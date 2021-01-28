@@ -64,6 +64,18 @@ jobs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\vcpkg.pdb'
         ArtifactName: 'Windows'
         publishLocation: 'Container'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish tls12-download.exe'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)\tls12-download.exe'
+        ArtifactName: 'Windows'
+        publishLocation: 'Container'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish tls12-download.pdb'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)\tls12-download.pdb'
+        ArtifactName: 'Windows'
+        publishLocation: 'Container'
     - task: MicroBuildCleanup@1
       condition: succeededOrFailed()
       displayName: MicroBuild Cleanup
