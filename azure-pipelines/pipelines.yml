@@ -1,0 +1,103 @@
+variables:
+  VCPKG_REPO_COMMIT_SHA: '401b26c9866a071f645ae57831caa419b2c48be1'
+jobs:
+- job: linux
+  displayName: 'Linux'
+  pool:
+    vmImage: 'ubuntu-latest'
+  variables:
+    - name: 'VCPKG_ROOT'
+      value: $(Build.SourcesDirectory)/vcpkg-root
+  steps:
+    - bash: |
+        git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT" -n
+        git -C "$VCPKG_ROOT" checkout $VCPKG_REPO_COMMIT_SHA
+      displayName: "Clone vcpkg repo to serve as root"
+    - bash: |
+        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
+        make -j 2 -C build.amd64.debug
+      displayName: "Build vcpkg with CMake"
+      failOnStderr: true
+    - bash: build.amd64.debug/vcpkg-test
+      displayName: 'Run vcpkg tests'
+    - task: PowerShell@2
+      displayName: 'Run vcpkg end-to-end tests'
+      inputs:
+        filePath: 'azure-pipelines/end-to-end-tests.ps1'
+        arguments: '-Triplet x64-linux -WorkingRoot work -VcpkgRoot $(VCPKG_ROOT)'
+        workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
+        pwsh: true
+- job: osx
+  displayName: 'OSX'
+  pool:
+    vmImage: 'macos-latest'
+  variables:
+    - name: 'VCPKG_ROOT'
+      value: $(Build.SourcesDirectory)/vcpkg-root
+  steps:
+    - bash: |
+        git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT" -n
+        git -C "$VCPKG_ROOT" checkout $VCPKG_REPO_COMMIT_SHA
+      displayName: "Clone vcpkg repo to serve as root"
+    - bash: |
+        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
+        make -j 2 -C build.amd64.debug
+      displayName: "Build vcpkg with CMake"
+      failOnStderr: true
+    - bash: build.amd64.debug/vcpkg-test
+      displayName: 'Run vcpkg tests'
+    - task: PowerShell@2
+      displayName: 'Run vcpkg end-to-end tests'
+      inputs:
+        filePath: 'azure-pipelines/end-to-end-tests.ps1'
+        arguments: '-Triplet x64-osx -WorkingRoot work -VcpkgRoot $(VCPKG_ROOT)'
+        workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
+        pwsh: true
+- job: windows
+  displayName: 'Windows'
+  pool:
+    vmImage: 'windows-latest'
+  variables:
+  - name: DiffFile
+    value: $(Build.ArtifactStagingDirectory)\format.diff
+  - name: 'VCPKG_ROOT'
+    value: $(Build.SourcesDirectory)\vcpkg-root
+  steps:
+    - task: Powershell@2
+      displayName: 'Format C++'
+      inputs:
+        filePath: 'azure-pipelines/Format-CxxCode.ps1'
+        pwsh: true
+    - task: Powershell@2
+      displayName: 'Create Diff'
+      inputs:
+        filePath: azure-pipelines/Create-PRDiff.ps1
+        arguments: '-DiffFile $(DiffFile)'
+        pwsh: true
+    - task: PublishBuildArtifacts@1
+      condition: failed()
+      displayName: 'Publish Format and Documentation Diff'
+      inputs:
+        PathtoPublish: '$(DiffFile)'
+        ArtifactName: 'format.diff'
+    - script: |
+        git clone https://github.com/microsoft/vcpkg "%VCPKG_ROOT%" -n
+        git -C "%VCPKG_ROOT%" checkout %VCPKG_REPO_COMMIT_SHA%
+      displayName: "Clone vcpkg repo to serve as root"
+    - task: CmdLine@2
+      displayName: "Build vcpkg with CMake, and Run Tests"
+      inputs:
+        script: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
+          rmdir /s /q build.x86.debug > nul 2> nul
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -B build.x86.debug
+          ninja.exe -C build.x86.debug
+          build.x86.debug\vcpkg-test.exe
+        failOnStderr: true
+    - task: PowerShell@2
+      displayName: 'Run vcpkg end-to-end tests'
+      inputs:
+        filePath: 'azure-pipelines/end-to-end-tests.ps1'
+        arguments: '-Triplet x86-windows -WorkingRoot work -VcpkgRoot "$(VCPKG_ROOT)"'
+        workingDirectory: '$(Build.SourcesDirectory)/build.x86.debug'
+        pwsh: true
