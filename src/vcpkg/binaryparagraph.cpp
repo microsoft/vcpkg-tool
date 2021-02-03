@@ -64,15 +64,7 @@ namespace vcpkg
         }
 
         this->description = Strings::split(parser.optional_field(Fields::DESCRIPTION), '\n');
-        for (auto& desc : this->description)
-        {
-            desc = Strings::trim(std::move(desc));
-        }
         this->maintainers = Strings::split(parser.optional_field(Fields::MAINTAINER), '\n');
-        for (auto& maintainer : this->maintainers)
-        {
-            maintainer = Strings::trim(std::move(maintainer));
-        }
 
         this->abi = parser.optional_field(Fields::ABI);
 
@@ -102,6 +94,8 @@ namespace vcpkg
 
         // prefer failing above when possible because it gives better information
         Checks::check_exit(VCPKG_LINE_INFO, multi_arch == "same", "Multi-Arch must be 'same' but was %s", multi_arch);
+
+        canonicalize();
     }
 
     BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
@@ -120,7 +114,7 @@ namespace vcpkg
         , type(spgh.type)
     {
         this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec().name(); });
-        Util::sort_unique_erase(this->dependencies);
+        canonicalize();
     }
 
     BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
@@ -139,7 +133,34 @@ namespace vcpkg
         , type(spgh.type)
     {
         this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec().name(); });
+        canonicalize();
+    }
+
+    void BinaryParagraph::canonicalize()
+    {
+        constexpr auto all_empty = [](const std::vector<std::string>& range) {
+            return std::all_of(range.begin(), range.end(), [](const std::string& el) { return el.empty(); });
+        };
+
         Util::sort_unique_erase(this->dependencies);
+
+        for (auto& maintainer : this->maintainers)
+        {
+            maintainer = Strings::trim(std::move(maintainer));
+        }
+        if (all_empty(this->maintainers))
+        {
+            this->maintainers.clear();
+        }
+
+        for (auto& desc : this->description)
+        {
+            desc = Strings::trim(std::move(desc));
+        }
+        if (all_empty(this->description))
+        {
+            this->description.clear();
+        }
     }
 
     std::string BinaryParagraph::displayname() const
