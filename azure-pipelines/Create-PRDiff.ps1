@@ -4,7 +4,13 @@ Param(
     [String]$DiffFile
 )
 
-Start-Process -FilePath 'git' -ArgumentList 'diff' `
+$gitConfigOptions = @(
+    '-c', 'user.name=Nobody',
+    '-c', 'user.email=nobody@example.com',
+    '-c', 'core.autocrlf=false'
+)
+
+Start-Process -FilePath 'git' -ArgumentList ($gitConfigOptions + 'diff') `
     -NoNewWindow -Wait `
     -RedirectStandardOutput $DiffFile
 if (0 -ne (Get-Item -LiteralPath $DiffFile).Length)
