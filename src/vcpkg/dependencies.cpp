@@ -1677,11 +1677,11 @@ namespace vcpkg::Dependencies
                             auto base_scfl = m_ver_provider.get_control_file({dep.name, *p_base_ver});
                             if (dep_scfl && base_scfl)
                             {
-                                auto r =
-                                    compare_versions(dep_scfl.get()->source_control_file->core_paragraph->version_scheme,
-                                                    *p_dep_ver,
-                                                    base_scfl.get()->source_control_file->core_paragraph->version_scheme,
-                                                    *p_base_ver);
+                                auto r = compare_versions(
+                                    dep_scfl.get()->source_control_file->core_paragraph->version_scheme,
+                                    *p_dep_ver,
+                                    base_scfl.get()->source_control_file->core_paragraph->version_scheme,
+                                    *p_base_ver);
                                 if (r == VerComp::lt)
                                 {
                                     add_constraint(node, *p_base_ver, "baseline");
@@ -1711,7 +1711,9 @@ namespace vcpkg::Dependencies
                     }
                     else
                     {
-                        m_errors.push_back(Strings::concat("Cannot resolve unversioned dependency from top-level to ", dep.name, " without a baseline entry or override."));
+                        m_errors.push_back(Strings::concat("Cannot resolve unversioned dependency from top-level to ",
+                                                           dep.name,
+                                                           " without a baseline entry or override."));
                     }
                 }
 
