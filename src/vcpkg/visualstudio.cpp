@@ -131,7 +131,8 @@ namespace vcpkg::VisualStudio
             const auto vcvarsall_bat = path_root / "VC" / "vcvarsall.bat";
 
             if (fs.exists(cl_exe) && fs.exists(vcvarsall_bat))
-                instances.emplace_back(std::move(path_root), version.c_str(), VisualStudioInstance::ReleaseType::LEGACY);
+                instances.emplace_back(
+                    std::move(path_root), version.c_str(), VisualStudioInstance::ReleaseType::LEGACY);
         };
 
         const auto append_if_comntools_has_cl = [&](ZStringView env_var, CStringView version) {
