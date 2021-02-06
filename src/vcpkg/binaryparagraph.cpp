@@ -138,7 +138,7 @@ namespace vcpkg
 
     void BinaryParagraph::canonicalize()
     {
-        constexpr auto all_empty = [](const std::vector<std::string>& range) {
+        const auto all_empty = [](const std::vector<std::string>& range) {
             return std::all_of(range.begin(), range.end(), [](const std::string& el) { return el.empty(); });
         };
 
