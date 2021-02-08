@@ -71,11 +71,16 @@ namespace vcpkg
         std::string multi_arch;
         parser.required_field(Fields::MULTI_ARCH, multi_arch);
 
+        Triplet my_triplet = this->spec.triplet();
         this->dependencies = Util::fmap(
             parse_qualified_specifier_list(parser.optional_field(Fields::DEPENDS)).value_or_exit(VCPKG_LINE_INFO),
-            [](const ParsedQualifiedSpecifier& dep) {
+            [my_triplet](const ParsedQualifiedSpecifier& dep) {
                 // for compatibility with previous vcpkg versions, we discard all irrelevant information
-                return dep.name;
+                return PackageSpec{
+                    dep.name,
+                    dep.triplet.map([](auto&& s) { return Triplet::from_canonical_name(std::string(s)); })
+                        .value_or(my_triplet),
+                };
             });
         if (!this->is_feature())
         {
@@ -113,7 +118,7 @@ namespace vcpkg
         , abi(abi_tag)
         , type(spgh.type)
     {
-        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec().name(); });
+        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
     }
 
@@ -132,7 +137,7 @@ namespace vcpkg
         , abi()
         , type(spgh.type)
     {
-        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec().name(); });
+        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
     }
 
@@ -223,6 +228,20 @@ namespace vcpkg
         serialize_array(name, array, out_str, "\n    ");
     }
 
+    static std::string serialize_deps_list(View<PackageSpec> deps, Triplet target)
+    {
+        return Strings::join(", ", deps, [target](const PackageSpec& pspec) {
+            if (pspec.triplet() == target)
+            {
+                return pspec.name();
+            }
+            else
+            {
+                return pspec.to_string();
+            }
+        });
+    }
+
     void serialize(const BinaryParagraph& pgh, std::string& out_str)
     {
         const size_t initial_end = out_str.size();
@@ -242,7 +261,7 @@ namespace vcpkg
 
         if (!pgh.dependencies.empty())
         {
-            serialize_array(Fields::DEPENDS, pgh.dependencies, out_str);
+            serialize_string(Fields::DEPENDS, serialize_deps_list(pgh.dependencies, pgh.spec.triplet()), out_str);
         }
 
         serialize_string(Fields::ARCHITECTURE, pgh.spec.triplet().to_string(), out_str);

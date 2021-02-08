@@ -49,9 +49,43 @@ if ($Filter -ne $Null) {
 $n = 1
 $m = $AllTests.Count
 
+$envvars_clear = @(
+    "VCPKG_DEFAULT_HOST_TRIPLET",
+    "VCPKG_DEFAULT_TRIPLET",
+    "VCPKG_BINARY_SOURCES",
+    "VCPKG_OVERLAY_PORTS",
+    "VCPKG_OVERLAY_TRIPLETS",
+    "VCPKG_KEEP_ENV_VARS",
+    "VCPKG_ROOT",
+    "VCPKG_FEATURE_FLAGS",
+    "VCPKG_DISABLE_METRICS"
+)
+$envvars = $envvars_clear + @("VCPKG_DOWNLOADS")
+
 $AllTests | % {
     Write-Host "[end-to-end-tests.ps1] [$n/$m] Running suite $_"
-    & $_
+
+    $envbackup = @{}
+    foreach ($var in $envvars)
+    {
+        $envbackup[$var] = [System.Environment]::GetEnvironmentVariable($var)
+    }
+
+    try
+    {
+        foreach ($var in $envvars_clear)
+    {
+            [System.Environment]::SetEnvironmentVariable($var, $null)
+        }
+        & $_
+    }
+    finally
+    {
+        foreach ($var in $envvars)
+        {
+            [System.Environment]::SetEnvironmentVariable($var, $envbackup[$var])
+        }
+    }
     $n += 1
 }
 

@@ -88,7 +88,7 @@ namespace vcpkg
 
     std::map<std::string, std::vector<FeatureSpec>> InstalledPackageView::feature_dependencies() const
     {
-        auto extract_deps = [&](const std::string& name) { return FeatureSpec{{name, spec().triplet()}, "core"}; };
+        auto extract_deps = [&](const PackageSpec& spec) { return FeatureSpec{spec, "core"}; };
 
         std::map<std::string, std::vector<FeatureSpec>> deps;
 
@@ -104,7 +104,7 @@ namespace vcpkg
     {
         // accumulate all features in installed dependencies
         // Todo: make this unneeded by collapsing all package dependencies into the core package
-        std::vector<std::string> deps;
+        std::vector<PackageSpec> deps;
         for (auto&& feature : features)
             for (auto&& dep : feature->package.dependencies)
                 deps.push_back(dep);
@@ -113,9 +113,10 @@ namespace vcpkg
         for (auto&& dep : core->package.dependencies)
             deps.push_back(dep);
 
-        Util::erase_remove_if(deps, [&](const std::string& pspec) { return pspec == spec().name(); });
+        auto this_spec = this->spec();
+        Util::erase_remove_if(deps, [this_spec](const PackageSpec& pspec) { return pspec == this_spec; });
         Util::sort_unique_erase(deps);
 
-        return PackageSpec::to_package_specs(deps, spec().triplet());
+        return deps;
     }
 }
