@@ -1069,9 +1069,23 @@ TEST_CASE ("version install scheme change in port version", "[versionplan]")
 TEST_CASE ("version install simple feature", "[versionplan]")
 {
     MockVersionedPortfileProvider vp;
-    auto a_x = std::make_unique<FeatureParagraph>();
-    a_x->name = "x";
-    vp.emplace("a", {"1", 0}, Scheme::Relaxed).source_control_file->feature_paragraphs.push_back(std::move(a_x));
+    {
+        auto a_x = std::make_unique<FeatureParagraph>();
+        a_x->name = "x";
+        vp.emplace("a", {"1", 0}, Scheme::Relaxed).source_control_file->feature_paragraphs.push_back(std::move(a_x));
+    }
+    {
+        auto a_x = std::make_unique<FeatureParagraph>();
+        a_x->name = "x";
+        vp.emplace("semver", {"1.0.0", 0}, Scheme::Semver)
+            .source_control_file->feature_paragraphs.push_back(std::move(a_x));
+    }
+    {
+        auto a_x = std::make_unique<FeatureParagraph>();
+        a_x->name = "x";
+        vp.emplace("date", {"2020-01-01", 0}, Scheme::Date)
+            .source_control_file->feature_paragraphs.push_back(std::move(a_x));
+    }
 
     MockCMakeVarProvider var_provider;
 
@@ -1079,18 +1093,51 @@ TEST_CASE ("version install simple feature", "[versionplan]")
     {
         MockBaselineProvider bp;
         bp.v["a"] = {"1", 0};
+        bp.v["semver"] = {"1.0.0", 0};
+        bp.v["date"] = {"2020-01-01", 0};
 
-        auto install_plan = unwrap(create_versioned_install_plan(vp,
-                                                                 bp,
-                                                                 var_provider,
-                                                                 {
-                                                                     Dependency{"a", {"x"}},
-                                                                 },
-                                                                 {},
-                                                                 toplevel_spec()));
+        SECTION ("relaxed")
+        {
+            auto install_plan = unwrap(create_versioned_install_plan(vp,
+                                                                     bp,
+                                                                     var_provider,
+                                                                     {
+                                                                         Dependency{"a", {"x"}},
+                                                                     },
+                                                                     {},
+                                                                     toplevel_spec()));
 
-        REQUIRE(install_plan.size() == 1);
-        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+            REQUIRE(install_plan.size() == 1);
+            check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+        }
+        SECTION ("semver")
+        {
+            auto install_plan = unwrap(create_versioned_install_plan(vp,
+                                                                     bp,
+                                                                     var_provider,
+                                                                     {
+                                                                         Dependency{"semver", {"x"}},
+                                                                     },
+                                                                     {},
+                                                                     toplevel_spec()));
+
+            REQUIRE(install_plan.size() == 1);
+            check_name_and_version(install_plan.install_actions[0], "semver", {"1.0.0", 0}, {"x"});
+        }
+        SECTION ("date")
+        {
+            auto install_plan = unwrap(create_versioned_install_plan(vp,
+                                                                     bp,
+                                                                     var_provider,
+                                                                     {
+                                                                         Dependency{"date", {"x"}},
+                                                                     },
+                                                                     {},
+                                                                     toplevel_spec()));
+
+            REQUIRE(install_plan.size() == 1);
+            check_name_and_version(install_plan.install_actions[0], "date", {"2020-01-01", 0}, {"x"});
+        }
     }
 
     SECTION ("without baseline")
