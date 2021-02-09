@@ -29,7 +29,9 @@ Param(
     [string]$VcpkgRoot,
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$Filter
+    [string]$Filter,
+    [Parameter(Mandatory = $false)]
+    [string]$VcpkgExe
 )
 
 $ErrorActionPreference = "Stop"
@@ -40,7 +42,18 @@ if (-Not (Test-Path $WorkingRoot)) {
 
 $WorkingRoot = (Get-Item $WorkingRoot).FullName
 $VcpkgRoot = (Get-Item $VcpkgRoot).FullName
-$env:VCPKG_ROOT = $VcpkgRoot
+
+if ([string]::IsNullOrEmpty($VcpkgExe))
+{
+    if ($IsWindows)
+    {
+        $VcpkgExe = Get-Item './vcpkg.exe'
+    }
+    else
+    {
+        $VcpkgExe = Get-Item './vcpkg'
+    }
+}
 
 $AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
 if ($Filter -ne $Null) {
@@ -62,8 +75,9 @@ $envvars_clear = @(
 )
 $envvars = $envvars_clear + @("VCPKG_DOWNLOADS")
 
-$AllTests | % {
-    Write-Host "[end-to-end-tests.ps1] [$n/$m] Running suite $_"
+foreach ($Test in $AllTests)
+{
+    Write-Host "[end-to-end-tests.ps1] [$n/$m] Running suite $Test"
 
     $envbackup = @{}
     foreach ($var in $envvars)
@@ -74,16 +88,30 @@ $AllTests | % {
     try
     {
         foreach ($var in $envvars_clear)
-    {
-            [System.Environment]::SetEnvironmentVariable($var, $null)
+        {
+            if (Test-Path "Env:\$var")
+            {
+                Remove-Item "Env:\$var"
+            }
         }
-        & $_
+        $env:VCPKG_ROOT = $VcpkgRoot
+        & $Test
     }
     finally
     {
         foreach ($var in $envvars)
         {
-            [System.Environment]::SetEnvironmentVariable($var, $envbackup[$var])
+            if ($envbackup[$var] -eq $null)
+            {
+                if (Test-Path "Env:\$var")
+                {
+                    Remove-Item "Env:\$var"
+                }
+            }
+            else
+            {
+                Set-Item "Env:\$var" "$envbackup[$var]"
+            }
         }
     }
     $n += 1
