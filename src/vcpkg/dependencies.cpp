@@ -1235,17 +1235,17 @@ namespace vcpkg::Dependencies
                 template<class F>
                 void foreach_vsi(F f)
                 {
-                    if (auto relaxed = this->relaxed.get())
+                    if (auto r = this->relaxed.get())
                     {
-                        f(**relaxed);
+                        f(**r);
                     }
-                    if (auto semver = this->semver.get())
+                    if (auto s = this->semver.get())
                     {
-                        f(**semver);
+                        f(**s);
                     }
-                    if (auto date = this->date.get())
+                    if (auto d = this->date.get())
                     {
-                        f(**date);
+                        f(**d);
                     }
                     for (auto&& vsi : this->exacts)
                     {
