@@ -126,19 +126,16 @@ namespace vcpkg::VisualStudio
             }
         }
 
-
         const auto maybe_append_path = [&](fs::path&& path_root, CStringView version, bool check_cl = true) {
             if (check_cl)
             {
                 const auto cl_exe = path_root / "VC" / "bin" / "cl.exe";
                 const auto vcvarsall_bat = path_root / "VC" / "vcvarsall.bat";
 
-                if (!(fs.exists(cl_exe) && fs.exists(vcvarsall_bat)))
-                    return;
+                if (!(fs.exists(cl_exe) && fs.exists(vcvarsall_bat))) return;
             }
 
-            instances.emplace_back(
-                std::move(path_root), version.c_str(), VisualStudioInstance::ReleaseType::LEGACY);
+            instances.emplace_back(std::move(path_root), version.c_str(), VisualStudioInstance::ReleaseType::LEGACY);
         };
 
         const auto maybe_append_comntools = [&](ZStringView env_var, CStringView version, bool check_cl = true) {
