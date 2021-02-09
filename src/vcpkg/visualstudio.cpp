@@ -126,45 +126,44 @@ namespace vcpkg::VisualStudio
             }
         }
 
-        // VS2019 instance from environment variable
-        auto maybe_vs160_comntools = System::get_environment_variable("vs160comntools");
-        if (const auto path_as_string = maybe_vs160_comntools.get())
-        {
-            // We want lexically_normal(), but it is not available
-            // Correct root path might be 2 or 3 levels up, depending on if the path has trailing backslash.
-            auto common7_tools = fs::u8path(*path_as_string);
-            if (common7_tools.filename().empty())
-                instances.emplace_back(common7_tools.parent_path().parent_path().parent_path(),
-                                       "16.0",
-                                       VisualStudioInstance::ReleaseType::LEGACY);
-            else
-                instances.emplace_back(
-                    common7_tools.parent_path().parent_path(), "16.0", VisualStudioInstance::ReleaseType::LEGACY);
-        }
+        const auto maybe_append_path = [&](fs::path&& path_root, CStringView version, bool check_cl = true) {
+            if (check_cl)
+            {
+                const auto cl_exe = path_root / "VC" / "bin" / "cl.exe";
+                const auto vcvarsall_bat = path_root / "VC" / "vcvarsall.bat";
 
-        const auto append_if_has_cl_vs140 = [&](fs::path&& path_root) {
-            const auto cl_exe = path_root / "VC" / "bin" / "cl.exe";
-            const auto vcvarsall_bat = path_root / "VC" / "vcvarsall.bat";
+                if (!(fs.exists(cl_exe) && fs.exists(vcvarsall_bat))) return;
+            }
 
-            if (fs.exists(cl_exe) && fs.exists(vcvarsall_bat))
-                instances.emplace_back(std::move(path_root), "14.0", VisualStudioInstance::ReleaseType::LEGACY);
+            instances.emplace_back(std::move(path_root), version.c_str(), VisualStudioInstance::ReleaseType::LEGACY);
         };
 
-        // VS2015 instance from environment variable
-        auto maybe_vs140_comntools = System::get_environment_variable("vs140comntools");
-        if (const auto path_as_string = maybe_vs140_comntools.get())
-        {
-            // We want lexically_normal(), but it is not available
-            // Correct root path might be 2 or 3 levels up, depending on if the path has trailing backslash.
-            auto common7_tools = fs::u8path(*path_as_string);
-            if (common7_tools.filename().empty())
-                append_if_has_cl_vs140(common7_tools.parent_path().parent_path().parent_path());
-            else
-                append_if_has_cl_vs140(common7_tools.parent_path().parent_path());
-        }
+        const auto maybe_append_comntools = [&](ZStringView env_var, CStringView version, bool check_cl = true) {
+            auto maybe_comntools = System::get_environment_variable(env_var);
+            if (const auto path_as_string = maybe_comntools.get())
+            {
+                // We want lexically_normal(), but it is not available
+                // Correct root path might be 2 or 3 levels up, depending on if the path has trailing backslash.
+                auto common7_tools = fs::u8path(*path_as_string);
+                if (common7_tools.filename().empty())
+                    maybe_append_path(common7_tools.parent_path().parent_path().parent_path(), version, check_cl);
+                else
+                    maybe_append_path(common7_tools.parent_path().parent_path(), version, check_cl);
+            }
+        };
 
-        // VS2015 instance from Program Files
-        append_if_has_cl_vs140(program_files_32_bit / "Microsoft Visual Studio 14.0");
+        const auto maybe_append_legacy_vs = [&](ZStringView env_var, const fs::path& dir, CStringView version) {
+            // VS instance from environment variable
+            maybe_append_comntools(env_var, version);
+            // VS instance from Program Files
+            maybe_append_path(program_files_32_bit / dir, version);
+        };
+
+        // VS 2017 changed the installer such that cl.exe cannot be found by path navigation and
+        // the env variable is only set when vcvars has been run. Therefore we close the safety valves.
+        maybe_append_comntools("vs160comntools", "16.0", false);
+        maybe_append_legacy_vs("vs140comntools", "Microsoft Visual Studio 14.0", "14.0");
+        maybe_append_legacy_vs("vs120comntools", "Microsoft Visual Studio 12.0", "12.0");
 
         return instances;
     }
