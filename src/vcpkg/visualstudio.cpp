@@ -126,16 +126,22 @@ namespace vcpkg::VisualStudio
             }
         }
 
-        const auto append_if_has_cl = [&](fs::path&& path_root, CStringView version) {
-            const auto cl_exe = path_root / "VC" / "bin" / "cl.exe";
-            const auto vcvarsall_bat = path_root / "VC" / "vcvarsall.bat";
 
-            if (fs.exists(cl_exe) && fs.exists(vcvarsall_bat))
-                instances.emplace_back(
-                    std::move(path_root), version.c_str(), VisualStudioInstance::ReleaseType::LEGACY);
+        const auto maybe_append_path = [&](fs::path&& path_root, CStringView version, bool check_cl = true) {
+            if (check_cl)
+            {
+                const auto cl_exe = path_root / "VC" / "bin" / "cl.exe";
+                const auto vcvarsall_bat = path_root / "VC" / "vcvarsall.bat";
+
+                if (!(fs.exists(cl_exe) && fs.exists(vcvarsall_bat)))
+                    return;
+            }
+
+            instances.emplace_back(
+                std::move(path_root), version.c_str(), VisualStudioInstance::ReleaseType::LEGACY);
         };
 
-        const auto append_if_comntools_has_cl = [&](ZStringView env_var, CStringView version) {
+        const auto maybe_append_comntools = [&](ZStringView env_var, CStringView version, bool check_cl = true) {
             auto maybe_comntools = System::get_environment_variable(env_var);
             if (const auto path_as_string = maybe_comntools.get())
             {
@@ -143,20 +149,22 @@ namespace vcpkg::VisualStudio
                 // Correct root path might be 2 or 3 levels up, depending on if the path has trailing backslash.
                 auto common7_tools = fs::u8path(*path_as_string);
                 if (common7_tools.filename().empty())
-                    append_if_has_cl(common7_tools.parent_path().parent_path().parent_path(), version);
+                    maybe_append_path(common7_tools.parent_path().parent_path().parent_path(), version, check_cl);
                 else
-                    append_if_has_cl(common7_tools.parent_path().parent_path(), version);
+                    maybe_append_path(common7_tools.parent_path().parent_path(), version, check_cl);
             }
         };
 
         const auto maybe_append_legacy_vs = [&](ZStringView env_var, const fs::path& dir, CStringView version) {
             // VS instance from environment variable
-            append_if_comntools_has_cl(env_var, version);
+            maybe_append_comntools(env_var, version);
             // VS instance from Program Files
-            append_if_has_cl(program_files_32_bit / dir, version);
+            maybe_append_path(program_files_32_bit / dir, version);
         };
 
-        append_if_comntools_has_cl("vs160comntools", "16.0");
+        // VS 2017 changed the installer such that cl.exe cannot be found by path navigation and
+        // the env variable is only set when vcvars has been run. Therefore we close the safety valves.
+        maybe_append_comntools("vs160comntools", "16.0", false);
         maybe_append_legacy_vs("vs140comntools", "Microsoft Visual Studio 14.0", "14.0");
         maybe_append_legacy_vs("vs120comntools", "Microsoft Visual Studio 12.0", "12.0");
 
