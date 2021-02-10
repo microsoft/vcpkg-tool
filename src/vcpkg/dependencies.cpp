@@ -1190,7 +1190,7 @@ namespace vcpkg::Dependencies
 
             void add_roots(View<Dependency> dep, const PackageSpec& toplevel);
 
-            ExpectedS<ActionPlan> finalize_extract_plan();
+            ExpectedS<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel);
 
         private:
             const IVersionedPortfileProvider& m_ver_provider;
@@ -1210,6 +1210,7 @@ namespace vcpkg::Dependencies
             // "relaxed" versions all share the same column
             struct VersionSchemeInfo
             {
+                Versions::Scheme scheme;
                 const SourceControlFileLocation* scfl = nullptr;
                 Versions::Version version;
                 // This tracks a list of constraint sources for debugging purposes
@@ -1257,6 +1258,11 @@ namespace vcpkg::Dependencies
                                 const std::string& feature);
 
             Optional<Versions::Version> dep_to_version(const std::string& name, const DependencyConstraint& dc);
+
+            static std::string format_incomparable_versions_message(const PackageSpec& on,
+                                                                    StringView from,
+                                                                    const VersionSchemeInfo& current,
+                                                                    const VersionSchemeInfo& target);
 
             std::vector<std::string> m_errors;
         };
@@ -1313,6 +1319,7 @@ namespace vcpkg::Dependencies
                 // not implemented
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
+            vsi->scheme = scheme;
             vermap.emplace(ver, vsi);
             return *vsi;
         }
@@ -1616,6 +1623,19 @@ namespace vcpkg::Dependencies
             m_overrides.emplace(name, v);
         }
 
+        static std::string format_missing_baseline_message(const std::string& onto, const PackageSpec& from)
+        {
+            return Strings::concat(
+                "Error: Cannot resolve a minimum constraint for dependency ",
+                onto,
+                " from ",
+                from,
+                ".\nThe dependency was not found in the baseline, indicating that the package did not "
+                "exist at that time. This may be fixed by providing an explicit override version via the "
+                "\"overrides\" field or by updating the baseline.\nSee `vcpkg help versioning` for more "
+                "information.");
+        }
+
         void VersionedPackageGraph::add_roots(View<Dependency> deps, const PackageSpec& toplevel)
         {
             auto specs = Util::fmap(deps, [&toplevel](const Dependency& d) {
@@ -1711,9 +1731,7 @@ namespace vcpkg::Dependencies
                     }
                     else
                     {
-                        m_errors.push_back(Strings::concat("Cannot resolve unversioned dependency from top-level to ",
-                                                           dep.name,
-                                                           " without a baseline entry or override."));
+                        m_errors.push_back(format_missing_baseline_message(dep.name, toplevel));
                     }
                 }
 
@@ -1728,7 +1746,38 @@ namespace vcpkg::Dependencies
             }
         }
 
-        ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan()
+        std::string VersionedPackageGraph::format_incomparable_versions_message(const PackageSpec& on,
+                                                                                StringView from,
+                                                                                const VersionSchemeInfo& current,
+                                                                                const VersionSchemeInfo& target)
+        {
+            return Strings::concat(
+                "Error: Version conflict on ",
+                on,
+                ": ",
+                from,
+                " required ",
+                target.version,
+                " but vcpkg could not compare it to ",
+                current.version,
+                "\n\nThe two versions used incomparable schemes:\n    \"",
+                current.version,
+                "\" was of scheme ",
+                current.scheme,
+                "\n    \"",
+                target.version,
+                "\" was of scheme ",
+                target.scheme,
+                "\n\nThis can be resolved by adding an explicit override to the preferred version, for example:\n\n",
+                Strings::format(R"(    "overrides": [
+        { "name": "%s", "version": "%s" }
+    ])",
+                                on.name(),
+                                current.version),
+                "\n\nSee `vcpkg help versioning` for more information.");
+        }
+
+        ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan(const PackageSpec& toplevel)
         {
             if (m_errors.size() > 0)
             {
@@ -1747,7 +1796,8 @@ namespace vcpkg::Dependencies
             std::vector<Frame> stack;
 
             auto push = [&emitted, this, &stack](const PackageSpec& spec,
-                                                 const Versions::Version& new_ver) -> Optional<std::string> {
+                                                 const Versions::Version& new_ver,
+                                                 const PackageSpec& origin) -> Optional<std::string> {
                 auto&& node = m_graph[spec];
                 auto overlay = m_o_provider.get_control_file(spec.name());
                 auto over_it = m_overrides.find(spec.name());
@@ -1760,7 +1810,16 @@ namespace vcpkg::Dependencies
                 else
                     p_vnode = node.get_node(new_ver);
 
-                if (!p_vnode) return Strings::concat("Version was not found during discovery: ", spec, "@", new_ver);
+                if (!p_vnode)
+                {
+                    return Strings::concat(
+                        "Error: Version was not found during discovery: ",
+                        spec,
+                        "@",
+                        new_ver,
+                        "\nThis is an internal vcpkg error. Please open an issue on https://github.com/Microsoft/vcpkg "
+                        "with detailed steps to reproduce the problem.");
+                }
 
                 auto p = emitted.emplace(spec, nullptr);
                 if (p.second)
@@ -1775,12 +1834,7 @@ namespace vcpkg::Dependencies
                             {
                                 if (base_node != p_vnode)
                                 {
-                                    return Strings::concat("Version conflict on ",
-                                                           spec.name(),
-                                                           "@",
-                                                           new_ver,
-                                                           ": baseline required ",
-                                                           *baseline.get());
+                                    return format_incomparable_versions_message(spec, "baseline", *p_vnode, *base_node);
                                 }
                             }
                         }
@@ -1813,11 +1867,7 @@ namespace vcpkg::Dependencies
                                 }
                                 else
                                 {
-                                    return Strings::concat("Cannot resolve unconstrained dependency from ",
-                                                           spec.name(),
-                                                           " to ",
-                                                           dep.name,
-                                                           " without a baseline entry or override.");
+                                    return format_missing_baseline_message(dep.name, spec);
                                 }
                             }
                         }
@@ -1831,7 +1881,7 @@ namespace vcpkg::Dependencies
                     if (p.first->second == nullptr)
                     {
                         return Strings::concat(
-                            "Cycle detected during ",
+                            "Error: Cycle detected during ",
                             spec,
                             ":\n",
                             Strings::join("\n", stack, [](const auto& p) -> const PackageSpec& { return p.ipa.spec; }));
@@ -1839,8 +1889,8 @@ namespace vcpkg::Dependencies
                     else if (p.first->second != p_vnode)
                     {
                         // comparable versions should retrieve the same info node
-                        return Strings::concat(
-                            "Version conflict on ", spec.name(), "@", p.first->second->version, ": required ", new_ver);
+                        return format_incomparable_versions_message(
+                            spec, origin.to_string(), *p_vnode, *p.first->second);
                     }
                     return nullopt;
                 }
@@ -1848,7 +1898,7 @@ namespace vcpkg::Dependencies
 
             for (auto&& root : m_roots)
             {
-                if (auto err = push(root.spec, root.ver))
+                if (auto err = push(root.spec, root.ver, toplevel))
                 {
                     return std::move(*err.get());
                 }
@@ -1867,7 +1917,7 @@ namespace vcpkg::Dependencies
                     {
                         auto dep = std::move(back.deps.back());
                         back.deps.pop_back();
-                        if (auto err = push(dep.spec, dep.ver))
+                        if (auto err = push(dep.spec, dep.ver, back.ipa.spec))
                         {
                             return std::move(*err.get());
                         }
@@ -1890,6 +1940,6 @@ namespace vcpkg::Dependencies
         for (auto&& o : overrides)
             vpg.add_override(o.name, {o.version, o.port_version});
         vpg.add_roots(deps, toplevel);
-        return vpg.finalize_extract_plan();
+        return vpg.finalize_extract_plan(toplevel);
     }
 }
