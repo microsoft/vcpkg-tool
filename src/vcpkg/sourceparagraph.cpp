@@ -1068,6 +1068,22 @@ namespace vcpkg
                     s_extended_help);
             }
         }
+        else
+        {
+            bool has_overrides = !core_paragraph->overrides.empty();
+            bool has_versioned_dependencies = std::any_of(
+                core_paragraph->dependencies.begin(), core_paragraph->dependencies.end(), [](const auto& dependency) {
+                    return dependency.constraint.type != Versions::Constraint::Type::None;
+                });
+
+            if (!core_paragraph->builtin_baseline.has_value() && (has_overrides || has_versioned_dependencies))
+            {
+                return Strings::concat(fs::u8string(origin),
+                                       " was rejected because it uses \"overrides\" or versioned dependencies "
+                                       "(\"version>=\") without setting a \"builtin-baseline\".\n",
+                                       s_extended_help);
+            }
+        }
         return nullopt;
     }
 

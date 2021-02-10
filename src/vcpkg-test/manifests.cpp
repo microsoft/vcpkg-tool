@@ -347,6 +347,80 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") == "");
     }
+
+    SECTION ("valid required baseline")
+    {
+        std::string raw = R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
+    "dependencies": [
+        {
+            "name": "abc",
+            "version>=": "abcd#1"
+        }
+    ],
+    "overrides": [
+        {
+            "name": "abc",
+            "version-string": "abcd"
+        }
+    ]
+}
+)json";
+
+        auto m_pgh = test_parse_manifest(raw);
+        REQUIRE(m_pgh.has_value());
+        auto& pgh = **m_pgh.get();
+        REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.value == "abcd");
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.port_version == 1);
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.type == Versions::Constraint::Type::Minimum);
+        REQUIRE(pgh.core_paragraph->overrides.size() == 1);
+        REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == Versions::Scheme::String);
+        REQUIRE(pgh.core_paragraph->overrides[0].version == "abcd");
+        REQUIRE(pgh.core_paragraph->overrides[0].port_version == 0);
+        REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
+                "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+    }
+
+    SECTION ("missing required baseline")
+    {
+        std::string raw = R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "dependencies": [
+        {
+            "name": "abc",
+            "version>=": "abcd#1"
+        }
+    ],
+    "overrides": [
+        {
+            "name": "abc",
+            "version-string": "abcd"
+        }
+    ]
+}
+)json";
+
+        auto m_pgh = test_parse_manifest(raw);
+        REQUIRE(m_pgh.has_value());
+        auto& pgh = **m_pgh.get();
+        REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.value == "abcd");
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.port_version == 1);
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.type == Versions::Constraint::Type::Minimum);
+        REQUIRE(pgh.core_paragraph->overrides.size() == 1);
+        REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == Versions::Scheme::String);
+        REQUIRE(pgh.core_paragraph->overrides[0].version == "abcd");
+        REQUIRE(pgh.core_paragraph->overrides[0].port_version == 0);
+        REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+    }
 }
 
 TEST_CASE ("manifest overrides", "[manifests]")
@@ -355,6 +429,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
         {R"json({
     "name": "zlib",
     "version-date": "2020-01-01",
+    "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
     "overrides": [
         {
             "name": "abc",
@@ -368,6 +443,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
         {R"json({
     "name": "zlib",
     "version": "1.2.3.4.5",
+    "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
     "overrides": [
         {
             "name": "abc",
@@ -381,6 +457,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
         {R"json({
     "name": "zlib",
     "version-date": "2020-01-01",
+    "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
     "overrides": [
         {
             "name": "abc",
@@ -394,6 +471,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
         {R"json({
     "name": "zlib",
     "version-date": "2020-01-01",
+    "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
     "overrides": [
         {
             "name": "abc",
@@ -422,6 +500,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
     test_parse_manifest(R"json({
         "name": "zlib",
         "version-string": "abcd",
+        "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
         "overrides": [
         {
             "name": "abc",
@@ -434,6 +513,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
     test_parse_manifest(R"json({
         "name": "zlib",
         "version-string": "abcd",
+        "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
         "overrides": [
         {
             "name": "abc",
@@ -445,6 +525,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
     std::string raw = R"json({
     "name": "zlib",
     "version-string": "abcd",
+    "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
     "overrides": [
         {
             "name": "abc",
