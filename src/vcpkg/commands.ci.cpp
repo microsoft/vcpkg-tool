@@ -2,6 +2,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
 
@@ -65,7 +66,8 @@ namespace
             {
                 for (const fs::path& p : children)
                 {
-                    filesystem.copy_file(p, target_path / p.filename(), fs::copy_options::none, VCPKG_LINE_INFO);
+                    filesystem.copy_file(
+                        p, target_path / p.filename(), fs::copy_options::overwrite_existing, VCPKG_LINE_INFO);
                 }
             }
         }
@@ -292,7 +294,8 @@ namespace vcpkg::Commands::CI
         const PortFileProvider::PortFileProvider& provider,
         const CMakeVars::CMakeVarProvider& var_provider,
         const std::vector<FullPackageSpec>& specs,
-        IBinaryProvider& binaryprovider)
+        IBinaryProvider& binaryprovider,
+        const Dependencies::CreateInstallPlanOptions& serialize_options)
     {
         auto ret = std::make_unique<UnknownCIPortsResults>();
 
@@ -312,7 +315,8 @@ namespace vcpkg::Commands::CI
         }
 
         var_provider.load_dep_info_vars(packages_with_qualified_deps);
-        auto action_plan = Dependencies::create_feature_install_plan(provider, var_provider, specs, {}, {});
+        auto action_plan =
+            Dependencies::create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
 
         std::vector<FullPackageSpec> install_specs;
         for (auto&& install_action : action_plan.install_actions)
@@ -419,7 +423,10 @@ namespace vcpkg::Commands::CI
         return ret;
     }
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet)
+    void perform_and_exit(const VcpkgCmdArguments& args,
+                          const VcpkgPaths& paths,
+                          Triplet default_triplet,
+                          Triplet host_triplet)
     {
         std::unique_ptr<IBinaryProvider> binaryproviderStorage;
         if (args.binary_caching_enabled())
@@ -496,7 +503,7 @@ namespace vcpkg::Commands::CI
                 return FullPackageSpec{spec, std::move(default_features)};
             });
 
-            Dependencies::CreateInstallPlanOptions serialize_options;
+            Dependencies::CreateInstallPlanOptions serialize_options(host_triplet);
 
             struct RandomizerInstance : Graphs::Randomizer
             {
@@ -515,8 +522,13 @@ namespace vcpkg::Commands::CI
                 serialize_options.randomizer = &randomizer_instance;
             }
 
-            auto split_specs = find_unknown_ports_for_ci(
-                paths, exclusions_set, provider, var_provider, all_default_full_specs, binaryprovider);
+            auto split_specs = find_unknown_ports_for_ci(paths,
+                                                         exclusions_set,
+                                                         provider,
+                                                         var_provider,
+                                                         all_default_full_specs,
+                                                         binaryprovider,
+                                                         serialize_options);
 
             auto& action_plan = split_specs->plan;
 
@@ -599,8 +611,9 @@ namespace vcpkg::Commands::CI
 
     void CICommand::perform_and_exit(const VcpkgCmdArguments& args,
                                      const VcpkgPaths& paths,
-                                     Triplet default_triplet) const
+                                     Triplet default_triplet,
+                                     Triplet host_triplet) const
     {
-        CI::perform_and_exit(args, paths, default_triplet);
+        CI::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

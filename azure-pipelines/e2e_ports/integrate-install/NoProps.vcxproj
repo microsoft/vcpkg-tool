@@ -141,5 +141,5 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Project="..\..\buildsystems\msbuild\vcpkg.targets" />
+  <Import Project="$(VCPKG_ROOT)\scripts\buildsystems\msbuild\vcpkg.targets" />
 </Project>

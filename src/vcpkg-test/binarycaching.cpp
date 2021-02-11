@@ -87,6 +87,7 @@ Build-Depends: bzip
     Dependencies::InstallPlanAction ipa(PackageSpec{"zlib2", Test::X64_WINDOWS},
                                         scfl,
                                         Dependencies::RequestType::USER_REQUESTED,
+                                        Test::ARM_UWP,
                                         {{"a", {}}, {"b", {}}});
 
     ipa.abi_info = Build::AbiInfo{};
