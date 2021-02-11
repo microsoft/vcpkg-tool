@@ -22,7 +22,10 @@ namespace vcpkg::Downloads
 
     struct WinHttpRequest
     {
-        static ExpectedS<WinHttpRequest> make(HINTERNET hConnect, StringView url_path, const wchar_t* method = L"GET")
+        static ExpectedS<WinHttpRequest> make(HINTERNET hConnect,
+                                              StringView url_path,
+                                              bool https,
+                                              const wchar_t* method = L"GET")
         {
             WinHttpRequest ret;
             // Create an HTTP request handle.
@@ -32,7 +35,7 @@ namespace vcpkg::Downloads
                                         nullptr,
                                         WINHTTP_NO_REFERER,
                                         WINHTTP_DEFAULT_ACCEPT_TYPES,
-                                        WINHTTP_FLAG_SECURE);
+                                        https ? WINHTTP_FLAG_SECURE : 0);
             if (!h) return Strings::concat("WinHttpOpenRequest() failed: ", GetLastError());
             ret.m_hRequest.reset(h);
 
@@ -150,6 +153,13 @@ namespace vcpkg::Downloads
             WinHttpSetOption(
                 ret.m_hSession.get(), WINHTTP_OPTION_SECURE_PROTOCOLS, &secure_protocols, sizeof(secure_protocols));
 
+            // Many open source mirrors such as https://download.gnome.org/ will redirect to http mirrors.
+            // `curl.exe -L` does follow https -> http redirection.
+            // Additionally, vcpkg hash checks the resulting archive.
+            DWORD redirect_policy(WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS);
+            WinHttpSetOption(
+                ret.m_hSession.get(), WINHTTP_OPTION_REDIRECT_POLICY, &redirect_policy, sizeof(redirect_policy));
+
             return ret;
         }
 
@@ -187,10 +197,26 @@ namespace vcpkg::Downloads
         return details::SplitURIView{scheme, {}, {sep + 1, uri.end()}};
     }
 
-    void verify_downloaded_file_hash(const Files::Filesystem& fs,
-                                     const std::string& url,
-                                     const fs::path& path,
-                                     const std::string& sha512)
+    static std::string format_hash_mismatch(StringView url,
+                                            const fs::path& path,
+                                            StringView expected,
+                                            StringView actual)
+    {
+        return Strings::format("File does not have the expected hash:\n"
+                               "             url : [ %s ]\n"
+                               "       File path : [ %s ]\n"
+                               "   Expected hash : [ %s ]\n"
+                               "     Actual hash : [ %s ]\n",
+                               url,
+                               fs::u8string(path),
+                               expected,
+                               actual);
+    }
+
+    static Optional<std::string> try_verify_downloaded_file_hash(const Files::Filesystem& fs,
+                                                                 const std::string& url,
+                                                                 const fs::path& path,
+                                                                 const std::string& sha512)
     {
         std::string actual_hash = vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, path, Hash::Algorithm::Sha512);
 
@@ -198,22 +224,30 @@ namespace vcpkg::Downloads
         // This is the NEW hash for 7zip
         if (actual_hash == "a9dfaaafd15d98a2ac83682867ec5766720acf6e99d40d1a00d480692752603bf3f3742623f0ea85647a92374df"
                            "405f331afd6021c5cf36af43ee8db198129c0")
+        {
             // This is the OLD hash for 7zip
             actual_hash = "8c75314102e68d2b2347d592f8e3eb05812e1ebb525decbac472231633753f1d4ca31c8e6881a36144a8da26b257"
                           "1305b3ae3f4e2b85fc4a290aeda63d1a13b8";
+        }
         // </HACK>
 
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           sha512 == actual_hash,
-                           "File does not have the expected hash:\n"
-                           "             url : [ %s ]\n"
-                           "       File path : [ %s ]\n"
-                           "   Expected hash : [ %s ]\n"
-                           "     Actual hash : [ %s ]\n",
-                           url,
-                           fs::u8string(path),
-                           sha512,
-                           actual_hash);
+        if (sha512 != actual_hash)
+        {
+            return format_hash_mismatch(url, fs::u8string(path), sha512, actual_hash);
+        }
+        return nullopt;
+    }
+
+    void verify_downloaded_file_hash(const Files::Filesystem& fs,
+                                     const std::string& url,
+                                     const fs::path& path,
+                                     const std::string& sha512)
+    {
+        auto maybe_error = try_verify_downloaded_file_hash(fs, url, path, sha512);
+        if (auto err = maybe_error.get())
+        {
+            Checks::exit_with_message(VCPKG_LINE_INFO, *err);
+        }
     }
 
     static void url_heads_inner(View<std::string> urls, std::vector<int>* out)
@@ -298,6 +332,20 @@ namespace vcpkg::Downloads
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
+        if (Strings::starts_with(url, "ftp://"))
+        {
+            System::Command cmd;
+            cmd.string_arg("curl");
+            cmd.string_arg(url);
+            cmd.string_arg("-T").path_arg(file);
+            auto res = System::cmd_execute_and_capture_output(cmd);
+            if (res.exit_code != 0)
+            {
+                Debug::print(res.output, '\n');
+                System::print2(System::Color::warning, "curl failed to execute with exit code: ", res.exit_code, '\n');
+            }
+            return res.exit_code;
+        }
         System::Command cmd;
         cmd.string_arg("curl").string_arg("-X").string_arg("PUT");
         cmd.string_arg("-w").string_arg(Strings::concat("\\n", guid_marker, "%{http_code}"));
@@ -392,14 +440,15 @@ namespace vcpkg::Downloads
                 Strings::append(errors, url, ": ", conn.error(), '\n');
                 return false;
             }
-            auto req = WinHttpRequest::make(conn.get()->m_hConnect.get(), split_uri.path_query_fragment);
+            auto req = WinHttpRequest::make(
+                conn.get()->m_hConnect.get(), split_uri.path_query_fragment, split_uri.scheme == "https");
             if (!req)
             {
                 Strings::append(errors, url, ": ", req.error(), '\n');
                 return false;
             }
             auto forall_data =
-                req.get()->forall_data([&](Span<char> span) { fwrite(span.data(), 1, span.size(), f.f); });
+                req.get()->forall_data([&f](Span<char> span) { fwrite(span.data(), 1, span.size(), f.f); });
             if (!forall_data)
             {
                 Strings::append(errors, url, ": ", forall_data.error(), '\n');
@@ -418,9 +467,11 @@ namespace vcpkg::Downloads
         Checks::check_exit(VCPKG_LINE_INFO, urls.size() > 0);
 
         auto download_path_part_path = download_path;
-        download_path_part_path += fs::u8path(".part");
-        fs.remove(download_path, ignore_errors);
-        fs.remove(download_path_part_path, ignore_errors);
+#if defined(_WIN32)
+        download_path_part_path += fs::u8path(Strings::concat(".", _getpid(), ".part"));
+#else
+        download_path_part_path += fs::u8path(Strings::concat(".", getpid(), ".part"));
+#endif
 
         std::string errors;
         for (const std::string& url : urls)
@@ -435,9 +486,16 @@ namespace vcpkg::Downloads
                 {
                     if (download_winhttp(fs, download_path_part_path, split_uri, url, errors))
                     {
-                        verify_downloaded_file_hash(fs, url, download_path_part_path, sha512);
-                        fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
-                        return url;
+                        auto maybe_error = try_verify_downloaded_file_hash(fs, url, download_path_part_path, sha512);
+                        if (auto err = maybe_error.get())
+                        {
+                            Strings::append(errors, *err);
+                        }
+                        else
+                        {
+                            fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                            return url;
+                        }
                     }
                     continue;
                 }
@@ -458,10 +516,69 @@ namespace vcpkg::Downloads
                 continue;
             }
 
-            verify_downloaded_file_hash(fs, url, download_path_part_path, sha512);
-            fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
-            return url;
+            auto maybe_error = try_verify_downloaded_file_hash(fs, url, download_path_part_path, sha512);
+            if (auto err = maybe_error.get())
+            {
+                Strings::append(errors, *err);
+            }
+            else
+            {
+                fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                return url;
+            }
         }
         Checks::exit_with_message(VCPKG_LINE_INFO, Strings::concat("Failed to download from mirror set:\n", errors));
+    }
+
+    DownloadManager::DownloadManager(Optional<std::string> read_url_template, Optional<std::string> write_url_template)
+        : m_read_url_template(std::move(read_url_template)), m_write_url_template(std::move(write_url_template))
+    {
+    }
+
+    void DownloadManager::download_file(Files::Filesystem& fs,
+                                        const std::string& url,
+                                        const fs::path& download_path,
+                                        const std::string& sha512) const
+    {
+        this->download_file(fs, View<std::string>(&url, 1), download_path, sha512);
+    }
+
+    std::string DownloadManager::download_file(Files::Filesystem& fs,
+                                               View<std::string> urls,
+                                               const fs::path& download_path,
+                                               const std::string& sha512) const
+    {
+        auto maybe_mirror_url = Strings::replace_all(m_read_url_template.value_or(""), "<SHA>", sha512);
+
+        std::vector<std::string> all_urls;
+        if (!maybe_mirror_url.empty()) all_urls.push_back(maybe_mirror_url);
+
+        Util::Vectors::append(&all_urls, urls);
+
+        if (all_urls.empty())
+        {
+            Checks::exit_with_message(VCPKG_LINE_INFO, "Error: No urls specified to download SHA: %s", sha512);
+        }
+
+        auto fetched_url = Downloads::download_file(fs, all_urls, download_path, sha512);
+        if (fetched_url != maybe_mirror_url)
+        {
+            put_file_to_mirror(fs, download_path, sha512);
+        }
+        return fetched_url;
+    }
+
+    int DownloadManager::put_file_to_mirror(const Files::Filesystem& fs,
+                                            const fs::path& path,
+                                            const std::string& sha512) const
+    {
+        int code = 0;
+        auto maybe_mirror_url = Strings::replace_all(m_write_url_template.value_or(""), "<SHA>", sha512);
+        if (!maybe_mirror_url.empty())
+        {
+            code = Downloads::put_file(fs, maybe_mirror_url, path);
+            Debug::print("Putting to cache: ", maybe_mirror_url, ": ", code, "\n");
+        }
+        return code;
     }
 }

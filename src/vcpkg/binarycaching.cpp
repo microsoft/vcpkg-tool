@@ -19,6 +19,130 @@ using namespace vcpkg;
 
 namespace
 {
+    struct ConfigSegmentsParser : Parse::ParserBase
+    {
+        using Parse::ParserBase::ParserBase;
+
+        void parse_segments(std::vector<std::pair<SourceLoc, std::string>>& out_segments);
+        std::vector<std::vector<std::pair<SourceLoc, std::string>>> parse_all_segments();
+
+        template<class T>
+        void handle_readwrite(std::vector<T>& read,
+                              std::vector<T>& write,
+                              T&& t,
+                              const std::vector<std::pair<SourceLoc, std::string>>& segments,
+                              size_t segment_idx)
+        {
+            if (segment_idx >= segments.size())
+            {
+                read.push_back(std::move(t));
+                return;
+            }
+
+            auto& mode = segments[segment_idx].second;
+
+            if (mode == "read")
+            {
+                read.push_back(std::move(t));
+            }
+            else if (mode == "write")
+            {
+                write.push_back(std::move(t));
+            }
+            else if (mode == "readwrite")
+            {
+                read.push_back(t);
+                write.push_back(std::move(t));
+            }
+            else
+            {
+                return add_error("unexpected argument: expected 'read', readwrite', or 'write'",
+                                 segments[segment_idx].first);
+            }
+        }
+    };
+
+    void ConfigSegmentsParser::parse_segments(std::vector<std::pair<SourceLoc, std::string>>& segments)
+    {
+        for (;;)
+        {
+            SourceLoc loc = cur_loc();
+            std::string segment;
+            for (;;)
+            {
+                auto n = match_until([](char32_t ch) { return ch == ',' || ch == '`' || ch == ';'; });
+                Strings::append(segment, n);
+                auto ch = cur();
+                if (ch == Unicode::end_of_file || ch == ',' || ch == ';')
+                {
+                    break;
+                }
+
+                if (ch == '`')
+                {
+                    ch = next();
+                    if (ch == Unicode::end_of_file)
+                    {
+                        return add_error("unexpected eof: trailing unescaped backticks (`) are not allowed");
+                    }
+                    else
+                    {
+                        Unicode::utf8_append_code_point(segment, ch);
+                    }
+
+                    next();
+                }
+                else
+                {
+                    Checks::unreachable(VCPKG_LINE_INFO);
+                }
+            }
+            segments.emplace_back(std::move(loc), std::move(segment));
+
+            auto ch = cur();
+            if (ch == Unicode::end_of_file || ch == ';')
+            {
+                break;
+            }
+
+            if (ch == ',')
+            {
+                next();
+                continue;
+            }
+
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    std::vector<std::vector<std::pair<Parse::ParserBase::SourceLoc, std::string>>> ConfigSegmentsParser::
+        parse_all_segments()
+    {
+        std::vector<std::vector<std::pair<Parse::ParserBase::SourceLoc, std::string>>> ret;
+        while (!at_eof())
+        {
+            std::vector<std::pair<SourceLoc, std::string>> segments;
+            parse_segments(segments);
+
+            if (get_error())
+            {
+                return {};
+            }
+
+            // Skip empty sources like ';;'
+            if (segments.size() > 1 || (segments.size() == 1 && !segments[0].second.empty()))
+            {
+                ret.push_back(std::move(segments));
+            }
+
+            if (cur() == ';')
+            {
+                next();
+            }
+        }
+        return ret;
+    }
+
     static const std::string& get_nuget_prefix()
     {
         static std::string nuget_prefix = []() {
@@ -51,6 +175,7 @@ std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult> vcpkg:
     const VcpkgPaths& paths, const Dependencies::ActionPlan& plan, IBinaryProvider& provider)
 {
     std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult> checked;
+    checked.reserve(plan.install_actions.size());
     for (auto&& action : plan.install_actions)
     {
         checked.emplace(&action, RestoreResult::missing);
@@ -1048,10 +1173,10 @@ namespace
         }
     };
 
-    struct BinaryConfigParser : Parse::ParserBase
+    struct BinaryConfigParser : ConfigSegmentsParser
     {
         BinaryConfigParser(StringView text, StringView origin, State* state)
-            : Parse::ParserBase(text, origin), state(state)
+            : ConfigSegmentsParser(text, origin), state(state)
         {
         }
 
@@ -1059,116 +1184,17 @@ namespace
 
         void parse()
         {
-            while (!at_eof())
+            auto all_segments = parse_all_segments();
+            for (auto&& x : all_segments)
             {
-                std::vector<std::pair<SourceLoc, std::string>> segments;
-
-                for (;;)
-                {
-                    SourceLoc loc = cur_loc();
-                    std::string segment;
-                    for (;;)
-                    {
-                        auto n = match_until([](char32_t ch) { return ch == ',' || ch == '`' || ch == ';'; });
-                        Strings::append(segment, n);
-                        auto ch = cur();
-                        if (ch == Unicode::end_of_file || ch == ',' || ch == ';')
-                        {
-                            break;
-                        }
-
-                        if (ch == '`')
-                        {
-                            ch = next();
-                            if (ch == Unicode::end_of_file)
-                            {
-                                add_error("unexpected eof: trailing unescaped backticks (`) are not allowed");
-                            }
-                            else
-                            {
-                                Unicode::utf8_append_code_point(segment, ch);
-                            }
-
-                            next();
-                        }
-                        else
-                        {
-                            Checks::unreachable(VCPKG_LINE_INFO);
-                        }
-                    }
-                    segments.emplace_back(std::move(loc), std::move(segment));
-
-                    auto ch = cur();
-                    if (ch == Unicode::end_of_file || ch == ';')
-                    {
-                        break;
-                    }
-
-                    if (ch == ',')
-                    {
-                        next();
-                        continue;
-                    }
-
-                    Checks::unreachable(VCPKG_LINE_INFO);
-                }
-
-                if (segments.size() != 1 || !segments[0].second.empty())
-                {
-                    handle_segments(std::move(segments));
-                }
-
-                segments.clear();
-                if (get_error())
-                {
-                    return;
-                }
-
-                if (cur() == ';')
-                {
-                    next();
-                }
-            }
-        }
-
-        template<class T>
-        void handle_readwrite(std::vector<T>& read,
-                              std::vector<T>& write,
-                              T&& t,
-                              const std::vector<std::pair<SourceLoc, std::string>>& segments,
-                              size_t segment_idx)
-        {
-            if (segment_idx >= segments.size())
-            {
-                read.push_back(std::move(t));
-                return;
-            }
-
-            auto& mode = segments[segment_idx].second;
-
-            if (mode == "read")
-            {
-                read.push_back(std::move(t));
-            }
-            else if (mode == "write")
-            {
-                write.push_back(std::move(t));
-            }
-            else if (mode == "readwrite")
-            {
-                read.push_back(t);
-                write.push_back(std::move(t));
-            }
-            else
-            {
-                return add_error("unexpected argument: expected 'read', readwrite', or 'write'",
-                                 segments[segment_idx].first);
+                if (get_error()) return;
+                handle_segments(std::move(x));
             }
         }
 
         void handle_segments(std::vector<std::pair<SourceLoc, std::string>>&& segments)
         {
-            if (segments.empty()) return;
+            Checks::check_exit(VCPKG_LINE_INFO, !segments.empty());
             if (segments[0].second == "clear")
             {
                 if (segments.size() != 1)
@@ -1358,6 +1384,115 @@ namespace
             }
         }
     };
+
+    struct AssetSourcesParser : ConfigSegmentsParser
+    {
+        AssetSourcesParser(StringView text, StringView origin, State* state)
+            : ConfigSegmentsParser(text, origin), state(state)
+        {
+        }
+
+        State* state;
+
+        void parse()
+        {
+            auto all_segments = parse_all_segments();
+            for (auto&& x : all_segments)
+            {
+                if (get_error()) return;
+                handle_segments(std::move(x));
+            }
+        }
+
+        void handle_segments(std::vector<std::pair<SourceLoc, std::string>>&& segments)
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, !segments.empty());
+
+            if (segments[0].second == "x-azurl")
+            {
+                // Scheme: x-azurl,<baseurl>[,<sas>[,<readwrite>]]
+                if (segments.size() < 2)
+                {
+                    return add_error("expected arguments: binary config 'azurl' requires at least a base url",
+                                     segments[0].first);
+                }
+
+                if (segments.size() > 4)
+                {
+                    return add_error("unexpected arguments: binary config 'azurl' requires less than 4 arguments",
+                                     segments[4].first);
+                }
+
+                if (segments[1].second.empty())
+                {
+                    return add_error("unexpected arguments: binary config 'azurl' requires a base uri",
+                                     segments[1].first);
+                }
+
+                auto p = segments[1].second;
+                if (p.back() != '/')
+                {
+                    p.push_back('/');
+                }
+
+                p.append("<SHA>");
+                if (segments.size() > 2 && !segments[2].second.empty())
+                {
+                    if (!Strings::starts_with(segments[2].second, "?"))
+                    {
+                        p.push_back('?');
+                    }
+                    p.append(segments[2].second);
+                    // Note: the download manager does not currently respect secrets
+                    state->secrets.push_back(segments[2].second);
+                }
+                handle_readwrite(
+                    state->url_templates_to_get, state->azblob_templates_to_put, std::move(p), segments, 3);
+            }
+            else
+            {
+                return add_error("unknown asset provider type: the only valid provider is 'x-azurl'",
+                                 segments[0].first);
+            }
+        }
+    };
+}
+
+ExpectedS<Downloads::DownloadManager> vcpkg::create_download_manager(const Optional<std::string>& arg)
+{
+    if (!arg || arg.get()->empty()) return Downloads::DownloadManager{};
+
+    Metrics::g_metrics.lock()->track_property("asset-source", "defined");
+
+    State s;
+    AssetSourcesParser parser(*arg.get(), "<environment>", &s);
+    parser.parse();
+    if (auto err = parser.get_error())
+    {
+        return err->format();
+    }
+
+    if (s.azblob_templates_to_put.size() > 1)
+    {
+        return std::string("Error: a maximum of one asset write url can be specified");
+    }
+    if (s.url_templates_to_get.size() > 1)
+    {
+        return std::string("Error: a maximum of one asset read url can be specified");
+    }
+
+    Optional<std::string> get_url;
+    if (!s.url_templates_to_get.empty())
+    {
+        get_url = std::move(s.url_templates_to_get.back());
+    }
+    Optional<std::string> put_url;
+    if (!s.azblob_templates_to_put.empty())
+    {
+        put_url = std::move(s.azblob_templates_to_put.back());
+    }
+
+    return Downloads::DownloadManager{std::move(get_url), std::move(put_url)};
 }
 
 ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_configs(View<std::string> args)

@@ -34,6 +34,11 @@ namespace vcpkg
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
+    namespace Downloads
+    {
+        struct DownloadManager;
+    }
+
     namespace Build
     {
         struct PreBuildInfo;
@@ -129,6 +134,8 @@ namespace vcpkg
                                               StringView git_tree,
                                               const fs::path& dot_git_dir) const;
         ExpectedS<std::string> git_show(const std::string& treeish, const fs::path& dot_git_dir) const;
+
+        const Downloads::DownloadManager& get_download_manager() const;
 
         ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
 

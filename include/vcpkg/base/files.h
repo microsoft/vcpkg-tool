@@ -214,6 +214,10 @@ namespace vcpkg::Files
         virtual bool create_directories(const fs::path& path, std::error_code& ec) = 0;
         bool create_directories(const fs::path& path, ignore_errors_t);
         bool create_directories(const fs::path& path, LineInfo);
+        virtual void create_symlink(const fs::path& to, const fs::path& from, std::error_code& ec) = 0;
+        virtual void create_hard_link(const fs::path& to, const fs::path& from, std::error_code& ec) = 0;
+        void create_best_link(const fs::path& to, const fs::path& from, std::error_code& ec);
+        void create_best_link(const fs::path& to, const fs::path& from, LineInfo);
         virtual void copy(const fs::path& oldpath, const fs::path& newpath, fs::copy_options opts) = 0;
         virtual bool copy_file(const fs::path& oldpath,
                                const fs::path& newpath,

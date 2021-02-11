@@ -582,6 +582,25 @@ namespace vcpkg::Files
         return result;
     }
 
+    void Filesystem::create_best_link(const fs::path& to, const fs::path& from, std::error_code& ec)
+    {
+        this->create_hard_link(to, from, ec);
+        if (!ec) return;
+        this->create_symlink(to, from, ec);
+        if (!ec) return;
+        this->copy_file(from, to, fs::stdfs::copy_options::none, ec);
+    }
+    void Filesystem::create_best_link(const fs::path& to, const fs::path& from, LineInfo linfo)
+    {
+        std::error_code ec;
+        this->create_best_link(to, from, ec);
+        if (ec)
+        {
+            vcpkg::Checks::exit_with_message(
+                linfo, "Error: could not link %s to %s: %s", fs::u8string(from), fs::u8string(to), ec.message());
+        }
+    }
+
     void Filesystem::copy_file(const fs::path& oldpath, const fs::path& newpath, fs::copy_options opts, LineInfo li)
     {
         std::error_code ec;
@@ -1156,6 +1175,14 @@ namespace vcpkg::Files
         virtual bool create_directories(const fs::path& path, std::error_code& ec) override
         {
             return fs::stdfs::create_directories(path, ec);
+        }
+        virtual void create_symlink(const fs::path& to, const fs::path& from, std::error_code& ec) override
+        {
+            fs::stdfs::create_symlink(to, from, ec);
+        }
+        virtual void create_hard_link(const fs::path& to, const fs::path& from, std::error_code& ec) override
+        {
+            fs::stdfs::create_hard_link(to, from, ec);
         }
         virtual void copy(const fs::path& oldpath, const fs::path& newpath, fs::copy_options opts) override
         {

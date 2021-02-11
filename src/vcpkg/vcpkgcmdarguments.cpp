@@ -655,6 +655,12 @@ namespace vcpkg
             dst = std::make_unique<std::string>(std::move(*val));
         }
     }
+    static void from_env(ZStringView var, Optional<std::string>& dst)
+    {
+        if (dst) return;
+
+        dst = System::get_environment_variable(var);
+    }
 
     void VcpkgCmdArguments::imbue_from_environment()
     {
@@ -672,6 +678,7 @@ namespace vcpkg
         from_env(VCPKG_ROOT_DIR_ENV, vcpkg_root_dir);
         from_env(DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
         from_env(DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
+        from_env(READWRITE_MIRROR_URL_TEMPLATE_ENV, readwrite_mirror_url_template);
 
         {
             const auto vcpkg_disable_lock = System::get_environment_variable(IGNORE_LOCK_FAILURES_ENV);
@@ -728,6 +735,11 @@ namespace vcpkg
                 args.downloads_root_dir = std::make_unique<std::string>(entry->string().to_string());
             }
 
+            if (auto entry = obj.get(READWRITE_MIRROR_URL_TEMPLATE_ENV))
+            {
+                args.readwrite_mirror_url_template = entry->string().to_string();
+            }
+
             if (obj.get(DISABLE_METRICS_ENV))
             {
                 args.disable_metrics = true;
@@ -743,6 +755,12 @@ namespace vcpkg
             if (args.downloads_root_dir)
             {
                 obj.insert(DOWNLOADS_ROOT_DIR_ENV, Json::Value::string(*args.downloads_root_dir.get()));
+            }
+
+            if (args.readwrite_mirror_url_template)
+            {
+                obj.insert(READWRITE_MIRROR_URL_TEMPLATE_ENV,
+                           Json::Value::string(*args.readwrite_mirror_url_template.get()));
             }
 
             if (args.disable_metrics)
@@ -956,6 +974,8 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::IGNORE_LOCK_FAILURES_ENV;
 
     constexpr StringLiteral VcpkgCmdArguments::JSON_SWITCH;
+
+    constexpr StringLiteral VcpkgCmdArguments::READWRITE_MIRROR_URL_TEMPLATE_ENV;
 
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ENV;
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ARG;

@@ -180,6 +180,9 @@ namespace vcpkg
         constexpr static StringLiteral JSON_SWITCH = "x-json";
         Optional<bool> json = nullopt;
 
+        constexpr static StringLiteral READWRITE_MIRROR_URL_TEMPLATE_ENV = "X_VCPKG_ASSET_SOURCES";
+        Optional<std::string> readwrite_mirror_url_template;
+
         // feature flags
         constexpr static StringLiteral FEATURE_FLAGS_ENV = "VCPKG_FEATURE_FLAGS";
         constexpr static StringLiteral FEATURE_FLAGS_ARG = "feature-flags";
@@ -198,7 +201,7 @@ namespace vcpkg
         constexpr static StringLiteral VERSIONS_FEATURE = "versions";
         Optional<bool> versions_feature = nullopt;
 
-        constexpr static StringLiteral RECURSIVE_DATA_ENV = "VCPKG_X_RECURSIVE_DATA";
+        constexpr static StringLiteral RECURSIVE_DATA_ENV = "X_VCPKG_RECURSIVE_DATA";
 
         bool binary_caching_enabled() const { return binary_caching.value_or(true); }
         bool compiler_tracking_enabled() const { return compiler_tracking.value_or(true); }

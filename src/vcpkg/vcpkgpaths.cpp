@@ -1,3 +1,4 @@
+#include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -6,6 +7,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/binarycaching.h>
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/build.h>
 #include <vcpkg/commands.h>
@@ -219,6 +221,8 @@ namespace vcpkg
             fs::path m_manifest_path;
             Configuration m_config;
 
+            Downloads::DownloadManager m_download_manager;
+
             FeatureFlagSettings m_ff_settings;
 
             fs::path registries_work_tree_dir;
@@ -365,6 +369,8 @@ If you wish to silence this error and use classic mode, you can:
             process_output_directory(filesystem, root, args.buildtrees_root_dir.get(), "buildtrees", VCPKG_LINE_INFO);
         downloads =
             process_output_directory(filesystem, root, args.downloads_root_dir.get(), "downloads", VCPKG_LINE_INFO);
+        m_pimpl->m_download_manager =
+            create_download_manager(args.readwrite_mirror_url_template).value_or_exit(VCPKG_LINE_INFO);
         packages =
             process_output_directory(filesystem, root, args.packages_root_dir.get(), "packages", VCPKG_LINE_INFO);
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);
@@ -996,6 +1002,7 @@ If you wish to silence this error and use classic mode, you can:
     }
 
     const Configuration& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
+    const Downloads::DownloadManager& VcpkgPaths::get_download_manager() const { return m_pimpl->m_download_manager; }
 
     const Toolset& VcpkgPaths::get_toolset(const Build::PreBuildInfo& prebuildinfo) const
     {

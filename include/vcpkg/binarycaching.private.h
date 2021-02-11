@@ -3,6 +3,7 @@
 #include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/dependencies.h>
