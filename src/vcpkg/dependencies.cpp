@@ -1376,8 +1376,8 @@ namespace vcpkg::Dependencies
         {
             Checks::check_exit(VCPKG_LINE_INFO, scfl);
             ASSUME(scfl != nullptr);
-            auto scheme = scfl->source_control_file->core_paragraph->version_scheme;
-            auto r = compare_versions(scheme, version, scheme, new_ver);
+            auto s = scfl->source_control_file->core_paragraph->version_scheme;
+            auto r = compare_versions(s, version, s, new_ver);
             Checks::check_exit(VCPKG_LINE_INFO, r != VerComp::unk);
             return r == VerComp::lt;
         }
