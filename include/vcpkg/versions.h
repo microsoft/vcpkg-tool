@@ -22,6 +22,8 @@ namespace vcpkg::Versions
         String
     };
 
+    void to_string(std::string& out, Scheme scheme);
+
     struct VersionSpec
     {
         std::string port_name;

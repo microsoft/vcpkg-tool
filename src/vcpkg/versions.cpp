@@ -139,6 +139,30 @@ namespace vcpkg::Versions
         return ret;
     }
 
+    void to_string(std::string& out, Scheme scheme)
+    {
+        if (scheme == Scheme::String)
+        {
+            out.append("string");
+        }
+        else if (scheme == Scheme::Semver)
+        {
+            out.append("semver");
+        }
+        else if (scheme == Scheme::Relaxed)
+        {
+            out.append("relaxed");
+        }
+        else if (scheme == Scheme::Date)
+        {
+            out.append("date");
+        }
+        else
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
     VerComp compare(const std::string& a, const std::string& b, Scheme scheme)
     {
         if (scheme == Scheme::String)
