@@ -1232,6 +1232,27 @@ namespace vcpkg::Dependencies
 
                 VersionSchemeInfo* get_node(const Versions::Version& ver);
                 VersionSchemeInfo& emplace_node(Versions::Scheme scheme, const Versions::Version& ver);
+
+                template<class F>
+                void foreach_vsi(F f)
+                {
+                    if (auto r = this->relaxed.get())
+                    {
+                        f(**r);
+                    }
+                    if (auto s = this->semver.get())
+                    {
+                        f(**s);
+                    }
+                    if (auto d = this->date.get())
+                    {
+                        f(**d);
+                    }
+                    for (auto&& vsi : this->exacts)
+                    {
+                        f(vsi.second);
+                    }
+                }
             };
 
             std::vector<DepSpec> m_roots;
@@ -1439,21 +1460,12 @@ namespace vcpkg::Dependencies
             if (!ref.second.default_features)
             {
                 ref.second.default_features = true;
-
-                if (auto relaxed = ref.second.relaxed.get())
-                {
-                    for (auto&& f : relaxed->get()->scfl->source_control_file->core_paragraph->default_features)
+                ref.second.foreach_vsi([this, &ref](VersionSchemeInfo& vsi) {
+                    for (auto&& f : vsi.scfl->source_control_file->core_paragraph->default_features)
                     {
-                        add_feature_to(ref, **relaxed, f);
+                        this->add_feature_to(ref, vsi, f);
                     }
-                }
-                for (auto&& vsi : ref.second.exacts)
-                {
-                    for (auto&& f : vsi.second.scfl->source_control_file->core_paragraph->default_features)
-                    {
-                        add_feature_to(ref, vsi.second, f);
-                    }
-                }
+                });
             }
         }
 
@@ -1574,14 +1586,8 @@ namespace vcpkg::Dependencies
             auto inserted = ref.second.features.emplace(feature).second;
             if (inserted)
             {
-                if (auto relaxed = ref.second.relaxed.get())
-                {
-                    add_feature_to(ref, **relaxed, feature);
-                }
-                for (auto&& vsi : ref.second.exacts)
-                {
-                    add_feature_to(ref, vsi.second, feature);
-                }
+                ref.second.foreach_vsi(
+                    [this, &ref, &feature](VersionSchemeInfo& vsi) { this->add_feature_to(ref, vsi, feature); });
             }
             (void)origin;
         }
