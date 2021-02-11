@@ -215,7 +215,23 @@ static ExpectedS<Dependencies::ActionPlan> create_versioned_install_plan(
     const PackageSpec& toplevel)
 {
     return Dependencies::create_versioned_install_plan(
-        provider, bprovider, s_empty_mock_overlay, var_provider, deps, overrides, toplevel);
+        provider, bprovider, s_empty_mock_overlay, var_provider, deps, overrides, toplevel, Test::ARM_UWP);
+}
+
+namespace vcpkg::Dependencies
+{
+    static ExpectedS<vcpkg::Dependencies::ActionPlan> create_versioned_install_plan(
+        const PortFileProvider::IVersionedPortfileProvider& provider,
+        const PortFileProvider::IBaselineProvider& bprovider,
+        const PortFileProvider::IOverlayProvider& oprovider,
+        const CMakeVars::CMakeVarProvider& var_provider,
+        const std::vector<Dependency>& deps,
+        const std::vector<DependencyOverride>& overrides,
+        const PackageSpec& toplevel)
+    {
+        return vcpkg::Dependencies::create_versioned_install_plan(
+            provider, bprovider, oprovider, var_provider, deps, overrides, toplevel, Test::ARM_UWP);
+    }
 }
 
 TEST_CASE ("basic version install single", "[versionplan]")
@@ -969,6 +985,18 @@ TEST_CASE ("version install diamond date", "[versionplan]")
     check_name_and_version(install_plan.install_actions[2], "a", {"2020-01-03", 0});
 }
 
+static void CHECK_LINES(const std::string& a, const std::string& b)
+{
+    auto as = Strings::split(a, '\n');
+    auto bs = Strings::split(b, '\n');
+    for (size_t i = 0; i < as.size() && i < bs.size(); ++i)
+    {
+        INFO(i);
+        CHECK(as[i] == bs[i]);
+    }
+    CHECK(as.size() == bs.size());
+}
+
 TEST_CASE ("version install scheme failure", "[versionplan]")
 {
     MockVersionedPortfileProvider vp;
@@ -992,7 +1020,21 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
                                           toplevel_spec());
 
         REQUIRE(!install_plan.error().empty());
-        CHECK(install_plan.error() == "Version conflict on a@1.0.1: baseline required 1.0.0");
+        CHECK_LINES(
+            install_plan.error(),
+            R"(Error: Version conflict on a:x86-windows: baseline required 1.0.0 but vcpkg could not compare it to 1.0.1
+
+The two versions used incomparable schemes:
+    "1.0.1" was of scheme relaxed
+    "1.0.0" was of scheme semver
+
+This can be resolved by adding an explicit override to the preferred version, for example:
+
+    "overrides": [
+        { "name": "a", "version": "1.0.1" }
+    ]
+
+See `vcpkg help versioning` for more information.)");
     }
     SECTION ("higher baseline")
     {
@@ -1008,7 +1050,21 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
                                           toplevel_spec());
 
         REQUIRE(!install_plan.error().empty());
-        CHECK(install_plan.error() == "Version conflict on a@1.0.1: baseline required 1.0.2");
+        CHECK_LINES(
+            install_plan.error(),
+            R"(Error: Version conflict on a:x86-windows: baseline required 1.0.2 but vcpkg could not compare it to 1.0.1
+
+The two versions used incomparable schemes:
+    "1.0.1" was of scheme relaxed
+    "1.0.2" was of scheme semver
+
+This can be resolved by adding an explicit override to the preferred version, for example:
+
+    "overrides": [
+        { "name": "a", "version": "1.0.1" }
+    ]
+
+See `vcpkg help versioning` for more information.)");
     }
 }
 
@@ -1646,6 +1702,89 @@ TEST_CASE ("version install self features", "[versionplan]")
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x", "y"});
 }
 
+static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
+                                          MockBaselineProvider& bp,
+                                          std::vector<Dependency> deps)
+{
+    MockCMakeVarProvider var_provider;
+
+    return create_versioned_install_plan(vp, bp, var_provider, deps, {}, toplevel_spec());
+}
+
+TEST_CASE ("version install host tool", "[versionplan]")
+{
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+    bp.v["b"] = {"1", 0};
+    bp.v["c"] = {"1", 0};
+    bp.v["d"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    vp.emplace("a", {"1", 0});
+    auto& b_scf = vp.emplace("b", {"1", 0}).source_control_file;
+    b_scf->core_paragraph->dependencies.push_back(Dependency{"a", {}, {}, {}, true});
+    auto& c_scf = vp.emplace("c", {"1", 0}).source_control_file;
+    c_scf->core_paragraph->dependencies.push_back(Dependency{"a"});
+    auto& d_scf = vp.emplace("d", {"1", 0}).source_control_file;
+    d_scf->core_paragraph->dependencies.push_back(Dependency{"d", {}, {}, {}, true});
+
+    SECTION ("normal toplevel")
+    {
+        Dependency dep_c{"c"};
+
+        auto install_plan = unwrap(create_versioned_install_plan(vp, bp, {dep_c}));
+
+        REQUIRE(install_plan.size() == 2);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
+        REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::X86_WINDOWS);
+        check_name_and_version(install_plan.install_actions[1], "c", {"1", 0});
+        REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::X86_WINDOWS);
+    }
+    SECTION ("toplevel")
+    {
+        Dependency dep_a{"a"};
+        dep_a.host = true;
+
+        auto install_plan = unwrap(create_versioned_install_plan(vp, bp, {dep_a}));
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
+        REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
+    }
+    SECTION ("transitive 1")
+    {
+        auto install_plan = unwrap(create_versioned_install_plan(vp, bp, {{"b"}}));
+
+        REQUIRE(install_plan.size() == 2);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
+        REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
+        check_name_and_version(install_plan.install_actions[1], "b", {"1", 0});
+        REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::X86_WINDOWS);
+    }
+    SECTION ("transitive 2")
+    {
+        Dependency dep_c{"c"};
+        dep_c.host = true;
+
+        auto install_plan = unwrap(create_versioned_install_plan(vp, bp, {dep_c}));
+
+        REQUIRE(install_plan.size() == 2);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
+        REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
+        check_name_and_version(install_plan.install_actions[1], "c", {"1", 0});
+        REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::ARM_UWP);
+    }
+    SECTION ("self-reference")
+    {
+        auto install_plan = unwrap(create_versioned_install_plan(vp, bp, {{"d"}}));
+
+        REQUIRE(install_plan.size() == 2);
+        check_name_and_version(install_plan.install_actions[0], "d", {"1", 0});
+        REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
+        check_name_and_version(install_plan.install_actions[1], "d", {"1", 0});
+        REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::X86_WINDOWS);
+    }
+}
 TEST_CASE ("version overlay ports", "[versionplan]")
 {
     MockBaselineProvider bp;

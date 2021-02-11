@@ -59,14 +59,16 @@ namespace vcpkg::Build
 
     void Command::perform_and_exit_ex(const VcpkgCmdArguments& args,
                                       const FullPackageSpec& full_spec,
+                                      Triplet host_triplet,
                                       const SourceControlFileLocation& scfl,
                                       const PathsPortFileProvider& provider,
                                       IBinaryProvider& binaryprovider,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const VcpkgPaths& paths)
     {
-        Checks::exit_with_code(VCPKG_LINE_INFO,
-                               perform_ex(args, full_spec, scfl, provider, binaryprovider, build_logs_recorder, paths));
+        Checks::exit_with_code(
+            VCPKG_LINE_INFO,
+            perform_ex(args, full_spec, host_triplet, scfl, provider, binaryprovider, build_logs_recorder, paths));
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -77,13 +79,17 @@ namespace vcpkg::Build
         nullptr,
     };
 
-    void Command::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet)
+    void Command::perform_and_exit(const VcpkgCmdArguments& args,
+                                   const VcpkgPaths& paths,
+                                   Triplet default_triplet,
+                                   Triplet host_triplet)
     {
-        Checks::exit_with_code(VCPKG_LINE_INFO, perform(args, paths, default_triplet));
+        Checks::exit_with_code(VCPKG_LINE_INFO, perform(args, paths, default_triplet, host_triplet));
     }
 
     int Command::perform_ex(const VcpkgCmdArguments& args,
                             const FullPackageSpec& full_spec,
+                            Triplet host_triplet,
                             const SourceControlFileLocation& scfl,
                             const PathsPortFileProvider& provider,
                             IBinaryProvider& binaryprovider,
@@ -97,7 +103,7 @@ namespace vcpkg::Build
         StatusParagraphs status_db = database_load_check(paths);
 
         auto action_plan = Dependencies::create_feature_install_plan(
-            provider, var_provider, std::vector<FullPackageSpec>{full_spec}, status_db);
+            provider, var_provider, std::vector<FullPackageSpec>{full_spec}, status_db, {host_triplet});
 
         var_provider.load_tag_vars(action_plan, provider);
 
@@ -165,7 +171,10 @@ namespace vcpkg::Build
         return 0;
     }
 
-    int Command::perform(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet)
+    int Command::perform(const VcpkgCmdArguments& args,
+                         const VcpkgPaths& paths,
+                         Triplet default_triplet,
+                         Triplet host_triplet)
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
@@ -187,6 +196,7 @@ namespace vcpkg::Build
 
         return perform_ex(args,
                           spec,
+                          host_triplet,
                           *scfl,
                           provider,
                           args.binary_caching_enabled() ? *binaryprovider : null_binary_provider(),
@@ -196,9 +206,10 @@ namespace vcpkg::Build
 
     void BuildCommand::perform_and_exit(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
-                                        Triplet default_triplet) const
+                                        Triplet default_triplet,
+                                        Triplet host_triplet) const
     {
-        Build::Command::perform_and_exit(args, paths, default_triplet);
+        Build::Command::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }
 
@@ -573,6 +584,8 @@ namespace vcpkg::Build
             {"CURRENT_PORT_DIR", paths.scripts / "detect_compiler"},
             {"CURRENT_BUILDTREES_DIR", buildpath},
             {"CURRENT_PACKAGES_DIR", paths.packages / ("detect_compiler_" + triplet.canonical_name())},
+            // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
+            {"_HOST_TRIPLET", triplet.canonical_name()},
         };
         get_generic_cmake_build_args(paths, triplet, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO), cmake_args);
 
@@ -645,8 +658,7 @@ namespace vcpkg::Build
 
     static std::vector<System::CMakeVariable> get_cmake_build_args(const VcpkgCmdArguments& args,
                                                                    const VcpkgPaths& paths,
-                                                                   const Dependencies::InstallPlanAction& action,
-                                                                   Triplet triplet)
+                                                                   const Dependencies::InstallPlanAction& action)
     {
 #if !defined(_WIN32)
         // TODO: remove when vcpkg.exe is in charge for acquiring tools. Change introduced in vcpkg v0.0.107.
@@ -665,6 +677,7 @@ namespace vcpkg::Build
         std::vector<System::CMakeVariable> variables{
             {"ALL_FEATURES", all_features},
             {"CURRENT_PORT_DIR", scfl.source_location},
+            {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
             {"FEATURES", Strings::join(";", action.feature_list)},
             {"PORT", scf.core_paragraph->name},
             {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
@@ -685,7 +698,7 @@ namespace vcpkg::Build
 
         get_generic_cmake_build_args(
             paths,
-            triplet,
+            action.spec.triplet(),
             action.abi_info.value_or_exit(VCPKG_LINE_INFO).toolset.value_or_exit(VCPKG_LINE_INFO),
             variables);
 
@@ -803,8 +816,7 @@ namespace vcpkg::Build
 
         const auto timer = Chrono::ElapsedTimer::create_started();
 
-        auto command =
-            vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action, triplet));
+        auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
 
         const auto& env = paths.get_action_env(action.abi_info.value_or_exit(VCPKG_LINE_INFO));
 

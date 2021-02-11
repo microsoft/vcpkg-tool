@@ -90,6 +90,20 @@ namespace vcpkg::Help
             "be used to handle version conflicts, such as with `version-string` dependencies. They will not be "
             "considered when transitively depended upon.");
         tbl.blank();
+        tbl.text(
+            "Vcpkg will select the minimum version found that matches all applicable constraints, including the "
+            "version from the baseline specified at top-level as well as any \"version>=\" constraints in the graph.");
+        tbl.blank();
+        tbl.text("To keep your libraries up to date, the best approach is to update your baseline reference. This will "
+                 "ensure all packages, including transitive ones, are updated. However if you need to update a package "
+                 "independently, you can use a \"version>=\" constraint.");
+        tbl.blank();
+        tbl.text(
+            "Additionally, package publishers can use \"version>=\" constraints to ensure that consumers are using at "
+            "least a certain minimum version of a given dependency. For example, if a library needs an API added "
+            "to boost-asio in 1.70, a \"version>=\" constraint will ensure transitive users use a sufficient version "
+            "even in the face of individual version overrides or cross-registry references.");
+        tbl.blank();
         tbl.text("Example manifest:");
         tbl.blank();
         tbl.text(R"({
