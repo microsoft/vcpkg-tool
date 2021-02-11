@@ -1,5 +1,5 @@
 variables:
-  VCPKG_REPO_COMMIT_SHA: '401b26c9866a071f645ae57831caa419b2c48be1'
+  VCPKG_REPO_COMMIT_SHA: '28c588e6afa75298ec3d3703db9f05e88da2b2b4'
 jobs:
 - job: linux
   displayName: 'Linux'
