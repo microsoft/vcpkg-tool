@@ -1072,18 +1072,27 @@ namespace vcpkg
         }
         else
         {
-            bool has_overrides = !core_paragraph->overrides.empty();
-            bool has_versioned_dependencies = std::any_of(
-                core_paragraph->dependencies.begin(), core_paragraph->dependencies.end(), [](const auto& dependency) {
-                    return dependency.constraint.type != Versions::Constraint::Type::None;
-                });
-
-            if (!core_paragraph->builtin_baseline.has_value() && (has_overrides || has_versioned_dependencies))
+            if (!core_paragraph->builtin_baseline.has_value())
             {
-                return Strings::concat(fs::u8string(origin),
-                                       " was rejected because it uses \"overrides\" or versioned dependencies "
-                                       "(\"version>=\") without setting a \"builtin-baseline\".\n",
-                                       s_extended_help);
+                if (std::any_of(core_paragraph->dependencies.begin(),
+                                core_paragraph->dependencies.end(),
+                                [](const auto& dependency) {
+                                    return dependency.constraint.type != Versions::Constraint::Type::None;
+                                }))
+                {
+                    return Strings::concat(
+                        fs::u8string(origin),
+                        " was rejected because it uses \"version>=\" without setting a \"builtin-baseline\".\n",
+                        s_extended_help);
+                }
+
+                if (!core_paragraph->overrides.empty())
+                {
+                    return Strings::concat(
+                        fs::u8string(origin),
+                        " was rejected because it uses \"overrides\" without setting a \"builtin-baseline\".\n",
+                        s_extended_help);
+                }
             }
         }
         return nullopt;
