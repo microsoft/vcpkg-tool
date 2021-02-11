@@ -985,6 +985,18 @@ TEST_CASE ("version install diamond date", "[versionplan]")
     check_name_and_version(install_plan.install_actions[2], "a", {"2020-01-03", 0});
 }
 
+static void CHECK_LINES(const std::string& a, const std::string& b)
+{
+    auto as = Strings::split(a, '\n');
+    auto bs = Strings::split(b, '\n');
+    for (size_t i = 0; i < as.size() && i < bs.size(); ++i)
+    {
+        INFO(i);
+        CHECK(as[i] == bs[i]);
+    }
+    CHECK(as.size() == bs.size());
+}
+
 TEST_CASE ("version install scheme failure", "[versionplan]")
 {
     MockVersionedPortfileProvider vp;
@@ -1008,7 +1020,21 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
                                           toplevel_spec());
 
         REQUIRE(!install_plan.error().empty());
-        CHECK(install_plan.error() == "Version conflict on a@1.0.1: baseline required 1.0.0");
+        CHECK_LINES(
+            install_plan.error(),
+            R"(Error: Version conflict on a:x86-windows: baseline required 1.0.0 but vcpkg could not compare it to 1.0.1
+
+The two versions used incomparable schemes:
+    "1.0.1" was of scheme relaxed
+    "1.0.0" was of scheme semver
+
+This can be resolved by adding an explicit override to the preferred version, for example:
+
+    "overrides": [
+        { "name": "a", "version": "1.0.1" }
+    ]
+
+See `vcpkg help versioning` for more information.)");
     }
     SECTION ("higher baseline")
     {
@@ -1024,7 +1050,21 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
                                           toplevel_spec());
 
         REQUIRE(!install_plan.error().empty());
-        CHECK(install_plan.error() == "Version conflict on a@1.0.1: baseline required 1.0.2");
+        CHECK_LINES(
+            install_plan.error(),
+            R"(Error: Version conflict on a:x86-windows: baseline required 1.0.2 but vcpkg could not compare it to 1.0.1
+
+The two versions used incomparable schemes:
+    "1.0.1" was of scheme relaxed
+    "1.0.2" was of scheme semver
+
+This can be resolved by adding an explicit override to the preferred version, for example:
+
+    "overrides": [
+        { "name": "a", "version": "1.0.1" }
+    ]
+
+See `vcpkg help versioning` for more information.)");
     }
 }
 
