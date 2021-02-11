@@ -73,38 +73,61 @@ namespace vcpkg
         return nullopt;
     }
 
+    static Triplet system_triplet()
+    {
+#if defined(_WIN32)
+        auto host_proc = System::get_host_processor();
+        switch (host_proc)
+        {
+            case System::CPUArchitecture::X86: return Triplet::from_canonical_name("x86-windows");
+            case System::CPUArchitecture::X64: return Triplet::from_canonical_name("x64-windows");
+            case System::CPUArchitecture::ARM: return Triplet::from_canonical_name("arm-windows");
+            case System::CPUArchitecture::ARM64: return Triplet::from_canonical_name("arm64-windows");
+            default: return Triplet::from_canonical_name("x86-windows");
+        }
+#elif defined(__APPLE__)
+        return Triplet::from_canonical_name("x64-osx");
+#elif defined(__FreeBSD__)
+        return Triplet::from_canonical_name("x64-freebsd");
+#elif defined(__OpenBSD__)
+        return Triplet::from_canonical_name("x64-openbsd");
+#elif defined(__GLIBC__)
+#if defined(__aarch64__)
+        return Triplet::from_canonical_name("arm64-linux");
+#elif defined(__arm__)
+        return Triplet::from_canonical_name("arm-linux");
+#elif defined(__s390x__)
+        return Triplet::from_canonical_name("s390x-linux");
+#elif (defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)) &&                    \
+    defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+        return Triplet::from_canonical_name("ppc64le-linux");
+#else
+        return Triplet::from_canonical_name("x64-linux");
+#endif
+#else
+        return Triplet::from_canonical_name("x64-linux-musl");
+#endif
+    }
+
     Triplet default_triplet(const VcpkgCmdArguments& args)
     {
         if (args.triplet != nullptr)
         {
             return Triplet::from_canonical_name(std::string(*args.triplet));
         }
-        else
-        {
 #if defined(_WIN32)
-            return Triplet::from_canonical_name("x86-windows");
-#elif defined(__APPLE__)
-            return Triplet::from_canonical_name("x64-osx");
-#elif defined(__FreeBSD__)
-            return Triplet::from_canonical_name("x64-freebsd");
-#elif defined(__OpenBSD__)
-            return Triplet::from_canonical_name("x64-openbsd");
-#elif defined(__GLIBC__)
-#if defined(__aarch64__)
-            return Triplet::from_canonical_name("arm64-linux");
-#elif defined(__arm__)
-            return Triplet::from_canonical_name("arm-linux");
-#elif defined(__s390x__)
-            return Triplet::from_canonical_name("s390x-linux");
-#elif (defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)) &&                    \
-    defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-            return Triplet::from_canonical_name("ppc64le-linux");
+        return Triplet::from_canonical_name("x86-windows");
 #else
-            return Triplet::from_canonical_name("x64-linux");
+        return system_triplet();
 #endif
-#else
-            return Triplet::from_canonical_name("x64-linux-musl");
-#endif
+    }
+
+    Triplet default_host_triplet(const VcpkgCmdArguments& args)
+    {
+        if (args.host_triplet != nullptr)
+        {
+            return Triplet::from_canonical_name(std::string(*args.host_triplet));
         }
+        return system_triplet();
     }
 }

@@ -214,9 +214,7 @@ namespace vcpkg::Remove
         &valid_arguments,
     };
 
-    void RemoveCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                         const VcpkgPaths& paths,
-                                         Triplet default_triplet) const
+    static void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet)
     {
         if (paths.manifest_mode_enabled())
         {
@@ -333,5 +331,13 @@ namespace vcpkg::Remove
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
+    }
+
+    void RemoveCommand::perform_and_exit(const VcpkgCmdArguments& args,
+                                         const VcpkgPaths& paths,
+                                         Triplet default_triplet,
+                                         Triplet /*host_triplet*/) const
+    {
+        Remove::perform_and_exit(args, paths, default_triplet);
     }
 }

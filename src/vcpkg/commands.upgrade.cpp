@@ -36,7 +36,10 @@ namespace vcpkg::Commands::Upgrade
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet)
+    void perform_and_exit(const VcpkgCmdArguments& args,
+                          const VcpkgPaths& paths,
+                          Triplet default_triplet,
+                          Triplet host_triplet)
     {
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
@@ -78,7 +81,8 @@ namespace vcpkg::Commands::Upgrade
                 provider,
                 var_provider,
                 Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
-                status_db);
+                status_db,
+                {host_triplet});
         }
         else
         {
@@ -158,7 +162,8 @@ namespace vcpkg::Commands::Upgrade
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
-            action_plan = Dependencies::create_upgrade_plan(provider, var_provider, to_upgrade, status_db);
+            action_plan =
+                Dependencies::create_upgrade_plan(provider, var_provider, to_upgrade, status_db, {host_triplet});
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
@@ -203,8 +208,9 @@ namespace vcpkg::Commands::Upgrade
 
     void UpgradeCommand::perform_and_exit(const VcpkgCmdArguments& args,
                                           const VcpkgPaths& paths,
-                                          Triplet default_triplet) const
+                                          Triplet default_triplet,
+                                          Triplet host_triplet) const
     {
-        Upgrade::perform_and_exit(args, paths, default_triplet);
+        Upgrade::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

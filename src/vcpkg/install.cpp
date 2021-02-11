@@ -758,7 +758,10 @@ namespace vcpkg::Install
     /// Run "install" command.
     /// </summary>
     ///
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet)
+    void perform_and_exit(const VcpkgCmdArguments& args,
+                          const VcpkgPaths& paths,
+                          Triplet default_triplet,
+                          Triplet host_triplet)
     {
         // input sanitization
         const ParsedArguments options =
@@ -903,7 +906,8 @@ namespace vcpkg::Install
                                                             var_provider,
                                                             dependencies,
                                                             manifest_scf.core_paragraph->overrides,
-                                                            {manifest_scf.core_paragraph->name, default_triplet})
+                                                            {manifest_scf.core_paragraph->name, default_triplet},
+                                                            host_triplet)
                     .value_or_exit(VCPKG_LINE_INFO);
 
             for (InstallPlanAction& action : install_plan.install_actions)
@@ -938,7 +942,8 @@ namespace vcpkg::Install
         StatusParagraphs status_db = database_load_check(paths);
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
-        auto action_plan = Dependencies::create_feature_install_plan(provider, var_provider, specs, status_db);
+        auto action_plan =
+            Dependencies::create_feature_install_plan(provider, var_provider, specs, status_db, {host_triplet});
 
         for (auto&& action : action_plan.install_actions)
         {
@@ -1065,9 +1070,10 @@ namespace vcpkg::Install
 
     void InstallCommand::perform_and_exit(const VcpkgCmdArguments& args,
                                           const VcpkgPaths& paths,
-                                          Triplet default_triplet) const
+                                          Triplet default_triplet,
+                                          Triplet host_triplet) const
     {
-        Install::perform_and_exit(args, paths, default_triplet);
+        Install::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
     SpecSummary::SpecSummary(const PackageSpec& spec, const Dependencies::InstallPlanAction* action)
