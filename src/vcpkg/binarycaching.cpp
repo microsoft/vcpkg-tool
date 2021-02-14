@@ -746,6 +746,147 @@ namespace
         bool m_interactive;
         bool m_use_nuget_cache;
     };
+
+    bool gsutil_stat(std::string const& url)
+    {
+        System::Command cmd;
+        cmd.string_arg("gsutil").string_arg("-q").string_arg("stat").string_arg(url);
+        const auto res = System::cmd_execute(cmd);
+        return res == 0;
+    }
+
+    bool gsutil_upload_file(std::string const& gcs_object, fs::path const& archive)
+    {
+        System::Command cmd;
+        cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").path_arg(archive).string_arg(gcs_object);
+        const auto out = System::cmd_execute_and_capture_output(cmd);
+        if (out.exit_code == 0) return true;
+        System::print2(
+            System::Color::warning, "gsutil failed to execute with exit code: ", out.exit_code, '\n', out.output);
+        return false;
+    }
+
+    bool gsutil_download_file(std::string const& gcs_object, fs::path const& archive)
+    {
+        System::Command cmd;
+        cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").string_arg(gcs_object).path_arg(archive);
+        const auto out = System::cmd_execute_and_capture_output(cmd);
+        if (out.exit_code == 0) return true;
+        System::print2(
+            System::Color::warning, "gsutil failed to execute with exit code: ", out.exit_code, '\n', out.output);
+        return false;
+    }
+
+    struct GcsBinaryProvider : NullBinaryProvider
+    {
+        GcsBinaryProvider(std::vector<std::string> read_prefixes, std::vector<std::string> write_prefixes)
+            : m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
+        {
+        }
+
+        void prefetch(const VcpkgPaths& paths, std::vector<const Dependencies::InstallPlanAction*>& actions) override
+        {
+            auto& fs = paths.get_filesystem();
+
+            const auto current_restored = m_restored.size();
+
+            for (const auto& prefix : m_read_prefixes)
+            {
+                std::vector<std::pair<std::string, fs::path>> url_paths;
+                std::vector<PackageSpec> specs;
+
+                for (auto&& action : actions)
+                {
+                    auto abi = action->package_abi();
+                    if (!abi) continue;
+
+                    specs.push_back(action->spec);
+                    auto pkgdir = paths.package_dir(action->spec);
+                    clean_prepare_dir(fs, pkgdir);
+                    pkgdir /= fs::u8path(Strings::concat(*abi.get(), ".zip"));
+                    url_paths.emplace_back(Strings::concat(prefix, *abi.get(), ".zip"), pkgdir);
+                }
+
+                if (url_paths.empty()) break;
+
+                System::print2("Attempting to fetch ", url_paths.size(), " packages from GCS.\n");
+                std::size_t index = 0;
+                for (auto const& p : url_paths)
+                {
+                    auto const i = index++;
+                    if (!gsutil_download_file(p.first, p.second)) continue;
+                    if (decompress_archive(paths, paths.package_dir(specs[i]), p.second).exit_code != 0)
+                    {
+                        Debug::print("Failed to decompress ", fs::u8string(p.second), '\n');
+                        continue;
+                    }
+                    // decompression success
+                    fs.remove(p.second, VCPKG_LINE_INFO);
+                    m_restored.insert(specs[i]);
+                }
+
+                Util::erase_remove_if(actions, [this](const Dependencies::InstallPlanAction* action) {
+                    return Util::Sets::contains(m_restored, action->spec);
+                });
+            }
+            System::print2("Restored ",
+                           m_restored.size() - current_restored,
+                           " packages from GCS servers. Use --debug for more information.\n");
+        }
+        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction& action) override
+        {
+            return Util::Sets::contains(m_restored, action.spec) ? RestoreResult::success : RestoreResult::missing;
+        }
+        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) override
+        {
+            if (m_write_prefixes.empty()) return;
+            const auto& abi_tag = action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
+            auto& spec = action.spec;
+            const auto tmp_archive_path = paths.buildtrees / spec.name() / (spec.triplet().to_string() + ".zip");
+            compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
+
+            std::size_t upload_count = 0;
+            for (const auto& prefix : m_write_prefixes)
+            {
+                auto gcs_object = Strings::concat(prefix, abi_tag, ".zip");
+                if (gsutil_upload_file(gcs_object, tmp_archive_path)) ++upload_count;
+            }
+
+            System::print2("Uploaded ", upload_count, " binaries to GCS.\n");
+        }
+        void precheck(const VcpkgPaths&,
+                      std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult>& results_map) override
+        {
+            for (auto const& prefix : m_read_prefixes)
+            {
+                std::vector<std::string> objects;
+                std::vector<const Dependencies::InstallPlanAction*> url_actions;
+                for (auto&& kv : results_map)
+                {
+                    if (kv.second != RestoreResult::missing) continue;
+                    auto abi = kv.first->package_abi();
+                    if (!abi) continue;
+                    objects.push_back(Strings::concat(prefix, *abi.get(), ".zip"));
+                    url_actions.push_back(kv.first);
+                }
+
+                std::vector<bool> stats(objects.size());
+                std::transform(objects.begin(), objects.end(), stats.begin(), gsutil_stat);
+                Checks::check_exit(VCPKG_LINE_INFO, stats.size() == url_actions.size());
+                for (std::size_t i = 0; i < stats.size(); ++i)
+                {
+                    if (!stats[i]) continue;
+                    results_map[url_actions[i]] = RestoreResult::success;
+                }
+            }
+        }
+
+    private:
+        std::vector<std::string> m_read_prefixes;
+        std::vector<std::string> m_write_prefixes;
+
+        std::set<PackageSpec> m_restored;
+    };
 }
 
 namespace vcpkg
@@ -865,6 +1006,9 @@ namespace
         std::vector<std::string> url_templates_to_get;
         std::vector<std::string> azblob_templates_to_put;
 
+        std::vector<std::string> gcs_read_prefixes;
+        std::vector<std::string> gcs_write_prefixes;
+
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
 
@@ -881,6 +1025,8 @@ namespace
             archives_to_write.clear();
             url_templates_to_get.clear();
             azblob_templates_to_put.clear();
+            gcs_read_prefixes.clear();
+            gcs_write_prefixes.clear();
             sources_to_read.clear();
             sources_to_write.clear();
             configs_to_read.clear();
@@ -1160,6 +1306,36 @@ namespace
                 handle_readwrite(
                     state->url_templates_to_get, state->azblob_templates_to_put, std::move(p), segments, 3);
             }
+            else if (segments[0].second == "x-gcs")
+            {
+                // Scheme: x-gsutil,<prefix>[,<readwrite>]
+                if (segments.size() < 2)
+                {
+                    return add_error("expected arguments: binary config 'gcs' requires at least a prefix",
+                                     segments[0].first);
+                }
+
+                if (!Strings::starts_with(segments[1].second, "gs://"))
+                {
+                    return add_error(
+                        "invalid argument: binary config 'gcs' requires an gs:// base url as the first argument",
+                        segments[1].first);
+                }
+
+                if (segments.size() > 3)
+                {
+                    return add_error("unexpected arguments: binary config 'gcs' requires 1 or 2 arguments",
+                                     segments[4].first);
+                }
+
+                auto p = segments[1].second;
+                if (p.back() != '/')
+                {
+                    p.push_back('/');
+                }
+
+                handle_readwrite(state->gcs_read_prefixes, state->gcs_write_prefixes, std::move(p), segments, 2);
+            }
             else
             {
                 return add_error(
@@ -1238,6 +1414,12 @@ ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_c
     }
 
     std::vector<std::unique_ptr<IBinaryProvider>> providers;
+    if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
+    {
+        providers.push_back(
+            std::make_unique<GcsBinaryProvider>(std::move(s.gcs_read_prefixes), std::move(s.gcs_write_prefixes)));
+    }
+
     if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.azblob_templates_to_put.empty())
     {
         providers.push_back(std::make_unique<ArchivesBinaryProvider>(std::move(s.archives_to_read),
@@ -1421,6 +1603,9 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
     tbl.format("x-azblob,<url>,<sas>[,<rw>]",
                "**Experimental: will change or be removed without warning** Adds an Azure Blob Storage source. Uses "
                "Shared Access Signature validation. URL should include the container path.");
+    tbl.format("x-gcs,<prefix>[,<rw>]",
+               "**Experimental: will change or be removed without warning** Adds a Google Cloud Storage (GCS) source. "
+               "Uses the gsutil CLI for uploads and downloads. prefix should include the gs:// scheme.");
     tbl.format("interactive", "Enables interactive credential management for some source types");
     tbl.blank();
     tbl.text("The `<rw>` optional parameter for certain strings controls whether they will be consulted for "
