@@ -747,7 +747,7 @@ namespace
         bool m_use_nuget_cache;
     };
 
-    bool gsutil_stat(std::string const& url)
+    bool gsutil_stat(const std::string& url)
     {
         System::Command cmd;
         cmd.string_arg("gsutil").string_arg("-q").string_arg("stat").string_arg(url);
@@ -755,31 +755,31 @@ namespace
         return res == 0;
     }
 
-    bool gsutil_upload_file(std::string const& gcs_object, fs::path const& archive)
+    bool gsutil_upload_file(const std::string& gcs_object, const fs::path& archive)
     {
         System::Command cmd;
         cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").path_arg(archive).string_arg(gcs_object);
         const auto out = System::cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0) return true;
         System::print2(
-            System::Color::warning, "gsutil failed to execute with exit code: ", out.exit_code, '\n', out.output);
+            System::Color::warning, "gsutil failed to upload with exit code: ", out.exit_code, '\n', out.output);
         return false;
     }
 
-    bool gsutil_download_file(std::string const& gcs_object, fs::path const& archive)
+    bool gsutil_download_file(const std::string& gcs_object, const fs::path& archive)
     {
         System::Command cmd;
         cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").string_arg(gcs_object).path_arg(archive);
         const auto out = System::cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0) return true;
         System::print2(
-            System::Color::warning, "gsutil failed to execute with exit code: ", out.exit_code, '\n', out.output);
+            System::Color::warning, "gsutil failed to download with exit code: ", out.exit_code, '\n', out.output);
         return false;
     }
 
     struct GcsBinaryProvider : NullBinaryProvider
     {
-        GcsBinaryProvider(std::vector<std::string> read_prefixes, std::vector<std::string> write_prefixes)
+        GcsBinaryProvider(std::vector<std::string>&& read_prefixes, std::vector<std::string>&& write_prefixes)
             : m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
         {
         }
@@ -811,9 +811,9 @@ namespace
 
                 System::print2("Attempting to fetch ", url_paths.size(), " packages from GCS.\n");
                 std::size_t index = 0;
-                for (auto const& p : url_paths)
+                for (const auto& p : url_paths)
                 {
-                    auto const i = index++;
+                    const auto i = index++;
                     if (!gsutil_download_file(p.first, p.second)) continue;
                     if (decompress_archive(paths, paths.package_dir(specs[i]), p.second).exit_code != 0)
                     {
@@ -857,7 +857,7 @@ namespace
         void precheck(const VcpkgPaths&,
                       std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult>& results_map) override
         {
-            for (auto const& prefix : m_read_prefixes)
+            for (const auto& prefix : m_read_prefixes)
             {
                 std::vector<std::string> objects;
                 std::vector<const Dependencies::InstallPlanAction*> url_actions;
@@ -1318,14 +1318,14 @@ namespace
                 if (!Strings::starts_with(segments[1].second, "gs://"))
                 {
                     return add_error(
-                        "invalid argument: binary config 'gcs' requires an gs:// base url as the first argument",
+                        "invalid argument: binary config 'gcs' requires a gs:// base url as the first argument",
                         segments[1].first);
                 }
 
                 if (segments.size() > 3)
                 {
                     return add_error("unexpected arguments: binary config 'gcs' requires 1 or 2 arguments",
-                                     segments[4].first);
+                                     segments[3].first);
                 }
 
                 auto p = segments[1].second;
