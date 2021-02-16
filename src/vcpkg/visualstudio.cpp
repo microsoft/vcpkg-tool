@@ -3,6 +3,7 @@
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -362,15 +363,14 @@ namespace vcpkg::VisualStudio
             System::print2(System::Color::warning, "Please install the English language pack.\n");
         }
 
-        if (found_toolsets.empty())
+        if (found_toolsets.empty() && Debug::g_debugging)
         {
-            System::print2(System::Color::error, "Could not locate a complete toolset.\n");
-            System::print2("The following paths were examined:\n");
+            Debug::print("Could not locate a complete Visual Studio instance\n");
+            Debug::print("The following paths were examined:\n");
             for (const fs::path& path : paths_examined)
             {
-                System::print2("    ", fs::u8string(path), '\n');
+                Debug::print("    ", fs::u8string(path), '\n');
             }
-            Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         return found_toolsets;
