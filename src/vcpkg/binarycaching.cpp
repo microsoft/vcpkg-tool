@@ -1605,7 +1605,8 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
                "Shared Access Signature validation. URL should include the container path.");
     tbl.format("x-gcs,<prefix>[,<rw>]",
                "**Experimental: will change or be removed without warning** Adds a Google Cloud Storage (GCS) source. "
-               "Uses the gsutil CLI for uploads and downloads. Prefix should include the gs:// scheme and be suffixed with a `/`.");
+               "Uses the gsutil CLI for uploads and downloads. Prefix should include the gs:// scheme and be suffixed "
+               "with a `/`.");
     tbl.format("interactive", "Enables interactive credential management for some source types");
     tbl.blank();
     tbl.text("The `<rw>` optional parameter for certain strings controls whether they will be consulted for "
