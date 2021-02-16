@@ -852,7 +852,7 @@ namespace
                 if (gsutil_upload_file(gcs_object, tmp_archive_path)) ++upload_count;
             }
 
-            System::print2("Uploaded ", upload_count, " binaries to GCS.\n");
+            System::print2("Uploaded binaries to ", upload_count, " GCS remotes.\n");
         }
         void precheck(const VcpkgPaths&,
                       std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult>& results_map) override
@@ -1308,7 +1308,7 @@ namespace
             }
             else if (segments[0].second == "x-gcs")
             {
-                // Scheme: x-gsutil,<prefix>[,<readwrite>]
+                // Scheme: x-gcs,<prefix>[,<readwrite>]
                 if (segments.size() < 2)
                 {
                     return add_error("expected arguments: binary config 'gcs' requires at least a prefix",
@@ -1605,7 +1605,7 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
                "Shared Access Signature validation. URL should include the container path.");
     tbl.format("x-gcs,<prefix>[,<rw>]",
                "**Experimental: will change or be removed without warning** Adds a Google Cloud Storage (GCS) source. "
-               "Uses the gsutil CLI for uploads and downloads. prefix should include the gs:// scheme.");
+               "Uses the gsutil CLI for uploads and downloads. Prefix should include the gs:// scheme and be suffixed with a `/`.");
     tbl.format("interactive", "Enables interactive credential management for some source types");
     tbl.blank();
     tbl.text("The `<rw>` optional parameter for certain strings controls whether they will be consulted for "
