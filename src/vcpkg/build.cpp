@@ -1043,6 +1043,7 @@ namespace vcpkg::Build
             }
         }
 
+        abi_tag_entries.emplace_back("ports.cmake", vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, paths.ports_cmake, Hash::Algorithm::Sha1));
         abi_tag_entries.emplace_back("post_build_checks", "2");
         std::vector<std::string> sorted_feature_list = action.feature_list;
         Util::sort(sorted_feature_list);
