@@ -209,6 +209,7 @@ namespace vcpkg
             Lazy<std::vector<VcpkgPaths::TripletFile>> available_triplets;
             Lazy<std::vector<Toolset>> toolsets;
             Lazy<std::map<std::string, std::string>> cmake_script_hashes;
+            Lazy<std::string> ports_cmake_hash;
 
             Files::Filesystem* fs_ptr;
 
@@ -457,6 +458,13 @@ If you wish to silence this error and use classic mode, you can:
                                 Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha1));
             }
             return helpers;
+        });
+    }
+
+    StringView VcpkgPaths::get_ports_cmake_hash() const
+    {
+        return m_pimpl->ports_cmake_hash.get_lazy([this]() -> std::string {
+            return Hash::get_file_hash(VCPKG_LINE_INFO, get_filesystem(), ports_cmake, Hash::Algorithm::Sha1);
         });
     }
 
