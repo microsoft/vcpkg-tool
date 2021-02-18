@@ -334,3 +334,35 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         REQUIRE(parsed.has_value());
     }
 }
+
+TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
+{
+    {
+        auto parsed = create_binary_provider_from_configs_pure("x-gcs,gs://my-bucket/", {});
+        REQUIRE(parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("x-gcs,gs://my-bucket/my-folder", {});
+        REQUIRE(parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("x-gcs,", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("x-gcs,gs://my-bucket/my-folder,invalid", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("x-gcs,gs://my-bucket/my-folder,read", {});
+        REQUIRE(parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("x-gcs,gs://my-bucket/my-folder,write", {});
+        REQUIRE(parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("x-gcs,gs://my-bucket/my-folder,readwrite", {});
+        REQUIRE(parsed.has_value());
+    }
+}
