@@ -79,3 +79,34 @@ Throw-IfFailed
 Write-Trace "test manifest features: no-default-features, features = [no-default-features-2]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-2
 Throw-IfFailed
+
+$vcpkgJson = @{
+    'name' = "manifest-test";
+    'version' = "1.0.0";
+    'features' = @{
+        'a' = feature 'manifest-test';
+    }
+}
+
+Set-Content -Path "$manifestDir/vcpkg.json" `
+    -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson) `
+    -Encoding Ascii -NoNewline
+
+$vcpkgJson = @{
+    'name' = "manifest-test";
+    'version' = "1.0.0";
+    'dependencies' = @( "nonexistent-port" )
+}
+
+New-Item -Path $manifestDir/manifest-test -ItemType Directory
+Set-Content -Path "$manifestDir/manifest-test/vcpkg.json" `
+    -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson) `
+    -Encoding Ascii -NoNewline
+
+Write-Trace "test manifest features: self-reference, features = [a]"
+Run-Vcpkg install @manifestDirArgs --x-feature=a
+Throw-IfFailed
+
+Write-Trace "test manifest features: self-reference, features = [a], with overlay"
+Run-Vcpkg install @manifestDirArgs --x-feature=a "--overlay-ports=$manifestDir/manifest-test"
+Throw-IfFailed
