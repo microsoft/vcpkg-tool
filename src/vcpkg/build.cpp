@@ -1033,8 +1033,7 @@ namespace vcpkg::Build
 #endif
 
         auto& helpers = paths.get_cmake_script_hashes();
-        auto portfile_contents =
-            fs.read_contents(port_dir / fs::u8path("portfile.cmake")).value_or_exit(VCPKG_LINE_INFO);
+        auto portfile_contents = fs.read_contents(port_dir / fs::u8path("portfile.cmake"), VCPKG_LINE_INFO);
         for (auto&& helper : helpers)
         {
             if (Strings::case_insensitive_ascii_contains(portfile_contents, helper.first))

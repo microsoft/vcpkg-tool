@@ -63,7 +63,7 @@ namespace vcpkg
         static const std::string XML_VERSION = "2";
         static const fs::path XML_PATH = paths.scripts / "vcpkgTools.xml";
         static const std::regex XML_VERSION_REGEX{R"###(<tools[\s]+version="([^"]+)">)###"};
-        static const std::string XML = paths.get_filesystem().read_contents(XML_PATH).value_or_exit(VCPKG_LINE_INFO);
+        static const std::string XML = paths.get_filesystem().read_contents(XML_PATH, VCPKG_LINE_INFO);
         std::smatch match_xml_version;
         const bool has_xml_version = std::regex_search(XML.cbegin(), XML.cend(), match_xml_version, XML_VERSION_REGEX);
         Checks::check_exit(VCPKG_LINE_INFO,
