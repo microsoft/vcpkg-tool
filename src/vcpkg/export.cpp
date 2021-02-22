@@ -542,7 +542,7 @@ namespace vcpkg::Export
                 action.spec.triplet().to_string(),
                 raw_exported_dir_path / "installed" / "vcpkg" / "info" / (binary_paragraph.fullstem() + ".list"));
 
-            auto lines = fs.read_lines(paths.listfile_path(binary_paragraph)).value_or_exit(VCPKG_LINE_INFO);
+            auto lines = fs.read_lines(paths.listfile_path(binary_paragraph), VCPKG_LINE_INFO);
             std::vector<fs::path> files;
             for (auto&& suffix : lines)
             {

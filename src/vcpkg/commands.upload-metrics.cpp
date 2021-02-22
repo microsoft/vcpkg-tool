@@ -21,7 +21,7 @@ namespace vcpkg::Commands::UploadMetrics
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         const auto& payload_path = args.command_arguments[0];
-        auto payload = fs.read_contents(payload_path).value_or_exit(VCPKG_LINE_INFO);
+        auto payload = fs.read_contents(payload_path, VCPKG_LINE_INFO);
         Metrics::g_metrics.lock()->upload(payload);
         Checks::exit_success(VCPKG_LINE_INFO);
     }

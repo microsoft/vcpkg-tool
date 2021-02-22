@@ -175,7 +175,7 @@ namespace vcpkg
         {
             iobj.insert("usage", Json::Value::string(std::move(usage.message)));
         }
-        auto owns_files = fs.read_lines(paths.listfile_path(ipv.core->package)).value_or_exit(VCPKG_LINE_INFO);
+        auto owns_files = fs.read_lines(paths.listfile_path(ipv.core->package), VCPKG_LINE_INFO);
         Json::Array owns;
         for (auto&& owns_file : owns_files)
             owns.push_back(Json::Value::string(std::move(owns_file)));

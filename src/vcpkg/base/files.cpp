@@ -455,6 +455,18 @@ namespace vcpkg::Files
         }
     }
 
+    std::vector<std::string> Filesystem::read_lines(const fs::path& path, LineInfo linfo) const
+    {
+        auto maybe_lines = this->read_lines(path);
+        if (auto p = maybe_lines.get())
+        {
+            return std::move(*p);
+        }
+
+        Checks::exit_with_message(
+            linfo, "error reading file: %s: %s", fs::u8string(path), maybe_lines.error().message());
+    }
+
     std::string Filesystem::read_contents(const fs::path& path, LineInfo linfo) const
     {
         auto maybe_contents = this->read_contents(path);
@@ -733,6 +745,7 @@ namespace vcpkg::Files
             std::fstream file_stream(file_path, std::ios_base::in | std::ios_base::binary);
             if (file_stream.fail())
             {
+                Debug::print("Failed to open: ", fs::u8string(file_path), '\n');
                 return std::make_error_code(std::errc::no_such_file_or_directory);
             }
 
@@ -756,10 +769,9 @@ namespace vcpkg::Files
             std::fstream file_stream(file_path, std::ios_base::in | std::ios_base::binary);
             if (file_stream.fail())
             {
-                Debug::print("Missing path: ", fs::u8string(file_path), '\n');
+                Debug::print("Failed to open: ", fs::u8string(file_path), '\n');
                 return std::make_error_code(std::errc::no_such_file_or_directory);
             }
-
             std::vector<std::string> output;
             std::string line;
             while (std::getline(file_stream, line))
