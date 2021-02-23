@@ -92,7 +92,8 @@ namespace vcpkg::PostBuildLint
             if (fs.exists(include_dir))
             {
                 System::print2(System::Color::warning,
-                            "The folder /include exists in a cmake helper port; this is incorrect, since only cmake files should be installed\n");
+                               "The folder /include exists in a cmake helper port; this is incorrect, since only cmake "
+                               "files should be installed\n");
                 return LintStatus::ERROR_DETECTED;
             }
             else
@@ -237,7 +238,10 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_vcpkg_cmake_scripts_directory(const Files::Filesystem& fs, const Build::BuildPolicies& policies, const fs::path& package_dir, const PackageSpec& spec)
+    static LintStatus check_for_vcpkg_cmake_scripts_directory(const Files::Filesystem& fs,
+                                                              const Build::BuildPolicies& policies,
+                                                              const fs::path& package_dir,
+                                                              const PackageSpec& spec)
     {
         const auto cmake_file = spec.name() + ".cmake";
         const fs::path vcpkg_cmake_scripts = package_dir / "share" / "vcpkg_cmake_scripts";
@@ -248,9 +252,10 @@ namespace vcpkg::PostBuildLint
             if (!fs.exists(vcpkg_cmake_script))
             {
                 System::print2(System::Color::warning,
-                            "The /share/vcpkg_cmake_scripts/", cmake_file, " file does not exist. This file must exist for CMake helper ports.\n");
-                System::print2(System::Color::warning,
-                            "(see ", fs::u8string(vcpkg_cmake_script), ")\n");
+                               "The /share/vcpkg_cmake_scripts/",
+                               cmake_file,
+                               " file does not exist. This file must exist for CMake helper ports.\n");
+                System::print2(System::Color::warning, "(see ", fs::u8string(vcpkg_cmake_script), ")\n");
                 return LintStatus::ERROR_DETECTED;
             }
         }
@@ -259,7 +264,8 @@ namespace vcpkg::PostBuildLint
             if (fs.exists(vcpkg_cmake_scripts))
             {
                 System::print2(System::Color::warning,
-                            "The folder /share/vcpkg_cmake_scripts exists in a port that is not a cmake helper; this is incorrect, since this folder should only be used for cmake helpers.\n");
+                               "The folder /share/vcpkg_cmake_scripts exists in a port that is not a cmake helper; "
+                               "this is incorrect, since this folder should only be used for cmake helpers.\n");
                 return LintStatus::ERROR_DETECTED;
             }
         }
