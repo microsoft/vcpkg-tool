@@ -86,6 +86,21 @@ namespace vcpkg::PostBuildLint
         }
 
         const fs::path include_dir = package_dir / "include";
+
+        if (policies.is_enabled(BuildPolicy::CMAKE_HELPER_PORT))
+        {
+            if (fs.exists(include_dir))
+            {
+                System::print2(System::Color::warning,
+                            "The folder /include exists in a cmake helper port; this is incorrect, since only cmake files should be installed\n");
+                return LintStatus::ERROR_DETECTED;
+            }
+            else
+            {
+                return LintStatus::SUCCESS;
+            }
+        }
+
         if (!fs.exists(include_dir) || fs.is_empty(include_dir))
         {
             System::print2(System::Color::warning,
@@ -217,6 +232,36 @@ namespace vcpkg::PostBuildLint
                            "/debug/share should not exist. Please reorganize any important files, then use\n"
                            "    file(REMOVE_RECURSE \"${CURRENT_PACKAGES_DIR}/debug/share\")\n");
             return LintStatus::ERROR_DETECTED;
+        }
+
+        return LintStatus::SUCCESS;
+    }
+
+    static LintStatus check_for_vcpkg_cmake_scripts_directory(const Files::Filesystem& fs, const Build::BuildPolicies& policies, const fs::path& package_dir, const PackageSpec& spec)
+    {
+        const auto cmake_file = spec.name() + ".cmake";
+        const fs::path vcpkg_cmake_scripts = package_dir / "share" / "vcpkg_cmake_scripts";
+        const fs::path vcpkg_cmake_script = vcpkg_cmake_scripts / fs::u8path(cmake_file);
+
+        if (policies.is_enabled(BuildPolicy::CMAKE_HELPER_PORT))
+        {
+            if (!fs.exists(vcpkg_cmake_script))
+            {
+                System::print2(System::Color::warning,
+                            "The /share/vcpkg_cmake_scripts/", cmake_file, " file does not exist. This file must exist for CMake helper ports.\n");
+                System::print2(System::Color::warning,
+                            "(see ", fs::u8string(vcpkg_cmake_script), ")\n");
+                return LintStatus::ERROR_DETECTED;
+            }
+        }
+        else
+        {
+            if (fs.exists(vcpkg_cmake_scripts))
+            {
+                System::print2(System::Color::warning,
+                            "The folder /share/vcpkg_cmake_scripts exists in a port that is not a cmake helper; this is incorrect, since this folder should only be used for cmake helpers.\n");
+                return LintStatus::ERROR_DETECTED;
+            }
         }
 
         return LintStatus::SUCCESS;
@@ -855,6 +900,7 @@ namespace vcpkg::PostBuildLint
         error_count += check_for_restricted_include_files(fs, build_info.policies, package_dir);
         error_count += check_for_files_in_debug_include_directory(fs, package_dir);
         error_count += check_for_files_in_debug_share_directory(fs, package_dir);
+        error_count += check_for_vcpkg_cmake_scripts_directory(fs, build_info.policies, package_dir, spec);
         error_count += check_folder_lib_cmake(fs, package_dir, spec);
         error_count += check_for_misplaced_cmake_files(fs, package_dir, spec);
         error_count += check_folder_debug_lib_cmake(fs, package_dir, spec);

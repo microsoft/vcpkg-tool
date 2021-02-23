@@ -275,6 +275,7 @@ namespace vcpkg::Build
         ALLOW_RESTRICTED_HEADERS,
         SKIP_DUMPBIN_CHECKS,
         SKIP_ARCHITECTURE_CHECK,
+        CMAKE_HELPER_PORT,
         // Must be last
         COUNT,
     };
