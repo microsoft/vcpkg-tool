@@ -1372,7 +1372,10 @@ namespace vcpkg::Json
     {
         if (!is_ident(sv))
         {
-            r.add_generic_error(type_name(), "must be lowercase alphanumeric+hyphens and not reserved");
+            r.add_generic_error(type_name(),
+                                "must be lowercase alphanumeric+hyphens and not reserved (see "
+                                "https://github.com/Microsoft/vcpkg/tree/master/docs/specifications/manifests.md for "
+                                "more information)");
         }
         return sv.to_string();
     }
