@@ -802,7 +802,6 @@ namespace vcpkg::Install
             prohibit_backcompat_features ? Build::BackcompatFeatures::PROHIBIT : Build::BackcompatFeatures::ALLOW,
         };
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -897,18 +896,24 @@ namespace vcpkg::Install
             }
             auto verprovider = PortFileProvider::make_versioned_portfile_provider(paths);
             auto baseprovider = PortFileProvider::make_baseline_provider(paths);
-            auto oprovider = PortFileProvider::make_overlay_provider(paths, args.overlay_ports);
 
-            auto install_plan =
-                Dependencies::create_versioned_install_plan(*verprovider,
-                                                            *baseprovider,
-                                                            *oprovider,
-                                                            var_provider,
-                                                            dependencies,
-                                                            manifest_scf.core_paragraph->overrides,
-                                                            {manifest_scf.core_paragraph->name, default_triplet},
-                                                            host_triplet)
-                    .value_or_exit(VCPKG_LINE_INFO);
+            std::vector<std::string> extended_overlay_ports;
+            extended_overlay_ports.reserve(args.overlay_ports.size() + 1);
+            extended_overlay_ports.push_back(fs::u8string(manifest_path.parent_path()));
+            Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
+            System::print2(Strings::join(",", extended_overlay_ports), "\n");
+            auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
+
+            PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
+            auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
+                                                                            *baseprovider,
+                                                                            *oprovider,
+                                                                            var_provider,
+                                                                            dependencies,
+                                                                            manifest_scf.core_paragraph->overrides,
+                                                                            toplevel,
+                                                                            host_triplet)
+                                    .value_or_exit(VCPKG_LINE_INFO);
 
             for (InstallPlanAction& action : install_plan.install_actions)
             {
@@ -916,6 +921,12 @@ namespace vcpkg::Install
                 action.build_options.use_head_version = Build::UseHeadVersion::NO;
                 action.build_options.editable = Build::Editable::NO;
             }
+
+            // If the manifest refers to itself, it will be added to the install plan.
+            Util::erase_remove_if(install_plan.install_actions,
+                                  [&toplevel](auto&& action) { return action.spec == toplevel; });
+
+            PortFileProvider::PathsPortFileProvider provider(paths, extended_overlay_ports);
 
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
@@ -926,6 +937,8 @@ namespace vcpkg::Install
                                                         dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
                                                         pkgsconfig);
         }
+
+        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return Input::check_and_get_full_package_spec(
