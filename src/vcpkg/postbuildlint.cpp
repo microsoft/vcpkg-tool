@@ -254,8 +254,7 @@ namespace vcpkg::PostBuildLint
                 System::print2(System::Color::warning,
                                "The /",
                                fs::u8string(relative_path),
-                               " "
-                               "file does not exist. This file must exist for CMake helper ports.\n");
+                               " file does not exist. This file must exist for CMake helper ports.\n");
                 return LintStatus::ERROR_DETECTED;
             }
         }
