@@ -59,11 +59,7 @@ namespace vcpkg::Unicode
         UnexpectedEof = 6,
     };
 
-    struct utf8_category : std::error_category
-    {
-        const char* name() const noexcept override;
-        std::string message(int condition) const override;
-    };
+    const std::error_category& utf8_category() noexcept;
 
     inline std::error_code make_error_code(utf8_errc err) noexcept
     {

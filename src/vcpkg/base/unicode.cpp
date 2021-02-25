@@ -113,8 +113,14 @@ namespace vcpkg::Unicode
         return res;
     }
 
-    const char* utf8_category::name() const noexcept { return "utf8"; }
-    std::string utf8_category::message(int condition) const
+    struct Utf8Category : std::error_category
+    {
+        const char* name() const noexcept override;
+        std::string message(int condition) const override;
+    };
+
+    const char* Utf8Category::name() const noexcept { return "utf8"; }
+    std::string Utf8Category::message(int condition) const
     {
         switch (static_cast<utf8_errc>(condition))
         {
@@ -128,6 +134,12 @@ namespace vcpkg::Unicode
             case utf8_errc::UnexpectedEof: return "found end of string in middle of code point";
             default: return "error code out of range";
         }
+    }
+
+    const std::error_category& utf8_category() noexcept
+    {
+        static const Utf8Category t;
+        return t;
     }
 
     Utf8Decoder::Utf8Decoder() noexcept : current_(end_of_file), next_(nullptr), last_(nullptr) { }
@@ -255,7 +267,7 @@ namespace vcpkg::Unicode
         next(ec);
         if (ec)
         {
-            vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, ec.message());
+            vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "utf-8 error: %s", ec.message());
         }
 
         return *this;
