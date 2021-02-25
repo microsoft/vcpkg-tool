@@ -243,7 +243,8 @@ namespace vcpkg::PostBuildLint
                                                   const fs::path& package_dir,
                                                   const PackageSpec& spec)
     {
-        const fs::path relative_path = fs::u8path("share") / fs::u8path(spec.name()) / fs::u8path("vcpkg-port-config.cmake");
+        const fs::path relative_path =
+            fs::u8path("share") / fs::u8path(spec.name()) / fs::u8path("vcpkg-port-config.cmake");
         const fs::path absolute_path = package_dir / relative_path;
 
         if (policies.is_enabled(BuildPolicy::CMAKE_HELPER_PORT))
@@ -251,7 +252,9 @@ namespace vcpkg::PostBuildLint
             if (!fs.exists(absolute_path))
             {
                 System::print2(System::Color::warning,
-                               "The /", fs::u8string(relative_path), " "
+                               "The /",
+                               fs::u8string(relative_path),
+                               " "
                                "file does not exist. This file must exist for CMake helper ports.\n");
                 return LintStatus::ERROR_DETECTED;
             }
