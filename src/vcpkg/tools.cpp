@@ -478,7 +478,7 @@ Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50
             if (rc.exit_code != 0)
             {
                 return {Strings::concat(
-                    std::move(rc.output), "\n\nFailed to get version of ", fs::u8string(path_to_exe), "\n"),
+                            std::move(rc.output), "\n\nFailed to get version of ", fs::u8string(path_to_exe), "\n"),
                         expected_right_tag};
             }
 
