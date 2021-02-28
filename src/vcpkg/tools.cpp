@@ -27,7 +27,7 @@ namespace vcpkg
 
     static Optional<std::array<int, 3>> parse_version_string(const std::string& version_as_string)
     {
-        static const std::regex RE(R"###((\d+)\.(\d+)\.(\d+))###");
+        static const std::regex RE(R"###((\d+)\.(\d+)(\.(\d+))?)###");
 
         std::match_results<std::string::const_iterator> match;
         const auto found = std::regex_search(version_as_string, match, RE);
@@ -38,7 +38,10 @@ namespace vcpkg
 
         const int d1 = atoi(match[1].str().c_str());
         const int d2 = atoi(match[2].str().c_str());
-        const int d3 = atoi(match[3].str().c_str());
+        const int d3 = [&] {
+            if (match[4].str().empty()) return 0;
+            return atoi(match[5].str().c_str());
+        }();
         const std::array<int, 3> result = {d1, d2, d3};
         return result;
     }
@@ -460,6 +463,36 @@ Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50
         }
     };
 
+    struct GsutilProvider : ToolProvider
+    {
+        std::string m_exe = "gsutil";
+
+        virtual const std::string& tool_data_name() const override { return m_exe; }
+        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual std::array<int, 3> default_min_version() const override { return {4, 56, 0}; }
+
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const fs::path& path_to_exe) const override
+        {
+            auto cmd = System::Command(path_to_exe).string_arg("version");
+            auto rc = System::cmd_execute_and_capture_output(cmd);
+            if (rc.exit_code != 0)
+            {
+                return {Strings::concat(
+                    std::move(rc.output), "\n\nFailed to get version of ", fs::u8string(path_to_exe), "\n"),
+                        expected_right_tag};
+            }
+
+            /* Sample output:
+gsutil version: 4.58
+                */
+
+            const auto idx = rc.output.find("gsutil version: ");
+            Checks::check_exit(
+                VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of gsutil version string: %s", rc.output);
+            return {rc.output.substr(idx), expected_left_tag};
+        }
+    };
+
     struct IfwInstallerBaseProvider : ToolProvider
     {
         std::string m_exe;
@@ -589,6 +622,14 @@ Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50
                 if (tool == Tools::NUGET) return get_path(paths, NuGetProvider());
                 if (tool == Tools::IFW_INSTALLER_BASE) return get_path(paths, IfwInstallerBaseProvider());
                 if (tool == Tools::MONO) return get_path(paths, MonoProvider());
+                if (tool == Tools::GSUTIL)
+                {
+                    if (System::get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
+                    {
+                        return {"gsutil", "0"};
+                    }
+                    return get_path(paths, GsutilProvider());
+                }
 
                 // For other tools, we simply always auto-download them.
                 auto maybe_tool_data = parse_tool_data_from_xml(paths, tool);
