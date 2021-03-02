@@ -874,10 +874,18 @@ namespace vcpkg::Install
                 }
             }
 
+            if (std::any_of(dependencies.begin(), dependencies.end(), [](const Dependency& dep) {
+                    return dep.constraint.type != Versions::Constraint::Type::None;
+                }))
+            {
+                Metrics::g_metrics.lock()->track_property("manifest_version_constraint", "defined");
+            }
+
             if (!manifest_scf.core_paragraph->overrides.empty())
             {
                 Metrics::g_metrics.lock()->track_property("manifest_overrides", "defined");
             }
+
             if (auto p_baseline = manifest_scf.core_paragraph->builtin_baseline.get())
             {
                 Metrics::g_metrics.lock()->track_property("manifest_baseline", "defined");
@@ -885,6 +893,7 @@ namespace vcpkg::Install
                         return (ch >= 'a' || ch <= 'f') || Parse::ParserBase::is_ascii_digit(ch);
                     }))
                 {
+                    Metrics::g_metrics.lock()->track_property("versioning-error-baseline", "defined");
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline (%s) was not a valid commit sha: "
                                                "expected 40 lowercase hexadecimal characters.\n%s\n",
@@ -894,6 +903,7 @@ namespace vcpkg::Install
 
                 paths.get_configuration().registry_set.experimental_set_builtin_registry_baseline(*p_baseline);
             }
+
             auto verprovider = PortFileProvider::make_versioned_portfile_provider(paths);
             auto baseprovider = PortFileProvider::make_baseline_provider(paths);
 
@@ -905,15 +915,23 @@ namespace vcpkg::Install
             auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
 
             PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
-            auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
-                                                                            *baseprovider,
-                                                                            *oprovider,
-                                                                            var_provider,
-                                                                            dependencies,
-                                                                            manifest_scf.core_paragraph->overrides,
-                                                                            toplevel,
-                                                                            host_triplet)
-                                    .value_or_exit(VCPKG_LINE_INFO);
+            auto maybe_install_plan =
+                Dependencies::create_versioned_install_plan(*verprovider,
+                                                            *baseprovider,
+                                                            *oprovider,
+                                                            var_provider,
+                                                            dependencies,
+                                                            manifest_scf.core_paragraph->overrides,
+                                                            toplevel,
+                                                            host_triplet);
+
+            auto pip = maybe_install_plan.get();
+            if (!pip)
+            {
+                Metrics::g_metrics.lock()->track_property("error-versioning-plan", "defined");
+                maybe_install_plan.value_or_exit(VCPKG_LINE_INFO);
+            }
+            auto& install_plan = *pip;
 
             for (InstallPlanAction& action : install_plan.install_actions)
             {
