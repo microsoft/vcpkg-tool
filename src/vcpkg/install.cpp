@@ -915,23 +915,15 @@ namespace vcpkg::Install
             auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
 
             PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
-            auto maybe_install_plan =
-                Dependencies::create_versioned_install_plan(*verprovider,
-                                                            *baseprovider,
-                                                            *oprovider,
-                                                            var_provider,
-                                                            dependencies,
-                                                            manifest_scf.core_paragraph->overrides,
-                                                            toplevel,
-                                                            host_triplet);
-
-            auto pip = maybe_install_plan.get();
-            if (!pip)
-            {
-                Metrics::g_metrics.lock()->track_property("error-versioning-plan", "defined");
-                maybe_install_plan.value_or_exit(VCPKG_LINE_INFO);
-            }
-            auto& install_plan = *pip;
+            auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
+                                                                            *baseprovider,
+                                                                            *oprovider,
+                                                                            var_provider,
+                                                                            dependencies,
+                                                                            manifest_scf.core_paragraph->overrides,
+                                                                            toplevel,
+                                                                            host_triplet)
+                                    .value_or_exit(VCPKG_LINE_INFO);
 
             for (InstallPlanAction& action : install_plan.install_actions)
             {
