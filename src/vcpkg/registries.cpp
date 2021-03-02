@@ -19,6 +19,7 @@ namespace
 
     using Baseline = std::map<std::string, VersionT, std::less<>>;
 
+    static const fs::path registry_default_ports_dir_name = fs::u8path("ports");
     static const fs::path registry_versions_dir_name = fs::u8path("versions");
 
     // this class is an implementation detail of `BuiltinRegistryEntry`;
@@ -656,7 +657,12 @@ namespace
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
-        return paths.git_checkout_object_from_remote_registry(git_tree);
+        const auto& maybe_path = paths.git_checkout_object_from_remote_registry(git_tree);
+        if (auto root = maybe_path.get())
+        {
+            return *root / registry_default_ports_dir_name / port_name;
+        }
+        return maybe_path;
     }
     // } GitRegistryEntry::RegistryEntry
 
