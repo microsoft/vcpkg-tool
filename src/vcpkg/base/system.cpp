@@ -64,7 +64,8 @@ namespace vcpkg
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(__APPLE__)
         // check for rosetta 2 emulation
-        // see docs: https://developer.apple.com/documentation/apple_silicon/about_the_rosetta_translation_environment#3616845
+        // see docs:
+        // https://developer.apple.com/documentation/apple_silicon/about_the_rosetta_translation_environment#3616845
         int is_translated = 0;
         size_t size = sizeof is_translated;
         if (sysctlbyname("sysctl.proc_translated", &is_translated, &size, nullptr, 0) == -1)
