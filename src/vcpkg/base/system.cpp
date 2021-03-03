@@ -6,14 +6,11 @@
 
 #include <ctime>
 
-using namespace vcpkg::System;
-
 #if defined(__APPLE__)
-extern "C"
-{
-    int sysctlbyname(const char*, void*, size_t*, void*, size_t);
-}
+#include <sys/sysctl.h>
 #endif
+
+using namespace vcpkg::System;
 
 namespace vcpkg
 {
