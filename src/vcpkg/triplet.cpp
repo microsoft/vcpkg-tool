@@ -99,11 +99,12 @@ namespace vcpkg
 #elif defined(__GLIBC__)
         switch (host_proc)
         {
-            case System::CPUArchitecture::ARM64: return Triplet::from_canonical_name("arm64-linux");
+            case System::CPUArchitecture::X64: return Triplet::from_canonical_name("x64-linux");
             case System::CPUArchitecture::ARM: return Triplet::from_canonical_name("arm-linux");
+            case System::CPUArchitecture::ARM64: return Triplet::from_canonical_name("arm64-linux");
             case System::CPUArchitecture::S390X: return Triplet::from_canonical_name("s390x-linux");
             case System::CPUArchitecture::PPC64LE: return Triplet::from_canonical_name("ppc64le-linux");
-            case System::CPUArchitecture::X64: return Triplet::from_canonical_name("x64-linux");
+            default: return Triplet::from_canonical_name("x64-linux");
         }
 #else
         return Triplet::from_canonical_name("x64-linux-musl");
