@@ -75,8 +75,8 @@ namespace vcpkg
 
     static Triplet system_triplet()
     {
-#if defined(_WIN32)
         auto host_proc = System::get_host_processor();
+#if defined(_WIN32)
         switch (host_proc)
         {
             case System::CPUArchitecture::X86: return Triplet::from_canonical_name("x86-windows");
@@ -86,7 +86,12 @@ namespace vcpkg
             default: return Triplet::from_canonical_name("x86-windows");
         }
 #elif defined(__APPLE__)
-        return Triplet::from_canonical_name("x64-osx");
+        switch (host_proc)
+        {
+            case System::CPUArchitecture::X64: return Triplet::from_canonical_name("x64-osx");
+            case System::CPUArchitecture::ARM64: return Triplet::from_canonical_name("arm64-osx");
+            default: return Triplet::from_canonical_name("x64-osx");
+        }
 #elif defined(__FreeBSD__)
         return Triplet::from_canonical_name("x64-freebsd");
 #elif defined(__OpenBSD__)
