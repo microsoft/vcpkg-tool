@@ -684,6 +684,7 @@ namespace vcpkg::Build
             {"_VCPKG_DOWNLOAD_TOOL", to_string(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
             {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
+            {"VCPKG_MANIFEST_MODE", args.manifest_root_dir ? "1" : "0"},
         };
 
         for (auto cmake_arg : args.cmake_args)
