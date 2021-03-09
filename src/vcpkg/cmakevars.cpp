@@ -75,9 +75,11 @@ namespace vcpkg::CMakeVars
                                                       const std::map<Triplet, int>& emitted_triplets)
     {
         const auto& fs = paths.get_filesystem();
-        std::string extraction_file("macro(vcpkg_triplet_file VCPKG_TRIPLET_ID)\n");
+        std::string extraction_file;
 
         Strings::append(extraction_file,
+                        "cmake_minimum_required(VERSION 3.5)\n"
+                        "macro(vcpkg_triplet_file VCPKG_TRIPLET_ID)\n",
                         "set(_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE \"${CMAKE_CURRENT_LIST_FILE}\")\n");
 
         for (auto&& p : emitted_triplets)
