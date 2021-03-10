@@ -1158,14 +1158,6 @@ namespace vcpkg
             builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
         }
 
-        if (!default_registry_is_builtin || registries_.size() != 0)
-        {
-            System::print2(System::Color::warning,
-                           "Warning: when using the registries feature, one should not use `\"builtin-baseline\"` "
-                           "to set the baseline.\n",
-                           "    Instead, use the \"baseline\" field of the registry.\n");
-        }
-
         for (auto& reg : registries_)
         {
             if (auto builtin_registry = dynamic_cast<BuiltinRegistry*>(reg.implementation_.get()))
