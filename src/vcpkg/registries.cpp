@@ -1155,14 +1155,20 @@ namespace vcpkg
         if (auto builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
         {
             default_registry_is_builtin = true;
-            builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
+            if (builtin_registry->m_baseline_identifier.empty())
+            {
+                builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
+            }
         }
 
         for (auto& reg : registries_)
         {
             if (auto builtin_registry = dynamic_cast<BuiltinRegistry*>(reg.implementation_.get()))
             {
-                builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
+                if (builtin_registry->m_baseline_identifier.empty())
+                {
+                    builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
+                }
             }
         }
     }
