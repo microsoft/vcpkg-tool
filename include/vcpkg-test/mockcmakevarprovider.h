@@ -19,11 +19,13 @@ namespace vcpkg::Test
         }
 
         void load_tag_vars(Span<const FullPackageSpec> specs,
-                           const PortFileProvider::PortFileProvider& port_provider) const override
+                           const PortFileProvider::PortFileProvider& port_provider,
+                           Triplet host_triplet) const override
         {
             for (auto&& spec : specs)
                 tag_vars.emplace(spec.package_spec, SMap{});
             (void)(port_provider);
+            (void)(host_triplet);
         }
 
         Optional<const std::unordered_map<std::string, std::string>&> get_generic_triplet_vars(

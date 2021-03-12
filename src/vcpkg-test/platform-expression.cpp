@@ -20,6 +20,16 @@ TEST_CASE ("platform-expression-identifier", "[platform-expression]")
     CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
     CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
     CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
+
+    m_expr = parse_expr("native");
+    CHECK(expr.evaluate({{"Z_VCPKG_IS_NATIVE", "1"}}));
+    CHECK_FALSE(expr.evaluate({{"Z_VCPKG_IS_NATIVE", "0"}}));
+
+    m_expr = parse_expr("staticcrt");
+    CHECK(expr.evaluate({{"VCPKG_CRT_LINKAGE", "static"}, {"VCPKG_LIBRARY_LINKAGE", "static"}}));
+    CHECK(expr.evaluate({{"VCPKG_CRT_LINKAGE", "static"}, {"VCPKG_LIBRARY_LINKAGE", "dynamic"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CRT_LINKAGE", "dynamic"}, {"VCPKG_LIBRARY_LINKAGE", "static"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CRT_LINKAGE", "dynamic"}, {"VCPKG_LIBRARY_LINKAGE", "dynamic"}}));
 }
 
 TEST_CASE ("platform-expression-not", "[platform-expression]")
