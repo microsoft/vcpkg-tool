@@ -279,7 +279,8 @@ endmacro()
         for (const auto& spec_abi_setting : spec_abi_settings)
         {
             const FullPackageSpec& spec = *spec_abi_setting.first;
-            PlatformExpression::Context ctxt{std::make_move_iterator(var_list_itr->begin()), std::make_move_iterator(var_list_itr->end())};
+            PlatformExpression::Context ctxt{std::make_move_iterator(var_list_itr->begin()),
+                                             std::make_move_iterator(var_list_itr->end())};
             ++var_list_itr;
 
             ctxt.emplace("Z_VCPKG_IS_NATIVE", host_triplet == spec.package_spec.triplet() ? "1" : "0");

@@ -70,8 +70,7 @@ namespace vcpkg::Commands
                 }
                 else
                 {
-                    System::printf(
-                        "port %s is not supported (supports: \"%s\")\n", full_port_name(p), p.supports_expr);
+                    System::printf("port %s is not supported (supports: \"%s\")\n", full_port_name(p), p.supports_expr);
                 }
 
                 return;
@@ -137,7 +136,8 @@ namespace vcpkg::Commands
             for (const auto& action : action_plan.install_actions)
             {
                 const auto& spec = action.spec;
-                const auto& supports_expression = action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).source_control_file->core_paragraph->supports_expression;
+                const auto& supports_expression = action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO)
+                                                      .source_control_file->core_paragraph->supports_expression;
 
                 PlatformExpression::Context context = cmake_vars->get_tag_vars(spec).value_or_exit(VCPKG_LINE_INFO);
 
@@ -171,8 +171,7 @@ namespace vcpkg::Commands
                 Json::Object& obj = json_to_print.push_back(Json::Object{});
                 obj.insert("port", to_object(user_port));
                 obj.insert("top-level-support", Json::Value::boolean(user_supported));
-                obj.insert("is-supported",
-                           Json::Value::boolean(user_supported && dependencies_not_supported.empty()));
+                obj.insert("is-supported", Json::Value::boolean(user_supported && dependencies_not_supported.empty()));
                 if (!dependencies_not_supported.empty())
                 {
                     Json::Array& deps = obj.insert("dependencies-not-supported", Json::Array{});
