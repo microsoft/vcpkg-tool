@@ -28,10 +28,12 @@ namespace vcpkg::CMakeVars
         virtual void load_dep_info_vars(Span<const PackageSpec> specs) const = 0;
 
         virtual void load_tag_vars(Span<const FullPackageSpec> specs,
-                                   const PortFileProvider::PortFileProvider& port_provider) const = 0;
+                                   const PortFileProvider::PortFileProvider& port_provider,
+                                   Triplet host_triplet) const = 0;
 
         void load_tag_vars(const vcpkg::Dependencies::ActionPlan& action_plan,
-                           const PortFileProvider::PortFileProvider& port_provider) const;
+                           const PortFileProvider::PortFileProvider& port_provider,
+                           Triplet host_triplet) const;
     };
 
     std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const vcpkg::VcpkgPaths& paths);

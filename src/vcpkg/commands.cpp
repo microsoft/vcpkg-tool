@@ -5,6 +5,7 @@
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.buildexternal.h>
 #include <vcpkg/commands.cache.h>
+#include <vcpkg/commands.check-support.h>
 #include <vcpkg/commands.ci.h>
 #include <vcpkg/commands.ciclean.h>
 #include <vcpkg/commands.civerifyversions.h>
@@ -116,6 +117,7 @@ namespace vcpkg::Commands
         static const BuildExternal::BuildExternalCommand build_external{};
         static const Export::ExportCommand export_command{};
         static const DependInfo::DependInfoCommand depend_info{};
+        static const CheckSupport::CheckSupportCommand check_support{};
 
         static std::vector<PackageNameAndFunction<const TripletCommand*>> t = {
             {"install", &install},
@@ -128,6 +130,7 @@ namespace vcpkg::Commands
             {"build-external", &build_external},
             {"export", &export_command},
             {"depend-info", &depend_info},
+            {"x-check-support", &check_support},
         };
         return t;
     }

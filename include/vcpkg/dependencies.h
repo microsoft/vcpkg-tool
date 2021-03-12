@@ -163,7 +163,7 @@ namespace vcpkg::Dependencies
     /// <param name="status_db">Status of installed packages in the current environment.</param>
     ActionPlan create_feature_install_plan(const PortFileProvider::PortFileProvider& provider,
                                            const CMakeVars::CMakeVarProvider& var_provider,
-                                           const std::vector<FullPackageSpec>& specs,
+                                           View<FullPackageSpec> specs,
                                            const StatusParagraphs& status_db,
                                            const CreateInstallPlanOptions& options = {Triplet{}});
 

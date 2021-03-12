@@ -33,6 +33,8 @@ namespace vcpkg::PlatformExpression
 
         static_link,
         static_crt,
+
+        native, // HOST_TRIPLET == TARGET_TRIPLET
     };
 
     static Identifier string2identifier(StringView name)
@@ -52,7 +54,8 @@ namespace vcpkg::PlatformExpression
             {"emscripten", Identifier::emscripten},
             {"ios", Identifier::ios},
             {"static", Identifier::static_link},
-            {"staticcrt", Identifier::static_link},
+            {"staticcrt", Identifier::static_crt},
+            {"native", Identifier::native},
         };
 
         auto id_pair = id_map.find(name);
@@ -401,6 +404,16 @@ namespace vcpkg::PlatformExpression
                         case Identifier::static_link:
                             return true_if_exists_and_equal("VCPKG_LIBRARY_LINKAGE", "static");
                         case Identifier::static_crt: return true_if_exists_and_equal("VCPKG_CRT_LINKAGE", "static");
+                        case Identifier::native:
+                        {
+                            auto is_native = context.find("Z_VCPKG_IS_NATIVE");
+                            if (is_native == context.end())
+                            {
+                                Checks::unreachable(VCPKG_LINE_INFO);
+                            }
+
+                            return is_native->second == "1";
+                        }
                         default: Checks::unreachable(VCPKG_LINE_INFO);
                     }
                 }
