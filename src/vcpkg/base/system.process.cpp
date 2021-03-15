@@ -313,6 +313,8 @@ namespace vcpkg
             L"CUDA_PATH_V10_1",
             L"CUDA_PATH_V10_2",
             L"CUDA_PATH_V11_0",
+            L"CUDA_PATH_V11_1",
+            L"CUDA_PATH_V11_2",
             L"CUDA_TOOLKIT_ROOT_DIR",
             // Environmental variable generated automatically by CUDA after installation
             L"NVCUDASAMPLES_ROOT",
