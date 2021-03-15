@@ -75,40 +75,22 @@ namespace vcpkg
 
     static Triplet system_triplet()
     {
-        auto host_proc = System::get_host_processor();
 #if defined(_WIN32)
-        switch (host_proc)
-        {
-            case System::CPUArchitecture::X86: return Triplet::from_canonical_name("x86-windows");
-            case System::CPUArchitecture::X64: return Triplet::from_canonical_name("x64-windows");
-            case System::CPUArchitecture::ARM: return Triplet::from_canonical_name("arm-windows");
-            case System::CPUArchitecture::ARM64: return Triplet::from_canonical_name("arm64-windows");
-            default: return Triplet::from_canonical_name("x86-windows");
-        }
+        StringLiteral operating_system = "windows";
 #elif defined(__APPLE__)
-        switch (host_proc)
-        {
-            case System::CPUArchitecture::X64: return Triplet::from_canonical_name("x64-osx");
-            case System::CPUArchitecture::ARM64: return Triplet::from_canonical_name("arm64-osx");
-            default: return Triplet::from_canonical_name("x64-osx");
-        }
+        StringLiteral operating_system = "osx";
 #elif defined(__FreeBSD__)
-        return Triplet::from_canonical_name("x64-freebsd");
+        StringLiteral operating_system = "freebsd";
 #elif defined(__OpenBSD__)
-        return Triplet::from_canonical_name("x64-openbsd");
+        StringLiteral operating_system = "openbsd";
 #elif defined(__GLIBC__)
-        switch (host_proc)
-        {
-            case System::CPUArchitecture::X64: return Triplet::from_canonical_name("x64-linux");
-            case System::CPUArchitecture::ARM: return Triplet::from_canonical_name("arm-linux");
-            case System::CPUArchitecture::ARM64: return Triplet::from_canonical_name("arm64-linux");
-            case System::CPUArchitecture::S390X: return Triplet::from_canonical_name("s390x-linux");
-            case System::CPUArchitecture::PPC64LE: return Triplet::from_canonical_name("ppc64le-linux");
-            default: return Triplet::from_canonical_name("x64-linux");
-        }
+        StringLiteral operating_system = "linux";
 #else
-        return Triplet::from_canonical_name("x64-linux-musl");
+        StringLiteral operating_system = "linux-musl";
 #endif
+        auto host_proc = System::get_host_processor();
+        auto canonical_name = Strings::format("%s-%s", to_zstring_view(host_proc), operating_system);
+        return Triplet::from_canonical_name(std::move(canonical_name));
     }
 
     Triplet default_triplet(const VcpkgCmdArguments& args)
