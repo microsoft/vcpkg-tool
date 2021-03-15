@@ -89,61 +89,27 @@ namespace
                                     const std::map<std::string, VersionT, std::less<>>& baseline_map,
                                     const fs::path& output_path)
     {
-        auto backup_path = fs::u8path(Strings::concat(fs::u8string(output_path), ".backup"));
-        if (fs.exists(output_path))
-        {
-            fs.rename(output_path, backup_path, VCPKG_LINE_INFO);
-            fs.remove(output_path, VCPKG_LINE_INFO);
-        }
-
+        auto new_path = output_path;
+        new_path += fs::u8path(".tmp");
         std::error_code ec;
-        fs.write_contents(
-            output_path, Json::stringify(serialize_baseline(baseline_map), Json::JsonStyle::with_spaces(2)), ec);
-        if (ec)
-        {
-            System::printf(
-                System::Color::error, "Error: Couldn't write baseline file to %s.", fs::u8string(output_path));
-            if (fs.exists(backup_path))
-            {
-                fs.rename(backup_path, output_path, VCPKG_LINE_INFO);
-            }
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        if (fs.exists(backup_path))
-        {
-            fs.remove(backup_path, VCPKG_LINE_INFO);
-        }
+        fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
+        fs.write_contents(new_path,
+                          Json::stringify(serialize_baseline(baseline_map), Json::JsonStyle::with_spaces(2)),
+                          VCPKG_LINE_INFO);
+        fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
     static void write_versions_file(Files::Filesystem& fs,
                                     const std::vector<VersionGitTree>& versions,
                                     const fs::path& output_path)
     {
-        auto backup_path = fs::u8path(Strings::concat(fs::u8string(output_path), ".backup"));
-        if (fs.exists(output_path))
-        {
-            fs.rename(output_path, backup_path, VCPKG_LINE_INFO);
-            fs.remove(output_path, VCPKG_LINE_INFO);
-        }
-
+        auto new_path = output_path;
+        new_path += fs::u8path(".tmp");
         std::error_code ec;
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
         fs.write_contents(
-            output_path, Json::stringify(serialize_versions(versions), Json::JsonStyle::with_spaces(2)), ec);
-        if (ec)
-        {
-            System::printf(
-                System::Color::error, "Error: Couldn't write versions file to %s.", fs::u8string(output_path));
-            if (fs.exists(backup_path))
-            {
-                fs.rename(backup_path, output_path, VCPKG_LINE_INFO);
-            }
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        if (fs.exists(backup_path))
-        {
-            fs.remove(backup_path, VCPKG_LINE_INFO);
-        }
+            new_path, Json::stringify(serialize_versions(versions), Json::JsonStyle::with_spaces(2)), VCPKG_LINE_INFO);
+        fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
     static void update_baseline_version(const VcpkgPaths& paths,
