@@ -93,8 +93,9 @@ namespace
         new_path += fs::u8path(".tmp");
         std::error_code ec;
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
-        fs.write_contents(
-            new_path, Json::stringify(serialize_baseline(baseline_map), Json::JsonStyle::with_spaces(2)), VCPKG_LINE_INFO);
+        fs.write_contents(new_path,
+                          Json::stringify(serialize_baseline(baseline_map), Json::JsonStyle::with_spaces(2)),
+                          VCPKG_LINE_INFO);
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
