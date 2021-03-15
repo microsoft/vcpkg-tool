@@ -483,6 +483,8 @@ namespace vcpkg::Metrics
         // TODO: convert to cmd_execute_background or something.
         auto curl = System::Command("curl")
                         .string_arg("https://dc.services.visualstudio.com/v2/track")
+                        .string_arg("--max-time")
+                        .string_arg("3")
                         .string_arg("-H")
                         .string_arg("Content-Type: application/json")
                         .string_arg("-X")
