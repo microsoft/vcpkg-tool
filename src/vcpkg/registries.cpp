@@ -1150,14 +1150,20 @@ namespace vcpkg
 
     void RegistrySet::experimental_set_builtin_registry_baseline(StringView baseline) const
     {
-        // to check if we should warn
-        bool default_registry_is_builtin = false;
+        static const StringLiteral warning_message = R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
+    (only one of these should be used; the baseline from vcpkg-configuration.json will be used))";
+        bool already_warned = false;
+
         if (auto builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
         {
-            default_registry_is_builtin = true;
             if (builtin_registry->m_baseline_identifier.empty())
             {
                 builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
+            }
+            else
+            {
+                System::print2(System::Color::warning, warning_message);
+                already_warned = true;
             }
         }
 
@@ -1168,6 +1174,11 @@ namespace vcpkg
                 if (builtin_registry->m_baseline_identifier.empty())
                 {
                     builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
+                }
+                else if (!already_warned)
+                {
+                    System::print2(System::Color::warning, warning_message);
+                    already_warned = true;
                 }
             }
         }
