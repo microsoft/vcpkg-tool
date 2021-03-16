@@ -12,24 +12,39 @@ static vcpkg::ExpectedS<Expr> parse_expr(StringView s)
 
 TEST_CASE ("platform-expression-identifier", "[platform-expression]")
 {
-    auto m_expr = parse_expr("windows");
-    REQUIRE(m_expr);
-    auto& expr = *m_expr.get();
+    auto m_windows = parse_expr("windows");
+    REQUIRE(m_windows);
+    auto m_native = parse_expr("native");
+    REQUIRE(m_native);
+    auto m_staticlink = parse_expr("static");
+    REQUIRE(m_staticlink);
+    auto m_staticcrt = parse_expr("staticcrt");
+    REQUIRE(m_staticcrt);
 
-    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
-    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
-    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
-    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
+    auto& windows = *m_windows.get();
+    auto& native = *m_native.get();
+    auto& staticlink = *m_staticlink.get();
+    auto& staticcrt = *m_staticcrt.get();
 
-    m_expr = parse_expr("native");
-    CHECK(expr.evaluate({{"Z_VCPKG_IS_NATIVE", "1"}}));
-    CHECK_FALSE(expr.evaluate({{"Z_VCPKG_IS_NATIVE", "0"}}));
+    CHECK(windows.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK(windows.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
+    CHECK_FALSE(windows.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK_FALSE(windows.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
 
-    m_expr = parse_expr("staticcrt");
-    CHECK(expr.evaluate({{"VCPKG_CRT_LINKAGE", "static"}, {"VCPKG_LIBRARY_LINKAGE", "static"}}));
-    CHECK(expr.evaluate({{"VCPKG_CRT_LINKAGE", "static"}, {"VCPKG_LIBRARY_LINKAGE", "dynamic"}}));
-    CHECK_FALSE(expr.evaluate({{"VCPKG_CRT_LINKAGE", "dynamic"}, {"VCPKG_LIBRARY_LINKAGE", "static"}}));
-    CHECK_FALSE(expr.evaluate({{"VCPKG_CRT_LINKAGE", "dynamic"}, {"VCPKG_LIBRARY_LINKAGE", "dynamic"}}));
+
+    CHECK(native.evaluate({{"Z_VCPKG_IS_NATIVE", "1"}}));
+    CHECK_FALSE(native.evaluate({{"Z_VCPKG_IS_NATIVE", "0"}}));
+    CHECK_FALSE(native.evaluate({}));
+
+    CHECK(staticlink.evaluate({{"VCPKG_LIBRARY_LINKAGE", "static"}, {"VCPKG_CRT_LINKAGE", "static"}}));
+    CHECK(staticlink.evaluate({{"VCPKG_LIBRARY_LINKAGE", "static"}, {"VCPKG_CRT_LINKAGE", "dynamic"}}));
+    CHECK_FALSE(staticlink.evaluate({{"VCPKG_LIBRARY_LINKAGE", "dynamic"}, {"VCPKG_CRT_LINKAGE", "static"}}));
+    CHECK_FALSE(staticlink.evaluate({{"VCPKG_LIBRARY_LINKAGE", "dynnamic"}, {"VCPKG_CRT_LINKAGE", "dynamic"}}));
+
+    CHECK(staticcrt.evaluate({{"VCPKG_CRT_LINKAGE", "static"}, {"VCPKG_LIBRARY_LINKAGE", "static"}}));
+    CHECK(staticcrt.evaluate({{"VCPKG_CRT_LINKAGE", "static"}, {"VCPKG_LIBRARY_LINKAGE", "dynamic"}}));
+    CHECK_FALSE(staticcrt.evaluate({{"VCPKG_CRT_LINKAGE", "dynamic"}, {"VCPKG_LIBRARY_LINKAGE", "static"}}));
+    CHECK_FALSE(staticcrt.evaluate({{"VCPKG_CRT_LINKAGE", "dynamic"}, {"VCPKG_LIBRARY_LINKAGE", "dynamic"}}));
 }
 
 TEST_CASE ("platform-expression-not", "[platform-expression]")
