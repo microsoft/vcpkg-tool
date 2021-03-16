@@ -3,6 +3,7 @@
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/system.debug.h>
 
+#include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
@@ -45,6 +46,11 @@ namespace
         {
         }
 
+        StringLiteral kind() const override
+        {
+            return "git";
+        }
+
         std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths&, StringView) const override;
 
         void get_all_port_names(std::vector<std::string>&, const VcpkgPaths&) const override;
@@ -73,6 +79,7 @@ namespace
                                                                                     registry_versions_dir_name);
                 if (!maybe_tree)
                 {
+                    Metrics::g_metrics.lock()->track_property("registries-error-no-versions-at-commit", "defined");
                     Checks::exit_with_message(
                         VCPKG_LINE_INFO,
                         "Error: could not find the git tree for `versions` in repo `%s` at commit `%s`: %s",
@@ -84,7 +91,7 @@ namespace
                 if (!maybe_path)
                 {
                     Checks::exit_with_message(VCPKG_LINE_INFO,
-                                              "Error: failed to check out `port_versions` from repo %s: %s",
+                                              "Error: failed to check out `versions` from repo %s: %s",
                                               m_repo,
                                               maybe_path.error());
                 }
@@ -158,6 +165,11 @@ namespace
             Debug::print("BuiltinRegistry initialized with: \"", m_baseline_identifier, "\"\n");
         }
 
+        StringLiteral kind() const override
+        {
+            return "builtin";
+        }
+
         std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths& paths, StringView port_name) const override;
 
         void get_all_port_names(std::vector<std::string>&, const VcpkgPaths&) const override;
@@ -175,6 +187,11 @@ namespace
         FilesystemRegistry(fs::path&& path, std::string&& baseline)
             : m_path(std::move(path)), m_baseline_identifier(baseline)
         {
+        }
+
+        StringLiteral kind() const override
+        {
+            return "filesystem";
         }
 
         std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths&, StringView) const override;
@@ -524,6 +541,7 @@ namespace
 
             if (m_baseline_identifier == "default")
             {
+                Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
                 Checks::exit_with_message(
                     VCPKG_LINE_INFO,
                     "Couldn't find explicitly specified baseline `\"default\"` in the baseline file.",
@@ -534,6 +552,7 @@ namespace
             auto explicit_hash = paths.git_fetch_from_remote_registry(m_repo, m_baseline_identifier);
             if (!explicit_hash.has_value())
             {
+                Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
                 Checks::exit_with_message(
                     VCPKG_LINE_INFO,
                     "Error: Couldn't find explicitly specified baseline `\"%s\"` in the baseline file for repo %s, "
@@ -546,6 +565,7 @@ namespace
             auto maybe_contents = paths.git_show_from_remote_registry(*explicit_hash.get(), path_to_baseline);
             if (!maybe_contents.has_value())
             {
+                Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
                 Checks::exit_with_message(
                     VCPKG_LINE_INFO,
                     "Error: Couldn't find explicitly specified baseline `\"%s\"` in the baseline file for repo %s, "
@@ -568,6 +588,7 @@ namespace
             }
             else
             {
+                Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
                 Checks::exit_maybe_upgrade(
                     VCPKG_LINE_INFO,
                     "Couldn't find explicitly specified baseline `\"%s\"` in the baseline file for repo %s, "
