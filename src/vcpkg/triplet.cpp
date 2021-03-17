@@ -75,7 +75,17 @@ namespace vcpkg
 
     static Triplet system_triplet()
     {
-#if defined(_WIN32)
+#if defined(__MINGW32__)
+        auto host_proc = System::get_host_processor();
+        switch (host_proc)
+        {
+            case System::CPUArchitecture::X86: return Triplet::from_canonical_name("x86-mingw-dynamic");
+            case System::CPUArchitecture::X64: return Triplet::from_canonical_name("x64-mingw-dynamic");
+            case System::CPUArchitecture::ARM: return Triplet::from_canonical_name("arm-mingw-dynamic");
+            case System::CPUArchitecture::ARM64: return Triplet::from_canonical_name("arm64-mingw-dynamic");
+            default: return Triplet::from_canonical_name("x86-mingw-dynamic");
+        }
+#elif defined(_WIN32)
         auto host_proc = System::get_host_processor();
         switch (host_proc)
         {
@@ -115,7 +125,7 @@ namespace vcpkg
         {
             return Triplet::from_canonical_name(std::string(*args.triplet));
         }
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(__MINGW32__)
         return Triplet::from_canonical_name("x86-windows");
 #else
         return system_triplet();
