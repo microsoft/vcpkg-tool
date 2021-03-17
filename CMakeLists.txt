@@ -190,7 +190,7 @@ endif()
 # === Target: tls12-download ===
 
 set(TLS12_DOWNLOAD_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c)
-if(WIN32)
+if(WIN32 AND NOT MINGW)
     add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES})
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
