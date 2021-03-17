@@ -1150,7 +1150,8 @@ namespace vcpkg
 
     void RegistrySet::experimental_set_builtin_registry_baseline(StringView baseline) const
     {
-        static const StringLiteral warning_message = R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
+        static const StringLiteral warning_message =
+            R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
     (only one of these should be used; the baseline from vcpkg-configuration.json will be used))";
         bool already_warned = false;
 
