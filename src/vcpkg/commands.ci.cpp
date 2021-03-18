@@ -105,7 +105,7 @@ namespace vcpkg::Commands::CI
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string("ci x64-windows"),
         1,
-        SIZE_MAX,
+        1,
         {CI_SWITCHES, CI_SETTINGS},
         nullptr,
     };
@@ -429,6 +429,7 @@ namespace vcpkg::Commands::CI
                           Triplet default_triplet,
                           Triplet host_triplet)
     {
+        (void)default_triplet;
         std::unique_ptr<IBinaryProvider> binaryproviderStorage;
         if (args.binary_caching_enabled())
         {
@@ -451,13 +452,12 @@ namespace vcpkg::Commands::CI
 
         const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
-        std::vector<Triplet> triplets = Util::fmap(
-            args.command_arguments, [](std::string s) { return Triplet::from_canonical_name(std::move(s)); });
-
-        if (triplets.empty())
+        if (args.command_arguments.size() != 1)
         {
-            triplets.push_back(default_triplet);
+            Checks::unreachable(VCPKG_LINE_INFO); // this should not be possible at this place
         }
+
+        Triplet target_triplet = Triplet::from_canonical_name(std::string(args.command_arguments[0]));
 
         auto& filesystem = paths.get_filesystem();
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
@@ -489,110 +489,109 @@ namespace vcpkg::Commands::CI
             Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         std::vector<TripletAndSummary> results;
         auto timer = Chrono::ElapsedTimer::create_started();
-        for (Triplet triplet : triplets)
+
+        Input::check_triplet(target_triplet, paths);
+
+        xunitTestResults.push_collection(target_triplet.canonical_name());
+
+        std::vector<PackageSpec> specs = PackageSpec::to_package_specs(all_ports, target_triplet);
+        // Install the default features for every package
+        auto all_default_full_specs = Util::fmap(specs, [&](auto& spec) {
+            std::vector<std::string> default_features =
+                provider.get_control_file(spec.name()).get()->source_control_file->core_paragraph->default_features;
+            default_features.emplace_back("core");
+            return FullPackageSpec{spec, std::move(default_features)};
+        });
+
+        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet);
+
+        struct RandomizerInstance : Graphs::Randomizer
         {
-            Input::check_triplet(triplet, paths);
-
-            xunitTestResults.push_collection(triplet.canonical_name());
-
-            std::vector<PackageSpec> specs = PackageSpec::to_package_specs(all_ports, triplet);
-            // Install the default features for every package
-            auto all_default_full_specs = Util::fmap(specs, [&](auto& spec) {
-                std::vector<std::string> default_features =
-                    provider.get_control_file(spec.name()).get()->source_control_file->core_paragraph->default_features;
-                default_features.emplace_back("core");
-                return FullPackageSpec{spec, std::move(default_features)};
-            });
-
-            Dependencies::CreateInstallPlanOptions serialize_options(host_triplet);
-
-            struct RandomizerInstance : Graphs::Randomizer
+            virtual int random(int i) override
             {
-                virtual int random(int i) override
-                {
-                    if (i <= 1) return 0;
-                    std::uniform_int_distribution<int> d(0, i - 1);
-                    return d(e);
-                }
-
-                std::random_device e;
-            } randomizer_instance;
-
-            if (Util::Sets::contains(options.switches, OPTION_RANDOMIZE))
-            {
-                serialize_options.randomizer = &randomizer_instance;
+                if (i <= 1) return 0;
+                std::uniform_int_distribution<int> d(0, i - 1);
+                return d(e);
             }
 
-            auto split_specs = find_unknown_ports_for_ci(paths,
-                                                         exclusions_set,
-                                                         provider,
-                                                         var_provider,
-                                                         all_default_full_specs,
-                                                         binaryprovider,
-                                                         serialize_options,
-                                                         host_triplet);
+            std::random_device e;
+        } randomizer_instance;
 
-            auto& action_plan = split_specs->plan;
+        if (Util::Sets::contains(options.switches, OPTION_RANDOMIZE))
+        {
+            serialize_options.randomizer = &randomizer_instance;
+        }
 
-            for (auto&& action : action_plan.install_actions)
+        auto split_specs = find_unknown_ports_for_ci(paths,
+                                                     exclusions_set,
+                                                     provider,
+                                                     var_provider,
+                                                     all_default_full_specs,
+                                                     binaryprovider,
+                                                     serialize_options,
+                                                     host_triplet);
+
+        auto& action_plan = split_specs->plan;
+
+        for (auto&& action : action_plan.install_actions)
+        {
+            if (action.spec.triplet() == target_triplet && Util::Sets::contains(exclusions_set, action.spec.name()))
             {
-                if (Util::Sets::contains(exclusions_set, action.spec.name()))
-                {
-                    action.plan_type = InstallPlanType::EXCLUDED;
-                }
-                else
-                {
-                    action.build_options = vcpkg::Build::backcompat_prohibiting_package_options;
-                }
-            }
-
-            if (is_dry_run)
-            {
-                Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+                action.plan_type = InstallPlanType::EXCLUDED;
             }
             else
             {
-                auto collection_timer = Chrono::ElapsedTimer::create_started();
-                auto summary = Install::perform(args,
-                                                action_plan,
-                                                Install::KeepGoing::YES,
-                                                paths,
-                                                status_db,
-                                                binaryprovider,
-                                                build_logs_recorder,
-                                                var_provider);
-                auto collection_time_elapsed = collection_timer.elapsed();
-
-                // Adding results for ports that were built or pulled from an archive
-                for (auto&& result : summary.results)
-                {
-                    auto& port_features = split_specs->features.at(result.spec);
-                    split_specs->known.erase(result.spec);
-                    xunitTestResults.add_test_results(result.spec.to_string(),
-                                                      result.build_result.code,
-                                                      result.timing,
-                                                      split_specs->abi_map.at(result.spec),
-                                                      port_features);
-                }
-
-                // Adding results for ports that were not built because they have known states
-                for (auto&& port : split_specs->known)
-                {
-                    auto& port_features = split_specs->features.at(port.first);
-                    xunitTestResults.add_test_results(port.first.to_string(),
-                                                      port.second,
-                                                      Chrono::ElapsedTime{},
-                                                      split_specs->abi_map.at(port.first),
-                                                      port_features);
-                }
-
-                all_known_results.emplace_back(std::move(split_specs->known));
-
-                results.push_back({triplet, std::move(summary)});
-
-                xunitTestResults.collection_time(collection_time_elapsed);
+                action.build_options = vcpkg::Build::backcompat_prohibiting_package_options;
             }
         }
+
+        if (is_dry_run)
+        {
+            Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+        }
+        else
+        {
+            auto collection_timer = Chrono::ElapsedTimer::create_started();
+            auto summary = Install::perform(args,
+                                            action_plan,
+                                            Install::KeepGoing::YES,
+                                            paths,
+                                            status_db,
+                                            binaryprovider,
+                                            build_logs_recorder,
+                                            var_provider);
+            auto collection_time_elapsed = collection_timer.elapsed();
+
+            // Adding results for ports that were built or pulled from an archive
+            for (auto&& result : summary.results)
+            {
+                auto& port_features = split_specs->features.at(result.spec);
+                split_specs->known.erase(result.spec);
+                xunitTestResults.add_test_results(result.spec.to_string(),
+                                                    result.build_result.code,
+                                                    result.timing,
+                                                    split_specs->abi_map.at(result.spec),
+                                                    port_features);
+            }
+
+            // Adding results for ports that were not built because they have known states
+            for (auto&& port : split_specs->known)
+            {
+                auto& port_features = split_specs->features.at(port.first);
+                xunitTestResults.add_test_results(port.first.to_string(),
+                                                    port.second,
+                                                    Chrono::ElapsedTime{},
+                                                    split_specs->abi_map.at(port.first),
+                                                    port_features);
+            }
+
+            all_known_results.emplace_back(std::move(split_specs->known));
+
+            results.push_back({target_triplet, std::move(summary)});
+
+            xunitTestResults.collection_time(collection_time_elapsed);
+        }
+
         xunitTestResults.assembly_time(timer.elapsed());
 
         for (auto&& result : results)
