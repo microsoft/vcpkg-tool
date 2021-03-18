@@ -1,9 +1,4 @@
-if(WIN32)
-# 3.16 for MSVC_RUNTIME_LIBRARY
-cmake_minimum_required(VERSION 3.16)
-else()
 cmake_minimum_required(VERSION 3.14)
-endif()
 
 # ===============
 # === Options ===
@@ -19,7 +14,6 @@ option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 
-
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
     "BUILD_TESTING" OFF)
 
@@ -28,44 +22,35 @@ if(DEFINE_DISABLE_METRICS OR VCPKG_DISABLE_METRICS)
         "file vcpkg.disable_metrics next to the binary.")
 endif()
 
-if(VCPKG_BUILD_TLS12_DOWNLOADER AND NOT WIN32)
-    message(FATAL_ERROR "The tls12-downloader binary is only supported on Windows.")
-endif()
+set(LANGUAGES "CXX")
+if(VCPKG_BUILD_TLS12_DOWNLOADER)
+    # 3.16 for MSVC_RUNTIME_LIBRARY
+    list(APPEND LANGUAGES "C")
+    cmake_minimum_required(VERSION 3.16)
+else()
 
-project(vcpkg C CXX)
+project(vcpkg
+    DESCRIPTION "vcpkg helps you manage C and C++ libraries on Windows, Linux and MacOS."
+    HOMEPAGE_URL "https://github.com/microsoft/vcpkg"
+    LANGUAGES ${LANGUAGES}
+)
 include(cmake/utilities.cmake)
 
 # =============
 # === Files ===
 # =============
 
-file(GLOB VCPKGLIB_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg/*.cpp"
-)
-file(GLOB VCPKGLIB_BASE_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg/base/*.cpp"
-)
-file(GLOB VCPKGLIB_INCLUDES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/vcpkg/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/vcpkg/fwd/*.h"
-)
-file(GLOB VCPKGLIB_BASE_INCLUDES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/vcpkg/base/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/vcpkg/base/fwd/*.h"
-)
+file(GLOB VCPKGLIB_SOURCES CONFIGURE_DEPENDS "src/vcpkg/*.cpp")
+file(GLOB VCPKGLIB_BASE_SOURCES CONFIGURE_DEPENDS "src/vcpkg/base/*.cpp")
+file(GLOB VCPKGLIB_INCLUDES CONFIGURE_DEPENDS "include/vcpkg/*.h" "include/vcpkg/fwd/*.h")
+file(GLOB VCPKGLIB_BASE_INCLUDES CONFIGURE_DEPENDS "include/vcpkg/base/*.h" "include/vcpkg/base/fwd/*.h")
 
 set(VCPKG_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.cpp")
 
-file(GLOB VCPKG_TEST_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-test/*.cpp"
-)
-file(GLOB VCPKG_TEST_INCLUDES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/vcpkg-test/*.h"
-)
+file(GLOB VCPKG_TEST_SOURCES CONFIGURE_DEPENDS "src/vcpkg-test/*.cpp")
+file(GLOB VCPKG_TEST_INCLUDES CONFIGURE_DEPENDS "include/vcpkg-test/*.h")
 
-file(GLOB VCPKG_FUZZ_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-fuzz/*.cpp"
-)
+file(GLOB VCPKG_FUZZ_SOURCES CONFIGURE_DEPENDS "src/vcpkg-fuzz/*.cpp")
 
 set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
 
@@ -151,6 +136,8 @@ if(VCPKG_CXXFS_LIBRARY)
     target_link_libraries(vcpkglib PRIVATE ${VCPKG_CXXFS_LIBRARY})
 endif()
 
+vcpkg_target_add_necessary_mingw_definitions(vcpkglib)
+
 if(MSVC)
     get_target_property(_srcs vcpkglib SOURCES)
 
@@ -164,17 +151,6 @@ if(MSVC)
     target_compile_options(vcpkglib PRIVATE /Yupch.h /FIpch.h /Zm200)
 else()
     target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
-endif()
-
-if (MINGW)
-    target_compile_definitions(vcpkglib
-        PUBLIC
-            UNICODE
-            _WIN32_WINNT=0x0601
-            WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY=4
-            __fastfail=exit
-    )
-    target_link_libraries(vcpkglib PUBLIC winhttp bcrypt version ole32 uuid)
 endif()
 
 # === Target: vcpkg ===
@@ -218,6 +194,7 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
     target_link_libraries(tls12-download winhttp)
+    vcpkg_target_add_necessary_mingw_definitions(tls12-download)
 endif()
 
 
