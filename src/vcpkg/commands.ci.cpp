@@ -568,10 +568,10 @@ namespace vcpkg::Commands::CI
                 auto& port_features = split_specs->features.at(result.spec);
                 split_specs->known.erase(result.spec);
                 xunitTestResults.add_test_results(result.spec.to_string(),
-                                                    result.build_result.code,
-                                                    result.timing,
-                                                    split_specs->abi_map.at(result.spec),
-                                                    port_features);
+                                                  result.build_result.code,
+                                                  result.timing,
+                                                  split_specs->abi_map.at(result.spec),
+                                                  port_features);
             }
 
             // Adding results for ports that were not built because they have known states
@@ -579,10 +579,10 @@ namespace vcpkg::Commands::CI
             {
                 auto& port_features = split_specs->features.at(port.first);
                 xunitTestResults.add_test_results(port.first.to_string(),
-                                                    port.second,
-                                                    Chrono::ElapsedTime{},
-                                                    split_specs->abi_map.at(port.first),
-                                                    port_features);
+                                                  port.second,
+                                                  Chrono::ElapsedTime{},
+                                                  split_specs->abi_map.at(port.first),
+                                                  port_features);
             }
 
             all_known_results.emplace_back(std::move(split_specs->known));
