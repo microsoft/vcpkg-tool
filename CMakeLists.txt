@@ -27,7 +27,7 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     # 3.16 for MSVC_RUNTIME_LIBRARY
     list(APPEND LANGUAGES "C")
     cmake_minimum_required(VERSION 3.16)
-else()
+endif()
 
 project(vcpkg
     DESCRIPTION "vcpkg helps you manage C and C++ libraries on Windows, Linux and MacOS."
@@ -136,8 +136,6 @@ if(VCPKG_CXXFS_LIBRARY)
     target_link_libraries(vcpkglib PRIVATE ${VCPKG_CXXFS_LIBRARY})
 endif()
 
-vcpkg_target_add_necessary_mingw_definitions(vcpkglib)
-
 if(MSVC)
     get_target_property(_srcs vcpkglib SOURCES)
 
@@ -151,6 +149,17 @@ if(MSVC)
     target_compile_options(vcpkglib PRIVATE /Yupch.h /FIpch.h /Zm200)
 else()
     target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
+endif()
+
+if(MINGW)
+    target_compile_definitions(vcpkglib
+        PUBLIC
+            UNICODE
+            _WIN32_WINNT=0x0601
+            WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY=4
+            __fastfail=exit
+    )
+    target_link_libraries(vcpkglib PUBLIC winhttp bcrypt version ole32 uuid)
 endif()
 
 # === Target: vcpkg ===
@@ -194,7 +203,6 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
     target_link_libraries(tls12-download winhttp)
-    vcpkg_target_add_necessary_mingw_definitions(tls12-download)
 endif()
 
 
@@ -218,5 +226,5 @@ if(CLANG_FORMAT)
 
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_FUZZ_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${TLS12_DOWNLOAD_SOURCES}
-        )
+    )
 endif()

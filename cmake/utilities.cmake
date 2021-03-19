@@ -248,16 +248,3 @@ function(vcpkg_target_add_warning_options TARGET)
         endif()
     endif()
 endfunction()
-
-function(vcpkg_target_add_necessary_mingw_definitions target)
-    if(MINGW)
-        target_compile_definitions("${target}"
-            PUBLIC
-                UNICODE
-                _WIN32_WINNT=0x0601
-                WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY=4
-                __fastfail=exit
-        )
-        target_link_libraries("${target}" PUBLIC winhttp bcrypt version ole32 uuid)
-    endif()
-endfunction()
