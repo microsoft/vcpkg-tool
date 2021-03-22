@@ -46,10 +46,7 @@ namespace
         {
         }
 
-        StringLiteral kind() const override
-        {
-            return "git";
-        }
+        StringLiteral kind() const override { return "git"; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths&, StringView) const override;
 
@@ -165,10 +162,7 @@ namespace
             Debug::print("BuiltinRegistry initialized with: \"", m_baseline_identifier, "\"\n");
         }
 
-        StringLiteral kind() const override
-        {
-            return "builtin";
-        }
+        StringLiteral kind() const override { return "builtin"; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths& paths, StringView port_name) const override;
 
@@ -189,10 +183,7 @@ namespace
         {
         }
 
-        StringLiteral kind() const override
-        {
-            return "filesystem";
-        }
+        StringLiteral kind() const override { return "filesystem"; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths&, StringView) const override;
 
