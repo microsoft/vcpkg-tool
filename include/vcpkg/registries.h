@@ -31,6 +31,8 @@ namespace vcpkg
 
     struct RegistryImplementation
     {
+        virtual StringLiteral kind() const = 0;
+
         // returns nullptr if the port doesn't exist
         virtual std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths& paths, StringView port_name) const = 0;
 

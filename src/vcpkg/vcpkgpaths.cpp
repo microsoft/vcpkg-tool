@@ -338,6 +338,33 @@ If you wish to silence this error and use classic mode, you can:
 
         auto config_file = load_configuration(filesystem, args, root, manifest_root_dir);
 
+        // metrics from configuration
+        {
+            auto default_registry = config_file.config.registry_set.default_registry();
+            auto other_registries = config_file.config.registry_set.registries();
+            auto metrics = Metrics::g_metrics.lock();
+
+            if (default_registry)
+            {
+                metrics->track_property("registries-default-registry-kind", default_registry->kind());
+            }
+            else
+            {
+                metrics->track_property("registries-default-registry-kind", "disabled");
+            }
+
+            if (other_registries.size() != 0)
+            {
+                std::vector<StringLiteral> registry_kinds;
+                for (const auto& reg : other_registries)
+                {
+                    registry_kinds.push_back(reg.implementation().kind());
+                }
+                Util::sort_unique_erase(registry_kinds);
+                metrics->track_property("registries-kinds-used", Strings::join(",", registry_kinds));
+            }
+        }
+
         config_root_dir = std::move(config_file.config_directory);
         m_pimpl->m_config = std::move(config_file.config);
 
