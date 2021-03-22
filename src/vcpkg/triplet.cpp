@@ -76,37 +76,21 @@ namespace vcpkg
     static Triplet system_triplet()
     {
 #if defined(_WIN32)
-        auto host_proc = System::get_host_processor();
-        switch (host_proc)
-        {
-            case System::CPUArchitecture::X86: return Triplet::from_canonical_name("x86-windows");
-            case System::CPUArchitecture::X64: return Triplet::from_canonical_name("x64-windows");
-            case System::CPUArchitecture::ARM: return Triplet::from_canonical_name("arm-windows");
-            case System::CPUArchitecture::ARM64: return Triplet::from_canonical_name("arm64-windows");
-            default: return Triplet::from_canonical_name("x86-windows");
-        }
+        StringLiteral operating_system = "windows";
 #elif defined(__APPLE__)
-        return Triplet::from_canonical_name("x64-osx");
+        StringLiteral operating_system = "osx";
 #elif defined(__FreeBSD__)
-        return Triplet::from_canonical_name("x64-freebsd");
+        StringLiteral operating_system = "freebsd";
 #elif defined(__OpenBSD__)
-        return Triplet::from_canonical_name("x64-openbsd");
+        StringLiteral operating_system = "openbsd";
 #elif defined(__GLIBC__)
-#if defined(__aarch64__)
-        return Triplet::from_canonical_name("arm64-linux");
-#elif defined(__arm__)
-        return Triplet::from_canonical_name("arm-linux");
-#elif defined(__s390x__)
-        return Triplet::from_canonical_name("s390x-linux");
-#elif (defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)) &&                    \
-    defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-        return Triplet::from_canonical_name("ppc64le-linux");
+        StringLiteral operating_system = "linux";
 #else
-        return Triplet::from_canonical_name("x64-linux");
+        StringLiteral operating_system = "linux-musl";
 #endif
-#else
-        return Triplet::from_canonical_name("x64-linux-musl");
-#endif
+        auto host_proc = System::get_host_processor();
+        auto canonical_name = Strings::format("%s-%s", to_zstring_view(host_proc), operating_system);
+        return Triplet::from_canonical_name(std::move(canonical_name));
     }
 
     Triplet default_triplet(const VcpkgCmdArguments& args)

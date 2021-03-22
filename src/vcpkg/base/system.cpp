@@ -6,6 +6,10 @@
 
 #include <ctime>
 
+#if defined(__APPLE__)
+#include <sys/sysctl.h>
+#endif
+
 using namespace vcpkg::System;
 
 namespace vcpkg
@@ -55,6 +59,21 @@ namespace vcpkg
         return to_cpu_architecture(procarch).value_or_exit(VCPKG_LINE_INFO);
 #else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
 #if defined(__x86_64__) || defined(_M_X64)
+#if defined(__APPLE__)
+        // check for rosetta 2 emulation
+        // see docs:
+        // https://developer.apple.com/documentation/apple_silicon/about_the_rosetta_translation_environment#3616845
+        int is_translated = 0;
+        size_t size = sizeof is_translated;
+        if (sysctlbyname("sysctl.proc_translated", &is_translated, &size, nullptr, 0) == -1)
+        {
+            return CPUArchitecture::X64;
+        }
+        if (is_translated == 1)
+        {
+            return CPUArchitecture::ARM64;
+        }
+#endif // ^^^ macos
         return CPUArchitecture::X64;
 #elif defined(__x86__) || defined(_M_X86) || defined(__i386__)
         return CPUArchitecture::X86;
