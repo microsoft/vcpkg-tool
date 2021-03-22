@@ -27,7 +27,7 @@ jobs:
         failOnStderr: true
         script: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -B "$(Build.StagingDirectory)"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -B "$(Build.StagingDirectory)"
           ninja.exe -C "$(Build.StagingDirectory)"
     - task: MicroBuildSigningPlugin@2
       inputs:
