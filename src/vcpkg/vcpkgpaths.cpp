@@ -776,6 +776,7 @@ If you wish to silence this error and use classic mode, you can:
         auto tar_cmd_builder = git_cmd_builder(*this, dot_git_dir, dot_git_dir)
                                    .string_arg("archive")
                                    .string_arg(git_tree)
+                                   .string_arg("--worktree-attributes")
                                    .string_arg("-o")
                                    .path_arg(destination_tar);
         const auto tar_output = System::cmd_execute_and_capture_output(tar_cmd_builder);
