@@ -845,8 +845,11 @@ If you wish to silence this error and use classic mode, you can:
         std::error_code ec;
         Files::ExclusiveFileLock guard(Files::ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
 
-        System::Command fetch_git_ref =
-            git_cmd_builder(*this, dot_git_dir, work_tree).string_arg("fetch").string_arg("--").string_arg(repo);
+        System::Command fetch_git_ref = git_cmd_builder(*this, dot_git_dir, work_tree)
+                                            .string_arg("fetch")
+                                            .string_arg("--update-shallow")
+                                            .string_arg("--")
+                                            .string_arg(repo);
         if (treeish.size() != 0)
         {
             fetch_git_ref.string_arg(treeish);
