@@ -426,7 +426,8 @@ namespace vcpkg::Paragraphs
 
         for (const auto& registry : registries.registries())
         {
-            registry.implementation().get_all_port_names(ports, paths);
+            const auto packages = registry.packages();
+            ports.insert(end(ports), begin(packages), end(packages));
         }
         if (auto registry = registries.default_registry())
         {
