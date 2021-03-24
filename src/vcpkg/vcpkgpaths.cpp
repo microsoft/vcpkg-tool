@@ -774,6 +774,8 @@ If you wish to silence this error and use classic mode, you can:
         }
 
         auto tar_cmd_builder = git_cmd_builder(*this, dot_git_dir, dot_git_dir)
+                                   .string_arg("-c")
+                                   .string_arg("core.autocrlf=false")
                                    .string_arg("archive")
                                    .string_arg(git_tree)
                                    .string_arg("-o")
