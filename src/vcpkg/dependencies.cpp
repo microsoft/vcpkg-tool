@@ -106,9 +106,14 @@ namespace vcpkg::Dependencies
                     return;
                 }
                 auto maybe_vars = var_provider.get_dep_info_vars(m_spec);
-                const std::vector<Dependency>* qualified_deps =
-                    &get_scfl_or_exit().source_control_file->find_dependencies_for_feature(feature).value_or_exit(
-                        VCPKG_LINE_INFO);
+                Optional<const std::vector<Dependency>&> maybe_qualified_deps =
+                    get_scfl_or_exit().source_control_file->find_dependencies_for_feature(feature);
+                if (!maybe_qualified_deps.has_value())
+                {
+                    Checks::exit_with_message(
+                        VCPKG_LINE_INFO, "Error: could not find feature '%s' in port '%s'", feature, m_spec.name());
+                }
+                const std::vector<Dependency>* qualified_deps = &maybe_qualified_deps.value_or_exit(VCPKG_LINE_INFO);
 
                 std::vector<FeatureSpec> dep_list;
                 if (auto vars = maybe_vars.get())
