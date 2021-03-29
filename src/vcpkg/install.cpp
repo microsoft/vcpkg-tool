@@ -983,20 +983,6 @@ namespace vcpkg::Install
         // install plan will be empty if it is already installed - need to change this at status paragraph part
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty(), "Install plan cannot be empty");
 
-        // log the plan
-        std::string specs_string;
-        for (auto&& remove_action : action_plan.remove_actions)
-        {
-            if (!specs_string.empty()) specs_string.push_back(',');
-            specs_string += "R$" + Hash::get_string_hash(remove_action.spec.to_string(), Hash::Algorithm::Sha256);
-        }
-
-        for (auto&& install_action : action_plan.install_actions)
-        {
-            if (!specs_string.empty()) specs_string.push_back(',');
-            specs_string += Hash::get_string_hash(install_action.spec.to_string(), Hash::Algorithm::Sha256);
-        }
-
 #if defined(_WIN32)
         const auto maybe_common_triplet = common_projection(
             action_plan.install_actions, [](const InstallPlanAction& to_install) { return to_install.spec.triplet(); });
@@ -1030,8 +1016,6 @@ namespace vcpkg::Install
         }
 #endif // defined(_WIN32)
 
-        Metrics::g_metrics.lock()->track_property("installplan_1", specs_string);
-
         Dependencies::print_plan(action_plan, is_recursive, paths.builtin_ports_directory());
 
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
@@ -1050,6 +1034,8 @@ namespace vcpkg::Install
         {
             Checks::exit_success(VCPKG_LINE_INFO);
         }
+
+        track_install_plan(action_plan);
 
         const InstallSummary summary =
             perform(args,
@@ -1155,5 +1141,35 @@ namespace vcpkg::Install
             xunit_doc += xunit_result(result.spec, result.timing, result.build_result.code);
         }
         return xunit_doc;
+    }
+
+    void track_install_plan(Dependencies::ActionPlan& plan)
+    {
+        Cache<Triplet, std::string> triplet_hashes;
+
+        auto hash_triplet = [&triplet_hashes](Triplet t) -> const std::string& {
+            return triplet_hashes.get_lazy(
+                t, [t]() { return Hash::get_string_hash(t.canonical_name(), Hash::Algorithm::Sha256); });
+        };
+
+        std::string specs_string;
+        for (auto&& remove_action : plan.remove_actions)
+        {
+            if (!specs_string.empty()) specs_string.push_back(',');
+            specs_string += Strings::concat("R$",
+                                            Hash::get_string_hash(remove_action.spec.name(), Hash::Algorithm::Sha256),
+                                            ":",
+                                            hash_triplet(remove_action.spec.triplet()));
+        }
+
+        for (auto&& install_action : plan.install_actions)
+        {
+            if (!specs_string.empty()) specs_string.push_back(',');
+            specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
+                                            ":",
+                                            hash_triplet(install_action.spec.triplet()));
+        }
+
+        Metrics::g_metrics.lock()->track_property("installplan_1", specs_string);
     }
 }

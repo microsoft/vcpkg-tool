@@ -117,4 +117,6 @@ namespace vcpkg::Install
                                       Triplet default_triplet,
                                       Triplet host_triplet) const override;
     };
+
+    void track_install_plan(Dependencies::ActionPlan& plan);
 }

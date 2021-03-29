@@ -103,6 +103,8 @@ namespace vcpkg::Commands::SetInstalled
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
+        Install::track_install_plan(action_plan);
+
         const auto summary = Install::perform(args,
                                               action_plan,
                                               Install::KeepGoing::NO,
