@@ -100,7 +100,11 @@ Build-Depends: bzip
     compiler_info.version = "compilerversion";
     ipa.abi_info.get()->compiler_info = compiler_info;
 
-    NugetReference ref(ipa);
+    NugetReference ref2 = make_nugetref(ipa, "prefix_");
+
+    REQUIRE(ref2.nupkg_filename() == "prefix_zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
+
+    NugetReference ref = make_nugetref(ipa, "");
 
     REQUIRE(ref.nupkg_filename() == "zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 

@@ -19,6 +19,19 @@ using namespace vcpkg;
 
 namespace
 {
+    static const std::string& get_nuget_prefix()
+    {
+        static std::string nuget_prefix = []() {
+            auto x = System::get_environment_variable("X_VCPKG_NUGET_ID_PREFIX").value_or("");
+            if (!x.empty())
+            {
+                x.push_back('_');
+            }
+            return x;
+        }();
+        return nuget_prefix;
+    }
+
     struct NullBinaryProvider : IBinaryProvider
     {
         void prefetch(const VcpkgPaths&, std::vector<const Dependencies::InstallPlanAction*>&) { }
@@ -488,7 +501,7 @@ namespace
                 auto& spec = action->spec;
                 fs.remove_all(paths.package_dir(spec), VCPKG_LINE_INFO);
 
-                nuget_refs.emplace_back(spec, NugetReference(*action));
+                nuget_refs.emplace_back(spec, make_nugetref(*action, get_nuget_prefix()));
             }
 
             if (nuget_refs.empty())
@@ -643,7 +656,7 @@ namespace
 
             auto& spec = action.spec;
 
-            NugetReference nuget_ref(action);
+            NugetReference nuget_ref = make_nugetref(action, get_nuget_prefix());
             auto nuspec_path = paths.buildtrees / spec.name() / (spec.triplet().to_string() + ".nuspec");
             paths.get_filesystem().write_contents(
                 nuspec_path, generate_nuspec(paths, action, nuget_ref), VCPKG_LINE_INFO);
@@ -1644,8 +1657,9 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
 
 std::string vcpkg::generate_nuget_packages_config(const Dependencies::ActionPlan& action)
 {
-    auto refs = Util::fmap(action.install_actions,
-                           [&](const Dependencies::InstallPlanAction& ipa) { return NugetReference(ipa); });
+    auto refs = Util::fmap(action.install_actions, [&](const Dependencies::InstallPlanAction& ipa) {
+        return make_nugetref(ipa, get_nuget_prefix());
+    });
     XmlSerializer xml;
     xml.emit_declaration().line_break();
     xml.open_tag("packages").line_break();
