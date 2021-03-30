@@ -31,7 +31,6 @@ TEST_CASE ("platform-expression-identifier", "[platform-expression]")
     CHECK_FALSE(windows.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
     CHECK_FALSE(windows.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
 
-
     CHECK(native.evaluate({{"Z_VCPKG_IS_NATIVE", "1"}}));
     CHECK_FALSE(native.evaluate({{"Z_VCPKG_IS_NATIVE", "0"}}));
 
