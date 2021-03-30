@@ -34,7 +34,6 @@ TEST_CASE ("platform-expression-identifier", "[platform-expression]")
 
     CHECK(native.evaluate({{"Z_VCPKG_IS_NATIVE", "1"}}));
     CHECK_FALSE(native.evaluate({{"Z_VCPKG_IS_NATIVE", "0"}}));
-    CHECK_FALSE(native.evaluate({}));
 
     CHECK(staticlink.evaluate({{"VCPKG_LIBRARY_LINKAGE", "static"}, {"VCPKG_CRT_LINKAGE", "static"}}));
     CHECK(staticlink.evaluate({{"VCPKG_LIBRARY_LINKAGE", "static"}, {"VCPKG_CRT_LINKAGE", "dynamic"}}));
