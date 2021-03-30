@@ -184,7 +184,7 @@ namespace vcpkg::Commands::Upgrade
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        var_provider.load_tag_vars(action_plan, provider);
+        var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
         const Install::InstallSummary summary =
             Install::perform(args,

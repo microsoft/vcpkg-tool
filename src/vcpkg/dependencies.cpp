@@ -719,7 +719,7 @@ namespace vcpkg::Dependencies
 
     ActionPlan create_feature_install_plan(const PortFileProvider::PortFileProvider& port_provider,
                                            const CMakeVars::CMakeVarProvider& var_provider,
-                                           const std::vector<FullPackageSpec>& specs,
+                                           View<FullPackageSpec> specs,
                                            const StatusParagraphs& status_db,
                                            const CreateInstallPlanOptions& options)
     {

@@ -41,9 +41,10 @@ namespace vcpkg::Commands::SetInstalled
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              Dependencies::ActionPlan action_plan,
                              DryRun dry_run,
-                             const Optional<fs::path>& maybe_pkgsconfig)
+                             const Optional<fs::path>& maybe_pkgsconfig,
+                             Triplet host_triplet)
     {
-        cmake_vars.load_tag_vars(action_plan, provider);
+        cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
         Build::compute_all_abis(paths, action_plan, cmake_vars, {});
 
         std::set<std::string> all_abis;
@@ -169,7 +170,8 @@ namespace vcpkg::Commands::SetInstalled
                             *cmake_vars,
                             std::move(action_plan),
                             dry_run ? DryRun::Yes : DryRun::No,
-                            pkgsconfig);
+                            pkgsconfig,
+                            host_triplet);
     }
 
     void SetInstalledCommand::perform_and_exit(const VcpkgCmdArguments& args,

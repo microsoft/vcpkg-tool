@@ -15,7 +15,8 @@ using vcpkg::Optional;
 namespace vcpkg::CMakeVars
 {
     void CMakeVarProvider::load_tag_vars(const vcpkg::Dependencies::ActionPlan& action_plan,
-                                         const PortFileProvider::PortFileProvider& port_provider) const
+                                         const PortFileProvider::PortFileProvider& port_provider,
+                                         Triplet host_triplet) const
     {
         std::vector<FullPackageSpec> install_package_specs;
         for (auto&& action : action_plan.install_actions)
@@ -23,7 +24,7 @@ namespace vcpkg::CMakeVars
             install_package_specs.emplace_back(FullPackageSpec{action.spec, action.feature_list});
         }
 
-        load_tag_vars(install_package_specs, port_provider);
+        load_tag_vars(install_package_specs, port_provider, host_triplet);
     }
 
     namespace
@@ -37,7 +38,8 @@ namespace vcpkg::CMakeVars
             void load_dep_info_vars(View<PackageSpec> specs) const override;
 
             void load_tag_vars(View<FullPackageSpec> specs,
-                               const PortFileProvider::PortFileProvider& port_provider) const override;
+                               const PortFileProvider::PortFileProvider& port_provider,
+                               Triplet host_triplet) const override;
 
             Optional<const std::unordered_map<std::string, std::string>&> get_generic_triplet_vars(
                 Triplet triplet) const override;
@@ -256,7 +258,8 @@ endmacro()
     }
 
     void TripletCMakeVarProvider::load_tag_vars(View<FullPackageSpec> specs,
-                                                const PortFileProvider::PortFileProvider& port_provider) const
+                                                const PortFileProvider::PortFileProvider& port_provider,
+                                                Triplet host_triplet) const
     {
         if (specs.size() == 0) return;
         std::vector<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings;
@@ -278,12 +281,13 @@ endmacro()
         for (const auto& spec_abi_setting : spec_abi_settings)
         {
             const FullPackageSpec& spec = *spec_abi_setting.first;
-
-            tag_vars.emplace(std::piecewise_construct,
-                             std::forward_as_tuple(spec.package_spec),
-                             std::forward_as_tuple(std::make_move_iterator(var_list_itr->begin()),
-                                                   std::make_move_iterator(var_list_itr->end())));
+            PlatformExpression::Context ctxt{std::make_move_iterator(var_list_itr->begin()),
+                                             std::make_move_iterator(var_list_itr->end())};
             ++var_list_itr;
+
+            ctxt.emplace("Z_VCPKG_IS_NATIVE", host_triplet == spec.package_spec.triplet() ? "1" : "0");
+
+            tag_vars.emplace(spec.package_spec, std::move(ctxt));
         }
     }
 

@@ -295,7 +295,8 @@ namespace vcpkg::Commands::CI
         const CMakeVars::CMakeVarProvider& var_provider,
         const std::vector<FullPackageSpec>& specs,
         IBinaryProvider& binaryprovider,
-        const Dependencies::CreateInstallPlanOptions& serialize_options)
+        const Dependencies::CreateInstallPlanOptions& serialize_options,
+        Triplet host_triplet)
     {
         auto ret = std::make_unique<UnknownCIPortsResults>();
 
@@ -324,7 +325,7 @@ namespace vcpkg::Commands::CI
             install_specs.emplace_back(install_action.spec, install_action.feature_list);
         }
 
-        var_provider.load_tag_vars(install_specs, provider);
+        var_provider.load_tag_vars(install_specs, provider, host_triplet);
 
         auto timer = Chrono::ElapsedTimer::create_started();
 
@@ -528,7 +529,8 @@ namespace vcpkg::Commands::CI
                                                          var_provider,
                                                          all_default_full_specs,
                                                          binaryprovider,
-                                                         serialize_options);
+                                                         serialize_options,
+                                                         host_triplet);
 
             auto& action_plan = split_specs->plan;
 

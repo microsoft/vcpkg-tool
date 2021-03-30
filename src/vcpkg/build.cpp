@@ -105,7 +105,7 @@ namespace vcpkg::Build
         auto action_plan = Dependencies::create_feature_install_plan(
             provider, var_provider, std::vector<FullPackageSpec>{full_spec}, status_db, {host_triplet});
 
-        var_provider.load_tag_vars(action_plan, provider);
+        var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
         const PackageSpec& spec = full_spec.package_spec;
         const SourceControlFile& scf = *scfl.source_control_file;

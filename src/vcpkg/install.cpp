@@ -945,7 +945,8 @@ namespace vcpkg::Install
                                                         var_provider,
                                                         std::move(install_plan),
                                                         dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
-                                                        pkgsconfig);
+                                                        pkgsconfig,
+                                                        host_triplet);
         }
 
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
@@ -978,7 +979,7 @@ namespace vcpkg::Install
             }
         }
 
-        var_provider.load_tag_vars(action_plan, provider);
+        var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
         // install plan will be empty if it is already installed - need to change this at status paragraph part
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty(), "Install plan cannot be empty");
