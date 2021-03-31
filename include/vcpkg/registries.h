@@ -87,8 +87,7 @@ namespace vcpkg
         void set_default_registry(std::unique_ptr<RegistryImplementation>&& r);
         void set_default_registry(std::nullptr_t r);
 
-        // this exists in order to allow versioning and registries to be developed and tested separately
-        void experimental_set_builtin_registry_baseline(StringView baseline) const;
+        void set_default_builtin_registry_baseline(StringView baseline) const;
 
         // returns whether the registry set has any modifications to the default
         // (i.e., whether `default_registry` was set, or `registries` had any entries)

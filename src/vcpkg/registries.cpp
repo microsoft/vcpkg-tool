@@ -1148,40 +1148,28 @@ namespace vcpkg
     }
     void RegistrySet::set_default_registry(std::nullptr_t) { default_registry_.reset(); }
 
-    void RegistrySet::experimental_set_builtin_registry_baseline(StringView baseline) const
+    void RegistrySet::set_default_builtin_registry_baseline(StringView baseline) const
     {
-        static const StringLiteral warning_message =
-            R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
-    (only one of these should be used; the baseline from vcpkg-configuration.json will be used))";
-        bool already_warned = false;
-
-        if (auto builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
+        if (auto default_builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
         {
-            if (builtin_registry->m_baseline_identifier.empty())
+            if (default_builtin_registry->m_baseline_identifier.empty())
             {
-                builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
+                default_builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
             }
             else
             {
-                System::print2(System::Color::warning, warning_message);
-                already_warned = true;
+                System::print2(System::Color::warning,
+            R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
+    (only one of these should be used; the baseline from vcpkg-configuration.json will be used))");
             }
         }
-
-        for (auto& reg : registries_)
+        else if (auto default_registry = default_registry_.get())
         {
-            if (auto builtin_registry = dynamic_cast<BuiltinRegistry*>(reg.implementation_.get()))
-            {
-                if (builtin_registry->m_baseline_identifier.empty())
-                {
-                    builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
-                }
-                else if (!already_warned)
-                {
-                    System::print2(System::Color::warning, warning_message);
-                    already_warned = true;
-                }
-            }
+            System::printf(System::Color::warning, "warning: the default registry has been replaced with a %s registry, but `builtin-baseline` is specified in vcpkg.json. This field will have no effect.", default_registry->kind());
+        }
+        else
+        {
+            System::print2(System::Color::warning, "warning: the default registry has been disabled, but `builtin-baseline` is specified in vcpkg.json. This field will have no effect.");
         }
     }
 

@@ -901,7 +901,7 @@ namespace vcpkg::Install
                                                paths.get_current_git_sha_message());
                 }
 
-                paths.get_configuration().registry_set.experimental_set_builtin_registry_baseline(*p_baseline);
+                paths.get_configuration().registry_set.set_default_builtin_registry_baseline(*p_baseline);
             }
 
             auto verprovider = PortFileProvider::make_versioned_portfile_provider(paths);
