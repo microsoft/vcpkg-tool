@@ -448,9 +448,8 @@ namespace vcpkg::Commands::CI
         if (it_exclusions != options.settings.end())
         {
             auto exclusions = Strings::split(it_exclusions->second, ',');
-            exclusions_set.insert(
-                std::make_move_iterator(exclusions.begin()),
-                std::make_move_iterator(exclusions.end()));
+            exclusions_set.insert(std::make_move_iterator(exclusions.begin()),
+                                  std::make_move_iterator(exclusions.end()));
         }
 
         return exclusions_set;
