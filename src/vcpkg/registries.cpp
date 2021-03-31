@@ -1158,18 +1158,24 @@ namespace vcpkg
             }
             else
             {
-                System::print2(System::Color::warning,
-            R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
+                System::print2(
+                    System::Color::warning,
+                    R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
     (only one of these should be used; the baseline from vcpkg-configuration.json will be used))");
             }
         }
         else if (auto default_registry = default_registry_.get())
         {
-            System::printf(System::Color::warning, "warning: the default registry has been replaced with a %s registry, but `builtin-baseline` is specified in vcpkg.json. This field will have no effect.", default_registry->kind());
+            System::printf(System::Color::warning,
+                           "warning: the default registry has been replaced with a %s registry, but `builtin-baseline` "
+                           "is specified in vcpkg.json. This field will have no effect.",
+                           default_registry->kind());
         }
         else
         {
-            System::print2(System::Color::warning, "warning: the default registry has been disabled, but `builtin-baseline` is specified in vcpkg.json. This field will have no effect.");
+            System::print2(System::Color::warning,
+                           "warning: the default registry has been disabled, but `builtin-baseline` is specified in "
+                           "vcpkg.json. This field will have no effect.");
         }
     }
 

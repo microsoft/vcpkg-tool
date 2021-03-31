@@ -148,7 +148,7 @@ static void __declspec(noreturn) abort_api_failure(const HANDLE std_out, const w
 
 #ifndef NDEBUG
 int main()
-#else // ^^^ debug // !debug vvv
+#else  // ^^^ debug // !debug vvv
 int __stdcall entry()
 #endif // ^^^ !debug
 {
