@@ -24,6 +24,7 @@
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/commands.porthistory.h>
 #include <vcpkg/commands.portsdiff.h>
+#include <vcpkg/commands.print-default-triplets.h>
 #include <vcpkg/commands.search.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/commands.upgrade.h>
@@ -118,6 +119,7 @@ namespace vcpkg::Commands
         static const Export::ExportCommand export_command{};
         static const DependInfo::DependInfoCommand depend_info{};
         static const CheckSupport::CheckSupportCommand check_support{};
+        static const PrintDefaultTriplets::PrintDefaultTripletsCommand print_default_triplets{};
 
         static std::vector<PackageNameAndFunction<const TripletCommand*>> t = {
             {"install", &install},
@@ -131,6 +133,7 @@ namespace vcpkg::Commands
             {"export", &export_command},
             {"depend-info", &depend_info},
             {"x-check-support", &check_support},
+            {"x-print-default-triplets", &print_default_triplets},
         };
         return t;
     }
