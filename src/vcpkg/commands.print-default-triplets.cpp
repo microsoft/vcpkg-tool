@@ -17,9 +17,9 @@ namespace vcpkg::Commands
     };
 
     void PrintDefaultTriplets::perform_and_exit(const VcpkgCmdArguments& args,
-                                        const VcpkgPaths&,
-                                        Triplet default_triplet,
-                                        Triplet host_triplet)
+                                                const VcpkgPaths&,
+                                                Triplet default_triplet,
+                                                Triplet host_triplet)
     {
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         if (args.json.value_or(false))
@@ -37,9 +37,9 @@ namespace vcpkg::Commands
     }
 
     void PrintDefaultTriplets::PrintDefaultTripletsCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                                             const VcpkgPaths& paths,
-                                                             Triplet default_triplet,
-                                                             Triplet host_triplet) const
+                                                                             const VcpkgPaths& paths,
+                                                                             Triplet default_triplet,
+                                                                             Triplet host_triplet) const
     {
         return PrintDefaultTriplets::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
