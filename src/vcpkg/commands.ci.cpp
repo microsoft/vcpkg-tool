@@ -444,7 +444,7 @@ namespace vcpkg::Commands::CI
     static std::set<std::string> parse_exclusions(const ParsedArguments& options, StringLiteral opt)
     {
         std::set<std::string> exclusions_set;
-        auto it_exclusions = options.settings.find(OPTION_EXCLUDE);
+        auto it_exclusions = options.settings.find(opt);
         if (it_exclusions != options.settings.end())
         {
             auto exclusions = Strings::split(it_exclusions->second, ',');
