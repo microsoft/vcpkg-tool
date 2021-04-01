@@ -1,3 +1,5 @@
+#! /usr/bin/env pwsh
+
 [CmdletBinding()]
 $Root = Resolve-Path -LiteralPath "$PSScriptRoot/.."
 
@@ -24,6 +26,9 @@ if ([String]::IsNullOrEmpty($clangFormat) -or -not (Test-Path $clangFormat))
     Write-Error 'clang-format not found; is it installed?'
     throw
 }
+
+$clangFormatVersion = "$(& $clangFormat --version)".Trim()
+"Using $clangFormatVersion located at $clangFormat" | Write-Host
 
 $files = Get-ChildItem -Recurse -LiteralPath "$Root/src" -Filter '*.cpp'
 $files += Get-ChildItem -Recurse -LiteralPath "$Root/src" -Filter '*.c'
