@@ -385,6 +385,26 @@ namespace vcpkg::Commands::AddVersion
             }
 
             const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
+
+            // check if manifest file is property formatted
+            const auto path_to_manifest =
+                paths.builtin_ports_directory() / fs::u8path(port_name) / fs::u8path("vcpkg.json");
+            if (fs.exists(path_to_manifest))
+            {
+                const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
+                const auto json = serialize_manifest(*scf);
+                const auto formatted_content = Json::stringify(json, {});
+                if (current_file_content != formatted_content)
+                {
+                    System::printf(System::Color::error,
+                                   "Error: The port `%s` is not properly formatted.\n"
+                                   "Run `vcpkg format-manifest ports/%s/vcpkg.json` to format the file.\n"
+                                   "Don't forget to commit the result!\n",
+                                   port_name,
+                                   port_name);
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+            }
             const auto& schemed_version = scf->to_schemed_version();
 
             auto git_tree_it = git_tree_map.find(port_name);
