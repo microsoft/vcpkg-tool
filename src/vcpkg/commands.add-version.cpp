@@ -116,20 +116,10 @@ namespace
                                         const std::string& port_name,
                                         const VersionT& version,
                                         const fs::path& baseline_path,
+                                        std::map<std::string, vcpkg::VersionT, std::less<>>& baseline_map,
                                         bool print_success)
     {
-        bool is_new_file = false;
         auto& fs = paths.get_filesystem();
-        auto baseline_map = [&]() -> std::map<std::string, vcpkg::VersionT, std::less<>> {
-            if (!fs.exists(VCPKG_LINE_INFO, baseline_path))
-            {
-                is_new_file = true;
-                std::map<std::string, vcpkg::VersionT, std::less<>> ret;
-                return ret;
-            }
-            auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
-            return maybe_baseline_map.value_or_exit(VCPKG_LINE_INFO);
-        }();
 
         auto it = baseline_map.find(port_name);
         if (it != baseline_map.end())
@@ -157,10 +147,9 @@ namespace
         if (print_success)
         {
             System::printf(System::Color::success,
-                           "Added version `%s` to `%s`%s.\n",
+                           "Added version `%s` to `%s`.\n",
                            version.to_string(),
-                           fs::u8string(baseline_path),
-                           is_new_file ? " (new file)" : "");
+                           fs::u8string(baseline_path));
         }
         return;
     }
@@ -335,6 +324,16 @@ namespace vcpkg::Commands::AddVersion
             }
         }
 
+        auto baseline_map = [&]() -> std::map<std::string, vcpkg::VersionT, std::less<>> {
+            if (!fs.exists(VCPKG_LINE_INFO, baseline_path))
+            {
+                std::map<std::string, vcpkg::VersionT, std::less<>> ret;
+                return ret;
+            }
+            auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
+            return maybe_baseline_map.value_or_exit(VCPKG_LINE_INFO);
+        }();
+
         // Get tree-ish from local repository state.
         auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
         auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
@@ -370,7 +369,7 @@ namespace vcpkg::Commands::AddVersion
                                       fs::u8path(Strings::concat(port_name, ".json"));
             update_version_db_file(
                 paths, port_name, schemed_version, git_tree, port_versions_path, overwrite_version, verbose, add_all);
-            update_baseline_version(paths, port_name, schemed_version.versiont, baseline_path, verbose);
+            update_baseline_version(paths, port_name, schemed_version.versiont, baseline_path, baseline_map, verbose);
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }
