@@ -5,6 +5,18 @@ writing new tests and keeping them up to date is also very important. If one's
 code is subtly broken, we'd rather find it out right away than a few weeks down
 the line when someone complains!
 
+## Environment Variables
+
+You will need to set the environment variable `VCPKG_ROOT` to the location
+of a copy of the [main vcpkg repo](https://github.com/microsoft/vcpkg) on your
+machine, in order to run the tests. 
+
+Failure to do so will result in this error, when some of the tests are run:
+
+```
+Error: Could not detect vcpkg-root.
+```
+
 ## Running Tests
 
 Before anything else, we should know whether you can actually run the tests!
