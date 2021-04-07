@@ -407,12 +407,12 @@ namespace vcpkg::Build
                 auto proxy = System::get_windows_proxy_server();
                 if (proxy.has_value())
                 {
-                    // It is better to set HTTPS_PROXY with http:// prefix.
-                    env.emplace("HTTP_PROXY", ("http://" + proxy.value()).c_str());
-                    env.emplace("HTTPS_PROXY", ("http://" + proxy.value()).c_str());
+                    // Most HTTP proxy DOES proxy HTTPS requests.
+                    env.emplace("HTTP_PROXY", proxy.value().c_str());
+                    env.emplace("HTTPS_PROXY", proxy.value().c_str());
 
                     System::print2(
-                        "-- Automatically setting HTTP(S)_PROXY environment variables to http://", proxy.value(), "\n");
+                        "-- Automatically setting HTTP(S)_PROXY environment variables to ", proxy.value(), "\n");
                 }
             }
             return {env};
