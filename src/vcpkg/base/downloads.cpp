@@ -17,13 +17,12 @@
  * So we need to do this workaround.
  * TODO: Feel free to beautify it.
  */
-typedef int (*RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 static int GetRealOSVersion(PRTL_OSVERSIONINFOW ver)
 {
     HMODULE hMod = GetModuleHandleW(L"ntdll.dll");
     if (hMod)
     {
-        auto fxPtr = (RtlGetVersionPtr)GetProcAddress(hMod, "RtlGetVersion");
+        auto fxPtr = (int (*)(PRTL_OSVERSIONINFOW))GetProcAddress(hMod, "RtlGetVersion");
         if (fxPtr != nullptr)
         {
             ver->dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);

@@ -10,13 +10,12 @@
  * This doesn't increase program size.
  * TODO: Feel free to beautify it.
  */
-typedef int (*RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 static int GetRealOSVersion(PRTL_OSVERSIONINFOW ver)
 {
     HMODULE hMod = GetModuleHandleW(L"ntdll.dll");
     if (hMod)
     {
-        RtlGetVersionPtr fxPtr = (RtlGetVersionPtr)GetProcAddress(hMod, "RtlGetVersion");
+        int (*fxPtr)(PRTL_OSVERSIONINFOW) = (int (*)(PRTL_OSVERSIONINFOW))GetProcAddress(hMod, "RtlGetVersion");
         if (fxPtr != NULL)
         {
             ver->dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);
