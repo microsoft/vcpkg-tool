@@ -8,6 +8,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -394,6 +395,25 @@ namespace vcpkg::Build
             {
                 auto val = System::get_environment_variable(var);
                 if (auto p_val = val.get()) env.emplace(var, *p_val);
+            }
+
+            /*
+             * On Windows 10 (>= 8.1) it is a user-friendly way to automatically set HTTP_PROXY and HTTPS_PROXY
+             * environment variables by reading proxy settings via WinHttpGetDefaultProxyConfiguration, preventing users
+             * set and unset these variables manually (which is not a decent way).
+             */
+            if (System::get_windows_proxy_enabled())
+            {
+                auto proxy = System::get_windows_proxy_server();
+                if (proxy.has_value())
+                {
+                    // It is better to set HTTPS_PROXY with http:// prefix.
+                    env.emplace("HTTP_PROXY", ("http://" + proxy.value()).c_str());
+                    env.emplace("HTTPS_PROXY", ("http://" + proxy.value()).c_str());
+
+                    System::print2(
+                        "-- Automatically setting HTTP(S)_PROXY environment variables to http://", proxy.value(), "\n");
+                }
             }
 
             return {env};

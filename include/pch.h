@@ -9,6 +9,7 @@
 #include <process.h>
 #include <shellapi.h>
 #include <winhttp.h>
+#include <winreg.h>
 #endif
 
 #include <math.h>
