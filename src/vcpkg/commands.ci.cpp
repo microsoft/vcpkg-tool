@@ -457,10 +457,9 @@ namespace vcpkg::Commands::CI
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
-                          Triplet default_triplet,
+                          Triplet,
                           Triplet host_triplet)
     {
-        (void)default_triplet;
         std::unique_ptr<IBinaryProvider> binaryproviderStorage;
         if (args.binary_caching_enabled())
         {
@@ -472,7 +471,7 @@ namespace vcpkg::Commands::CI
 
         if (args.command_arguments.size() != 1)
         {
-            Checks::unreachable(VCPKG_LINE_INFO); // this should not be possible at this place
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
