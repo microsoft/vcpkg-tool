@@ -310,11 +310,13 @@ namespace vcpkg::Commands::AddVersion
 {
     static constexpr StringLiteral OPTION_ALL = "all";
     static constexpr StringLiteral OPTION_OVERWRITE_VERSION = "overwrite-version";
+    static constexpr StringLiteral OPTION_SKIP_FORMATTING_CHECK = "skip-formatting-check";
     static constexpr StringLiteral OPTION_VERBOSE = "verbose";
 
     const CommandSwitch COMMAND_SWITCHES[] = {
         {OPTION_ALL, "Process versions for all ports."},
         {OPTION_OVERWRITE_VERSION, "Overwrite `git-tree` of an existing version."},
+        {OPTION_SKIP_FORMATTING_CHECK, "Skips the formatting check of vcpkg.json files."},
         {OPTION_VERBOSE, "Print success messages instead of just errors."},
     };
 
@@ -331,6 +333,7 @@ namespace vcpkg::Commands::AddVersion
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
         const bool add_all = Util::Sets::contains(parsed_args.switches, OPTION_ALL);
         const bool overwrite_version = Util::Sets::contains(parsed_args.switches, OPTION_OVERWRITE_VERSION);
+        const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_FORMATTING_CHECK);
         const bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
 
         auto& fs = paths.get_filesystem();
@@ -386,23 +389,26 @@ namespace vcpkg::Commands::AddVersion
 
             const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
 
-            // check if manifest file is property formatted
-            const auto path_to_manifest =
-                paths.builtin_ports_directory() / fs::u8path(port_name) / fs::u8path("vcpkg.json");
-            if (fs.exists(path_to_manifest))
+            if (!skip_formatting_check)
             {
-                const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
-                const auto json = serialize_manifest(*scf);
-                const auto formatted_content = Json::stringify(json, {});
-                if (current_file_content != formatted_content)
+                // check if manifest file is property formatted
+                const auto path_to_manifest =
+                    paths.builtin_ports_directory() / fs::u8path(port_name) / fs::u8path("vcpkg.json");
+                if (fs.exists(path_to_manifest))
                 {
-                    System::printf(System::Color::error,
-                                   "Error: The port `%s` is not properly formatted.\n"
-                                   "Run `vcpkg format-manifest ports/%s/vcpkg.json` to format the file.\n"
-                                   "Don't forget to commit the result!\n",
-                                   port_name,
-                                   port_name);
-                    Checks::exit_fail(VCPKG_LINE_INFO);
+                    const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
+                    const auto json = serialize_manifest(*scf);
+                    const auto formatted_content = Json::stringify(json, {});
+                    if (current_file_content != formatted_content)
+                    {
+                        System::printf(System::Color::error,
+                                       "Error: The port `%s` is not properly formatted.\n"
+                                       "Run `vcpkg format-manifest ports/%s/vcpkg.json` to format the file.\n"
+                                       "Don't forget to commit the result!\n",
+                                       port_name,
+                                       port_name);
+                        Checks::exit_fail(VCPKG_LINE_INFO);
+                    }
                 }
             }
             const auto& schemed_version = scf->to_schemed_version();
