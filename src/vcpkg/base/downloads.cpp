@@ -9,7 +9,45 @@
 #include <vcpkg/base/util.h>
 
 #if defined(_WIN32)
-#include <VersionHelpers.h>
+/* VersionHelper.h (IsWindows8Point1OrGreater, etc..) is deprecated.
+ * See https://github.com/glfw/glfw/issues/1294
+ * See remark section in https://docs.microsoft.com/en-us/windows/win32/api/versionhelpers/nf-versionhelpers-iswindows8point1orgreater
+ * Applications not manifested for Windows 8.1 or Windows 10 return false, even if the current operating is 8.1 or 10
+ * So we need to do this workaround.
+ * TODO: Feel free to beautify it.
+ */
+typedef int (*RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
+static int GetRealOSVersion(PRTL_OSVERSIONINFOW ver)
+{
+    HMODULE hMod = GetModuleHandleW(L"ntdll.dll");
+    if (hMod)
+    {
+        auto fxPtr = (RtlGetVersionPtr)GetProcAddress(hMod, "RtlGetVersion");
+        if (fxPtr != nullptr)
+        {
+            ver->dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);
+            return fxPtr(ver);
+        }
+    }
+    return -1;
+}
+
+static int IsWindows8Point1OrGreater()
+{
+    RTL_OSVERSIONINFOW version;
+    GetRealOSVersion(&version);
+    return version.dwMajorVersion > HIBYTE(_WIN32_WINNT_WINBLUE) ||
+           (version.dwMajorVersion == HIBYTE(_WIN32_WINNT_WINBLUE) &&
+            version.dwMinorVersion >= LOBYTE(_WIN32_WINNT_WINBLUE));
+}
+
+static int IsWindows7OrGreater()
+{
+    RTL_OSVERSIONINFOW version;
+    GetRealOSVersion(&version);
+    return version.dwMajorVersion > HIBYTE(_WIN32_WINNT_WIN7) ||
+           (version.dwMajorVersion == HIBYTE(_WIN32_WINNT_WIN7) && version.dwMinorVersion >= LOBYTE(_WIN32_WINNT_WIN7));
+}
 #endif
 
 namespace vcpkg::Downloads
