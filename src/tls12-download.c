@@ -199,7 +199,7 @@ int __stdcall entry()
     }
     else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND)
     {
-        access_type = WINHTTP_ACCESS_TYPE_NO_PROXY;
+        access_type = WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY;
         proxy_setting = WINHTTP_NO_PROXY_NAME;
         proxy_bypass_setting = WINHTTP_NO_PROXY_BYPASS;
     }
