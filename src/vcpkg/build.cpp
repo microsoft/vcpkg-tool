@@ -415,7 +415,6 @@ namespace vcpkg::Build
                         "-- Automatically setting HTTP(S)_PROXY environment variables to http://", proxy.value(), "\n");
                 }
             }
-
             return {env};
         });
 

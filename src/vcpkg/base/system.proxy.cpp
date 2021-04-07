@@ -1,5 +1,4 @@
 #include <vcpkg/base/system.proxy.h>
-
 std::optional<std::string> vcpkg::System::get_windows_proxy_server()
 {
 #if defined(_WIN32)
@@ -25,7 +24,6 @@ std::optional<std::string> vcpkg::System::get_windows_proxy_server()
     return nullptr;
 #endif
 }
-
 bool vcpkg::System::get_windows_proxy_enabled()
 {
 #if defined(_WIN32)
