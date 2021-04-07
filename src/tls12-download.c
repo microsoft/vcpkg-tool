@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <process.h>
 #include <winhttp.h>
+#include <VersionHelpers.h>
 /*
  * This program must be as small as possible, because it is committed in binary form to the
  * vcpkg github repo to enable downloading the main vcpkg program on Windows 7, where TLS 1.2 is
@@ -199,7 +200,7 @@ int __stdcall entry()
     }
     else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND)
     {
-        access_type = WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY;
+        access_type = IsWindows8Point1OrGreater() ? WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY : WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
         proxy_setting = WINHTTP_NO_PROXY_NAME;
         proxy_bypass_setting = WINHTTP_NO_PROXY_BYPASS;
     }
