@@ -1,7 +1,6 @@
 #include <Windows.h>
 #include <process.h>
 #include <winhttp.h>
-
 /* VersionHelper.h (IsWindows8Point1OrGreater, etc..) is deprecated.
  * See https://github.com/glfw/glfw/issues/1294
  * See remark section in https://docs.microsoft.com/en-us/windows/win32/api/versionhelpers/nf-versionhelpers-iswindows8point1orgreater
