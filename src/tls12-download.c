@@ -3,7 +3,8 @@
 #include <winhttp.h>
 /* VersionHelper.h (IsWindows8Point1OrGreater, etc..) is deprecated.
  * See https://github.com/glfw/glfw/issues/1294
- * See remark section in https://docs.microsoft.com/en-us/windows/win32/api/versionhelpers/nf-versionhelpers-iswindows8point1orgreater
+ * See remark section in
+ * https://docs.microsoft.com/en-us/windows/win32/api/versionhelpers/nf-versionhelpers-iswindows8point1orgreater
  * Applications not manifested for Windows 8.1 or Windows 10 return false, even if the current operating is 8.1 or 10
  * So we need to do this workaround.
  * This doesn't increase program size.
@@ -25,13 +26,14 @@ static int GetRealOSVersion(PRTL_OSVERSIONINFOW ver)
     return -1;
 }
 
-static int IsWindows8Point1OrGreater() {
+static int IsWindows8Point1OrGreater()
+{
     RTL_OSVERSIONINFOW version;
     GetRealOSVersion(&version);
     return version.dwMajorVersion > HIBYTE(_WIN32_WINNT_WINBLUE) ||
-        (version.dwMajorVersion == HIBYTE(_WIN32_WINNT_WINBLUE) && version.dwMinorVersion >= LOBYTE(_WIN32_WINNT_WINBLUE));
+           (version.dwMajorVersion == HIBYTE(_WIN32_WINNT_WINBLUE) &&
+            version.dwMinorVersion >= LOBYTE(_WIN32_WINNT_WINBLUE));
 }
-
 
 /*
  * This program must be as small as possible, because it is committed in binary form to the
@@ -231,7 +233,8 @@ int __stdcall entry()
     }
     else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND)
     {
-        access_type = IsWindows8Point1OrGreater() ? WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY : WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
+        access_type =
+            IsWindows8Point1OrGreater() ? WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY : WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
         proxy_setting = WINHTTP_NO_PROXY_NAME;
         proxy_bypass_setting = WINHTTP_NO_PROXY_BYPASS;
     }

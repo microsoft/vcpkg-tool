@@ -11,7 +11,8 @@
 #if defined(_WIN32)
 /* VersionHelper.h (IsWindows8Point1OrGreater, etc..) is deprecated.
  * See https://github.com/glfw/glfw/issues/1294
- * See remark section in https://docs.microsoft.com/en-us/windows/win32/api/versionhelpers/nf-versionhelpers-iswindows8point1orgreater
+ * See remark section in
+ * https://docs.microsoft.com/en-us/windows/win32/api/versionhelpers/nf-versionhelpers-iswindows8point1orgreater
  * Applications not manifested for Windows 8.1 or Windows 10 return false, even if the current operating is 8.1 or 10
  * So we need to do this workaround.
  * TODO: Feel free to beautify it.
