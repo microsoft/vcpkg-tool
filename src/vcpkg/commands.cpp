@@ -24,7 +24,7 @@
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/commands.porthistory.h>
 #include <vcpkg/commands.portsdiff.h>
-#include <vcpkg/commands.print-default-triplets.h>
+#include <vcpkg/commands.print-triplets.h>
 #include <vcpkg/commands.search.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/commands.upgrade.h>
@@ -133,7 +133,7 @@ namespace vcpkg::Commands
             {"export", &export_command},
             {"depend-info", &depend_info},
             {"x-check-support", &check_support},
-            {"x-print-default-triplets", &print_default_triplets},
+            {"x-print-triplets", &print_triplets},
         };
         return t;
     }

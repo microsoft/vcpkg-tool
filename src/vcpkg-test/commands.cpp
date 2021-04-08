@@ -79,7 +79,7 @@ TEST_CASE ("get_available_triplet_commands works", "[commands]")
         "export",
         "depend-info",
         "x-check-support",
-        "x-print-default-triplets",
+        "x-print-triplets",
         });
 }
 // clang-format on
