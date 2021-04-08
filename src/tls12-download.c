@@ -1,37 +1,43 @@
 #include <Windows.h>
 #include <process.h>
 #include <winhttp.h>
-/* VersionHelper.h (IsWindows8Point1OrGreater, etc..) is deprecated.
- * See https://github.com/glfw/glfw/issues/1294
- * See remark section in
- * https://docs.microsoft.com/en-us/windows/win32/api/versionhelpers/nf-versionhelpers-iswindows8point1orgreater
- * Applications not manifested for Windows 8.1 or Windows 10 return false, even if the current operating is 8.1 or 10
- * So we need to do this workaround.
- * This doesn't increase program size.
- * TODO: Feel free to beautify it.
- */
-static int GetRealOSVersion(PRTL_OSVERSIONINFOW ver)
-{
-    HMODULE hMod = GetModuleHandleW(L"ntdll.dll");
-    if (hMod)
-    {
-        int (*fxPtr)(PRTL_OSVERSIONINFOW) = (int (*)(PRTL_OSVERSIONINFOW))GetProcAddress(hMod, "RtlGetVersion");
-        if (fxPtr != NULL)
-        {
-            ver->dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);
-            return fxPtr(ver);
-        }
-    }
-    return -1;
-}
 
-static int IsWindows8Point1OrGreater()
+/*
+ * Instead of WPAD, on Windows platform it is a user-friendly way to check
+ * HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings
+ * instead of only checking HTTPS_PROXY. Because most proxies on Windows
+ * doesn't set these environment variables.
+ */
+#include <winreg.h>
+/*
+ * This helper function reads proxy settings from registry, returns 1 if succeed
+ * and copy the proxy setting in outProxyBuffer, returns 0 if failed.
+ *
+ * According to the code below we can say the buffer's size passed in is 32767,
+ * which is for sure enough for reading proxy server from registry. So the size
+ * check is skipped.
+ */
+static int GetWindowsProxyFromRegistry(wchar_t* outProxyBuffer)
 {
-    RTL_OSVERSIONINFOW version;
-    GetRealOSVersion(&version);
-    return version.dwMajorVersion > HIBYTE(_WIN32_WINNT_WINBLUE) ||
-           (version.dwMajorVersion == HIBYTE(_WIN32_WINNT_WINBLUE) &&
-            version.dwMinorVersion >= LOBYTE(_WIN32_WINNT_WINBLUE));
+    HKEY proxy_reg;
+    DWORD len = 0;
+    DWORD enable = 0;
+
+    int ret =
+        RegOpenKeyW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", &proxy_reg);
+    if (ret) return 0;
+
+    len = 4;
+    ret = RegGetValueW(proxy_reg, NULL, L"ProxyEnable", RRF_RT_REG_DWORD, NULL, &enable, &len);
+    if (ret) return 0;
+
+    if (!enable) return 0;
+
+    len = 32767;
+    ret = RegGetValueW(proxy_reg, NULL, L"ProxyServer", RRF_RT_REG_SZ, NULL, outProxyBuffer, &len);
+    if (ret) return 0;
+
+    return 1;
 }
 
 /*
@@ -221,7 +227,11 @@ int __stdcall entry()
     DWORD access_type;
     const wchar_t* proxy_setting;
     const wchar_t* proxy_bypass_setting;
-    if (GetEnvironmentVariableW(L"HTTPS_PROXY", https_proxy_env, sizeof(https_proxy_env) / sizeof(wchar_t)))
+    if (GetEnvironmentVariableW(L"HTTPS_PROXY", https_proxy_env, sizeof(https_proxy_env) / sizeof(wchar_t))
+        /*
+         * Check the windows proxy setting in registry too.
+         */
+        || GetWindowsProxyFromRegistry(https_proxy_env))
     {
         access_type = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
         proxy_setting = https_proxy_env;
@@ -232,8 +242,7 @@ int __stdcall entry()
     }
     else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND)
     {
-        access_type =
-            IsWindows8Point1OrGreater() ? WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY : WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
+        access_type = WINHTTP_ACCESS_TYPE_NO_PROXY;
         proxy_setting = WINHTTP_NO_PROXY_NAME;
         proxy_bypass_setting = WINHTTP_NO_PROXY_BYPASS;
     }
