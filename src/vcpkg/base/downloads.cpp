@@ -8,48 +8,6 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#if defined(_WIN32)
-/* VersionHelper.h (IsWindows8Point1OrGreater, etc..) is deprecated.
- * See https://github.com/glfw/glfw/issues/1294
- * See remark section in
- * https://docs.microsoft.com/en-us/windows/win32/api/versionhelpers/nf-versionhelpers-iswindows8point1orgreater
- * Applications not manifested for Windows 8.1 or Windows 10 return false, even if the current operating is 8.1 or 10
- * So we need to do this workaround.
- * TODO: Feel free to beautify it.
- */
-static int GetRealOSVersion(PRTL_OSVERSIONINFOW ver)
-{
-    HMODULE hMod = GetModuleHandleW(L"ntdll.dll");
-    if (hMod)
-    {
-        auto fxPtr = (int (*)(PRTL_OSVERSIONINFOW))GetProcAddress(hMod, "RtlGetVersion");
-        if (fxPtr != nullptr)
-        {
-            ver->dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);
-            return fxPtr(ver);
-        }
-    }
-    return -1;
-}
-
-static int IsWindows8Point1OrGreater()
-{
-    RTL_OSVERSIONINFOW version;
-    GetRealOSVersion(&version);
-    return version.dwMajorVersion > HIBYTE(_WIN32_WINNT_WINBLUE) ||
-           (version.dwMajorVersion == HIBYTE(_WIN32_WINNT_WINBLUE) &&
-            version.dwMinorVersion >= LOBYTE(_WIN32_WINNT_WINBLUE));
-}
-
-static int IsWindows7OrGreater()
-{
-    RTL_OSVERSIONINFOW version;
-    GetRealOSVersion(&version);
-    return version.dwMajorVersion > HIBYTE(_WIN32_WINNT_WIN7) ||
-           (version.dwMajorVersion == HIBYTE(_WIN32_WINNT_WIN7) && version.dwMinorVersion >= LOBYTE(_WIN32_WINNT_WIN7));
-}
-#endif
-
 namespace vcpkg::Downloads
 {
 #if defined(_WIN32)
@@ -131,8 +89,7 @@ namespace vcpkg::Downloads
         static ExpectedS<WinHttpSession> make()
         {
             auto h = WinHttpOpen(L"vcpkg/1.0",
-                                 IsWindows8Point1OrGreater() ? WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY
-                                                             : WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                                 WINHTTP_ACCESS_TYPE_NO_PROXY,
                                  WINHTTP_NO_PROXY_NAME,
                                  WINHTTP_NO_PROXY_BYPASS,
                                  0);
@@ -154,31 +111,22 @@ namespace vcpkg::Downloads
 
                 WinHttpSetOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
             }
-            // Win7 IE Proxy fallback
-            else if (IsWindows7OrGreater() && !IsWindows8Point1OrGreater())
+            // IE Proxy fallback, this works on Windows 10
+            else
             {
-                // First check if any proxy has been found automatically
-                WINHTTP_PROXY_INFO proxyInfo;
-                DWORD proxyInfoSize = sizeof(WINHTTP_PROXY_INFO);
-                auto noProxyFound =
-                    !WinHttpQueryOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxyInfo, &proxyInfoSize) ||
-                    proxyInfo.dwAccessType == WINHTTP_ACCESS_TYPE_NO_PROXY;
-
-                // If no proxy was found automatically, use IE's proxy settings, if any
-                if (noProxyFound)
+                // We do not use WPAD anymore
+                // Directly read IE Proxy setting
+                WINHTTP_CURRENT_USER_IE_PROXY_CONFIG ieProxy;
+                if (WinHttpGetIEProxyConfigForCurrentUser(&ieProxy) && ieProxy.lpszProxy != nullptr)
                 {
-                    WINHTTP_CURRENT_USER_IE_PROXY_CONFIG ieProxy;
-                    if (WinHttpGetIEProxyConfigForCurrentUser(&ieProxy) && ieProxy.lpszProxy != nullptr)
-                    {
-                        WINHTTP_PROXY_INFO proxy;
-                        proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
-                        proxy.lpszProxy = ieProxy.lpszProxy;
-                        proxy.lpszProxyBypass = ieProxy.lpszProxyBypass;
-                        WinHttpSetOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
-                        GlobalFree(ieProxy.lpszProxy);
-                        GlobalFree(ieProxy.lpszProxyBypass);
-                        GlobalFree(ieProxy.lpszAutoConfigUrl);
-                    }
+                    WINHTTP_PROXY_INFO proxy;
+                    proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
+                    proxy.lpszProxy = ieProxy.lpszProxy;
+                    proxy.lpszProxyBypass = ieProxy.lpszProxyBypass;
+                    WinHttpSetOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
+                    GlobalFree(ieProxy.lpszProxy);
+                    GlobalFree(ieProxy.lpszProxyBypass);
+                    GlobalFree(ieProxy.lpszAutoConfigUrl);
                 }
             }
 
