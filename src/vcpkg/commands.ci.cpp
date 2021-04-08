@@ -455,10 +455,7 @@ namespace vcpkg::Commands::CI
         return exclusions_set;
     }
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet,
-                          Triplet host_triplet)
+    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet, Triplet host_triplet)
     {
         std::unique_ptr<IBinaryProvider> binaryproviderStorage;
         if (args.binary_caching_enabled())
