@@ -8,10 +8,6 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#if defined(_WIN32)
-#include <VersionHelpers.h>
-#endif
-
 namespace vcpkg::Downloads
 {
 #if defined(_WIN32)
@@ -93,8 +89,7 @@ namespace vcpkg::Downloads
         static ExpectedS<WinHttpSession> make()
         {
             auto h = WinHttpOpen(L"vcpkg/1.0",
-                                 IsWindows8Point1OrGreater() ? WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY
-                                                             : WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                                 WINHTTP_ACCESS_TYPE_NO_PROXY,
                                  WINHTTP_NO_PROXY_NAME,
                                  WINHTTP_NO_PROXY_BYPASS,
                                  0);
@@ -116,31 +111,22 @@ namespace vcpkg::Downloads
 
                 WinHttpSetOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
             }
-            // Win7 IE Proxy fallback
-            else if (IsWindows7OrGreater() && !IsWindows8Point1OrGreater())
+            // IE Proxy fallback, this works on Windows 10
+            else
             {
-                // First check if any proxy has been found automatically
-                WINHTTP_PROXY_INFO proxyInfo;
-                DWORD proxyInfoSize = sizeof(WINHTTP_PROXY_INFO);
-                auto noProxyFound =
-                    !WinHttpQueryOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxyInfo, &proxyInfoSize) ||
-                    proxyInfo.dwAccessType == WINHTTP_ACCESS_TYPE_NO_PROXY;
-
-                // If no proxy was found automatically, use IE's proxy settings, if any
-                if (noProxyFound)
+                // We do not use WPAD anymore
+                // Directly read IE Proxy setting
+                WINHTTP_CURRENT_USER_IE_PROXY_CONFIG ieProxy;
+                if (WinHttpGetIEProxyConfigForCurrentUser(&ieProxy) && ieProxy.lpszProxy != nullptr)
                 {
-                    WINHTTP_CURRENT_USER_IE_PROXY_CONFIG ieProxy;
-                    if (WinHttpGetIEProxyConfigForCurrentUser(&ieProxy) && ieProxy.lpszProxy != nullptr)
-                    {
-                        WINHTTP_PROXY_INFO proxy;
-                        proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
-                        proxy.lpszProxy = ieProxy.lpszProxy;
-                        proxy.lpszProxyBypass = ieProxy.lpszProxyBypass;
-                        WinHttpSetOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
-                        GlobalFree(ieProxy.lpszProxy);
-                        GlobalFree(ieProxy.lpszProxyBypass);
-                        GlobalFree(ieProxy.lpszAutoConfigUrl);
-                    }
+                    WINHTTP_PROXY_INFO proxy;
+                    proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
+                    proxy.lpszProxy = ieProxy.lpszProxy;
+                    proxy.lpszProxyBypass = ieProxy.lpszProxyBypass;
+                    WinHttpSetOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
+                    GlobalFree(ieProxy.lpszProxy);
+                    GlobalFree(ieProxy.lpszProxyBypass);
+                    GlobalFree(ieProxy.lpszAutoConfigUrl);
                 }
             }
 

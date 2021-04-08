@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <process.h>
 #include <winhttp.h>
+
 /*
  * This program must be as small as possible, because it is committed in binary form to the
  * vcpkg github repo to enable downloading the main vcpkg program on Windows 7, where TLS 1.2 is
@@ -208,8 +209,6 @@ int __stdcall entry()
         abort_api_failure(std_out, L"GetEnvironmentVariableW");
     }
 
-    write_message(std_out, L"\r\n");
-
     const HANDLE out_file = CreateFileW(out_file_path, FILE_WRITE_DATA, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
     if (out_file == INVALID_HANDLE_VALUE)
     {
@@ -222,6 +221,31 @@ int __stdcall entry()
     {
         abort_api_failure(std_out, L"WinHttpOpen");
     }
+
+    // If HTTPS_PROXY not found, try use IE Proxy. This works on Windows 10 20H2, so there's no need to determine
+    // the OS version >= 8.1.
+    if (access_type == WINHTTP_ACCESS_TYPE_NO_PROXY)
+    {
+        WINHTTP_CURRENT_USER_IE_PROXY_CONFIG ieProxy;
+        if (WinHttpGetIEProxyConfigForCurrentUser(&ieProxy) && ieProxy.lpszProxy != NULL)
+        {
+            WINHTTP_PROXY_INFO proxy;
+            proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
+            proxy.lpszProxy = ieProxy.lpszProxy;
+            proxy.lpszProxyBypass = ieProxy.lpszProxyBypass;
+            WinHttpSetOption(session, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
+
+            write_message(std_out, L" (using IE proxy: ");
+            write_message(std_out, proxy.lpszProxy);
+            write_message(std_out, L")");
+
+            GlobalFree(ieProxy.lpszProxy);
+            GlobalFree(ieProxy.lpszProxyBypass);
+            GlobalFree(ieProxy.lpszAutoConfigUrl);
+        }
+    }
+
+    write_message(std_out, L"\r\n");
 
     unsigned long secure_protocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
     if (!WinHttpSetOption(session, WINHTTP_OPTION_SECURE_PROTOCOLS, &secure_protocols, sizeof(DWORD)))
