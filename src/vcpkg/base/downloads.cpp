@@ -6,6 +6,7 @@
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
 namespace vcpkg::Downloads
@@ -116,17 +117,14 @@ namespace vcpkg::Downloads
             {
                 // We do not use WPAD anymore
                 // Directly read IE Proxy setting
-                WINHTTP_CURRENT_USER_IE_PROXY_CONFIG ieProxy;
-                if (WinHttpGetIEProxyConfigForCurrentUser(&ieProxy) && ieProxy.lpszProxy != nullptr)
+                auto ieProxy = System::get_windows_ie_proxy_server();
+                if (ieProxy.has_value())
                 {
                     WINHTTP_PROXY_INFO proxy;
                     proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
-                    proxy.lpszProxy = ieProxy.lpszProxy;
-                    proxy.lpszProxyBypass = ieProxy.lpszProxyBypass;
+                    proxy.lpszProxy = ieProxy.get()->server.data();
+                    proxy.lpszProxyBypass = ieProxy.get()->bypass.data();
                     WinHttpSetOption(ret.m_hSession.get(), WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
-                    GlobalFree(ieProxy.lpszProxy);
-                    GlobalFree(ieProxy.lpszProxyBypass);
-                    GlobalFree(ieProxy.lpszAutoConfigUrl);
                 }
             }
 

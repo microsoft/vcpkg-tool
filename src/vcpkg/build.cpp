@@ -406,18 +406,16 @@ namespace vcpkg::Build
              * specially when use vcpkg in Visual Studio, we even cannot set HTTP(S)_PROXY in CLI, if we want to open or
              * close Proxy we need to restart VS.
              */
-            if (System::get_windows_ie_proxy_enabled())
+            auto ieProxy = System::get_windows_ie_proxy_server();
+            if (ieProxy.has_value())
             {
-                auto proxy = System::get_windows_ie_proxy_server();
-                if (proxy.has_value())
-                {
-                    // Most HTTP proxy DOES proxy HTTPS requests.
-                    env.emplace("HTTP_PROXY", proxy.value().c_str());
-                    env.emplace("HTTPS_PROXY", proxy.value().c_str());
+                std::string server = Strings::to_utf8(ieProxy.get()->server);
 
-                    System::print2(
-                        "-- Automatically setting HTTP(S)_PROXY environment variables to ", proxy.value(), "\n");
-                }
+                System::print2(
+                    "-- Automatically setting HTTP(S)_PROXY environment variables to ", server, "\n");
+
+                env.emplace("HTTP_PROXY", server.c_str());
+                env.emplace("HTTPS_PROXY", server.c_str());
             }
             return {env};
         });

@@ -13,6 +13,11 @@
 
 namespace vcpkg::System
 {
-    bool get_windows_ie_proxy_enabled();
-    std::optional<std::string> get_windows_ie_proxy_server();
+    struct IEProxySetting
+    {
+        std::wstring server;
+        std::wstring bypass;
+    };
+
+    vcpkg::Optional<IEProxySetting> get_windows_ie_proxy_server();
 }
