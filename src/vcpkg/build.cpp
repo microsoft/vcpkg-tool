@@ -411,10 +411,54 @@ namespace vcpkg::Build
             {
                 std::string server = Strings::to_utf8(ieProxy.get()->server);
 
-                System::print2("-- Automatically setting HTTP(S)_PROXY environment variables to ", server, "\n");
+                // Separate settings in IE Proxy Settings, which is rare?
+                // Python implementation:
+                // https://github.com/python/cpython/blob/7215d1ae25525c92b026166f9d5cac85fb1defe1/Lib/urllib/request.py#L2655
+                if (Strings::contains(server, "="))
+                {
+                    auto proxy_settings = Strings::split(server, ';');
+                    for (auto& s : proxy_settings)
+                    {
+                        auto kvp = Strings::split(s, '=');
+                        if (kvp.size() == 2)
+                        {
+                            auto protocol = kvp[0];
+                            auto address = kvp[1];
+                            if (!Strings::starts_with(address, protocol + "://"))
+                            {
+                                address = Strings::concat(protocol, "://", address);
+                            }
+                            protocol = Strings::concat(Strings::ascii_to_uppercase(protocol.c_str()), "_PROXY");
+                            env.emplace(protocol, address);
+                            System::print2("-- Setting ", protocol, " environment variables to ", address, "\n");
+                        }
+                    }
+                }
+                // Specified http:// prefix
+                else if (Strings::starts_with(server, "http://"))
+                {
+                    System::print2("-- Setting HTTP_PROXY environment variables to ", server, "\n");
+                    env.emplace("HTTP_PROXY", server);
+                }
+                // Specified https:// prefix
+                else if (Strings::starts_with(server, "https://"))
+                {
+                    System::print2("-- Setting HTTPS_PROXY environment variables to ", server, "\n");
+                    env.emplace("HTTPS_PROXY", server);
+                }
+                // Most common case: "ip:port" style, apply to HTTP and HTTPS proxies.
+                // An HTTP(S)_PROXY means https requests go through that, it can be:
+                // http:// prefixed: the request go through an HTTP proxy without end-to-end security.
+                // https:// prefixed: the request go through an HTTPS proxy with end-to-end security.
+                // Nothing prefixed: don't know the default behaviour, seems considering HTTP proxy as default.
+                // We simply set "ip:port" to HTTP(S)_PROXY variables because it works on most common cases.
+                else
+                {
+                    System::print2("-- Automatically setting HTTP(S)_PROXY environment variables to ", server, "\n");
 
-                env.emplace("HTTP_PROXY", server.c_str());
-                env.emplace("HTTPS_PROXY", server.c_str());
+                    env.emplace("HTTP_PROXY", server.c_str());
+                    env.emplace("HTTPS_PROXY", server.c_str());
+                }
             }
             return {env};
         });
