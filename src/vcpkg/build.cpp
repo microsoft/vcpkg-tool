@@ -399,20 +399,19 @@ namespace vcpkg::Build
 
             /*
              * On Windows 10 (>= 8.1) it is a user-friendly way to automatically set HTTP_PROXY and HTTPS_PROXY
-             * environment variables by reading proxy settings via WinHttpGetIEProxyConfigForCurrentUser, preventing users
-             * set and unset these variables manually (which is not a decent way).
-             * It is common in China or any other regions that needs an proxy software (v2ray, shadowsocks, etc.), which
-             * sets the IE Proxy Settings, but not setting environment variables. This will make vcpkg easier to use,
-             * specially when use vcpkg in Visual Studio, we even cannot set HTTP(S)_PROXY in CLI, if we want to open or
-             * close Proxy we need to restart VS.
+             * environment variables by reading proxy settings via WinHttpGetIEProxyConfigForCurrentUser, preventing
+             * users set and unset these variables manually (which is not a decent way). It is common in China or any
+             * other regions that needs an proxy software (v2ray, shadowsocks, etc.), which sets the IE Proxy Settings,
+             * but not setting environment variables. This will make vcpkg easier to use, specially when use vcpkg in
+             * Visual Studio, we even cannot set HTTP(S)_PROXY in CLI, if we want to open or close Proxy we need to
+             * restart VS.
              */
             auto ieProxy = System::get_windows_ie_proxy_server();
             if (ieProxy.has_value())
             {
                 std::string server = Strings::to_utf8(ieProxy.get()->server);
 
-                System::print2(
-                    "-- Automatically setting HTTP(S)_PROXY environment variables to ", server, "\n");
+                System::print2("-- Automatically setting HTTP(S)_PROXY environment variables to ", server, "\n");
 
                 env.emplace("HTTP_PROXY", server.c_str());
                 env.emplace("HTTPS_PROXY", server.c_str());

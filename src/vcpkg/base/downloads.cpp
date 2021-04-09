@@ -89,11 +89,8 @@ namespace vcpkg::Downloads
     {
         static ExpectedS<WinHttpSession> make()
         {
-            auto h = WinHttpOpen(L"vcpkg/1.0",
-                                 WINHTTP_ACCESS_TYPE_NO_PROXY,
-                                 WINHTTP_NO_PROXY_NAME,
-                                 WINHTTP_NO_PROXY_BYPASS,
-                                 0);
+            auto h = WinHttpOpen(
+                L"vcpkg/1.0", WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
             if (!h) return Strings::concat("WinHttpOpen() failed: ", GetLastError());
             WinHttpSession ret;
             ret.m_hSession.reset(h);

@@ -10,8 +10,7 @@ vcpkg::Optional<vcpkg::System::IEProxySetting> vcpkg::System::get_windows_ie_pro
 
         ieProxySetting.server = ieProxy.lpszProxy;
 
-        if(ieProxy.lpszProxyBypass != nullptr)
-            ieProxySetting.bypass = ieProxy.lpszProxyBypass;
+        if (ieProxy.lpszProxyBypass != nullptr) ieProxySetting.bypass = ieProxy.lpszProxyBypass;
 
         GlobalFree(ieProxy.lpszProxy);
         GlobalFree(ieProxy.lpszProxyBypass);
