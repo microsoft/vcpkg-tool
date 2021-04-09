@@ -424,7 +424,7 @@ namespace vcpkg::Build
                         {
                             auto protocol = kvp[0];
                             auto address = kvp[1];
-                            if (!Strings::starts_with(address, protocol + "://"))
+                            if (!Strings::contains(address, "://"))
                             {
                                 address = Strings::concat(protocol, "://", address);
                             }
