@@ -18,6 +18,7 @@
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.hash.h>
 #include <vcpkg/commands.info.h>
+#include <vcpkg/commands.init-registry.h>
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/commands.list.h>
 #include <vcpkg/commands.owns.h>
@@ -41,6 +42,7 @@ namespace vcpkg::Commands
     {
         static const Version::VersionCommand version{};
         static const Contact::ContactCommand contact{};
+        static const InitRegistry::InitRegistryCommand initRegistry{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
@@ -48,6 +50,8 @@ namespace vcpkg::Commands
         static std::vector<PackageNameAndFunction<const BasicCommand*>> t = {
             {"version", &version},
             {"contact", &contact},
+            {"init-registry", &initRegistry},
+
 #if defined(_WIN32)
             {"x-upload-metrics", &upload_metrics},
 #endif // defined(_WIN32)
