@@ -679,6 +679,32 @@ If you wish to silence this error and use classic mode, you can:
         return ret;
     }
 
+    ExpectedS<std::vector<fs::path>> VcpkgPaths::git_changed_port_files() const
+    {
+        const auto local_repo = this->root / fs::u8path(".git");
+        const auto path_with_separator =
+            Strings::concat(fs::u8string(this->builtin_ports_directory()), Files::preferred_separator);
+        const auto git_cmd = git_cmd_builder(*this, local_repo, this->root)
+                                 .string_arg("status")
+                                 .string_arg("--porcelain=v1")
+                                 .path_arg(path_with_separator);
+
+        auto output = System::cmd_execute_and_capture_output(git_cmd);
+        if (output.exit_code != 0)
+            return Strings::format("Error: Couldn't get a list of modified port files.\n%s", output.output);
+
+        auto lines = Strings::split(output.output, '\n');
+        std::vector<fs::path> paths;
+        for (auto& line : lines)
+        {
+            // The default output comes in the format:
+            // <mode> <mode> SP <path>
+            // we are only interested in the path
+            paths.push_back(this->root / line.erase(0, 3));
+        }
+        return paths;
+    }
+
     ExpectedS<fs::path> VcpkgPaths::git_checkout_baseline(StringView commit_sha) const
     {
         Files::Filesystem& fs = get_filesystem();

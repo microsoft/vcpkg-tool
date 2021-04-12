@@ -128,6 +128,7 @@ namespace vcpkg
         ExpectedS<std::string> git_show(const std::string& treeish, const fs::path& dot_git_dir) const;
 
         ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
+        ExpectedS<std::vector<fs::path>> git_changed_port_files() const;
 
         // Git manipulation for remote registries
         // runs `git fetch {uri} {treeish}`, and returns the hash of FETCH_HEAD.
