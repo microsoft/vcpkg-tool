@@ -28,28 +28,11 @@ namespace vcpkg::Commands::PortHistory
             Versions::Scheme scheme;
         };
 
-        const System::ExitCodeAndOutput run_git_command_inner(const VcpkgPaths& paths,
-                                                              const fs::path& dot_git_directory,
-                                                              const fs::path& working_directory,
-                                                              const System::Command& cmd)
+        System::ExitCodeAndOutput run_git_command(const VcpkgPaths& paths, const System::Command& cmd)
         {
-            const fs::path& git_exe = paths.get_tool_exe(Tools::GIT);
+            auto full_cmd = paths.git_cmd_builder(paths.root / ".git", paths.root).raw_arg(cmd.command_line());
 
-            auto full_cmd = System::Command(git_exe)
-                                .string_arg(Strings::concat("--git-dir=", fs::u8string(dot_git_directory)))
-                                .string_arg(Strings::concat("--work-tree=", fs::u8string(working_directory)))
-                                .raw_arg(cmd.command_line());
-
-            auto output = System::cmd_execute_and_capture_output(full_cmd);
-            return output;
-        }
-
-        const System::ExitCodeAndOutput run_git_command(const VcpkgPaths& paths, const System::Command& cmd)
-        {
-            const fs::path& work_dir = paths.root;
-            const fs::path dot_git_dir = paths.root / ".git";
-
-            return run_git_command_inner(paths, dot_git_dir, work_dir, cmd);
+            return System::cmd_execute_and_capture_output(full_cmd);
         }
 
         vcpkg::Optional<HistoryVersion> get_version_from_text(const std::string& text,
