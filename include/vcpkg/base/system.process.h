@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/system.process.h>
+
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/zstringview.h>
 

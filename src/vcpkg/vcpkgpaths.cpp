@@ -70,13 +70,6 @@ namespace
         return result;
     }
 
-    System::Command git_cmd_builder(const VcpkgPaths& paths, const fs::path& dot_git_dir, const fs::path& work_tree)
-    {
-        return System::Command()
-            .path_arg(paths.get_tool_exe(Tools::GIT))
-            .string_arg(Strings::concat("--git-dir=", fs::u8string(dot_git_dir)))
-            .string_arg(Strings::concat("--work-tree=", fs::u8string(work_tree)));
-    }
 } // unnamed namespace
 
 namespace vcpkg
@@ -522,6 +515,15 @@ If you wish to silence this error and use classic mode, you can:
         return m_pimpl->m_tool_cache->get_tool_version(*this, tool);
     }
 
+    System::Command VcpkgPaths::git_cmd_builder(const fs::path& dot_git_dir, const fs::path& work_tree) const
+    {
+        return System::Command(get_tool_exe(Tools::GIT))
+            .string_arg(Strings::concat("--git-dir=", fs::u8string(dot_git_dir)))
+            .string_arg(Strings::concat("--work-tree=", fs::u8string(work_tree)))
+            .string_arg("-c")
+            .string_arg("core.autocrlf=false");
+    }
+
     void VcpkgPaths::git_checkout_subpath(const VcpkgPaths& paths,
                                           StringView commit_sha,
                                           const fs::path& subpath,
@@ -538,7 +540,7 @@ If you wish to silence this error and use classic mode, you can:
         // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
         // git clone --no-checkout --local --no-hardlinks {vcpkg_root} {dot_git_dir}
         // note that `--no-hardlinks` is added because otherwise, git fails to clone in some cases
-        System::Command clone_cmd_builder = git_cmd_builder(paths, dot_git_dir, work_tree)
+        System::Command clone_cmd_builder = paths.git_cmd_builder(dot_git_dir, work_tree)
                                                 .string_arg("clone")
                                                 .string_arg("--no-checkout")
                                                 .string_arg("--local")
@@ -552,7 +554,7 @@ If you wish to silence this error and use classic mode, you can:
                            clone_output.output);
 
         // git checkout {commit-sha} -- {subpath}
-        System::Command checkout_cmd_builder = git_cmd_builder(paths, dot_git_dir, work_tree)
+        System::Command checkout_cmd_builder = paths.git_cmd_builder(dot_git_dir, work_tree)
                                                    .string_arg("checkout")
                                                    .string_arg(commit_sha)
                                                    .string_arg("--")
@@ -588,7 +590,7 @@ If you wish to silence this error and use classic mode, you can:
 
     ExpectedS<std::string> VcpkgPaths::get_current_git_sha() const
     {
-        auto cmd = git_cmd_builder(*this, this->root / fs::u8path(".git"), this->root);
+        auto cmd = git_cmd_builder(this->root / fs::u8path(".git"), this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
         auto output = System::cmd_execute_and_capture_output(cmd);
         if (output.exit_code != 0)
@@ -617,8 +619,7 @@ If you wish to silence this error and use classic mode, you can:
     {
         // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
         // git clone --no-checkout --local {vcpkg_root} {dot_git_dir}
-        System::Command showcmd =
-            git_cmd_builder(*this, dot_git_dir, dot_git_dir).string_arg("show").string_arg(treeish);
+        System::Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir).string_arg("show").string_arg(treeish);
 
         auto output = System::cmd_execute_and_capture_output(showcmd);
         if (output.exit_code == 0)
@@ -636,7 +637,7 @@ If you wish to silence this error and use classic mode, you can:
         const auto local_repo = this->root / fs::u8path(".git");
         const auto path_with_separator =
             Strings::concat(fs::u8string(this->builtin_ports_directory()), Files::preferred_separator);
-        const auto git_cmd = git_cmd_builder(*this, local_repo, this->root)
+        const auto git_cmd = git_cmd_builder(local_repo, this->root)
                                  .string_arg("ls-tree")
                                  .string_arg("-d")
                                  .string_arg("HEAD")
@@ -773,9 +774,7 @@ If you wish to silence this error and use classic mode, you can:
                 expected_right_tag};
         }
 
-        auto tar_cmd_builder = git_cmd_builder(*this, dot_git_dir, dot_git_dir)
-                                   .string_arg("-c")
-                                   .string_arg("core.autocrlf=false")
+        auto tar_cmd_builder = git_cmd_builder(dot_git_dir, dot_git_dir)
                                    .string_arg("archive")
                                    .string_arg(git_tree)
                                    .string_arg("-o")
@@ -832,7 +831,7 @@ If you wish to silence this error and use classic mode, you can:
         fs.create_directories(work_tree, VCPKG_LINE_INFO);
         auto dot_git_dir = m_pimpl->registries_dot_git_dir;
 
-        System::Command init_registries_git_dir = git_cmd_builder(*this, dot_git_dir, work_tree).string_arg("init");
+        System::Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
         auto init_output = System::cmd_execute_and_capture_output(init_registries_git_dir);
         if (init_output.exit_code != 0)
         {
@@ -847,7 +846,7 @@ If you wish to silence this error and use classic mode, you can:
         std::error_code ec;
         Files::ExclusiveFileLock guard(Files::ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
 
-        System::Command fetch_git_ref = git_cmd_builder(*this, dot_git_dir, work_tree)
+        System::Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
                                             .string_arg("fetch")
                                             .string_arg("--update-shallow")
                                             .string_arg("--")
@@ -869,7 +868,7 @@ If you wish to silence this error and use classic mode, you can:
         }
 
         System::Command get_fetch_head =
-            git_cmd_builder(*this, dot_git_dir, work_tree).string_arg("rev-parse").string_arg("FETCH_HEAD");
+            git_cmd_builder(dot_git_dir, work_tree).string_arg("rev-parse").string_arg("FETCH_HEAD");
         auto fetch_head_output = System::cmd_execute_and_capture_output(get_fetch_head);
         if (fetch_head_output.exit_code != 0)
         {
@@ -884,10 +883,9 @@ If you wish to silence this error and use classic mode, you can:
                                                                      const fs::path& relative_path) const
     {
         auto revision = Strings::format("%s:%s", hash, fs::generic_u8string(relative_path));
-        System::Command git_show =
-            git_cmd_builder(*this, m_pimpl->registries_dot_git_dir, m_pimpl->registries_work_tree_dir)
-                .string_arg("show")
-                .string_arg(revision);
+        System::Command git_show = git_cmd_builder(m_pimpl->registries_dot_git_dir, m_pimpl->registries_work_tree_dir)
+                                       .string_arg("show")
+                                       .string_arg(revision);
 
         auto git_show_output = System::cmd_execute_and_capture_output(git_show);
         if (git_show_output.exit_code != 0)
@@ -901,7 +899,7 @@ If you wish to silence this error and use classic mode, you can:
     {
         auto revision = Strings::format("%s:%s", hash, fs::generic_u8string(relative_path));
         System::Command git_rev_parse =
-            git_cmd_builder(*this, m_pimpl->registries_dot_git_dir, m_pimpl->registries_work_tree_dir)
+            git_cmd_builder(m_pimpl->registries_dot_git_dir, m_pimpl->registries_work_tree_dir)
                 .string_arg("rev-parse")
                 .string_arg(revision);
 
@@ -931,7 +929,7 @@ If you wish to silence this error and use classic mode, you can:
         fs.create_directory(git_tree_temp, VCPKG_LINE_INFO);
 
         auto dot_git_dir = m_pimpl->registries_dot_git_dir;
-        System::Command git_archive = git_cmd_builder(*this, dot_git_dir, m_pimpl->registries_work_tree_dir)
+        System::Command git_archive = git_cmd_builder(dot_git_dir, m_pimpl->registries_work_tree_dir)
                                           .string_arg("archive")
                                           .string_arg("--format")
                                           .string_arg("tar")

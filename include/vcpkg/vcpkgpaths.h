@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/registries.h>
@@ -117,6 +118,8 @@ namespace vcpkg
 
         const fs::path& get_tool_exe(const std::string& tool) const;
         const std::string& get_tool_version(const std::string& tool) const;
+
+        System::Command git_cmd_builder(const fs::path& dot_git_dir, const fs::path& work_tree) const;
 
         // Git manipulation in the vcpkg directory
         ExpectedS<std::string> get_current_git_sha() const;
