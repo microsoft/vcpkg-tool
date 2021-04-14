@@ -50,7 +50,7 @@ namespace vcpkg::Commands
         static std::vector<PackageNameAndFunction<const BasicCommand*>> t = {
             {"version", &version},
             {"contact", &contact},
-            {"init-registry", &initRegistry},
+            {"x-init-registry", &initRegistry},
 
 #if defined(_WIN32)
             {"x-upload-metrics", &upload_metrics},
