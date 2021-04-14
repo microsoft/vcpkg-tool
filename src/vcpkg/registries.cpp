@@ -1148,30 +1148,34 @@ namespace vcpkg
     }
     void RegistrySet::set_default_registry(std::nullptr_t) { default_registry_.reset(); }
 
-    void RegistrySet::experimental_set_builtin_registry_baseline(StringView baseline) const
+    void RegistrySet::set_default_builtin_registry_baseline(StringView baseline) const
     {
-        // to check if we should warn
-        bool default_registry_is_builtin = false;
-        if (auto builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
+        if (auto default_builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
         {
-            default_registry_is_builtin = true;
-            builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
+            if (default_builtin_registry->m_baseline_identifier.empty())
+            {
+                default_builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
+            }
+            else
+            {
+                System::print2(
+                    System::Color::warning,
+                    R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
+    (only one of these should be used; the baseline from vcpkg-configuration.json will be used))");
+            }
         }
-
-        if (!default_registry_is_builtin || registries_.size() != 0)
+        else if (auto default_registry = default_registry_.get())
+        {
+            System::printf(System::Color::warning,
+                           "warning: the default registry has been replaced with a %s registry, but `builtin-baseline` "
+                           "is specified in vcpkg.json. This field will have no effect.",
+                           default_registry->kind());
+        }
+        else
         {
             System::print2(System::Color::warning,
-                           "Warning: when using the registries feature, one should not use `\"builtin-baseline\"` "
-                           "to set the baseline.\n",
-                           "    Instead, use the \"baseline\" field of the registry.\n");
-        }
-
-        for (auto& reg : registries_)
-        {
-            if (auto builtin_registry = dynamic_cast<BuiltinRegistry*>(reg.implementation_.get()))
-            {
-                builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
-            }
+                           "warning: the default registry has been disabled, but `builtin-baseline` is specified in "
+                           "vcpkg.json. This field will have no effect.");
         }
     }
 
