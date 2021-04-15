@@ -1481,7 +1481,18 @@ namespace vcpkg::Dependencies
                 }
 
                 auto& dep_node = emplace_package(dep_spec);
-                add_constraint(dep_node, dep, ref.first.name());
+                if (dep_spec == ref.first)
+                {
+                    // this is a feature dependency for oneself
+                    for (auto&& f : dep.features)
+                    {
+                        add_constraint(ref, f, ref.first.name());
+                    }
+                }
+                else
+                {
+                    add_constraint(dep_node, dep, ref.first.name());
+                }
 
                 p.first->second.emplace_back(dep_spec, "core");
                 for (auto&& f : dep.features)
