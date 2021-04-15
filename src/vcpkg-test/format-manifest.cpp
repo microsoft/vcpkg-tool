@@ -19,15 +19,17 @@ namespace
 
         ListOfExistingFiles(std::vector<fs::path>&& allowed_paths_) : allowed_paths(std::move(allowed_paths_)) { }
 
-        virtual fs::file_status status(const fs::path& path, std::error_code&) const noexcept override {
-            const bool fileExists = std::any_of(allowed_paths.begin(), allowed_paths.end(), [&](const fs::path& candidate) {
-                return path == candidate;
-            });
+        virtual fs::file_status status(const fs::path& path, std::error_code&) const noexcept override
+        {
+            const bool fileExists = std::any_of(allowed_paths.begin(),
+                                                allowed_paths.end(),
+                                                [&](const fs::path& candidate) { return path == candidate; });
 
             return fs::file_status{fileExists ? fs::file_type::regular : fs::file_type::none, fs::perms::unknown};
         }
 
-        virtual fs::file_status symlink_status(const fs::path& path, std::error_code& ec) const noexcept override {
+        virtual fs::file_status symlink_status(const fs::path& path, std::error_code& ec) const noexcept override
+        {
             return this->status(path, ec);
         }
     };
