@@ -1460,6 +1460,7 @@ namespace vcpkg::Dependencies
                 // This feature has already been handled
                 return;
             }
+            auto& feature_spec_vec = p.first->second;
 
             for (auto&& dep : *deps.get())
             {
@@ -1483,10 +1484,10 @@ namespace vcpkg::Dependencies
                 auto& dep_node = emplace_package(dep_spec);
                 add_constraint(dep_node, dep, ref.first.name());
 
-                p.first->second.emplace_back(dep_spec, "core");
+                feature_spec_vec.emplace_back(dep_spec, "core");
                 for (auto&& f : dep.features)
                 {
-                    p.first->second.emplace_back(dep_spec, f);
+                    feature_spec_vec.emplace_back(dep_spec, f);
                 }
             }
         }
