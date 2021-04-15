@@ -165,7 +165,29 @@ void is_directory(const fs::path& p, std::error_code& ec) = delete;
 
 namespace vcpkg::Files
 {
-    struct Filesystem
+    struct IFilesystemStatusProvider
+    {
+        bool exists(const fs::path& path, std::error_code& ec) const noexcept;
+        bool exists(LineInfo li, const fs::path& path) const noexcept;
+        bool exists(const fs::path& path, ignore_errors_t = ignore_errors) const noexcept;
+        bool is_directory(const fs::path& path, std::error_code& ec) const noexcept;
+        bool is_directory(LineInfo li, const fs::path& path) const noexcept;
+        bool is_directory(const fs::path& path, ignore_errors_t = ignore_errors) const noexcept;
+        bool is_regular_file(const fs::path& path, std::error_code& ec) const noexcept;
+        bool is_regular_file(LineInfo li, const fs::path& path) const noexcept;
+        bool is_regular_file(const fs::path& path, ignore_errors_t = ignore_errors) const noexcept;
+        virtual fs::file_status status(const fs::path& path, std::error_code& ec) const noexcept = 0;
+        fs::file_status status(LineInfo li, const fs::path& p) const noexcept;
+        fs::file_status status(const fs::path& p, ignore_errors_t = ignore_errors) const noexcept;
+        virtual fs::file_status symlink_status(const fs::path& path, std::error_code& ec) const noexcept = 0;
+        fs::file_status symlink_status(LineInfo li, const fs::path& p) const noexcept;
+        fs::file_status symlink_status(const fs::path& p, ignore_errors_t = ignore_errors) const noexcept;
+
+    protected:
+        ~IFilesystemStatusProvider() = default;
+    };
+
+    struct Filesystem : IFilesystemStatusProvider
     {
         std::string read_contents(const fs::path& file_path, LineInfo linfo) const;
         virtual Expected<std::string> read_contents(const fs::path& file_path) const = 0;
@@ -202,11 +224,6 @@ namespace vcpkg::Files
         virtual void remove_all_inside(const fs::path& path, std::error_code& ec, fs::path& failure_point) = 0;
         void remove_all_inside(const fs::path& path, LineInfo li);
         void remove_all_inside(const fs::path& path, ignore_errors_t);
-        bool exists(const fs::path& path, std::error_code& ec) const;
-        bool exists(LineInfo li, const fs::path& path) const;
-        bool exists(const fs::path& path, ignore_errors_t = ignore_errors) const;
-        virtual bool is_directory(const fs::path& path) const = 0;
-        virtual bool is_regular_file(const fs::path& path) const = 0;
         virtual bool is_empty(const fs::path& path) const = 0;
         virtual bool create_directory(const fs::path& path, std::error_code& ec) = 0;
         bool create_directory(const fs::path& path, ignore_errors_t);
@@ -221,12 +238,6 @@ namespace vcpkg::Files
                                std::error_code& ec) = 0;
         void copy_file(const fs::path& oldpath, const fs::path& newpath, fs::copy_options opts, LineInfo li);
         virtual void copy_symlink(const fs::path& oldpath, const fs::path& newpath, std::error_code& ec) = 0;
-        virtual fs::file_status status(const fs::path& path, std::error_code& ec) const = 0;
-        virtual fs::file_status symlink_status(const fs::path& path, std::error_code& ec) const = 0;
-        fs::file_status status(LineInfo li, const fs::path& p) const noexcept;
-        fs::file_status status(const fs::path& p, ignore_errors_t) const noexcept;
-        fs::file_status symlink_status(LineInfo li, const fs::path& p) const noexcept;
-        fs::file_status symlink_status(const fs::path& p, ignore_errors_t) const noexcept;
         virtual fs::path absolute(const fs::path& path, std::error_code& ec) const = 0;
         fs::path absolute(LineInfo li, const fs::path& path) const;
         virtual fs::path canonical(const fs::path& path, std::error_code& ec) const = 0;
