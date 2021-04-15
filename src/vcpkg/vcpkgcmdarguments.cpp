@@ -233,6 +233,12 @@ namespace vcpkg
         VcpkgCmdArguments args;
         std::vector<std::string> feature_flags;
 
+        if (arg_first != arg_last && arg_first + 1 == arg_last && *arg_first == "--version")
+        {
+            args.command = "version";
+            return args;
+        }
+
         for (auto it = arg_first; it != arg_last; ++it)
         {
             std::string basic_arg = *it;
