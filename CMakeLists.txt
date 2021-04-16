@@ -13,6 +13,7 @@ option(VCPKG_WARNINGS_AS_ERRORS "Set warnings to be errors" OFF)
 option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
+option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" ON)
 
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
     "BUILD_TESTING" OFF)
@@ -167,6 +168,9 @@ endif()
 add_executable(vcpkg ${VCPKG_SOURCES})
 target_link_libraries(vcpkg PRIVATE vcpkglib)
 vcpkg_target_add_warning_options(vcpkg)
+if(VCPKG_EMBED_GIT_SHA AND VCPKG_ADD_SOURCELINK)
+    vcpkg_target_add_sourcelink(vcpkg "microsoft" "vcpkg-tool" ${VCPKG_VERSION})
+endif()
 
 # === Target: vcpkg-test ===
 

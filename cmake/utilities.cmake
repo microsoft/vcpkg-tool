@@ -248,3 +248,19 @@ function(vcpkg_target_add_warning_options TARGET)
         endif()
     endif()
 endfunction()
+
+function(vcpkg_target_add_sourcelink TARGET repoOwner repoName gitFullSha1)
+    if(MSVC)
+        set(githubBaseUrl "https://raw.githubusercontent.com/${repoOwner}/${repoName}/${gitFullSha1}/*")
+        set(localBaseFolder "${CMAKE_SOURCE_DIR}/*")
+        file(TO_NATIVE_PATH "${localBaseFolder}" localBaseFolder)
+        string(REPLACE "\\" "\\\\" localBaseFolder "${localBaseFolder}")
+        set(outputJsonFilename "${CMAKE_CURRENT_BINARY_DIR}/vcpkgsourcelink.json")
+        file(CONFIGURE 
+             OUTPUT ${outputJsonFilename}
+             CONTENT "{\"documents\": { \"${localBaseFolder}\": \"${githubBaseUrl}\"} }"
+             NEWLINE_STYLE CRLF)
+        file(TO_NATIVE_PATH "${outputJsonFilename}" jsonFilenameNative)
+        target_link_options(${TARGET} PRIVATE "/SOURCELINK:${jsonFilenameNative}")
+    endif()
+endfunction()
