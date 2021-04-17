@@ -523,7 +523,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         table.format("vcpkg integrate install", "Make installed packages available user-wide");
         table.format("vcpkg integrate remove", "Remove user-wide integration");
         table.format("vcpkg integrate bash", "Enable bash tab-completion");
-        table.format("vcpkg integrate fish", "Enable fish tab-completion");
+        table.format("vcpkg integrate x-fish", "Enable fish tab-completion");
 #endif // ^^^ !defined(_WIN32)
     }
 
