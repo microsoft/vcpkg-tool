@@ -759,8 +759,7 @@ namespace vcpkg
 
             if (args.asset_sources_template)
             {
-                obj.insert(ASSET_SOURCES_ENV,
-                           Json::Value::string(*args.asset_sources_template.get()));
+                obj.insert(ASSET_SOURCES_ENV, Json::Value::string(*args.asset_sources_template.get()));
             }
 
             if (args.disable_metrics)
