@@ -29,6 +29,7 @@
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/commands.upload-metrics.h>
 #include <vcpkg/commands.version.h>
+#include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
@@ -75,6 +76,7 @@ namespace vcpkg::Commands
         static const CIClean::CICleanCommand ciclean{};
         static const PortHistory::PortHistoryCommand porthistory{};
         static const X_VSInstances::VSInstancesCommand vsinstances{};
+        static const X_Download::XDownloadCommand xdownload{};
         static const FormatManifest::FormatManifestCommand format_manifest{};
         static const CIVerifyVersions::CIVerifyVersionsCommand ci_verify_versions{};
         static const AddVersion::AddVersionCommand add_version{};
@@ -98,6 +100,7 @@ namespace vcpkg::Commands
             {"x-package-info", &info},
             {"x-history", &porthistory},
             {"x-vsinstances", &vsinstances},
+            {"x-download", &xdownload},
             {"format-manifest", &format_manifest},
             {"x-ci-verify-versions", &ci_verify_versions},
             {"x-add-version", &add_version},

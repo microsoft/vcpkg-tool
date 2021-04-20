@@ -490,7 +490,14 @@ namespace vcpkg::Install
 
         Build::compute_all_abis(paths, action_plan, var_provider, status_db);
 
-        auto to_prefetch = Util::fmap(action_plan.install_actions, [](const auto& x) { return &x; });
+        std::vector<const InstallPlanAction*> to_prefetch;
+        for (auto&& action : action_plan.install_actions)
+        {
+            if (action.has_package_abi())
+            {
+                to_prefetch.push_back(&action);
+            }
+        }
         binaryprovider.prefetch(paths, to_prefetch);
 
         for (auto&& action : action_plan.install_actions)

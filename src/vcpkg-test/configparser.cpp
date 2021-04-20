@@ -366,3 +366,38 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
         REQUIRE(parsed.has_value());
     }
 }
+
+TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
+{
+    CHECK(create_download_manager({}));
+    CHECK(!create_download_manager("x-azurl"));
+    CHECK(!create_download_manager("x-azurl,"));
+    CHECK(create_download_manager("x-azurl,value"));
+    CHECK(create_download_manager("x-azurl,value,"));
+    CHECK(!create_download_manager("x-azurl,value,,"));
+    CHECK(!create_download_manager("x-azurl,value,,invalid"));
+    CHECK(create_download_manager("x-azurl,value,,read"));
+    CHECK(create_download_manager("x-azurl,value,,readwrite"));
+    CHECK(!create_download_manager("x-azurl,value,,readwrite,"));
+    CHECK(create_download_manager("x-azurl,https://abc/123,?foo"));
+    CHECK(create_download_manager("x-azurl,https://abc/123,foo"));
+    CHECK(create_download_manager("x-azurl,ftp://magic,none"));
+    CHECK(create_download_manager("x-azurl,ftp://magic,none"));
+    auto value_or = [](auto o, auto v) {
+        if (o)
+            return std::move(*o.get());
+        else
+            return std::move(v);
+    };
+
+    Downloads::DownloadManager empty;
+
+    CHECK(value_or(create_download_manager("x-azurl,https://abc/123,foo"), empty).internal_get_read_url_template() ==
+          "https://abc/123/<SHA>?foo");
+    CHECK(value_or(create_download_manager("x-azurl,https://abc/123/,foo"), empty).internal_get_read_url_template() ==
+          "https://abc/123/<SHA>?foo");
+    CHECK(value_or(create_download_manager("x-azurl,https://abc/123,?foo"), empty).internal_get_read_url_template() ==
+          "https://abc/123/<SHA>?foo");
+    CHECK(value_or(create_download_manager("x-azurl,https://abc/123"), empty).internal_get_read_url_template() ==
+          "https://abc/123/<SHA>");
+}

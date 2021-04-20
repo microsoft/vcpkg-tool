@@ -57,6 +57,7 @@ TEST_CASE ("get_available_paths_commands works", "[commands]")
         "fetch",
         "format-manifest",
         "x-ci-clean",
+        "x-download",
         "x-history",
         "x-package-info",
         "x-vsinstances",
