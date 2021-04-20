@@ -1393,7 +1393,7 @@ namespace
     struct AssetSourcesState
     {
         bool cleared = false;
-        bool required = false;
+        bool block_origin = false;
         std::vector<std::string> url_templates_to_get;
         std::vector<std::string> azblob_templates_to_put;
 
@@ -1403,7 +1403,7 @@ namespace
         void clear()
         {
             cleared = true;
-            required = false;
+            block_origin = false;
             url_templates_to_get.clear();
             azblob_templates_to_put.clear();
             secrets.clear();
@@ -1440,7 +1440,7 @@ namespace
                     return add_error("unexpected arguments: asset config 'x-block-origin' does not accept arguments",
                                      segments[1].first);
                 }
-                state->required = true;
+                state->block_origin = true;
             }
             else if (segments[0].second == "clear")
             {
@@ -1543,7 +1543,7 @@ ExpectedS<Downloads::DownloadManager> vcpkg::create_download_manager(const Optio
         put_url = std::move(s.azblob_templates_to_put.back());
     }
 
-    return Downloads::DownloadManager{std::move(get_url), std::move(put_url), s.required};
+    return Downloads::DownloadManager{std::move(get_url), std::move(put_url), s.block_origin};
 }
 
 ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_configs(View<std::string> args)
