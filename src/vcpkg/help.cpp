@@ -123,8 +123,9 @@ namespace vcpkg::Help
                        "https://github.com/Microsoft/vcpkg/tree/master/docs/users/versioning.md\n");
     }
 
-    static constexpr std::array<Topic, 16> topics = {{
+    static constexpr std::array<Topic, 17> topics = {{
         {"binarycaching", help_topic_binary_caching},
+        {"assetcaching", help_topic_asset_caching},
         {"create", command_topic_fn<Commands::Create::COMMAND_STRUCTURE>},
         {"depend-info", command_topic_fn<Commands::DependInfo::COMMAND_STRUCTURE>},
         {"edit", command_topic_fn<Commands::Edit::COMMAND_STRUCTURE>},
