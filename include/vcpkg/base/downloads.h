@@ -45,7 +45,7 @@ namespace vcpkg::Downloads
         DownloadManager() = default;
         explicit DownloadManager(Optional<std::string> read_url_template,
                                  Optional<std::string> write_url_template,
-                                 bool required);
+                                 bool block_origin);
 
         void download_file(Files::Filesystem& fs,
                            const std::string& url,
@@ -62,8 +62,10 @@ namespace vcpkg::Downloads
         const Optional<std::string>& internal_get_read_url_template() const { return m_read_url_template; }
         const Optional<std::string>& internal_get_write_url_template() const { return m_write_url_template; }
 
+        bool block_origin() const { return m_block_origin; }
+
     private:
-        bool m_required = false;
+        bool m_block_origin = false;
         Optional<std::string> m_read_url_template;
         Optional<std::string> m_write_url_template;
     };

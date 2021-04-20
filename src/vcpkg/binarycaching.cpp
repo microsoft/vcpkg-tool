@@ -19,6 +19,11 @@ using namespace vcpkg;
 
 namespace
 {
+    static constexpr StringLiteral s_assetcaching_doc_url =
+        "https://github.com/Microsoft/vcpkg/tree/master/docs/users/assetcaching.md";
+    static constexpr StringLiteral s_binarycaching_doc_url =
+        "https://github.com/Microsoft/vcpkg/tree/master/docs/users/binarycaching.md";
+
     struct ConfigSegmentsParser : Parse::ParserBase
     {
         using Parse::ParserBase::ParserBase;
@@ -1490,8 +1495,9 @@ namespace
             }
             else
             {
-                return add_error("unknown asset provider type: the only valid provider is 'x-azurl'",
-                                 segments[0].first);
+                return add_error(
+                    "unknown asset provider type: valid source types are 'x-azurl', 'x-block-origin', and 'clear'",
+                    segments[0].first);
             }
         }
     };
@@ -1504,20 +1510,26 @@ ExpectedS<Downloads::DownloadManager> vcpkg::create_download_manager(const Optio
     Metrics::g_metrics.lock()->track_property("asset-source", "defined");
 
     AssetSourcesState s;
-    AssetSourcesParser parser(*arg.get(), "<environment>", &s);
+    AssetSourcesParser parser(*arg.get(), Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV), &s);
     parser.parse();
     if (auto err = parser.get_error())
     {
-        return err->format();
+        return Strings::concat(err->format(), "For more information, see ", s_assetcaching_doc_url, "\n");
     }
 
     if (s.azblob_templates_to_put.size() > 1)
     {
-        return std::string("Error: a maximum of one asset write url can be specified");
+        return Strings::concat("Error: a maximum of one asset write url can be specified\n"
+                               "For more information, see ",
+                               s_assetcaching_doc_url,
+                               "\n");
     }
     if (s.url_templates_to_get.size() > 1)
     {
-        return std::string("Error: a maximum of one asset read url can be specified");
+        return Strings::concat("Error: a maximum of one asset read url can be specified\n"
+                               "For more information, see ",
+                               s_assetcaching_doc_url,
+                               "\n");
     }
 
     Optional<std::string> get_url;
@@ -1794,8 +1806,7 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
     tbl.blank();
     System::print2(tbl.m_str);
 
-    System::print2("\nExtended documentation is available at "
-                   "https://github.com/Microsoft/vcpkg/tree/master/docs/users/assetcaching.md \n");
+    System::print2("\nExtended documentation is available at ", s_assetcaching_doc_url, "\n");
 }
 
 void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
@@ -1859,8 +1870,7 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
             "\nThis consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.\n");
     }
 
-    System::print2("\nExtended documentation is available at "
-                   "https://github.com/Microsoft/vcpkg/tree/master/docs/users/binarycaching.md \n");
+    System::print2("\nExtended documentation is available at ", s_binarycaching_doc_url, "\n");
 }
 
 std::string vcpkg::generate_nuget_packages_config(const Dependencies::ActionPlan& action)

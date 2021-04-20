@@ -513,8 +513,8 @@ namespace vcpkg::Downloads
 
     DownloadManager::DownloadManager(Optional<std::string> read_url_template,
                                      Optional<std::string> write_url_template,
-                                     bool required)
-        : m_required(required)
+                                     bool block_origin)
+        : m_block_origin(block_origin)
         , m_read_url_template(std::move(read_url_template))
         , m_write_url_template(std::move(write_url_template))
     {
@@ -538,7 +538,7 @@ namespace vcpkg::Downloads
         std::vector<std::string> all_urls;
         if (!maybe_mirror_url.empty()) all_urls.push_back(maybe_mirror_url);
 
-        if (!m_required)
+        if (!m_block_origin)
         {
             Util::Vectors::append(&all_urls, urls);
         }

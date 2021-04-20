@@ -401,3 +401,41 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
     CHECK(value_or(create_download_manager("x-azurl,https://abc/123"), empty).internal_get_read_url_template() ==
           "https://abc/123/<SHA>");
 }
+
+TEST_CASE ("AssetConfigParser clear provider", "[assetconfigparser]")
+{
+    CHECK(create_download_manager("clear"));
+    CHECK(!create_download_manager("clear,"));
+    CHECK(create_download_manager("x-azurl,value;clear"));
+    auto value_or = [](auto o, auto v) {
+        if (o)
+            return std::move(*o.get());
+        else
+            return std::move(v);
+    };
+
+    Downloads::DownloadManager empty;
+
+    CHECK(value_or(create_download_manager("x-azurl,https://abc/123,foo;clear"), empty)
+              .internal_get_read_url_template() == nullopt);
+    CHECK(value_or(create_download_manager("clear;x-azurl,https://abc/123/,foo"), empty)
+              .internal_get_read_url_template() == "https://abc/123/<SHA>?foo");
+}
+
+TEST_CASE ("AssetConfigParser x-block-origin provider", "[assetconfigparser]")
+{
+    CHECK(create_download_manager("x-block-origin"));
+    CHECK(!create_download_manager("x-block-origin,"));
+    auto value_or = [](auto o, auto v) {
+        if (o)
+            return std::move(*o.get());
+        else
+            return std::move(v);
+    };
+
+    Downloads::DownloadManager empty;
+
+    CHECK(!value_or(create_download_manager({}), empty).block_origin());
+    CHECK(value_or(create_download_manager("x-block-origin"), empty).block_origin());
+    CHECK(!value_or(create_download_manager("x-block-origin;clear"), empty).block_origin());
+}
