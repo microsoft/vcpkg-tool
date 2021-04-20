@@ -180,8 +180,8 @@ namespace vcpkg
         constexpr static StringLiteral JSON_SWITCH = "x-json";
         Optional<bool> json = nullopt;
 
-        constexpr static StringLiteral READWRITE_MIRROR_URL_TEMPLATE_ENV = "X_VCPKG_ASSET_SOURCES";
-        Optional<std::string> readwrite_mirror_url_template;
+        constexpr static StringLiteral ASSET_SOURCES_ENV = "X_VCPKG_ASSET_SOURCES";
+        Optional<std::string> asset_sources_template;
 
         // feature flags
         constexpr static StringLiteral FEATURE_FLAGS_ENV = "VCPKG_FEATURE_FLAGS";

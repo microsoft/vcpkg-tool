@@ -370,7 +370,7 @@ If you wish to silence this error and use classic mode, you can:
         downloads =
             process_output_directory(filesystem, root, args.downloads_root_dir.get(), "downloads", VCPKG_LINE_INFO);
         m_pimpl->m_download_manager =
-            create_download_manager(args.readwrite_mirror_url_template).value_or_exit(VCPKG_LINE_INFO);
+            create_download_manager(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO);
         packages =
             process_output_directory(filesystem, root, args.packages_root_dir.get(), "packages", VCPKG_LINE_INFO);
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);

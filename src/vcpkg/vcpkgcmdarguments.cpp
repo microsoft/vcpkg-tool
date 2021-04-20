@@ -678,7 +678,7 @@ namespace vcpkg
         from_env(VCPKG_ROOT_DIR_ENV, vcpkg_root_dir);
         from_env(DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
         from_env(DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
-        from_env(READWRITE_MIRROR_URL_TEMPLATE_ENV, readwrite_mirror_url_template);
+        from_env(ASSET_SOURCES_ENV, asset_sources_template);
 
         {
             const auto vcpkg_disable_lock = System::get_environment_variable(IGNORE_LOCK_FAILURES_ENV);
@@ -735,9 +735,9 @@ namespace vcpkg
                 args.downloads_root_dir = std::make_unique<std::string>(entry->string().to_string());
             }
 
-            if (auto entry = obj.get(READWRITE_MIRROR_URL_TEMPLATE_ENV))
+            if (auto entry = obj.get(ASSET_SOURCES_ENV))
             {
-                args.readwrite_mirror_url_template = entry->string().to_string();
+                args.asset_sources_template = entry->string().to_string();
             }
 
             if (obj.get(DISABLE_METRICS_ENV))
@@ -757,10 +757,10 @@ namespace vcpkg
                 obj.insert(DOWNLOADS_ROOT_DIR_ENV, Json::Value::string(*args.downloads_root_dir.get()));
             }
 
-            if (args.readwrite_mirror_url_template)
+            if (args.asset_sources_template)
             {
-                obj.insert(READWRITE_MIRROR_URL_TEMPLATE_ENV,
-                           Json::Value::string(*args.readwrite_mirror_url_template.get()));
+                obj.insert(ASSET_SOURCES_ENV,
+                           Json::Value::string(*args.asset_sources_template.get()));
             }
 
             if (args.disable_metrics)
@@ -975,7 +975,7 @@ namespace vcpkg
 
     constexpr StringLiteral VcpkgCmdArguments::JSON_SWITCH;
 
-    constexpr StringLiteral VcpkgCmdArguments::READWRITE_MIRROR_URL_TEMPLATE_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ENV;
 
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ENV;
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ARG;
