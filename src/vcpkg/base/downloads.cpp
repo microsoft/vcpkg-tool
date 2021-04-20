@@ -182,10 +182,10 @@ namespace vcpkg::Downloads
     };
 #endif
 
-    Optional<details::SplitURIView> details::split_uri_view(StringView uri)
+    ExpectedS<details::SplitURIView> details::split_uri_view(StringView uri)
     {
         auto sep = std::find(uri.begin(), uri.end(), ':');
-        if (sep == uri.end()) return nullopt;
+        if (sep == uri.end()) return Strings::concat("Error: unable to parse uri: '", uri, "'");
 
         StringView scheme(uri.begin(), sep);
         if (Strings::starts_with({sep + 1, uri.end()}, "//"))

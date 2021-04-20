@@ -16,7 +16,7 @@ namespace vcpkg::Downloads
         };
 
         // e.g. {"https","//example.org", "/index.html"}
-        Optional<SplitURIView> split_uri_view(StringView uri);
+        ExpectedS<SplitURIView> split_uri_view(StringView uri);
     }
 
     void verify_downloaded_file_hash(const Files::Filesystem& fs,
