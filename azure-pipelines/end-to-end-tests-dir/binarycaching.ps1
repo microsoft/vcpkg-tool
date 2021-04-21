@@ -57,10 +57,11 @@ Throw-IfFailed
 Require-FileNotExists "$installRoot/$Triplet/include/rapidjson/rapidjson.h"
 Require-FileNotExists "$buildtreesRoot/rapidjson/src"
 Require-FileExists "$TestingRoot/packages.config"
+$fetchNuGetArgs = $commonArgs + @('fetch', 'nuget')
 if ($IsLinux -or $IsMacOS) {
-    mono $(./vcpkg fetch nuget) restore $TestingRoot/packages.config -OutputDirectory "$NuGetRoot2" -Source "$NuGetRoot"
+    mono $(./vcpkg @fetchNuGetArgs) restore $TestingRoot/packages.config -OutputDirectory "$NuGetRoot2" -Source "$NuGetRoot"
 } else {
-    & $(./vcpkg fetch nuget) restore $TestingRoot/packages.config -OutputDirectory "$NuGetRoot2" -Source "$NuGetRoot"
+    & $(./vcpkg @fetchNuGetArgs) restore $TestingRoot/packages.config -OutputDirectory "$NuGetRoot2" -Source "$NuGetRoot"
 }
 Throw-IfFailed
 Remove-Item -Recurse -Force $NuGetRoot -ErrorAction SilentlyContinue
