@@ -529,13 +529,15 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_USE_ARIA2 = "x-use-aria2";
     static constexpr StringLiteral OPTION_CLEAN_AFTER_BUILD = "clean-after-build";
-    static constexpr StringLiteral OPTION_CLEAN_NON_DOWNLOADS_AFTER_BUILD = "clean-non-downloads-after-build";
+    static constexpr StringLiteral OPTION_CLEAN_BUILDTREES_AFTER_BUILD = "clean-buildtrees-after-build";
+    static constexpr StringLiteral OPTION_CLEAN_PACKAGES_AFTER_BUILD = "clean-packages-after-build";
+    static constexpr StringLiteral OPTION_CLEAN_DOWNLOADS_AFTER_BUILD = "clean-downloads-after-build";
     static constexpr StringLiteral OPTION_WRITE_PACKAGES_CONFIG = "x-write-nuget-packages-config";
     static constexpr StringLiteral OPTION_MANIFEST_NO_DEFAULT_FEATURES = "x-no-default-features";
     static constexpr StringLiteral OPTION_MANIFEST_FEATURE = "x-feature";
     static constexpr StringLiteral OPTION_PROHIBIT_BACKCOMPAT_FEATURES = "x-prohibit-backcompat-features";
 
-    static constexpr std::array<CommandSwitch, 12> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 14> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -547,11 +549,13 @@ namespace vcpkg::Install
 
         {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
         {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
-        {OPTION_CLEAN_NON_DOWNLOADS_AFTER_BUILD, "Clean buildtrees and packages after building each package"},
+        {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
+        {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
+        {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES,
          "(experimental) Fail install if a package attempts to use a deprecated feature"},
     }};
-    static constexpr std::array<CommandSwitch, 12> MANIFEST_INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 14> MANIFEST_INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -562,7 +566,9 @@ namespace vcpkg::Install
         {OPTION_EDITABLE, "Disable source re-extraction and binary caching for libraries on the command line"},
         {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
         {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
-        {OPTION_CLEAN_NON_DOWNLOADS_AFTER_BUILD, "Clean buildtrees and packages after building each package"},
+        {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
+        {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
+        {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_MANIFEST_NO_DEFAULT_FEATURES, "Don't install the default features from the manifest."},
     }};
 
@@ -788,8 +794,12 @@ namespace vcpkg::Install
         const bool is_editable = Util::Sets::contains(options.switches, (OPTION_EDITABLE)) || !args.cmake_args.empty();
         const bool use_aria2 = Util::Sets::contains(options.switches, (OPTION_USE_ARIA2));
         const bool clean_after_build = Util::Sets::contains(options.switches, (OPTION_CLEAN_AFTER_BUILD));
-        const bool clean_non_downloads_after_build =
-            Util::Sets::contains(options.switches, (OPTION_CLEAN_NON_DOWNLOADS_AFTER_BUILD));
+        const bool clean_buildtrees_after_build =
+            Util::Sets::contains(options.switches, (OPTION_CLEAN_BUILDTREES_AFTER_BUILD));
+        const bool clean_packages_after_build =
+            Util::Sets::contains(options.switches, (OPTION_CLEAN_PACKAGES_AFTER_BUILD));
+        const bool clean_downloads_after_build =
+            Util::Sets::contains(options.switches, (OPTION_CLEAN_DOWNLOADS_AFTER_BUILD));
         const KeepGoing keep_going =
             to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads);
         const bool prohibit_backcompat_features =
@@ -805,9 +815,9 @@ namespace vcpkg::Install
             Util::Enum::to_enum<Build::UseHeadVersion>(use_head_version),
             Util::Enum::to_enum<Build::AllowDownloads>(!no_downloads),
             Util::Enum::to_enum<Build::OnlyDownloads>(only_downloads),
-            Util::Enum::to_enum<Build::CleanBuildtrees>(clean_after_build || clean_non_downloads_after_build),
-            Util::Enum::to_enum<Build::CleanPackages>(clean_after_build || clean_non_downloads_after_build),
-            Util::Enum::to_enum<Build::CleanDownloads>(clean_after_build),
+            Util::Enum::to_enum<Build::CleanBuildtrees>(clean_after_build || clean_buildtrees_after_build),
+            Util::Enum::to_enum<Build::CleanPackages>(clean_after_build || clean_packages_after_build),
+            Util::Enum::to_enum<Build::CleanDownloads>(clean_after_build || clean_downloads_after_build),
             download_tool,
             Build::PurgeDecompressFailure::NO,
             Util::Enum::to_enum<Build::Editable>(is_editable),
