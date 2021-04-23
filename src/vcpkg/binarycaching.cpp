@@ -1781,7 +1781,7 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
     HelpTableFormatter tbl;
     tbl.text("**Experimental feature: this may change or be removed at any time**");
     tbl.blank();
-    tbl.text("Vcpkg can utilize mirrors to cache downloaded assets, ensuring continued operation even if the original "
+    tbl.text("Vcpkg can use mirrors to cache downloaded assets, ensuring continued operation even if the original "
              "source changes or disappears.");
     tbl.blank();
     tbl.blank();
