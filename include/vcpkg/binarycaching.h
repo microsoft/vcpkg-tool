@@ -61,5 +61,6 @@ namespace vcpkg
 
     std::string generate_nuget_packages_config(const Dependencies::ActionPlan& action);
 
+    void help_topic_asset_caching(const VcpkgPaths& paths);
     void help_topic_binary_caching(const VcpkgPaths& paths);
 }

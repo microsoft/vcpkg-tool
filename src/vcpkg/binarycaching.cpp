@@ -19,6 +19,11 @@ using namespace vcpkg;
 
 namespace
 {
+    static constexpr StringLiteral s_assetcaching_doc_url =
+        "https://github.com/Microsoft/vcpkg/tree/master/docs/users/assetcaching.md";
+    static constexpr StringLiteral s_binarycaching_doc_url =
+        "https://github.com/Microsoft/vcpkg/tree/master/docs/users/binarycaching.md";
+
     struct ConfigSegmentsParser : Parse::ParserBase
     {
         using Parse::ParserBase::ParserBase;
@@ -1385,14 +1390,34 @@ namespace
         }
     };
 
+    struct AssetSourcesState
+    {
+        bool cleared = false;
+        bool block_origin = false;
+        std::vector<std::string> url_templates_to_get;
+        std::vector<std::string> azblob_templates_to_put;
+
+        // Note: the download manager does not currently respect secrets
+        std::vector<std::string> secrets;
+
+        void clear()
+        {
+            cleared = true;
+            block_origin = false;
+            url_templates_to_get.clear();
+            azblob_templates_to_put.clear();
+            secrets.clear();
+        }
+    };
+
     struct AssetSourcesParser : ConfigSegmentsParser
     {
-        AssetSourcesParser(StringView text, StringView origin, State* state)
+        AssetSourcesParser(StringView text, StringView origin, AssetSourcesState* state)
             : ConfigSegmentsParser(text, origin), state(state)
         {
         }
 
-        State* state;
+        AssetSourcesState* state;
 
         void parse()
         {
@@ -1408,24 +1433,43 @@ namespace
         {
             Checks::check_exit(VCPKG_LINE_INFO, !segments.empty());
 
-            if (segments[0].second == "x-azurl")
+            if (segments[0].second == "x-block-origin")
+            {
+                if (segments.size() >= 2)
+                {
+                    return add_error("unexpected arguments: asset config 'x-block-origin' does not accept arguments",
+                                     segments[1].first);
+                }
+                state->block_origin = true;
+            }
+            else if (segments[0].second == "clear")
+            {
+                if (segments.size() != 1)
+                {
+                    return add_error("unexpected arguments: asset config 'clear' does not take arguments",
+                                     segments[1].first);
+                }
+
+                state->clear();
+            }
+            else if (segments[0].second == "x-azurl")
             {
                 // Scheme: x-azurl,<baseurl>[,<sas>[,<readwrite>]]
                 if (segments.size() < 2)
                 {
-                    return add_error("expected arguments: binary config 'azurl' requires at least a base url",
+                    return add_error("expected arguments: asset config 'azurl' requires at least a base url",
                                      segments[0].first);
                 }
 
                 if (segments.size() > 4)
                 {
-                    return add_error("unexpected arguments: binary config 'azurl' requires less than 4 arguments",
+                    return add_error("unexpected arguments: asset config 'azurl' requires less than 4 arguments",
                                      segments[4].first);
                 }
 
                 if (segments[1].second.empty())
                 {
-                    return add_error("unexpected arguments: binary config 'azurl' requires a base uri",
+                    return add_error("unexpected arguments: asset config 'azurl' requires a base uri",
                                      segments[1].first);
                 }
 
@@ -1451,8 +1495,9 @@ namespace
             }
             else
             {
-                return add_error("unknown asset provider type: the only valid provider is 'x-azurl'",
-                                 segments[0].first);
+                return add_error(
+                    "unknown asset provider type: valid source types are 'x-azurl', 'x-block-origin', and 'clear'",
+                    segments[0].first);
             }
         }
     };
@@ -1464,21 +1509,27 @@ ExpectedS<Downloads::DownloadManager> vcpkg::create_download_manager(const Optio
 
     Metrics::g_metrics.lock()->track_property("asset-source", "defined");
 
-    State s;
-    AssetSourcesParser parser(*arg.get(), "<environment>", &s);
+    AssetSourcesState s;
+    AssetSourcesParser parser(*arg.get(), Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV), &s);
     parser.parse();
     if (auto err = parser.get_error())
     {
-        return err->format();
+        return Strings::concat(err->format(), "For more information, see ", s_assetcaching_doc_url, "\n");
     }
 
     if (s.azblob_templates_to_put.size() > 1)
     {
-        return std::string("Error: a maximum of one asset write url can be specified");
+        return Strings::concat("Error: a maximum of one asset write url can be specified\n"
+                               "For more information, see ",
+                               s_assetcaching_doc_url,
+                               "\n");
     }
     if (s.url_templates_to_get.size() > 1)
     {
-        return std::string("Error: a maximum of one asset read url can be specified");
+        return Strings::concat("Error: a maximum of one asset read url can be specified\n"
+                               "For more information, see ",
+                               s_assetcaching_doc_url,
+                               "\n");
     }
 
     Optional<std::string> get_url;
@@ -1492,7 +1543,7 @@ ExpectedS<Downloads::DownloadManager> vcpkg::create_download_manager(const Optio
         put_url = std::move(s.azblob_templates_to_put.back());
     }
 
-    return Downloads::DownloadManager{std::move(get_url), std::move(put_url)};
+    return Downloads::DownloadManager{std::move(get_url), std::move(put_url), s.block_origin};
 }
 
 ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_configs(View<std::string> args)
@@ -1725,6 +1776,39 @@ std::string vcpkg::generate_nuspec(const VcpkgPaths& paths,
     return std::move(xml.buf);
 }
 
+void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
+{
+    HelpTableFormatter tbl;
+    tbl.text("**Experimental feature: this may change or be removed at any time**");
+    tbl.blank();
+    tbl.text("Vcpkg can use mirrors to cache downloaded assets, ensuring continued operation even if the original "
+             "source changes or disappears.");
+    tbl.blank();
+    tbl.blank();
+    tbl.text(Strings::concat(
+        "Asset caching can be configured by setting the environment variable ",
+        VcpkgCmdArguments::ASSET_SOURCES_ENV,
+        " to a semicolon-delimited list of source strings. Characters can be escaped using backtick (`)."));
+    tbl.blank();
+    tbl.blank();
+    tbl.header("Valid source strings");
+    tbl.format("clear", "Removes all previous sources");
+    tbl.format(
+        "x-azurl,<url>[,<sas>[,<rw>]]",
+        "Adds an Azure Blob Storage source, optionally using Shared Access Signature validation. URL should include "
+        "the container path and be terminated with a trailing `/`. SAS, if defined, should be prefixed with a `?`. "
+        "Non-Azure servers will also work if they respond to GET and PUT requests of the form: `<url><sha512><sas>`.");
+    tbl.format("x-block-origin",
+               "Disables use of the original URLs in case the mirror does not have the file available.");
+    tbl.blank();
+    tbl.text("The `<rw>` optional parameter for certain strings controls how they will be accessed. It can be "
+             "specified as `read`, `write`, or `readwrite` and defaults to `read`.");
+    tbl.blank();
+    System::print2(tbl.m_str);
+
+    System::print2("\nExtended documentation is available at ", s_assetcaching_doc_url, "\n");
+}
+
 void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
 {
     HelpTableFormatter tbl;
@@ -1786,8 +1870,7 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
             "\nThis consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.\n");
     }
 
-    System::print2("\nExtended documentation is available at "
-                   "https://github.com/Microsoft/vcpkg/tree/master/docs/users/binarycaching.md \n");
+    System::print2("\nExtended documentation is available at ", s_binarycaching_doc_url, "\n");
 }
 
 std::string vcpkg::generate_nuget_packages_config(const Dependencies::ActionPlan& action)
