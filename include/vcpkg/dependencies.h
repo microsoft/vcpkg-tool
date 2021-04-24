@@ -45,11 +45,15 @@ namespace vcpkg::Dependencies
         EXCLUDED
     };
 
-    struct InstallPlanAction : Util::MoveOnlyBase
+    struct InstallPlanAction
     {
         static bool compare_by_name(const InstallPlanAction* left, const InstallPlanAction* right);
 
         InstallPlanAction() noexcept;
+        InstallPlanAction(const InstallPlanAction&) = delete;
+        InstallPlanAction(InstallPlanAction&&) = default;
+        InstallPlanAction& operator=(const InstallPlanAction&) = delete;
+        InstallPlanAction& operator=(InstallPlanAction&&) = default;
 
         InstallPlanAction(InstalledPackageView&& spghs, const RequestType& request_type);
 
@@ -89,11 +93,16 @@ namespace vcpkg::Dependencies
         REMOVE
     };
 
-    struct RemovePlanAction : Util::MoveOnlyBase
+    struct RemovePlanAction
     {
         static bool compare_by_name(const RemovePlanAction* left, const RemovePlanAction* right);
 
         RemovePlanAction() noexcept;
+        RemovePlanAction(const RemovePlanAction&) = delete;
+        RemovePlanAction(RemovePlanAction&&) = default;
+        RemovePlanAction& operator=(const RemovePlanAction&) = delete;
+        RemovePlanAction& operator=(RemovePlanAction&&) = default;
+
         RemovePlanAction(const PackageSpec& spec, const RemovePlanType& plan_type, const RequestType& request_type);
 
         PackageSpec spec;
@@ -118,11 +127,16 @@ namespace vcpkg::Dependencies
         ALREADY_BUILT
     };
 
-    struct ExportPlanAction : Util::MoveOnlyBase
+    struct ExportPlanAction
     {
         static bool compare_by_name(const ExportPlanAction* left, const ExportPlanAction* right);
 
         ExportPlanAction() noexcept;
+        ExportPlanAction(const ExportPlanAction&) = delete;
+        ExportPlanAction(ExportPlanAction&&) = default;
+        ExportPlanAction& operator=(const ExportPlanAction&) = delete;
+        ExportPlanAction& operator=(ExportPlanAction&&) = default;
+
         ExportPlanAction(const PackageSpec& spec,
                          InstalledPackageView&& installed_package,
                          const RequestType& request_type);

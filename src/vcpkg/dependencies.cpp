@@ -49,7 +49,7 @@ namespace vcpkg::Dependencies
         /// <summary>
         /// Representation of a package and its features in a ClusterGraph.
         /// </summary>
-        struct Cluster : Util::MoveOnlyBase
+        struct Cluster
         {
             Cluster(const InstalledPackageView& ipv, ExpectedS<const SourceControlFileLocation&>&& scfl)
                 : m_spec(ipv.spec()), m_scfl(std::move(scfl)), m_installed(ipv)
@@ -57,6 +57,11 @@ namespace vcpkg::Dependencies
             }
 
             Cluster(const PackageSpec& spec, const SourceControlFileLocation& scfl) : m_spec(spec), m_scfl(scfl) { }
+
+            Cluster(const Cluster&) = delete;
+            Cluster(Cluster&&) = default;
+            Cluster& operator=(const Cluster&) = delete;
+            Cluster& operator=(Cluster&&) = default;
 
             bool has_feature_installed(const std::string& feature) const
             {
@@ -260,12 +265,15 @@ namespace vcpkg::Dependencies
     /// <summary>
     /// Directional graph representing a collection of packages with their features connected by their dependencies.
     /// </summary>
-    struct ClusterGraph : Util::ResourceBase
+    struct ClusterGraph
     {
         explicit ClusterGraph(const PortFileProvider::PortFileProvider& port_provider, Triplet host_triplet)
             : m_port_provider(port_provider), m_host_triplet(host_triplet)
         {
         }
+
+        ClusterGraph(const ClusterGraph&) = delete;
+        ClusterGraph& operator=(const ClusterGraph&) = delete;
 
         /// <summary>
         ///     Find the cluster associated with spec or if not found, create it from the PortFileProvider.
@@ -1259,7 +1267,7 @@ namespace vcpkg::Dependencies
                 bool is_less_than(const Versions::Version& new_ver) const;
             };
 
-            struct PackageNode : Util::MoveOnlyBase
+            struct PackageNode
             {
                 std::map<Versions::Version, VersionSchemeInfo*, VersionTMapLess> vermap;
                 std::map<std::string, VersionSchemeInfo> exacts;
@@ -1271,6 +1279,12 @@ namespace vcpkg::Dependencies
 
                 VersionSchemeInfo* get_node(const Versions::Version& ver);
                 VersionSchemeInfo& emplace_node(Versions::Scheme scheme, const Versions::Version& ver);
+
+                PackageNode() = default;
+                PackageNode(const PackageNode&) = delete;
+                PackageNode(PackageNode&&) = default;
+                PackageNode& operator=(const PackageNode&) = delete;
+                PackageNode& operator=(PackageNode&&) = default;
 
                 template<class F>
                 void foreach_vsi(F f)

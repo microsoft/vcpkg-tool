@@ -207,30 +207,6 @@ namespace vcpkg::Util
         return fmap(input_map, [](auto&& p) { return p.first; });
     }
 
-    struct MoveOnlyBase
-    {
-        MoveOnlyBase() = default;
-        MoveOnlyBase(const MoveOnlyBase&) = delete;
-        MoveOnlyBase(MoveOnlyBase&&) = default;
-
-        MoveOnlyBase& operator=(const MoveOnlyBase&) = delete;
-        MoveOnlyBase& operator=(MoveOnlyBase&&) = default;
-
-        ~MoveOnlyBase() = default;
-    };
-
-    struct ResourceBase
-    {
-        ResourceBase() = default;
-        ResourceBase(const ResourceBase&) = delete;
-        ResourceBase(ResourceBase&&) = delete;
-
-        ResourceBase& operator=(const ResourceBase&) = delete;
-        ResourceBase& operator=(ResourceBase&&) = delete;
-
-        ~ResourceBase() = default;
-    };
-
     namespace Enum
     {
         template<class E>

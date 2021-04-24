@@ -1007,7 +1007,7 @@ namespace vcpkg::Install
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty(), "Install plan cannot be empty");
 
 #if defined(_WIN32)
-        const auto maybe_common_triplet = common_projection(
+        const auto maybe_common_triplet = Util::common_projection(
             action_plan.install_actions, [](const InstallPlanAction& to_install) { return to_install.spec.triplet(); });
         if (maybe_common_triplet)
         {

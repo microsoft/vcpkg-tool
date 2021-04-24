@@ -988,7 +988,7 @@ namespace vcpkg::Files
 
             struct remove
             {
-                struct ErrorInfo : Util::ResourceBase
+                struct ErrorInfo
                 {
                     std::error_code ec;
                     fs::path failure_point;
