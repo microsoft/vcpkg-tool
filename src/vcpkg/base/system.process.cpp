@@ -591,7 +591,7 @@ namespace vcpkg
         actual_cmd_line.raw_arg(Strings::concat(" & echo ", magic_string, " & set"));
 
         auto rc_output = cmd_execute_and_capture_output(actual_cmd_line, env);
-        Checks::check_exit(VCPKG_LINE_INFO, rc_output.exit_code == 0);
+        Checks::check_exit(VCPKG_LINE_INFO, rc_output.exit_code == 0, "Run vcvarsall.bat to get Visual Studio env failed with exit code %d", rc_output.exit_code);
         Debug::print("command line: ", actual_cmd_line.command_line(), "\n");
         Debug::print(rc_output.output, "\n");
 
