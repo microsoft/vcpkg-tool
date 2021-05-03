@@ -551,13 +551,7 @@ namespace
     {
         const auto& baseline = m_baseline.get([this, &paths]() -> Baseline {
             // We delay baseline validation until here to give better error messages and suggestions
-            static constexpr struct
-            {
-                bool operator()(char ch) { return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f'); }
-            } is_lcase_ascii_hex;
-
-            if (m_baseline_identifier.size() != 40 ||
-                !std::all_of(m_baseline_identifier.begin(), m_baseline_identifier.end(), is_lcase_ascii_hex))
+            if (!is_git_commit_sha(m_baseline_identifier))
             {
                 auto e = get_lock_entry(paths);
                 e.ensure_up_to_date(paths);
@@ -612,8 +606,7 @@ namespace
                     Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
                     Checks::exit_maybe_upgrade(
                         VCPKG_LINE_INFO,
-                        "Couldn't find explicitly specified baseline `\"%s\"` in the baseline file for repo %s, "
-                        "and the `\"default\"` baseline does not exist at that commit.",
+                        "The baseline.json from commit `\"%s\"` in the repo %s did not contain a \"default\" field.",
                         m_baseline_identifier,
                         m_repo);
                 }
@@ -1309,5 +1302,15 @@ namespace vcpkg
     ExpectedS<std::map<std::string, VersionT, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths)
     {
         return try_parse_builtin_baseline(paths, "default");
+    }
+
+    bool is_git_commit_sha(StringView sv)
+    {
+        static constexpr struct
+        {
+            bool operator()(char ch) { return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f'); }
+        } is_lcase_ascii_hex;
+
+        return sv.size() == 40 && std::all_of(sv.begin(), sv.end(), is_lcase_ascii_hex);
     }
 }

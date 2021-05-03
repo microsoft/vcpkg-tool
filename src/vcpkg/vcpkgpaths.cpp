@@ -520,7 +520,13 @@ If you wish to silence this error and use classic mode, you can:
                         Debug::print("Lockfile value for key '", x.first, "' was not a string\n");
                         return ret;
                     }
-                    ret.lockdata.emplace(x.first.to_string(), LockFile::EntryData{x.second.string().to_string(), true});
+                    auto sv = x.second.string();
+                    if (!is_git_commit_sha(sv))
+                    {
+                        Debug::print("Lockfile value for key '", x.first, "' was not a git commit sha\n");
+                        return ret;
+                    }
+                    ret.lockdata.emplace(x.first.to_string(), LockFile::EntryData{sv.to_string(), true});
                 }
                 return ret;
             }
