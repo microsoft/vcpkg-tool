@@ -107,6 +107,8 @@ try
     $CurrentTest = 'git commit'
     git @gitConfigOptions commit --amend --no-edit
     Throw-IfFailed
+
+    $gitBaselineCommit = git rev-parse HEAD
 }
 finally
 {
@@ -176,6 +178,7 @@ try
             @{
                 "kind" = "git";
                 "repository" = $gitRegistryUpstream;
+                "baseline" = $gitBaselineCommit;
                 "packages" = @( "vcpkg-internal-e2e-test-port" )
             }
         )

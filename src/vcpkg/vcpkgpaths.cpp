@@ -587,11 +587,17 @@ If you wish to silence this error and use classic mode, you can:
 
     System::Command VcpkgPaths::git_cmd_builder(const fs::path& dot_git_dir, const fs::path& work_tree) const
     {
-        return System::Command(get_tool_exe(Tools::GIT))
-            .string_arg(Strings::concat("--git-dir=", fs::u8string(dot_git_dir)))
-            .string_arg(Strings::concat("--work-tree=", fs::u8string(work_tree)))
-            .string_arg("-c")
-            .string_arg("core.autocrlf=false");
+        System::Command ret(get_tool_exe(Tools::GIT));
+        if (!dot_git_dir.empty())
+        {
+            ret.string_arg(Strings::concat("--git-dir=", fs::u8string(dot_git_dir)));
+        }
+        if (!work_tree.empty())
+        {
+            ret.string_arg(Strings::concat("--work-tree=", fs::u8string(work_tree)));
+        }
+        ret.string_arg("-c").string_arg("core.autocrlf=false");
+        return ret;
     }
 
     ExpectedS<std::string> VcpkgPaths::get_current_git_sha() const
@@ -641,14 +647,13 @@ If you wish to silence this error and use classic mode, you can:
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
         const auto local_repo = this->root / fs::u8path(".git");
-        const auto path_with_separator =
-            Strings::concat(fs::u8string(this->builtin_ports_directory()), Files::preferred_separator);
-        const auto git_cmd = git_cmd_builder(local_repo, this->root)
+        const auto git_cmd = git_cmd_builder({}, {})
+                                 .string_arg("-C")
+                                 .path_arg(this->builtin_ports_directory())
                                  .string_arg("ls-tree")
                                  .string_arg("-d")
                                  .string_arg("HEAD")
-                                 .string_arg("--")
-                                 .path_arg(path_with_separator);
+                                 .string_arg("--");
 
         auto output = System::cmd_execute_and_capture_output(git_cmd);
         if (output.exit_code != 0)
@@ -673,15 +678,7 @@ If you wish to silence this error and use classic mode, you can:
                                        git_cmd.command_line(),
                                        line);
 
-            const auto index = split_line[1].find_last_of('/');
-            if (index == std::string::npos)
-            {
-                return Strings::format("Error: Unexpected output from command `%s`. Couldn't split by `/`.\n%s",
-                                       git_cmd.command_line(),
-                                       line);
-            }
-
-            ret.emplace(split_line[1].substr(index + 1), file_info_section.back());
+            ret.emplace(split_line[1], file_info_section.back());
         }
         return ret;
     }
