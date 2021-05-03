@@ -131,4 +131,42 @@ TEST_CASE ("registry_parsing", "[registries]")
     REQUIRE(registry_impl);
     CHECK(*registry_impl.get());
     CHECK(r.errors().empty());
+
+    test_json = parse_json(R"json(
+{
+    "kind": "git"
+}
+    )json");
+    r.visit(test_json, *registry_impl_des);
+    CHECK(!r.errors().empty());
+
+    test_json = parse_json(R"json(
+{
+    "kind": "git",
+    "repo": "abc"
+}
+    )json");
+    r.visit(test_json, *registry_impl_des);
+    CHECK(!r.errors().empty());
+
+    test_json = parse_json(R"json(
+{
+    "kind": "git",
+    "baseline": "123"
+}
+    )json");
+    r.visit(test_json, *registry_impl_des);
+    CHECK(!r.errors().empty());
+
+    test_json = parse_json(R"json(
+{
+    "kind": "git",
+    "repo": "abc",
+    "baseline": "123"
+}
+    )json");
+    r.visit(test_json, *registry_impl_des);
+    REQUIRE(registry_impl);
+    CHECK(*registry_impl.get());
+    CHECK(r.errors().empty());
 }
