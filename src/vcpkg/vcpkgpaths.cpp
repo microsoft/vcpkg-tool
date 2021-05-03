@@ -228,8 +228,12 @@ namespace vcpkg
             fs::path registries_work_tree_dir;
             fs::path registries_dot_git_dir;
             fs::path registries_git_trees;
+
+            Optional<LockFile> m_installed_lock;
         };
     }
+
+    static fs::path lockfile_path(const VcpkgPaths& p) { return p.vcpkg_dir / fs::u8path("vcpkg-lock.json"); }
 
     VcpkgPaths::VcpkgPaths(Files::Filesystem& filesystem, const VcpkgCmdArguments& args)
         : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(filesystem, args.feature_flag_settings()))
@@ -494,6 +498,66 @@ If you wish to silence this error and use classic mode, you can:
         });
     }
 
+    static LockFile load_lockfile(const Files::Filesystem& fs, const fs::path& p)
+    {
+        LockFile ret;
+        std::error_code ec;
+        auto maybe_lock_contents = Json::parse_file(fs, p, ec);
+        if (ec)
+        {
+            Debug::print("Failed to load lockfile: ", ec.message(), "\n");
+            return ret;
+        }
+        else if (auto lock_contents = maybe_lock_contents.get())
+        {
+            auto& doc = lock_contents->first;
+            if (doc.is_object())
+            {
+                for (auto&& x : doc.object())
+                {
+                    if (!x.second.is_string())
+                    {
+                        Debug::print("Lockfile value for key '", x.first, "' was not a string\n");
+                        return ret;
+                    }
+                    ret.lockdata.emplace(x.first.to_string(), LockFile::EntryData{x.second.string().to_string(), true});
+                }
+                return ret;
+            }
+            Debug::print("Lockfile was not an object\n");
+            return ret;
+        }
+        else
+        {
+            Debug::print("Failed to load lockfile:\n", maybe_lock_contents.error()->format());
+            return ret;
+        }
+    }
+
+    LockFile& VcpkgPaths::get_installed_lockfile() const
+    {
+        if (!m_pimpl->m_installed_lock.has_value())
+        {
+            m_pimpl->m_installed_lock = load_lockfile(get_filesystem(), lockfile_path(*this));
+        }
+        return *m_pimpl->m_installed_lock.get();
+    }
+    void VcpkgPaths::flush_lockfile() const
+    {
+        // If the lock file was not loaded, no need to flush it.
+        if (!m_pimpl->m_installed_lock.has_value()) return;
+        // lockfile was not modified, no need to write anything to disk.
+        const auto& lockfile = *m_pimpl->m_installed_lock.get();
+        if (!lockfile.modified) return;
+        Json::Object obj;
+        for (auto&& data : lockfile.lockdata)
+        {
+            obj.insert(data.first, Json::Value::string(data.second.value));
+        }
+        get_filesystem().write_rename_contents(
+            lockfile_path(*this), fs::u8path("vcpkg-lock.json.tmp"), Json::stringify(obj, {}), VCPKG_LINE_INFO);
+    }
+
     const fs::path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
         return m_pimpl->m_triplets_cache.get_lazy(
@@ -528,70 +592,6 @@ If you wish to silence this error and use classic mode, you can:
             .string_arg(Strings::concat("--work-tree=", fs::u8string(work_tree)))
             .string_arg("-c")
             .string_arg("core.autocrlf=false");
-    }
-
-    void VcpkgPaths::git_checkout_subpath(const VcpkgPaths& paths,
-                                          StringView commit_sha,
-                                          const fs::path& subpath,
-                                          const fs::path& local_repo,
-                                          const fs::path& destination,
-                                          const fs::path& dot_git_dir,
-                                          const fs::path& work_tree)
-    {
-        Files::Filesystem& fs = paths.get_filesystem();
-        fs.remove_all(work_tree, VCPKG_LINE_INFO);
-        fs.remove_all(destination, VCPKG_LINE_INFO);
-        fs.remove_all(dot_git_dir, VCPKG_LINE_INFO);
-
-        // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
-        // git clone --no-checkout --local --no-hardlinks {vcpkg_root} {dot_git_dir}
-        // note that `--no-hardlinks` is added because otherwise, git fails to clone in some cases
-        System::Command clone_cmd_builder = paths.git_cmd_builder(dot_git_dir, work_tree)
-                                                .string_arg("clone")
-                                                .string_arg("--no-checkout")
-                                                .string_arg("--local")
-                                                .string_arg("--no-hardlinks")
-                                                .path_arg(local_repo)
-                                                .path_arg(dot_git_dir);
-        const auto clone_output = System::cmd_execute_and_capture_output(clone_cmd_builder);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           clone_output.exit_code == 0,
-                           "Failed to clone temporary vcpkg instance.\n%s\n",
-                           clone_output.output);
-
-        // git checkout {commit-sha} -- {subpath}
-        System::Command checkout_cmd_builder = paths.git_cmd_builder(dot_git_dir, work_tree)
-                                                   .string_arg("checkout")
-                                                   .string_arg(commit_sha)
-                                                   .string_arg("--")
-                                                   .path_arg(subpath);
-        const auto checkout_output = System::cmd_execute_and_capture_output(checkout_cmd_builder);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           checkout_output.exit_code == 0,
-                           "Error: Failed to checkout %s:%s\n%s\n",
-                           commit_sha,
-                           fs::u8string(subpath),
-                           checkout_output.output);
-
-        const fs::path checked_out_path = work_tree / subpath;
-        const auto& containing_folder = destination.parent_path();
-        if (!fs.exists(containing_folder))
-        {
-            fs.create_directories(containing_folder, VCPKG_LINE_INFO);
-        }
-
-        std::error_code ec;
-        fs.rename_or_copy(checked_out_path, destination, ".tmp", ec);
-        fs.remove_all(work_tree, VCPKG_LINE_INFO);
-        fs.remove_all(dot_git_dir, VCPKG_LINE_INFO);
-        if (ec)
-        {
-            System::printf(System::Color::error,
-                           "Error: Couldn't move checked out files from %s to destination %s",
-                           fs::u8string(checked_out_path),
-                           fs::u8string(destination));
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
     }
 
     ExpectedS<std::string> VcpkgPaths::get_current_git_sha() const
@@ -856,20 +856,14 @@ If you wish to silence this error and use classic mode, you can:
                                             .string_arg("fetch")
                                             .string_arg("--update-shallow")
                                             .string_arg("--")
-                                            .string_arg(repo);
-        if (treeish.size() != 0)
-        {
-            fetch_git_ref.string_arg(treeish);
-        }
+                                            .string_arg(repo)
+                                            .string_arg(treeish);
 
         auto fetch_output = System::cmd_execute_and_capture_output(fetch_git_ref);
         if (fetch_output.exit_code != 0)
         {
-            return {Strings::format("Error: Failed to fetch %s%s from repository %s.\n%s\n",
-                                    treeish.size() != 0 ? "ref " : "",
-                                    treeish,
-                                    repo,
-                                    fetch_output.output),
+            return {Strings::format(
+                        "Error: Failed to fetch ref %s from repository %s.\n%s\n", treeish, repo, fetch_output.output),
                     expected_right_tag};
         }
 
@@ -883,6 +877,44 @@ If you wish to silence this error and use classic mode, you can:
         }
         return {Strings::trim(fetch_head_output.output).to_string(), expected_left_tag};
     }
+
+    Optional<std::string> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
+    {
+        auto& fs = get_filesystem();
+
+        auto work_tree = m_pimpl->registries_work_tree_dir;
+        fs.create_directories(work_tree, VCPKG_LINE_INFO);
+
+        auto lock_file = work_tree / fs::u8path(".vcpkg-lock");
+
+        std::error_code ec;
+        Files::ExclusiveFileLock guard(Files::ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
+
+        auto dot_git_dir = m_pimpl->registries_dot_git_dir;
+
+        System::Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
+        auto init_output = System::cmd_execute_and_capture_output(init_registries_git_dir);
+        if (init_output.exit_code != 0)
+        {
+            return Strings::format(
+                "Error: Failed to initialize local repository %s.\n%s\n", fs::u8string(work_tree), init_output.output);
+        }
+        System::Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
+                                            .string_arg("fetch")
+                                            .string_arg("--update-shallow")
+                                            .string_arg("--")
+                                            .string_arg(repo)
+                                            .string_arg(treeish);
+
+        auto fetch_output = System::cmd_execute_and_capture_output(fetch_git_ref);
+        if (fetch_output.exit_code != 0)
+        {
+            return Strings::format(
+                "Error: Failed to fetch ref %s from repository %s.\n%s\n", treeish, repo, fetch_output.output);
+        }
+        return nullopt;
+    }
+
     // returns an error if there was an unexpected error; returns nullopt if the file doesn't exist at the specified
     // hash
     ExpectedS<std::string> VcpkgPaths::git_show_from_remote_registry(StringView hash,

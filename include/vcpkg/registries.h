@@ -20,6 +20,31 @@
 
 namespace vcpkg
 {
+    struct LockFile
+    {
+        struct EntryData
+        {
+            std::string value;
+            bool stale;
+        };
+        struct Entry
+        {
+            LockFile* lockfile;
+            std::map<std::string, EntryData, std::less<>>::iterator data;
+
+            const std::string& value() const { return data->second.value; }
+            bool stale() const { return data->second.stale; }
+            const std::string& uri() const { return data->first; }
+
+            void ensure_up_to_date(const VcpkgPaths& paths) const;
+        };
+
+        Entry get_or_fetch(const VcpkgPaths& paths, StringView key);
+
+        std::map<std::string, EntryData, std::less<>> lockdata;
+        bool modified = false;
+    };
+
     struct RegistryEntry
     {
         virtual View<VersionT> get_port_versions() const = 0;

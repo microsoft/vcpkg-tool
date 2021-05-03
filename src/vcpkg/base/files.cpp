@@ -487,6 +487,16 @@ namespace vcpkg::Files
             Checks::exit_with_message(linfo, "error writing file: %s: %s", fs::u8string(path), ec.message());
         }
     }
+    void Filesystem::write_rename_contents(const fs::path& path,
+                                           const fs::path& tmpname,
+                                           const std::string& data,
+                                           LineInfo linfo)
+    {
+        auto tmp_path = path;
+        tmp_path.replace_filename(tmpname);
+        this->write_contents(tmp_path, data, linfo);
+        this->rename(tmp_path, path, linfo);
+    }
     void Filesystem::write_contents_and_dirs(const fs::path& path, const std::string& data, LineInfo linfo)
     {
         std::error_code ec;

@@ -182,6 +182,10 @@ namespace vcpkg::Files
                                  std::error_code& ec) = 0;
         void write_contents(const fs::path& path, const std::string& data, LineInfo linfo);
         virtual void write_contents(const fs::path& file_path, const std::string& data, std::error_code& ec) = 0;
+        void write_rename_contents(const fs::path& path,
+                                   const fs::path& tmpext,
+                                   const std::string& data,
+                                   LineInfo linfo);
         void write_contents_and_dirs(const fs::path& path, const std::string& data, LineInfo linfo);
         virtual void write_contents_and_dirs(const fs::path& file_path,
                                              const std::string& data,
