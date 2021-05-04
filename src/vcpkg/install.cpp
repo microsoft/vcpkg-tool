@@ -1174,10 +1174,14 @@ namespace vcpkg::Install
 
         for (auto&& install_action : plan.install_actions)
         {
+            auto&& version_as_string =
+                install_action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).to_versiont().to_string();
             if (!specs_string.empty()) specs_string.push_back(',');
             specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
                                             ":",
-                                            hash_triplet(install_action.spec.triplet()));
+                                            hash_triplet(install_action.spec.triplet()),
+                                            ":",
+                                            Hash::get_string_hash(version_as_string, Hash::Algorithm::Sha256));
         }
 
         Metrics::g_metrics.lock()->track_property("installplan_1", specs_string);
