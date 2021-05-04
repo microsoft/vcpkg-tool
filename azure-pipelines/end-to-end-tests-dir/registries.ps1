@@ -109,6 +109,7 @@ try
     Throw-IfFailed
 
     $gitBaselineCommit = git rev-parse HEAD
+    $gitRefVersionsObject = git rev-parse HEAD:versions
 }
 finally
 {
@@ -186,6 +187,37 @@ try
     New-Item -Path 'vcpkg-configuration.json' -ItemType File `
         -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson)
 
+    Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests' --dry-run
+    Throw-IfFailed
+    Require-FileExists $env:X_VCPKG_REGISTRIES_CACHE/git-trees/$vcpkgInternalE2eTestPortGitTree
+    # This is both the selected baseline as well as the current HEAD
+    Require-FileExists $env:X_VCPKG_REGISTRIES_CACHE/git-trees/$gitRefVersionsObject
+    # Dry run does not create a lockfile
+    Require-FileNotExists $installRoot/vcpkg/vcpkg-lock.json
+
+    Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
+    Throw-IfFailed
+    Require-FileEquals $installRoot/vcpkg/vcpkg-lock.json "{`n  `"$gitRegistryUpstream`": `"$gitBaselineCommit`"`n}`n"
+
+    # Using the lock file means we can reinstall without pulling from the upstream registry
+    $vcpkgConfigurationJson = @{
+        "default-registry" = $null;
+        "registries" = @(
+            @{
+                "kind" = "git";
+                "repository" = "/"; # An invalid repository
+                "baseline" = $gitBaselineCommit;
+                "packages" = @( "vcpkg-internal-e2e-test-port" )
+            }
+        )
+    }
+
+    Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+    Require-FileNotExists $installRoot
+    New-Item -Path $installRoot/vcpkg -ItemType Directory
+    # We pre-seed the install root with a lockfile for the invalid repository, so it isn't actually fetched from
+    New-Item -Path $installRoot/vcpkg/vcpkg-lock.json -ItemType File `
+        -Value "{`n  `"/`": `"$gitBaselineCommit`"`n}`n"
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
     Throw-IfFailed
 }

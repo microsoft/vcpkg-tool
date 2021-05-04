@@ -186,6 +186,55 @@ namespace vcpkg
 
     namespace details
     {
+        namespace
+        {
+            const ExpectedS<fs::path>& default_registries_cache_path()
+            {
+                static auto cachepath = System::get_platform_cache_home().then([](fs::path p) -> ExpectedS<fs::path> {
+                    auto maybe_cachepath = System::get_environment_variable("X_VCPKG_REGISTRIES_CACHE");
+                    if (auto p_str = maybe_cachepath.get())
+                    {
+                        Metrics::g_metrics.lock()->track_property("X_VCPKG_REGISTRIES_CACHE", "defined");
+                        auto path = fs::u8path(*p_str);
+                        path.make_preferred();
+                        const auto status = fs::stdfs::status(path);
+                        if (!fs::stdfs::exists(status))
+                        {
+                            return {"Path to X_VCPKG_REGISTRIES_CACHE does not exist: " + fs::u8string(path),
+                                    expected_right_tag};
+                        }
+
+                        if (!fs::stdfs::is_directory(status))
+                        {
+                            return {"Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: " +
+                                        fs::u8string(path),
+                                    expected_right_tag};
+                        }
+
+                        if (!path.is_absolute())
+                        {
+                            return {"Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: " +
+                                        fs::u8string(path),
+                                    expected_right_tag};
+                        }
+
+                        return {std::move(path), expected_left_tag};
+                    }
+                    p /= fs::u8path("vcpkg/registries");
+                    p.make_preferred();
+                    if (p.is_absolute())
+                    {
+                        return {std::move(p), expected_left_tag};
+                    }
+                    else
+                    {
+                        return {"default path was not absolute: " + fs::u8string(p), expected_right_tag};
+                    }
+                });
+                return cachepath;
+            }
+        }
+
         struct VcpkgPathsImpl
         {
             VcpkgPathsImpl(Files::Filesystem& fs, FeatureFlagSettings ff_settings)
@@ -194,11 +243,10 @@ namespace vcpkg
                 , m_env_cache(ff_settings.compiler_tracking)
                 , m_ff_settings(ff_settings)
             {
-                const auto& cache_root =
-                    System::get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / fs::u8path("vcpkg");
-                registries_work_tree_dir = cache_root / fs::u8path("registries") / fs::u8path("git");
+                const auto& cache_root = default_registries_cache_path().value_or_exit(VCPKG_LINE_INFO);
+                registries_work_tree_dir = cache_root / fs::u8path("git");
                 registries_dot_git_dir = registries_work_tree_dir / fs::u8path(".git");
-                registries_git_trees = cache_root / fs::u8path("registries") / fs::u8path("git-trees");
+                registries_git_trees = cache_root / fs::u8path("git-trees");
             }
 
             Lazy<std::vector<VcpkgPaths::TripletFile>> available_triplets;
@@ -989,6 +1037,8 @@ If you wish to silence this error and use classic mode, you can:
                 git_tree_temp_tar);
 
         auto untar_output = System::cmd_execute_and_capture_output(untar, System::InWorkingDirectory{git_tree_temp});
+        // Attempt to remove temporary files, though non-critical.
+        fs.remove(git_tree_temp_tar, ignore_errors);
         if (untar_output.exit_code != 0)
         {
             return {Strings::format("cmake's untar failed with message:\n%s", untar_output.output), expected_right_tag};

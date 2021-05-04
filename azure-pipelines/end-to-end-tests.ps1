@@ -71,7 +71,8 @@ $envvars_clear = @(
     "VCPKG_KEEP_ENV_VARS",
     "VCPKG_ROOT",
     "VCPKG_FEATURE_FLAGS",
-    "VCPKG_DISABLE_METRICS"
+    "VCPKG_DISABLE_METRICS",
+    "X_VCPKG_REGISTRIES_CACHE"
 )
 $envvars = $envvars_clear + @("VCPKG_DOWNLOADS")
 

@@ -16,10 +16,12 @@ $commonArgs = @(
     "--overlay-triplets=$PSScriptRoot/e2e_ports/triplets"
 )
 $Script:CurrentTest = 'unassigned'
+$env:X_VCPKG_REGISTRIES_CACHE = Join-Path $TestingRoot 'registries'
 
 function Refresh-TestRoot {
     Remove-Item -Recurse -Force $TestingRoot -ErrorAction SilentlyContinue
     mkdir $TestingRoot | Out-Null
+    mkdir $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
     mkdir $NuGetRoot | Out-Null
 }
 
@@ -37,6 +39,19 @@ function Require-FileExists {
     if (-Not (Test-Path $File)) {
         Write-Stack
         throw "'$Script:CurrentTest' failed to create file '$File'"
+    }
+}
+
+function Require-FileEquals {
+    [CmdletBinding()]
+    Param(
+        [string]$File,
+        [string]$Content
+    )
+    Require-FileExists $File
+    if ((Get-Content $File -Raw) -ne $Content) {
+        Write-Stack
+        throw "'$Script:CurrentTest' file '$File' did not have the correct contents"
     }
 }
 
