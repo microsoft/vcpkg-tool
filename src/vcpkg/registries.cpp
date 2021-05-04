@@ -542,6 +542,9 @@ namespace
         // This guarantees that parent.m_paths has been filled before any entries are constructed.
         // The entries may then rely on (bool)parent.m_paths during their operation
         Checks::check_exit(VCPKG_LINE_INFO, parent.m_paths);
+#if defined(_MSC_VER)
+        __assume(parent.m_paths);
+#endif
         auto vtp = parent.get_stale_versions_tree_path(*parent.m_paths);
         stale = vtp.stale;
         fill_data_from_path(parent.m_paths->get_filesystem(), vtp.path);
