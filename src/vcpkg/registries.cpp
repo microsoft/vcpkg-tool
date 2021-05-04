@@ -100,13 +100,13 @@ namespace
             });
         }
 
-        struct VTPResult
+        struct VersionsTreePathResult
         {
             fs::path path;
             bool stale;
         };
 
-        VTPResult get_stale_versions_tree_path(const VcpkgPaths& paths) const
+        VersionsTreePathResult get_stale_versions_tree_path(const VcpkgPaths& paths) const
         {
             auto e = get_lock_entry(paths);
             if (!e.stale())
