@@ -833,7 +833,10 @@ namespace vcpkg::Install
 
             auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
 
-            if (auto maybe_error = manifest_scf.check_against_feature_flags(manifest_path, paths.get_feature_flags()))
+            if (auto maybe_error = manifest_scf.check_against_feature_flags(
+                    manifest_path,
+                    paths.get_feature_flags(),
+                    paths.get_configuration().registry_set.is_default_builtin_registry()))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
             }

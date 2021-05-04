@@ -1237,6 +1237,14 @@ namespace vcpkg
     }
     void RegistrySet::set_default_registry(std::nullptr_t) { default_registry_.reset(); }
 
+    bool RegistrySet::is_default_builtin_registry() const
+    {
+        if (auto default_builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
+        {
+            return default_builtin_registry->m_baseline_identifier.empty();
+        }
+        return false;
+    }
     void RegistrySet::set_default_builtin_registry_baseline(StringView baseline) const
     {
         if (auto default_builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))

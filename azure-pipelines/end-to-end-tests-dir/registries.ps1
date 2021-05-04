@@ -1,6 +1,5 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
-
 $builtinRegistryArgs = $commonArgs + @("--x-builtin-registry-versions-dir=$PSScriptRoot/../e2e_ports/versions")
 
 Run-Vcpkg install @builtinRegistryArgs 'vcpkg-internal-e2e-test-port'
@@ -123,7 +122,12 @@ $vcpkgJson = @{
     "version-string" = "1.0.0";
     "dependencies" = @(
         "vcpkg-internal-e2e-test-port"
-    )
+    );
+    # Use versioning features without a builtin-baseline
+    "overrides" = @(@{
+        "name" = "unused";
+        "version" = "0";
+    })
 }
 
 # test the filesystem registry

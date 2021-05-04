@@ -111,7 +111,7 @@ namespace vcpkg
         void add_registry(Registry&& r);
         void set_default_registry(std::unique_ptr<RegistryImplementation>&& r);
         void set_default_registry(std::nullptr_t r);
-
+        bool is_default_builtin_registry() const;
         void set_default_builtin_registry_baseline(StringView baseline) const;
 
         // returns whether the registry set has any modifications to the default
