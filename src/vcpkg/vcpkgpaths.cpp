@@ -309,7 +309,8 @@ namespace vcpkg
         Debug::print("Using vcpkg-root: ", fs::u8string(root), '\n');
 
         std::error_code ec;
-        bool manifest_mode_on = args.manifest_mode.value_or(args.manifest_root_dir != nullptr);
+        if (args.manifests_enabled())
+        {
         if (args.manifest_root_dir)
         {
             manifest_root_dir = filesystem.canonical(VCPKG_LINE_INFO, fs::u8path(*args.manifest_root_dir));
@@ -318,8 +319,14 @@ namespace vcpkg
         {
             manifest_root_dir = filesystem.find_file_recursively_up(original_cwd, fs::u8path("vcpkg.json"));
         }
+        }
 
-        if (!manifest_root_dir.empty() && manifest_mode_on)
+        if (manifest_root_dir.empty())
+        {
+            installed =
+                process_output_directory(filesystem, root, args.install_root_dir.get(), "installed", VCPKG_LINE_INFO);
+        }
+        else
         {
             Debug::print("Using manifest-root: ", fs::u8string(manifest_root_dir), '\n');
 
@@ -349,40 +356,6 @@ namespace vcpkg
 
             m_pimpl->m_manifest_doc = load_manifest(filesystem, manifest_root_dir);
             m_pimpl->m_manifest_path = manifest_root_dir / fs::u8path("vcpkg.json");
-        }
-        else
-        {
-            // we ignore the manifest root dir if the user requests -manifest
-            if (!manifest_root_dir.empty() && !args.manifest_mode.has_value() && !args.output_json())
-            {
-                System::print2(System::Color::warning,
-                               "Warning: manifest-root detected at ",
-                               fs::generic_u8string(manifest_root_dir),
-                               ", but manifests are not enabled.\n");
-                System::printf(System::Color::warning,
-                               R"(If you wish to use manifest mode, you may do one of the following:
-    * Add the `%s` feature flag to the comma-separated environment
-      variable `%s`.
-    * Add the `%s` feature flag to the `--%s` option.
-    * Pass your manifest directory to the `--%s` option.
-If you wish to silence this error and use classic mode, you can:
-    * Add the `-%s` feature flag to `%s`.
-    * Add the `-%s` feature flag to `--%s`.
-)",
-                               VcpkgCmdArguments::MANIFEST_MODE_FEATURE,
-                               VcpkgCmdArguments::FEATURE_FLAGS_ENV,
-                               VcpkgCmdArguments::MANIFEST_MODE_FEATURE,
-                               VcpkgCmdArguments::FEATURE_FLAGS_ARG,
-                               VcpkgCmdArguments::MANIFEST_ROOT_DIR_ARG,
-                               VcpkgCmdArguments::MANIFEST_MODE_FEATURE,
-                               VcpkgCmdArguments::FEATURE_FLAGS_ENV,
-                               VcpkgCmdArguments::MANIFEST_MODE_FEATURE,
-                               VcpkgCmdArguments::FEATURE_FLAGS_ARG);
-            }
-
-            manifest_root_dir.clear();
-            installed =
-                process_output_directory(filesystem, root, args.install_root_dir.get(), "installed", VCPKG_LINE_INFO);
         }
 
         auto config_file = load_configuration(filesystem, args, root, manifest_root_dir);
