@@ -7,6 +7,7 @@
 #include <vcpkg/update.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Update
 {
@@ -55,6 +56,13 @@ namespace vcpkg::Update
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        if (paths.manifest_mode_enabled())
+        {
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                       "Error: the update command does not currently support manifest mode. Instead, "
+                                       "modify your vcpkg.json and run install.");
+        }
+
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         System::print2("Using local portfile versions. To update the local portfiles, use `git pull`.\n");
 
