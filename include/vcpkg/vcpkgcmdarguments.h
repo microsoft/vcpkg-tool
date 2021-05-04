@@ -104,6 +104,7 @@ namespace vcpkg
         bool compiler_tracking;
         bool binary_caching;
         bool versions;
+        bool manifests;
     };
 
     struct VcpkgCmdArguments
@@ -205,8 +206,9 @@ namespace vcpkg
 
         bool binary_caching_enabled() const { return binary_caching.value_or(true); }
         bool compiler_tracking_enabled() const { return compiler_tracking.value_or(true); }
-        bool registries_enabled() const { return registries_feature.value_or(false); }
-        bool versions_enabled() const { return versions_feature.value_or(false); }
+        bool registries_enabled() const { return registries_feature.value_or(true); }
+        bool versions_enabled() const { return versions_feature.value_or(true); }
+        bool manifests_enabled() const { return manifest_mode.value_or(true); }
         FeatureFlagSettings feature_flag_settings() const
         {
             FeatureFlagSettings f;
@@ -214,6 +216,7 @@ namespace vcpkg
             f.compiler_tracking = compiler_tracking_enabled();
             f.registries = registries_enabled();
             f.versions = versions_enabled();
+            f.manifests = manifests_enabled();
             return f;
         }
 

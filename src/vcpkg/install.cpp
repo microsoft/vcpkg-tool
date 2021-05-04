@@ -833,7 +833,10 @@ namespace vcpkg::Install
 
             auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
 
-            if (auto maybe_error = manifest_scf.check_against_feature_flags(manifest_path, paths.get_feature_flags()))
+            if (auto maybe_error = manifest_scf.check_against_feature_flags(
+                    manifest_path,
+                    paths.get_feature_flags(),
+                    paths.get_configuration().registry_set.is_default_builtin_registry()))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
             }
@@ -918,7 +921,6 @@ namespace vcpkg::Install
             extended_overlay_ports.reserve(args.overlay_ports.size() + 1);
             extended_overlay_ports.push_back(fs::u8string(manifest_path.parent_path()));
             Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
-            System::print2(Strings::join(",", extended_overlay_ports), "\n");
             auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
 
             PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};

@@ -571,6 +571,7 @@ namespace
             auto maybe_contents = paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             if (!maybe_contents.has_value())
             {
+                System::print2("Fetching baseline information from ", m_repo, "...\n");
                 if (auto err = paths.git_fetch(m_repo, m_baseline_identifier))
                 {
                     Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
@@ -966,7 +967,13 @@ namespace
         if (kind == KIND_BUILTIN)
         {
             std::string baseline;
-            r.optional_object_field(obj, BASELINE, baseline, baseline_deserializer);
+            r.required_object_field("a builtin registry", obj, BASELINE, baseline, baseline_deserializer);
+            if (!is_git_commit_sha(baseline))
+            {
+                r.add_generic_error(
+                    "a builtin registry",
+                    "The baseline field of builtin registries must be a git commit SHA (40 lowercase hex characters)");
+            }
             r.check_for_unexpected_fields(obj, valid_builtin_fields(), "a builtin registry");
             res = std::make_unique<BuiltinRegistry>(std::move(baseline));
         }
@@ -1172,6 +1179,7 @@ namespace vcpkg
         auto it = lockdata.find(key);
         if (it == lockdata.end())
         {
+            System::print2("Fetching registry information from ", key, "...\n");
             auto x = paths.git_fetch_from_remote_registry(key, "HEAD");
             it = lockdata.emplace(key.to_string(), EntryData{x.value_or_exit(VCPKG_LINE_INFO), false}).first;
             modified = true;
@@ -1182,6 +1190,7 @@ namespace vcpkg
     {
         if (data->second.stale)
         {
+            System::print2("Fetching registry information from ", data->first, "...\n");
             data->second.value =
                 paths.git_fetch_from_remote_registry(data->first, "HEAD").value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
@@ -1237,6 +1246,14 @@ namespace vcpkg
     }
     void RegistrySet::set_default_registry(std::nullptr_t) { default_registry_.reset(); }
 
+    bool RegistrySet::is_default_builtin_registry() const
+    {
+        if (auto default_builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
+        {
+            return default_builtin_registry->m_baseline_identifier.empty();
+        }
+        return false;
+    }
     void RegistrySet::set_default_builtin_registry_baseline(StringView baseline) const
     {
         if (auto default_builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
@@ -1257,14 +1274,14 @@ namespace vcpkg
         {
             System::printf(System::Color::warning,
                            "warning: the default registry has been replaced with a %s registry, but `builtin-baseline` "
-                           "is specified in vcpkg.json. This field will have no effect.",
+                           "is specified in vcpkg.json. This field will have no effect.\n",
                            default_registry->kind());
         }
         else
         {
             System::print2(System::Color::warning,
                            "warning: the default registry has been disabled, but `builtin-baseline` is specified in "
-                           "vcpkg.json. This field will have no effect.");
+                           "vcpkg.json. This field will have no effect.\n");
         }
     }
 

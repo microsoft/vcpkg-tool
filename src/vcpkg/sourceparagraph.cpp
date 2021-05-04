@@ -1024,7 +1024,8 @@ namespace vcpkg
     }
 
     Optional<std::string> SourceControlFile::check_against_feature_flags(const fs::path& origin,
-                                                                         const FeatureFlagSettings& flags) const
+                                                                         const FeatureFlagSettings& flags,
+                                                                         bool is_default_builtin_registry) const
     {
         static constexpr StringLiteral s_extended_help = "See `vcpkg help versioning` for more information.";
         if (!flags.versions)
@@ -1076,7 +1077,7 @@ namespace vcpkg
         }
         else
         {
-            if (!core_paragraph->builtin_baseline.has_value())
+            if (!core_paragraph->builtin_baseline.has_value() && is_default_builtin_registry)
             {
                 if (std::any_of(core_paragraph->dependencies.begin(),
                                 core_paragraph->dependencies.end(),

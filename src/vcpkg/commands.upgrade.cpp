@@ -41,6 +41,13 @@ namespace vcpkg::Commands::Upgrade
                           Triplet default_triplet,
                           Triplet host_triplet)
     {
+        if (paths.manifest_mode_enabled())
+        {
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                       "Error: the upgrade command does not currently support manifest mode. Instead, "
+                                       "modify your vcpkg.json and run install.");
+        }
+
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
         const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);

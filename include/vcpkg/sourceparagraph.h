@@ -107,7 +107,8 @@ namespace vcpkg
         Optional<const std::vector<Dependency>&> find_dependencies_for_feature(const std::string& featurename) const;
 
         Optional<std::string> check_against_feature_flags(const fs::path& origin,
-                                                          const FeatureFlagSettings& flags) const;
+                                                          const FeatureFlagSettings& flags,
+                                                          bool is_default_builtin_registry = true) const;
 
         VersionT to_versiont() const { return core_paragraph->to_versiont(); }
         SchemedVersion to_schemed_version() const
