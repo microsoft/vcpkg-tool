@@ -918,7 +918,6 @@ namespace vcpkg::Install
             extended_overlay_ports.reserve(args.overlay_ports.size() + 1);
             extended_overlay_ports.push_back(fs::u8string(manifest_path.parent_path()));
             Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
-            System::print2(Strings::join(",", extended_overlay_ports), "\n");
             auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
 
             PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
