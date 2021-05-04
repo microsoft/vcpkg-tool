@@ -3,7 +3,7 @@
 ##### Test spaces in the path
 $Script:CurrentTest = "zlib with spaces in path"
 Write-Host $Script:CurrentTest
-./vcpkg install zlib "--triplet" $Triplet `
+Run-Vcpkg install zlib "--triplet" $Triplet `
     "--no-binarycaching" `
     "--x-buildtrees-root=$TestingRoot/build Trees" `
     "--x-install-root=$TestingRoot/instalL ed" `

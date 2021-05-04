@@ -1043,6 +1043,8 @@ namespace vcpkg::Install
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
+        paths.flush_lockfile();
+
         track_install_plan(action_plan);
 
         const InstallSummary summary =

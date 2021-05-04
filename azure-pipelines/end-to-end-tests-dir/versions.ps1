@@ -1,9 +1,9 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$versionFilesPath = "$env:VCPKG_ROOT/scripts/testing/version-files"
+$versionFilesPath = "$PSScriptRoot/../e2e_ports/version-files"
 
 # Test verify versions
-mkdir $VersionFilesRoot
+mkdir $VersionFilesRoot | Out-Null
 Copy-Item -Recurse "$versionFilesPath/versions_incomplete" $VersionFilesRoot
 $portsRedirectArgsOK = @(
     "--feature-flags=versions",
@@ -17,51 +17,51 @@ $portsRedirectArgsIncomplete = @(
 )
 $CurrentTest = "x-verify-ci-versions (All files OK)"
 Write-Host $CurrentTest
-./vcpkg $portsRedirectArgsOK x-ci-verify-versions --verbose
+Run-Vcpkg @portsRedirectArgsOK x-ci-verify-versions --verbose --debug
 Throw-IfFailed
 
 $CurrentTest = "x-verify-ci-versions (Incomplete)"
-./vcpkg $portsRedirectArgsIncomplete x-ci-verify-versions --verbose
+Run-Vcpkg @portsRedirectArgsIncomplete x-ci-verify-versions --verbose
 Throw-IfNotFailed
 
 $CurrentTest = "x-add-version cat"
 # Do not fail if there's nothing to update
-./vcpkg $portsRedirectArgsIncomplete x-add-version cat --skip-formatting-check
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version cat
 Throw-IfFailed
 
 $CurrentTest = "x-add-version dog"
 # Local version is not in baseline and versions file
-./vcpkg $portsRedirectArgsIncomplete x-add-version dog --skip-formatting-check
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version dog
 Throw-IfFailed
 
 $CurrentTest = "x-add-version duck"
 # Missing versions file
-./vcpkg $portsRedirectArgsIncomplete x-add-version duck --skip-formatting-check
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version duck
 Throw-IfFailed
 
 $CurrentTest = "x-add-version ferret"
 # Missing versions file and missing baseline entry
-./vcpkg $portsRedirectArgsIncomplete x-add-version ferret --skip-formatting-check
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version ferret
 Throw-IfFailed
 
 $CurrentTest = "x-add-version fish (must fail)"
 # Discrepancy between local SHA and SHA in fish.json. Requires --overwrite-version.
-$out = ./vcpkg $portsRedirectArgsIncomplete x-add-version fish --skip-formatting-check
+$out = Run-Vcpkg @portsRedirectArgsIncomplete x-add-version fish
 Throw-IfNotFailed
 $CurrentTest = "x-add-version fish --overwrite-version"
-./vcpkg $portsRedirectArgsIncomplete x-add-version fish --overwrite-version --skip-formatting-check
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version fish --overwrite-version
 Throw-IfFailed
 
 $CurrentTest = "x-add-version mouse"
 # Missing baseline entry
-./vcpkg $portsRedirectArgsIncomplete x-add-version mouse --skip-formatting-check
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version mouse
 Throw-IfFailed
 # Validate changes
-./vcpkg $portsRedirectArgsIncomplete x-ci-verify-versions --verbose
+Run-Vcpkg @portsRedirectArgsIncomplete x-ci-verify-versions --verbose
 Throw-IfFailed
 
 $CurrentTest = "default baseline"
-$out = ./vcpkg $commonArgs "--feature-flags=versions" install --x-manifest-root=$versionFilesPath/default-baseline-1 2>&1 | Out-String
+$out = Run-Vcpkg @commonArgs "--feature-flags=versions" install --x-manifest-root=$versionFilesPath/default-baseline-1 2>&1 | Out-String
 Throw-IfNotFailed
 if ($out -notmatch ".*Error: while checking out baseline.*")
 {
@@ -76,7 +76,7 @@ foreach ($opt_registries in @("",",registries"))
     Refresh-TestRoot
     $CurrentTest = "without default baseline 2 -- enabling versions should not change behavior"
     Remove-Item -Recurse $buildtreesRoot/versioning -ErrorAction SilentlyContinue
-    ./vcpkg $commonArgs "--feature-flags=versions$opt_registries" install `
+    Run-Vcpkg @commonArgs "--feature-flags=versions$opt_registries" install `
         "--dry-run" `
         "--x-manifest-root=$versionFilesPath/without-default-baseline-2" `
         "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"
@@ -84,7 +84,7 @@ foreach ($opt_registries in @("",",registries"))
     Require-FileNotExists $buildtreesRoot/versioning
 
     $CurrentTest = "default baseline 2"
-    ./vcpkg $commonArgs "--feature-flags=versions$opt_registries" install `
+    Run-Vcpkg @commonArgs "--feature-flags=versions$opt_registries" install `
         "--dry-run" `
         "--x-manifest-root=$versionFilesPath/default-baseline-2" `
         "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"
@@ -92,7 +92,7 @@ foreach ($opt_registries in @("",",registries"))
     Require-FileExists $buildtreesRoot/versioning
 
     $CurrentTest = "using version features fails without flag"
-    ./vcpkg $commonArgs "--feature-flags=-versions$opt_registries" install `
+    Run-Vcpkg @commonArgs "--feature-flags=-versions$opt_registries" install `
         "--dry-run" `
         "--x-manifest-root=$versionFilesPath/default-baseline-2" `
         "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"

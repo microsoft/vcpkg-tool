@@ -5,7 +5,7 @@ $packagesRoot = Join-Path $TestingRoot 'packages'
 $NuGetRoot = Join-Path $TestingRoot 'nuget'
 $NuGetRoot2 = Join-Path $TestingRoot 'nuget2'
 $ArchiveRoot = Join-Path $TestingRoot 'archives'
-$VersionFilesRoot = Join-Path $env:VCPKG_ROOT 'version-test'
+$VersionFilesRoot = Join-Path $TestingRoot 'version-test'
 $commonArgs = @(
     "--triplet",
     $Triplet,
@@ -16,11 +16,19 @@ $commonArgs = @(
     "--overlay-triplets=$PSScriptRoot/e2e_ports/triplets"
 )
 $Script:CurrentTest = 'unassigned'
+$env:X_VCPKG_REGISTRIES_CACHE = Join-Path $TestingRoot 'registries'
 
 function Refresh-TestRoot {
     Remove-Item -Recurse -Force $TestingRoot -ErrorAction SilentlyContinue
     mkdir $TestingRoot | Out-Null
+    mkdir $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
     mkdir $NuGetRoot | Out-Null
+}
+
+function Write-Stack {
+    Get-PSCallStack | % {
+        Write-Host "$($_.ScriptName):$($_.ScriptLineNumber): $($_.FunctionName)"
+    }
 }
 
 function Require-FileExists {
@@ -29,7 +37,21 @@ function Require-FileExists {
         [string]$File
     )
     if (-Not (Test-Path $File)) {
+        Write-Stack
         throw "'$Script:CurrentTest' failed to create file '$File'"
+    }
+}
+
+function Require-FileEquals {
+    [CmdletBinding()]
+    Param(
+        [string]$File,
+        [string]$Content
+    )
+    Require-FileExists $File
+    if ((Get-Content $File -Raw) -ne $Content) {
+        Write-Stack
+        throw "'$Script:CurrentTest' file '$File' did not have the correct contents"
     }
 }
 
@@ -39,18 +61,21 @@ function Require-FileNotExists {
         [string]$File
     )
     if (Test-Path $File) {
+        Write-Stack
         throw "'$Script:CurrentTest' should not have created file '$File'"
     }
 }
 
 function Throw-IfFailed {
     if ($LASTEXITCODE -ne 0) {
+        Write-Stack
         throw "'$Script:CurrentTest' had a step with a nonzero exit code"
     }
 }
 
 function Throw-IfNotFailed {
     if ($LASTEXITCODE -eq 0) {
+        Write-Stack
         throw "'$Script:CurrentTest' had a step with an unexpectedly zero exit code"
     }
 }

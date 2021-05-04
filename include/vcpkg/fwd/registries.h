@@ -6,4 +6,5 @@ namespace vcpkg
     struct RegistryImplementation;
     struct Registry;
     struct RegistrySet;
+    struct LockFile;
 }

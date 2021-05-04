@@ -236,8 +236,8 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 port_name,
                                 fs::u8string(versions_file_path),
                                 top_entry.first.versiont,
-                                local_git_tree,
                                 top_entry.second,
+                                local_git_tree,
                                 port_name),
                 expected_right_tag,
             };

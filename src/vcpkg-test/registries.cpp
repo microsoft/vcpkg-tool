@@ -76,59 +76,109 @@ TEST_CASE ("registry_set_selects_registry", "[registries]")
 
 TEST_CASE ("registry_parsing", "[registries]")
 {
-    Json::Reader r;
     auto registry_impl_des = get_registry_implementation_deserializer({});
+    {
+        Json::Reader r;
 
-    auto test_json = parse_json(R"json(
+        auto test_json = parse_json(R"json(
 {
     "kind": "builtin"
 }
     )json");
-    auto registry_impl = r.visit(test_json, *registry_impl_des);
-    REQUIRE(registry_impl);
-    CHECK(*registry_impl.get());
-    CHECK(r.errors().empty());
+        auto registry_impl = r.visit(test_json, *registry_impl_des);
+        REQUIRE(registry_impl);
+        CHECK(*registry_impl.get());
+        CHECK(r.errors().empty());
 
-    test_json = parse_json(R"json(
+        test_json = parse_json(R"json(
 {
     "kind": "builtin",
     "baseline": "hi"
 }
     )json");
-    registry_impl = r.visit(test_json, *registry_impl_des);
-    REQUIRE(registry_impl);
-    CHECK(*registry_impl.get());
-    CHECK(r.errors().empty());
+        registry_impl = r.visit(test_json, *registry_impl_des);
+        REQUIRE(registry_impl);
+        CHECK(*registry_impl.get());
+        CHECK(r.errors().empty());
 
-    test_json = parse_json(R"json(
+        test_json = parse_json(R"json(
 {
     "kind": "builtin",
     "path": "a/b"
 }
     )json");
-    registry_impl = r.visit(test_json, *registry_impl_des);
-    CHECK_FALSE(r.errors().empty());
-    r.errors().clear();
+        registry_impl = r.visit(test_json, *registry_impl_des);
+        CHECK_FALSE(r.errors().empty());
+        r.errors().clear();
 
-    test_json = parse_json(R"json(
+        test_json = parse_json(R"json(
 {
     "kind": "filesystem",
     "path": "a/b/c"
 }
     )json");
-    registry_impl = r.visit(test_json, *registry_impl_des);
-    REQUIRE(registry_impl);
-    CHECK(*registry_impl.get());
-    CHECK(r.errors().empty());
+        registry_impl = r.visit(test_json, *registry_impl_des);
+        REQUIRE(registry_impl);
+        CHECK(*registry_impl.get());
+        CHECK(r.errors().empty());
 
-    test_json = parse_json(R"json(
+        test_json = parse_json(R"json(
 {
     "kind": "filesystem",
     "path": "/a/b/c"
 }
     )json");
-    registry_impl = r.visit(test_json, *registry_impl_des);
+        registry_impl = r.visit(test_json, *registry_impl_des);
+        REQUIRE(registry_impl);
+        CHECK(*registry_impl.get());
+        CHECK(r.errors().empty());
+    }
+
+    auto test_json = parse_json(R"json(
+{
+    "kind": "git"
+}
+    )json");
+    {
+        Json::Reader r;
+        r.visit(test_json, *registry_impl_des);
+        CHECK(!r.errors().empty());
+    }
+    test_json = parse_json(R"json(
+{
+    "kind": "git",
+    "repository": "abc"
+}
+    )json");
+    {
+        Json::Reader r;
+        r.visit(test_json, *registry_impl_des);
+        CHECK(!r.errors().empty());
+    }
+
+    test_json = parse_json(R"json(
+{
+    "kind": "git",
+    "baseline": "123"
+}
+    )json");
+    {
+        Json::Reader r;
+        r.visit(test_json, *registry_impl_des);
+        CHECK(!r.errors().empty());
+    }
+
+    test_json = parse_json(R"json(
+{
+    "kind": "git",
+    "repository": "abc",
+    "baseline": "123"
+}
+    )json");
+    Json::Reader r;
+    auto registry_impl = r.visit(test_json, *registry_impl_des);
     REQUIRE(registry_impl);
     CHECK(*registry_impl.get());
+    INFO(Strings::join("\n", r.errors()));
     CHECK(r.errors().empty());
 }

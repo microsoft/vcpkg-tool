@@ -104,6 +104,8 @@ namespace vcpkg::Commands::SetInstalled
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
+        paths.flush_lockfile();
+
         Install::track_install_plan(action_plan);
 
         const auto summary = Install::perform(args,

@@ -86,6 +86,9 @@ namespace vcpkg
         StringView get_ports_cmake_hash() const;
         const fs::path get_triplet_file_path(Triplet triplet) const;
 
+        LockFile& get_installed_lockfile() const;
+        void flush_lockfile() const;
+
         fs::path original_cwd;
         fs::path root;
         fs::path manifest_root_dir;
@@ -141,8 +144,10 @@ namespace vcpkg
 
         // Git manipulation for remote registries
         // runs `git fetch {uri} {treeish}`, and returns the hash of FETCH_HEAD.
-        // If `treeish` is empty, then just runs `git fetch {uri}`
-        ExpectedS<std::string> git_fetch_from_remote_registry(StringView uri, StringView treeish = {}) const;
+        // Use {treeish} of "HEAD" for the default branch
+        ExpectedS<std::string> git_fetch_from_remote_registry(StringView uri, StringView treeish) const;
+        // runs `git fetch {uri} {treeish}`
+        Optional<std::string> git_fetch(StringView uri, StringView treeish) const;
         ExpectedS<std::string> git_show_from_remote_registry(StringView hash,
                                                              const fs::path& relative_path_to_file) const;
         ExpectedS<std::string> git_find_object_id_for_remote_registry_path(StringView hash,
@@ -177,13 +182,5 @@ namespace vcpkg
 
     private:
         std::unique_ptr<details::VcpkgPathsImpl> m_pimpl;
-
-        static void git_checkout_subpath(const VcpkgPaths& paths,
-                                         StringView commit_sha,
-                                         const fs::path& subpath,
-                                         const fs::path& local_repo,
-                                         const fs::path& destination,
-                                         const fs::path& dot_git_dir,
-                                         const fs::path& work_tree);
     };
 }
