@@ -79,45 +79,59 @@ TEST_CASE ("registry_parsing", "[registries]")
     auto registry_impl_des = get_registry_implementation_deserializer({});
     {
         Json::Reader r;
-
         auto test_json = parse_json(R"json(
 {
     "kind": "builtin"
+}
+    )json");
+        r.visit(test_json, *registry_impl_des);
+        CHECK(!r.errors().empty());
+    }
+    {
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+{
+    "kind": "builtin",
+    "baseline": "hi"
+}
+    )json");
+        r.visit(test_json, *registry_impl_des);
+        CHECK(!r.errors().empty());
+    }
+    {
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+{
+    "kind": "builtin",
+    "baseline": "1234567890123456789012345678901234567890"
 }
     )json");
         auto registry_impl = r.visit(test_json, *registry_impl_des);
         REQUIRE(registry_impl);
         CHECK(*registry_impl.get());
         CHECK(r.errors().empty());
-
-        test_json = parse_json(R"json(
+    }
+    {
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
 {
     "kind": "builtin",
-    "baseline": "hi"
-}
-    )json");
-        registry_impl = r.visit(test_json, *registry_impl_des);
-        REQUIRE(registry_impl);
-        CHECK(*registry_impl.get());
-        CHECK(r.errors().empty());
-
-        test_json = parse_json(R"json(
-{
-    "kind": "builtin",
+    "baseline": "1234567890123456789012345678901234567890",
     "path": "a/b"
 }
     )json");
-        registry_impl = r.visit(test_json, *registry_impl_des);
-        CHECK_FALSE(r.errors().empty());
-        r.errors().clear();
-
-        test_json = parse_json(R"json(
+        r.visit(test_json, *registry_impl_des);
+        CHECK(!r.errors().empty());
+    }
+    {
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
 {
     "kind": "filesystem",
     "path": "a/b/c"
 }
     )json");
-        registry_impl = r.visit(test_json, *registry_impl_des);
+        auto registry_impl = r.visit(test_json, *registry_impl_des);
         REQUIRE(registry_impl);
         CHECK(*registry_impl.get());
         CHECK(r.errors().empty());

@@ -966,7 +966,13 @@ namespace
         if (kind == KIND_BUILTIN)
         {
             std::string baseline;
-            r.optional_object_field(obj, BASELINE, baseline, baseline_deserializer);
+            r.required_object_field("a builtin registry", obj, BASELINE, baseline, baseline_deserializer);
+            if (!is_git_commit_sha(baseline))
+            {
+                r.add_generic_error(
+                    "a builtin registry",
+                    "The baseline field of builtin registries must be a git commit SHA (40 lowercase hex characters)");
+            }
             r.check_for_unexpected_fields(obj, valid_builtin_fields(), "a builtin registry");
             res = std::make_unique<BuiltinRegistry>(std::move(baseline));
         }
