@@ -197,7 +197,7 @@ try
 
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
     Throw-IfFailed
-    Require-FileEquals $installRoot/vcpkg/vcpkg-lock.json "{`n  `"$gitRegistryUpstream`": `"$gitBaselineCommit`"`n}`n"
+    Require-FileEquals $installRoot/vcpkg/vcpkg-lock.json "{`n  $(ConvertTo-Json $gitRegistryUpstream): `"$gitBaselineCommit`"`n}`n"
 
     # Using the lock file means we can reinstall without pulling from the upstream registry
     $vcpkgConfigurationJson = @{
