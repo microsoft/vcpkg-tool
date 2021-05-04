@@ -90,7 +90,7 @@ namespace vcpkg
             for (auto&& msg : reader.errors())
                 System::print2("    ", msg, '\n');
 
-            System::print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/specifications/registries.md for "
+            System::print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for "
                            "more information.\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -311,14 +311,14 @@ namespace vcpkg
         std::error_code ec;
         if (args.manifests_enabled())
         {
-        if (args.manifest_root_dir)
-        {
-            manifest_root_dir = filesystem.canonical(VCPKG_LINE_INFO, fs::u8path(*args.manifest_root_dir));
-        }
-        else
-        {
-            manifest_root_dir = filesystem.find_file_recursively_up(original_cwd, fs::u8path("vcpkg.json"));
-        }
+            if (args.manifest_root_dir)
+            {
+                manifest_root_dir = filesystem.canonical(VCPKG_LINE_INFO, fs::u8path(*args.manifest_root_dir));
+            }
+            else
+            {
+                manifest_root_dir = filesystem.find_file_recursively_up(original_cwd, fs::u8path("vcpkg.json"));
+            }
         }
 
         if (manifest_root_dir.empty())
