@@ -29,9 +29,11 @@ namespace vcpkg::CMakeVars
 
     namespace
     {
-        struct TripletCMakeVarProvider : Util::ResourceBase, CMakeVarProvider
+        struct TripletCMakeVarProvider : CMakeVarProvider
         {
             explicit TripletCMakeVarProvider(const vcpkg::VcpkgPaths& paths) : paths(paths) { }
+            TripletCMakeVarProvider(const TripletCMakeVarProvider&) = delete;
+            TripletCMakeVarProvider& operator=(const TripletCMakeVarProvider&) = delete;
 
             void load_generic_triplet_vars(Triplet triplet) const override;
 

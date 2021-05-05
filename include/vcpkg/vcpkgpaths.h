@@ -60,7 +60,7 @@ namespace vcpkg
     struct PackageSpec;
     struct Triplet;
 
-    struct VcpkgPaths : Util::MoveOnlyBase
+    struct VcpkgPaths
     {
         struct TripletFile
         {
@@ -71,6 +71,10 @@ namespace vcpkg
         };
 
         VcpkgPaths(Files::Filesystem& filesystem, const VcpkgCmdArguments& args);
+        VcpkgPaths(const VcpkgPaths&) = delete;
+        VcpkgPaths(VcpkgPaths&&) = default;
+        VcpkgPaths& operator=(const VcpkgPaths&) = delete;
+        VcpkgPaths& operator=(VcpkgPaths&&) = default;
         ~VcpkgPaths();
 
         fs::path package_dir(const PackageSpec& spec) const;

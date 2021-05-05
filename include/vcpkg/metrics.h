@@ -8,8 +8,12 @@
 
 namespace vcpkg::Metrics
 {
-    struct Metrics : Util::ResourceBase
+    struct Metrics
     {
+        Metrics() = default;
+        Metrics(const Metrics&) = delete;
+        Metrics& operator=(const Metrics&) = delete;
+
         void set_send_metrics(bool should_send_metrics);
         void set_print_metrics(bool should_print_metrics);
         void set_disabled(bool disabled);

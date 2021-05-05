@@ -18,9 +18,11 @@ namespace vcpkg::PortFileProvider
         virtual std::vector<const SourceControlFileLocation*> load_all_control_files() const = 0;
     };
 
-    struct MapPortFileProvider : Util::ResourceBase, PortFileProvider
+    struct MapPortFileProvider : PortFileProvider
     {
         explicit MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileLocation>& map);
+        MapPortFileProvider(const MapPortFileProvider&) = delete;
+        MapPortFileProvider& operator=(const MapPortFileProvider&) = delete;
         ExpectedS<const SourceControlFileLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileLocation*> load_all_control_files() const override;
 
@@ -51,9 +53,11 @@ namespace vcpkg::PortFileProvider
         virtual void load_all_control_files(std::map<std::string, const SourceControlFileLocation*>& out) const = 0;
     };
 
-    struct PathsPortFileProvider : Util::ResourceBase, PortFileProvider
+    struct PathsPortFileProvider : PortFileProvider
     {
         explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, const std::vector<std::string>& overlay_ports);
+        PathsPortFileProvider(const PathsPortFileProvider&) = delete;
+        PathsPortFileProvider& operator=(const PathsPortFileProvider&) = delete;
         ExpectedS<const SourceControlFileLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileLocation*> load_all_control_files() const override;
 

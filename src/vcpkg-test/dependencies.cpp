@@ -165,15 +165,21 @@ static const PackageSpec& toplevel_spec()
     return ret;
 }
 
-struct MockOverlayProvider : PortFileProvider::IOverlayProvider, Util::ResourceBase
+struct MockOverlayProvider : PortFileProvider::IOverlayProvider
 {
+    MockOverlayProvider() = default;
+    MockOverlayProvider(const MockOverlayProvider&) = delete;
+    MockOverlayProvider& operator=(const MockOverlayProvider&) = delete;
+
     virtual Optional<const SourceControlFileLocation&> get_control_file(StringView name) const override
     {
         auto it = mappings.find(name);
-        if (it != mappings.end())
-            return it->second;
-        else
+        if (it == mappings.end())
+        {
             return nullopt;
+        }
+
+        return it->second;
     }
 
     SourceControlFileLocation& emplace(const std::string& name,

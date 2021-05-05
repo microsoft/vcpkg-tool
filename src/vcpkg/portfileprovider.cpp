@@ -93,9 +93,11 @@ namespace vcpkg::PortFileProvider
 
     namespace
     {
-        struct BaselineProviderImpl : IBaselineProvider, Util::ResourceBase
+        struct BaselineProviderImpl : IBaselineProvider
         {
             BaselineProviderImpl(const VcpkgPaths& paths_) : paths(paths_) { }
+            BaselineProviderImpl(const BaselineProviderImpl&) = delete;
+            BaselineProviderImpl& operator=(const BaselineProviderImpl&) = delete;
 
             virtual Optional<VersionT> get_baseline_version(StringView port_name) const override
             {
@@ -117,9 +119,11 @@ namespace vcpkg::PortFileProvider
             mutable std::map<std::string, Optional<VersionT>, std::less<>> m_baseline_cache;
         };
 
-        struct VersionedPortfileProviderImpl : IVersionedPortfileProvider, Util::ResourceBase
+        struct VersionedPortfileProviderImpl : IVersionedPortfileProvider
         {
             VersionedPortfileProviderImpl(const VcpkgPaths& paths_) : paths(paths_) { }
+            VersionedPortfileProviderImpl(const VersionedPortfileProviderImpl&) = delete;
+            VersionedPortfileProviderImpl& operator=(const VersionedPortfileProviderImpl&) = delete;
 
             const ExpectedS<std::unique_ptr<RegistryEntry>>& entry(StringView name) const
             {
@@ -237,7 +241,7 @@ namespace vcpkg::PortFileProvider
             mutable std::map<std::string, ExpectedS<std::unique_ptr<RegistryEntry>>, std::less<>> m_entry_cache;
         };
 
-        struct OverlayProviderImpl : IOverlayProvider, Util::ResourceBase
+        struct OverlayProviderImpl : IOverlayProvider
         {
             OverlayProviderImpl(const VcpkgPaths& paths, View<std::string> overlay_ports)
                 : m_fs(paths.get_filesystem())
@@ -256,6 +260,9 @@ namespace vcpkg::PortFileProvider
                                        s_overlay);
                 }
             }
+
+            OverlayProviderImpl(const OverlayProviderImpl&) = delete;
+            OverlayProviderImpl& operator=(const OverlayProviderImpl&) = delete;
 
             Optional<SourceControlFileLocation> load_port(StringView port_name) const
             {

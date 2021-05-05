@@ -214,11 +214,14 @@ namespace vcpkg::Build
     /// <summary>
     /// Settings from the triplet file which impact the build environment and post-build checks
     /// </summary>
-    struct PreBuildInfo : Util::ResourceBase
+    struct PreBuildInfo
     {
         PreBuildInfo(const VcpkgPaths& paths,
                      Triplet triplet,
                      const std::unordered_map<std::string, std::string>& cmakevars);
+
+        PreBuildInfo(const PreBuildInfo&) = delete;
+        PreBuildInfo& operator=(const PreBuildInfo&) = delete;
 
         Triplet triplet;
         bool load_vcvars_env = false;

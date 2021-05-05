@@ -2,6 +2,7 @@ $TestingRoot = Join-Path $WorkingRoot 'testing'
 $buildtreesRoot = Join-Path $TestingRoot 'buildtrees'
 $installRoot = Join-Path $TestingRoot 'installed'
 $packagesRoot = Join-Path $TestingRoot 'packages'
+$downloadsRoot = Join-Path $TestingRoot 'downloads'
 $NuGetRoot = Join-Path $TestingRoot 'nuget'
 $NuGetRoot2 = Join-Path $TestingRoot 'nuget2'
 $ArchiveRoot = Join-Path $TestingRoot 'archives'
@@ -12,6 +13,7 @@ $commonArgs = @(
     "--x-buildtrees-root=$buildtreesRoot",
     "--x-install-root=$installRoot",
     "--x-packages-root=$packagesRoot",
+    "--downloads-root=$downloadsRoot",
     "--overlay-ports=$PSScriptRoot/e2e_ports/overlays",
     "--overlay-triplets=$PSScriptRoot/e2e_ports/triplets"
 )
