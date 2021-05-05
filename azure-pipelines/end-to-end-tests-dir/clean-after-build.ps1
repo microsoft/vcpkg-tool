@@ -1,5 +1,7 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
+$downloadsRoot = Join-Path $TestingRoot 'downloads'
+
 $CurrentTest = "Clean After Build"
 
 $ZlibInstalledHeader = Join-Path $installRoot "$Triplet/include/zlib.h"
@@ -7,7 +9,7 @@ $ZlibDownloadTarball = Join-Path $downloadsRoot 'zlib1211.tar.gz'
 $ZlibPackageRoot = Join-Path $packagesRoot "zlib_$Triplet"
 $ZlibSrc = Join-Path $buildtreesRoot "zlib/src"
 
-$installZlibArgs = @("install", "zlib", "--no-binarycaching")
+$installZlibArgs = @("install", "zlib", "--no-binarycaching", "--downloads-root=$downloadsRoot")
 
 Refresh-TestRoot
 Run-Vcpkg -TestArgs ($commonArgs + $installZlibArgs)
