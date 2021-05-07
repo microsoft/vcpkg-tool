@@ -368,7 +368,7 @@ namespace vcpkg::Commands::DependInfo
         {
             if (level)
                 System::print2("|");
-            for (size_t j = 0; j < level * 4; j++)
+            for (auto j = 0; j < level * 4; j++)
             {
                 System::print2(" ");
             }
