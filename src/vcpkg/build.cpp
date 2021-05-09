@@ -406,8 +406,14 @@ namespace vcpkg::Build
              * Visual Studio, we even cannot set HTTP(S)_PROXY in CLI, if we want to open or close Proxy we need to
              * restart VS.
              */
+
+            // 2021-05-09 Fix: Detect If there's already HTTP(S)_PROXY presented in the environment variables.
+            // If so, we no longer overwrite them.
+            bool proxy_from_env = (System::get_environment_variable("HTTP_PROXY").has_value() ||
+                                   System::get_environment_variable("HTTPS_PROXY").has_value());
+
             auto ieProxy = System::get_windows_ie_proxy_server();
-            if (ieProxy.has_value())
+            if (ieProxy.has_value() && !proxy_from_env)
             {
                 std::string server = Strings::to_utf8(ieProxy.get()->server);
 
@@ -424,10 +430,9 @@ namespace vcpkg::Build
                         {
                             auto protocol = kvp[0];
                             auto address = kvp[1];
-                            if (!Strings::contains(address, "://"))
-                            {
-                                address = Strings::concat(protocol, "://", address);
-                            }
+                            // No longer append protocol prefix to address. Because HTTPS_PROXY's address is not always
+                            // an HTTPS proxy, an HTTP proxy can also proxy HTTPS requests without end-to-end security
+                            // (As an HTTP Proxy can see your cleartext while an HTTPS proxy can't).
                             protocol = Strings::concat(Strings::ascii_to_uppercase(protocol.c_str()), "_PROXY");
                             env.emplace(protocol, address);
                             System::print2("-- Setting ", protocol, " environment variables to ", address, "\n");
@@ -459,6 +464,10 @@ namespace vcpkg::Build
                     env.emplace("HTTP_PROXY", server.c_str());
                     env.emplace("HTTPS_PROXY", server.c_str());
                 }
+            }
+            else if (proxy_from_env)
+            {
+                System::print2("-- Using HTTP(S)_PROXY in environment variables.\n");
             }
             return {env};
         });
