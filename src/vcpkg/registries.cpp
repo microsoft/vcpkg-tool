@@ -134,7 +134,7 @@ namespace
         }
 
         std::string m_repo;
-        std::string m_baseline_identifier;
+        mutable std::string m_baseline_identifier;
         DelayedInit<LockFile::Entry> m_lock_entry;
         mutable Optional<fs::path> m_stale_versions_tree;
         DelayedInit<fs::path> m_versions_tree;
@@ -558,13 +558,21 @@ namespace
             {
                 auto e = get_lock_entry(paths);
                 e.ensure_up_to_date(paths);
-                Checks::exit_maybe_upgrade(
-                    VCPKG_LINE_INFO,
-                    "Error: the git registry entry for \"%s\" must have a \"baseline\" field that is a valid git "
-                    "commit SHA (40 lowercase hexadecimal characters).\n"
-                    "The current HEAD of that repo is \"%s\".\n",
-                    m_repo,
-                    e.value());
+                std::string latest_commit_sha = e.value();
+
+                // For easy use, please just considering HEAD as 'use latest'.
+                if(Strings::equals(m_baseline_identifier, "HEAD")) {
+                    m_baseline_identifier = latest_commit_sha;
+                    System::print2("Using HEAD commit SHA ", latest_commit_sha, " for git registry ", m_repo, ".\n");
+                } else {
+                    Checks::exit_maybe_upgrade(
+                        VCPKG_LINE_INFO,
+                        "Error: the git registry entry for \"%s\" must have a \"baseline\" field that is a valid git "
+                        "commit SHA (40 lowercase hexadecimal characters).\n"
+                        "The current HEAD of that repo is \"%s\".\n",
+                        m_repo,
+                        e.value());
+                }
             }
 
             auto path_to_baseline = registry_versions_dir_name / fs::u8path("baseline.json");
