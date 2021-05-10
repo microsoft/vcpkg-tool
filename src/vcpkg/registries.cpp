@@ -561,10 +561,13 @@ namespace
                 std::string latest_commit_sha = e.value();
 
                 // For easy use, please just considering HEAD as 'use latest'.
-                if(Strings::equals(m_baseline_identifier, "HEAD")) {
+                if (Strings::equals(m_baseline_identifier, "HEAD"))
+                {
                     m_baseline_identifier = latest_commit_sha;
                     System::print2("Using HEAD commit SHA ", latest_commit_sha, " for git registry ", m_repo, ".\n");
-                } else {
+                }
+                else
+                {
                     Checks::exit_maybe_upgrade(
                         VCPKG_LINE_INFO,
                         "Error: the git registry entry for \"%s\" must have a \"baseline\" field that is a valid git "
