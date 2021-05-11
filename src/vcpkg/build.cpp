@@ -406,58 +406,84 @@ namespace vcpkg::Build
              * Visual Studio, we even cannot set HTTP(S)_PROXY in CLI, if we want to open or close Proxy we need to
              * restart VS.
              */
-            auto ieProxy = System::get_windows_ie_proxy_server();
-            if (ieProxy.has_value())
-            {
-                std::string server = Strings::to_utf8(ieProxy.get()->server);
 
-                // Separate settings in IE Proxy Settings, which is rare?
-                // Python implementation:
-                // https://github.com/python/cpython/blob/7215d1ae25525c92b026166f9d5cac85fb1defe1/Lib/urllib/request.py#L2655
-                if (Strings::contains(server, "="))
+            // 2021-05-09 Fix: Detect If there's already HTTP(S)_PROXY presented in the environment variables.
+            // If so, we no longer overwrite them.
+            bool proxy_from_env = (System::get_environment_variable("HTTP_PROXY").has_value() ||
+                                   System::get_environment_variable("HTTPS_PROXY").has_value());
+
+            if (proxy_from_env)
+            {
+                System::print2("-- Using HTTP(S)_PROXY in environment variables.\n");
+            }
+            else
+            {
+                auto ieProxy = System::get_windows_ie_proxy_server();
+                if (ieProxy.has_value() && !proxy_from_env)
                 {
-                    auto proxy_settings = Strings::split(server, ';');
-                    for (auto& s : proxy_settings)
+                    std::string server = Strings::to_utf8(ieProxy.get()->server);
+
+                    // Separate settings in IE Proxy Settings, which is rare?
+                    // Python implementation:
+                    // https://github.com/python/cpython/blob/7215d1ae25525c92b026166f9d5cac85fb1defe1/Lib/urllib/request.py#L2655
+                    if (Strings::contains(server, "="))
                     {
-                        auto kvp = Strings::split(s, '=');
-                        if (kvp.size() == 2)
+                        auto proxy_settings = Strings::split(server, ';');
+                        for (auto& s : proxy_settings)
                         {
-                            auto protocol = kvp[0];
-                            auto address = kvp[1];
-                            if (!Strings::contains(address, "://"))
+                            auto kvp = Strings::split(s, '=');
+                            if (kvp.size() == 2)
                             {
-                                address = Strings::concat(protocol, "://", address);
+                                auto protocol = kvp[0];
+                                auto address = kvp[1];
+
+                                /* Unlike Python's urllib implementation about this type of proxy configuration
+                                 * (http=addr:port;https=addr:port)
+                                 * https://github.com/python/cpython/blob/7215d1ae25525c92b026166f9d5cac85fb1defe1/Lib/urllib/request.py#L2682
+                                 * we do not intentionally append protocol prefix to address. Because HTTPS_PROXY's
+                                 * address is not always an HTTPS proxy, an HTTP proxy can also proxy HTTPS requests
+                                 * without end-to-end security (As an HTTP Proxy can see your cleartext while an HTTPS
+                                 * proxy can't).
+                                 *
+                                 * If the prefix (http=http://addr:port;https=https://addr:port) already exists in the
+                                 * address, we should consider this address points to an HTTPS proxy, and assign to
+                                 * HTTPS_PROXY directly. However, if it doesn't exist, then we should NOT append an
+                                 * `https://` prefix to an `addr:port` as it could be an HTTP proxy, and the connection
+                                 * request will fail.
+                                 */
+
+                                protocol = Strings::concat(Strings::ascii_to_uppercase(protocol.c_str()), "_PROXY");
+                                env.emplace(protocol, address);
+                                System::print2("-- Setting ", protocol, " environment variables to ", address, "\n");
                             }
-                            protocol = Strings::concat(Strings::ascii_to_uppercase(protocol.c_str()), "_PROXY");
-                            env.emplace(protocol, address);
-                            System::print2("-- Setting ", protocol, " environment variables to ", address, "\n");
                         }
                     }
-                }
-                // Specified http:// prefix
-                else if (Strings::starts_with(server, "http://"))
-                {
-                    System::print2("-- Setting HTTP_PROXY environment variables to ", server, "\n");
-                    env.emplace("HTTP_PROXY", server);
-                }
-                // Specified https:// prefix
-                else if (Strings::starts_with(server, "https://"))
-                {
-                    System::print2("-- Setting HTTPS_PROXY environment variables to ", server, "\n");
-                    env.emplace("HTTPS_PROXY", server);
-                }
-                // Most common case: "ip:port" style, apply to HTTP and HTTPS proxies.
-                // An HTTP(S)_PROXY means https requests go through that, it can be:
-                // http:// prefixed: the request go through an HTTP proxy without end-to-end security.
-                // https:// prefixed: the request go through an HTTPS proxy with end-to-end security.
-                // Nothing prefixed: don't know the default behaviour, seems considering HTTP proxy as default.
-                // We simply set "ip:port" to HTTP(S)_PROXY variables because it works on most common cases.
-                else
-                {
-                    System::print2("-- Automatically setting HTTP(S)_PROXY environment variables to ", server, "\n");
+                    // Specified http:// prefix
+                    else if (Strings::starts_with(server, "http://"))
+                    {
+                        System::print2("-- Setting HTTP_PROXY environment variables to ", server, "\n");
+                        env.emplace("HTTP_PROXY", server);
+                    }
+                    // Specified https:// prefix
+                    else if (Strings::starts_with(server, "https://"))
+                    {
+                        System::print2("-- Setting HTTPS_PROXY environment variables to ", server, "\n");
+                        env.emplace("HTTPS_PROXY", server);
+                    }
+                    // Most common case: "ip:port" style, apply to HTTP and HTTPS proxies.
+                    // An HTTP(S)_PROXY means https requests go through that, it can be:
+                    // http:// prefixed: the request go through an HTTP proxy without end-to-end security.
+                    // https:// prefixed: the request go through an HTTPS proxy with end-to-end security.
+                    // Nothing prefixed: don't know the default behaviour, seems considering HTTP proxy as default.
+                    // We simply set "ip:port" to HTTP(S)_PROXY variables because it works on most common cases.
+                    else
+                    {
+                        System::print2(
+                            "-- Automatically setting HTTP(S)_PROXY environment variables to ", server, "\n");
 
-                    env.emplace("HTTP_PROXY", server.c_str());
-                    env.emplace("HTTPS_PROXY", server.c_str());
+                        env.emplace("HTTP_PROXY", server.c_str());
+                        env.emplace("HTTPS_PROXY", server.c_str());
+                    }
                 }
             }
             return {env};
