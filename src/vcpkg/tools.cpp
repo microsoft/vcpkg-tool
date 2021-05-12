@@ -40,7 +40,7 @@ namespace vcpkg
         const int d2 = atoi(match[2].str().c_str());
         const int d3 = [&] {
             if (match[4].str().empty()) return 0;
-            return atoi(match[5].str().c_str());
+            return atoi(match[4].str().c_str());
         }();
         const std::array<int, 3> result = {d1, d2, d3};
         return result;
