@@ -37,6 +37,7 @@ namespace vcpkg::Commands::Search
 
         System::print2(Json::stringify(obj, Json::JsonStyle{}));
     }
+    static constexpr const int s_name_and_ver_columns = 41;
     static void do_print(const SourceParagraph& source_paragraph, bool full_desc)
     {
         auto full_version = VersionT(source_paragraph.version, source_paragraph.port_version).to_string();
@@ -54,10 +55,18 @@ namespace vcpkg::Commands::Search
             {
                 description = source_paragraph.description[0];
             }
-            System::printf("%-20s %-16s %s\n",
-                           vcpkg::shorten_text(source_paragraph.name, 20),
-                           vcpkg::shorten_text(full_version, 16),
-                           vcpkg::shorten_text(description, 81));
+            static constexpr const int name_columns = 24;
+            size_t used_columns = std::max<size_t>(source_paragraph.name.size(), name_columns) + 1;
+            int ver_size = std::max(0, s_name_and_ver_columns - static_cast<int>(used_columns));
+            used_columns += std::max<size_t>(full_version.size(), ver_size) + 1;
+            size_t description_size = used_columns < (119 - 40) ? 119 - used_columns : 40;
+
+            System::printf("%-*s %-*s %s\n",
+                           name_columns,
+                           source_paragraph.name,
+                           ver_size,
+                           full_version,
+                           vcpkg::shorten_text(description, description_size));
         }
     }
 
@@ -75,8 +84,10 @@ namespace vcpkg::Commands::Search
             {
                 description = feature_paragraph.description[0];
             }
+            size_t desc_length =
+                119 - std::min<size_t>(60, 1 + std::max<size_t>(s_name_and_ver_columns, full_feature_name.size()));
             System::printf(
-                "%-37s %s\n", vcpkg::shorten_text(full_feature_name, 37), vcpkg::shorten_text(description, 81));
+                "%-*s %s\n", s_name_and_ver_columns, full_feature_name, vcpkg::shorten_text(description, desc_length));
         }
     }
 
