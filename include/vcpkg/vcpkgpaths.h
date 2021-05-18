@@ -87,6 +87,7 @@ namespace vcpkg
         const std::vector<std::string> get_available_triplets_names() const;
         const std::vector<TripletFile>& get_available_triplets() const;
         const std::map<std::string, std::string>& get_cmake_script_hashes() const;
+        const std::map<std::string, std::string>& get_buildsystem_script_hashes() const;
         StringView get_ports_cmake_hash() const;
         const fs::path get_triplet_file_path(Triplet triplet) const;
 

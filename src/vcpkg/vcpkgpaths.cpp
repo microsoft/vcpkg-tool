@@ -252,6 +252,7 @@ namespace vcpkg
             Lazy<std::vector<VcpkgPaths::TripletFile>> available_triplets;
             Lazy<std::vector<Toolset>> toolsets;
             Lazy<std::map<std::string, std::string>> cmake_script_hashes;
+            Lazy<std::map<std::string, std::string>> buildsystem_script_hashes;
             Lazy<std::string> ports_cmake_hash;
 
             Files::Filesystem* fs_ptr;
@@ -509,6 +510,33 @@ namespace vcpkg
                                 Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha1));
             }
             return helpers;
+        });
+    }
+
+    const std::map<std::string, std::string>& VcpkgPaths::get_buildsystem_script_hashes() const
+    {
+        return m_pimpl->buildsystem_script_hashes.get_lazy([this]() -> std::map<std::string, std::string> {
+            auto& fs = this->get_filesystem();
+            std::map<std::string, std::string> buildsystem_scripts;
+            auto buildsystem_directory = this->scripts / fs::u8path("buildsystems");
+            auto buildsystem_files = fs.get_files_recursive(buildsystem_directory);
+            for (auto&& file : buildsystem_files)
+            {
+                if (fs.is_directory(file))
+                {
+                    continue;
+                }
+                auto hash = Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha1);
+                auto relative_file = this->scripts.lexically_relative(file);
+                if (relative_file.empty())
+                {
+                    System::printf(System::Color::error, "File %s does not exist under directory %s; this should not be possible.\n", fs::u8string(file), fs::u8string(this->scripts));
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+                buildsystem_scripts.emplace(fs::generic_u8string(relative_file), std::move(hash));
+            }
+
+            return buildsystem_scripts;
         });
     }
 

@@ -1134,6 +1134,11 @@ namespace vcpkg::Build
                 abi_tag_entries.emplace_back(helper.first, helper.second);
             }
         }
+        auto& buildsystem_scripts = paths.get_buildsystem_script_hashes();
+        for (auto&& script : buildsystem_scripts)
+        {
+            abi_tag_entries.emplace_back(script.first, script.second);
+        }
 
         abi_tag_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back("post_build_checks", "2");
