@@ -354,7 +354,10 @@ namespace vcpkg::Commands::DependInfo
 
     void RecurseFindDependencies(int level, std::string currDepend, std::vector<PackageDependInfo> allDepends)
     {
-        auto currPos = allDepends.begin();
+        if (level == 100)
+        {
+            Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
+        }
         for (currPos = allDepends.begin(); currPos != allDepends.end(); currPos++)
         {
             if (currPos->package == currDepend)
