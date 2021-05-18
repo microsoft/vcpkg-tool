@@ -352,7 +352,7 @@ namespace vcpkg::Commands::DependInfo
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void RecurseFindDependencies(int level, std::string currDepend, std::vector<PackageDependInfo> allDepends)
+    void RecurseFindDependencies(int level, const std::string& currDepend, const std::vector<PackageDependInfo>& allDepends)
     {
         if (level == 100)
         {
