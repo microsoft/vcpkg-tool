@@ -310,7 +310,6 @@ namespace vcpkg::Commands::DependInfo
         {
             auto first = depend_info.begin();
             std::string features = Strings::join(", ", first->features);
-            const std::string dependencies = Strings::join(", ", first->dependencies);
 
             if (show_depth)
             {
