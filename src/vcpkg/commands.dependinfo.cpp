@@ -75,7 +75,7 @@ namespace vcpkg::Commands::DependInfo
             constexpr StringLiteral OPTION_SORT_LEXICOGRAPHICAL = "lexicographical";
             constexpr StringLiteral OPTION_SORT_TOPOLOGICAL = "topological";
             constexpr StringLiteral OPTION_SORT_REVERSE = "reverse";
-            constexpr StringLiteral OPTION_SORT_TREE = "tree";
+            constexpr StringLiteral OPTION_SORT_TREE = "x-tree";
 
             static const std::map<std::string, SortMode> sortModesMap{{OPTION_SORT_LEXICOGRAPHICAL, Lexicographical},
                                                                       {OPTION_SORT_TOPOLOGICAL, Topological},
