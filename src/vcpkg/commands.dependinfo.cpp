@@ -358,13 +358,8 @@ namespace vcpkg::Commands::DependInfo
         {
             Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
         }
-        for (currPos = allDepends.begin(); currPos != allDepends.end(); currPos++)
-        {
-            if (currPos->package == currDepend)
-            {
-                break;
-            }
-        }
+        auto currPos = std::find_if(allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
+        Checks::check_exit(VCPKG_LINE_INFO, currPos != allDepends.end(), "internal vcpkg error");
         
         for (auto i = currPos->dependencies.begin(); i != currPos->dependencies.end(); i++)
         {
