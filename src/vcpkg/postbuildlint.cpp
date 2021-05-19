@@ -781,7 +781,7 @@ namespace vcpkg::PostBuildLint
         if (!libs_with_invalid_crt.empty())
         {
             System::printf(System::Color::warning,
-                           "Expected %s crt linkage, but the following libs had invalid crt linkage:\n\n",
+                           "Invalid crt linkage. Expected %s, but the following libs had:\n\n",
                            expected_build_type.to_string());
             for (const BuildTypeAndFile& btf : libs_with_invalid_crt)
             {
