@@ -323,7 +323,7 @@ namespace vcpkg::Commands::DependInfo
                 System::print2("]");
             }
             System::print2("\n");
-            RecurseFindDependencies(0, first->package, depend_info);
+            RecurseFindDependencies(0, first->package, false, depend_info);
         }
         else
         {
@@ -352,7 +352,7 @@ namespace vcpkg::Commands::DependInfo
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void RecurseFindDependencies(int levelFrom, const std::string& currDepend, const std::vector<PackageDependInfo>& allDepends)
+    void RecurseFindDependencies(int levelFrom, const std::string& currDepend, bool isEnd, const std::vector<PackageDependInfo>& allDepends)
     {
         if (levelFrom == 100)
         {
@@ -364,14 +364,24 @@ namespace vcpkg::Commands::DependInfo
         for (auto i = currPos->dependencies.begin(); i != currPos->dependencies.end(); i++)
         {
             // Handle the connecting lines and spaces in front
-            for (auto j = 0; j < levelFrom; j++)
+            if (levelFrom)
             {
-                System::print2("|   ");
+                for (auto j = 0; j < levelFrom - 1; j++)
+                {
+                    System::print2("|   ");
+                }
+
+                if (!isEnd)
+                    System::print2("|   ");
+                else
+                    System::print2("    ");
             }
 
             // Handle the current level
             System::print2("+-- ", i->c_str(), "\n");
-            RecurseFindDependencies(levelFrom + 1, i->c_str(), allDepends);
+            // The last element doesn't need additional connecting lines
+            auto j = i;
+            RecurseFindDependencies(levelFrom + 1, i->c_str(), ++j == currPos->dependencies.end(), allDepends);
         }
     }
 
