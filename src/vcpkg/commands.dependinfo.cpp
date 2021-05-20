@@ -352,25 +352,26 @@ namespace vcpkg::Commands::DependInfo
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void RecurseFindDependencies(int level, const std::string& currDepend, const std::vector<PackageDependInfo>& allDepends)
+    void RecurseFindDependencies(int levelFrom, const std::string& currDepend, const std::vector<PackageDependInfo>& allDepends)
     {
-        if (level == 100)
+        if (levelFrom == 100)
         {
             Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
         }
         auto currPos = std::find_if(allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
         Checks::check_exit(VCPKG_LINE_INFO, currPos != allDepends.end(), "internal vcpkg error");
-        
+
         for (auto i = currPos->dependencies.begin(); i != currPos->dependencies.end(); i++)
         {
-            if (level)
-                System::print2("|");
-            for (auto j = 0; j < level * 4; j++)
+            // Handle the connecting lines and spaces in front
+            for (auto j = 0; j < levelFrom; j++)
             {
-                System::print2(" ");
+                System::print2("|   ");
             }
+
+            // Handle the current level
             System::print2("+-- ", i->c_str(), "\n");
-            RecurseFindDependencies(level + 1, i->c_str(), allDepends);
+            RecurseFindDependencies(levelFrom + 1, i->c_str(), allDepends);
         }
     }
 

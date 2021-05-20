@@ -19,7 +19,7 @@ namespace vcpkg::Commands::DependInfo
                           Triplet default_triplet,
                           Triplet host_triplet);
 
-    void RecurseFindDependencies(int level, std::string currDepend, std::vector<PackageDependInfo> allDepends);
+    void RecurseFindDependencies(int levelFrom, const std::string& currDepend, const std::vector<PackageDependInfo>& allDepends);
 
     struct DependInfoCommand : TripletCommand
     {
