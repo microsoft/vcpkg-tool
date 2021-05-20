@@ -10,6 +10,7 @@
 
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/hash.h>
 #include <vcpkg/base/lazy.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.h>
@@ -60,6 +61,23 @@ namespace vcpkg
     struct PackageSpec;
     struct Triplet;
 
+    struct ContentAndHash
+    {
+        ContentAndHash(std::string&& content, Hash::Algorithm algo);
+
+        StringView content() const
+        {
+            return content_;
+        }
+        StringView hash() const
+        {
+            return hash_;
+        }
+    private:
+        std::string content_;
+        std::string hash_;
+    };
+
     struct VcpkgPaths
     {
         struct TripletFile
@@ -86,8 +104,8 @@ namespace vcpkg
         bool is_valid_triplet(Triplet t) const;
         const std::vector<std::string> get_available_triplets_names() const;
         const std::vector<TripletFile>& get_available_triplets() const;
-        const std::map<std::string, std::string>& get_cmake_script_hashes() const;
-        const std::map<std::string, std::string>& get_buildsystem_script_hashes() const;
+        const std::map<std::string, ContentAndHash>& get_cmake_script_content_and_hashes() const;
+        const std::map<std::string, ContentAndHash>& get_buildsystem_script_content_and_hashes() const;
         StringView get_ports_cmake_hash() const;
         const fs::path get_triplet_file_path(Triplet triplet) const;
 

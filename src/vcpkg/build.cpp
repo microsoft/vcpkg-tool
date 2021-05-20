@@ -1125,19 +1125,43 @@ namespace vcpkg::Build
         abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core"));
 #endif
 
-        auto& helpers = paths.get_cmake_script_hashes();
-        auto portfile_contents = fs.read_contents(port_dir / fs::u8path("portfile.cmake"), VCPKG_LINE_INFO);
-        for (auto&& helper : helpers)
-        {
-            if (Strings::case_insensitive_ascii_contains(portfile_contents, helper.first))
+
+        auto& helpers = paths.get_cmake_script_content_and_hashes();
+        // use instead of a lambda so that we can do recursive calls
+        const struct {
+            const std::map<std::string, ContentAndHash>& helpers;
+            std::vector<Build::AbiEntry>& abi_tag_entries;
+            void operator()(
+                StringView contents,
+                const std::string& helper_name,
+                const ContentAndHash& content_and_hash) const
             {
-                abi_tag_entries.emplace_back(helper.first, helper.second);
+                if (Util::Sets::contains(helpers, helper_name))
+                {
+                    return;
+                }
+                if (!Strings::case_insensitive_ascii_contains(contents, helper_name))
+                {
+                    return;
+                }
+
+                abi_tag_entries.emplace_back(helper_name, content_and_hash.hash().to_string());
+                for (const auto& helper : helpers)
+                {
+                    (*this)(content_and_hash.content().to_string(), helper.first, helper.second);
+                }
             }
+        } add_helper_hash{helpers, abi_tag_entries};
+
+        auto portfile_contents = fs.read_contents(port_dir / fs::u8path("portfile.cmake"), VCPKG_LINE_INFO);
+        for (const auto& helper : helpers)
+        {
+            add_helper_hash(portfile_contents, helper.first, helper.second);
         }
-        auto& buildsystem_scripts = paths.get_buildsystem_script_hashes();
+        auto& buildsystem_scripts = paths.get_buildsystem_script_content_and_hashes();
         for (auto&& script : buildsystem_scripts)
         {
-            abi_tag_entries.emplace_back(script.first, script.second);
+            abi_tag_entries.emplace_back(script.first, script.second.hash().to_string());
         }
 
         abi_tag_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
