@@ -512,7 +512,8 @@ namespace vcpkg
             auto files = fs.get_files_non_recursive(this->scripts / fs::u8path("cmake"));
             for (auto&& file : files)
             {
-                helpers.emplace(fs::u8string(file.stem()), ContentAndHash(fs.read_contents(file, VCPKG_LINE_INFO), Hash::Algorithm::Sha1));
+                auto content = fs.read_contents(file, VCPKG_LINE_INFO);
+                helpers.emplace(fs::u8string(file.stem()), ContentAndHash(std::move(content), Hash::Algorithm::Sha1));
             }
             return helpers;
         });
@@ -537,7 +538,9 @@ namespace vcpkg
                     System::printf(System::Color::error, "File %s does not exist under directory %s; this should not be possible.\n", fs::u8string(file), fs::u8string(this->scripts));
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
-                buildsystem_scripts.emplace(fs::generic_u8string(relative_file), ContentAndHash(fs.read_contents(file, VCPKG_LINE_INFO), Hash::Algorithm::Sha1));
+                auto content = fs.read_contents(file, VCPKG_LINE_INFO);
+
+                buildsystem_scripts.emplace(fs::u8string(file.stem()), ContentAndHash(std::move(content), Hash::Algorithm::Sha1));
             }
 
             return buildsystem_scripts;
@@ -547,7 +550,8 @@ namespace vcpkg
     StringView VcpkgPaths::get_ports_cmake_hash() const
     {
         return m_pimpl->ports_cmake_hash.get_lazy([this]() -> std::string {
-            return Hash::get_file_hash(VCPKG_LINE_INFO, get_filesystem(), ports_cmake, Hash::Algorithm::Sha1);
+            auto content = get_filesystem().read_contents(ports_cmake, VCPKG_LINE_INFO);
+            return Hash::get_string_hash(content, Hash::Algorithm::Sha1);
         });
     }
 

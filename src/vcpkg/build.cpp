@@ -1125,18 +1125,19 @@ namespace vcpkg::Build
         abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core"));
 #endif
 
-
         auto& helpers = paths.get_cmake_script_content_and_hashes();
         // use instead of a lambda so that we can do recursive calls
-        const struct {
+        struct {
             const std::map<std::string, ContentAndHash>& helpers;
             std::vector<Build::AbiEntry>& abi_tag_entries;
+            std::set<char const*> helpers_added; // pointers to helpers keys
             void operator()(
                 StringView contents,
                 const std::string& helper_name,
-                const ContentAndHash& content_and_hash) const
+                const ContentAndHash& content_and_hash)
             {
-                if (Util::Sets::contains(helpers, helper_name))
+                auto helpers_added_it = helpers_added.lower_bound(helper_name.c_str());
+                if (helpers_added_it != helpers_added.end() && *helpers_added_it == helper_name.c_str())
                 {
                     return;
                 }
@@ -1146,12 +1147,13 @@ namespace vcpkg::Build
                 }
 
                 abi_tag_entries.emplace_back(helper_name, content_and_hash.hash().to_string());
+                helpers_added.insert(helpers_added_it, helper_name.c_str());
                 for (const auto& helper : helpers)
                 {
                     (*this)(content_and_hash.content().to_string(), helper.first, helper.second);
                 }
             }
-        } add_helper_hash{helpers, abi_tag_entries};
+        } add_helper_hash{helpers, abi_tag_entries, {}};
 
         auto portfile_contents = fs.read_contents(port_dir / fs::u8path("portfile.cmake"), VCPKG_LINE_INFO);
         for (const auto& helper : helpers)
