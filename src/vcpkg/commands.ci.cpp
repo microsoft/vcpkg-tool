@@ -299,19 +299,22 @@ namespace vcpkg::Commands::CI
         const std::vector<FullPackageSpec>& specs,
         IBinaryProvider& binaryprovider,
         const Dependencies::CreateInstallPlanOptions& serialize_options,
+        Triplet target_triplet,
         Triplet host_triplet)
     {
         auto ret = std::make_unique<UnknownCIPortsResults>();
 
         auto is_excluded = [&](const PackageSpec& spec) -> bool {
+            bool excluded = false;
             if (spec.triplet() == host_triplet)
             {
-                return Util::Sets::contains(host_exclusions, spec.name());
+                excluded = excluded || Util::Sets::contains(host_exclusions, spec.name());
             }
-            else
+            if (spec.triplet() == target_triplet)
             {
-                return Util::Sets::contains(exclusions, spec.name());
+                excluded = excluded || Util::Sets::contains(exclusions, spec.name());
             }
+            return excluded;
         };
 
         std::set<PackageSpec> will_fail;
@@ -551,6 +554,7 @@ namespace vcpkg::Commands::CI
                                                      all_default_full_specs,
                                                      binaryprovider,
                                                      serialize_options,
+                                                     target_triplet,
                                                      host_triplet);
 
         auto& action_plan = split_specs->plan;
