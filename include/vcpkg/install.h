@@ -93,16 +93,6 @@ namespace vcpkg::Install
                            const Build::IBuildLogsRecorder& build_logs_recorder,
                            const CMakeVars::CMakeVarProvider& var_provider);
 
-    struct CMakeUsageInfo
-    {
-        std::string message;
-        bool usage_file = false;
-        Optional<bool> header_only;
-        std::map<std::string, std::vector<std::string>> cmake_targets_map;
-    };
-
-    CMakeUsageInfo get_cmake_usage(const BinaryParagraph& bpgh, const VcpkgPaths& paths);
-
     extern const CommandStructure COMMAND_STRUCTURE;
 
     void perform_and_exit(const VcpkgCmdArguments& args,
