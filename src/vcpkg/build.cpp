@@ -1127,14 +1127,12 @@ namespace vcpkg::Build
 
         auto& helpers = paths.get_cmake_script_content_and_hashes();
         // use instead of a lambda so that we can do recursive calls
-        struct {
+        struct
+        {
             const std::map<std::string, ContentAndHash>& helpers;
             std::vector<Build::AbiEntry>& abi_tag_entries;
             std::set<char const*> helpers_added; // pointers to helpers keys
-            void operator()(
-                StringView contents,
-                const std::string& helper_name,
-                const ContentAndHash& content_and_hash)
+            void operator()(StringView contents, const std::string& helper_name, const ContentAndHash& content_and_hash)
             {
                 auto helpers_added_it = helpers_added.lower_bound(helper_name.c_str());
                 if (helpers_added_it != helpers_added.end() && *helpers_added_it == helper_name.c_str())

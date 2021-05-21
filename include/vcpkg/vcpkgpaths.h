@@ -65,14 +65,9 @@ namespace vcpkg
     {
         ContentAndHash(std::string&& content, Hash::Algorithm algo);
 
-        StringView content() const
-        {
-            return content_;
-        }
-        StringView hash() const
-        {
-            return hash_;
-        }
+        StringView content() const { return content_; }
+        StringView hash() const { return hash_; }
+
     private:
         std::string content_;
         std::string hash_;

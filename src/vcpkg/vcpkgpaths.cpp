@@ -498,10 +498,9 @@ namespace vcpkg
         });
     }
 
-    ContentAndHash::ContentAndHash(std::string&& ctnt, Hash::Algorithm algo)
-        : content_(ctnt)
+    ContentAndHash::ContentAndHash(std::string&& ctnt, Hash::Algorithm algo) : content_(ctnt)
     {
-       hash_ = Hash::get_string_hash(content(), algo);
+        hash_ = Hash::get_string_hash(content(), algo);
     }
 
     const std::map<std::string, ContentAndHash>& VcpkgPaths::get_cmake_script_content_and_hashes() const
@@ -535,12 +534,16 @@ namespace vcpkg
                 auto relative_file = this->scripts.lexically_relative(file);
                 if (relative_file.empty())
                 {
-                    System::printf(System::Color::error, "File %s does not exist under directory %s; this should not be possible.\n", fs::u8string(file), fs::u8string(this->scripts));
+                    System::printf(System::Color::error,
+                                   "File %s does not exist under directory %s; this should not be possible.\n",
+                                   fs::u8string(file),
+                                   fs::u8string(this->scripts));
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
                 auto content = fs.read_contents(file, VCPKG_LINE_INFO);
 
-                buildsystem_scripts.emplace(fs::u8string(file.stem()), ContentAndHash(std::move(content), Hash::Algorithm::Sha1));
+                buildsystem_scripts.emplace(fs::u8string(file.stem()),
+                                            ContentAndHash(std::move(content), Hash::Algorithm::Sha1));
             }
 
             return buildsystem_scripts;
