@@ -122,6 +122,7 @@ namespace vcpkg
 
     Json::Object serialize_manifest(const SourceControlFile& scf);
     Json::Object serialize_debug_manifest(const SourceControlFile& scf);
+    Json::Object serialize_manifest_for_export(const SourceControlFile& scf, bool includeEmptyFields);
 
     /// <summary>
     /// Full metadata of a package: core and other features,

@@ -14,6 +14,7 @@
 #include <vcpkg/commands.dependinfo.h>
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.env.h>
+#include <vcpkg/commands.export-for-website.h>
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/commands.h>
@@ -78,6 +79,7 @@ namespace vcpkg::Commands
         static const X_VSInstances::VSInstancesCommand vsinstances{};
         static const X_Download::XDownloadCommand xdownload{};
         static const FormatManifest::FormatManifestCommand format_manifest{};
+        static const ExportForWebsite::ExportForWebsiteCommand export_for_website{};
         static const CIVerifyVersions::CIVerifyVersionsCommand ci_verify_versions{};
         static const AddVersion::AddVersionCommand add_version{};
 
@@ -102,6 +104,7 @@ namespace vcpkg::Commands
             {"x-vsinstances", &vsinstances},
             {"x-download", &xdownload},
             {"format-manifest", &format_manifest},
+            {"x-export-for-website", &export_for_website},
             {"x-ci-verify-versions", &ci_verify_versions},
             {"x-add-version", &add_version},
         };
