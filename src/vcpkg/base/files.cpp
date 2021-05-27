@@ -517,6 +517,19 @@ namespace vcpkg::Files
                 linfo, "error renaming file: %s: %s: %s", fs::u8string(oldpath), fs::u8string(newpath), ec.message());
         }
     }
+    void Filesystem::rename_with_retry(const fs::path& oldpath, const fs::path& newpath, std::error_code& ec)
+    {
+        using namespace std::chrono_literals;
+        std::chrono::milliseconds delays[] = {0ms, 100ms, 1000ms};
+        size_t max_retry = sizeof(delays) / sizeof(std::chrono::milliseconds);
+        int retry = 0;
+        do
+        {
+            std::this_thread::sleep_for(delays[retry]);
+            this->rename(oldpath, newpath, ec);
+            ++retry;
+        } while (ec && retry < max_retry);
+    }
 
     bool Filesystem::remove(const fs::path& path, LineInfo linfo)
     {

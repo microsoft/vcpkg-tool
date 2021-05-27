@@ -191,6 +191,7 @@ namespace vcpkg::Files
                                              const std::string& data,
                                              std::error_code& ec) = 0;
         void rename(const fs::path& oldpath, const fs::path& newpath, LineInfo linfo);
+        void rename_with_retry(const fs::path& oldpath, const fs::path& newpath, std::error_code& ec);
         virtual void rename(const fs::path& oldpath, const fs::path& newpath, std::error_code& ec) = 0;
         virtual void rename_or_copy(const fs::path& oldpath,
                                     const fs::path& newpath,
