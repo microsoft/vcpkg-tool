@@ -522,7 +522,7 @@ namespace vcpkg::Files
         using namespace std::chrono_literals;
         std::chrono::milliseconds delays[] = {0ms, 100ms, 1000ms};
         size_t max_retry = sizeof(delays) / sizeof(std::chrono::milliseconds);
-        int retry = 0;
+        size_t retry = 0;
         do
         {
             std::this_thread::sleep_for(delays[retry]);
