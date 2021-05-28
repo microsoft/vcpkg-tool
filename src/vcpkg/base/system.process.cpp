@@ -305,6 +305,8 @@ namespace vcpkg
             // Environment variables needed for ssh-agent based authentication
             L"SSH_AUTH_SOCK",
             L"SSH_AGENT_PID",
+            // Enables use of alternative download tools in CMake
+            L"VCPKG_DOWNLOAD_TOOL",
             // Enables find_package(CUDA) and enable_language(CUDA) in CMake
             L"CUDA_PATH",
             L"CUDA_PATH_V9_0",
