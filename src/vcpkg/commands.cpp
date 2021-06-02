@@ -42,7 +42,7 @@ namespace vcpkg::Commands
     {
         static const Version::VersionCommand version{};
         static const Contact::ContactCommand contact{};
-        static const InitRegistry::InitRegistryCommand initRegistry{};
+        static const InitRegistry::InitRegistryCommand init_registry{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
@@ -50,7 +50,7 @@ namespace vcpkg::Commands
         static std::vector<PackageNameAndFunction<const BasicCommand*>> t = {
             {"version", &version},
             {"contact", &contact},
-            {"x-init-registry", &initRegistry},
+            {"x-init-registry", &init_registry},
 
 #if defined(_WIN32)
             {"x-upload-metrics", &upload_metrics},
