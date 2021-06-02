@@ -19,7 +19,7 @@ namespace vcpkg::Commands::InitRegistry
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
         auto path = fs::u8path(args.command_arguments.front());
-        path = fs::combine(paths.original_cwd, path);
+        path = Files::combine(fs.current_path(VCPKG_LINE_INFO), path);
         const auto ports = path / fs::u8path("ports");
         const auto baseline = path / fs::u8path("versions") / fs::u8path("baseline.json");
         if (!fs.exists(ports))
