@@ -459,7 +459,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         for (auto&& line : bashrc_content)
         {
             std::smatch match;
-            if (std::regex_match(line, match, std::regex{R"###(^source.*scripts/vcpkg_completion.bash$)###"}))
+            if (std::regex_match(line, match, std::regex{R"###(source.*scripts/vcpkg_completion.bash)###"}))
             {
                 matches.push_back(line);
             }
@@ -479,6 +479,67 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         System::printf("Adding vcpkg completion entry to %s\n", fs::u8string(bashrc_path));
         bashrc_content.push_back(Strings::format("source %s", fs::u8string(completion_script_path)));
         fs.write_contents(bashrc_path, Strings::join("\n", bashrc_content) + '\n', VCPKG_LINE_INFO);
+        Checks::exit_success(VCPKG_LINE_INFO);
+    }
+
+    static void integrate_zsh(const VcpkgPaths& paths)
+    {
+        const auto home_path = System::get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
+        const fs::path zshrc_path = fs::path{home_path} / ".zshrc";
+
+        auto& fs = paths.get_filesystem();
+        const fs::path completion_script_path = paths.scripts / "vcpkg_completion.zsh";
+
+        Expected<std::vector<std::string>> maybe_zshrc_content = fs.read_lines(zshrc_path);
+        Checks::check_exit(
+            VCPKG_LINE_INFO, maybe_zshrc_content.has_value(), "Unable to read %s", fs::u8string(zshrc_path));
+
+        std::vector<std::string> zshrc_content = maybe_zshrc_content.value_or_exit(VCPKG_LINE_INFO);
+
+        // How to use bash completions in zsh: https://stackoverflow.com/a/8492043/10162645
+        bool has_autoload_bashcompinit = false;
+        bool has_bashcompinit = false;
+        std::vector<std::string> matches;
+        for (auto&& line : zshrc_content)
+        {
+            std::smatch match;
+            if (std::regex_match(line, match, std::regex{R"###(source.*scripts/vcpkg_completion.zsh)###"}))
+            {
+                matches.push_back(line);
+            }
+            else if (std::regex_search(line, std::regex{R"###(^ *autoload[ a-zA-Z0-9-]+bashcompinit)###"}),
+                     std::regex_constants::match_any)
+            {
+                has_autoload_bashcompinit = true;
+            }
+            if (std::regex_match(line, std::regex{R"###(^ *([^#]*&& *)?bashcompinit)###"}))
+            {
+                has_bashcompinit = true;
+            }
+        }
+
+        if (!matches.empty())
+        {
+            System::printf("vcpkg zsh completion is already imported to your %s file.\n"
+                           "The following entries were found:\n"
+                           "    %s\n"
+                           "Please make sure you have started a new zsh shell for the changes to take effect.\n",
+                           fs::u8string(zshrc_path),
+                           Strings::join("\n    ", matches));
+            Checks::exit_success(VCPKG_LINE_INFO);
+        }
+
+        System::printf("Adding vcpkg completion entry to %s\n", fs::u8string(zshrc_path));
+        if (!has_autoload_bashcompinit)
+        {
+            zshrc_content.push_back("autoload bashcompinit");
+        }
+        if (!has_bashcompinit)
+        {
+            zshrc_content.push_back("bashcompinit");
+        }
+        zshrc_content.push_back(Strings::format("source %s", fs::u8string(completion_script_path)));
+        fs.write_contents(zshrc_path, Strings::join("\n", zshrc_content) + '\n', VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
@@ -523,6 +584,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         table.format("vcpkg integrate install", "Make installed packages available user-wide");
         table.format("vcpkg integrate remove", "Remove user-wide integration");
         table.format("vcpkg integrate bash", "Enable bash tab-completion");
+        table.format("vcpkg integrate zsh", "Enable zsh tab-completion");
         table.format("vcpkg integrate x-fish", "Enable fish tab-completion");
 #endif // ^^^ !defined(_WIN32)
     }
@@ -541,6 +603,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         static const std::string PROJECT = "project";
         static const std::string POWERSHELL = "powershell";
         static const std::string BASH = "bash";
+        static const std::string ZSH = "zsh";
         static const std::string FISH = "x-fish";
     }
 
@@ -590,6 +653,10 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         if (args.command_arguments[0] == Subcommand::BASH)
         {
             return integrate_bash(paths);
+        }
+        if (args.command_arguments[0] == Subcommand::ZSH)
+        {
+            return integrate_zsh(paths);
         }
         if (args.command_arguments[0] == Subcommand::FISH)
         {
