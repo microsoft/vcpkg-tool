@@ -444,7 +444,11 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
     static void integrate_bash(const VcpkgPaths& paths)
     {
         const auto home_path = System::get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
+#if defined(__APPLE__)
+        const fs::path bashrc_path = fs::path{home_path} / ".bash_profile";
+#else
         const fs::path bashrc_path = fs::path{home_path} / ".bashrc";
+#endif
 
         auto& fs = paths.get_filesystem();
         const fs::path completion_script_path = paths.scripts / "vcpkg_completion.bash";
