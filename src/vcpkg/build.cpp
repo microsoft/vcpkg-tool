@@ -400,11 +400,11 @@ namespace vcpkg::Build
             /*
              * On Windows 10 (>= 8.1) it is a user-friendly way to automatically set HTTP_PROXY and HTTPS_PROXY
              * environment variables by reading proxy settings via WinHttpGetIEProxyConfigForCurrentUser, preventing
-             * users set and unset these variables manually (which is not a decent way). It is common in China or any
-             * other regions that needs an proxy software (v2ray, shadowsocks, etc.), which sets the IE Proxy Settings,
-             * but not setting environment variables. This will make vcpkg easier to use, specially when use vcpkg in
-             * Visual Studio, we even cannot set HTTP(S)_PROXY in CLI, if we want to open or close Proxy we need to
-             * restart VS.
+             * users set and unset these variables manually (which is not a decent way). It is common in China or
+             * any other regions that needs an proxy software (v2ray, shadowsocks, etc.), which sets the IE Proxy
+             * Settings, but not setting environment variables. This will make vcpkg easier to use, specially when
+             * use vcpkg in Visual Studio, we even cannot set HTTP(S)_PROXY in CLI, if we want to open or close
+             * Proxy we need to restart VS.
              */
 
             // 2021-05-09 Fix: Detect If there's already HTTP(S)_PROXY presented in the environment variables.
@@ -442,14 +442,14 @@ namespace vcpkg::Build
                                  * https://github.com/python/cpython/blob/7215d1ae25525c92b026166f9d5cac85fb1defe1/Lib/urllib/request.py#L2682
                                  * we do not intentionally append protocol prefix to address. Because HTTPS_PROXY's
                                  * address is not always an HTTPS proxy, an HTTP proxy can also proxy HTTPS requests
-                                 * without end-to-end security (As an HTTP Proxy can see your cleartext while an HTTPS
-                                 * proxy can't).
+                                 * without end-to-end security (As an HTTP Proxy can see your cleartext while an
+                                 * HTTPS proxy can't).
                                  *
-                                 * If the prefix (http=http://addr:port;https=https://addr:port) already exists in the
-                                 * address, we should consider this address points to an HTTPS proxy, and assign to
-                                 * HTTPS_PROXY directly. However, if it doesn't exist, then we should NOT append an
-                                 * `https://` prefix to an `addr:port` as it could be an HTTP proxy, and the connection
-                                 * request will fail.
+                                 * If the prefix (http=http://addr:port;https=https://addr:port) already exists in
+                                 * the address, we should consider this address points to an HTTPS proxy, and assign
+                                 * to HTTPS_PROXY directly. However, if it doesn't exist, then we should NOT append
+                                 * an `https://` prefix to an `addr:port` as it could be an HTTP proxy, and the
+                                 * connection request will fail.
                                  */
 
                                 protocol = Strings::concat(Strings::ascii_to_uppercase(protocol.c_str()), "_PROXY");
@@ -516,10 +516,11 @@ namespace vcpkg::Build
 
         auto tcfile = abi_info.pre_build_info->toolchain_file();
         auto&& toolchain_hash = m_toolchain_cache.get_lazy(
-            tcfile, [&]() { return Hash::get_file_hash(VCPKG_LINE_INFO, fs, tcfile, Hash::Algorithm::Sha1); });
+            tcfile, [&]() { return Hash::get_file_hash(VCPKG_LINE_INFO, fs, tcfile, Hash::Algorithm::Sha256); });
 
         auto&& triplet_entry = m_triplet_cache.get_lazy(triplet_file_path, [&]() -> TripletMapEntry {
-            return TripletMapEntry{Hash::get_file_hash(VCPKG_LINE_INFO, fs, triplet_file_path, Hash::Algorithm::Sha1)};
+            return TripletMapEntry{
+                Hash::get_file_hash(VCPKG_LINE_INFO, fs, triplet_file_path, Hash::Algorithm::Sha256)};
         });
 
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
@@ -542,10 +543,11 @@ namespace vcpkg::Build
 
         auto tcfile = abi_info.pre_build_info->toolchain_file();
         auto&& toolchain_hash = m_toolchain_cache.get_lazy(
-            tcfile, [&]() { return Hash::get_file_hash(VCPKG_LINE_INFO, fs, tcfile, Hash::Algorithm::Sha1); });
+            tcfile, [&]() { return Hash::get_file_hash(VCPKG_LINE_INFO, fs, tcfile, Hash::Algorithm::Sha256); });
 
         auto&& triplet_entry = m_triplet_cache.get_lazy(triplet_file_path, [&]() -> TripletMapEntry {
-            return TripletMapEntry{Hash::get_file_hash(VCPKG_LINE_INFO, fs, triplet_file_path, Hash::Algorithm::Sha1)};
+            return TripletMapEntry{
+                Hash::get_file_hash(VCPKG_LINE_INFO, fs, triplet_file_path, Hash::Algorithm::Sha256)};
         });
 
         return triplet_entry.compiler_hashes.get_lazy(toolchain_hash, [&]() -> std::string {
@@ -1037,7 +1039,7 @@ namespace vcpkg::Build
             abi_tag_entries.emplace_back(
                 "public_abi_override",
                 Hash::get_string_hash(pre_build_info.public_abi_override.value_or_exit(VCPKG_LINE_INFO),
-                                      Hash::Algorithm::Sha1));
+                                      Hash::Algorithm::Sha256));
         }
 
         for (const auto& env_var : pre_build_info.passthrough_env_vars_tracked)
@@ -1045,7 +1047,7 @@ namespace vcpkg::Build
             if (auto e = System::get_environment_variable(env_var))
             {
                 abi_tag_entries.emplace_back(
-                    "ENV:" + env_var, Hash::get_string_hash(e.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha1));
+                    "ENV:" + env_var, Hash::get_string_hash(e.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
             }
         }
     }
@@ -1108,7 +1110,7 @@ namespace vcpkg::Build
             {
                 abi_tag_entries.emplace_back(
                     fs::u8string(port_file.path().filename()),
-                    vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha1));
+                    vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha256));
 
                 ++port_file_count;
                 if (port_file_count > max_port_file_count)
@@ -1167,7 +1169,7 @@ namespace vcpkg::Build
             fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
 
             return AbiTagAndFile{&triplet_abi,
-                                 Hash::get_file_hash(VCPKG_LINE_INFO, fs, abi_file_path, Hash::Algorithm::Sha1),
+                                 Hash::get_file_hash(VCPKG_LINE_INFO, fs, abi_file_path, Hash::Algorithm::Sha256),
                                  abi_file_path};
         }
 
