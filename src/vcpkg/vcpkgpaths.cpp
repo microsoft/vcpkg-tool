@@ -251,7 +251,8 @@ namespace vcpkg
 
             Lazy<std::vector<VcpkgPaths::TripletFile>> available_triplets;
             Lazy<std::vector<Toolset>> toolsets;
-            Lazy<std::map<std::string, std::string>> cmake_script_hashes;
+            Lazy<std::map<std::string, ContentAndHash>> cmake_script_content_and_hashes;
+            Lazy<std::map<std::string, ContentAndHash>> buildsystem_script_content_and_hashes;
             Lazy<std::string> ports_cmake_hash;
 
             Files::Filesystem* fs_ptr;
@@ -497,25 +498,63 @@ namespace vcpkg
         });
     }
 
-    const std::map<std::string, std::string>& VcpkgPaths::get_cmake_script_hashes() const
+    ContentAndHash::ContentAndHash(std::string&& ctnt, Hash::Algorithm algo) : content_(ctnt)
     {
-        return m_pimpl->cmake_script_hashes.get_lazy([this]() -> std::map<std::string, std::string> {
+        hash_ = Hash::get_string_hash(content(), algo);
+    }
+
+    const std::map<std::string, ContentAndHash>& VcpkgPaths::get_cmake_script_content_and_hashes() const
+    {
+        return m_pimpl->cmake_script_content_and_hashes.get_lazy([this]() {
             auto& fs = this->get_filesystem();
-            std::map<std::string, std::string> helpers;
+            std::map<std::string, ContentAndHash> helpers;
             auto files = fs.get_files_non_recursive(this->scripts / fs::u8path("cmake"));
             for (auto&& file : files)
             {
-                helpers.emplace(fs::u8string(file.stem()),
-                                Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha1));
+                auto content = fs.read_contents(file, VCPKG_LINE_INFO);
+                helpers.emplace(fs::u8string(file.stem()), ContentAndHash(std::move(content), Hash::Algorithm::Sha1));
             }
             return helpers;
+        });
+    }
+
+    const std::map<std::string, ContentAndHash>& VcpkgPaths::get_buildsystem_script_content_and_hashes() const
+    {
+        return m_pimpl->buildsystem_script_content_and_hashes.get_lazy([this]() {
+            auto& fs = this->get_filesystem();
+            std::map<std::string, ContentAndHash> buildsystem_scripts;
+            auto buildsystem_directory = this->scripts / fs::u8path("buildsystems");
+            auto buildsystem_files = fs.get_files_recursive(buildsystem_directory);
+            for (auto&& file : buildsystem_files)
+            {
+                if (fs.is_directory(file))
+                {
+                    continue;
+                }
+                auto relative_file = this->scripts.lexically_relative(file);
+                if (relative_file.empty())
+                {
+                    System::printf(System::Color::error,
+                                   "File %s does not exist under directory %s; this should not be possible.\n",
+                                   fs::u8string(file),
+                                   fs::u8string(this->scripts));
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+                auto content = fs.read_contents(file, VCPKG_LINE_INFO);
+
+                buildsystem_scripts.emplace(fs::u8string(file.stem()),
+                                            ContentAndHash(std::move(content), Hash::Algorithm::Sha1));
+            }
+
+            return buildsystem_scripts;
         });
     }
 
     StringView VcpkgPaths::get_ports_cmake_hash() const
     {
         return m_pimpl->ports_cmake_hash.get_lazy([this]() -> std::string {
-            return Hash::get_file_hash(VCPKG_LINE_INFO, get_filesystem(), ports_cmake, Hash::Algorithm::Sha1);
+            auto content = get_filesystem().read_contents(ports_cmake, VCPKG_LINE_INFO);
+            return Hash::get_string_hash(content, Hash::Algorithm::Sha1);
         });
     }
 
