@@ -235,6 +235,8 @@ namespace vcpkg::Files
         fs::file_status status(const fs::path& p, ignore_errors_t) const noexcept;
         fs::file_status symlink_status(LineInfo li, const fs::path& p) const noexcept;
         fs::file_status symlink_status(const fs::path& p, ignore_errors_t) const noexcept;
+        virtual fs::path relative(const fs::path& path, const fs::path& base, std::error_code& ec) const = 0;
+        fs::path relative(LineInfo li, const fs::path& path, const fs::path& base) const;
         virtual fs::path absolute(const fs::path& path, std::error_code& ec) const = 0;
         fs::path absolute(LineInfo li, const fs::path& path) const;
         virtual fs::path canonical(const fs::path& path, std::error_code& ec) const = 0;
