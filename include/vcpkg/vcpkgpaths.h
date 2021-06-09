@@ -108,6 +108,11 @@ namespace vcpkg
         fs::path builtin_ports;
         fs::path builtin_registry_versions;
 
+        // When we are in a custom registry, these values are different from builtin_ports, otherwise they are the same
+        fs::path current_registry_dot_git_dir;
+        fs::path current_registry_ports;
+        fs::path current_registry_versions;
+
         fs::path tools;
         fs::path buildsystems;
         fs::path buildsystems_msbuild_targets;

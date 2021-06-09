@@ -446,6 +446,75 @@ namespace vcpkg
         }
         m_pimpl->triplets_dirs.emplace_back(triplets);
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
+
+        // detect custom registry
+        if (args.registry_ports_dir || args.registry_versions_dir || args.registry_root_dir)
+        {
+            const auto canonical = [&](const auto& arg) {
+                return filesystem.almost_canonical(VCPKG_LINE_INFO, fs::u8path(*arg));
+            };
+            auto registry_root = args.registry_root_dir ? canonical(args.registry_ports_dir) : original_cwd;
+            const auto find_dir = [&](const fs::path& filename) {
+                fs::path path;
+                if (args.registry_root_dir)
+                {
+                    path = registry_root / filename;
+                }
+                else
+                {
+                    path = filesystem.find_file_recursively_up(original_cwd, filename);
+                }
+                Checks::check_exit(VCPKG_LINE_INFO,
+                                   !path.empty() && filesystem.exists(path),
+                                   "Error: Could not detect " + fs::u8string(filename) +
+                                       " dir for custom registry at " + fs::u8string(registry_root));
+                return path;
+            };
+            current_registry_ports = args.registry_ports_dir ? canonical(args.registry_ports_dir) : find_dir("ports");
+            current_registry_versions =
+                args.registry_versions_dir ? canonical(args.registry_versions_dir) : find_dir("versions");
+            auto git_dir_root = filesystem.find_file_recursively_up(registry_root, ".git");
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               !git_dir_root.empty(),
+                               "Error: Could not detect .git dir for custom registry at " +
+                                   fs::u8string(registry_root));
+            current_registry_dot_git_dir = git_dir_root / ".git";
+        }
+        else
+        {
+            auto registry_root = filesystem.find_file_recursively_up(original_cwd, "ports");
+            if (!registry_root.empty())
+            {
+                current_registry_ports = registry_root / fs::u8path("ports");
+                current_registry_versions = registry_root / fs::u8path("versions");
+                if (filesystem.exists(current_registry_versions))
+                {
+                    auto git_dir = filesystem.find_file_recursively_up(registry_root, ".git");
+                    Checks::check_exit(VCPKG_LINE_INFO,
+                                       !git_dir.empty(),
+                                       "Error: Could not detect .git dir for custom registry at " +
+                                           fs::u8string(registry_root));
+                    current_registry_dot_git_dir = git_dir / fs::u8path(".git");
+                }
+                else
+                {
+                    Debug::print("Found ports dir ",
+                                 fs::u8string(current_registry_ports),
+                                 " but versions dir ",
+                                 fs::u8string(current_registry_versions),
+                                 " does not exists\n");
+                }
+            }
+            if (current_registry_dot_git_dir.empty())
+            {
+                current_registry_ports = this->builtin_ports;
+                current_registry_versions = this->builtin_registry_versions;
+                current_registry_dot_git_dir = this->root / fs::u8path(".git");
+            }
+            Debug::print("Using current_registry_ports: ", fs::u8string(current_registry_ports), '\n');
+            Debug::print("Using current_registry_versions: ", fs::u8string(current_registry_versions), '\n');
+            Debug::print("Using current_registry_dot_git_dir: ", fs::u8string(current_registry_dot_git_dir), '\n');
+        }
     }
 
     fs::path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages / fs::u8path(spec.dir()); }
