@@ -698,7 +698,15 @@ namespace vcpkg
 
     ExpectedS<std::string> VcpkgPaths::get_current_git_sha() const
     {
-        auto cmd = git_cmd_builder(this->root / fs::u8path(".git"), this->root);
+        return get_current_git_sha(this->root / fs::u8path(".git"));
+    }
+    std::string VcpkgPaths::get_current_git_sha_message() const
+    {
+        return get_current_git_sha_message(this->root / fs::u8path(".git"));
+    }
+    ExpectedS<std::string> VcpkgPaths::get_current_git_sha(const fs::path& dot_git_dir) const
+    {
+        auto cmd = git_cmd_builder(dot_git_dir, this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
         auto output = System::cmd_execute_and_capture_output(cmd);
         if (output.exit_code != 0)
@@ -710,9 +718,9 @@ namespace vcpkg
             return {Strings::trim(std::move(output.output)), expected_left_tag};
         }
     }
-    std::string VcpkgPaths::get_current_git_sha_message() const
+    std::string VcpkgPaths::get_current_git_sha_message(const fs::path& dot_git_dir) const
     {
-        auto maybe_cur_sha = get_current_git_sha();
+        auto maybe_cur_sha = get_current_git_sha(dot_git_dir);
         if (auto p_sha = maybe_cur_sha.get())
         {
             return Strings::concat("The current commit is \"", *p_sha, '"');
@@ -740,12 +748,12 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
+    ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_port_treeish_map(
+        const fs::path& ports_dir) const
     {
-        const auto local_repo = this->root / fs::u8path(".git");
         const auto git_cmd = git_cmd_builder({}, {})
                                  .string_arg("-C")
-                                 .path_arg(this->builtin_ports_directory())
+                                 .path_arg(ports_dir)
                                  .string_arg("ls-tree")
                                  .string_arg("-d")
                                  .string_arg("HEAD")
@@ -779,7 +787,18 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedS<fs::path> VcpkgPaths::git_checkout_baseline(StringView commit_sha) const
+    ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
+    {
+        return git_get_port_treeish_map(builtin_ports_directory());
+    }
+
+    ExpectedS<fs::path> VcpkgPaths::git_checkout_builtin_baseline(StringView commit_sha) const
+    {
+        return git_checkout_baseline(this->root / fs::u8path(".git"), this->root / fs::u8path("versions"), commit_sha);
+    }
+    ExpectedS<fs::path> VcpkgPaths::git_checkout_baseline(const fs::path& dot_git_dir,
+                                                          const fs::path& versions_dir,
+                                                          StringView commit_sha) const
     {
         Files::Filesystem& fs = get_filesystem();
         const fs::path destination_parent = this->baselines_output / fs::u8path(commit_sha);
@@ -788,8 +807,9 @@ namespace vcpkg
         if (!fs.exists(destination))
         {
             const fs::path destination_tmp = destination_parent / fs::u8path("baseline.json.tmp");
-            auto treeish = Strings::concat(commit_sha, ":versions/baseline.json");
-            auto maybe_contents = git_show(treeish, this->root / fs::u8path(".git"));
+            auto relative_path = fs.relative(VCPKG_LINE_INFO, versions_dir, dot_git_dir.parent_path());
+            auto treeish = Strings::concat(commit_sha, ":", fs::u8string(relative_path), "/baseline.json");
+            auto maybe_contents = git_show(treeish, dot_git_dir);
             if (auto contents = maybe_contents.get())
             {
                 std::error_code ec;
