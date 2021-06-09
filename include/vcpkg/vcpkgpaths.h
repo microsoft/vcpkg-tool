@@ -141,7 +141,12 @@ namespace vcpkg
         // Git manipulation in the vcpkg directory
         ExpectedS<std::string> get_current_git_sha() const;
         std::string get_current_git_sha_message() const;
-        ExpectedS<fs::path> git_checkout_baseline(StringView commit_sha) const;
+        ExpectedS<std::string> get_current_git_sha(const fs::path& dot_git_dir) const;
+        std::string get_current_git_sha_message(const fs::path& dot_git_dir) const;
+        ExpectedS<fs::path> git_checkout_builtin_baseline(StringView commit_sha) const;
+        ExpectedS<fs::path> git_checkout_baseline(const fs::path& dot_git_dir,
+                                                  const fs::path& versions_dir,
+                                                  StringView commit_sha) const;
         ExpectedS<fs::path> git_checkout_port(StringView port_name,
                                               StringView git_tree,
                                               const fs::path& dot_git_dir) const;
@@ -149,6 +154,8 @@ namespace vcpkg
 
         const Downloads::DownloadManager& get_download_manager() const;
 
+        ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_port_treeish_map(
+            const fs::path& ports_dir) const;
         ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
 
         // Git manipulation for remote registries
