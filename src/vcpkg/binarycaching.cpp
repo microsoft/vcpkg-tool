@@ -326,7 +326,7 @@ namespace
             for (auto&& put_url_template : m_put_url_templates)
             {
                 auto url = Strings::replace_all(std::string(put_url_template), "<SHA>", abi_tag);
-                auto code = Downloads::put_file(fs, url, tmp_archive_path);
+                auto code = Downloads::put_file(fs, url, Downloads::azure_blob_headers(), tmp_archive_path);
                 if (code >= 200 && code < 300)
                 {
                     http_remotes_pushed++;
@@ -516,7 +516,7 @@ namespace
                     break;
                 }
 
-                auto codes = Downloads::url_heads(urls);
+                auto codes = Downloads::url_heads(urls, {});
                 Checks::check_exit(VCPKG_LINE_INFO, codes.size() == url_actions.size());
                 for (size_t i = 0; i < codes.size(); ++i)
                 {
@@ -1538,12 +1538,16 @@ ExpectedS<Downloads::DownloadManager> vcpkg::create_download_manager(const Optio
         get_url = std::move(s.url_templates_to_get.back());
     }
     Optional<std::string> put_url;
+    std::vector<std::string> put_headers;
     if (!s.azblob_templates_to_put.empty())
     {
         put_url = std::move(s.azblob_templates_to_put.back());
+        auto v = Downloads::azure_blob_headers();
+        put_headers.assign(v.begin(), v.end());
     }
 
-    return Downloads::DownloadManager{std::move(get_url), std::move(put_url), s.block_origin};
+    return Downloads::DownloadManager{
+        std::move(get_url), std::vector<std::string>{}, std::move(put_url), std::move(put_headers), s.block_origin};
 }
 
 ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_configs(View<std::string> args)

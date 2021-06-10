@@ -107,6 +107,20 @@ namespace vcpkg::Test
         return std::move(*opt.get());
     }
 
+    template<class R1, class R2>
+    void check_ranges(const R1& r1, const R2& r2)
+    {
+        CHECK(r1.size() == r2.size());
+        auto it1 = r1.begin();
+        auto e1 = r1.end();
+        auto it2 = r2.begin();
+        auto e2 = r2.end();
+        while (it1 != e1 && it2 != e2)
+        {
+            CHECK(*it1++ == *it2++);
+        }
+    }
+
     struct AllowSymlinks
     {
         enum Tag : bool
