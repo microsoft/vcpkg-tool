@@ -1289,7 +1289,8 @@ namespace vcpkg::Files
         virtual fs::path almost_canonical(const fs::path& path, std::error_code& ec) const override
         {
             auto result = this->absolute(path, ec);
-            if (ec) {
+            if (ec)
+            {
                 return result;
             }
 

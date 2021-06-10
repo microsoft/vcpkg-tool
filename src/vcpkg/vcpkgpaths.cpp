@@ -301,7 +301,8 @@ namespace vcpkg
             if (root.empty())
             {
                 root = filesystem.find_file_recursively_up(
-                    filesystem.almost_canonical(VCPKG_LINE_INFO, System::get_exe_path_of_current_process()), ".vcpkg-root");
+                    filesystem.almost_canonical(VCPKG_LINE_INFO, System::get_exe_path_of_current_process()),
+                    ".vcpkg-root");
             }
         }
 
