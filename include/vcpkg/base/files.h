@@ -237,9 +237,14 @@ namespace vcpkg::Files
         fs::file_status symlink_status(const fs::path& p, ignore_errors_t) const noexcept;
         virtual fs::path absolute(const fs::path& path, std::error_code& ec) const = 0;
         fs::path absolute(LineInfo li, const fs::path& path) const;
-        virtual fs::path canonical(const fs::path& path, std::error_code& ec) const = 0;
-        fs::path canonical(LineInfo li, const fs::path& path) const;
-        fs::path canonical(const fs::path& path, ignore_errors_t) const;
+        // absolute/system_complete + lexically_normal + fixup_win32_path_case
+        // we don't use real canonical due to issues like:
+        // https://github.com/microsoft/vcpkg/issues/16614 (canonical breaking on some older Windows Server containers)
+        // https://github.com/microsoft/vcpkg/issues/18208 (canonical removing subst despite our recommendation to use
+        // subst)
+        virtual fs::path almost_canonical(const fs::path& path, std::error_code& ec) const = 0;
+        fs::path almost_canonical(LineInfo li, const fs::path& path) const;
+        fs::path almost_canonical(const fs::path& path, ignore_errors_t) const;
         virtual fs::path current_path(std::error_code&) const = 0;
         fs::path current_path(LineInfo li) const;
         virtual void current_path(const fs::path& path, std::error_code&) = 0;

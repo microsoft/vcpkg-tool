@@ -730,10 +730,10 @@ namespace vcpkg::Files
         return result;
     }
 
-    fs::path Filesystem::canonical(LineInfo li, const fs::path& path) const
+    fs::path Filesystem::almost_canonical(LineInfo li, const fs::path& path) const
     {
         std::error_code ec;
-        const auto result = this->canonical(path, ec);
+        const auto result = this->almost_canonical(path, ec);
         if (ec)
         {
             Checks::exit_with_message(li, "Error getting canonicalization of %s: %s", path.string(), ec.message());
@@ -741,10 +741,10 @@ namespace vcpkg::Files
 
         return result;
     }
-    fs::path Filesystem::canonical(const fs::path& path, ignore_errors_t) const
+    fs::path Filesystem::almost_canonical(const fs::path& path, ignore_errors_t) const
     {
         std::error_code ec;
-        return this->canonical(path, ec);
+        return this->almost_canonical(path, ec);
     }
     fs::path Filesystem::current_path(LineInfo li) const
     {
@@ -1286,9 +1286,18 @@ namespace vcpkg::Files
 #endif // ^^^ !VCPKG_USE_STD_FILESYSTEM
         }
 
-        virtual fs::path canonical(const fs::path& path, std::error_code& ec) const override
+        virtual fs::path almost_canonical(const fs::path& path, std::error_code& ec) const override
         {
-            return fs::stdfs::canonical(path, ec);
+            auto result = this->absolute(path, ec);
+            if (ec) {
+                return result;
+            }
+
+            result = fs::lexically_normal(result);
+#if defined(_WIN32)
+            result = vcpkg::Files::win32_fix_path_case(result);
+#endif // _WIN32
+            return result;
         }
 
         virtual fs::path current_path(std::error_code& ec) const override { return fs::stdfs::current_path(ec); }
