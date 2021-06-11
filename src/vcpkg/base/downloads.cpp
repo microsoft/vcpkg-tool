@@ -313,7 +313,7 @@ namespace vcpkg::Downloads
         return ret;
     }
 
-    int put_file(const Files::Filesystem&, StringView url, View<std::string> headers, const fs::path& file)
+    ExpectedS<int> put_file(const Files::Filesystem&, StringView url, View<std::string> headers, const fs::path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -328,9 +328,10 @@ namespace vcpkg::Downloads
             if (res.exit_code != 0)
             {
                 Debug::print(res.output, '\n');
-                System::print2(System::Color::warning, "curl failed to execute with exit code: ", res.exit_code, '\n');
+                return Strings::concat(
+                    "Error: curl failed to put file to ", url, " with exit code: ", res.exit_code, '\n');
             }
-            return res.exit_code;
+            return 0;
         }
         System::Command cmd;
         cmd.string_arg("curl").string_arg("-X").string_arg("PUT");
@@ -348,9 +349,10 @@ namespace vcpkg::Downloads
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
             }
         });
-        if (res != 0)
+        if (res != 0 || code < 200 || code >= 300)
         {
-            System::print2(System::Color::warning, "curl failed to execute with exit code: ", res, '\n');
+            return Strings::concat(
+                "Error: curl failed to put file to ", url, " with exit code '", res, "' and http code '", code, "'\n");
         }
         return code;
     }
@@ -606,14 +608,19 @@ namespace vcpkg::Downloads
         {
             if (urls.size() == 0)
             {
-                Strings::append(errors, "Error: No urls specified to download SHA: %s", sha512);
+                Strings::append(errors, "Error: No urls specified to download SHA: ", sha512);
             }
             else
             {
                 auto maybe_url = try_download_files(fs, urls, headers, download_path, sha512, errors);
                 if (auto url = maybe_url.get())
                 {
-                    put_file_to_mirror(fs, download_path, sha512);
+                    auto maybe_push = put_file_to_mirror(fs, download_path, sha512);
+                    if (!maybe_push.has_value())
+                    {
+                        System::print2(
+                            System::Color::warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
+                    }
                     return *url;
                 }
             }
@@ -621,17 +628,15 @@ namespace vcpkg::Downloads
         Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Failed to download from mirror set:\n%s", errors);
     }
 
-    int DownloadManager::put_file_to_mirror(const Files::Filesystem& fs,
-                                            const fs::path& path,
-                                            const std::string& sha512) const
+    ExpectedS<int> DownloadManager::put_file_to_mirror(const Files::Filesystem& fs,
+                                                       const fs::path& path,
+                                                       const std::string& sha512) const
     {
-        int code = 0;
         auto maybe_mirror_url = Strings::replace_all(m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            code = Downloads::put_file(fs, maybe_mirror_url, m_write_headers, path);
-            Debug::print("Putting to cache: ", maybe_mirror_url, ": ", code, "\n");
+            return Downloads::put_file(fs, maybe_mirror_url, m_write_headers, path);
         }
-        return code;
+        return 0;
     }
 }

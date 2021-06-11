@@ -326,23 +326,24 @@ namespace
             for (auto&& put_url_template : m_put_url_templates)
             {
                 auto url = Strings::replace_all(std::string(put_url_template), "<SHA>", abi_tag);
-                auto code = Downloads::put_file(fs, url, Downloads::azure_blob_headers(), tmp_archive_path);
-                if (code >= 200 && code < 300)
+                auto maybe_success = Downloads::put_file(fs, url, Downloads::azure_blob_headers(), tmp_archive_path);
+                if (maybe_success.has_value())
                 {
                     http_remotes_pushed++;
                     continue;
                 }
 
-                auto safe_url = url;
+                auto errors = std::move(maybe_success).error();
+
                 if (!Debug::g_debugging.load(std::memory_order_relaxed))
                 {
                     for (const auto& secret : m_secrets)
                     {
-                        Strings::inplace_replace_all(safe_url, secret, "*** SECRET ***");
+                        Strings::inplace_replace_all(errors, secret, "*** SECRET ***");
                     }
                 }
 
-                System::print2(System::Color::warning, "Failed to upload to ", safe_url, ": ", code, '\n');
+                System::print2(System::Color::warning, errors);
             }
 
             if (!m_put_url_templates.empty())

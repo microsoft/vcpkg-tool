@@ -40,7 +40,7 @@ namespace vcpkg::Downloads
     View<std::string> azure_blob_headers();
 
     std::vector<int> download_files(Files::Filesystem& fs, View<std::pair<std::string, fs::path>> url_pairs);
-    int put_file(const Files::Filesystem&, StringView url, View<std::string> headers, const fs::path& file);
+    ExpectedS<int> put_file(const Files::Filesystem&, StringView url, View<std::string> headers, const fs::path& file);
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers);
 
     struct DownloadManagerConfig
@@ -82,7 +82,9 @@ namespace vcpkg::Downloads
                                   const fs::path& download_path,
                                   const std::string& sha512) const;
 
-        int put_file_to_mirror(const Files::Filesystem& fs, const fs::path& path, const std::string& sha512) const;
+        ExpectedS<int> put_file_to_mirror(const Files::Filesystem& fs,
+                                          const fs::path& path,
+                                          const std::string& sha512) const;
 
         const DownloadManagerConfig& internal_get_config() const { return *this; }
 
