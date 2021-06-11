@@ -519,16 +519,16 @@ namespace vcpkg::Files
     }
     void Filesystem::rename_with_retry(const fs::path& oldpath, const fs::path& newpath, std::error_code& ec)
     {
+        this->rename(oldpath, newpath, ec);
         using namespace std::chrono_literals;
-        std::chrono::milliseconds delays[] = {0ms, 100ms, 1000ms};
-        size_t max_retry = sizeof(delays) / sizeof(std::chrono::milliseconds);
-        size_t retry = 0;
-        do
-        {
-            std::this_thread::sleep_for(delays[retry]);
+        for (const auto& delay : {10ms, 100ms, 1000ms}) {
+            if (!ec) {
+                return;
+            }
+
+            std::this_thread::sleep_for(delay);
             this->rename(oldpath, newpath, ec);
-            ++retry;
-        } while (ec && retry < max_retry);
+        }
     }
 
     bool Filesystem::remove(const fs::path& path, LineInfo linfo)
