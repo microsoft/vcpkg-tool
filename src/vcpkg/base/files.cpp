@@ -521,8 +521,10 @@ namespace vcpkg::Files
     {
         this->rename(oldpath, newpath, ec);
         using namespace std::chrono_literals;
-        for (const auto& delay : {10ms, 100ms, 1000ms}) {
-            if (!ec) {
+        for (const auto& delay : {10ms, 100ms, 1000ms})
+        {
+            if (!ec)
+            {
                 return;
             }
 
