@@ -277,24 +277,41 @@ namespace vcpkg::Downloads
                                      View<std::pair<std::string, fs::path>> url_pairs,
                                      std::vector<int>* out)
     {
-        static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
-
-        System::Command cmd;
-        cmd.string_arg("curl")
-            .string_arg("--location")
-            .string_arg("-w")
-            .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
-        for (auto&& url : url_pairs)
+        for (auto i : {100, 1000, 10000, 0})
         {
-            cmd.string_arg(url.first).string_arg("-o").path_arg(url.second);
-        }
-        auto res = System::cmd_execute_and_stream_lines(cmd, [out](StringView line) {
-            if (Strings::starts_with(line, guid_marker))
+            size_t start_size = out->size();
+            static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
+
+            System::Command cmd;
+            cmd.string_arg("curl")
+                .string_arg("--location")
+                .string_arg("-w")
+                .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
+            for (auto&& url : url_pairs)
             {
-                out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
+                cmd.string_arg(url.first).string_arg("-o").path_arg(url.second);
             }
-        });
-        Checks::check_exit(VCPKG_LINE_INFO, res == 0, "curl failed to execute with exit code: %d", res);
+            auto res = System::cmd_execute_and_stream_lines(cmd, [out](StringView line) {
+                if (Strings::starts_with(line, guid_marker))
+                {
+                    out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
+                }
+            });
+            Checks::check_exit(VCPKG_LINE_INFO, res == 0, "Error: curl failed to execute with exit code: %d", res);
+
+            if (start_size + url_pairs.size() > out->size())
+            {
+                // curl stopped before finishing all downloads; retry after some time
+                System::print2(System::Color::warning, "Warning: an unexpected error occurred during bulk download.\n");
+                std::this_thread::sleep_for(std::chrono::milliseconds(i));
+                url_pairs = View<std::pair<std::string, fs::path>>{url_pairs.begin() + out->size() - start_size,
+                                                                   url_pairs.end()};
+            }
+            else
+            {
+                break;
+            }
+        }
     }
     std::vector<int> download_files(Files::Filesystem& fs, View<std::pair<std::string, fs::path>> url_pairs)
     {
@@ -309,7 +326,14 @@ namespace vcpkg::Downloads
         }
         if (i != url_pairs.size()) download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, &ret);
 
-        Checks::check_exit(VCPKG_LINE_INFO, ret.size() == url_pairs.size());
+        Checks::check_exit(
+            VCPKG_LINE_INFO,
+            ret.size() == url_pairs.size(),
+            "Error: curl returned a different number of response codes than were expected for the request (",
+            ret.size(),
+            " vs expected ",
+            url_pairs.size(),
+            ")");
         return ret;
     }
 

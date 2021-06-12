@@ -71,6 +71,10 @@ namespace vcpkg
     {
         if (!expression)
         {
+            System::print2(System::Color::error,
+                           "Error: vcpkg has crashed; no additional details are available.\nThe source line is ",
+                           Strings::format("%s(%d)\n", line_info.file_name, line_info.line_number),
+                           '\n');
             exit_fail(line_info);
         }
     }
