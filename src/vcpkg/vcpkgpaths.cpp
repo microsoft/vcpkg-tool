@@ -836,7 +836,7 @@ namespace vcpkg
                 Strings::concat(PRELUDE, "Error: while removing ", fs::u8string(destination_tar), ": ", ec.message()),
                 expected_right_tag};
         }
-        fs.rename(destination_tmp, destination, ec);
+        fs.rename_with_retry(destination_tmp, destination, ec);
         if (ec)
         {
             return {Strings::concat(PRELUDE,
