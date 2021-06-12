@@ -1,66 +1,81 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
+$downloadsRoot = Join-Path $TestingRoot 'downloads'
+
 $CurrentTest = "Clean After Build"
 
-$ZlibInstalledHeader = Join-Path $installRoot "$Triplet/include/zlib.h"
-$ZlibDownloadTarball = Join-Path $downloadsRoot 'zlib1211.tar.gz'
-$ZlibPackageRoot = Join-Path $packagesRoot "zlib_$Triplet"
-$ZlibSrc = Join-Path $buildtreesRoot "zlib/src"
+$InstalledHeader = Join-Path $installRoot "$Triplet/include/vcpkg-clean-after-build-test-port.h"
+$DownloadedFile = Join-Path $downloadsRoot 'clean_after_build_test.txt'
+$PackageRoot = Join-Path $packagesRoot "vcpkg-clean-after-build-test-port_$Triplet"
+$PackageSrc = Join-Path $buildtreesRoot "vcpkg-clean-after-build-test-port/src"
 
-$installZlibArgs = @("install", "zlib", "--no-binarycaching")
-
-Refresh-TestRoot
-Run-Vcpkg -TestArgs ($commonArgs + $installZlibArgs)
-Require-FileExists $ZlibInstalledHeader
-Require-FileExists $ZlibDownloadTarball
-Require-FileExists $ZlibPackageRoot
-Require-FileExists $ZlibSrc
+$installTestPortArgs = `
+  @("install", "vcpkg-clean-after-build-test-port", "--no-binarycaching", "--downloads-root=$downloadsRoot")
 
 Refresh-TestRoot
-Run-Vcpkg -TestArgs ($commonArgs + $installZlibArgs + @("--clean-packages-after-build"))
-Require-FileExists $ZlibInstalledHeader
-Require-FileExists $ZlibDownloadTarball
-Require-FileNotExists $ZlibPackageRoot
-Require-FileExists $ZlibSrc
+Run-Vcpkg -TestArgs ($commonArgs + $installTestPortArgs)
+Require-FileExists $InstalledHeader
+Require-FileExists $DownloadedFile
+Require-FileExists $PackageRoot
+Require-FileExists $PackageSrc
 
 Refresh-TestRoot
-Run-Vcpkg -TestArgs ($commonArgs + $installZlibArgs + @("--clean-buildtrees-after-build"))
-Require-FileExists $ZlibInstalledHeader
-Require-FileExists $ZlibDownloadTarball
-Require-FileExists $ZlibPackageRoot
-Require-FileNotExists $ZlibSrc
+Run-Vcpkg -TestArgs ($commonArgs + $installTestPortArgs + @("--clean-packages-after-build"))
+Require-FileExists $InstalledHeader
+Require-FileExists $DownloadedFile
+Require-FileNotExists $PackageRoot
+Require-FileExists $PackageSrc
 
 Refresh-TestRoot
-Run-Vcpkg -TestArgs ($commonArgs + $installZlibArgs + @("--clean-packages-after-build", "--clean-buildtrees-after-build"))
-Require-FileExists $ZlibInstalledHeader
-Require-FileExists $ZlibDownloadTarball
-Require-FileNotExists $ZlibPackageRoot
-Require-FileNotExists $ZlibSrc
+Run-Vcpkg -TestArgs ($commonArgs + $installTestPortArgs + @("--clean-buildtrees-after-build"))
+Require-FileExists $InstalledHeader
+Require-FileExists $DownloadedFile
+Require-FileExists $PackageRoot
+Require-FileNotExists $PackageSrc
 
 Refresh-TestRoot
-Run-Vcpkg -TestArgs ($commonArgs + $installZlibArgs + @("--clean-buildtrees-after-build"))
-Require-FileExists $ZlibInstalledHeader
-Require-FileExists $ZlibDownloadTarball
-Require-FileExists $ZlibPackageRoot
-Require-FileNotExists $ZlibSrc
+Run-Vcpkg -TestArgs ($commonArgs + $installTestPortArgs + @(
+    "--clean-packages-after-build",
+    "--clean-buildtrees-after-build"
+    ))
+Require-FileExists $InstalledHeader
+Require-FileExists $DownloadedFile
+Require-FileNotExists $PackageRoot
+Require-FileNotExists $PackageSrc
 
 Refresh-TestRoot
-Run-Vcpkg -TestArgs ($commonArgs + $installZlibArgs + @("--clean-downloads-after-build", "--clean-packages-after-build", "--clean-buildtrees-after-build"))
-Require-FileExists $ZlibInstalledHeader
-Require-FileNotExists $ZlibDownloadTarball
-Require-FileNotExists $ZlibPackageRoot
-Require-FileNotExists $ZlibSrc
+Run-Vcpkg -TestArgs ($commonArgs + $installTestPortArgs + @("--clean-buildtrees-after-build"))
+Require-FileExists $InstalledHeader
+Require-FileExists $DownloadedFile
+Require-FileExists $PackageRoot
+Require-FileNotExists $PackageSrc
 
 Refresh-TestRoot
-Run-Vcpkg -TestArgs ($commonArgs + $installZlibArgs + @("--clean-after-build"))
-Require-FileExists $ZlibInstalledHeader
-Require-FileNotExists $ZlibDownloadTarball
-Require-FileNotExists $ZlibPackageRoot
-Require-FileNotExists $ZlibSrc
+Run-Vcpkg -TestArgs ($commonArgs + $installTestPortArgs + @(
+    "--clean-downloads-after-build",
+    "--clean-packages-after-build",
+    "--clean-buildtrees-after-build"
+    ))
+Require-FileExists $InstalledHeader
+Require-FileNotExists $DownloadedFile
+Require-FileNotExists $PackageRoot
+Require-FileNotExists $PackageSrc
 
 Refresh-TestRoot
-Run-Vcpkg -TestArgs ($commonArgs + $installZlibArgs + @("--clean-after-build", "--clean-downloads-after-build", "--clean-packages-after-build", "--clean-buildtrees-after-build"))
-Require-FileExists $ZlibInstalledHeader
-Require-FileNotExists $ZlibDownloadTarball
-Require-FileNotExists $ZlibPackageRoot
-Require-FileNotExists $ZlibSrc
+Run-Vcpkg -TestArgs ($commonArgs + $installTestPortArgs + @("--clean-after-build"))
+Require-FileExists $InstalledHeader
+Require-FileNotExists $DownloadedFile
+Require-FileNotExists $PackageRoot
+Require-FileNotExists $PackageSrc
+
+Refresh-TestRoot
+Run-Vcpkg -TestArgs ($commonArgs + $installTestPortArgs + @(
+    "--clean-after-build",
+    "--clean-downloads-after-build",
+    "--clean-packages-after-build",
+    "--clean-buildtrees-after-build"
+    ))
+Require-FileExists $InstalledHeader
+Require-FileNotExists $DownloadedFile
+Require-FileNotExists $PackageRoot
+Require-FileNotExists $PackageSrc
