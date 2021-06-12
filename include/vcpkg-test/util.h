@@ -115,9 +115,9 @@ namespace vcpkg::Test
         auto e1 = r1.end();
         auto it2 = r2.begin();
         auto e2 = r2.end();
-        while (it1 != e1 && it2 != e2)
+        for (; it1 != e1 && it2 != e2; ++it1, ++it2)
         {
-            CHECK(*it1++ == *it2++);
+            CHECK(*it1 == *it2);
         }
     }
 
