@@ -285,9 +285,6 @@ namespace vcpkg
                     {SCRIPTS_ROOT_DIR_ARG, &VcpkgCmdArguments::scripts_root_dir},
                     {BUILTIN_PORTS_ROOT_DIR_ARG, &VcpkgCmdArguments::builtin_ports_root_dir},
                     {BUILTIN_REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::builtin_registry_versions_dir},
-                    {REGISTRY_PORTS_DIR_ARG, &VcpkgCmdArguments::registry_ports_dir},
-                    {REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::registry_versions_dir},
-                    {REGISTRY_ROOT_DIR_ARG, &VcpkgCmdArguments::registry_root_dir},
                 };
 
             constexpr static std::pair<StringView, std::vector<std::string> VcpkgCmdArguments::*>

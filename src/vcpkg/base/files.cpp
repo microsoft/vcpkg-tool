@@ -733,19 +733,6 @@ namespace vcpkg::Files
         this->remove_all_inside(path, ec, failure_point);
     }
 
-    fs::path Filesystem::relative(LineInfo li, const fs::path& path, const fs::path& base) const
-    {
-        std::error_code ec;
-        const auto result = this->relative(path, base, ec);
-        if (ec)
-        {
-            Checks::exit_with_message(
-                li, "Error getting relative path of %s to base %s: %s", path.string(), base.string(), ec.message());
-        }
-
-        return result;
-    }
-
     fs::path Filesystem::absolute(LineInfo li, const fs::path& path) const
     {
         std::error_code ec;
@@ -1289,11 +1276,6 @@ namespace vcpkg::Files
                 }
                 write_contents(file_path, data, ec);
             }
-        }
-
-        virtual fs::path relative(const fs::path& path, const fs::path& base, std::error_code& ec) const override
-        {
-            return fs::stdfs::relative(path, base, ec);
         }
 
         virtual fs::path absolute(const fs::path& path, std::error_code& ec) const override

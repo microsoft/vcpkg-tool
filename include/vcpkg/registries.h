@@ -132,13 +132,7 @@ namespace vcpkg
 
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name);
-    ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_versions(const Files::Filesystem& fs,
-                                                                                const fs::path& versions_dir,
-                                                                                StringView port_name);
 
-    ExpectedS<std::map<std::string, VersionT, std::less<>>> get_baseline(const VcpkgPaths& paths,
-                                                                         const fs::path& dot_git_dir,
-                                                                         const fs::path& versions_dir);
     ExpectedS<std::map<std::string, VersionT, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
