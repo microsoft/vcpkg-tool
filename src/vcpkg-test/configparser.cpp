@@ -2,6 +2,8 @@
 
 #include <vcpkg/binarycaching.h>
 
+#include <vcpkg-test/util.h>
+
 using namespace vcpkg;
 
 #if defined(_WIN32)
@@ -383,23 +385,50 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
     CHECK(create_download_manager("x-azurl,https://abc/123,foo"));
     CHECK(create_download_manager("x-azurl,ftp://magic,none"));
     CHECK(create_download_manager("x-azurl,ftp://magic,none"));
-    auto value_or = [](auto o, auto v) {
-        if (o)
-            return std::move(*o.get());
-        else
-            return std::move(v);
-    };
 
-    Downloads::DownloadManager empty;
-
-    CHECK(value_or(create_download_manager("x-azurl,https://abc/123,foo"), empty).internal_get_read_url_template() ==
-          "https://abc/123/<SHA>?foo");
-    CHECK(value_or(create_download_manager("x-azurl,https://abc/123/,foo"), empty).internal_get_read_url_template() ==
-          "https://abc/123/<SHA>?foo");
-    CHECK(value_or(create_download_manager("x-azurl,https://abc/123,?foo"), empty).internal_get_read_url_template() ==
-          "https://abc/123/<SHA>?foo");
-    CHECK(value_or(create_download_manager("x-azurl,https://abc/123"), empty).internal_get_read_url_template() ==
-          "https://abc/123/<SHA>");
+    {
+        Downloads::DownloadManager empty;
+        CHECK(empty.internal_get_config().m_write_headers.empty());
+        CHECK(empty.internal_get_config().m_read_headers.empty());
+    }
+    {
+        Downloads::DownloadManager dm = Test::unwrap(create_download_manager("x-azurl,https://abc/123,foo"));
+        CHECK(dm.internal_get_config().m_read_url_template == "https://abc/123/<SHA>?foo");
+        CHECK(dm.internal_get_config().m_read_headers.empty());
+        CHECK(dm.internal_get_config().m_write_url_template == nullopt);
+    }
+    {
+        Downloads::DownloadManager dm = Test::unwrap(create_download_manager("x-azurl,https://abc/123/,foo"));
+        CHECK(dm.internal_get_config().m_read_url_template == "https://abc/123/<SHA>?foo");
+        CHECK(dm.internal_get_config().m_read_headers.empty());
+        CHECK(dm.internal_get_config().m_write_url_template == nullopt);
+    }
+    {
+        Downloads::DownloadManager dm = Test::unwrap(create_download_manager("x-azurl,https://abc/123,?foo"));
+        CHECK(dm.internal_get_config().m_read_url_template == "https://abc/123/<SHA>?foo");
+        CHECK(dm.internal_get_config().m_read_headers.empty());
+        CHECK(dm.internal_get_config().m_write_url_template == nullopt);
+    }
+    {
+        Downloads::DownloadManager dm = Test::unwrap(create_download_manager("x-azurl,https://abc/123"));
+        CHECK(dm.internal_get_config().m_read_url_template == "https://abc/123/<SHA>");
+        CHECK(dm.internal_get_config().m_read_headers.empty());
+        CHECK(dm.internal_get_config().m_write_url_template == nullopt);
+    }
+    {
+        Downloads::DownloadManager dm = Test::unwrap(create_download_manager("x-azurl,https://abc/123,,readwrite"));
+        CHECK(dm.internal_get_config().m_read_url_template == "https://abc/123/<SHA>");
+        CHECK(dm.internal_get_config().m_read_headers.empty());
+        CHECK(dm.internal_get_config().m_write_url_template == "https://abc/123/<SHA>");
+        Test::check_ranges(dm.internal_get_config().m_write_headers, Downloads::azure_blob_headers());
+    }
+    {
+        Downloads::DownloadManager dm = Test::unwrap(create_download_manager("x-azurl,https://abc/123,foo,readwrite"));
+        CHECK(dm.internal_get_config().m_read_url_template == "https://abc/123/<SHA>?foo");
+        CHECK(dm.internal_get_config().m_read_headers.empty());
+        CHECK(dm.internal_get_config().m_write_url_template == "https://abc/123/<SHA>?foo");
+        Test::check_ranges(dm.internal_get_config().m_write_headers, Downloads::azure_blob_headers());
+    }
 }
 
 TEST_CASE ("AssetConfigParser clear provider", "[assetconfigparser]")
@@ -417,9 +446,11 @@ TEST_CASE ("AssetConfigParser clear provider", "[assetconfigparser]")
     Downloads::DownloadManager empty;
 
     CHECK(value_or(create_download_manager("x-azurl,https://abc/123,foo;clear"), empty)
-              .internal_get_read_url_template() == nullopt);
+              .internal_get_config()
+              .m_read_url_template == nullopt);
     CHECK(value_or(create_download_manager("clear;x-azurl,https://abc/123/,foo"), empty)
-              .internal_get_read_url_template() == "https://abc/123/<SHA>?foo");
+              .internal_get_config()
+              .m_read_url_template == "https://abc/123/<SHA>?foo");
 }
 
 TEST_CASE ("AssetConfigParser x-block-origin provider", "[assetconfigparser]")

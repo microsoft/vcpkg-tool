@@ -19,7 +19,7 @@ namespace vcpkg::Commands::X_Download
     };
     static constexpr CommandMultiSetting FETCH_MULTISETTINGS[] = {
         {OPTION_URL, "URL to download and store if missing from cache"},
-        {OPTION_HEADER, "(Not Implemented) Additional header to use when fetching from URLs"},
+        {OPTION_HEADER, "Additional header to use when fetching from URLs"},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -65,20 +65,27 @@ namespace vcpkg::Commands::X_Download
             auto hash =
                 Strings::ascii_to_lowercase(Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha512));
             if (hash != sha) Checks::exit_with_message(VCPKG_LINE_INFO, "Error: file to store does not match hash");
-            paths.get_download_manager().put_file_to_mirror(fs, file, sha);
+            paths.get_download_manager().put_file_to_mirror(fs, file, sha).value_or_exit(VCPKG_LINE_INFO);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         else
         {
             // Try to fetch from urls
+            auto it_headers = parsed.multisettings.find(OPTION_HEADER);
+            View<std::string> headers;
+            if (it_headers != parsed.multisettings.end())
+            {
+                headers = it_headers->second;
+            }
+
             auto it_urls = parsed.multisettings.find(OPTION_URL);
             if (it_urls == parsed.multisettings.end())
             {
-                paths.get_download_manager().download_file(fs, View<std::string>{}, file, sha);
+                paths.get_download_manager().download_file(fs, View<std::string>{}, headers, file, sha);
             }
             else
             {
-                paths.get_download_manager().download_file(fs, it_urls->second, file, sha);
+                paths.get_download_manager().download_file(fs, it_urls->second, headers, file, sha);
             }
             Checks::exit_success(VCPKG_LINE_INFO);
         }
