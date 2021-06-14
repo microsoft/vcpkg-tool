@@ -274,6 +274,6 @@ function(vcpkg_target_add_sourcelink target)
 }"
         )
         file(TO_NATIVE_PATH "${output_json_filename}" native_json_filename)
-        target_link_options(${TARGET} PRIVATE "/SOURCELINK:${native_json_filename}")
+        target_link_options("${target}" PRIVATE "/SOURCELINK:${native_json_filename}")
     endif()
 endfunction()
