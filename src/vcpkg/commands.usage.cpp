@@ -1,9 +1,10 @@
-#include <vcpkg/commands.usage.h>
-#include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/base/util.h>
+
+#include <vcpkg/commands.usage.h>
 #include <vcpkg/input.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands::Usage
 {
@@ -15,10 +16,7 @@ namespace vcpkg::Commands::Usage
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet)
+    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet, Triplet)
     {
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
@@ -61,7 +59,10 @@ namespace vcpkg::Commands::Usage
                 auto it = status_db.find_installed(spec.package_spec);
                 if (it == status_db.end())
                 {
-                    System::printf(System::Color::warning, "warning: the package %s:%s is not installed; not printing usage.", spec.package_spec.name(), spec.package_spec.triplet());
+                    System::printf(System::Color::warning,
+                                   "warning: the package %s:%s is not installed; not printing usage.",
+                                   spec.package_spec.name(),
+                                   spec.package_spec.triplet());
                     continue;
                 }
                 auto usage = to_string(get_cmake_usage((*it)->package, paths));
@@ -71,7 +72,9 @@ namespace vcpkg::Commands::Usage
                 }
                 else
                 {
-                    System::printf("The package %s:%s does not have CMake usage instructions.\n", spec.package_spec.name(), spec.package_spec.triplet());
+                    System::printf("The package %s:%s does not have CMake usage instructions.\n",
+                                   spec.package_spec.name(),
+                                   spec.package_spec.triplet());
                 }
             }
         }
@@ -136,12 +139,12 @@ namespace vcpkg::Commands::Usage
 
                 auto library_target_pair_copy = library_target_pair.second;
                 std::sort(library_target_pair_copy.begin(),
-                            library_target_pair_copy.end(),
-                            [](const std::string& l, const std::string& r) {
-                                if (l.size() < r.size()) return true;
-                                if (l.size() > r.size()) return false;
-                                return l < r;
-                            });
+                          library_target_pair_copy.end(),
+                          [](const std::string& l, const std::string& r) {
+                              if (l.size() < r.size()) return true;
+                              if (l.size() > r.size()) return false;
+                              return l < r;
+                          });
 
                 if (library_target_pair_copy.size() <= 4)
                 {
@@ -153,10 +156,11 @@ namespace vcpkg::Commands::Usage
                 else
                 {
                     auto omitted = library_target_pair_copy.size() - 4;
-                    msg += Strings::format("    # Note: %zd target(s) were omitted.\n"
-                                            "    target_link_libraries(main PRIVATE %s)\n\n",
-                                            omitted,
-                                            Strings::join(" ", library_target_pair.second.begin(), library_target_pair.second.end()));
+                    msg += Strings::format(
+                        "    # Note: %zd target(s) were omitted.\n"
+                        "    target_link_libraries(main PRIVATE %s)\n\n",
+                        omitted,
+                        Strings::join(" ", library_target_pair.second.begin(), library_target_pair.second.end()));
                 }
             }
             return msg;
@@ -211,14 +215,12 @@ namespace vcpkg::Commands::Usage
                     if (Strings::ends_with(filename, "Config.cmake"))
                     {
                         auto root = filename.substr(0, filename.size() - 12);
-                        if (Strings::case_insensitive_ascii_equals(root, port_name))
-                            find_package_name = root;
+                        if (Strings::case_insensitive_ascii_equals(root, port_name)) find_package_name = root;
                     }
                     else if (Strings::ends_with(filename, "-config.cmake"))
                     {
                         auto root = filename.substr(0, filename.size() - 13);
-                        if (Strings::case_insensitive_ascii_equals(root, port_name))
-                            find_package_name = root;
+                        if (Strings::case_insensitive_ascii_equals(root, port_name)) find_package_name = root;
                     }
                     else
                     {

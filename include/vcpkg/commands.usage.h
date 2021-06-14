@@ -1,6 +1,7 @@
-#include <vcpkg/commands.interface.h>
-#include <vcpkg/binaryparagraph.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
+
+#include <vcpkg/binaryparagraph.h>
+#include <vcpkg/commands.interface.h>
 
 namespace vcpkg::Commands::Usage
 {
@@ -8,8 +9,8 @@ namespace vcpkg::Commands::Usage
     {
         std::string name;
         Triplet triplet;
-        Optional<std::string> usage_file; // has a usage file
-        Optional<std::string> header_to_find; // header only
+        Optional<std::string> usage_file;                                  // has a usage file
+        Optional<std::string> header_to_find;                              // header only
         std::map<std::string, std::vector<std::string>> cmake_targets_map; // has cmake targets
     };
 
