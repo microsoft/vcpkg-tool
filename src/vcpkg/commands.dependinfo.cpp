@@ -42,19 +42,12 @@ namespace vcpkg::Commands::DependInfo
               "(default), "
               "reverse"}}};
 
-        struct PackageDependInfo
-        {
-            std::string package;
-            int depth;
-            std::unordered_set<std::string> features;
-            std::vector<std::string> dependencies;
-        };
-
         enum SortMode
         {
             Lexicographical = 0,
             Topological,
             ReverseTopological,
+            Treelogical,
             Default = Topological
         };
 
@@ -82,10 +75,12 @@ namespace vcpkg::Commands::DependInfo
             constexpr StringLiteral OPTION_SORT_LEXICOGRAPHICAL = "lexicographical";
             constexpr StringLiteral OPTION_SORT_TOPOLOGICAL = "topological";
             constexpr StringLiteral OPTION_SORT_REVERSE = "reverse";
+            constexpr StringLiteral OPTION_SORT_TREE = "x-tree";
 
             static const std::map<std::string, SortMode> sortModesMap{{OPTION_SORT_LEXICOGRAPHICAL, Lexicographical},
                                                                       {OPTION_SORT_TOPOLOGICAL, Topological},
-                                                                      {OPTION_SORT_REVERSE, ReverseTopological}};
+                                                                      {OPTION_SORT_REVERSE, ReverseTopological},
+                                                                      {OPTION_SORT_TREE, Treelogical}};
 
             auto iter = options.settings.find(OPTION_SORT);
             if (iter != options.settings.end())
@@ -304,34 +299,90 @@ namespace vcpkg::Commands::DependInfo
         {
             case SortMode::Lexicographical: std::sort(std::begin(depend_info), std::end(depend_info), lex); break;
             case SortMode::ReverseTopological:
+            case SortMode::Treelogical:
                 std::sort(std::begin(depend_info), std::end(depend_info), reverse);
                 break;
             case SortMode::Topological: std::sort(std::begin(depend_info), std::end(depend_info), topo); break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
-        for (auto&& info : depend_info)
+        if (sort_mode == SortMode::Treelogical)
         {
-            if (info.depth >= 0)
-            {
-                std::string features = Strings::join(", ", info.features);
-                const std::string dependencies = Strings::join(", ", info.dependencies);
+            auto first = depend_info.begin();
+            std::string features = Strings::join(", ", first->features);
 
-                if (show_depth)
+            if (show_depth)
+            {
+                System::print2(System::Color::error, "(", first->depth, ") ");
+            }
+            System::print2(System::Color::success, first->package);
+            if (!features.empty())
+            {
+                System::print2("[");
+                System::print2(System::Color::warning, features);
+                System::print2("]");
+            }
+            System::print2("\n");
+            RecurseFindDependencies(0, first->package, false, depend_info);
+        }
+        else
+        {
+            for (auto&& info : depend_info)
+            {
+                if (info.depth >= 0)
                 {
-                    System::print2(System::Color::error, "(", info.depth, ") ");
+                    std::string features = Strings::join(", ", info.features);
+                    const std::string dependencies = Strings::join(", ", info.dependencies);
+
+                    if (show_depth)
+                    {
+                        System::print2(System::Color::error, "(", info.depth, ") ");
+                    }
+                    System::print2(System::Color::success, info.package);
+                    if (!features.empty())
+                    {
+                        System::print2("[");
+                        System::print2(System::Color::warning, features);
+                        System::print2("]");
+                    }
+                    System::print2(": ", dependencies, "\n");
                 }
-                System::print2(System::Color::success, info.package);
-                if (!features.empty())
-                {
-                    System::print2("[");
-                    System::print2(System::Color::warning, features);
-                    System::print2("]");
-                }
-                System::print2(": ", dependencies, "\n");
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);
+    }
+
+    void RecurseFindDependencies(int levelFrom, const std::string& currDepend, bool isEnd, const std::vector<PackageDependInfo>& allDepends)
+    {
+        if (levelFrom == 100)
+        {
+            Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
+        }
+        auto currPos = std::find_if(allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
+        Checks::check_exit(VCPKG_LINE_INFO, currPos != allDepends.end(), "internal vcpkg error");
+
+        for (auto i = currPos->dependencies.begin(); i != currPos->dependencies.end(); i++)
+        {
+            // Handle the connecting lines and spaces in front
+            if (levelFrom)
+            {
+                for (auto j = 0; j < levelFrom - 1; j++)
+                {
+                    System::print2("|   ");
+                }
+
+                if (!isEnd)
+                    System::print2("|   ");
+                else
+                    System::print2("    ");
+            }
+
+            // Handle the current level
+            System::print2("+-- ", i->c_str(), "\n");
+            // The last element doesn't need additional connecting lines
+            auto j = i;
+            RecurseFindDependencies(levelFrom + 1, i->c_str(), ++j == currPos->dependencies.end(), allDepends);
+        }
     }
 
     void DependInfoCommand::perform_and_exit(const VcpkgCmdArguments& args,
