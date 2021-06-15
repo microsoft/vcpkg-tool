@@ -67,7 +67,7 @@ TEST_CASE ("get_available_paths_commands works", "[commands]")
         });
 }
 
-TEST_CASE ("get_available_commands_type_a works", "[commands]")
+TEST_CASE ("get_available_triplet_commands works", "[commands]")
 {
     check_all_commands(Commands::get_available_triplet_commands(), {
         "install",
@@ -80,7 +80,8 @@ TEST_CASE ("get_available_commands_type_a works", "[commands]")
         "build-external",
         "export",
         "depend-info",
-        "x-check-support"
+        "x-check-support",
+        "x-print-triplets",
         });
 }
 // clang-format on
