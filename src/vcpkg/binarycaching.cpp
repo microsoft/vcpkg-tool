@@ -825,6 +825,9 @@ namespace
                         .string_arg("push")
                         .path_arg(nupkg_path)
                         .string_arg("-ForceEnglishOutput")
+                        .string_arg("-Timeout")
+                        // One hour and one second
+                        .string_arg("3601")
                         .string_arg("-Source")
                         .string_arg(write_src);
 
@@ -854,6 +857,9 @@ namespace
                         .string_arg("push")
                         .path_arg(nupkg_path)
                         .string_arg("-ForceEnglishOutput")
+                        .string_arg("-Timeout")
+                        // One hour and one second
+                        .string_arg("3601")
                         .string_arg("-ConfigFile")
                         .path_arg(write_cfg);
                     if (!m_interactive)
