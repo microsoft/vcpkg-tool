@@ -37,7 +37,7 @@ namespace vcpkg::Commands::SetInstalled
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
                              const PortFileProvider::PathsPortFileProvider& provider,
-                             IBinaryProvider& binary_provider,
+                             BinaryCache& binary_cache,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              Dependencies::ActionPlan action_plan,
                              DryRun dry_run,
@@ -113,7 +113,7 @@ namespace vcpkg::Commands::SetInstalled
                                               Install::KeepGoing::NO,
                                               paths,
                                               status_db,
-                                              args.binary_caching_enabled() ? binary_provider : null_binary_provider(),
+                                              binary_cache,
                                               Build::null_build_logs_recorder(),
                                               cmake_vars);
 
@@ -140,7 +140,7 @@ namespace vcpkg::Commands::SetInstalled
             Input::check_triplet(spec.package_spec.triplet(), paths);
         }
 
-        auto binary_provider = create_binary_provider_from_configs(args.binary_sources).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache{args};
 
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
@@ -168,7 +168,7 @@ namespace vcpkg::Commands::SetInstalled
         perform_and_exit_ex(args,
                             paths,
                             provider,
-                            *binary_provider,
+                            binary_cache,
                             *cmake_vars,
                             std::move(action_plan),
                             dry_run ? DryRun::Yes : DryRun::No,

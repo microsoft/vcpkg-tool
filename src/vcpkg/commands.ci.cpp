@@ -297,7 +297,7 @@ namespace vcpkg::Commands::CI
         const PortFileProvider::PortFileProvider& provider,
         const CMakeVars::CMakeVarProvider& var_provider,
         const std::vector<FullPackageSpec>& specs,
-        IBinaryProvider& binaryprovider,
+        BinaryCache& binary_cache,
         const Dependencies::CreateInstallPlanOptions& serialize_options,
         Triplet target_triplet,
         Triplet host_triplet)
@@ -351,19 +351,20 @@ namespace vcpkg::Commands::CI
 
         Build::compute_all_abis(paths, action_plan, var_provider, {});
 
-        auto precheck_results = binary_provider_precheck(paths, action_plan, binaryprovider);
+        const auto precheck_results = binary_cache.precheck(paths, action_plan.install_actions);
         {
             vcpkg::System::BufferedPrint stdout_print;
 
-            for (auto&& action : action_plan.install_actions)
+            for (size_t action_idx = 0; action_idx < action_plan.install_actions.size(); ++action_idx)
             {
+                auto&& action = action_plan.install_actions[action_idx];
                 action.build_options = vcpkg::Build::backcompat_prohibiting_package_options;
 
                 auto p = &action;
                 ret->abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
                 ret->features.emplace(action.spec, action.feature_list);
 
-                auto precheck_result = precheck_results.at(&action);
+                auto precheck_result = precheck_results[action_idx];
                 bool b_will_build = false;
 
                 std::string state;
@@ -391,16 +392,10 @@ namespace vcpkg::Commands::CI
                     ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
                     will_fail.emplace(p->spec);
                 }
-                else if (precheck_result == RestoreResult::success)
+                else if (precheck_result == CacheAvailability::available)
                 {
                     state = "pass";
                     ret->known.emplace(p->spec, BuildResult::SUCCEEDED);
-                }
-                else if (precheck_result == RestoreResult::build_failed)
-                {
-                    state = "fail";
-                    ret->known.emplace(p->spec, BuildResult::BUILD_FAILED);
-                    will_fail.emplace(p->spec);
                 }
                 else
                 {
@@ -460,15 +455,6 @@ namespace vcpkg::Commands::CI
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet, Triplet host_triplet)
     {
-        std::unique_ptr<IBinaryProvider> binaryproviderStorage;
-        if (args.binary_caching_enabled())
-        {
-            binaryproviderStorage =
-                create_binary_provider_from_configs(args.binary_sources).value_or_exit(VCPKG_LINE_INFO);
-        }
-
-        IBinaryProvider& binaryprovider = binaryproviderStorage ? *binaryproviderStorage : null_binary_provider();
-
         if (args.command_arguments.size() != 1)
         {
             Checks::unreachable(VCPKG_LINE_INFO);
@@ -477,6 +463,7 @@ namespace vcpkg::Commands::CI
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
 
+        BinaryCache binary_cache{args};
         Triplet target_triplet = Triplet::from_canonical_name(std::string(args.command_arguments[0]));
         auto exclusions_set = parse_exclusions(options, OPTION_EXCLUDE);
         auto host_exclusions_set = parse_exclusions(options, OPTION_HOST_EXCLUDE);
@@ -552,7 +539,7 @@ namespace vcpkg::Commands::CI
                                                      provider,
                                                      var_provider,
                                                      all_default_full_specs,
-                                                     binaryprovider,
+                                                     binary_cache,
                                                      serialize_options,
                                                      target_triplet,
                                                      host_triplet);
@@ -571,7 +558,7 @@ namespace vcpkg::Commands::CI
                                             Install::KeepGoing::YES,
                                             paths,
                                             status_db,
-                                            binaryprovider,
+                                            binary_cache,
                                             build_logs_recorder,
                                             var_provider);
             auto collection_time_elapsed = collection_timer.elapsed();

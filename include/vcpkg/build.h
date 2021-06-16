@@ -23,7 +23,7 @@
 
 namespace vcpkg
 {
-    struct IBinaryProvider;
+    class BinaryCache;
 }
 
 namespace vcpkg::System
@@ -62,7 +62,7 @@ namespace vcpkg::Build
                        Triplet host_triplet,
                        const SourceControlFileLocation& scfl,
                        const PortFileProvider::PathsPortFileProvider& provider,
-                       IBinaryProvider& binaryprovider,
+                       BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
                        const VcpkgPaths& paths);
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
@@ -70,7 +70,7 @@ namespace vcpkg::Build
                                  Triplet host_triplet,
                                  const SourceControlFileLocation& scfl,
                                  const PortFileProvider::PathsPortFileProvider& provider,
-                                 IBinaryProvider& binaryprovider,
+                                 BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
                                  const VcpkgPaths& paths);
 
@@ -261,7 +261,7 @@ namespace vcpkg::Build
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
                                       const Dependencies::InstallPlanAction& config,
-                                      IBinaryProvider& binaries_provider,
+                                      BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db);
 

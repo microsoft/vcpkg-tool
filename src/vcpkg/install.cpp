@@ -314,7 +314,7 @@ namespace vcpkg::Install
                                                            const VcpkgPaths& paths,
                                                            InstallPlanAction& action,
                                                            StatusParagraphs& status_db,
-                                                           IBinaryProvider& binaries_provider,
+                                                           BinaryCache& binary_cache,
                                                            const Build::IBuildLogsRecorder& build_logs_recorder)
     {
         const InstallPlanType& plan_type = action.plan_type;
@@ -342,7 +342,7 @@ namespace vcpkg::Install
             else
                 System::printf("Building package %s...\n", display_name_with_features);
 
-            auto result = Build::build_package(args, paths, action, binaries_provider, build_logs_recorder, status_db);
+            auto result = Build::build_package(args, paths, action, binary_cache, build_logs_recorder, status_db);
 
             if (BuildResult::DOWNLOADED == result.code)
             {
@@ -466,7 +466,7 @@ namespace vcpkg::Install
                            const KeepGoing keep_going,
                            const VcpkgPaths& paths,
                            StatusParagraphs& status_db,
-                           IBinaryProvider& binaryprovider,
+                           BinaryCache& binary_cache,
                            const Build::IBuildLogsRecorder& build_logs_recorder,
                            const CMakeVars::CMakeVarProvider& var_provider)
     {
@@ -485,26 +485,16 @@ namespace vcpkg::Install
         {
             results.emplace_back(action.spec, &action);
             results.back().build_result =
-                perform_install_plan_action(args, paths, action, status_db, binaryprovider, build_logs_recorder);
+                perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
         }
 
         Build::compute_all_abis(paths, action_plan, var_provider, status_db);
-
-        std::vector<const InstallPlanAction*> to_prefetch;
-        for (auto&& action : action_plan.install_actions)
-        {
-            if (action.has_package_abi())
-            {
-                to_prefetch.push_back(&action);
-            }
-        }
-        binaryprovider.prefetch(paths, to_prefetch);
-
+        binary_cache.prefetch(paths, action_plan.install_actions);
         for (auto&& action : action_plan.install_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
             auto result =
-                perform_install_plan_action(args, paths, action, status_db, binaryprovider, build_logs_recorder);
+                perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
                 System::print2(Build::create_user_troubleshooting_message(action.spec), '\n');
@@ -783,8 +773,6 @@ namespace vcpkg::Install
         const ParsedArguments options =
             args.parse_arguments(paths.manifest_mode_enabled() ? MANIFEST_COMMAND_STRUCTURE : COMMAND_STRUCTURE);
 
-        auto binaryprovider = create_binary_provider_from_configs(args.binary_sources).value_or_exit(VCPKG_LINE_INFO);
-
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
         const bool use_head_version = Util::Sets::contains(options.switches, (OPTION_USE_HEAD_VERSION));
         const bool no_downloads = Util::Sets::contains(options.switches, (OPTION_NO_DOWNLOADS));
@@ -804,6 +792,12 @@ namespace vcpkg::Install
             to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads);
         const bool prohibit_backcompat_features =
             Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES));
+
+        BinaryCache binary_cache;
+        if (!only_downloads)
+        {
+            binary_cache.install_providers_for(args);
+        }
 
         auto& fs = paths.get_filesystem();
 
@@ -965,7 +959,7 @@ namespace vcpkg::Install
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
                                                         provider,
-                                                        *binaryprovider,
+                                                        binary_cache,
                                                         var_provider,
                                                         std::move(install_plan),
                                                         dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
@@ -1064,15 +1058,14 @@ namespace vcpkg::Install
 
         track_install_plan(action_plan);
 
-        const InstallSummary summary =
-            perform(args,
-                    action_plan,
-                    keep_going,
-                    paths,
-                    status_db,
-                    args.binary_caching_enabled() && !only_downloads ? *binaryprovider : null_binary_provider(),
-                    Build::null_build_logs_recorder(),
-                    var_provider);
+        const InstallSummary summary = perform(args,
+                                               action_plan,
+                                               keep_going,
+                                               paths,
+                                               status_db,
+                                               binary_cache,
+                                               Build::null_build_logs_recorder(),
+                                               var_provider);
 
         System::print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
 
@@ -1119,12 +1112,19 @@ namespace vcpkg::Install
 
     const BinaryParagraph* SpecSummary::get_binary_paragraph() const
     {
-        if (build_result.binary_control_file) return &build_result.binary_control_file->core_paragraph;
+        if (build_result.binary_control_file)
+        {
+            return &build_result.binary_control_file->core_paragraph;
+        }
+
         if (action)
+        {
             if (auto p_status = action->installed_package.get())
             {
                 return &p_status->core->package;
             }
+        }
+
         return nullptr;
     }
 
@@ -1167,6 +1167,7 @@ namespace vcpkg::Install
         {
             xunit_doc += xunit_result(result.spec, result.timing, result.build_result.code);
         }
+
         return xunit_doc;
     }
 

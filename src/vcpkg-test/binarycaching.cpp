@@ -16,6 +16,191 @@
 
 using namespace vcpkg;
 
+struct KnowNothingBinaryProvider : IBinaryProvider
+{
+    RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
+    {
+        return RestoreResult::unavailable;
+    }
+
+    virtual void push_success(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override { }
+    virtual void prefetch(const VcpkgPaths&,
+                          const std::vector<Dependencies::InstallPlanAction>&,
+                          const std::vector<CacheStatus*>&) const override
+    {
+    }
+    virtual void precheck(const VcpkgPaths&,
+                          const std::vector<Dependencies::InstallPlanAction>&,
+                          const std::vector<CacheStatus*>& cache_status) const override
+    {
+        for (const auto c : cache_status)
+        {
+            if (c)
+            {
+                c->mark_unavailable(this);
+            }
+        }
+    }
+};
+
+TEST_CASE ("CacheStatus operations", "[BinaryCache]")
+{
+    KnowNothingBinaryProvider know_nothing;
+
+    // CacheStatus() noexcept;
+    CacheStatus default_constructed;
+    REQUIRE(default_constructed.should_attempt_precheck(&know_nothing));
+    REQUIRE(default_constructed.should_attempt_restore(&know_nothing));
+    REQUIRE(default_constructed.is_unavailable(0));
+    REQUIRE(default_constructed.is_unavailable(1));
+    REQUIRE(default_constructed.get_available_provider() == nullptr);
+    REQUIRE(!default_constructed.is_restored());
+
+    CacheStatus unavailable;
+    unavailable.mark_unavailable(&know_nothing);
+    REQUIRE(!unavailable.should_attempt_precheck(&know_nothing));
+    REQUIRE(!unavailable.should_attempt_restore(&know_nothing));
+    REQUIRE(!unavailable.is_unavailable(0));
+    REQUIRE(unavailable.is_unavailable(1));
+    REQUIRE(unavailable.get_available_provider() == nullptr);
+    REQUIRE(!unavailable.is_restored());
+
+    CacheStatus available;
+    available.mark_available(&know_nothing);
+    REQUIRE(!available.should_attempt_precheck(&know_nothing));
+    REQUIRE(available.should_attempt_restore(&know_nothing));
+    REQUIRE(!available.is_unavailable(0));
+    REQUIRE(!available.is_unavailable(1));
+    REQUIRE(available.get_available_provider() == &know_nothing);
+    REQUIRE(!available.is_restored());
+
+    CacheStatus restored;
+    restored.mark_restored();
+    REQUIRE(!restored.should_attempt_precheck(&know_nothing));
+    REQUIRE(!restored.should_attempt_restore(&know_nothing));
+    REQUIRE(!restored.is_unavailable(0));
+    REQUIRE(!restored.is_unavailable(1));
+    REQUIRE(restored.get_available_provider() == nullptr);
+    REQUIRE(restored.is_restored());
+
+    // CacheStatus(const CacheStatus&);
+    CacheStatus default_copy{default_constructed};
+    REQUIRE(default_copy.is_unavailable(0));
+
+    CacheStatus unavailable_copy{unavailable};
+    REQUIRE(!unavailable_copy.should_attempt_precheck(&know_nothing));
+    REQUIRE(!unavailable_copy.should_attempt_restore(&know_nothing));
+    REQUIRE(!unavailable_copy.is_unavailable(0));
+    REQUIRE(unavailable_copy.is_unavailable(1));
+    REQUIRE(unavailable_copy.get_available_provider() == nullptr);
+    REQUIRE(!unavailable_copy.is_restored());
+
+    CacheStatus available_copy{available};
+    REQUIRE(!available_copy.should_attempt_precheck(&know_nothing));
+    REQUIRE(available_copy.should_attempt_restore(&know_nothing));
+    REQUIRE(!available_copy.is_unavailable(0));
+    REQUIRE(!available_copy.is_unavailable(1));
+    REQUIRE(available_copy.get_available_provider() == &know_nothing);
+    REQUIRE(!available_copy.is_restored());
+
+    CacheStatus restored_copy{restored};
+    REQUIRE(!restored_copy.should_attempt_precheck(&know_nothing));
+    REQUIRE(!restored_copy.should_attempt_restore(&know_nothing));
+    REQUIRE(!restored_copy.is_unavailable(0));
+    REQUIRE(!restored_copy.is_unavailable(1));
+    REQUIRE(restored_copy.get_available_provider() == nullptr);
+    REQUIRE(restored_copy.is_restored());
+
+    // CacheStatus(CacheStatus&&) noexcept;
+    CacheStatus default_move{std::move(default_copy)};
+    REQUIRE(default_move.is_unavailable(0));
+
+    CacheStatus unavailable_move{std::move(unavailable_copy)};
+    REQUIRE(!unavailable_move.should_attempt_precheck(&know_nothing));
+    REQUIRE(!unavailable_move.should_attempt_restore(&know_nothing));
+    REQUIRE(!unavailable_move.is_unavailable(0));
+    REQUIRE(unavailable_move.is_unavailable(1));
+    REQUIRE(unavailable_move.get_available_provider() == nullptr);
+    REQUIRE(!unavailable_move.is_restored());
+
+    CacheStatus available_move{std::move(available_copy)};
+    REQUIRE(!available_move.should_attempt_precheck(&know_nothing));
+    REQUIRE(available_move.should_attempt_restore(&know_nothing));
+    REQUIRE(!available_move.is_unavailable(0));
+    REQUIRE(!available_move.is_unavailable(1));
+    REQUIRE(available_move.get_available_provider() == &know_nothing);
+    REQUIRE(!available_move.is_restored());
+
+    CacheStatus restored_move{std::move(restored_copy)};
+    REQUIRE(!restored_move.should_attempt_precheck(&know_nothing));
+    REQUIRE(!restored_move.should_attempt_restore(&know_nothing));
+    REQUIRE(!restored_move.is_unavailable(0));
+    REQUIRE(!restored_move.is_unavailable(1));
+    REQUIRE(restored_move.get_available_provider() == nullptr);
+    REQUIRE(restored_move.is_restored());
+
+    // CacheStatus& operator=(const CacheStatus&);
+    CacheStatus assignee;
+    assignee = unavailable;
+    REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
+    REQUIRE(!assignee.should_attempt_restore(&know_nothing));
+    REQUIRE(!assignee.is_unavailable(0));
+    REQUIRE(assignee.is_unavailable(1));
+    REQUIRE(assignee.get_available_provider() == nullptr);
+    REQUIRE(!assignee.is_restored());
+    assignee = available;
+    REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
+    REQUIRE(assignee.should_attempt_restore(&know_nothing));
+    REQUIRE(!assignee.is_unavailable(0));
+    REQUIRE(!assignee.is_unavailable(1));
+    REQUIRE(assignee.get_available_provider() == &know_nothing);
+    REQUIRE(!assignee.is_restored());
+    assignee = unavailable;
+    REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
+    REQUIRE(assignee.should_attempt_restore(&know_nothing));
+    REQUIRE(!assignee.is_unavailable(0));
+    REQUIRE(!assignee.is_unavailable(1));
+    REQUIRE(assignee.get_available_provider() == &know_nothing);
+    REQUIRE(!assignee.is_restored());
+    assignee = restored;
+    REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
+    REQUIRE(!assignee.should_attempt_restore(&know_nothing));
+    REQUIRE(!assignee.is_unavailable(0));
+    REQUIRE(!assignee.is_unavailable(1));
+    REQUIRE(assignee.get_available_provider() == nullptr);
+    REQUIRE(assignee.is_restored());
+
+    // CacheStatus& operator=(CacheStatus&&) noexcept;
+    assignee = std::move(unavailable);
+    REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
+    REQUIRE(!assignee.should_attempt_restore(&know_nothing));
+    REQUIRE(!assignee.is_unavailable(0));
+    REQUIRE(assignee.is_unavailable(1));
+    REQUIRE(assignee.get_available_provider() == nullptr);
+    REQUIRE(!assignee.is_restored());
+    assignee = std::move(available);
+    REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
+    REQUIRE(assignee.should_attempt_restore(&know_nothing));
+    REQUIRE(!assignee.is_unavailable(0));
+    REQUIRE(!assignee.is_unavailable(1));
+    REQUIRE(assignee.get_available_provider() == &know_nothing);
+    REQUIRE(!assignee.is_restored());
+    assignee = std::move(unavailable);
+    REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
+    REQUIRE(assignee.should_attempt_restore(&know_nothing));
+    REQUIRE(!assignee.is_unavailable(0));
+    REQUIRE(!assignee.is_unavailable(1));
+    REQUIRE(assignee.get_available_provider() == &know_nothing);
+    REQUIRE(!assignee.is_restored());
+    assignee = std::move(restored);
+    REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
+    REQUIRE(!assignee.should_attempt_restore(&know_nothing));
+    REQUIRE(!assignee.is_unavailable(0));
+    REQUIRE(!assignee.is_unavailable(1));
+    REQUIRE(assignee.get_available_provider() == nullptr);
+    REQUIRE(assignee.is_restored());
+}
+
 #define REQUIRE_EQUAL_TEXT(lhs, rhs)                                                                                   \
     {                                                                                                                  \
         auto lhs_lines = Strings::split((lhs), '\n');                                                                  \
