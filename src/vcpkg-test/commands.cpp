@@ -32,6 +32,7 @@ TEST_CASE ("get_available_basic_commands works", "[commands]")
     check_all_commands(Commands::get_available_basic_commands(), {
         "contact",
         "version",
+        "x-download",
         "x-init-registry",
 #if defined(_WIN32)
         "x-upload-metrics",
@@ -58,7 +59,6 @@ TEST_CASE ("get_available_paths_commands works", "[commands]")
         "fetch",
         "format-manifest",
         "x-ci-clean",
-        "x-download",
         "x-history",
         "x-package-info",
         "x-vsinstances",
