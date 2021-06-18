@@ -1346,7 +1346,7 @@ namespace vcpkg
     {
         switch (m_status)
         {
-            case CacheStatusState::unknown: return m_known_unavailable_providers.size() == total_providers;
+            case CacheStatusState::unknown: return m_known_unavailable_providers.size() <= total_providers;
             case CacheStatusState::available:
             case CacheStatusState::restored: return false;
             default: Checks::unreachable(VCPKG_LINE_INFO);
