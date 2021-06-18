@@ -731,6 +731,11 @@ namespace vcpkg
             auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
             const auto& obj = rec_doc.object();
 
+            if (auto entry = obj.get(VCPKG_ROOT_DIR_ENV))
+            {
+                args.vcpkg_root_dir = std::make_unique<std::string>(entry->string().to_string());
+            }
+
             if (auto entry = obj.get(DOWNLOADS_ROOT_DIR_ENV))
             {
                 args.downloads_root_dir = std::make_unique<std::string>(entry->string().to_string());
@@ -753,6 +758,11 @@ namespace vcpkg
         else
         {
             Json::Object obj;
+            if (args.vcpkg_root_dir)
+            {
+                obj.insert(VCPKG_ROOT_DIR_ENV, Json::Value::string(*args.vcpkg_root_dir.get()));
+            }
+
             if (args.downloads_root_dir)
             {
                 obj.insert(DOWNLOADS_ROOT_DIR_ENV, Json::Value::string(*args.downloads_root_dir.get()));
