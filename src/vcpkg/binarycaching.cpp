@@ -1223,7 +1223,7 @@ namespace vcpkg
         }
     }
 
-    CacheStatus::CacheStatus(CacheStatus&& other) noexcept
+    CacheStatus::CacheStatus(CacheStatus&& other) noexcept : m_status(other.m_status)
     {
         switch (other.m_status)
         {

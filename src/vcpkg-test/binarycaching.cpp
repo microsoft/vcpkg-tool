@@ -155,13 +155,6 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     REQUIRE(!assignee.is_unavailable(1));
     REQUIRE(assignee.get_available_provider() == &know_nothing);
     REQUIRE(!assignee.is_restored());
-    assignee = unavailable;
-    REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
-    REQUIRE(assignee.should_attempt_restore(&know_nothing));
-    REQUIRE(!assignee.is_unavailable(0));
-    REQUIRE(!assignee.is_unavailable(1));
-    REQUIRE(assignee.get_available_provider() == &know_nothing);
-    REQUIRE(!assignee.is_restored());
     assignee = restored;
     REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
     REQUIRE(!assignee.should_attempt_restore(&know_nothing));
@@ -179,13 +172,6 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     REQUIRE(assignee.get_available_provider() == nullptr);
     REQUIRE(!assignee.is_restored());
     assignee = std::move(available);
-    REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
-    REQUIRE(assignee.should_attempt_restore(&know_nothing));
-    REQUIRE(!assignee.is_unavailable(0));
-    REQUIRE(!assignee.is_unavailable(1));
-    REQUIRE(assignee.get_available_provider() == &know_nothing);
-    REQUIRE(!assignee.is_restored());
-    assignee = std::move(unavailable);
     REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
     REQUIRE(assignee.should_attempt_restore(&know_nothing));
     REQUIRE(!assignee.is_unavailable(0));
