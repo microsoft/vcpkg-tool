@@ -39,7 +39,7 @@ namespace vcpkg::Commands::X_Download
     }
     static bool is_lower_sha512(StringView sha) { return sha.size() == 128 && is_lower_hex(sha); }
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs)
+    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
         auto download_manager = create_download_manager(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO);
@@ -90,7 +90,7 @@ namespace vcpkg::Commands::X_Download
         }
     }
 
-    void XDownloadCommand::perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs) const
+    void XDownloadCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         X_Download::perform_and_exit(args, fs);
     }

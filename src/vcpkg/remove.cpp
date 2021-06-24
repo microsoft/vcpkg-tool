@@ -175,7 +175,7 @@ namespace vcpkg::Remove
 
         if (purge == Purge::YES)
         {
-            Files::Filesystem& fs = paths.get_filesystem();
+            Filesystem& fs = paths.get_filesystem();
             fs.remove_all(paths.packages / action.spec.dir(), VCPKG_LINE_INFO);
         }
     }

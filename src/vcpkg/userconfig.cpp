@@ -19,7 +19,7 @@ namespace vcpkg
 
     static fs::path get_config_path() { return get_user_dir() / "config"; }
 
-    UserConfig UserConfig::try_read_data(const Files::Filesystem& fs)
+    UserConfig UserConfig::try_read_data(const Filesystem& fs)
     {
         UserConfig ret;
         try
@@ -51,7 +51,7 @@ namespace vcpkg
         return ret;
     }
 
-    void UserConfig::try_write_data(Files::Filesystem& fs) const
+    void UserConfig::try_write_data(Filesystem& fs) const
     {
         try
         {

@@ -58,7 +58,7 @@ namespace
     };
 
     void create_directory_tree(urbg_t& urbg,
-                               vcpkg::Files::Filesystem& fs,
+                               vcpkg::Filesystem& fs,
                                const fs::path& base,
                                MaxDepth max_depth,
                                AllowSymlinks allow_symlinks = AllowSymlinks::Yes,
@@ -143,9 +143,9 @@ namespace
         CHECK_EC_ON_FILE(base, ec);
     }
 
-    vcpkg::Files::Filesystem& setup()
+    vcpkg::Filesystem& setup()
     {
-        auto& fs = vcpkg::Files::get_real_filesystem();
+        auto& fs = vcpkg::get_real_filesystem();
 
         std::error_code ec;
         fs.create_directory(base_temporary_directory(), ec);
@@ -158,7 +158,7 @@ namespace
 TEST_CASE ("fs::combine works correctly", "[filesystem][files]")
 {
     using namespace fs;
-    using namespace vcpkg::Files;
+    using namespace vcpkg;
     CHECK(combine(u8path("/a/b"), u8path("c/d")) == u8path("/a/b/c/d"));
     CHECK(combine(u8path("a/b"), u8path("c/d")) == u8path("a/b/c/d"));
     CHECK(combine(u8path("/a/b"), u8path("/c/d")) == u8path("/c/d"));
@@ -287,7 +287,7 @@ TEST_CASE ("lexically_normal", "[files]")
 #if defined(_WIN32)
 TEST_CASE ("win32_fix_path_case", "[files]")
 {
-    using vcpkg::Files::win32_fix_path_case;
+    using vcpkg::win32_fix_path_case;
 
     // This test assumes that the Windows directory is C:\Windows
 
@@ -303,7 +303,7 @@ TEST_CASE ("win32_fix_path_case", "[files]")
     CHECK(win32_fix_path_case(L"C://///////WiNdOws") == L"C:\\Windows");
     CHECK(win32_fix_path_case(L"c:\\/\\/WiNdOws\\/") == L"C:\\Windows\\");
 
-    auto& fs = vcpkg::Files::get_real_filesystem();
+    auto& fs = vcpkg::get_real_filesystem();
     auto original_cwd = fs.current_path(VCPKG_LINE_INFO);
     fs.current_path(L"C:\\", VCPKG_LINE_INFO);
     CHECK(win32_fix_path_case(L"\\") == L"\\");
@@ -349,7 +349,7 @@ TEST_CASE ("remove all -- benchmarks", "[files][!benchmark]")
     struct
     {
         urbg_t& urbg;
-        vcpkg::Files::Filesystem& fs;
+        vcpkg::Filesystem& fs;
 
         void operator()(Catch::Benchmark::Chronometer& meter, MaxDepth max_depth, AllowSymlinks allow_symlinks) const
         {

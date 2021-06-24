@@ -163,7 +163,7 @@ void is_regular_file(const fs::path& p, std::error_code& ec) = delete;
 void is_directory(const fs::path& p) = delete;
 void is_directory(const fs::path& p, std::error_code& ec) = delete;
 
-namespace vcpkg::Files
+namespace vcpkg
 {
     struct Filesystem
     {

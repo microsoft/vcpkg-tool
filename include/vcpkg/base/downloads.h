@@ -19,19 +19,19 @@ namespace vcpkg::Downloads
         ExpectedS<SplitURIView> split_uri_view(StringView uri);
     }
 
-    void verify_downloaded_file_hash(const Files::Filesystem& fs,
+    void verify_downloaded_file_hash(const Filesystem& fs,
                                      const std::string& url,
                                      const fs::path& path,
                                      const std::string& sha512);
 
     // Returns url that was successfully downloaded from
-    std::string download_file(Files::Filesystem& fs,
+    std::string download_file(Filesystem& fs,
                               View<std::string> urls,
                               View<std::string> headers,
                               const fs::path& download_path,
                               const std::string& sha512);
 
-    void download_file(Files::Filesystem& fs,
+    void download_file(Filesystem& fs,
                        const std::string& url,
                        View<std::string> headers,
                        const fs::path& download_path,
@@ -39,8 +39,8 @@ namespace vcpkg::Downloads
 
     View<std::string> azure_blob_headers();
 
-    std::vector<int> download_files(Files::Filesystem& fs, View<std::pair<std::string, fs::path>> url_pairs);
-    ExpectedS<int> put_file(const Files::Filesystem&, StringView url, View<std::string> headers, const fs::path& file);
+    std::vector<int> download_files(Filesystem& fs, View<std::pair<std::string, fs::path>> url_pairs);
+    ExpectedS<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const fs::path& file);
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers);
 
     struct DownloadManagerConfig
@@ -62,7 +62,7 @@ namespace vcpkg::Downloads
                                  std::vector<std::string> write_headers,
                                  bool block_origin);
 
-        void download_file(Files::Filesystem& fs,
+        void download_file(Filesystem& fs,
                            const std::string& url,
                            const fs::path& download_path,
                            const std::string& sha512) const
@@ -70,21 +70,19 @@ namespace vcpkg::Downloads
             this->download_file(fs, url, {}, download_path, sha512);
         }
 
-        void download_file(Files::Filesystem& fs,
+        void download_file(Filesystem& fs,
                            const std::string& url,
                            View<std::string> headers,
                            const fs::path& download_path,
                            const std::string& sha512) const;
 
-        std::string download_file(Files::Filesystem& fs,
+        std::string download_file(Filesystem& fs,
                                   View<std::string> urls,
                                   View<std::string> headers,
                                   const fs::path& download_path,
                                   const std::string& sha512) const;
 
-        ExpectedS<int> put_file_to_mirror(const Files::Filesystem& fs,
-                                          const fs::path& path,
-                                          const std::string& sha512) const;
+        ExpectedS<int> put_file_to_mirror(const Filesystem& fs, const fs::path& path, const std::string& sha512) const;
 
         const DownloadManagerConfig& internal_get_config() const { return *this; }
 

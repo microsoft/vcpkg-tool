@@ -14,9 +14,9 @@ namespace vcpkg
 
         std::string last_completed_survey;
 
-        static UserConfig try_read_data(const Files::Filesystem& fs);
+        static UserConfig try_read_data(const Filesystem& fs);
 
-        void try_write_data(Files::Filesystem& fs) const;
+        void try_write_data(Filesystem& fs) const;
     };
 
     fs::path get_user_dir();

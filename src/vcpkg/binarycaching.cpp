@@ -192,7 +192,7 @@ std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult> vcpkg:
 
 namespace
 {
-    static void clean_prepare_dir(Files::Filesystem& fs, const fs::path& dir)
+    static void clean_prepare_dir(Filesystem& fs, const fs::path& dir)
     {
         fs.remove_all(dir, VCPKG_LINE_INFO);
         bool created_last = fs.create_directories(dir, VCPKG_LINE_INFO);

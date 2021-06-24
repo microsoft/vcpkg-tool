@@ -66,7 +66,7 @@ namespace vcpkg
             TripletFile(const std::string& name, const fs::path& location) : name(name), location(location) { }
         };
 
-        VcpkgPaths(Files::Filesystem& filesystem, const VcpkgCmdArguments& args);
+        VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args);
         VcpkgPaths(const VcpkgPaths&) = delete;
         VcpkgPaths(VcpkgPaths&&) = default;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
@@ -166,7 +166,7 @@ namespace vcpkg
 
         View<Toolset> get_all_toolsets() const;
 
-        Files::Filesystem& get_filesystem() const;
+        Filesystem& get_filesystem() const;
 
         const Environment& get_action_env(const Build::AbiInfo& abi_info) const;
         const std::string& get_triplet_info(const Build::AbiInfo& abi_info) const;

@@ -56,7 +56,7 @@ TEST_CASE ("reformat_version generic", "[reformat_version]")
 
 TEST_CASE ("generate_nuspec", "[generate_nuspec]")
 {
-    auto& fsWrapper = Files::get_real_filesystem();
+    auto& fsWrapper = get_real_filesystem();
     VcpkgCmdArguments args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     args.imbue_from_environment();
     args.packages_root_dir = std::make_unique<std::string>("/");

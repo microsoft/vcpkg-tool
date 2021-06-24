@@ -46,7 +46,7 @@ static void invalid_command(const std::string& cmd)
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
 
-static void inner(vcpkg::Files::Filesystem& fs, const VcpkgCmdArguments& args)
+static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
     Metrics::g_metrics.lock()->track_property("command", args.command);
     if (args.command.empty())
@@ -98,7 +98,7 @@ static void inner(vcpkg::Files::Filesystem& fs, const VcpkgCmdArguments& args)
     return invalid_command(args.command);
 }
 
-static void load_config(vcpkg::Files::Filesystem& fs)
+static void load_config(vcpkg::Filesystem& fs)
 {
     auto config = UserConfig::try_read_data(fs);
 
@@ -163,7 +163,7 @@ int main(const int argc, const char* const* const argv)
 {
     if (argc == 0) std::abort();
 
-    auto& fs = Files::get_real_filesystem();
+    auto& fs = get_real_filesystem();
     *GlobalState::timer.lock() = Chrono::ElapsedTimer::create_started();
 
 #if defined(_WIN32)
@@ -186,7 +186,7 @@ int main(const int argc, const char* const* const argv)
         auto metrics = Metrics::g_metrics.lock();
         metrics->track_metric("elapsed_us", elapsed_us_inner);
         Debug::g_debugging = false;
-        metrics->flush(Files::get_real_filesystem());
+        metrics->flush(get_real_filesystem());
 
 #if defined(_WIN32)
         if (GlobalState::g_init_console_initialized)

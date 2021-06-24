@@ -506,7 +506,7 @@ gsutil version: 4.58
         {
             (void)out_candidate_paths;
             // TODO: Uncomment later
-            // const std::vector<fs::path> from_path = Files::find_from_PATH("installerbase");
+            // const std::vector<fs::path> from_path = find_from_PATH("installerbase");
             // candidate_paths.insert(candidate_paths.end(), from_path.cbegin(), from_path.cend());
             // candidate_paths.push_back(fs::path(get_environment_variable("HOMEDRIVE").value_or("C:")) /
             // "Qt" / "Tools" / "QtInstallerFramework" / "3.1" / "bin" / "installerbase.exe");

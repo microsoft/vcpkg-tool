@@ -319,7 +319,7 @@ namespace vcpkg::Build
         BuildPolicies policies;
     };
 
-    BuildInfo read_build_info(const Files::Filesystem& fs, const fs::path& filepath);
+    BuildInfo read_build_info(const Filesystem& fs, const fs::path& filepath);
 
     struct AbiEntry
     {

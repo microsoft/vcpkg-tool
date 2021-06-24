@@ -10,7 +10,7 @@ using namespace vcpkg;
 
 namespace
 {
-    void clear_directory(Files::Filesystem& fs, const fs::path& target)
+    void clear_directory(Filesystem& fs, const fs::path& target)
     {
         using vcpkg::print2;
         if (fs.is_directory(target))

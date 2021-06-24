@@ -10,7 +10,7 @@ namespace vcpkg::Archives
 {
     void extract_archive(const VcpkgPaths& paths, const fs::path& archive, const fs::path& to_path)
     {
-        Files::Filesystem& fs = paths.get_filesystem();
+        Filesystem& fs = paths.get_filesystem();
         const fs::path to_path_partial = fs::u8string(to_path) + ".partial"
 #if defined(_WIN32)
                                          + "." + std::to_string(GetCurrentProcessId())

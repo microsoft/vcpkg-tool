@@ -119,7 +119,7 @@ namespace vcpkg
         }
     }
 
-    VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const Files::Filesystem& fs,
+    VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const Filesystem& fs,
                                                                   const int argc,
                                                                   const CommandLineCharType* const* const argv)
     {

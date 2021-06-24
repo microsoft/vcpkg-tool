@@ -246,7 +246,7 @@ namespace vcpkg::PortFileProvider
             OverlayProviderImpl(const VcpkgPaths& paths, View<std::string> overlay_ports)
                 : m_fs(paths.get_filesystem())
                 , m_overlay_ports(Util::fmap(overlay_ports, [&paths](const std::string& s) -> fs::path {
-                    return Files::combine(paths.original_cwd, fs::u8path(s));
+                    return combine(paths.original_cwd, fs::u8path(s));
                 }))
             {
                 for (auto&& overlay : m_overlay_ports)
@@ -375,7 +375,7 @@ namespace vcpkg::PortFileProvider
             }
 
         private:
-            const Files::Filesystem& m_fs;
+            const Filesystem& m_fs;
             const std::vector<fs::path> m_overlay_ports;
             mutable std::map<std::string, Optional<SourceControlFileLocation>, std::less<>> m_overlay_cache;
         };

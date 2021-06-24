@@ -110,7 +110,7 @@ endmacro()
     fs::path TripletCMakeVarProvider::create_tag_extraction_file(
         const View<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings) const
     {
-        Files::Filesystem& fs = paths.get_filesystem();
+        Filesystem& fs = paths.get_filesystem();
         static int tag_extract_id = 0;
 
         std::map<Triplet, int> emitted_triplets;
@@ -147,7 +147,7 @@ endmacro()
     fs::path TripletCMakeVarProvider::create_dep_info_extraction_file(const View<PackageSpec> specs) const
     {
         static int dep_info_id = 0;
-        Files::Filesystem& fs = paths.get_filesystem();
+        Filesystem& fs = paths.get_filesystem();
 
         std::map<Triplet, int> emitted_triplets;
         int emitted_triplet_id = 0;

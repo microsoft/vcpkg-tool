@@ -437,7 +437,7 @@ namespace vcpkg::Metrics
 #endif // ^^^ !_WIN32
     }
 
-    void Metrics::flush(Files::Filesystem& fs)
+    void Metrics::flush(Filesystem& fs)
     {
         if (!metrics_enabled())
         {

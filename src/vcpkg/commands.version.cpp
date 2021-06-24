@@ -42,7 +42,7 @@ namespace vcpkg::Commands::Version
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem&)
+    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem&)
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         print2("Vcpkg package management program version ",
@@ -53,7 +53,7 @@ namespace vcpkg::Commands::Version
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void VersionCommand::perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs) const
+    void VersionCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         Version::perform_and_exit(args, fs);
     }

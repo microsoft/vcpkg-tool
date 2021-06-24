@@ -16,7 +16,7 @@ using vcpkg::Build::PreBuildInfo;
 
 namespace vcpkg::PostBuildLint
 {
-    static auto not_extension_pred(const Files::Filesystem& fs, const std::string& ext)
+    static auto not_extension_pred(const Filesystem& fs, const std::string& ext)
     {
         return [&fs, ext](const fs::path& path) { return fs.is_directory(path) || path.extension() != ext; };
     }
@@ -76,7 +76,7 @@ namespace vcpkg::PostBuildLint
         return V_NO_MSVCRT;
     }
 
-    static LintStatus check_for_files_in_include_directory(const Files::Filesystem& fs,
+    static LintStatus check_for_files_in_include_directory(const Filesystem& fs,
                                                            const Build::BuildPolicies& policies,
                                                            const fs::path& package_dir)
     {
@@ -113,7 +113,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_restricted_include_files(const Files::Filesystem& fs,
+    static LintStatus check_for_restricted_include_files(const Filesystem& fs,
                                                          const Build::BuildPolicies& policies,
                                                          const fs::path& package_dir)
     {
@@ -191,7 +191,7 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning,
                    "Restricted headers paths are present. These files can prevent the core C++ runtime and "
                    "other packages from compiling correctly:\n");
-            Files::print_paths(violations);
+            print_paths(violations);
             print2("In exceptional circumstances, this policy can be disabled via ",
                    Build::to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS),
                    "\n");
@@ -201,8 +201,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_files_in_debug_include_directory(const Files::Filesystem& fs,
-                                                                 const fs::path& package_dir)
+    static LintStatus check_for_files_in_debug_include_directory(const Filesystem& fs, const fs::path& package_dir)
     {
         const fs::path debug_include_dir = package_dir / "debug" / "include";
 
@@ -223,7 +222,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_files_in_debug_share_directory(const Files::Filesystem& fs, const fs::path& package_dir)
+    static LintStatus check_for_files_in_debug_share_directory(const Filesystem& fs, const fs::path& package_dir)
     {
         const fs::path debug_share = package_dir / "debug" / "share";
 
@@ -238,7 +237,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_vcpkg_port_config(const Files::Filesystem& fs,
+    static LintStatus check_for_vcpkg_port_config(const Filesystem& fs,
                                                   const Build::BuildPolicies& policies,
                                                   const fs::path& package_dir,
                                                   const PackageSpec& spec)
@@ -262,9 +261,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_folder_lib_cmake(const Files::Filesystem& fs,
-                                             const fs::path& package_dir,
-                                             const PackageSpec& spec)
+    static LintStatus check_folder_lib_cmake(const Filesystem& fs, const fs::path& package_dir, const PackageSpec& spec)
     {
         const fs::path lib_cmake = package_dir / "lib" / "cmake";
         if (fs.exists(lib_cmake))
@@ -279,7 +276,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_misplaced_cmake_files(const Files::Filesystem& fs,
+    static LintStatus check_for_misplaced_cmake_files(const Filesystem& fs,
                                                       const fs::path& package_dir,
                                                       const PackageSpec& spec)
     {
@@ -308,14 +305,14 @@ namespace vcpkg::PostBuildLint
                 "The following cmake files were found outside /share/%s. Please place cmake files in /share/%s.\n",
                 spec.name(),
                 spec.name());
-            Files::print_paths(misplaced_cmake_files);
+            print_paths(misplaced_cmake_files);
             return LintStatus::ERROR_DETECTED;
         }
 
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_folder_debug_lib_cmake(const Files::Filesystem& fs,
+    static LintStatus check_folder_debug_lib_cmake(const Filesystem& fs,
                                                    const fs::path& package_dir,
                                                    const PackageSpec& spec)
     {
@@ -331,7 +328,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_dlls_in_lib_dir(const Files::Filesystem& fs, const fs::path& package_dir)
+    static LintStatus check_for_dlls_in_lib_dir(const Filesystem& fs, const fs::path& package_dir)
     {
         std::vector<fs::path> dlls = fs.get_files_recursive(package_dir / "lib");
         Util::erase_remove_if(dlls, not_extension_pred(fs, ".dll"));
@@ -341,16 +338,14 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning,
                    "\nThe following dlls were found in /lib or /debug/lib. Please move them to /bin or "
                    "/debug/bin, respectively.\n");
-            Files::print_paths(dlls);
+            print_paths(dlls);
             return LintStatus::ERROR_DETECTED;
         }
 
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_copyright_file(const Files::Filesystem& fs,
-                                               const PackageSpec& spec,
-                                               const VcpkgPaths& paths)
+    static LintStatus check_for_copyright_file(const Filesystem& fs, const PackageSpec& spec, const VcpkgPaths& paths)
     {
         const fs::path packages_dir = paths.packages / spec.dir();
         const fs::path copyright_file = packages_dir / "share" / spec.name() / "copyright";
@@ -399,12 +394,12 @@ namespace vcpkg::PostBuildLint
         else if (potential_copyright_files.size() > 1)
         {
             print2(Color::warning, "The following files are potential copyright files:\n");
-            Files::print_paths(potential_copyright_files);
+            print_paths(potential_copyright_files);
         }
         return LintStatus::ERROR_DETECTED;
     }
 
-    static LintStatus check_for_exes(const Files::Filesystem& fs, const fs::path& package_dir)
+    static LintStatus check_for_exes(const Filesystem& fs, const fs::path& package_dir)
     {
         std::vector<fs::path> exes = fs.get_files_recursive(package_dir / "bin");
         Util::erase_remove_if(exes, not_extension_pred(fs, ".exe"));
@@ -413,7 +408,7 @@ namespace vcpkg::PostBuildLint
         {
             print2(Color::warning,
                    "The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.\n");
-            Files::print_paths(exes);
+            print_paths(exes);
             return LintStatus::ERROR_DETECTED;
         }
 
@@ -443,7 +438,7 @@ namespace vcpkg::PostBuildLint
         if (!dlls_with_no_exports.empty())
         {
             print2(Color::warning, "The following DLLs have no exports:\n");
-            Files::print_paths(dlls_with_no_exports);
+            print_paths(dlls_with_no_exports);
             print2(Color::warning, "DLLs without any exports are likely a bug in the build script.\n");
             vcpkg::printf(Color::warning,
                           "If this is intended, add the following line in the portfile:\n"
@@ -481,7 +476,7 @@ namespace vcpkg::PostBuildLint
         if (!dlls_with_improper_uwp_bit.empty())
         {
             print2(Color::warning, "The following DLLs do not have the App Container bit set:\n");
-            Files::print_paths(dlls_with_improper_uwp_bit);
+            print_paths(dlls_with_improper_uwp_bit);
             print2(Color::warning, "This bit is required for Windows Store apps.\n");
             return LintStatus::ERROR_DETECTED;
         }
@@ -608,7 +603,7 @@ namespace vcpkg::PostBuildLint
         }
 
         print2(Color::warning, "DLLs should not be present in a static build, but the following DLLs were found:\n");
-        Files::print_paths(dlls);
+        print_paths(dlls);
         return LintStatus::ERROR_DETECTED;
     }
 
@@ -627,10 +622,10 @@ namespace vcpkg::PostBuildLint
                       debug_count,
                       release_count);
         print2("Debug binaries\n");
-        Files::print_paths(debug_binaries);
+        print_paths(debug_binaries);
 
         print2("Release binaries\n");
-        Files::print_paths(release_binaries);
+        print_paths(release_binaries);
 
         if (debug_count == 0)
         {
@@ -667,7 +662,7 @@ namespace vcpkg::PostBuildLint
     }
 
     static LintStatus check_bin_folders_are_not_present_in_static_build(const Build::BuildPolicies& policies,
-                                                                        const Files::Filesystem& fs,
+                                                                        const Filesystem& fs,
                                                                         const fs::path& package_dir)
     {
         if (policies.is_enabled(BuildPolicy::DLLS_IN_STATIC_LIBRARY)) return LintStatus::SUCCESS;
@@ -711,7 +706,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::ERROR_DETECTED;
     }
 
-    static LintStatus check_no_empty_folders(const Files::Filesystem& fs, const fs::path& dir)
+    static LintStatus check_no_empty_folders(const Filesystem& fs, const fs::path& dir)
     {
         std::vector<fs::path> empty_directories = fs.get_files_recursive(dir);
 
@@ -723,7 +718,7 @@ namespace vcpkg::PostBuildLint
         {
             print2(Color::warning, "There should be no empty directories in ", fs::u8string(dir), "\n");
             print2("The following empty directories were found:\n");
-            Files::print_paths(empty_directories);
+            print_paths(empty_directories);
             print2(
                 Color::warning,
                 "If a directory should be populated but is not, this might indicate an error in the portfile.\n"
@@ -842,7 +837,7 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_no_files_in_dir(const Files::Filesystem& fs, const fs::path& dir)
+    static LintStatus check_no_files_in_dir(const Filesystem& fs, const fs::path& dir)
     {
         std::vector<fs::path> misplaced_files = fs.get_files_non_recursive(dir);
         Util::erase_remove_if(misplaced_files, [&fs](const fs::path& path) {
@@ -859,7 +854,7 @@ namespace vcpkg::PostBuildLint
         if (!misplaced_files.empty())
         {
             print2(Color::warning, "The following files are placed in\n", fs::u8string(dir), ":\n");
-            Files::print_paths(misplaced_files);
+            print_paths(misplaced_files);
             print2(Color::warning, "Files cannot be present in those directories.\n\n");
             return LintStatus::ERROR_DETECTED;
         }

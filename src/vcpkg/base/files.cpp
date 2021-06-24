@@ -275,7 +275,7 @@ fs::path fs::lexically_normal(const fs::path& p)
     return std::move(normalized);
 }
 
-namespace vcpkg::Files
+namespace vcpkg
 {
     static const std::regex FILESYSTEM_INVALID_CHARACTERS_REGEX = std::regex(R"([\/:*?"<>|])");
 
@@ -1029,7 +1029,7 @@ namespace vcpkg::Files
                 static void do_remove(const fs::path& current_path, ErrorInfo& err)
                 {
                     std::error_code ec;
-                    const auto path_status = Files::symlink_status(current_path, ec);
+                    const auto path_status = vcpkg::symlink_status(current_path, ec);
                     if (check_ec(ec, current_path, err)) return;
                     if (!fs::exists(path_status)) return;
 
@@ -1222,16 +1222,16 @@ namespace vcpkg::Files
         }
         virtual void copy_symlink(const fs::path& oldpath, const fs::path& newpath, std::error_code& ec) override
         {
-            return Files::copy_symlink_implementation(oldpath, newpath, ec);
+            return copy_symlink_implementation(oldpath, newpath, ec);
         }
 
         virtual fs::file_status status(const fs::path& path, std::error_code& ec) const override
         {
-            return Files::status(path, ec);
+            return vcpkg::status(path, ec);
         }
         virtual fs::file_status symlink_status(const fs::path& path, std::error_code& ec) const override
         {
-            return Files::symlink_status(path, ec);
+            return vcpkg::symlink_status(path, ec);
         }
         virtual void write_contents(const fs::path& file_path, const std::string& data, std::error_code& ec) override
         {
@@ -1311,7 +1311,7 @@ namespace vcpkg::Files
 
             result = fs::lexically_normal(result);
 #if defined(_WIN32)
-            result = vcpkg::Files::win32_fix_path_case(result);
+            result = vcpkg::win32_fix_path_case(result);
 #endif // _WIN32
             return result;
         }

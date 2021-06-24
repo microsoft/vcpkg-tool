@@ -20,7 +20,7 @@ namespace vcpkg::Export::Prefab
     static std::vector<fs::path> find_modules(const VcpkgPaths& system, const fs::path& root, const std::string& ext)
     {
         std::vector<fs::path> paths;
-        Files::Filesystem& utils = system.get_filesystem();
+        Filesystem& utils = system.get_filesystem();
         std::error_code error_code;
         if (!utils.exists(root, error_code) || !utils.is_directory(root)) return paths;
 
@@ -307,7 +307,7 @@ namespace vcpkg::Export::Prefab
         Checks::check_exit(
             VCPKG_LINE_INFO, android_ndk_home.has_value(), "Error: ANDROID_NDK_HOME environment missing");
 
-        Files::Filesystem& utils = paths.get_filesystem();
+        Filesystem& utils = paths.get_filesystem();
 
         const fs::path ndk_location = android_ndk_home.value_or_exit(VCPKG_LINE_INFO);
 

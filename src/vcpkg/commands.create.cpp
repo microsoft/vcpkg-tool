@@ -47,9 +47,9 @@ namespace vcpkg::Commands::Create
         {
             const std::string& zip_file_name = args.command_arguments.at(2);
             Checks::check_exit(VCPKG_LINE_INFO,
-                               !Files::has_invalid_chars_for_filesystem(zip_file_name),
+                               !has_invalid_chars_for_filesystem(zip_file_name),
                                R"(Filename cannot contain invalid chars %s, but was %s)",
-                               Files::FILESYSTEM_INVALID_CHARACTERS,
+                               FILESYSTEM_INVALID_CHARACTERS,
                                zip_file_name);
             cmake_args.emplace_back("FILENAME", zip_file_name);
         }

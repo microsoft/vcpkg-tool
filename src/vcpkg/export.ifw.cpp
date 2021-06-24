@@ -75,7 +75,7 @@ namespace vcpkg::Export::IFW
 
         fs::path export_real_package(const fs::path& ifw_packages_dir_path,
                                      const ExportPlanAction& action,
-                                     Files::Filesystem& fs)
+                                     Filesystem& fs)
         {
             std::error_code ec;
 
@@ -125,7 +125,7 @@ namespace vcpkg::Export::IFW
 
         void export_unique_packages(const fs::path& raw_exported_dir_path,
                                     std::map<std::string, const ExportPlanAction*> unique_packages,
-                                    Files::Filesystem& fs)
+                                    Filesystem& fs)
         {
             std::error_code ec;
 
@@ -184,7 +184,7 @@ namespace vcpkg::Export::IFW
 
         void export_unique_triplets(const fs::path& raw_exported_dir_path,
                                     std::set<std::string> unique_triplets,
-                                    Files::Filesystem& fs)
+                                    Filesystem& fs)
         {
             std::error_code ec;
 
@@ -234,7 +234,7 @@ namespace vcpkg::Export::IFW
             }
         }
 
-        void export_integration(const fs::path& raw_exported_dir_path, Files::Filesystem& fs)
+        void export_integration(const fs::path& raw_exported_dir_path, Filesystem& fs)
         {
             std::error_code ec;
 
@@ -263,7 +263,7 @@ namespace vcpkg::Export::IFW
         void export_config(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
             std::error_code ec;
-            Files::Filesystem& fs = paths.get_filesystem();
+            Filesystem& fs = paths.get_filesystem();
 
             const fs::path config_xml_file_path = get_config_file_path(export_id, ifw_options, paths);
 
@@ -306,7 +306,7 @@ namespace vcpkg::Export::IFW
             print2("Exporting maintenance tool...\n");
 
             std::error_code ec;
-            Files::Filesystem& fs = paths.get_filesystem();
+            Filesystem& fs = paths.get_filesystem();
 
             const fs::path& installerbase_exe = paths.get_tool_exe(Tools::IFW_INSTALLER_BASE);
             fs::path tempmaintenancetool = ifw_packages_dir_path / "maintenance" / "data" / "tempmaintenancetool.exe";
@@ -361,7 +361,7 @@ namespace vcpkg::Export::IFW
 
             std::error_code ec;
             fs::path failure_point;
-            Files::Filesystem& fs = paths.get_filesystem();
+            Filesystem& fs = paths.get_filesystem();
 
             fs.remove_all(repository_dir, ec, failure_point);
             Checks::check_exit(VCPKG_LINE_INFO,
@@ -426,7 +426,7 @@ namespace vcpkg::Export::IFW
     {
         std::error_code ec;
         fs::path failure_point;
-        Files::Filesystem& fs = paths.get_filesystem();
+        Filesystem& fs = paths.get_filesystem();
 
         // Prepare packages directory
         const fs::path ifw_packages_dir_path = get_packages_dir_path(export_id, ifw_options, paths);

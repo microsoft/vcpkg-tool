@@ -26,7 +26,7 @@ namespace
 {
     using namespace vcpkg;
     fs::path process_input_directory_impl(
-        Files::Filesystem& filesystem, const fs::path& root, std::string* option, StringLiteral name, LineInfo li)
+        Filesystem& filesystem, const fs::path& root, std::string* option, StringLiteral name, LineInfo li)
     {
         if (option)
         {
@@ -40,7 +40,7 @@ namespace
     }
 
     fs::path process_input_directory(
-        Files::Filesystem& filesystem, const fs::path& root, std::string* option, StringLiteral name, LineInfo li)
+        Filesystem& filesystem, const fs::path& root, std::string* option, StringLiteral name, LineInfo li)
     {
         auto result = process_input_directory_impl(filesystem, root, option, name, li);
         Debug::print("Using ", name, "-root: ", fs::u8string(result), '\n');
@@ -48,7 +48,7 @@ namespace
     }
 
     fs::path process_output_directory_impl(
-        Files::Filesystem& filesystem, const fs::path& root, std::string* option, StringLiteral name, LineInfo li)
+        Filesystem& filesystem, const fs::path& root, std::string* option, StringLiteral name, LineInfo li)
     {
         if (option)
         {
@@ -62,11 +62,11 @@ namespace
     }
 
     fs::path process_output_directory(
-        Files::Filesystem& filesystem, const fs::path& root, std::string* option, StringLiteral name, LineInfo li)
+        Filesystem& filesystem, const fs::path& root, std::string* option, StringLiteral name, LineInfo li)
     {
         auto result = process_output_directory_impl(filesystem, root, option, name, li);
 #if defined(_WIN32)
-        result = vcpkg::Files::win32_fix_path_case(result);
+        result = vcpkg::win32_fix_path_case(result);
 #endif // _WIN32
         Debug::print("Using ", name, "-root: ", fs::u8string(result), '\n');
         return result;
@@ -106,8 +106,7 @@ namespace vcpkg
         Configuration config;
     };
 
-    static std::pair<Json::Object, Json::JsonStyle> load_manifest(const Files::Filesystem& fs,
-                                                                  const fs::path& manifest_dir)
+    static std::pair<Json::Object, Json::JsonStyle> load_manifest(const Filesystem& fs, const fs::path& manifest_dir)
     {
         std::error_code ec;
         auto manifest_path = manifest_dir / fs::u8path("vcpkg.json");
@@ -147,7 +146,7 @@ namespace vcpkg
     };
 
     // doesn't yet implement searching upwards for configurations, nor inheritance of configurations
-    static ConfigAndPath load_configuration(const Files::Filesystem& fs,
+    static ConfigAndPath load_configuration(const Filesystem& fs,
                                             const VcpkgCmdArguments& args,
                                             const fs::path& vcpkg_root,
                                             const fs::path& manifest_dir)
@@ -237,7 +236,7 @@ namespace vcpkg
 
         struct VcpkgPathsImpl
         {
-            VcpkgPathsImpl(Files::Filesystem& fs, FeatureFlagSettings ff_settings)
+            VcpkgPathsImpl(Filesystem& fs, FeatureFlagSettings ff_settings)
                 : fs_ptr(&fs)
                 , m_tool_cache(get_tool_cache())
                 , m_env_cache(ff_settings.compiler_tracking)
@@ -254,7 +253,7 @@ namespace vcpkg
             Lazy<std::map<std::string, std::string>> cmake_script_hashes;
             Lazy<std::string> ports_cmake_hash;
 
-            Files::Filesystem* fs_ptr;
+            Filesystem* fs_ptr;
 
             fs::path default_vs_path;
             std::vector<fs::path> triplets_dirs;
@@ -283,12 +282,12 @@ namespace vcpkg
 
     static fs::path lockfile_path(const VcpkgPaths& p) { return p.vcpkg_dir / fs::u8path("vcpkg-lock.json"); }
 
-    VcpkgPaths::VcpkgPaths(Files::Filesystem& filesystem, const VcpkgCmdArguments& args)
+    VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
         : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(filesystem, args.feature_flag_settings()))
     {
         original_cwd = filesystem.current_path(VCPKG_LINE_INFO);
 #if defined(_WIN32)
-        original_cwd = vcpkg::Files::win32_fix_path_case(original_cwd);
+        original_cwd = vcpkg::win32_fix_path_case(original_cwd);
 #endif // _WIN32
 
         if (args.vcpkg_root_dir)
@@ -482,7 +481,7 @@ namespace vcpkg
     {
         return m_pimpl->available_triplets.get_lazy([this]() -> std::vector<TripletFile> {
             std::vector<TripletFile> output;
-            Files::Filesystem& fs = this->get_filesystem();
+            Filesystem& fs = this->get_filesystem();
             for (auto&& triplets_dir : m_pimpl->triplets_dirs)
             {
                 for (auto&& path : fs.get_files_non_recursive(triplets_dir))
@@ -519,7 +518,7 @@ namespace vcpkg
         });
     }
 
-    static LockFile load_lockfile(const Files::Filesystem& fs, const fs::path& p)
+    static LockFile load_lockfile(const Filesystem& fs, const fs::path& p)
     {
         LockFile ret;
         std::error_code ec;
@@ -712,7 +711,7 @@ namespace vcpkg
 
     ExpectedS<fs::path> VcpkgPaths::git_checkout_baseline(StringView commit_sha) const
     {
-        Files::Filesystem& fs = get_filesystem();
+        Filesystem& fs = get_filesystem();
         const fs::path destination_parent = this->baselines_output / fs::u8path(commit_sha);
         fs::path destination = destination_parent / fs::u8path("baseline.json");
 
@@ -775,7 +774,7 @@ namespace vcpkg
          * Since we are checking a git tree object, all files will be checked out to the root of `work-tree`.
          * Because of that, it makes sense to use the git hash as the name for the directory.
          */
-        Files::Filesystem& fs = get_filesystem();
+        Filesystem& fs = get_filesystem();
         fs::path destination = this->versions_output / fs::u8path(port_name) / fs::u8path(git_tree);
         if (fs.exists(destination))
         {
@@ -872,7 +871,7 @@ namespace vcpkg
         auto lock_file = work_tree / fs::u8path(".vcpkg-lock");
 
         std::error_code ec;
-        Files::ExclusiveFileLock guard(Files::ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
+        ExclusiveFileLock guard(ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
 
         Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
                                     .string_arg("fetch")
@@ -910,7 +909,7 @@ namespace vcpkg
         auto lock_file = work_tree / fs::u8path(".vcpkg-lock");
 
         std::error_code ec;
-        Files::ExclusiveFileLock guard(Files::ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
+        ExclusiveFileLock guard(ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
 
         auto dot_git_dir = m_pimpl->registries_dot_git_dir;
 
@@ -1151,7 +1150,7 @@ namespace vcpkg
         return m_pimpl->m_env_cache.get_compiler_info(*this, abi_info);
     }
 
-    Files::Filesystem& VcpkgPaths::get_filesystem() const { return *m_pimpl->fs_ptr; }
+    Filesystem& VcpkgPaths::get_filesystem() const { return *m_pimpl->fs_ptr; }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }
 

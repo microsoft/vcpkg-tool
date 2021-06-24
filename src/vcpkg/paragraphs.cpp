@@ -230,7 +230,7 @@ namespace vcpkg::Paragraphs
         }
     }
 
-    ExpectedS<Paragraph> get_single_paragraph(const Files::Filesystem& fs, const fs::path& control_path)
+    ExpectedS<Paragraph> get_single_paragraph(const Filesystem& fs, const fs::path& control_path)
     {
         const Expected<std::string> contents = fs.read_contents(control_path);
         if (auto spgh = contents.get())
@@ -246,7 +246,7 @@ namespace vcpkg::Paragraphs
         return parse_paragraphs(text, origin);
     }
 
-    ExpectedS<std::vector<Paragraph>> get_paragraphs(const Files::Filesystem& fs, const fs::path& control_path)
+    ExpectedS<std::vector<Paragraph>> get_paragraphs(const Filesystem& fs, const fs::path& control_path)
     {
         const Expected<std::string> contents = fs.read_contents(control_path);
         if (auto spgh = contents.get())
@@ -262,7 +262,7 @@ namespace vcpkg::Paragraphs
         return PghParser(str, origin).get_paragraphs();
     }
 
-    bool is_port_directory(const Files::Filesystem& fs, const fs::path& path)
+    bool is_port_directory(const Filesystem& fs, const fs::path& path)
     {
         return fs.exists(path / fs::u8path("CONTROL")) || fs.exists(path / fs::u8path("vcpkg.json"));
     }
@@ -300,7 +300,7 @@ namespace vcpkg::Paragraphs
         return try_load_manifest_object(origin, res);
     }
 
-    static ParseExpected<SourceControlFile> try_load_manifest(const Files::Filesystem& fs,
+    static ParseExpected<SourceControlFile> try_load_manifest(const Filesystem& fs,
                                                               const std::string& port_name,
                                                               const fs::path& path_to_manifest,
                                                               std::error_code& ec)
@@ -334,7 +334,7 @@ namespace vcpkg::Paragraphs
         return error_info;
     }
 
-    ParseExpected<SourceControlFile> try_load_port(const Files::Filesystem& fs, const fs::path& path)
+    ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const fs::path& path)
     {
         const auto path_to_manifest = path / fs::u8path("vcpkg.json");
         const auto path_to_control = path / fs::u8path("CONTROL");
@@ -501,7 +501,7 @@ namespace vcpkg::Paragraphs
         return std::move(results.paragraphs);
     }
 
-    std::vector<SourceControlFileLocation> load_overlay_ports(const Files::Filesystem& fs, const fs::path& directory)
+    std::vector<SourceControlFileLocation> load_overlay_ports(const Filesystem& fs, const fs::path& directory)
     {
         LoadResults ret;
 

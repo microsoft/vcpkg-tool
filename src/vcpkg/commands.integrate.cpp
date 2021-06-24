@@ -170,7 +170,7 @@ namespace vcpkg::Commands::Integrate
     static fs::path get_path_txt_path() { return get_user_dir() / "vcpkg.path.txt"; }
 
 #if defined(_WIN32)
-    static void integrate_install_msbuild14(Files::Filesystem& fs, const fs::path& tmp_dir)
+    static void integrate_install_msbuild14(Filesystem& fs, const fs::path& tmp_dir)
     {
         static const std::array<fs::path, 2> OLD_SYSTEM_TARGET_FILES = {
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
@@ -321,7 +321,7 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    static void integrate_remove(Files::Filesystem& fs)
+    static void integrate_remove(Filesystem& fs)
     {
         std::error_code ec;
         bool was_deleted = false;

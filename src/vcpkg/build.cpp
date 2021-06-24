@@ -796,7 +796,7 @@ namespace vcpkg::Build
             variables.push_back({"VCPKG_DOWNLOAD_MODE", "true"});
         }
 
-        const Files::Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
 
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
@@ -1454,7 +1454,7 @@ namespace vcpkg::Build
         return build_info;
     }
 
-    BuildInfo read_build_info(const Files::Filesystem& fs, const fs::path& filepath)
+    BuildInfo read_build_info(const Filesystem& fs, const fs::path& filepath)
     {
         const ExpectedS<Parse::Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
         Checks::check_maybe_upgrade(

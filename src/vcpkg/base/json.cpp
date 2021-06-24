@@ -1023,7 +1023,7 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Files::Filesystem& fs,
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Filesystem& fs,
                                                                                            const fs::path& path,
                                                                                            std::error_code& ec) noexcept
     {
@@ -1039,9 +1039,7 @@ namespace vcpkg::Json
         }
     }
 
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo linfo,
-                                           const Files::Filesystem& fs,
-                                           const fs::path& path) noexcept
+    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo linfo, const Filesystem& fs, const fs::path& path) noexcept
     {
         std::error_code ec;
         auto ret = parse_file(fs, path, ec);

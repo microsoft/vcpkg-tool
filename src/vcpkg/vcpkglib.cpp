@@ -9,7 +9,7 @@
 
 namespace vcpkg
 {
-    static StatusParagraphs load_current_database(Files::Filesystem& fs,
+    static StatusParagraphs load_current_database(Filesystem& fs,
                                                   const fs::path& vcpkg_dir_status_file,
                                                   const fs::path& vcpkg_dir_status_file_old)
     {
@@ -99,7 +99,7 @@ namespace vcpkg
         fs.rename(tmp_update_filename, update_filename, VCPKG_LINE_INFO);
     }
 
-    static void upgrade_to_slash_terminated_sorted_format(Files::Filesystem& fs,
+    static void upgrade_to_slash_terminated_sorted_format(Filesystem& fs,
                                                           std::vector<std::string>* lines,
                                                           const fs::path& listfile_path)
     {

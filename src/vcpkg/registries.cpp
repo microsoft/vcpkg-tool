@@ -32,7 +32,7 @@ namespace
         ExpectedS<fs::path> get_path_to_version(const VcpkgPaths&, const VersionT& version) const override;
 
     private:
-        void fill_data_from_path(const Files::Filesystem& fs, const fs::path& port_versions_path) const;
+        void fill_data_from_path(const Filesystem& fs, const fs::path& port_versions_path) const;
 
         std::string port_name;
 
@@ -257,7 +257,7 @@ namespace
     };
 
     fs::path relative_path_to_versions(StringView port_name);
-    ExpectedS<std::vector<VersionDbEntry>> load_versions_file(const Files::Filesystem& fs,
+    ExpectedS<std::vector<VersionDbEntry>> load_versions_file(const Filesystem& fs,
                                                               VersionDbType vdb,
                                                               const fs::path& port_versions,
                                                               StringView port_name,
@@ -719,7 +719,7 @@ namespace
         return paths.git_checkout_object_from_remote_registry(git_tree);
     }
 
-    void GitRegistryEntry::fill_data_from_path(const Files::Filesystem& fs, const fs::path& port_versions_path) const
+    void GitRegistryEntry::fill_data_from_path(const Filesystem& fs, const fs::path& port_versions_path) const
     {
         auto maybe_version_entries = load_versions_file(fs, VersionDbType::Git, port_versions_path, port_name);
         Checks::check_maybe_upgrade(
@@ -986,7 +986,7 @@ namespace
             fs::path path;
             r.required_object_field("a filesystem registry", obj, PATH, path, Json::PathDeserializer::instance);
 
-            res = std::make_unique<FilesystemRegistry>(Files::combine(config_directory, path), std::move(baseline));
+            res = std::make_unique<FilesystemRegistry>(combine(config_directory, path), std::move(baseline));
         }
         else if (kind == KIND_GIT)
         {
@@ -1052,7 +1052,7 @@ namespace
         return fs::u8path({port_name.byte_at_index(0), '-'}) / port_filename;
     }
 
-    ExpectedS<std::vector<VersionDbEntry>> load_versions_file(const Files::Filesystem& fs,
+    ExpectedS<std::vector<VersionDbEntry>> load_versions_file(const Filesystem& fs,
                                                               VersionDbType type,
                                                               const fs::path& registry_versions,
                                                               StringView port_name,

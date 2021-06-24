@@ -246,7 +246,7 @@ namespace vcpkg::Commands::Edit
                 Color::error,
                 "Error: Visual Studio Code was not found and the environment variable EDITOR is not set or invalid.\n");
             print2("The following paths were examined:\n");
-            Files::print_paths(candidate_paths);
+            print_paths(candidate_paths);
             print2("You can also set the environmental variable EDITOR to your editor of choice.\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }

@@ -57,7 +57,7 @@ namespace vcpkg::Install
         auto files = fs.get_files_recursive(source_dir);
         install_files_and_write_listfile(fs, source_dir, files, destination_dir);
     }
-    void install_files_and_write_listfile(Files::Filesystem& fs,
+    void install_files_and_write_listfile(Filesystem& fs,
                                           const fs::path& source_dir,
                                           const std::vector<fs::path>& files,
                                           const InstallDir& destination_dir)
@@ -185,8 +185,7 @@ namespace vcpkg::Install
         return output;
     }
 
-    static SortedVector<std::string> build_list_of_package_files(const Files::Filesystem& fs,
-                                                                 const fs::path& package_dir)
+    static SortedVector<std::string> build_list_of_package_files(const Filesystem& fs, const fs::path& package_dir)
     {
         const std::vector<fs::path> package_file_paths = fs.get_files_recursive(package_dir);
         const size_t package_remove_char_count = package_dir.generic_string().size() + 1; // +1 for the slash
@@ -1046,7 +1045,7 @@ namespace vcpkg::Install
             Metrics::g_metrics.lock()->track_property("x-write-nuget-packages-config", "defined");
             Build::compute_all_abis(paths, action_plan, var_provider, status_db);
 
-            auto pkgsconfig_path = Files::combine(paths.original_cwd, fs::u8path(it_pkgsconfig->second));
+            auto pkgsconfig_path = combine(paths.original_cwd, fs::u8path(it_pkgsconfig->second));
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
             print2("Wrote NuGet packages config information to ", fs::u8string(pkgsconfig_path), "\n");

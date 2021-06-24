@@ -93,7 +93,7 @@ namespace vcpkg::Commands::SetInstalled
         {
             Build::compute_all_abis(paths, action_plan, cmake_vars, status_db);
             auto& fs = paths.get_filesystem();
-            auto pkgsconfig_path = Files::combine(paths.original_cwd, *p_pkgsconfig);
+            auto pkgsconfig_path = combine(paths.original_cwd, *p_pkgsconfig);
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
             print2("Wrote NuGet packages config information to ", fs::u8string(pkgsconfig_path), "\n");

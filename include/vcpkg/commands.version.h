@@ -6,10 +6,10 @@ namespace vcpkg::Commands::Version
 {
     const char* base_version() noexcept;
     const char* version() noexcept;
-    void perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs);
+    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
 
     struct VersionCommand : BasicCommand
     {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs) const override;
+        virtual void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const override;
     };
 }

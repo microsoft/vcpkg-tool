@@ -138,7 +138,7 @@ namespace vcpkg::Export
                                     const fs::path& raw_exported_dir,
                                     const fs::path& output_dir)
     {
-        Files::Filesystem& fs = paths.get_filesystem();
+        Filesystem& fs = paths.get_filesystem();
         const fs::path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
 
         std::error_code ec;
@@ -258,7 +258,7 @@ namespace vcpkg::Export
             {fs::path{"scripts"} / "cmake" / "vcpkg_get_windows_sdk.cmake"},
         };
 
-        Files::Filesystem& fs = paths.get_filesystem();
+        Filesystem& fs = paths.get_filesystem();
         for (const fs::path& file : integration_files_relative_to_root)
         {
             const fs::path source = paths.root / file;
@@ -391,7 +391,7 @@ namespace vcpkg::Export
         auto maybe_output_dir = maybe_lookup(options.settings, OPTION_OUTPUT_DIR);
         if (auto output_dir = maybe_output_dir.get())
         {
-            ret.output_dir = Files::combine(paths.original_cwd, fs::u8path(*output_dir));
+            ret.output_dir = combine(paths.original_cwd, fs::u8path(*output_dir));
         }
         else
         {
@@ -513,7 +513,7 @@ namespace vcpkg::Export
                                         const std::string& export_id,
                                         const VcpkgPaths& paths)
     {
-        Files::Filesystem& fs = paths.get_filesystem();
+        Filesystem& fs = paths.get_filesystem();
         const fs::path raw_exported_dir_path = opts.output_dir / export_id;
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
 

@@ -22,7 +22,7 @@ namespace
         std::string original_source;
     };
 
-    Optional<ToWrite> read_manifest(Files::Filesystem& fs, fs::path&& manifest_path)
+    Optional<ToWrite> read_manifest(Filesystem& fs, fs::path&& manifest_path)
     {
         auto path_string = fs::u8string(manifest_path);
         Debug::print("Reading ", path_string, "\n");
@@ -59,7 +59,7 @@ namespace
         };
     }
 
-    Optional<ToWrite> read_control_file(Files::Filesystem& fs, fs::path&& control_path)
+    Optional<ToWrite> read_control_file(Filesystem& fs, fs::path&& control_path)
     {
         std::error_code ec;
         auto control_path_string = fs::u8string(control_path);
@@ -94,7 +94,7 @@ namespace
         };
     }
 
-    void write_file(Files::Filesystem& fs, const ToWrite& data)
+    void write_file(Filesystem& fs, const ToWrite& data)
     {
         auto original_path_string = fs::u8string(data.original_path);
         auto file_to_write_string = fs::u8string(data.file_to_write);
