@@ -548,7 +548,7 @@ namespace vcpkg
                         Debug::print("Lockfile value for key '", x.first, "' was not a git commit sha\n");
                         return ret;
                     }
-                    ret.lockdata.emplace(x.first.to_string(), LockFile::EntryData{sv.to_string(), true});
+                    ret.lockdata.emplace(RepoAndRef::parse(x.first), LockFile::EntryData{sv.to_string(), true});
                 }
                 return ret;
             }
@@ -580,7 +580,7 @@ namespace vcpkg
         Json::Object obj;
         for (auto&& data : lockfile.lockdata)
         {
-            obj.insert(data.first, Json::Value::string(data.second.value));
+            obj.insert(data.first.to_string(), Json::Value::string(data.second.value));
         }
         get_filesystem().write_rename_contents(
             lockfile_path(*this), fs::u8path("vcpkg-lock.json.tmp"), Json::stringify(obj, {}), VCPKG_LINE_INFO);

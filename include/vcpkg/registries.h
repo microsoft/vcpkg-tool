@@ -20,6 +20,53 @@
 
 namespace vcpkg
 {
+    struct RepoAndRef {
+        std::string url;
+        std::string reference = "HEAD";
+
+        std::string& to_string(std::string& s) const {
+            Strings::append(s, url);
+            if (reference != "HEAD") {
+                Strings::append(s, "@", reference);
+            }
+            return s;
+        }
+        std::string to_string() const {
+            std::string result;
+            to_string(result);
+            return result;
+        }
+        static RepoAndRef parse(StringView sv) {
+            auto at = std::find(sv.begin(), sv.end(), '@');
+            if (at == sv.end()) {
+                // old-style, only URL. implicitly HEAD
+                return RepoAndRef{sv.to_string()};
+            }
+            return RepoAndRef{std::string(sv.begin(), at), std::string(at + 1, sv.end())};
+        }
+    };
+
+    inline bool operator==(const RepoAndRef& lhs, const RepoAndRef& rhs) noexcept {
+        return lhs.url == rhs.url && lhs.reference == rhs.reference;
+    }
+    inline bool operator!=(const RepoAndRef& lhs, const RepoAndRef& rhs) noexcept {
+        return !(lhs == rhs);
+    }
+    inline bool operator<(const RepoAndRef& lhs, const RepoAndRef& rhs) noexcept {
+        auto cmp = lhs.url.compare(rhs.url);
+        if (cmp != 0) return cmp < 0;
+        return lhs.reference < rhs.reference;
+    }
+    inline bool operator>(const RepoAndRef& lhs, const RepoAndRef& rhs) noexcept {
+        return rhs < lhs;
+    }
+    inline bool operator<=(const RepoAndRef& lhs, const RepoAndRef& rhs) noexcept {
+        return !(rhs < lhs);
+    }
+    inline bool operator>=(const RepoAndRef& lhs, const RepoAndRef& rhs) noexcept {
+        return !(lhs < rhs);
+    }
+
     struct LockFile
     {
         struct EntryData
@@ -30,18 +77,17 @@ namespace vcpkg
         struct Entry
         {
             LockFile* lockfile;
-            std::map<std::string, EntryData, std::less<>>::iterator data;
+            std::map<RepoAndRef, EntryData, std::less<>>::iterator data;
 
             const std::string& value() const { return data->second.value; }
             bool stale() const { return data->second.stale; }
-            const std::string& uri() const { return data->first; }
 
             void ensure_up_to_date(const VcpkgPaths& paths) const;
         };
 
-        Entry get_or_fetch(const VcpkgPaths& paths, StringView key);
+        Entry get_or_fetch(const VcpkgPaths& paths, const RepoAndRef& key);
 
-        std::map<std::string, EntryData, std::less<>> lockdata;
+        std::map<RepoAndRef, EntryData, std::less<>> lockdata;
         bool modified = false;
     };
 

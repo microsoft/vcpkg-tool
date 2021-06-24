@@ -49,8 +49,8 @@ namespace
 
     struct GitRegistry final : RegistryImplementation
     {
-        GitRegistry(std::string&& repo, std::string&& baseline)
-            : m_repo(std::move(repo)), m_baseline_identifier(std::move(baseline))
+        GitRegistry(std::string&& repo, std::string&& reference, std::string&& baseline)
+            : m_repo{std::move(repo), std::move(reference)}, m_baseline_identifier(std::move(baseline))
         {
         }
 
@@ -133,7 +133,7 @@ namespace
             return {*m_stale_versions_tree.get(), true};
         }
 
-        std::string m_repo;
+        RepoAndRef m_repo;
         std::string m_baseline_identifier;
         DelayedInit<LockFile::Entry> m_lock_entry;
         mutable Optional<fs::path> m_stale_versions_tree;
@@ -572,7 +572,7 @@ namespace
             if (!maybe_contents.has_value())
             {
                 System::print2("Fetching baseline information from ", m_repo, "...\n");
-                if (auto err = paths.git_fetch(m_repo, m_baseline_identifier))
+                if (auto err = paths.git_fetch(m_repo.url, m_baseline_identifier))
                 {
                     Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
                     Checks::exit_with_message(
@@ -873,6 +873,7 @@ namespace
         constexpr static StringLiteral BASELINE = "baseline";
         constexpr static StringLiteral PATH = "path";
         constexpr static StringLiteral REPO = "repository";
+        constexpr static StringLiteral REFERENCE = "reference";
 
         constexpr static StringLiteral KIND_BUILTIN = "builtin";
         constexpr static StringLiteral KIND_FILESYSTEM = "filesystem";
@@ -996,10 +997,16 @@ namespace
             Json::StringDeserializer repo_des{"a git repository URL"};
             r.required_object_field("a git registry", obj, REPO, repo, repo_des);
 
+            std::string ref;
+            Json::StringDeserializer ref_des{"a git reference (for example, a branch)"};
+            if (!r.optional_object_field(obj, REFERENCE, ref, ref_des)) {
+                ref = "HEAD";
+            }
+
             std::string baseline;
             r.required_object_field("a git registry", obj, BASELINE, baseline, baseline_deserializer);
 
-            res = std::make_unique<GitRegistry>(std::move(repo), std::move(baseline));
+            res = std::make_unique<GitRegistry>(std::move(repo), std::move(ref), std::move(baseline));
         }
         else
         {
@@ -1023,6 +1030,7 @@ namespace
             RegistryImplDeserializer::BASELINE,
             RegistryImplDeserializer::PATH,
             RegistryImplDeserializer::REPO,
+            RegistryImplDeserializer::REFERENCE,
             PACKAGES,
         };
         return t;
@@ -1174,14 +1182,14 @@ namespace
 
 namespace vcpkg
 {
-    LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView key)
+    LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, const RepoAndRef& key)
     {
         auto it = lockdata.find(key);
         if (it == lockdata.end())
         {
             System::print2("Fetching registry information from ", key, "...\n");
-            auto x = paths.git_fetch_from_remote_registry(key, "HEAD");
-            it = lockdata.emplace(key.to_string(), EntryData{x.value_or_exit(VCPKG_LINE_INFO), false}).first;
+            auto x = paths.git_fetch_from_remote_registry(key.url, key.reference);
+            it = lockdata.emplace(key, EntryData{x.value_or_exit(VCPKG_LINE_INFO), false}).first;
             modified = true;
         }
         return {this, it};
@@ -1192,7 +1200,7 @@ namespace vcpkg
         {
             System::print2("Fetching registry information from ", data->first, "...\n");
             data->second.value =
-                paths.git_fetch_from_remote_registry(data->first, "HEAD").value_or_exit(VCPKG_LINE_INFO);
+                paths.git_fetch_from_remote_registry(data->first.url, data->first.reference).value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
             lockfile->modified = true;
         }
