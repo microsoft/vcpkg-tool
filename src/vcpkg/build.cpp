@@ -1342,7 +1342,7 @@ namespace vcpkg::Build
 
     const std::string& to_string(const BuildResult build_result)
     {
-        static const std::string NULLVALUE_STRING = Enums::nullvalue_to_string("vcpkg::Commands::Build::BuildResult");
+        static const std::string NULLVALUE_STRING = Util::nullvalue_to_string("vcpkg::Commands::Build::BuildResult");
         static const std::string SUCCEEDED_STRING = "SUCCEEDED";
         static const std::string BUILD_FAILED_STRING = "BUILD_FAILED";
         static const std::string FILE_CONFLICTS_STRING = "FILE_CONFLICTS";
