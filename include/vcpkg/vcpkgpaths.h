@@ -20,8 +20,8 @@ namespace vcpkg
     struct ToolsetArchOption
     {
         CStringView name;
-        System::CPUArchitecture host_arch;
-        System::CPUArchitecture target_arch;
+        CPUArchitecture host_arch;
+        CPUArchitecture target_arch;
     };
 
     struct Toolset
@@ -46,17 +46,13 @@ namespace vcpkg
         struct CompilerInfo;
     }
 
-    namespace System
-    {
-        struct Environment;
-    }
-
     namespace details
     {
         struct VcpkgPathsImpl;
     }
 
     struct BinaryParagraph;
+    struct Environment;
     struct PackageSpec;
     struct Triplet;
 
@@ -131,7 +127,7 @@ namespace vcpkg
         const fs::path& get_tool_exe(const std::string& tool) const;
         const std::string& get_tool_version(const std::string& tool) const;
 
-        System::Command git_cmd_builder(const fs::path& dot_git_dir, const fs::path& work_tree) const;
+        Command git_cmd_builder(const fs::path& dot_git_dir, const fs::path& work_tree) const;
 
         // Git manipulation in the vcpkg directory
         ExpectedS<std::string> get_current_git_sha() const;
@@ -172,7 +168,7 @@ namespace vcpkg
 
         Files::Filesystem& get_filesystem() const;
 
-        const System::Environment& get_action_env(const Build::AbiInfo& abi_info) const;
+        const Environment& get_action_env(const Build::AbiInfo& abi_info) const;
         const std::string& get_triplet_info(const Build::AbiInfo& abi_info) const;
         const Build::CompilerInfo& get_compiler_info(const Build::AbiInfo& abi_info) const;
         bool manifest_mode_enabled() const { return get_manifest().has_value(); }

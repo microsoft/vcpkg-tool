@@ -353,7 +353,7 @@ namespace vcpkg::Commands::CI
 
         auto precheck_results = binary_provider_precheck(paths, action_plan, binaryprovider);
         {
-            vcpkg::System::BufferedPrint stdout_print;
+            vcpkg::BufferedPrint stdout_print;
 
             for (auto&& action : action_plan.install_actions)
             {
@@ -440,7 +440,7 @@ namespace vcpkg::Commands::CI
             ret->plan.install_actions.push_back(std::move(**it));
         }
 
-        System::printf("Time to determine pass/fail: %s\n", timer.elapsed());
+        vcpkg::printf("Time to determine pass/fail: %s\n", timer.elapsed());
         return ret;
     }
 
@@ -490,7 +490,7 @@ namespace vcpkg::Commands::CI
             if (it_failure_logs != settings.end())
             {
                 auto raw_path = fs::u8path(it_failure_logs->second);
-                System::printf("Creating failure logs output directory %s\n", it_failure_logs->second);
+                vcpkg::printf("Creating failure logs output directory %s\n", it_failure_logs->second);
                 filesystem.create_directories(raw_path, VCPKG_LINE_INFO);
                 build_logs_recorder_storage = filesystem.almost_canonical(VCPKG_LINE_INFO, raw_path);
             }
@@ -610,8 +610,8 @@ namespace vcpkg::Commands::CI
 
         for (auto&& result : results)
         {
-            System::print2("\nTriplet: ", result.triplet, "\n");
-            System::print2("Total elapsed time: ", result.summary.total_elapsed_time, "\n");
+            print2("\nTriplet: ", result.triplet, "\n");
+            print2("Total elapsed time: ", result.summary.total_elapsed_time, "\n");
             result.summary.print();
         }
 

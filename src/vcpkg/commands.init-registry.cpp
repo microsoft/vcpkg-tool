@@ -33,7 +33,7 @@ namespace vcpkg::Commands::InitRegistry
 })";
             fs.write_contents_and_dirs(baseline, content, VCPKG_LINE_INFO);
         }
-        System::print2("Sucessfully created registry at ", fs::u8string(path), "\n");
+        print2("Sucessfully created registry at ", fs::u8string(path), "\n");
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

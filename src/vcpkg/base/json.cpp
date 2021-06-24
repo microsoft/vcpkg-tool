@@ -1047,13 +1047,13 @@ namespace vcpkg::Json
         auto ret = parse_file(fs, path, ec);
         if (ec)
         {
-            System::print2(System::Color::error, "Failed to read ", fs::u8string(path), ": ", ec.message(), "\n");
+            print2(Color::error, "Failed to read ", fs::u8string(path), ": ", ec.message(), "\n");
             Checks::exit_fail(linfo);
         }
         else if (!ret)
         {
-            System::print2(System::Color::error, "Failed to parse ", fs::u8string(path), ":\n");
-            System::print2(ret.error()->format());
+            print2(Color::error, "Failed to parse ", fs::u8string(path), ":\n");
+            print2(ret.error()->format());
             Checks::exit_fail(linfo);
         }
         return ret.value_or_exit(linfo);

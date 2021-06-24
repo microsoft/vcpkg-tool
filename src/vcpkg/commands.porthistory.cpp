@@ -28,11 +28,11 @@ namespace vcpkg::Commands::PortHistory
             Versions::Scheme scheme;
         };
 
-        System::ExitCodeAndOutput run_git_command(const VcpkgPaths& paths, const System::Command& cmd)
+        ExitCodeAndOutput run_git_command(const VcpkgPaths& paths, const Command& cmd)
         {
             auto full_cmd = paths.git_cmd_builder(paths.root / ".git", paths.root).raw_arg(cmd.command_line());
 
-            return System::cmd_execute_and_capture_output(full_cmd);
+            return cmd_execute_and_capture_output(full_cmd);
         }
 
         vcpkg::Optional<HistoryVersion> get_version_from_text(const std::string& text,
@@ -71,8 +71,7 @@ namespace vcpkg::Commands::PortHistory
                                                                 const std::string& commit_date,
                                                                 const std::string& port_name)
         {
-            auto rev_parse_cmd =
-                System::Command("rev-parse").string_arg(Strings::concat(commit_id, ":ports/", port_name));
+            auto rev_parse_cmd = Command("rev-parse").string_arg(Strings::concat(commit_id, ":ports/", port_name));
             auto rev_parse_output = run_git_command(paths, rev_parse_cmd);
             if (rev_parse_output.exit_code == 0)
             {
@@ -80,7 +79,7 @@ namespace vcpkg::Commands::PortHistory
                 const auto git_tree = Strings::trim(std::move(rev_parse_output.output));
 
                 // Do we have a manifest file?
-                auto manifest_cmd = System::Command("show").string_arg(Strings::concat(git_tree, ":vcpkg.json"));
+                auto manifest_cmd = Command("show").string_arg(Strings::concat(git_tree, ":vcpkg.json"));
                 auto manifest_output = run_git_command(paths, manifest_cmd);
                 if (manifest_output.exit_code == 0)
                 {
@@ -88,7 +87,7 @@ namespace vcpkg::Commands::PortHistory
                         manifest_output.output, git_tree, commit_id, commit_date, port_name, true);
                 }
 
-                auto cmd = System::Command("show").string_arg(Strings::concat(git_tree, ":CONTROL"));
+                auto cmd = Command("show").string_arg(Strings::concat(git_tree, ":CONTROL"));
                 auto control_output = run_git_command(paths, cmd);
 
                 if (control_output.exit_code == 0)
@@ -104,7 +103,7 @@ namespace vcpkg::Commands::PortHistory
         std::vector<HistoryVersion> read_versions_from_log(const VcpkgPaths& paths, const std::string& port_name)
         {
             // log --format="%H %cd" --date=short --left-only -- ports/{port_name}/.
-            System::Command builder;
+            Command builder;
             builder.string_arg("log");
             builder.string_arg("--format=%H %cd");
             builder.string_arg("--date=short");
@@ -196,21 +195,20 @@ namespace vcpkg::Commands::PortHistory
             }
             else
             {
-                System::printf("%s\n", json_string);
+                vcpkg::printf("%s\n", json_string);
             }
         }
         else
         {
             if (maybe_output_file.has_value())
             {
-                System::printf(
-                    System::Color::warning, "Warning: Option `--$s` requires `--x-json` switch.", OPTION_OUTPUT_FILE);
+                vcpkg::printf(Color::warning, "Warning: Option `--$s` requires `--x-json` switch.", OPTION_OUTPUT_FILE);
             }
 
-            System::print2("             version          date    vcpkg commit\n");
+            print2("             version          date    vcpkg commit\n");
             for (auto&& version : versions)
             {
-                System::printf("%20.20s    %s    %s\n", version.version_string, version.commit_date, version.commit_id);
+                vcpkg::printf("%20.20s    %s    %s\n", version.version_string, version.commit_date, version.commit_id);
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);

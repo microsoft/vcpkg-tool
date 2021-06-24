@@ -23,7 +23,7 @@ namespace vcpkg::Commands::X_VSInstances
         const auto instances = vcpkg::VisualStudio::get_visual_studio_instances(paths);
         for (const std::string& instance : instances)
         {
-            System::print2(instance, '\n');
+            print2(instance, '\n');
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

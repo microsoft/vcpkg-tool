@@ -16,7 +16,6 @@ namespace vcpkg::Export::Prefab
     using Dependencies::ExportPlanAction;
     using Dependencies::ExportPlanType;
     using Install::InstallDir;
-    using System::CPUArchitecture;
 
     static std::vector<fs::path> find_modules(const VcpkgPaths& system, const fs::path& root, const std::string& ext)
     {
@@ -206,13 +205,12 @@ namespace vcpkg::Export::Prefab
 #if defined(_WIN32)
         auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
 
-        System::cmd_execute_and_capture_output(
-            System::Command(seven_zip_exe).string_arg("a").path_arg(destination).path_arg(source / fs::u8path("*")),
-            System::get_clean_environment());
+        cmd_execute_and_capture_output(
+            Command(seven_zip_exe).string_arg("a").path_arg(destination).path_arg(source / fs::u8path("*")),
+            get_clean_environment());
 #else
-        System::cmd_execute_clean(
-            System::Command{"zip"}.string_arg("--quiet").string_arg("-r").path_arg(destination).string_arg("*"),
-            System::InWorkingDirectory{source});
+        cmd_execute_clean(Command{"zip"}.string_arg("--quiet").string_arg("-r").path_arg(destination).string_arg("*"),
+                          InWorkingDirectory{source});
 #endif
     }
 
@@ -220,9 +218,9 @@ namespace vcpkg::Export::Prefab
     {
         if (prefab_options.enable_debug)
         {
-            System::print2("\n[DEBUG] Installing POM and AAR file to ~/.m2\n\n");
+            print2("\n[DEBUG] Installing POM and AAR file to ~/.m2\n\n");
         }
-        auto cmd_line = System::Command(Tools::MAVEN);
+        auto cmd_line = Command(Tools::MAVEN);
         if (!prefab_options.enable_debug)
         {
             cmd_line.string_arg("-q");
@@ -230,7 +228,7 @@ namespace vcpkg::Export::Prefab
         cmd_line.string_arg("install:install-file")
             .string_arg(Strings::concat("-Dfile=", fs::u8string(aar)))
             .string_arg(Strings::concat("-DpomFile=", fs::u8string(pom)));
-        const int exit_code = System::cmd_execute_clean(cmd_line);
+        const int exit_code = cmd_execute_clean(cmd_line);
         Checks::check_exit(
             VCPKG_LINE_INFO, exit_code == 0, "Error: %s installing maven file", fs::generic_u8string(aar));
     }
@@ -285,8 +283,8 @@ namespace vcpkg::Export::Prefab
                 auto triplet_build_info = build_info_from_triplet(paths, provider, triplet);
                 if (is_supported(*triplet_build_info))
                 {
-                    auto cpu_architecture = System::to_cpu_architecture(triplet_build_info->target_architecture)
-                                                .value_or_exit(VCPKG_LINE_INFO);
+                    auto cpu_architecture =
+                        to_cpu_architecture(triplet_build_info->target_architecture).value_or_exit(VCPKG_LINE_INFO);
                     auto required_arch = required_archs.find(cpu_architecture);
                     if (required_arch != required_archs.end())
                     {
@@ -304,7 +302,7 @@ namespace vcpkg::Export::Prefab
             required_archs.empty(),
             "Export requires the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present");
 
-        Optional<std::string> android_ndk_home = System::get_environment_variable("ANDROID_NDK_HOME");
+        Optional<std::string> android_ndk_home = get_environment_variable("ANDROID_NDK_HOME");
 
         Checks::check_exit(
             VCPKG_LINE_INFO, android_ndk_home.has_value(), "Error: ANDROID_NDK_HOME environment missing");
@@ -412,7 +410,7 @@ namespace vcpkg::Export::Prefab
 
             version_map[name] = norm_version;
 
-            System::print2("\nExporting package ", name, "...\n");
+            print2("\nExporting package ", name, "...\n");
 
             fs::path package_directory = per_package_dir_path / "aar";
             fs::path prefab_directory = package_directory / "prefab";
@@ -501,10 +499,9 @@ namespace vcpkg::Export::Prefab
 
             if (prefab_options.enable_debug)
             {
-                System::print2(
-                    Strings::format("[DEBUG]\n\tWriting manifest\n\tTo %s\n\tWriting prefab meta data\n\tTo %s\n\n",
-                                    fs::generic_u8string(manifest_path),
-                                    fs::generic_u8string(prefab_path)));
+                print2(Strings::format("[DEBUG]\n\tWriting manifest\n\tTo %s\n\tWriting prefab meta data\n\tTo %s\n\n",
+                                       fs::generic_u8string(manifest_path),
+                                       fs::generic_u8string(prefab_path)));
             }
 
             utils.write_contents(manifest_path, manifest, VCPKG_LINE_INFO);
@@ -517,7 +514,7 @@ namespace vcpkg::Export::Prefab
                 {
                     triplet_names.push_back(triplet.canonical_name());
                 }
-                System::print2(Strings::format(
+                print2(Strings::format(
                     "[DEBUG] Found %d triplets\n\t%s\n\n", triplets.size(), Strings::join("\n\t", triplet_names)));
             }
 
@@ -583,7 +580,7 @@ namespace vcpkg::Export::Prefab
 
                         if (prefab_options.enable_debug)
                         {
-                            System::print2(Strings::format("[DEBUG] Found module %s:%s\n", module_name, ab.abi));
+                            print2(Strings::format("[DEBUG] Found module %s:%s\n", module_name, ab.abi));
                         }
 
                         module_name = Strings::trim(std::move(module_name));
@@ -600,7 +597,7 @@ namespace vcpkg::Export::Prefab
 
                         if (prefab_options.enable_debug)
                         {
-                            System::print2(
+                            print2(
                                 Strings::format("\tWriting abi metadata\n\tTo %s\n", fs::generic_u8string(abi_path)));
                         }
                         utils.write_contents(abi_path, ab.to_string(), VCPKG_LINE_INFO);
@@ -614,18 +611,18 @@ namespace vcpkg::Export::Prefab
                                         error_code);
                         if (prefab_options.enable_debug)
                         {
-                            System::print2(Strings::format("\tCopying libs\n\tFrom %s\n\tTo %s\n",
-                                                           fs::generic_u8string(installed_module_path),
-                                                           fs::generic_u8string(exported_module_path)));
+                            print2(Strings::format("\tCopying libs\n\tFrom %s\n\tTo %s\n",
+                                                   fs::generic_u8string(installed_module_path),
+                                                   fs::generic_u8string(exported_module_path)));
                         }
                         fs::path installed_headers_dir = installed_dir / "include";
                         fs::path exported_headers_dir = module_libs_dir / "include";
 
                         if (prefab_options.enable_debug)
                         {
-                            System::print2(Strings::format("\tCopying headers\n\tFrom %s\n\tTo %s\n",
-                                                           fs::generic_u8string(installed_headers_dir),
-                                                           fs::generic_u8string(exported_headers_dir)));
+                            print2(Strings::format("\tCopying headers\n\tFrom %s\n\tTo %s\n",
+                                                   fs::generic_u8string(installed_headers_dir),
+                                                   fs::generic_u8string(exported_headers_dir)));
                         }
 
                         utils.copy(installed_headers_dir, exported_headers_dir, fs::copy_options::recursive);
@@ -636,8 +633,8 @@ namespace vcpkg::Export::Prefab
 
                         if (prefab_options.enable_debug)
                         {
-                            System::print2(Strings::format("\tWriting module metadata\n\tTo %s\n\n",
-                                                           fs::generic_u8string(module_meta_path)));
+                            print2(Strings::format("\tWriting module metadata\n\tTo %s\n\n",
+                                                   fs::generic_u8string(module_meta_path)));
                         }
 
                         utils.write_contents(module_meta_path, meta.to_json(), VCPKG_LINE_INFO);
@@ -650,9 +647,9 @@ namespace vcpkg::Export::Prefab
 
             if (prefab_options.enable_debug)
             {
-                System::print2(Strings::format("[DEBUG] Exporting AAR And POM\n\tAAR Path %s\n\tPOM Path %s\n",
-                                               fs::generic_u8string(exported_archive_path),
-                                               fs::generic_u8string(pom_path)));
+                print2(Strings::format("[DEBUG] Exporting AAR And POM\n\tAAR Path %s\n\tPOM Path %s\n",
+                                       fs::generic_u8string(exported_archive_path),
+                                       fs::generic_u8string(pom_path)));
             }
 
             compress_directory(paths, package_directory, exported_archive_path);
@@ -685,13 +682,13 @@ namespace vcpkg::Export::Prefab
                 maven_install(exported_archive_path, pom_path, prefab_options);
                 if (prefab_options.enable_debug)
                 {
-                    System::print2(Strings::format(
+                    print2(Strings::format(
                         "\n\n[DEBUG] Configuration properties in Android Studio\nIn app/build.gradle\n\n\t%s:%s:%s\n\n",
                         group_id,
                         artifact_id,
                         norm_version));
 
-                    System::print2(R"(And cmake flags
+                    print2(R"(And cmake flags
 
     externalNativeBuild {
                 cmake {
@@ -702,7 +699,7 @@ namespace vcpkg::Export::Prefab
 
 )");
 
-                    System::print2(R"(In gradle.properties
+                    print2(R"(In gradle.properties
 
     android.enablePrefab=true
     android.enableParallelJsonGen=false
@@ -711,8 +708,8 @@ namespace vcpkg::Export::Prefab
 )");
                 }
             }
-            System::print2(
-                System::Color::success,
+            print2(
+                Color::success,
                 Strings::format("Successfuly exported %s. Checkout %s  \n", name, fs::generic_u8string(paths.prefab)));
         }
     }

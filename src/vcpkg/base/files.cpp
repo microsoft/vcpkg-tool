@@ -1409,7 +1409,7 @@ namespace vcpkg::Files
                 return res;
             }
 
-            System::printf("Waiting to take filesystem lock on %s...\n", fs::u8string(path));
+            vcpkg::printf("Waiting to take filesystem lock on %s...\n", fs::u8string(path));
             const auto wait = std::chrono::milliseconds(1000);
             for (;;)
             {
@@ -1470,7 +1470,7 @@ namespace vcpkg::Files
 #else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
             static constexpr char const* EXTS[] = {""};
 #endif // ^^^!defined(_WIN32)
-            auto paths = Strings::split_paths(System::get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
+            auto paths = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
 
             std::vector<fs::path> ret;
             for (auto&& path : paths)
@@ -1512,7 +1512,7 @@ namespace vcpkg::Files
             Strings::append(message, "    ", p.generic_string(), '\n');
         }
         message.push_back('\n');
-        System::print2(message);
+        print2(message);
     }
 
     fs::path combine(const fs::path& lhs, const fs::path& rhs)

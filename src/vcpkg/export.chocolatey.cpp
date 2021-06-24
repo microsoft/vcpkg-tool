@@ -188,7 +188,7 @@ if (Test-Path $installedDir)
         for (const ExportPlanAction& action : export_plan)
         {
             const std::string display_name = action.spec.to_string();
-            System::print2("Exporting package ", display_name, "...\n");
+            print2("Exporting package ", display_name, "...\n");
 
             const fs::path per_package_dir_path = raw_exported_dir_path / action.spec.name();
 
@@ -217,15 +217,14 @@ if (Test-Path $installedDir)
             const fs::path chocolatey_uninstall_file_path = per_package_dir_path / "tools" / "chocolateyUninstall.ps1";
             fs.write_contents(chocolatey_uninstall_file_path, chocolatey_uninstall_content, VCPKG_LINE_INFO);
 
-            auto cmd_line = System::Command(nuget_exe)
+            auto cmd_line = Command(nuget_exe)
                                 .string_arg("pack")
                                 .string_arg("-OutputDirectory")
                                 .path_arg(exported_dir_path)
                                 .path_arg(nuspec_file_path)
                                 .string_arg("-NoDefaultExcludes");
 
-            const int exit_code =
-                System::cmd_execute_and_capture_output(cmd_line, System::get_clean_environment()).exit_code;
+            const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
         }
     }

@@ -145,18 +145,17 @@ namespace vcpkg::Build
 
         const auto build_timer = Chrono::ElapsedTimer::create_started();
         const auto result = Build::build_package(args, paths, *action, binaryprovider, build_logs_recorder, status_db);
-        System::print2("Elapsed time for package ", spec, ": ", build_timer, '\n');
+        print2("Elapsed time for package ", spec, ": ", build_timer, '\n');
 
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            System::print2(System::Color::error,
-                           "The build command requires all dependencies to be already installed.\n");
-            System::print2("The following dependencies are missing:\n\n");
+            print2(Color::error, "The build command requires all dependencies to be already installed.\n");
+            print2("The following dependencies are missing:\n\n");
             for (const auto& p : result.unmet_dependencies)
             {
-                System::print2("    ", p, '\n');
+                print2("    ", p, '\n');
             }
-            System::print2('\n');
+            print2('\n');
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -164,8 +163,8 @@ namespace vcpkg::Build
 
         if (result.code != BuildResult::SUCCEEDED)
         {
-            System::print2(System::Color::error, Build::create_error_message(result.code, spec), '\n');
-            System::print2(Build::create_user_troubleshooting_message(spec), '\n');
+            print2(Color::error, Build::create_error_message(result.code, spec), '\n');
+            print2(Build::create_user_troubleshooting_message(spec), '\n');
             return 1;
         }
 
@@ -325,11 +324,11 @@ namespace vcpkg::Build
                                               View<Toolset> all_toolsets)
     {
 #if defined(_WIN32)
-        auto maybe_target_arch = System::to_cpu_architecture(target_architecture);
+        auto maybe_target_arch = to_cpu_architecture(target_architecture);
         Checks::check_maybe_upgrade(
             VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architecture);
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
-        auto host_architectures = System::get_supported_host_architectures();
+        auto host_architectures = get_supported_host_architectures();
 
         for (auto&& host : host_architectures)
         {
@@ -339,24 +338,23 @@ namespace vcpkg::Build
             if (it != toolset.supported_architectures.end()) return it->name;
         }
 
-        System::print2("Error: Unsupported toolchain combination.\n");
-        System::print2("Target was ",
-                       target_architecture,
-                       " but the chosen Visual Studio instance supports:\n    ",
-                       Strings::join(", ",
-                                     toolset.supported_architectures,
-                                     [](const ToolsetArchOption& t) { return t.name.c_str(); }),
-                       "\nVcpkg selected ",
-                       fs::u8string(toolset.visual_studio_root_path),
-                       " as the Visual Studio instance.\nDetected instances:\n",
-                       Strings::join("",
-                                     all_toolsets,
-                                     [](const Toolset& t) {
-                                         return Strings::concat("    ", fs::u8string(t.visual_studio_root_path), '\n');
-                                     }),
-                       "\nSee "
-                       "https://github.com/microsoft/vcpkg/blob/master/docs/users/triplets.md#VCPKG_VISUAL_STUDIO_PATH "
-                       "for more information.\n");
+        print2("Error: Unsupported toolchain combination.\n");
+        print2("Target was ",
+               target_architecture,
+               " but the chosen Visual Studio instance supports:\n    ",
+               Strings::join(
+                   ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); }),
+               "\nVcpkg selected ",
+               fs::u8string(toolset.visual_studio_root_path),
+               " as the Visual Studio instance.\nDetected instances:\n",
+               Strings::join("",
+                             all_toolsets,
+                             [](const Toolset& t) {
+                                 return Strings::concat("    ", fs::u8string(t.visual_studio_root_path), '\n');
+                             }),
+               "\nSee "
+               "https://github.com/microsoft/vcpkg/blob/master/docs/users/triplets.md#VCPKG_VISUAL_STUDIO_PATH "
+               "for more information.\n");
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
 #else
         (void)target_architecture;
@@ -368,7 +366,7 @@ namespace vcpkg::Build
     }
 
 #if defined(_WIN32)
-    const System::Environment& EnvCache::get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info)
+    const Environment& EnvCache::get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info)
     {
         auto build_env_cmd = make_build_env_cmd(
             *abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO), paths.get_all_toolsets());
@@ -378,7 +376,7 @@ namespace vcpkg::Build
 
             for (auto&& env_var : abi_info.pre_build_info->passthrough_env_vars)
             {
-                auto env_val = System::get_environment_variable(env_var);
+                auto env_val = get_environment_variable(env_var);
 
                 if (env_val)
                 {
@@ -393,7 +391,7 @@ namespace vcpkg::Build
 
             for (auto var : s_extra_vars)
             {
-                auto val = System::get_environment_variable(var);
+                auto val = get_environment_variable(var);
                 if (auto p_val = val.get()) env.emplace(var, *p_val);
             }
 
@@ -409,16 +407,16 @@ namespace vcpkg::Build
 
             // 2021-05-09 Fix: Detect If there's already HTTP(S)_PROXY presented in the environment variables.
             // If so, we no longer overwrite them.
-            bool proxy_from_env = (System::get_environment_variable("HTTP_PROXY").has_value() ||
-                                   System::get_environment_variable("HTTPS_PROXY").has_value());
+            bool proxy_from_env = (get_environment_variable("HTTP_PROXY").has_value() ||
+                                   get_environment_variable("HTTPS_PROXY").has_value());
 
             if (proxy_from_env)
             {
-                System::print2("-- Using HTTP(S)_PROXY in environment variables.\n");
+                print2("-- Using HTTP(S)_PROXY in environment variables.\n");
             }
             else
             {
-                auto ieProxy = System::get_windows_ie_proxy_server();
+                auto ieProxy = get_windows_ie_proxy_server();
                 if (ieProxy.has_value() && !proxy_from_env)
                 {
                     std::string server = Strings::to_utf8(ieProxy.get()->server);
@@ -454,20 +452,20 @@ namespace vcpkg::Build
 
                                 protocol = Strings::concat(Strings::ascii_to_uppercase(protocol.c_str()), "_PROXY");
                                 env.emplace(protocol, address);
-                                System::print2("-- Setting ", protocol, " environment variables to ", address, "\n");
+                                print2("-- Setting ", protocol, " environment variables to ", address, "\n");
                             }
                         }
                     }
                     // Specified http:// prefix
                     else if (Strings::starts_with(server, "http://"))
                     {
-                        System::print2("-- Setting HTTP_PROXY environment variables to ", server, "\n");
+                        print2("-- Setting HTTP_PROXY environment variables to ", server, "\n");
                         env.emplace("HTTP_PROXY", server);
                     }
                     // Specified https:// prefix
                     else if (Strings::starts_with(server, "https://"))
                     {
-                        System::print2("-- Setting HTTPS_PROXY environment variables to ", server, "\n");
+                        print2("-- Setting HTTPS_PROXY environment variables to ", server, "\n");
                         env.emplace("HTTPS_PROXY", server);
                     }
                     // Most common case: "ip:port" style, apply to HTTP and HTTPS proxies.
@@ -478,8 +476,7 @@ namespace vcpkg::Build
                     // We simply set "ip:port" to HTTP(S)_PROXY variables because it works on most common cases.
                     else
                     {
-                        System::print2(
-                            "-- Automatically setting HTTP(S)_PROXY environment variables to ", server, "\n");
+                        print2("-- Automatically setting HTTP(S)_PROXY environment variables to ", server, "\n");
 
                         env.emplace("HTTP_PROXY", server.c_str());
                         env.emplace("HTTPS_PROXY", server.c_str());
@@ -491,19 +488,16 @@ namespace vcpkg::Build
 
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
             const fs::path& powershell_exe_path = paths.get_tool_exe("powershell-core");
-            auto clean_env = System::get_modified_clean_environment(
-                base_env.env_map, fs::u8string(powershell_exe_path.parent_path()) + ";");
+            auto clean_env =
+                get_modified_clean_environment(base_env.env_map, fs::u8string(powershell_exe_path.parent_path()) + ";");
             if (build_env_cmd.empty())
                 return clean_env;
             else
-                return System::cmd_execute_modify_env(build_env_cmd, clean_env);
+                return cmd_execute_modify_env(build_env_cmd, clean_env);
         });
     }
 #else
-    const System::Environment& EnvCache::get_action_env(const VcpkgPaths&, const AbiInfo&)
-    {
-        return System::get_clean_environment();
-    }
+    const Environment& EnvCache::get_action_env(const VcpkgPaths&, const AbiInfo&) { return get_clean_environment(); }
 #endif
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
@@ -572,9 +566,9 @@ namespace vcpkg::Build
         });
     }
 
-    System::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
-                                       const Toolset& toolset,
-                                       View<Toolset> all_toolsets)
+    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
+                                      const Toolset& toolset,
+                                      View<Toolset> all_toolsets)
     {
         if (!pre_build_info.using_vcvars()) return {};
 
@@ -587,7 +581,7 @@ namespace vcpkg::Build
         const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, all_toolsets);
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
-        return System::Command{"cmd"}.string_arg("/c").raw_arg(
+        return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(
             Strings::format(R"("%s" %s %s %s %s 2>&1 <NUL)",
                             fs::u8string(toolset.vcvarsall),
                             Strings::join(" ", toolset.vcvarsall_options),
@@ -628,14 +622,14 @@ namespace vcpkg::Build
     static int get_concurrency()
     {
         static int concurrency = [] {
-            auto user_defined_concurrency = System::get_environment_variable("VCPKG_MAX_CONCURRENCY");
+            auto user_defined_concurrency = get_environment_variable("VCPKG_MAX_CONCURRENCY");
             if (user_defined_concurrency)
             {
                 return std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
             }
             else
             {
-                return System::get_num_logical_cores() + 1;
+                return get_num_logical_cores() + 1;
             }
         }();
 
@@ -645,10 +639,10 @@ namespace vcpkg::Build
     static void get_generic_cmake_build_args(const VcpkgPaths& paths,
                                              Triplet triplet,
                                              const Toolset& toolset,
-                                             std::vector<System::CMakeVariable>& out_vars)
+                                             std::vector<CMakeVariable>& out_vars)
     {
         Util::Vectors::append(&out_vars,
-                              std::initializer_list<System::CMakeVariable>{
+                              std::initializer_list<CMakeVariable>{
                                   {"CMD", "BUILD"},
                                   {"DOWNLOADS", paths.downloads},
                                   {"TARGET_TRIPLET", triplet.canonical_name()},
@@ -657,7 +651,7 @@ namespace vcpkg::Build
                                   {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
                                   {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
                               });
-        if (!System::get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
+        if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
         {
             const fs::path& git_exe_path = paths.get_tool_exe(Tools::GIT);
             out_vars.push_back({"GIT", git_exe_path});
@@ -667,7 +661,7 @@ namespace vcpkg::Build
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
     {
         auto triplet = abi_info.pre_build_info->triplet;
-        System::print2("Detecting compiler hash for triplet ", triplet, "...\n");
+        print2("Detecting compiler hash for triplet ", triplet, "...\n");
         auto buildpath = paths.buildtrees / "detect_compiler";
 
 #if !defined(_WIN32)
@@ -675,7 +669,7 @@ namespace vcpkg::Build
         // bootstrap should have already downloaded ninja, but making sure it is present in case it was deleted.
         (void)(paths.get_tool_exe(Tools::NINJA));
 #endif
-        std::vector<System::CMakeVariable> cmake_args{
+        std::vector<CMakeVariable> cmake_args{
             {"CURRENT_PORT_DIR", paths.scripts / "detect_compiler"},
             {"CURRENT_BUILDTREES_DIR", buildpath},
             {"CURRENT_PACKAGES_DIR", paths.packages / ("detect_compiler_" + triplet.canonical_name())},
@@ -703,7 +697,7 @@ namespace vcpkg::Build
         Checks::check_exit(VCPKG_LINE_INFO, out_file, "Failed to open '%s' for writing", fs::u8string(stdoutlog));
         CompilerInfo compiler_info;
         std::string buf;
-        int rc = System::cmd_execute_and_stream_lines(
+        int rc = cmd_execute_and_stream_lines(
             command,
             [&](StringView s) {
                 static const StringLiteral s_hash_marker = "#COMPILER_HASH#";
@@ -738,10 +732,10 @@ namespace vcpkg::Build
                          VcpkgCmdArguments::COMPILER_TRACKING_FEATURE,
                          "\n");
 
-            System::print2("Error: while detecting compiler information:\nThe log content at ",
-                           fs::u8string(stdoutlog),
-                           " is:\n",
-                           buf);
+            print2("Error: while detecting compiler information:\nThe log content at ",
+                   fs::u8string(stdoutlog),
+                   " is:\n",
+                   buf);
             Checks::exit_with_message(VCPKG_LINE_INFO,
                                       "Error: vcpkg was unable to detect the active compiler's information. See above "
                                       "for the CMake failure output.");
@@ -751,9 +745,9 @@ namespace vcpkg::Build
         return compiler_info;
     }
 
-    static std::vector<System::CMakeVariable> get_cmake_build_args(const VcpkgCmdArguments& args,
-                                                                   const VcpkgPaths& paths,
-                                                                   const Dependencies::InstallPlanAction& action)
+    static std::vector<CMakeVariable> get_cmake_build_args(const VcpkgCmdArguments& args,
+                                                           const VcpkgPaths& paths,
+                                                           const Dependencies::InstallPlanAction& action)
     {
 #if !defined(_WIN32)
         // TODO: remove when vcpkg.exe is in charge for acquiring tools. Change introduced in vcpkg v0.0.107.
@@ -769,7 +763,7 @@ namespace vcpkg::Build
             all_features.append(feature->name + ";");
         }
 
-        std::vector<System::CMakeVariable> variables{
+        std::vector<CMakeVariable> variables{
             {"ALL_FEATURES", all_features},
             {"CURRENT_PORT_DIR", scfl.source_location},
             {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
@@ -783,7 +777,7 @@ namespace vcpkg::Build
 
         for (auto cmake_arg : args.cmake_args)
         {
-            variables.push_back(System::CMakeVariable{cmake_arg});
+            variables.push_back(CMakeVariable{cmake_arg});
         }
 
         if (action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
@@ -893,20 +887,20 @@ namespace vcpkg::Build
 
         if (Strings::case_insensitive_ascii_starts_with(triplet_file_path, fs::u8string(paths.community_triplets)))
         {
-            System::printf(vcpkg::System::Color::warning,
-                           "-- Using community triplet %s. This triplet configuration is not guaranteed to succeed.\n",
-                           triplet.canonical_name());
-            System::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);
+            vcpkg::printf(vcpkg::Color::warning,
+                          "-- Using community triplet %s. This triplet configuration is not guaranteed to succeed.\n",
+                          triplet.canonical_name());
+            vcpkg::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
         else if (!Strings::case_insensitive_ascii_starts_with(triplet_file_path, fs::u8string(paths.triplets)))
         {
-            System::printf("-- [OVERLAY] Loading triplet configuration from: %s\n", triplet_file_path);
+            vcpkg::printf("-- [OVERLAY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
 
         auto u8portdir = fs::u8string(scfl.source_location);
         if (!Strings::case_insensitive_ascii_starts_with(u8portdir, fs::u8string(paths.builtin_ports_directory())))
         {
-            System::printf("-- Installing port from location: %s\n", u8portdir);
+            vcpkg::printf("-- Installing port from location: %s\n", u8portdir);
         }
 
         const auto timer = Chrono::ElapsedTimer::create_started();
@@ -929,10 +923,10 @@ namespace vcpkg::Build
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
         std::ofstream out_file(stdoutlog.native().c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
         Checks::check_exit(VCPKG_LINE_INFO, out_file, "Failed to open '%s' for writing", fs::u8string(stdoutlog));
-        const int return_code = System::cmd_execute_and_stream_data(
+        const int return_code = cmd_execute_and_stream_data(
             command,
             [&](StringView sv) {
-                System::print2(sv);
+                print2(sv);
                 out_file.write(sv.data(), sv.size());
                 Checks::check_exit(
                     VCPKG_LINE_INFO, out_file, "Error occurred while writing '%s'", fs::u8string(stdoutlog));
@@ -1044,7 +1038,7 @@ namespace vcpkg::Build
 
         for (const auto& env_var : pre_build_info.passthrough_env_vars_tracked)
         {
-            if (auto e = System::get_environment_variable(env_var))
+            if (auto e = get_environment_variable(env_var))
             {
                 abi_tag_entries.emplace_back(
                     "ENV:" + env_var, Hash::get_string_hash(e.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
@@ -1156,7 +1150,7 @@ namespace vcpkg::Build
                 Strings::append(message, "[DEBUG]   ", entry.key, "|", entry.value, "\n");
             }
             Strings::append(message, "[DEBUG] </abientries>\n");
-            System::print2(message);
+            print2(message);
         }
 
         auto abi_tag_entries_missing = Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });

@@ -86,12 +86,12 @@ namespace vcpkg
         auto parsed_config_opt = reader.visit(obj, *deserializer);
         if (!reader.errors().empty())
         {
-            System::print2(System::Color::error, "Errors occurred while parsing ", fs::u8string(filepath), "\n");
+            print2(Color::error, "Errors occurred while parsing ", fs::u8string(filepath), "\n");
             for (auto&& msg : reader.errors())
-                System::print2("    ", msg, '\n');
+                print2("    ", msg, '\n');
 
-            System::print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for "
-                           "more information.\n");
+            print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for "
+                   "more information.\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -131,10 +131,10 @@ namespace vcpkg
 
         if (!manifest_value.first.is_object())
         {
-            System::print2(System::Color::error,
-                           "Failed to parse manifest at ",
-                           fs::u8string(manifest_path),
-                           ": Manifest files must have a top-level object\n");
+            print2(Color::error,
+                   "Failed to parse manifest at ",
+                   fs::u8string(manifest_path),
+                   ": Manifest files must have a top-level object\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         return {std::move(manifest_value.first.object()), std::move(manifest_value.second)};
@@ -173,10 +173,10 @@ namespace vcpkg
         auto parsed_config = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_config);
         if (!parsed_config.first.is_object())
         {
-            System::print2(System::Color::error,
-                           "Failed to parse ",
-                           fs::u8string(path_to_config),
-                           ": configuration files must have a top-level object\n");
+            print2(Color::error,
+                   "Failed to parse ",
+                   fs::u8string(path_to_config),
+                   ": configuration files must have a top-level object\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         auto config_obj = std::move(parsed_config.first.object());
@@ -190,8 +190,8 @@ namespace vcpkg
         {
             const ExpectedS<fs::path>& default_registries_cache_path()
             {
-                static auto cachepath = System::get_platform_cache_home().then([](fs::path p) -> ExpectedS<fs::path> {
-                    auto maybe_cachepath = System::get_environment_variable("X_VCPKG_REGISTRIES_CACHE");
+                static auto cachepath = get_platform_cache_home().then([](fs::path p) -> ExpectedS<fs::path> {
+                    auto maybe_cachepath = get_environment_variable("X_VCPKG_REGISTRIES_CACHE");
                     if (auto p_str = maybe_cachepath.get())
                     {
                         Metrics::g_metrics.lock()->track_property("X_VCPKG_REGISTRIES_CACHE", "defined");
@@ -301,8 +301,7 @@ namespace vcpkg
             if (root.empty())
             {
                 root = filesystem.find_file_recursively_up(
-                    filesystem.almost_canonical(VCPKG_LINE_INFO, System::get_exe_path_of_current_process()),
-                    ".vcpkg-root");
+                    filesystem.almost_canonical(VCPKG_LINE_INFO, get_exe_path_of_current_process()), ".vcpkg-root");
             }
         }
 
@@ -348,9 +347,9 @@ namespace vcpkg
             {
                 if (ec == std::errc::device_or_resource_busy || args.ignore_lock_failures.value_or(false))
                 {
-                    System::printf(
-                        System::Color::error, "Failed to take the filesystem lock on %s:\n", fs::u8string(vcpkg_lock));
-                    System::printf(System::Color::error, "    %s\n", ec.message());
+                    vcpkg::printf(
+                        Color::error, "Failed to take the filesystem lock on %s:\n", fs::u8string(vcpkg_lock));
+                    vcpkg::printf(Color::error, "    %s\n", ec.message());
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
             }
@@ -613,9 +612,9 @@ namespace vcpkg
         return m_pimpl->m_tool_cache->get_tool_version(*this, tool);
     }
 
-    System::Command VcpkgPaths::git_cmd_builder(const fs::path& dot_git_dir, const fs::path& work_tree) const
+    Command VcpkgPaths::git_cmd_builder(const fs::path& dot_git_dir, const fs::path& work_tree) const
     {
-        System::Command ret(get_tool_exe(Tools::GIT));
+        Command ret(get_tool_exe(Tools::GIT));
         if (!dot_git_dir.empty())
         {
             ret.string_arg(Strings::concat("--git-dir=", fs::u8string(dot_git_dir)));
@@ -632,7 +631,7 @@ namespace vcpkg
     {
         auto cmd = git_cmd_builder(this->root / fs::u8path(".git"), this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
-        auto output = System::cmd_execute_and_capture_output(cmd);
+        auto output = cmd_execute_and_capture_output(cmd);
         if (output.exit_code != 0)
         {
             return {std::move(output.output), expected_right_tag};
@@ -659,9 +658,9 @@ namespace vcpkg
     {
         // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
         // git clone --no-checkout --local {vcpkg_root} {dot_git_dir}
-        System::Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir).string_arg("show").string_arg(treeish);
+        Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir).string_arg("show").string_arg(treeish);
 
-        auto output = System::cmd_execute_and_capture_output(showcmd);
+        auto output = cmd_execute_and_capture_output(showcmd);
         if (output.exit_code == 0)
         {
             return {std::move(output.output), expected_left_tag};
@@ -683,7 +682,7 @@ namespace vcpkg
                                  .string_arg("HEAD")
                                  .string_arg("--");
 
-        auto output = System::cmd_execute_and_capture_output(git_cmd);
+        auto output = cmd_execute_and_capture_output(git_cmd);
         if (output.exit_code != 0)
             return Strings::format("Error: Couldn't get local treeish objects for ports.\n%s", output.output);
 
@@ -810,21 +809,19 @@ namespace vcpkg
                                    .string_arg(git_tree)
                                    .string_arg("-o")
                                    .path_arg(destination_tar);
-        const auto tar_output = System::cmd_execute_and_capture_output(tar_cmd_builder);
+        const auto tar_output = cmd_execute_and_capture_output(tar_cmd_builder);
         if (tar_output.exit_code != 0)
         {
             return {Strings::concat(PRELUDE, "Error: Failed to tar port directory\n", tar_output.output),
                     expected_right_tag};
         }
 
-        auto extract_cmd_builder = System::Command{this->get_tool_exe(Tools::CMAKE)}
-                                       .string_arg("-E")
-                                       .string_arg("tar")
-                                       .string_arg("xf")
-                                       .path_arg(destination_tar);
+        auto extract_cmd_builder =
+            Command{this->get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").path_arg(
+                destination_tar);
 
         const auto extract_output =
-            System::cmd_execute_and_capture_output(extract_cmd_builder, System::InWorkingDirectory{destination_tmp});
+            cmd_execute_and_capture_output(extract_cmd_builder, InWorkingDirectory{destination_tmp});
         if (extract_output.exit_code != 0)
         {
             return {Strings::concat(PRELUDE, "Error: Failed to extract port directory\n", extract_output.output),
@@ -862,8 +859,8 @@ namespace vcpkg
         fs.create_directories(work_tree, VCPKG_LINE_INFO);
         auto dot_git_dir = m_pimpl->registries_dot_git_dir;
 
-        System::Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
-        auto init_output = System::cmd_execute_and_capture_output(init_registries_git_dir);
+        Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
+        auto init_output = cmd_execute_and_capture_output(init_registries_git_dir);
         if (init_output.exit_code != 0)
         {
             return {Strings::format("Error: Failed to initialize local repository %s.\n%s\n",
@@ -877,14 +874,14 @@ namespace vcpkg
         std::error_code ec;
         Files::ExclusiveFileLock guard(Files::ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
 
-        System::Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
-                                            .string_arg("fetch")
-                                            .string_arg("--update-shallow")
-                                            .string_arg("--")
-                                            .string_arg(repo)
-                                            .string_arg(treeish);
+        Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
+                                    .string_arg("fetch")
+                                    .string_arg("--update-shallow")
+                                    .string_arg("--")
+                                    .string_arg(repo)
+                                    .string_arg(treeish);
 
-        auto fetch_output = System::cmd_execute_and_capture_output(fetch_git_ref);
+        auto fetch_output = cmd_execute_and_capture_output(fetch_git_ref);
         if (fetch_output.exit_code != 0)
         {
             return {Strings::format(
@@ -892,9 +889,9 @@ namespace vcpkg
                     expected_right_tag};
         }
 
-        System::Command get_fetch_head =
+        Command get_fetch_head =
             git_cmd_builder(dot_git_dir, work_tree).string_arg("rev-parse").string_arg("FETCH_HEAD");
-        auto fetch_head_output = System::cmd_execute_and_capture_output(get_fetch_head);
+        auto fetch_head_output = cmd_execute_and_capture_output(get_fetch_head);
         if (fetch_head_output.exit_code != 0)
         {
             return {Strings::format("Error: Failed to rev-parse FETCH_HEAD.\n%s\n", fetch_head_output.output),
@@ -917,21 +914,21 @@ namespace vcpkg
 
         auto dot_git_dir = m_pimpl->registries_dot_git_dir;
 
-        System::Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
-        auto init_output = System::cmd_execute_and_capture_output(init_registries_git_dir);
+        Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
+        auto init_output = cmd_execute_and_capture_output(init_registries_git_dir);
         if (init_output.exit_code != 0)
         {
             return Strings::format(
                 "Error: Failed to initialize local repository %s.\n%s\n", fs::u8string(work_tree), init_output.output);
         }
-        System::Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
-                                            .string_arg("fetch")
-                                            .string_arg("--update-shallow")
-                                            .string_arg("--")
-                                            .string_arg(repo)
-                                            .string_arg(treeish);
+        Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
+                                    .string_arg("fetch")
+                                    .string_arg("--update-shallow")
+                                    .string_arg("--")
+                                    .string_arg(repo)
+                                    .string_arg(treeish);
 
-        auto fetch_output = System::cmd_execute_and_capture_output(fetch_git_ref);
+        auto fetch_output = cmd_execute_and_capture_output(fetch_git_ref);
         if (fetch_output.exit_code != 0)
         {
             return Strings::format(
@@ -946,11 +943,11 @@ namespace vcpkg
                                                                      const fs::path& relative_path) const
     {
         auto revision = Strings::format("%s:%s", hash, fs::generic_u8string(relative_path));
-        System::Command git_show = git_cmd_builder(m_pimpl->registries_dot_git_dir, m_pimpl->registries_work_tree_dir)
-                                       .string_arg("show")
-                                       .string_arg(revision);
+        Command git_show = git_cmd_builder(m_pimpl->registries_dot_git_dir, m_pimpl->registries_work_tree_dir)
+                               .string_arg("show")
+                               .string_arg(revision);
 
-        auto git_show_output = System::cmd_execute_and_capture_output(git_show);
+        auto git_show_output = cmd_execute_and_capture_output(git_show);
         if (git_show_output.exit_code != 0)
         {
             return {git_show_output.output, expected_right_tag};
@@ -961,12 +958,11 @@ namespace vcpkg
                                                                                    const fs::path& relative_path) const
     {
         auto revision = Strings::format("%s:%s", hash, fs::generic_u8string(relative_path));
-        System::Command git_rev_parse =
-            git_cmd_builder(m_pimpl->registries_dot_git_dir, m_pimpl->registries_work_tree_dir)
-                .string_arg("rev-parse")
-                .string_arg(revision);
+        Command git_rev_parse = git_cmd_builder(m_pimpl->registries_dot_git_dir, m_pimpl->registries_work_tree_dir)
+                                    .string_arg("rev-parse")
+                                    .string_arg(revision);
 
-        auto git_rev_parse_output = System::cmd_execute_and_capture_output(git_rev_parse);
+        auto git_rev_parse_output = cmd_execute_and_capture_output(git_rev_parse);
         if (git_rev_parse_output.exit_code != 0)
         {
             return {git_rev_parse_output.output, expected_right_tag};
@@ -984,7 +980,7 @@ namespace vcpkg
             return std::move(git_tree_final);
         }
 
-        auto pid = System::get_process_id();
+        auto pid = get_process_id();
 
         fs::path git_tree_temp = fs::u8path(Strings::format("%s.tmp%ld", fs::u8string(git_tree_final), pid));
         fs::path git_tree_temp_tar = fs::u8path(Strings::format("%s.tmp%ld.tar", fs::u8string(git_tree_final), pid));
@@ -992,25 +988,24 @@ namespace vcpkg
         fs.create_directory(git_tree_temp, VCPKG_LINE_INFO);
 
         auto dot_git_dir = m_pimpl->registries_dot_git_dir;
-        System::Command git_archive = git_cmd_builder(dot_git_dir, m_pimpl->registries_work_tree_dir)
-                                          .string_arg("archive")
-                                          .string_arg("--format")
-                                          .string_arg("tar")
-                                          .string_arg(object)
-                                          .string_arg("--output")
-                                          .path_arg(git_tree_temp_tar);
-        auto git_archive_output = System::cmd_execute_and_capture_output(git_archive);
+        Command git_archive = git_cmd_builder(dot_git_dir, m_pimpl->registries_work_tree_dir)
+                                  .string_arg("archive")
+                                  .string_arg("--format")
+                                  .string_arg("tar")
+                                  .string_arg(object)
+                                  .string_arg("--output")
+                                  .path_arg(git_tree_temp_tar);
+        auto git_archive_output = cmd_execute_and_capture_output(git_archive);
         if (git_archive_output.exit_code != 0)
         {
             return {Strings::format("git archive failed with message:\n%s", git_archive_output.output),
                     expected_right_tag};
         }
 
-        auto untar =
-            System::Command{get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").path_arg(
-                git_tree_temp_tar);
+        auto untar = Command{get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").path_arg(
+            git_tree_temp_tar);
 
-        auto untar_output = System::cmd_execute_and_capture_output(untar, System::InWorkingDirectory{git_tree_temp});
+        auto untar_output = cmd_execute_and_capture_output(untar, InWorkingDirectory{git_tree_temp});
         // Attempt to remove temporary files, though non-critical.
         fs.remove(git_tree_temp_tar, ignore_errors);
         if (untar_output.exit_code != 0)
@@ -1070,8 +1065,7 @@ namespace vcpkg
             static Toolset external_toolset = []() -> Toolset {
                 Toolset ret;
                 ret.dumpbin.clear();
-                ret.supported_architectures = {
-                    ToolsetArchOption{"", System::get_host_processor(), System::get_host_processor()}};
+                ret.supported_architectures = {ToolsetArchOption{"", get_host_processor(), get_host_processor()}};
                 ret.vcvarsall.clear();
                 ret.vcvarsall_options = {};
                 ret.version = "external";
@@ -1142,7 +1136,7 @@ namespace vcpkg
 #endif
     }
 
-    const System::Environment& VcpkgPaths::get_action_env(const Build::AbiInfo& abi_info) const
+    const Environment& VcpkgPaths::get_action_env(const Build::AbiInfo& abi_info) const
     {
         return m_pimpl->m_env_cache.get_action_env(*this, abi_info);
     }

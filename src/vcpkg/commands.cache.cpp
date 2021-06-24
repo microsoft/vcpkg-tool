@@ -43,7 +43,7 @@ namespace vcpkg::Commands::Cache
         const std::vector<BinaryParagraph> binary_paragraphs = read_all_binary_paragraphs(paths);
         if (binary_paragraphs.empty())
         {
-            System::print2("No packages are cached.\n");
+            print2("No packages are cached.\n");
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -51,7 +51,7 @@ namespace vcpkg::Commands::Cache
         {
             for (const BinaryParagraph& binary_paragraph : binary_paragraphs)
             {
-                System::print2(binary_paragraph.displayname(), '\n');
+                print2(binary_paragraph.displayname(), '\n');
             }
         }
         else
@@ -65,7 +65,7 @@ namespace vcpkg::Commands::Cache
                     continue;
                 }
 
-                System::print2(displayname, '\n');
+                print2(displayname, '\n');
             }
         }
 

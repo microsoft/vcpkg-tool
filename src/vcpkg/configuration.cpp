@@ -77,10 +77,10 @@ namespace vcpkg
         {
             Metrics::g_metrics.lock()->track_property("registries-error-registry-modification-without-feature-flag",
                                                       "defined");
-            System::printf(System::Color::warning,
-                           "Warning: configuration specified the \"registries\" or \"default-registries\" field, but "
-                           "the %s feature flag was not enabled.\n",
-                           VcpkgCmdArguments::REGISTRIES_FEATURE);
+            vcpkg::printf(Color::warning,
+                          "Warning: configuration specified the \"registries\" or \"default-registries\" field, but "
+                          "the %s feature flag was not enabled.\n",
+                          VcpkgCmdArguments::REGISTRIES_FEATURE);
             registry_set = RegistrySet();
         }
     }

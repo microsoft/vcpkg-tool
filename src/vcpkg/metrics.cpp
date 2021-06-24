@@ -257,7 +257,7 @@ namespace vcpkg::Metrics
             return "{}";
         }
 
-        auto getmac = System::cmd_execute_and_capture_output(System::Command("getmac"));
+        auto getmac = cmd_execute_and_capture_output(Command("getmac"));
 
         if (getmac.exit_code != 0) return "0";
 
@@ -461,8 +461,7 @@ namespace vcpkg::Metrics
 #if defined(_WIN32)
         fs.create_directories(temp_folder_path, ec);
         if (ec) return;
-        fs.copy_file(
-            System::get_exe_path_of_current_process(), temp_folder_path_exe, fs::copy_options::skip_existing, ec);
+        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, fs::copy_options::skip_existing, ec);
         if (ec) return;
 #else
         if (!fs.exists("/tmp")) return;
@@ -474,14 +473,14 @@ namespace vcpkg::Metrics
         if (ec) return;
 
 #if defined(_WIN32)
-        System::Command builder;
+        Command builder;
         builder.path_arg(temp_folder_path_exe);
         builder.string_arg("x-upload-metrics");
         builder.path_arg(vcpkg_metrics_txt_path);
-        System::cmd_execute_background(builder);
+        cmd_execute_background(builder);
 #else
         // TODO: convert to cmd_execute_background or something.
-        auto curl = System::Command("curl")
+        auto curl = Command("curl")
                         .string_arg("https://dc.services.visualstudio.com/v2/track")
                         .string_arg("--max-time")
                         .string_arg("3")
@@ -494,10 +493,10 @@ namespace vcpkg::Metrics
                         .string_arg(Strings::concat("@", fs::u8string(vcpkg_metrics_txt_path)))
                         .raw_arg(">/dev/null")
                         .raw_arg("2>&1");
-        auto remove = System::Command("rm").path_arg(vcpkg_metrics_txt_path);
-        System::Command cmd_line;
+        auto remove = Command("rm").path_arg(vcpkg_metrics_txt_path);
+        Command cmd_line;
         cmd_line.raw_arg("(").raw_arg(curl.command_line()).raw_arg(";").raw_arg(remove.command_line()).raw_arg(") &");
-        System::cmd_execute_clean(cmd_line);
+        cmd_execute_clean(cmd_line);
 #endif
     }
 }

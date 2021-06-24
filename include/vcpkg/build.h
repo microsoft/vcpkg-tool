@@ -24,10 +24,6 @@
 namespace vcpkg
 {
     struct IBinaryProvider;
-}
-
-namespace vcpkg::System
-{
     struct Environment;
 }
 
@@ -243,9 +239,9 @@ namespace vcpkg::Build
         const VcpkgPaths& m_paths;
     };
 
-    System::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
-                                       const Toolset& toolset,
-                                       View<Toolset> all_toolsets);
+    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
+                                      const Toolset& toolset,
+                                      View<Toolset> all_toolsets);
 
     struct ExtendedBuildResult
     {
@@ -365,7 +361,7 @@ namespace vcpkg::Build
     {
         explicit EnvCache(bool compiler_tracking) : m_compiler_tracking(compiler_tracking) { }
 
-        const System::Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
+        const Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
         const std::string& get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
         const CompilerInfo& get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
 
@@ -383,7 +379,7 @@ namespace vcpkg::Build
         struct EnvMapEntry
         {
             std::unordered_map<std::string, std::string> env_map;
-            Cache<System::Command, System::Environment, System::CommandLess> cmd_cache;
+            Cache<vcpkg::Command, Environment, CommandLess> cmd_cache;
         };
 
         Cache<std::vector<std::string>, EnvMapEntry> envs;

@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace vcpkg::System
+namespace vcpkg
 {
     struct CMakeVariable
     {

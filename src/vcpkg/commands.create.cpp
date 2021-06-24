@@ -35,7 +35,7 @@ namespace vcpkg::Commands::Create
         const std::string port_name = args.command_arguments.at(0);
         const std::string url = remove_trailing_slashes(args.command_arguments.at(1));
 
-        std::vector<System::CMakeVariable> cmake_args{
+        std::vector<CMakeVariable> cmake_args{
             {"CMD", "CREATE"},
             {"PORT", port_name},
             {"PORT_PATH", fs::generic_u8string(paths.builtin_ports_directory() / fs::u8path(port_name))},
@@ -55,7 +55,7 @@ namespace vcpkg::Commands::Create
         }
 
         auto cmd_launch_cmake = make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
-        return System::cmd_execute_clean(cmd_launch_cmake);
+        return cmd_execute_clean(cmd_launch_cmake);
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)

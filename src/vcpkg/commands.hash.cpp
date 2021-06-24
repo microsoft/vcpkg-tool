@@ -30,7 +30,7 @@ namespace vcpkg::Commands::Hash
 
         const std::string hash =
             vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, paths.get_filesystem(), file_to_hash, algorithm);
-        System::print2(hash, '\n');
+        print2(hash, '\n');
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

@@ -180,7 +180,7 @@ endmacro()
         static constexpr CStringView BLOCK_END_GUID = "e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f";
 
         const auto cmd_launch_cmake = vcpkg::make_cmake_cmd(paths, script_path, {});
-        const auto ec_data = System::cmd_execute_and_capture_output(cmd_launch_cmake);
+        const auto ec_data = cmd_execute_and_capture_output(cmd_launch_cmake);
         Checks::check_exit(VCPKG_LINE_INFO, ec_data.exit_code == 0, ec_data.output);
 
         const std::vector<std::string> lines = Strings::split(ec_data.output, '\n');
@@ -243,7 +243,7 @@ endmacro()
         const fs::path file_path = create_dep_info_extraction_file(specs);
         if (specs.size() > 100)
         {
-            System::print2("Loading dependency information for ", specs.size(), " packages...\n");
+            print2("Loading dependency information for ", specs.size(), " packages...\n");
         }
         launch_and_split(file_path, vars);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);

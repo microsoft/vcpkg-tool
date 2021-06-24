@@ -303,7 +303,7 @@ namespace vcpkg::Export::IFW
 
         void export_maintenance_tool(const fs::path& ifw_packages_dir_path, const VcpkgPaths& paths)
         {
-            System::print2("Exporting maintenance tool...\n");
+            print2("Exporting maintenance tool...\n");
 
             std::error_code ec;
             Files::Filesystem& fs = paths.get_filesystem();
@@ -348,7 +348,7 @@ namespace vcpkg::Export::IFW
             Checks::check_exit(
                 VCPKG_LINE_INFO, !ec, "Could not write package file %s", fs::generic_u8string(script_destination));
 
-            System::print2("Exporting maintenance tool... done\n");
+            print2("Exporting maintenance tool... done\n");
         }
 
         void do_repository(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
@@ -357,7 +357,7 @@ namespace vcpkg::Export::IFW
             const fs::path packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
             const fs::path repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
 
-            System::print2("Generating repository ", fs::generic_u8string(repository_dir), "...\n");
+            print2("Generating repository ", fs::generic_u8string(repository_dir), "...\n");
 
             std::error_code ec;
             fs::path failure_point;
@@ -371,14 +371,12 @@ namespace vcpkg::Export::IFW
                                failure_point.string());
 
             auto cmd_line =
-                System::Command(repogen_exe).string_arg("--packages").path_arg(packages_dir).path_arg(repository_dir);
+                Command(repogen_exe).string_arg("--packages").path_arg(packages_dir).path_arg(repository_dir);
 
-            const int exit_code =
-                System::cmd_execute_and_capture_output(cmd_line, System::get_clean_environment()).exit_code;
+            const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW repository generating failed");
 
-            System::printf(
-                System::Color::success, "Generating repository %s... done.\n", fs::generic_u8string(repository_dir));
+            vcpkg::printf(Color::success, "Generating repository %s... done.\n", fs::generic_u8string(repository_dir));
         }
 
         void do_installer(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
@@ -389,14 +387,14 @@ namespace vcpkg::Export::IFW
             const fs::path repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
             const fs::path installer_file = get_installer_file_path(export_id, ifw_options, paths);
 
-            System::printf("Generating installer %s...\n", fs::generic_u8string(installer_file));
+            vcpkg::printf("Generating installer %s...\n", fs::generic_u8string(installer_file));
 
-            System::Command cmd_line;
+            Command cmd_line;
 
             std::string ifw_repo_url = ifw_options.maybe_repository_url.value_or("");
             if (!ifw_repo_url.empty())
             {
-                cmd_line = System::Command(binarycreator_exe)
+                cmd_line = Command(binarycreator_exe)
                                .string_arg("--online-only")
                                .string_arg("--config")
                                .path_arg(config_file)
@@ -406,7 +404,7 @@ namespace vcpkg::Export::IFW
             }
             else
             {
-                cmd_line = System::Command(binarycreator_exe)
+                cmd_line = Command(binarycreator_exe)
                                .string_arg("--config")
                                .path_arg(config_file)
                                .string_arg("--packages")
@@ -414,12 +412,10 @@ namespace vcpkg::Export::IFW
                                .path_arg(installer_file);
             }
 
-            const int exit_code =
-                System::cmd_execute_and_capture_output(cmd_line, System::get_clean_environment()).exit_code;
+            const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW installer generating failed");
 
-            System::printf(
-                System::Color::success, "Generating installer %s... done.\n", fs::generic_u8string(installer_file));
+            vcpkg::printf(Color::success, "Generating installer %s... done.\n", fs::generic_u8string(installer_file));
         }
     }
 
@@ -451,7 +447,7 @@ namespace vcpkg::Export::IFW
         // Export maintenance tool
         export_maintenance_tool(ifw_packages_dir_path, paths);
 
-        System::printf("Exporting packages %s...\n", fs::generic_u8string(ifw_packages_dir_path));
+        vcpkg::printf("Exporting packages %s...\n", fs::generic_u8string(ifw_packages_dir_path));
 
         // execute the plan
         std::map<std::string, const ExportPlanAction*> unique_packages;
@@ -463,7 +459,7 @@ namespace vcpkg::Export::IFW
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            System::print2("Exporting package ", action.spec, "...\n");
+            print2("Exporting package ", action.spec, "...\n");
 
             const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
@@ -482,11 +478,11 @@ namespace vcpkg::Export::IFW
             Install::install_package_and_write_listfile(paths, action.spec, dirs);
         }
 
-        System::printf("Exporting packages %s... done\n", fs::generic_u8string(ifw_packages_dir_path));
+        vcpkg::printf("Exporting packages %s... done\n", fs::generic_u8string(ifw_packages_dir_path));
 
         const fs::path config_file = get_config_file_path(export_id, ifw_options, paths);
 
-        System::printf("Generating configuration %s...\n", fs::generic_u8string(config_file));
+        vcpkg::printf("Generating configuration %s...\n", fs::generic_u8string(config_file));
 
         // Unique packages
         export_unique_packages(ifw_packages_dir_path, unique_packages, fs);
@@ -502,7 +498,7 @@ namespace vcpkg::Export::IFW
         // Configuration
         export_config(export_id, ifw_options, paths);
 
-        System::printf("Generating configuration %s... done.\n", fs::generic_u8string(config_file));
+        vcpkg::printf("Generating configuration %s... done.\n", fs::generic_u8string(config_file));
 
         // Do repository (optional)
         std::string ifw_repo_url = ifw_options.maybe_repository_url.value_or("");

@@ -571,7 +571,7 @@ namespace
             auto maybe_contents = paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             if (!maybe_contents.has_value())
             {
-                System::print2("Fetching baseline information from ", m_repo, "...\n");
+                print2("Fetching baseline information from ", m_repo, "...\n");
                 if (auto err = paths.git_fetch(m_repo, m_baseline_identifier))
                 {
                     Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
@@ -1179,7 +1179,7 @@ namespace vcpkg
         auto it = lockdata.find(key);
         if (it == lockdata.end())
         {
-            System::print2("Fetching registry information from ", key, "...\n");
+            print2("Fetching registry information from ", key, "...\n");
             auto x = paths.git_fetch_from_remote_registry(key, "HEAD");
             it = lockdata.emplace(key.to_string(), EntryData{x.value_or_exit(VCPKG_LINE_INFO), false}).first;
             modified = true;
@@ -1190,7 +1190,7 @@ namespace vcpkg
     {
         if (data->second.stale)
         {
-            System::print2("Fetching registry information from ", data->first, "...\n");
+            print2("Fetching registry information from ", data->first, "...\n");
             data->second.value =
                 paths.git_fetch_from_remote_registry(data->first, "HEAD").value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
@@ -1264,24 +1264,23 @@ namespace vcpkg
             }
             else
             {
-                System::print2(
-                    System::Color::warning,
-                    R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
+                print2(Color::warning,
+                       R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
     (only one of these should be used; the baseline from vcpkg-configuration.json will be used))");
             }
         }
         else if (auto default_registry = default_registry_.get())
         {
-            System::printf(System::Color::warning,
-                           "warning: the default registry has been replaced with a %s registry, but `builtin-baseline` "
-                           "is specified in vcpkg.json. This field will have no effect.\n",
-                           default_registry->kind());
+            vcpkg::printf(Color::warning,
+                          "warning: the default registry has been replaced with a %s registry, but `builtin-baseline` "
+                          "is specified in vcpkg.json. This field will have no effect.\n",
+                          default_registry->kind());
         }
         else
         {
-            System::print2(System::Color::warning,
-                           "warning: the default registry has been disabled, but `builtin-baseline` is specified in "
-                           "vcpkg.json. This field will have no effect.\n");
+            print2(Color::warning,
+                   "warning: the default registry has been disabled, but `builtin-baseline` is specified in "
+                   "vcpkg.json. This field will have no effect.\n");
         }
     }
 

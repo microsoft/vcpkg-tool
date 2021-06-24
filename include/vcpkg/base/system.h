@@ -5,7 +5,7 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/zstringview.h>
 
-namespace vcpkg::System
+namespace vcpkg
 {
     Optional<std::string> get_environment_variable(ZStringView varname) noexcept;
     void set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept;

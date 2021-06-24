@@ -41,7 +41,7 @@ static constexpr int SURVEY_INITIAL_OFFSET_IN_HOURS = SURVEY_INTERVAL_IN_HOURS -
 
 static void invalid_command(const std::string& cmd)
 {
-    System::print2(System::Color::error, "invalid command: ", cmd, '\n');
+    print2(Color::error, "invalid command: ", cmd, '\n');
     print_usage();
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
@@ -174,9 +174,9 @@ int main(const int argc, const char* const* const argv)
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 
-    System::initialize_global_job_object();
+    initialize_global_job_object();
 #endif
-    System::set_environment_variable("VCPKG_COMMAND", fs::generic_u8string(System::get_exe_path_of_current_process()));
+    set_environment_variable("VCPKG_COMMAND", fs::generic_u8string(get_exe_path_of_current_process()));
 
     Checks::register_global_shutdown_handler([]() {
         const auto elapsed_us_inner = GlobalState::timer.lock()->microseconds();
@@ -198,9 +198,9 @@ int main(const int argc, const char* const* const argv)
 
         auto elapsed_us = GlobalState::timer.lock()->microseconds();
         if (debugging)
-            System::printf("[DEBUG] Exiting after %d us (%d us)\n",
-                           static_cast<int>(elapsed_us),
-                           static_cast<int>(elapsed_us_inner));
+            vcpkg::printf("[DEBUG] Exiting after %d us (%d us)\n",
+                          static_cast<int>(elapsed_us),
+                          static_cast<int>(elapsed_us_inner));
     });
 
     {
@@ -208,7 +208,7 @@ int main(const int argc, const char* const* const argv)
         locked_metrics->track_property("version", Commands::Version::version());
     }
 
-    System::register_console_ctrl_handler();
+    register_console_ctrl_handler();
 
     load_config(fs);
 
@@ -217,7 +217,7 @@ int main(const int argc, const char* const* const argv)
       defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)) ||                                       \
      defined(_M_ARM) || defined(_M_ARM64)) &&                                                                          \
     !defined(_WIN32) && !defined(__APPLE__)
-    if (!System::get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
+    if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
     {
         Checks::exit_with_message(
             VCPKG_LINE_INFO,
@@ -239,7 +239,7 @@ int main(const int argc, const char* const* const argv)
         }
 
         auto disable_metrics_tag_file_path =
-            System::get_exe_path_of_current_process().replace_filename(fs::u8path("vcpkg.disable-metrics"));
+            get_exe_path_of_current_process().replace_filename(fs::u8path("vcpkg.disable-metrics"));
         std::error_code ec;
         if (fs.exists(disable_metrics_tag_file_path, ec) || ec)
         {
@@ -258,7 +258,7 @@ int main(const int argc, const char* const* const argv)
 
         if (args.send_metrics.value_or(false) && !metrics->metrics_enabled())
         {
-            System::print2(System::Color::warning, "Warning: passed --sendmetrics, but metrics are disabled.\n");
+            print2(Color::warning, "Warning: passed --sendmetrics, but metrics are disabled.\n");
         }
     } // unlock Metrics::g_metrics
 
@@ -288,24 +288,24 @@ int main(const int argc, const char* const* const argv)
     Metrics::g_metrics.lock()->track_property("error", exc_msg);
 
     fflush(stdout);
-    System::printf("vcpkg.exe has crashed.\n"
-                   "Please send an email to:\n"
-                   "    %s\n"
-                   "containing a brief summary of what you were trying to do and the following data blob:\n"
-                   "\n"
-                   "Version=%s\n"
-                   "EXCEPTION='%s'\n"
-                   "CMD=\n",
-                   Commands::Contact::email(),
-                   Commands::Version::version(),
-                   exc_msg);
+    vcpkg::printf("vcpkg.exe has crashed.\n"
+                  "Please send an email to:\n"
+                  "    %s\n"
+                  "containing a brief summary of what you were trying to do and the following data blob:\n"
+                  "\n"
+                  "Version=%s\n"
+                  "EXCEPTION='%s'\n"
+                  "CMD=\n",
+                  Commands::Contact::email(),
+                  Commands::Version::version(),
+                  exc_msg);
     fflush(stdout);
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
-        System::print2(Strings::to_utf8(argv[x]), "|\n");
+        print2(Strings::to_utf8(argv[x]), "|\n");
 #else
-        System::print2(argv[x], "|\n");
+        print2(argv[x], "|\n");
 #endif
     }
     fflush(stdout);

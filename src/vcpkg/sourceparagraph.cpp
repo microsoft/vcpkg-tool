@@ -1120,15 +1120,14 @@ namespace vcpkg
             Checks::check_exit(VCPKG_LINE_INFO, error_info != nullptr);
             if (!error_info->error.empty())
             {
-                System::print2(
-                    System::Color::error, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
+                print2(Color::error, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
             }
 
             if (!error_info->other_errors.empty())
             {
-                System::print2(System::Color::error, "Errors occurred while parsing ", error_info->name, "\n");
+                print2(Color::error, "Errors occurred while parsing ", error_info->name, "\n");
                 for (auto&& msg : error_info->other_errors)
-                    System::print2("    ", msg, '\n');
+                    print2("    ", msg, '\n');
             }
         }
 
@@ -1137,15 +1136,15 @@ namespace vcpkg
         {
             if (!error_info->extra_fields.empty())
             {
-                System::print2(System::Color::error,
-                               "Error: There are invalid fields in the control or manifest file of ",
-                               error_info->name,
-                               '\n');
-                System::print2("The following fields were not expected:\n");
+                print2(Color::error,
+                       "Error: There are invalid fields in the control or manifest file of ",
+                       error_info->name,
+                       '\n');
+                print2("The following fields were not expected:\n");
 
                 for (const auto& pr : error_info->extra_fields)
                 {
-                    System::print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
+                    print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
                 }
                 have_remaining_fields = true;
             }
@@ -1153,29 +1152,26 @@ namespace vcpkg
 
         if (have_remaining_fields)
         {
-            System::print2("This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
-                           Strings::join("\n    ", get_list_of_valid_fields()),
-                           "\n\n");
+            print2("This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
+                   Strings::join("\n    ", get_list_of_valid_fields()),
+                   "\n\n");
 #if defined(_WIN32)
             auto bootstrap = ".\\bootstrap-vcpkg.bat";
 #else
             auto bootstrap = "./bootstrap-vcpkg.sh";
 #endif
-            System::printf("You may need to update the vcpkg binary; try running %s to update.\n\n", bootstrap);
+            vcpkg::printf("You may need to update the vcpkg binary; try running %s to update.\n\n", bootstrap);
         }
 
         for (auto&& error_info : error_info_list)
         {
             if (!error_info->missing_fields.empty())
             {
-                System::print2(System::Color::error,
-                               "Error: There are missing fields in the control file of ",
-                               error_info->name,
-                               '\n');
-                System::print2("The following fields were missing:\n");
+                print2(Color::error, "Error: There are missing fields in the control file of ", error_info->name, '\n');
+                print2("The following fields were missing:\n");
                 for (const auto& pr : error_info->missing_fields)
                 {
-                    System::print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
+                    print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
                 }
             }
         }
@@ -1184,17 +1180,17 @@ namespace vcpkg
         {
             if (!error_info->expected_types.empty())
             {
-                System::print2(System::Color::error,
-                               "Error: There are invalid field types in the CONTROL or manifest file of ",
-                               error_info->name,
-                               '\n');
-                System::print2("The following fields had the wrong types:\n\n");
+                print2(Color::error,
+                       "Error: There are invalid field types in the CONTROL or manifest file of ",
+                       error_info->name,
+                       '\n');
+                print2("The following fields had the wrong types:\n\n");
 
                 for (const auto& pr : error_info->expected_types)
                 {
-                    System::printf("    %s was expected to be %s\n", pr.first, pr.second);
+                    vcpkg::printf("    %s was expected to be %s\n", pr.first, pr.second);
                 }
-                System::print2("\n");
+                print2("\n");
             }
         }
     }

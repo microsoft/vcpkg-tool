@@ -101,7 +101,7 @@ namespace vcpkg::Downloads
             // If the environment variable HTTPS_PROXY is set
             // use that variable as proxy. This situation might exist when user is in a company network
             // with restricted network/proxy settings
-            auto maybe_https_proxy_env = System::get_environment_variable("HTTPS_PROXY");
+            auto maybe_https_proxy_env = get_environment_variable("HTTPS_PROXY");
             if (auto p_https_proxy = maybe_https_proxy_env.get())
             {
                 std::wstring env_proxy_settings = Strings::to_utf16(*p_https_proxy);
@@ -117,7 +117,7 @@ namespace vcpkg::Downloads
             {
                 // We do not use WPAD anymore
                 // Directly read IE Proxy setting
-                auto ieProxy = System::get_windows_ie_proxy_server();
+                auto ieProxy = get_windows_ie_proxy_server();
                 if (ieProxy.has_value())
                 {
                     WINHTTP_PROXY_INFO proxy;
@@ -235,7 +235,7 @@ namespace vcpkg::Downloads
     {
         static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
-        System::Command cmd;
+        Command cmd;
         cmd.string_arg("curl")
             .string_arg("--head")
             .string_arg("--location")
@@ -249,7 +249,7 @@ namespace vcpkg::Downloads
         {
             cmd.string_arg(url);
         }
-        auto res = System::cmd_execute_and_stream_lines(cmd, [out](StringView line) {
+        auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
             if (Strings::starts_with(line, guid_marker))
             {
                 out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
@@ -282,7 +282,7 @@ namespace vcpkg::Downloads
             size_t start_size = out->size();
             static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
-            System::Command cmd;
+            Command cmd;
             cmd.string_arg("curl")
                 .string_arg("--location")
                 .string_arg("-w")
@@ -291,7 +291,7 @@ namespace vcpkg::Downloads
             {
                 cmd.string_arg(url.first).string_arg("-o").path_arg(url.second);
             }
-            auto res = System::cmd_execute_and_stream_lines(cmd, [out](StringView line) {
+            auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
                 if (Strings::starts_with(line, guid_marker))
                 {
                     out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
@@ -302,7 +302,7 @@ namespace vcpkg::Downloads
             if (start_size + url_pairs.size() > out->size())
             {
                 // curl stopped before finishing all downloads; retry after some time
-                System::print2(System::Color::warning, "Warning: an unexpected error occurred during bulk download.\n");
+                print2(Color::warning, "Warning: an unexpected error occurred during bulk download.\n");
                 std::this_thread::sleep_for(std::chrono::milliseconds(i));
                 url_pairs = View<std::pair<std::string, fs::path>>{url_pairs.begin() + out->size() - start_size,
                                                                    url_pairs.end()};
@@ -344,11 +344,11 @@ namespace vcpkg::Downloads
         if (Strings::starts_with(url, "ftp://"))
         {
             // HTTP headers are ignored for FTP clients
-            System::Command cmd;
+            Command cmd;
             cmd.string_arg("curl");
             cmd.string_arg(url);
             cmd.string_arg("-T").path_arg(file);
-            auto res = System::cmd_execute_and_capture_output(cmd);
+            auto res = cmd_execute_and_capture_output(cmd);
             if (res.exit_code != 0)
             {
                 Debug::print(res.output, '\n');
@@ -357,7 +357,7 @@ namespace vcpkg::Downloads
             }
             return 0;
         }
-        System::Command cmd;
+        Command cmd;
         cmd.string_arg("curl").string_arg("-X").string_arg("PUT");
         for (auto&& header : headers)
         {
@@ -367,7 +367,7 @@ namespace vcpkg::Downloads
         cmd.string_arg(url);
         cmd.string_arg("-T").path_arg(file);
         int code = 0;
-        auto res = System::cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
+        auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
             if (Strings::starts_with(line, guid_marker))
             {
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
@@ -520,7 +520,7 @@ namespace vcpkg::Downloads
             }
         }
 #endif
-        System::Command cmd;
+        Command cmd;
         cmd.string_arg("curl")
             .string_arg("--fail")
             .string_arg("-L")
@@ -532,7 +532,7 @@ namespace vcpkg::Downloads
         {
             cmd.string_arg("-H").string_arg(header);
         }
-        const auto out = System::cmd_execute_and_capture_output(cmd);
+        const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code != 0)
         {
             Strings::append(errors, url, ": ", out.output, '\n');
@@ -642,8 +642,7 @@ namespace vcpkg::Downloads
                     auto maybe_push = put_file_to_mirror(fs, download_path, sha512);
                     if (!maybe_push.has_value())
                     {
-                        System::print2(
-                            System::Color::warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
+                        print2(Color::warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
                     }
                     return *url;
                 }

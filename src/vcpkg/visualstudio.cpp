@@ -80,20 +80,20 @@ namespace vcpkg::VisualStudio
         const auto& fs = paths.get_filesystem();
         std::vector<VisualStudioInstance> instances;
 
-        const auto& program_files_32_bit = System::get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO);
+        const auto& program_files_32_bit = get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO);
 
         // Instances from vswhere
         const fs::path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
         if (fs.exists(vswhere_exe))
         {
-            const auto code_and_output = System::cmd_execute_and_capture_output(System::Command(vswhere_exe)
-                                                                                    .string_arg("-all")
-                                                                                    .string_arg("-prerelease")
-                                                                                    .string_arg("-legacy")
-                                                                                    .string_arg("-products")
-                                                                                    .string_arg("*")
-                                                                                    .string_arg("-format")
-                                                                                    .string_arg("xml"));
+            const auto code_and_output = cmd_execute_and_capture_output(Command(vswhere_exe)
+                                                                            .string_arg("-all")
+                                                                            .string_arg("-prerelease")
+                                                                            .string_arg("-legacy")
+                                                                            .string_arg("-products")
+                                                                            .string_arg("*")
+                                                                            .string_arg("-format")
+                                                                            .string_arg("xml"));
             Checks::check_exit(VCPKG_LINE_INFO,
                                code_and_output.exit_code == 0,
                                "Running vswhere.exe failed with message:\n%s",
@@ -140,7 +140,7 @@ namespace vcpkg::VisualStudio
         };
 
         const auto maybe_append_comntools = [&](ZStringView env_var, CStringView version, bool check_cl = true) {
-            auto maybe_comntools = System::get_environment_variable(env_var);
+            auto maybe_comntools = get_environment_variable(env_var);
             if (const auto path_as_string = maybe_comntools.get())
             {
                 // We want lexically_normal(), but it is not available
@@ -178,7 +178,7 @@ namespace vcpkg::VisualStudio
 
     std::vector<Toolset> find_toolset_instances_preferred_first(const VcpkgPaths& paths)
     {
-        using CPU = System::CPUArchitecture;
+        using CPU = CPUArchitecture;
 
         const auto& fs = paths.get_filesystem();
 
@@ -353,14 +353,14 @@ namespace vcpkg::VisualStudio
 
         if (!excluded_toolsets.empty())
         {
-            System::print2(
-                System::Color::warning,
+            print2(
+                Color::warning,
                 "Warning: The following VS instances are excluded because the English language pack is unavailable.\n");
             for (const Toolset& toolset : excluded_toolsets)
             {
-                System::print2("    ", fs::u8string(toolset.visual_studio_root_path), '\n');
+                print2("    ", fs::u8string(toolset.visual_studio_root_path), '\n');
             }
-            System::print2(System::Color::warning, "Please install the English language pack.\n");
+            print2(Color::warning, "Please install the English language pack.\n");
         }
 
         if (found_toolsets.empty() && Debug::g_debugging)

@@ -375,8 +375,8 @@ namespace vcpkg::PlatformExpression
                             // Point out in the diagnostic that they should add to the override list because that is
                             // what most users should do, however it is also valid to update the built in identifiers to
                             // recognize the name.
-                            System::printf(
-                                System::Color::error,
+                            vcpkg::printf(
+                                Color::error,
                                 "Error: Unrecognized identifer name %s. Add to override list in triplet file.\n",
                                 expr.identifier);
                             return false;

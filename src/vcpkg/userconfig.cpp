@@ -10,9 +10,9 @@ namespace vcpkg
     fs::path get_user_dir()
     {
 #if defined(_WIN32)
-        return System::get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg";
+        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg";
 #else
-        auto maybe_home = System::get_environment_variable("HOME");
+        auto maybe_home = get_environment_variable("HOME");
         return fs::path(maybe_home.value_or("/var")) / ".vcpkg";
 #endif
     }

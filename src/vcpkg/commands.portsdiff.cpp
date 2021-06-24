@@ -73,7 +73,7 @@ namespace vcpkg::Commands::PortsDiff
         for (const std::string& name : ports_to_print)
         {
             const VersionT& version = names_and_versions.at(name);
-            System::printf("    - %-14s %-16s\n", name, version);
+            vcpkg::printf("    - %-14s %-16s\n", name, version);
         }
     }
 
@@ -98,10 +98,9 @@ namespace vcpkg::Commands::PortsDiff
                        .string_arg("--")
                        .string_arg(checkout_this_dir)
                        .string_arg(".vcpkg-root");
-        System::cmd_execute_and_capture_output(cmd, System::get_clean_environment());
-        System::cmd_execute_and_capture_output(
-            paths.git_cmd_builder(dot_git_dir, temp_checkout_path).string_arg("reset"),
-            System::get_clean_environment());
+        cmd_execute_and_capture_output(cmd, get_clean_environment());
+        cmd_execute_and_capture_output(paths.git_cmd_builder(dot_git_dir, temp_checkout_path).string_arg("reset"),
+                                       get_clean_environment());
         const auto ports_at_commit = Paragraphs::load_overlay_ports(fs, temp_checkout_path / ports_dir_name_as_string);
         std::map<std::string, VersionT> names_and_versions;
         for (auto&& port : ports_at_commit)
@@ -121,7 +120,7 @@ namespace vcpkg::Commands::PortsDiff
                        .string_arg("cat-file")
                        .string_arg("-t")
                        .string_arg(git_commit_id);
-        const System::ExitCodeAndOutput output = System::cmd_execute_and_capture_output(cmd);
+        const ExitCodeAndOutput output = cmd_execute_and_capture_output(cmd);
         Checks::check_exit(
             VCPKG_LINE_INFO, output.output == VALID_COMMIT_OUTPUT, "Invalid commit id %s", git_commit_id);
     }
@@ -161,14 +160,14 @@ namespace vcpkg::Commands::PortsDiff
         const std::vector<std::string>& added_ports = setp.only_left;
         if (!added_ports.empty())
         {
-            System::printf("\nThe following %zd ports were added:\n", added_ports.size());
+            vcpkg::printf("\nThe following %zd ports were added:\n", added_ports.size());
             do_print_name_and_version(added_ports, current_names_and_versions);
         }
 
         const std::vector<std::string>& removed_ports = setp.only_right;
         if (!removed_ports.empty())
         {
-            System::printf("\nThe following %zd ports were removed:\n", removed_ports.size());
+            vcpkg::printf("\nThe following %zd ports were removed:\n", removed_ports.size());
             do_print_name_and_version(removed_ports, previous_names_and_versions);
         }
 
@@ -178,16 +177,16 @@ namespace vcpkg::Commands::PortsDiff
 
         if (!updated_ports.empty())
         {
-            System::printf("\nThe following %zd ports were updated:\n", updated_ports.size());
+            vcpkg::printf("\nThe following %zd ports were updated:\n", updated_ports.size());
             for (const UpdatedPort& p : updated_ports)
             {
-                System::printf("    - %-14s %-16s\n", p.port, p.version_diff.to_string());
+                vcpkg::printf("    - %-14s %-16s\n", p.port, p.version_diff.to_string());
             }
         }
 
         if (added_ports.empty() && removed_ports.empty() && updated_ports.empty())
         {
-            System::print2("There were no changes in the ports between the two commits.\n");
+            print2("There were no changes in the ports between the two commits.\n");
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

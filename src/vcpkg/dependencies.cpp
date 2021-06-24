@@ -1097,7 +1097,7 @@ namespace vcpkg::Dependencies
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
             action_plan.install_actions.empty())
         {
-            System::print2("All requested packages are currently installed.\n");
+            print2("All requested packages are currently installed.\n");
             return;
         }
 
@@ -1160,14 +1160,14 @@ namespace vcpkg::Dependencies
 
         if (!excluded.empty())
         {
-            System::print2("The following packages are excluded:\n", actions_to_output_string(excluded), '\n');
+            print2("The following packages are excluded:\n", actions_to_output_string(excluded), '\n');
         }
 
         if (!already_installed_plans.empty())
         {
-            System::print2("The following packages are already installed:\n",
-                           actions_to_output_string(already_installed_plans),
-                           '\n');
+            print2("The following packages are already installed:\n",
+                   actions_to_output_string(already_installed_plans),
+                   '\n');
         }
 
         if (!remove_specs.empty())
@@ -1177,35 +1177,34 @@ namespace vcpkg::Dependencies
             {
                 Strings::append(msg, to_output_string(RequestType::USER_REQUESTED, spec.to_string()), '\n');
             }
-            System::print2(msg);
+            print2(msg);
         }
 
         if (!rebuilt_plans.empty())
         {
-            System::print2("The following packages will be rebuilt:\n", actions_to_output_string(rebuilt_plans), '\n');
+            print2("The following packages will be rebuilt:\n", actions_to_output_string(rebuilt_plans), '\n');
         }
 
         if (!new_plans.empty())
         {
-            System::print2(
-                "The following packages will be built and installed:\n", actions_to_output_string(new_plans), '\n');
+            print2("The following packages will be built and installed:\n", actions_to_output_string(new_plans), '\n');
         }
 
         if (!only_install_plans.empty())
         {
-            System::print2("The following packages will be directly installed:\n",
-                           actions_to_output_string(only_install_plans),
-                           '\n');
+            print2("The following packages will be directly installed:\n",
+                   actions_to_output_string(only_install_plans),
+                   '\n');
         }
 
         if (has_non_user_requested_packages)
-            System::print2("Additional packages (*) will be modified to complete this operation.\n");
+            print2("Additional packages (*) will be modified to complete this operation.\n");
         bool have_removals = !remove_specs.empty() || !rebuilt_plans.empty();
         if (have_removals && !is_recursive)
         {
-            System::print2(System::Color::warning,
-                           "If you are sure you want to rebuild the above packages, run the command with the "
-                           "--recurse option\n");
+            print2(Color::warning,
+                   "If you are sure you want to rebuild the above packages, run the command with the "
+                   "--recurse option\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }

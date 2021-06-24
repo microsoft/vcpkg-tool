@@ -32,10 +32,7 @@ namespace vcpkg::Help
         print_usage(S);
     }
 
-    static void integrate_topic_fn(const VcpkgPaths&)
-    {
-        System::print2("Commands:\n", Commands::Integrate::get_helpstring());
-    }
+    static void integrate_topic_fn(const VcpkgPaths&) { print2("Commands:\n", Commands::Integrate::get_helpstring()); }
 
     static void help_topics(const VcpkgPaths&);
 
@@ -118,9 +115,9 @@ namespace vcpkg::Help
         { "name": "rapidjson", "version": "2020-09-14" }
     ]
 })");
-        System::print2(tbl.m_str,
-                       "\nExtended documentation is available at "
-                       "https://github.com/Microsoft/vcpkg/tree/master/docs/users/versioning.md\n");
+        print2(tbl.m_str,
+               "\nExtended documentation is available at "
+               "https://github.com/Microsoft/vcpkg/tree/master/docs/users/versioning.md\n");
     }
 
     static constexpr std::array<Topic, 17> topics = {{
@@ -145,9 +142,9 @@ namespace vcpkg::Help
 
     static void help_topics(const VcpkgPaths&)
     {
-        System::print2("Available help topics:",
-                       Strings::join("", topics, [](const Topic& topic) { return std::string("\n  ") + topic.name; }),
-                       "\n");
+        print2("Available help topics:",
+               Strings::join("", topics, [](const Topic& topic) { return std::string("\n  ") + topic.name; }),
+               "\n");
     }
 
     void help_topic_valid_triplet(const VcpkgPaths& paths)
@@ -159,28 +156,28 @@ namespace vcpkg::Help
                                   return fs::u8string(triplet_file.location);
                               });
 
-        System::print2("Available architecture triplets\n");
+        print2("Available architecture triplets\n");
 
-        System::print2("VCPKG built-in triplets:\n");
+        print2("VCPKG built-in triplets:\n");
         for (auto* triplet : triplets_per_location[fs::u8string(paths.triplets)])
         {
-            System::print2("  ", triplet->name, '\n');
+            print2("  ", triplet->name, '\n');
         }
         triplets_per_location.erase(fs::u8string(paths.triplets));
 
-        System::print2("\nVCPKG community triplets:\n");
+        print2("\nVCPKG community triplets:\n");
         for (auto* triplet : triplets_per_location[fs::u8string(paths.community_triplets)])
         {
-            System::print2("  ", triplet->name, '\n');
+            print2("  ", triplet->name, '\n');
         }
         triplets_per_location.erase(fs::u8string(paths.community_triplets));
 
         for (auto&& kv_pair : triplets_per_location)
         {
-            System::print2("\nOverlay triplets from ", kv_pair.first, ":\n");
+            print2("\nOverlay triplets from ", kv_pair.first, ":\n");
             for (auto* triplet : kv_pair.second)
             {
-                System::print2("  ", triplet->name, '\n');
+                print2("  ", triplet->name, '\n');
             }
         }
     }
@@ -208,7 +205,7 @@ namespace vcpkg::Help
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        System::print2(System::Color::error, "Error: unknown topic ", topic, '\n');
+        print2(Color::error, "Error: unknown topic ", topic, '\n');
         help_topics(paths);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }

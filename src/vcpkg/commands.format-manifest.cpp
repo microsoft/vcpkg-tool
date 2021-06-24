@@ -30,15 +30,14 @@ namespace
         auto parsed_json_opt = Json::parse(contents, manifest_path);
         if (!parsed_json_opt.has_value())
         {
-            System::printf(
-                System::Color::error, "Failed to parse %s: %s\n", path_string, parsed_json_opt.error()->format());
+            vcpkg::printf(Color::error, "Failed to parse %s: %s\n", path_string, parsed_json_opt.error()->format());
             return nullopt;
         }
 
         const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).first;
         if (!parsed_json.is_object())
         {
-            System::printf(System::Color::error, "The file %s is not an object\n", path_string);
+            vcpkg::printf(Color::error, "The file %s is not an object\n", path_string);
             return nullopt;
         }
 
@@ -47,7 +46,7 @@ namespace
         auto scf = SourceControlFile::parse_manifest_file(manifest_path, parsed_json_obj);
         if (!scf.has_value())
         {
-            System::printf(System::Color::error, "Failed to parse manifest file: %s\n", path_string);
+            vcpkg::printf(Color::error, "Failed to parse manifest file: %s\n", path_string);
             print_error_message(scf.error());
             return nullopt;
         }
@@ -74,17 +73,15 @@ namespace
 
         if (!paragraphs)
         {
-            System::printf(System::Color::error,
-                           "Failed to read paragraphs from %s: %s\n",
-                           control_path_string,
-                           paragraphs.error());
+            vcpkg::printf(
+                Color::error, "Failed to read paragraphs from %s: %s\n", control_path_string, paragraphs.error());
             return {};
         }
         auto scf_res = SourceControlFile::parse_control_file(fs::u8string(control_path),
                                                              std::move(paragraphs).value_or_exit(VCPKG_LINE_INFO));
         if (!scf_res)
         {
-            System::printf(System::Color::error, "Failed to parse control file: %s\n", control_path_string);
+            vcpkg::printf(Color::error, "Failed to parse control file: %s\n", control_path_string);
             print_error_message(scf_res.error());
             return {};
         }
@@ -114,11 +111,11 @@ namespace
         auto check = SourceControlFile::parse_manifest_file(fs::path{}, res);
         if (!check)
         {
-            System::printf(System::Color::error,
-                           R"([correctness check] Failed to parse serialized manifest file of %s
+            vcpkg::printf(Color::error,
+                          R"([correctness check] Failed to parse serialized manifest file of %s
 Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
 Error:)",
-                           data.scf.core_paragraph->name);
+                          data.scf.core_paragraph->name);
             print_error_message(check.error());
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                        R"(
@@ -204,7 +201,7 @@ namespace vcpkg::Commands::FormatManifest
 
         if (!format_all && convert_control)
         {
-            System::print2(System::Color::warning, R"(format-manifest was passed '--convert-control' without '--all'.
+            print2(Color::warning, R"(format-manifest was passed '--convert-control' without '--all'.
     This doesn't do anything:
     we will automatically convert all control files passed explicitly.)");
         }
@@ -279,7 +276,7 @@ namespace vcpkg::Commands::FormatManifest
         }
         else
         {
-            System::print2("Succeeded in formatting the manifest files.\n");
+            print2("Succeeded in formatting the manifest files.\n");
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }

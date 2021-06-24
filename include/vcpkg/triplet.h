@@ -22,7 +22,7 @@ namespace vcpkg
         const std::string& to_string() const;
         void to_string(std::string& out) const;
         size_t hash_code() const;
-        Optional<System::CPUArchitecture> guess_architecture() const noexcept;
+        Optional<CPUArchitecture> guess_architecture() const noexcept;
 
         bool operator==(Triplet other) const { return this->m_instance == other.m_instance; }
         bool operator<(Triplet other) const { return canonical_name() < other.canonical_name(); }

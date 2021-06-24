@@ -45,11 +45,11 @@ namespace vcpkg::Commands::Version
     void perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem&)
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
-        System::print2("Vcpkg package management program version ",
-                       version(),
-                       "\n"
-                       "\n"
-                       "See LICENSE.txt for license information.\n");
+        print2("Vcpkg package management program version ",
+               version(),
+               "\n"
+               "\n"
+               "See LICENSE.txt for license information.\n");
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
