@@ -10,17 +10,18 @@ using namespace vcpkg;
 
 namespace
 {
-    void clear_directory(Filesystem& fs, const fs::path& target)
+    void clear_directory(Filesystem& fs, const stdfs::path& target)
     {
         using vcpkg::print2;
         if (fs.is_directory(target))
         {
-            print2("Clearing contents of ", fs::u8string(target), "\n");
+            print2("Clearing contents of ", vcpkg::Files::u8string(target), "\n");
             fs.remove_all_inside(target, VCPKG_LINE_INFO);
         }
         else
         {
-            print2("Skipping clearing contents of ", fs::u8string(target), " because it was not a directory\n");
+            print2(
+                "Skipping clearing contents of ", vcpkg::Files::u8string(target), " because it was not a directory\n");
         }
     }
 }

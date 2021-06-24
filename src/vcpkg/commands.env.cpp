@@ -61,22 +61,25 @@ namespace vcpkg::Commands::Env
         const bool add_python = Util::Sets::contains(options.switches, OPTION_PYTHON);
 
         std::vector<std::string> path_vars;
-        if (add_bin) path_vars.push_back(fs::u8string(paths.installed / triplet.to_string() / "bin"));
-        if (add_debug_bin) path_vars.push_back(fs::u8string(paths.installed / triplet.to_string() / "debug" / "bin"));
-        if (add_include) extra_env.emplace("INCLUDE", fs::u8string(paths.installed / triplet.to_string() / "include"));
+        if (add_bin) path_vars.push_back(vcpkg::Files::u8string(paths.installed / triplet.to_string() / "bin"));
+        if (add_debug_bin)
+            path_vars.push_back(vcpkg::Files::u8string(paths.installed / triplet.to_string() / "debug" / "bin"));
+        if (add_include)
+            extra_env.emplace("INCLUDE", vcpkg::Files::u8string(paths.installed / triplet.to_string() / "include"));
         if (add_tools)
         {
             auto tools_dir = paths.installed / triplet.to_string() / "tools";
             auto tool_files = fs.get_files_non_recursive(tools_dir);
-            path_vars.push_back(fs::u8string(tools_dir));
+            path_vars.push_back(vcpkg::Files::u8string(tools_dir));
             for (auto&& tool_dir : tool_files)
             {
-                if (fs.is_directory(tool_dir)) path_vars.push_back(fs::u8string(tool_dir));
+                if (fs.is_directory(tool_dir)) path_vars.push_back(vcpkg::Files::u8string(tool_dir));
             }
         }
         if (add_python)
             extra_env.emplace("PYTHONPATH",
-                              fs::u8string(paths.installed / fs::u8path(triplet.to_string()) / fs::u8path("python")));
+                              vcpkg::Files::u8string(paths.installed / vcpkg::Files::u8path(triplet.to_string()) /
+                                                     vcpkg::Files::u8path("python")));
         if (path_vars.size() > 0) extra_env.emplace("PATH", Strings::join(";", path_vars));
         for (auto&& passthrough : pre_build_info.passthrough_env_vars)
         {

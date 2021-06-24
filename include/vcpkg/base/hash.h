@@ -30,15 +30,21 @@ namespace vcpkg::Hash
 
     std::string get_bytes_hash(const void* first, const void* last, Algorithm algo) noexcept;
     std::string get_string_hash(StringView s, Algorithm algo) noexcept;
-    std::string get_file_hash(const Filesystem& fs, const fs::path& path, Algorithm algo, std::error_code& ec) noexcept;
-    inline std::string get_file_hash(LineInfo li, const Filesystem& fs, const fs::path& path, Algorithm algo) noexcept
+    std::string get_file_hash(const Filesystem& fs,
+                              const stdfs::path& path,
+                              Algorithm algo,
+                              std::error_code& ec) noexcept;
+    inline std::string get_file_hash(LineInfo li,
+                                     const Filesystem& fs,
+                                     const stdfs::path& path,
+                                     Algorithm algo) noexcept
     {
         std::error_code ec;
         const auto result = get_file_hash(fs, path, algo, ec);
         if (ec)
         {
             Checks::exit_with_message(
-                li, "Failure to read file '%s' for hashing: %s", fs::u8string(path), ec.message());
+                li, "Failure to read file '%s' for hashing: %s", vcpkg::Files::u8string(path), ec.message());
         }
 
         return result;

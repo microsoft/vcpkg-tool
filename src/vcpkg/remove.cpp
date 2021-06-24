@@ -46,7 +46,7 @@ namespace vcpkg::Remove
 
         if (const auto lines = maybe_lines.get())
         {
-            std::vector<fs::path> dirs_touched;
+            std::vector<stdfs::path> dirs_touched;
             for (auto&& suffix : *lines)
             {
                 if (!suffix.empty() && suffix.back() == '\r') suffix.pop_back();
@@ -58,39 +58,42 @@ namespace vcpkg::Remove
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
                 {
-                    print2(Color::error, "failed: status(", fs::u8string(target), "): ", ec.message(), "\n");
+                    print2(Color::error, "failed: status(", vcpkg::Files::u8string(target), "): ", ec.message(), "\n");
                     continue;
                 }
 
-                if (fs::is_directory(status))
+                if (vcpkg::Files::is_directory(status))
                 {
                     dirs_touched.push_back(target);
                 }
-                else if (fs::is_regular_file(status) || fs::is_symlink(status))
+                else if (vcpkg::Files::is_regular_file(status) || vcpkg::Files::is_symlink(status))
                 {
                     fs.remove(target, ec);
                     if (ec)
                     {
                         // TODO: this is racy; should we ignore this error?
 #if defined(_WIN32)
-                        fs::stdfs::permissions(target, fs::perms::owner_all | fs::perms::group_all, ec);
+                        stdfs::permissions(target, stdfs::perms::owner_all | stdfs::perms::group_all, ec);
                         fs.remove(target, ec);
                         if (ec)
                         {
-                            vcpkg::printf(Color::error, "failed: remove(%s): %s\n", fs::u8string(target), ec.message());
+                            vcpkg::printf(
+                                Color::error, "failed: remove(%s): %s\n", vcpkg::Files::u8string(target), ec.message());
                         }
 #else
-                        vcpkg::printf(Color::error, "failed: remove(%s): %s\n", fs::u8string(target), ec.message());
+                        vcpkg::printf(
+                            Color::error, "failed: remove(%s): %s\n", vcpkg::Files::u8string(target), ec.message());
 #endif
                     }
                 }
-                else if (!fs::exists(status))
+                else if (!vcpkg::Files::exists(status))
                 {
-                    vcpkg::printf(Color::warning, "Warning: %s: file not found\n", fs::u8string(target));
+                    vcpkg::printf(Color::warning, "Warning: %s: file not found\n", vcpkg::Files::u8string(target));
                 }
                 else
                 {
-                    vcpkg::printf(Color::warning, "Warning: %s: cannot handle file type\n", fs::u8string(target));
+                    vcpkg::printf(
+                        Color::warning, "Warning: %s: cannot handle file type\n", vcpkg::Files::u8string(target));
                 }
             }
 

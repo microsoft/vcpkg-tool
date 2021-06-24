@@ -130,13 +130,13 @@ namespace vcpkg
     void exit_interactive_subprocess() { g_ctrl_c_state.exit_interactive(); }
 #endif
 
-    fs::path get_exe_path_of_current_process()
+    stdfs::path get_exe_path_of_current_process()
     {
 #if defined(_WIN32)
         wchar_t buf[_MAX_PATH];
         const int bytes = GetModuleFileNameW(nullptr, buf, _MAX_PATH);
         if (bytes == 0) std::abort();
-        return fs::path(buf, buf + bytes);
+        return stdfs::path(buf, buf + bytes);
 #elif defined(__APPLE__)
         static constexpr const uint32_t buff_size = 1024 * 32;
         uint32_t size = buff_size;
@@ -145,7 +145,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
         std::unique_ptr<char> canonicalPath(realpath(buf, NULL));
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
-        return fs::path(std::string(canonicalPath.get()));
+        return stdfs::path(std::string(canonicalPath.get()));
 #elif defined(__FreeBSD__)
         int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
         char exePath[2048];
@@ -153,18 +153,18 @@ namespace vcpkg
         auto rcode = sysctl(mib, 4, exePath, &len, NULL, 0);
         Checks::check_exit(VCPKG_LINE_INFO, rcode == 0, "Could not determine current executable path.");
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
-        return fs::path(exePath, exePath + len - 1);
+        return stdfs::path(exePath, exePath + len - 1);
 #elif defined(__OpenBSD__)
         const char* progname = getprogname();
         char resolved_path[PATH_MAX];
         auto ret = realpath(progname, resolved_path);
         Checks::check_exit(VCPKG_LINE_INFO, ret != nullptr, "Could not determine current executable path.");
-        return fs::u8path(resolved_path);
+        return vcpkg::Files::u8path(resolved_path);
 #else /* LINUX */
         std::array<char, 1024 * 4> buf;
         auto written = readlink("/proc/self/exe", buf.data(), buf.size());
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
-        return fs::path(buf.data(), buf.data() + written);
+        return stdfs::path(buf.data(), buf.data() + written);
 #endif
     }
 
@@ -176,14 +176,14 @@ namespace vcpkg
         : CMakeVariable(varname, varvalue.c_str())
     {
     }
-    CMakeVariable::CMakeVariable(const StringView varname, const fs::path& path)
-        : CMakeVariable(varname, fs::generic_u8string(path))
+    CMakeVariable::CMakeVariable(const StringView varname, const stdfs::path& path)
+        : CMakeVariable(varname, vcpkg::Files::generic_u8string(path))
     {
     }
     CMakeVariable::CMakeVariable(std::string var) : s(std::move(var)) { }
 
-    Command make_basic_cmake_cmd(const fs::path& cmake_tool_path,
-                                 const fs::path& cmake_script,
+    Command make_basic_cmake_cmd(const stdfs::path& cmake_tool_path,
+                                 const stdfs::path& cmake_script,
                                  const std::vector<CMakeVariable>& pass_variables)
     {
         Command cmd{cmake_tool_path};
@@ -569,7 +569,7 @@ namespace vcpkg
 
         auto process_info =
             windows_create_windowless_process(cmd_line.command_line(),
-                                              InWorkingDirectory{fs::path()},
+                                              InWorkingDirectory{stdfs::path()},
                                               {},
                                               CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
         if (!process_info.get())

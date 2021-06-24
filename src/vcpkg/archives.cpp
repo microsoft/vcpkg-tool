@@ -8,12 +8,12 @@
 
 namespace vcpkg::Archives
 {
-    void extract_archive(const VcpkgPaths& paths, const fs::path& archive, const fs::path& to_path)
+    void extract_archive(const VcpkgPaths& paths, const stdfs::path& archive, const stdfs::path& to_path)
     {
         Filesystem& fs = paths.get_filesystem();
-        const fs::path to_path_partial = fs::u8string(to_path) + ".partial"
+        const stdfs::path to_path_partial = vcpkg::Files::u8string(to_path) + ".partial"
 #if defined(_WIN32)
-                                         + "." + std::to_string(GetCurrentProcessId())
+                                            + "." + std::to_string(GetCurrentProcessId())
 #endif
             ;
 
@@ -31,7 +31,7 @@ namespace vcpkg::Archives
             recursion_limiter_sevenzip_old = true;
             const auto nuget_exe = paths.get_tool_exe(Tools::NUGET);
 
-            const std::string stem = fs::u8string(archive.stem());
+            const std::string stem = vcpkg::Files::u8string(archive.stem());
             // assuming format of [name].[version in the form d.d.d]
             // This assumption may not always hold
             std::smatch match;
@@ -39,7 +39,7 @@ namespace vcpkg::Archives
             Checks::check_exit(VCPKG_LINE_INFO,
                                has_match,
                                "Could not deduce nuget id and version from filename: %s",
-                               fs::u8string(archive));
+                               vcpkg::Files::u8string(archive));
 
             const std::string nugetid = match[1];
             const std::string version = match[2];
@@ -63,7 +63,7 @@ namespace vcpkg::Archives
             Checks::check_exit(VCPKG_LINE_INFO,
                                code_and_output.exit_code == 0,
                                "Failed to extract '%s' with message:\n%s",
-                               fs::u8string(archive),
+                               vcpkg::Files::u8string(archive),
                                code_and_output.output);
             recursion_limiter_sevenzip_old = false;
         }
@@ -73,16 +73,16 @@ namespace vcpkg::Archives
             Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
             recursion_limiter_sevenzip = true;
             const auto seven_zip = paths.get_tool_exe(Tools::SEVEN_ZIP);
-            const auto code_and_output =
-                cmd_execute_and_capture_output(Command{seven_zip}
-                                                   .string_arg("x")
-                                                   .path_arg(archive)
-                                                   .string_arg(Strings::format("-o%s", fs::u8string(to_path_partial)))
-                                                   .string_arg("-y"));
+            const auto code_and_output = cmd_execute_and_capture_output(
+                Command{seven_zip}
+                    .string_arg("x")
+                    .path_arg(archive)
+                    .string_arg(Strings::format("-o%s", vcpkg::Files::u8string(to_path_partial)))
+                    .string_arg("-y"));
             Checks::check_exit(VCPKG_LINE_INFO,
                                code_and_output.exit_code == 0,
                                "7zip failed while extracting '%s' with message:\n%s",
-                               fs::u8string(archive),
+                               vcpkg::Files::u8string(archive),
                                code_and_output.output);
             recursion_limiter_sevenzip = false;
         }
@@ -91,17 +91,20 @@ namespace vcpkg::Archives
         {
             const auto code =
                 cmd_execute(Command{"tar"}.string_arg("xzf").path_arg(archive), InWorkingDirectory{to_path_partial});
-            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", fs::u8string(archive));
+            Checks::check_exit(
+                VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", vcpkg::Files::u8string(archive));
         }
         else if (ext == ".zip")
         {
             const auto code =
                 cmd_execute(Command{"unzip"}.string_arg("-qqo").path_arg(archive), InWorkingDirectory{to_path_partial});
-            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", fs::u8string(archive));
+            Checks::check_exit(
+                VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", vcpkg::Files::u8string(archive));
         }
         else
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unexpected archive extension: %s", fs::u8string(ext));
+            Checks::exit_maybe_upgrade(
+                VCPKG_LINE_INFO, "Unexpected archive extension: %s", vcpkg::Files::u8string(ext));
         }
 #endif
 
@@ -123,8 +126,8 @@ namespace vcpkg::Archives
                            !ec,
                            "Failed to do post-extract rename-in-place.\n"
                            "fs.rename(%s, %s, %s)",
-                           fs::u8string(to_path_partial),
-                           fs::u8string(to_path),
+                           vcpkg::Files::u8string(to_path_partial),
+                           vcpkg::Files::u8string(to_path),
                            ec.message());
     }
 }

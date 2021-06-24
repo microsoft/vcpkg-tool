@@ -138,9 +138,9 @@ namespace vcpkg::Test
 
     AllowSymlinks can_create_symlinks() noexcept;
 
-    const fs::path& base_temporary_directory() noexcept;
+    const stdfs::path& base_temporary_directory() noexcept;
 
-    void create_symlink(const fs::path& file, const fs::path& target, std::error_code& ec);
+    void create_symlink(const stdfs::path& file, const stdfs::path& target, std::error_code& ec);
 
-    void create_directory_symlink(const fs::path& file, const fs::path& target, std::error_code& ec);
+    void create_directory_symlink(const stdfs::path& file, const stdfs::path& target, std::error_code& ec);
 }

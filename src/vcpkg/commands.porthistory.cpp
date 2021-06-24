@@ -189,7 +189,7 @@ namespace vcpkg::Commands::PortHistory
 
             if (maybe_output_file.has_value())
             {
-                auto output_file_path = fs::u8path(maybe_output_file.value_or_exit(VCPKG_LINE_INFO));
+                auto output_file_path = vcpkg::Files::u8path(maybe_output_file.value_or_exit(VCPKG_LINE_INFO));
                 auto& fs = paths.get_filesystem();
                 fs.write_contents(output_file_path, json_string, VCPKG_LINE_INFO);
             }

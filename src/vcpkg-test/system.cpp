@@ -130,7 +130,7 @@ TEST_CASE ("cmdlinebuilder", "[system]")
     using vcpkg::Command;
 
     Command cmd;
-    cmd.path_arg(fs::u8path("relative/path.exe"));
+    cmd.path_arg(vcpkg::Files::u8path("relative/path.exe"));
     cmd.string_arg("abc");
     cmd.string_arg("hello world!");
     cmd.string_arg("|");
@@ -139,7 +139,7 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 
     cmd.clear();
 
-    cmd.path_arg(fs::u8path("trailing\\slash\\"));
+    cmd.path_arg(vcpkg::Files::u8path("trailing\\slash\\"));
     cmd.string_arg("inner\"quotes");
 #ifdef _WIN32
     REQUIRE(cmd.command_line() == "\"trailing\\slash\\\\\" \"inner\\\"quotes\"");

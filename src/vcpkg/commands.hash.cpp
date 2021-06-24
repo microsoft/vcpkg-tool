@@ -20,7 +20,7 @@ namespace vcpkg::Commands::Hash
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
 
-        const fs::path file_to_hash = args.command_arguments[0];
+        const stdfs::path file_to_hash = args.command_arguments[0];
 
         auto algorithm = vcpkg::Hash::Algorithm::Sha512;
         if (args.command_arguments.size() == 2)

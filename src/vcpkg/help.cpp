@@ -153,24 +153,24 @@ namespace vcpkg::Help
         vcpkg::Util::group_by(paths.get_available_triplets(),
                               &triplets_per_location,
                               [](const VcpkgPaths::TripletFile& triplet_file) -> std::string {
-                                  return fs::u8string(triplet_file.location);
+                                  return vcpkg::Files::u8string(triplet_file.location);
                               });
 
         print2("Available architecture triplets\n");
 
         print2("VCPKG built-in triplets:\n");
-        for (auto* triplet : triplets_per_location[fs::u8string(paths.triplets)])
+        for (auto* triplet : triplets_per_location[vcpkg::Files::u8string(paths.triplets)])
         {
             print2("  ", triplet->name, '\n');
         }
-        triplets_per_location.erase(fs::u8string(paths.triplets));
+        triplets_per_location.erase(vcpkg::Files::u8string(paths.triplets));
 
         print2("\nVCPKG community triplets:\n");
-        for (auto* triplet : triplets_per_location[fs::u8string(paths.community_triplets)])
+        for (auto* triplet : triplets_per_location[vcpkg::Files::u8string(paths.community_triplets)])
         {
             print2("  ", triplet->name, '\n');
         }
-        triplets_per_location.erase(fs::u8string(paths.community_triplets));
+        triplets_per_location.erase(vcpkg::Files::u8string(paths.community_triplets));
 
         for (auto&& kv_pair : triplets_per_location)
         {

@@ -225,14 +225,14 @@ namespace vcpkg::Build
         std::string cmake_system_name;
         std::string cmake_system_version;
         Optional<std::string> platform_toolset;
-        Optional<fs::path> visual_studio_path;
+        Optional<stdfs::path> visual_studio_path;
         Optional<std::string> external_toolchain_file;
         Optional<ConfigurationType> build_type;
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
 
-        fs::path toolchain_file() const;
+        stdfs::path toolchain_file() const;
         bool using_vcvars() const;
 
     private:
@@ -319,7 +319,7 @@ namespace vcpkg::Build
         BuildPolicies policies;
     };
 
-    BuildInfo read_build_info(const Filesystem& fs, const fs::path& filepath);
+    BuildInfo read_build_info(const Filesystem& fs, const stdfs::path& filepath);
 
     struct AbiEntry
     {
@@ -348,7 +348,7 @@ namespace vcpkg::Build
         Optional<const Toolset&> toolset;
         Optional<const std::string&> triplet_abi;
         std::string package_abi;
-        Optional<fs::path> abi_tag_file;
+        Optional<stdfs::path> abi_tag_file;
         Optional<const CompilerInfo&> compiler_info;
     };
 
@@ -372,8 +372,8 @@ namespace vcpkg::Build
             Cache<std::string, std::string> compiler_hashes;
             Cache<std::string, CompilerInfo> compiler_info;
         };
-        Cache<fs::path, TripletMapEntry> m_triplet_cache;
-        Cache<fs::path, std::string> m_toolchain_cache;
+        Cache<stdfs::path, TripletMapEntry> m_triplet_cache;
+        Cache<stdfs::path, std::string> m_toolchain_cache;
 
 #if defined(_WIN32)
         struct EnvMapEntry

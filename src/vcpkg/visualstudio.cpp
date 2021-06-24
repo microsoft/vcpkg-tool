@@ -57,19 +57,19 @@ namespace vcpkg::VisualStudio
             return left.version > right.version;
         }
 
-        VisualStudioInstance(fs::path&& root_path, std::string&& version, const ReleaseType& release_type)
+        VisualStudioInstance(stdfs::path&& root_path, std::string&& version, const ReleaseType& release_type)
             : root_path(std::move(root_path)), version(std::move(version)), release_type(release_type)
         {
         }
 
-        fs::path root_path;
+        stdfs::path root_path;
         std::string version;
         ReleaseType release_type;
 
         std::string to_string() const
         {
             return Strings::format(
-                "%s, %s, %s", fs::u8string(root_path), version, release_type_to_string(release_type));
+                "%s, %s, %s", vcpkg::Files::u8string(root_path), version, release_type_to_string(release_type));
         }
 
         std::string major_version() const { return version.substr(0, 2); }
@@ -83,7 +83,7 @@ namespace vcpkg::VisualStudio
         const auto& program_files_32_bit = get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO);
 
         // Instances from vswhere
-        const fs::path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
+        const stdfs::path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
         if (fs.exists(vswhere_exe))
         {
             const auto code_and_output = cmd_execute_and_capture_output(Command(vswhere_exe)
@@ -127,7 +127,7 @@ namespace vcpkg::VisualStudio
             }
         }
 
-        const auto maybe_append_path = [&](fs::path&& path_root, CStringView version, bool check_cl = true) {
+        const auto maybe_append_path = [&](stdfs::path&& path_root, CStringView version, bool check_cl = true) {
             if (check_cl)
             {
                 const auto cl_exe = path_root / "VC" / "bin" / "cl.exe";
@@ -145,7 +145,7 @@ namespace vcpkg::VisualStudio
             {
                 // We want lexically_normal(), but it is not available
                 // Correct root path might be 2 or 3 levels up, depending on if the path has trailing backslash.
-                auto common7_tools = fs::u8path(*path_as_string);
+                auto common7_tools = vcpkg::Files::u8path(*path_as_string);
                 if (common7_tools.filename().empty())
                     maybe_append_path(common7_tools.parent_path().parent_path().parent_path(), version, check_cl);
                 else
@@ -153,7 +153,7 @@ namespace vcpkg::VisualStudio
             }
         };
 
-        const auto maybe_append_legacy_vs = [&](ZStringView env_var, const fs::path& dir, CStringView version) {
+        const auto maybe_append_legacy_vs = [&](ZStringView env_var, const stdfs::path& dir, CStringView version) {
             // VS instance from environment variable
             maybe_append_comntools(env_var, version);
             // VS instance from Program Files
@@ -183,7 +183,7 @@ namespace vcpkg::VisualStudio
         const auto& fs = paths.get_filesystem();
 
         // Note: this will contain a mix of vcvarsall.bat locations and dumpbin.exe locations.
-        std::vector<fs::path> paths_examined;
+        std::vector<stdfs::path> paths_examined;
 
         std::vector<Toolset> found_toolsets;
         std::vector<Toolset> excluded_toolsets;
@@ -200,11 +200,11 @@ namespace vcpkg::VisualStudio
             const std::string major_version = vs_instance.major_version();
             if (major_version >= "15")
             {
-                const fs::path vc_dir = vs_instance.root_path / "VC";
+                const stdfs::path vc_dir = vs_instance.root_path / "VC";
 
                 // Skip any instances that do not have vcvarsall.
-                const fs::path vcvarsall_dir = vc_dir / "Auxiliary" / "Build";
-                const fs::path vcvarsall_bat = vcvarsall_dir / "vcvarsall.bat";
+                const stdfs::path vcvarsall_dir = vc_dir / "Auxiliary" / "Build";
+                const stdfs::path vcvarsall_bat = vcvarsall_dir / "vcvarsall.bat";
                 paths_examined.push_back(vcvarsall_bat);
                 if (!fs.exists(vcvarsall_bat)) continue;
 
@@ -228,20 +228,21 @@ namespace vcpkg::VisualStudio
                     supported_architectures.push_back({"amd64_arm64", CPU::X64, CPU::ARM64});
 
                 // Locate the "best" MSVC toolchain version
-                const fs::path msvc_path = vc_dir / "Tools" / "MSVC";
-                std::vector<fs::path> msvc_subdirectories = fs.get_files_non_recursive(msvc_path);
+                const stdfs::path msvc_path = vc_dir / "Tools" / "MSVC";
+                std::vector<stdfs::path> msvc_subdirectories = fs.get_files_non_recursive(msvc_path);
                 Util::erase_remove_if(msvc_subdirectories,
-                                      [&fs](const fs::path& path) { return !fs.is_directory(path); });
+                                      [&fs](const stdfs::path& path) { return !fs.is_directory(path); });
 
                 // Sort them so that latest comes first
-                std::sort(
-                    msvc_subdirectories.begin(),
-                    msvc_subdirectories.end(),
-                    [](const fs::path& left, const fs::path& right) { return left.filename() > right.filename(); });
+                std::sort(msvc_subdirectories.begin(),
+                          msvc_subdirectories.end(),
+                          [](const stdfs::path& left, const stdfs::path& right) {
+                              return left.filename() > right.filename();
+                          });
 
-                for (const fs::path& subdir : msvc_subdirectories)
+                for (const stdfs::path& subdir : msvc_subdirectories)
                 {
-                    auto toolset_version_full = fs::u8string(subdir.filename());
+                    auto toolset_version_full = vcpkg::Files::u8string(subdir.filename());
                     auto toolset_version_prefix = toolset_version_full.substr(0, 4);
                     CStringView toolset_version;
                     std::string vcvars_option;
@@ -265,7 +266,7 @@ namespace vcpkg::VisualStudio
                         // unknown toolset minor version
                         continue;
                     }
-                    const fs::path dumpbin_path = subdir / "bin" / "HostX86" / "x86" / "dumpbin.exe";
+                    const stdfs::path dumpbin_path = subdir / "bin" / "HostX86" / "x86" / "dumpbin.exe";
                     paths_examined.push_back(dumpbin_path);
                     if (fs.exists(dumpbin_path))
                     {
@@ -305,15 +306,15 @@ namespace vcpkg::VisualStudio
 
             if (major_version == "14" || major_version == "12")
             {
-                const fs::path vcvarsall_bat = vs_instance.root_path / "VC" / "vcvarsall.bat";
+                const stdfs::path vcvarsall_bat = vs_instance.root_path / "VC" / "vcvarsall.bat";
 
                 paths_examined.push_back(vcvarsall_bat);
                 if (fs.exists(vcvarsall_bat))
                 {
-                    const fs::path vs_dumpbin_exe = vs_instance.root_path / "VC" / "bin" / "dumpbin.exe";
+                    const stdfs::path vs_dumpbin_exe = vs_instance.root_path / "VC" / "bin" / "dumpbin.exe";
                     paths_examined.push_back(vs_dumpbin_exe);
 
-                    const fs::path vs_bin_dir = vcvarsall_bat.parent_path() / "bin";
+                    const stdfs::path vs_bin_dir = vcvarsall_bat.parent_path() / "bin";
                     std::vector<ToolsetArchOption> supported_architectures;
                     if (fs.exists(vs_bin_dir / "vcvars32.bat"))
                         supported_architectures.push_back({"x86", CPU::X86, CPU::X86});
@@ -358,7 +359,7 @@ namespace vcpkg::VisualStudio
                 "Warning: The following VS instances are excluded because the English language pack is unavailable.\n");
             for (const Toolset& toolset : excluded_toolsets)
             {
-                print2("    ", fs::u8string(toolset.visual_studio_root_path), '\n');
+                print2("    ", vcpkg::Files::u8string(toolset.visual_studio_root_path), '\n');
             }
             print2(Color::warning, "Please install the English language pack.\n");
         }
@@ -367,9 +368,9 @@ namespace vcpkg::VisualStudio
         {
             Debug::print("Could not locate a complete Visual Studio instance\n");
             Debug::print("The following paths were examined:\n");
-            for (const fs::path& path : paths_examined)
+            for (const stdfs::path& path : paths_examined)
             {
-                Debug::print("    ", fs::u8string(path), '\n');
+                Debug::print("    ", vcpkg::Files::u8string(path), '\n');
             }
         }
 

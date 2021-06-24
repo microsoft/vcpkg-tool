@@ -1023,7 +1023,7 @@ namespace vcpkg
         }
     }
 
-    Optional<std::string> SourceControlFile::check_against_feature_flags(const fs::path& origin,
+    Optional<std::string> SourceControlFile::check_against_feature_flags(const stdfs::path& origin,
                                                                          const FeatureFlagSettings& flags,
                                                                          bool is_default_builtin_registry) const
     {
@@ -1037,7 +1037,7 @@ namespace vcpkg
                     {
                         Metrics::g_metrics.lock()->track_property("error-versioning-disabled", "defined");
                         return Strings::concat(
-                            fs::u8string(origin),
+                            vcpkg::Files::u8string(origin),
                             " was rejected because it uses constraints and the `",
                             VcpkgCmdArguments::VERSIONS_FEATURE,
                             "` feature flag is disabled.\nThis can be fixed by removing uses of \"version>=\".\n",
@@ -1057,7 +1057,7 @@ namespace vcpkg
             if (core_paragraph->overrides.size() != 0)
             {
                 Metrics::g_metrics.lock()->track_property("error-versioning-disabled", "defined");
-                return Strings::concat(fs::u8string(origin),
+                return Strings::concat(vcpkg::Files::u8string(origin),
                                        " was rejected because it uses overrides and the `",
                                        VcpkgCmdArguments::VERSIONS_FEATURE,
                                        "` feature flag is disabled.\nThis can be fixed by removing \"overrides\".\n",
@@ -1068,7 +1068,7 @@ namespace vcpkg
             {
                 Metrics::g_metrics.lock()->track_property("error-versioning-disabled", "defined");
                 return Strings::concat(
-                    fs::u8string(origin),
+                    vcpkg::Files::u8string(origin),
                     " was rejected because it uses builtin-baseline and the `",
                     VcpkgCmdArguments::VERSIONS_FEATURE,
                     "` feature flag is disabled.\nThis can be fixed by removing \"builtin-baseline\".\n",
@@ -1087,7 +1087,7 @@ namespace vcpkg
                 {
                     Metrics::g_metrics.lock()->track_property("error-versioning-no-baseline", "defined");
                     return Strings::concat(
-                        fs::u8string(origin),
+                        vcpkg::Files::u8string(origin),
                         " was rejected because it uses \"version>=\" without setting a \"builtin-baseline\".\n",
                         s_extended_help);
                 }
@@ -1096,7 +1096,7 @@ namespace vcpkg
                 {
                     Metrics::g_metrics.lock()->track_property("error-versioning-no-baseline", "defined");
                     return Strings::concat(
-                        fs::u8string(origin),
+                        vcpkg::Files::u8string(origin),
                         " was rejected because it uses \"overrides\" without setting a \"builtin-baseline\".\n",
                         s_extended_help);
                 }
@@ -1105,10 +1105,10 @@ namespace vcpkg
         return nullopt;
     }
 
-    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_file(const fs::path& path_to_manifest,
+    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_file(const stdfs::path& path_to_manifest,
                                                                                    const Json::Object& manifest)
     {
-        return parse_manifest_object(fs::u8string(path_to_manifest), manifest);
+        return parse_manifest_object(vcpkg::Files::u8string(path_to_manifest), manifest);
     }
 
     void print_error_message(Span<const std::unique_ptr<Parse::ParseControlErrorInfo>> error_info_list)

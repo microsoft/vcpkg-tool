@@ -230,12 +230,12 @@ namespace vcpkg::Paragraphs
         }
     }
 
-    ExpectedS<Paragraph> get_single_paragraph(const Filesystem& fs, const fs::path& control_path)
+    ExpectedS<Paragraph> get_single_paragraph(const Filesystem& fs, const stdfs::path& control_path)
     {
         const Expected<std::string> contents = fs.read_contents(control_path);
         if (auto spgh = contents.get())
         {
-            return parse_single_paragraph(*spgh, fs::u8string(control_path));
+            return parse_single_paragraph(*spgh, vcpkg::Files::u8string(control_path));
         }
 
         return contents.error().message();
@@ -246,12 +246,12 @@ namespace vcpkg::Paragraphs
         return parse_paragraphs(text, origin);
     }
 
-    ExpectedS<std::vector<Paragraph>> get_paragraphs(const Filesystem& fs, const fs::path& control_path)
+    ExpectedS<std::vector<Paragraph>> get_paragraphs(const Filesystem& fs, const stdfs::path& control_path)
     {
         const Expected<std::string> contents = fs.read_contents(control_path);
         if (auto spgh = contents.get())
         {
-            return parse_paragraphs(*spgh, fs::u8string(control_path));
+            return parse_paragraphs(*spgh, vcpkg::Files::u8string(control_path));
         }
 
         return contents.error().message();
@@ -262,9 +262,10 @@ namespace vcpkg::Paragraphs
         return PghParser(str, origin).get_paragraphs();
     }
 
-    bool is_port_directory(const Filesystem& fs, const fs::path& path)
+    bool is_port_directory(const Filesystem& fs, const stdfs::path& path)
     {
-        return fs.exists(path / fs::u8path("CONTROL")) || fs.exists(path / fs::u8path("vcpkg.json"));
+        return fs.exists(path / vcpkg::Files::u8path("CONTROL")) ||
+               fs.exists(path / vcpkg::Files::u8path("vcpkg.json"));
     }
 
     static ParseExpected<SourceControlFile> try_load_manifest_object(
@@ -302,7 +303,7 @@ namespace vcpkg::Paragraphs
 
     static ParseExpected<SourceControlFile> try_load_manifest(const Filesystem& fs,
                                                               const std::string& port_name,
-                                                              const fs::path& path_to_manifest,
+                                                              const stdfs::path& path_to_manifest,
                                                               std::error_code& ec)
     {
         (void)port_name;
@@ -311,7 +312,7 @@ namespace vcpkg::Paragraphs
         auto res = Json::parse_file(fs, path_to_manifest, ec);
         if (ec) return error_info;
 
-        return try_load_manifest_object(fs::u8string(path_to_manifest), res);
+        return try_load_manifest_object(vcpkg::Files::u8string(path_to_manifest), res);
     }
 
     ParseExpected<SourceControlFile> try_load_port_text(const std::string& text,
@@ -329,30 +330,31 @@ namespace vcpkg::Paragraphs
             return SourceControlFile::parse_control_file(origin, std::move(*vector_pghs));
         }
         auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->name = fs::u8string(origin);
+        error_info->name = vcpkg::Files::u8string(origin);
         error_info->error = pghs.error();
         return error_info;
     }
 
-    ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const fs::path& path)
+    ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const stdfs::path& path)
     {
-        const auto path_to_manifest = path / fs::u8path("vcpkg.json");
-        const auto path_to_control = path / fs::u8path("CONTROL");
+        const auto path_to_manifest = path / vcpkg::Files::u8path("vcpkg.json");
+        const auto path_to_control = path / vcpkg::Files::u8path("CONTROL");
         if (fs.exists(path_to_manifest))
         {
             vcpkg::Checks::check_exit(VCPKG_LINE_INFO,
                                       !fs.exists(path_to_control),
                                       "Found both manifest and CONTROL file in port %s; please rename one or the other",
-                                      fs::u8string(path));
+                                      vcpkg::Files::u8string(path));
 
             std::error_code ec;
-            auto res = try_load_manifest(fs, fs::u8string(path.filename()), path_to_manifest, ec);
+            auto res = try_load_manifest(fs, vcpkg::Files::u8string(path.filename()), path_to_manifest, ec);
             if (ec)
             {
                 auto error_info = std::make_unique<ParseControlErrorInfo>();
-                error_info->name = fs::u8string(path.filename());
-                error_info->error = Strings::format(
-                    "Failed to load manifest file for port: %s\n", fs::u8string(path_to_manifest), ec.message());
+                error_info->name = vcpkg::Files::u8string(path.filename());
+                error_info->error = Strings::format("Failed to load manifest file for port: %s\n",
+                                                    vcpkg::Files::u8string(path_to_manifest),
+                                                    ec.message());
                 return error_info;
             }
 
@@ -364,23 +366,24 @@ namespace vcpkg::Paragraphs
             ExpectedS<std::vector<Paragraph>> pghs = get_paragraphs(fs, path_to_control);
             if (auto vector_pghs = pghs.get())
             {
-                return SourceControlFile::parse_control_file(fs::u8string(path_to_control), std::move(*vector_pghs));
+                return SourceControlFile::parse_control_file(vcpkg::Files::u8string(path_to_control),
+                                                             std::move(*vector_pghs));
             }
             auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = fs::u8string(path.filename());
+            error_info->name = vcpkg::Files::u8string(path.filename());
             error_info->error = pghs.error();
             return error_info;
         }
 
         auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->name = fs::u8string(path.filename());
+        error_info->name = vcpkg::Files::u8string(path.filename());
         if (fs.exists(path))
         {
             error_info->error = "Failed to find either a CONTROL file or vcpkg.json file.";
         }
         else
         {
-            error_info->error = "The port directory (" + fs::u8string(path) + ") does not exist";
+            error_info->error = "The port directory (" + vcpkg::Files::u8string(path) + ") does not exist";
         }
         return error_info;
     }
@@ -402,7 +405,7 @@ namespace vcpkg::Paragraphs
             if (bcf.core_paragraph.spec != spec)
             {
                 return Strings::concat("Mismatched spec in package at ",
-                                       fs::u8string(paths.package_dir(spec)),
+                                       vcpkg::Files::u8string(paths.package_dir(spec)),
                                        ": expected ",
                                        spec,
                                        ", actual ",
@@ -501,7 +504,7 @@ namespace vcpkg::Paragraphs
         return std::move(results.paragraphs);
     }
 
-    std::vector<SourceControlFileLocation> load_overlay_ports(const Filesystem& fs, const fs::path& directory)
+    std::vector<SourceControlFileLocation> load_overlay_ports(const Filesystem& fs, const stdfs::path& directory)
     {
         LoadResults ret;
 

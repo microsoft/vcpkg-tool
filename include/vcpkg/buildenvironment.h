@@ -10,6 +10,6 @@
 namespace vcpkg
 {
     Command make_cmake_cmd(const VcpkgPaths& paths,
-                           const fs::path& cmake_script,
+                           const stdfs::path& cmake_script,
                            std::vector<CMakeVariable>&& pass_variables);
 }

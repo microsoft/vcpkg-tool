@@ -35,7 +35,7 @@ static Json::Object parse_json_object(StringView sv)
 static Parse::ParseExpected<SourceControlFile> test_parse_manifest(StringView sv, bool expect_fail = false)
 {
     auto object = parse_json_object(sv);
-    auto res = SourceControlFile::parse_manifest_file(fs::u8path("<test manifest>"), object);
+    auto res = SourceControlFile::parse_manifest_file(vcpkg::Files::u8path("<test manifest>"), object);
     if (!res.has_value() && !expect_fail)
     {
         print_error_message(res.error());
@@ -798,18 +798,18 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
 
     std::vector<SourceControlFile> scfs;
 
-    for (auto dir : fs::directory_iterator(paths.builtin_ports_directory()))
+    for (auto dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
     {
-        const auto control = dir / fs::u8path("CONTROL");
-        const auto manifest = dir / fs::u8path("vcpkg.json");
+        const auto control = dir / vcpkg::Files::u8path("CONTROL");
+        const auto manifest = dir / vcpkg::Files::u8path("vcpkg.json");
         if (fs.exists(control))
         {
-            INFO(fs::u8string(control));
+            INFO(vcpkg::Files::u8string(control));
             auto contents = fs.read_contents(control, VCPKG_LINE_INFO);
-            auto pghs = Paragraphs::parse_paragraphs(contents, fs::u8string(control));
+            auto pghs = Paragraphs::parse_paragraphs(contents, vcpkg::Files::u8string(control));
             REQUIRE(pghs);
 
-            auto scf = SourceControlFile::parse_control_file(fs::u8string(control),
+            auto scf = SourceControlFile::parse_control_file(vcpkg::Files::u8string(control),
                                                              std::move(pghs).value_or_exit(VCPKG_LINE_INFO));
             if (!scf)
             {
