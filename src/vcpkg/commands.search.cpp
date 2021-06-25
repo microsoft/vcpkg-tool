@@ -181,6 +181,7 @@ namespace vcpkg::Commands::Search
         if (!enable_json)
         {
             System::print2(
+                "The search result is maybe outdated. Execute `git pull` to get the latest results.\n"
                 "\nIf your library is not listed, please open an issue at and/or consider making a pull request:\n"
                 "    https://github.com/Microsoft/vcpkg/issues\n");
         }
