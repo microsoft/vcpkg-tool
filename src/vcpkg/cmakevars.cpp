@@ -139,9 +139,9 @@ endmacro()
                             "\")\n");
         }
 
-        path path = paths.buildtrees / Strings::concat(tag_extract_id++, ".vcpkg_tags.cmake");
-        fs.write_contents_and_dirs(path, extraction_file, VCPKG_LINE_INFO);
-        return path;
+        auto tags_path = paths.buildtrees / Strings::concat(tag_extract_id++, ".vcpkg_tags.cmake");
+        fs.write_contents_and_dirs(tags_path, extraction_file, VCPKG_LINE_INFO);
+        return tags_path;
     }
 
     path TripletCMakeVarProvider::create_dep_info_extraction_file(const View<PackageSpec> specs) const
@@ -166,9 +166,9 @@ endmacro()
                 extraction_file, "vcpkg_get_dep_info(", spec.name(), " ", emitted_triplets[spec.triplet()], ")\n");
         }
 
-        path path = paths.buildtrees / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
-        fs.write_contents_and_dirs(path, extraction_file, VCPKG_LINE_INFO);
-        return path;
+        auto dep_info_path = paths.buildtrees / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
+        fs.write_contents_and_dirs(dep_info_path, extraction_file, VCPKG_LINE_INFO);
+        return dep_info_path;
     }
 
     void TripletCMakeVarProvider::launch_and_split(

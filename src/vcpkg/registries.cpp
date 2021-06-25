@@ -102,7 +102,7 @@ namespace
 
         struct VersionsTreePathResult
         {
-            path path;
+            path p;
             bool stale;
         };
 
@@ -146,12 +146,17 @@ namespace
 
     struct BuiltinPortTreeRegistryEntry final : RegistryEntry
     {
+        BuiltinPortTreeRegistryEntry(StringView name_, path root_, VersionT version_)
+            : name(name_.to_string()), root(root_), version(version_)
+        {
+        }
+
         View<VersionT> get_port_versions() const override { return {&version, 1}; }
         ExpectedS<path> get_path_to_version(const VcpkgPaths&, const VersionT& v) const override
         {
             if (v == version)
             {
-                return path;
+                return root;
             }
 
             return {Strings::format("Error: no version entry for %s at version %s.\n"
@@ -163,7 +168,7 @@ namespace
         }
 
         std::string name;
-        path path;
+        path root;
         VersionT version;
     };
 
@@ -245,7 +250,7 @@ namespace
 
         // only one of these may be non-empty
         std::string git_tree;
-        path path;
+        path p;
     };
 
     // VersionDbType::Git => VersionDbEntry.git_tree is filled
@@ -338,12 +343,10 @@ namespace
 
                 if (scf->core_paragraph->name == port_name)
                 {
-                    auto res = std::make_unique<BuiltinPortTreeRegistryEntry>();
-                    res->name = std::move(scf->core_paragraph->name);
-                    res->path = std::move(port_directory);
-                    res->version = scf->to_versiont();
-                    return res;
+                    return std::make_unique<BuiltinPortTreeRegistryEntry>(
+                        scf->core_paragraph->name, port_directory, scf->to_versiont());
                 }
+
                 Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                            "Error: Failed to load port from %s: names did not match: '%s' != '%s'",
                                            vcpkg::u8string(port_directory),
@@ -518,7 +521,7 @@ namespace
         for (auto&& version_entry : version_entries)
         {
             res->port_versions.push_back(std::move(version_entry.version));
-            res->version_paths.push_back(std::move(version_entry.path));
+            res->version_paths.push_back(std::move(version_entry.p));
         }
         return res;
     }
@@ -547,7 +550,7 @@ namespace
 #endif
         auto vtp = parent.get_stale_versions_tree_path(*parent.m_paths);
         stale = vtp.stale;
-        fill_data_from_path(parent.m_paths->get_filesystem(), vtp.path);
+        fill_data_from_path(parent.m_paths->get_filesystem(), vtp.p);
     }
 
     Optional<VersionT> GitRegistry::get_baseline_version(const VcpkgPaths& paths, StringView port_name) const
@@ -826,7 +829,7 @@ namespace
                             "A registry path must start with `$` to mean the registry root; e.g., `$/foo/bar`");
                     }
 
-                    ret.path = registry_root;
+                    ret.p = registry_root;
                     ++it;
                     std::for_each(it, p.end(), [&r, &ret](const path& p) {
                         if (p == "..")
@@ -835,7 +838,7 @@ namespace
                         }
                         else
                         {
-                            ret.path /= p;
+                            ret.p /= p;
                         }
                     });
 
@@ -981,10 +984,10 @@ namespace
             r.optional_object_field(obj, BASELINE, baseline, baseline_deserializer);
             r.check_for_unexpected_fields(obj, valid_filesystem_fields(), "a filesystem registry");
 
-            path path;
-            r.required_object_field("a filesystem registry", obj, PATH, path, Json::PathDeserializer::instance);
+            path p;
+            r.required_object_field("a filesystem registry", obj, PATH, p, Json::PathDeserializer::instance);
 
-            res = std::make_unique<FilesystemRegistry>(combine(config_directory, path), std::move(baseline));
+            res = std::make_unique<FilesystemRegistry>(combine(config_directory, p), std::move(baseline));
         }
         else if (kind == KIND_GIT)
         {

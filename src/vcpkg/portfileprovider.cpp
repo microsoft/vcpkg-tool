@@ -22,19 +22,19 @@ namespace
 
     struct OverlayRegistryEntry final : RegistryEntry
     {
-        OverlayRegistryEntry(path&& p, VersionT&& v) : path(p), version(v) { }
+        OverlayRegistryEntry(path&& p, VersionT&& v) : root(p), version(v) { }
 
         View<VersionT> get_port_versions() const override { return {&version, 1}; }
         ExpectedS<path> get_path_to_version(const VcpkgPaths&, const VersionT& v) const override
         {
             if (v == version)
             {
-                return path;
+                return root;
             }
             return Strings::format("Version %s not found; only %s is available.", v.to_string(), version.to_string());
         }
 
-        path path;
+        path root;
         VersionT version;
     };
 }

@@ -142,7 +142,7 @@ namespace vcpkg
 
     struct PathAndVersion
     {
-        path path;
+        path p;
         std::string version;
     };
 
@@ -578,7 +578,7 @@ gsutil version: 4.58
                 if (tool == Tools::IFW_REPOGEN)
                     return get_tool_path(paths, Tools::IFW_INSTALLER_BASE).parent_path() / "repogen.exe";
 
-                return get_tool_pathversion(paths, tool).path;
+                return get_tool_pathversion(paths, tool).p;
             });
         }
 
