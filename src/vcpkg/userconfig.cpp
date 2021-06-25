@@ -7,17 +7,17 @@
 
 namespace vcpkg
 {
-    stdfs::path get_user_dir()
+    path get_user_dir()
     {
 #if defined(_WIN32)
         return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg";
 #else
         auto maybe_home = get_environment_variable("HOME");
-        return stdfs::path(maybe_home.value_or("/var")) / ".vcpkg";
+        return path(maybe_home.value_or("/var")) / ".vcpkg";
 #endif
     }
 
-    static stdfs::path get_config_path() { return get_user_dir() / "config"; }
+    static path get_config_path() { return get_user_dir() / "config"; }
 
     UserConfig UserConfig::try_read_data(const Filesystem& fs)
     {

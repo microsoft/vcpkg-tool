@@ -23,10 +23,10 @@ namespace
 
         virtual Optional<Configuration> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
-        ConfigurationDeserializer(const stdfs::path& configuration_directory);
+        ConfigurationDeserializer(const path& configuration_directory);
 
     private:
-        stdfs::path configuration_directory;
+        path configuration_directory;
     };
 
     constexpr StringLiteral ConfigurationDeserializer::DEFAULT_REGISTRY;
@@ -56,15 +56,14 @@ namespace
         return Configuration{std::move(registries)};
     }
 
-    ConfigurationDeserializer::ConfigurationDeserializer(const stdfs::path& configuration_directory)
+    ConfigurationDeserializer::ConfigurationDeserializer(const path& configuration_directory)
         : configuration_directory(configuration_directory)
     {
     }
 
 }
 
-std::unique_ptr<Json::IDeserializer<Configuration>> vcpkg::make_configuration_deserializer(
-    const stdfs::path& config_directory)
+std::unique_ptr<Json::IDeserializer<Configuration>> vcpkg::make_configuration_deserializer(const path& config_directory)
 {
     return std::make_unique<ConfigurationDeserializer>(config_directory);
 }

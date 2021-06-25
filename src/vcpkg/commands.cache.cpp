@@ -15,8 +15,7 @@ namespace vcpkg::Commands::Cache
         std::vector<BinaryParagraph> output;
         for (auto&& path : paths.get_filesystem().get_files_non_recursive(paths.packages))
         {
-            const auto pghs =
-                Paragraphs::get_single_paragraph(paths.get_filesystem(), path / vcpkg::Files::u8path("CONTROL"));
+            const auto pghs = Paragraphs::get_single_paragraph(paths.get_filesystem(), path / vcpkg::u8path("CONTROL"));
             if (const auto p = pghs.get())
             {
                 const BinaryParagraph binary_paragraph = BinaryParagraph(*p);

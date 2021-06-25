@@ -10,8 +10,8 @@
 namespace vcpkg
 {
     static StatusParagraphs load_current_database(Filesystem& fs,
-                                                  const stdfs::path& vcpkg_dir_status_file,
-                                                  const stdfs::path& vcpkg_dir_status_file_old)
+                                                  const path& vcpkg_dir_status_file,
+                                                  const path& vcpkg_dir_status_file_old)
     {
         if (!fs.exists(vcpkg_dir_status_file))
         {
@@ -47,9 +47,9 @@ namespace vcpkg
         fs.create_directory(paths.vcpkg_dir_info, ec);
         fs.create_directory(updates_dir, ec);
 
-        const stdfs::path& status_file = paths.vcpkg_dir_status_file;
-        const stdfs::path status_file_old = status_file.parent_path() / "status-old";
-        const stdfs::path status_file_new = status_file.parent_path() / "status-new";
+        const path& status_file = paths.vcpkg_dir_status_file;
+        const path status_file_old = status_file.parent_path() / "status-old";
+        const path status_file_new = status_file.parent_path() / "status-new";
 
         StatusParagraphs current_status_db = load_current_database(fs, status_file, status_file_old);
 
@@ -101,7 +101,7 @@ namespace vcpkg
 
     static void upgrade_to_slash_terminated_sorted_format(Filesystem& fs,
                                                           std::vector<std::string>* lines,
-                                                          const stdfs::path& listfile_path)
+                                                          const path& listfile_path)
     {
         static bool was_tracked = false;
 
@@ -164,7 +164,7 @@ namespace vcpkg
         std::sort(lines->begin(), lines->end());
 
         // Replace the listfile on disk
-        const stdfs::path updated_listfile_path = listfile_path.generic_string() + "_updated";
+        const path updated_listfile_path = listfile_path.generic_string() + "_updated";
         fs.write_lines(updated_listfile_path, *lines, VCPKG_LINE_INFO);
         fs.rename(updated_listfile_path, listfile_path, VCPKG_LINE_INFO);
     }
@@ -212,7 +212,7 @@ namespace vcpkg
                 continue;
             }
 
-            const stdfs::path listfile_path = paths.listfile_path(pgh->package);
+            const path listfile_path = paths.listfile_path(pgh->package);
             std::vector<std::string> installed_files_of_current_pgh = fs.read_lines(listfile_path, VCPKG_LINE_INFO);
             Strings::trim_all_and_remove_whitespace_strings(&installed_files_of_current_pgh);
             upgrade_to_slash_terminated_sorted_format(fs, &installed_files_of_current_pgh, listfile_path);

@@ -203,7 +203,5 @@ namespace vcpkg::Dependencies
                                                         const PackageSpec& toplevel,
                                                         Triplet host_triplet);
 
-    void print_plan(const ActionPlan& action_plan,
-                    const bool is_recursive = true,
-                    const stdfs::path& builtin_ports_dir = {});
+    void print_plan(const ActionPlan& action_plan, const bool is_recursive = true, const path& builtin_ports_dir = {});
 }

@@ -59,7 +59,7 @@ namespace
 
     void create_directory_tree(urbg_t& urbg,
                                vcpkg::Filesystem& fs,
-                               const stdfs::path& base,
+                               const vcpkg::path& base,
                                MaxDepth max_depth,
                                AllowSymlinks allow_symlinks = AllowSymlinks::Yes,
                                Width width = Width{5},
@@ -125,7 +125,7 @@ namespace
         {
             // regular symlink
             auto base_link = base;
-            base_link.replace_filename(vcpkg::Files::u8string(base.filename()) + "-orig");
+            base_link.replace_filename(vcpkg::u8string(base.filename()) + "-orig");
             fs.write_contents(base_link, "", ec);
             CHECK_EC_ON_FILE(base_link, ec);
             vcpkg::Test::create_symlink(base_link, base, ec);
@@ -139,7 +139,7 @@ namespace
         }
 
         CHECK_EC_ON_FILE(base, ec);
-        REQUIRE(vcpkg::Files::exists(fs.symlink_status(base, ec)));
+        REQUIRE(vcpkg::exists(fs.symlink_status(base, ec)));
         CHECK_EC_ON_FILE(base, ec);
     }
 
@@ -155,10 +155,9 @@ namespace
     }
 }
 
-TEST_CASE ("vcpkg::Files::combine works correctly", "[filesystem][files]")
+TEST_CASE ("vcpkg::combine works correctly", "[filesystem][files]")
 {
     using namespace vcpkg;
-    using namespace vcpkg::Files;
     CHECK(combine(u8path("/a/b"), u8path("c/d")) == u8path("/a/b/c/d"));
     CHECK(combine(u8path("a/b"), u8path("c/d")) == u8path("a/b/c/d"));
     CHECK(combine(u8path("/a/b"), u8path("/c/d")) == u8path("/c/d"));
@@ -180,13 +179,13 @@ TEST_CASE ("remove all", "[files]")
 
     auto& fs = setup();
 
-    stdfs::path temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    vcpkg::path temp_dir = base_temporary_directory() / get_random_filename(urbg);
     INFO("temp dir is: " << temp_dir);
 
     create_directory_tree(urbg, fs, temp_dir, MaxDepth{5});
 
     std::error_code ec;
-    stdfs::path fp;
+    vcpkg::path fp;
     fs.remove_all(temp_dir, ec, fp);
     CHECK_EC_ON_FILE(fp, ec);
 
@@ -196,9 +195,9 @@ TEST_CASE ("remove all", "[files]")
 
 TEST_CASE ("lexically_normal", "[files]")
 {
-    const auto lexically_normal = [](const char* s) { return vcpkg::Files::lexically_normal(vcpkg::Files::u8path(s)); };
-    const auto native = [](const char* s) { return std::move(vcpkg::Files::u8path(s).make_preferred()); };
-    CHECK(vcpkg::Files::lexically_normal(stdfs::path()).native() == stdfs::path().native());
+    const auto lexically_normal = [](const char* s) { return vcpkg::lexically_normal(vcpkg::u8path(s)); };
+    const auto native = [](const char* s) { return std::move(vcpkg::u8path(s).make_preferred()); };
+    CHECK(vcpkg::lexically_normal(vcpkg::path()).native() == vcpkg::path().native());
 
     // these test cases are taken from the MS STL tests
     CHECK(lexically_normal("cat/./dog/..").native() == native("cat/").native());
@@ -353,18 +352,18 @@ TEST_CASE ("remove all -- benchmarks", "[files][!benchmark]")
 
         void operator()(Catch::Benchmark::Chronometer& meter, MaxDepth max_depth, AllowSymlinks allow_symlinks) const
         {
-            std::vector<stdfs::path> temp_dirs;
+            std::vector<path> temp_dirs;
             temp_dirs.resize(meter.runs());
 
             std::generate(begin(temp_dirs), end(temp_dirs), [&] {
-                stdfs::path temp_dir = base_temporary_directory() / get_random_filename(urbg);
+                path temp_dir = base_temporary_directory() / get_random_filename(urbg);
                 create_directory_tree(urbg, fs, temp_dir, max_depth, allow_symlinks);
                 return temp_dir;
             });
 
             meter.measure([&](int run) {
                 std::error_code ec;
-                stdfs::path fp;
+                path fp;
                 const auto& temp_dir = temp_dirs[run];
 
                 fs.remove_all(temp_dir, ec, fp);

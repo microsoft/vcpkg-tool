@@ -93,7 +93,7 @@ namespace vcpkg
         static Parse::ParseExpected<SourceControlFile> parse_manifest_object(const std::string& origin,
                                                                              const Json::Object& object);
 
-        static Parse::ParseExpected<SourceControlFile> parse_manifest_file(const stdfs::path& path_to_manifest,
+        static Parse::ParseExpected<SourceControlFile> parse_manifest_file(const path& path_to_manifest,
                                                                            const Json::Object& object);
 
         static Parse::ParseExpected<SourceControlFile> parse_control_file(
@@ -106,7 +106,7 @@ namespace vcpkg
         Optional<const FeatureParagraph&> find_feature(const std::string& featurename) const;
         Optional<const std::vector<Dependency>&> find_dependencies_for_feature(const std::string& featurename) const;
 
-        Optional<std::string> check_against_feature_flags(const stdfs::path& origin,
+        Optional<std::string> check_against_feature_flags(const path& origin,
                                                           const FeatureFlagSettings& flags,
                                                           bool is_default_builtin_registry = true) const;
 
@@ -129,12 +129,12 @@ namespace vcpkg
     /// </summary>
     struct SourceControlFileLocation
     {
-        SourceControlFileLocation(std::unique_ptr<SourceControlFile>&& scf, stdfs::path&& source)
+        SourceControlFileLocation(std::unique_ptr<SourceControlFile>&& scf, path&& source)
             : source_control_file(std::move(scf)), source_location(std::move(source))
         {
         }
 
-        SourceControlFileLocation(std::unique_ptr<SourceControlFile>&& scf, const stdfs::path& source)
+        SourceControlFileLocation(std::unique_ptr<SourceControlFile>&& scf, const path& source)
             : source_control_file(std::move(scf)), source_location(source)
         {
         }
@@ -147,7 +147,7 @@ namespace vcpkg
         VersionT to_versiont() const { return source_control_file->to_versiont(); }
 
         std::unique_ptr<SourceControlFile> source_control_file;
-        stdfs::path source_location;
+        path source_location;
     };
 
     void print_error_message(Span<const std::unique_ptr<Parse::ParseControlErrorInfo>> error_info_list);

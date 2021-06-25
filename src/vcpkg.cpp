@@ -176,7 +176,7 @@ int main(const int argc, const char* const* const argv)
 
     initialize_global_job_object();
 #endif
-    set_environment_variable("VCPKG_COMMAND", vcpkg::Files::generic_u8string(get_exe_path_of_current_process()));
+    set_environment_variable("VCPKG_COMMAND", vcpkg::generic_u8string(get_exe_path_of_current_process()));
 
     Checks::register_global_shutdown_handler([]() {
         const auto elapsed_us_inner = GlobalState::timer.lock()->microseconds();
@@ -239,7 +239,7 @@ int main(const int argc, const char* const* const argv)
         }
 
         auto disable_metrics_tag_file_path =
-            get_exe_path_of_current_process().replace_filename(vcpkg::Files::u8path("vcpkg.disable-metrics"));
+            get_exe_path_of_current_process().replace_filename(vcpkg::u8path("vcpkg.disable-metrics"));
         std::error_code ec;
         if (fs.exists(disable_metrics_tag_file_path, ec) || ec)
         {

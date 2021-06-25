@@ -345,13 +345,12 @@ namespace vcpkg::Build
                Strings::join(
                    ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); }),
                "\nVcpkg selected ",
-               vcpkg::Files::u8string(toolset.visual_studio_root_path),
+               vcpkg::u8string(toolset.visual_studio_root_path),
                " as the Visual Studio instance.\nDetected instances:\n",
                Strings::join("",
                              all_toolsets,
                              [](const Toolset& t) {
-                                 return Strings::concat(
-                                     "    ", vcpkg::Files::u8string(t.visual_studio_root_path), '\n');
+                                 return Strings::concat("    ", vcpkg::u8string(t.visual_studio_root_path), '\n');
                              }),
                "\nSee "
                "https://github.com/microsoft/vcpkg/blob/master/docs/users/triplets.md#VCPKG_VISUAL_STUDIO_PATH "
@@ -488,9 +487,9 @@ namespace vcpkg::Build
         });
 
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
-            const stdfs::path& powershell_exe_path = paths.get_tool_exe("powershell-core");
-            auto clean_env = get_modified_clean_environment(
-                base_env.env_map, vcpkg::Files::u8string(powershell_exe_path.parent_path()) + ";");
+            const path& powershell_exe_path = paths.get_tool_exe("powershell-core");
+            auto clean_env = get_modified_clean_environment(base_env.env_map,
+                                                            vcpkg::u8string(powershell_exe_path.parent_path()) + ";");
             if (build_env_cmd.empty())
                 return clean_env;
             else
@@ -507,7 +506,7 @@ namespace vcpkg::Build
     {
         const auto& fs = paths.get_filesystem();
         Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-        const stdfs::path triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const path triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
 
         auto tcfile = abi_info.pre_build_info->toolchain_file();
         auto&& toolchain_hash = m_toolchain_cache.get_lazy(
@@ -534,7 +533,7 @@ namespace vcpkg::Build
     {
         const auto& fs = paths.get_filesystem();
         Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-        const stdfs::path triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const path triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
 
         auto tcfile = abi_info.pre_build_info->toolchain_file();
         auto&& toolchain_hash = m_toolchain_cache.get_lazy(
@@ -584,7 +583,7 @@ namespace vcpkg::Build
 
         return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(
             Strings::format(R"("%s" %s %s %s %s 2>&1 <NUL)",
-                            vcpkg::Files::u8string(toolset.vcvarsall),
+                            vcpkg::u8string(toolset.vcvarsall),
                             Strings::join(" ", toolset.vcvarsall_options),
                             arch,
                             target,
@@ -616,8 +615,7 @@ namespace vcpkg::Build
         {
             start += "\n" + Strings::serialize(feature);
         }
-        const stdfs::path binary_control_file =
-            paths.packages / bcf.core_paragraph.dir() / vcpkg::Files::u8path("CONTROL");
+        const path binary_control_file = paths.packages / bcf.core_paragraph.dir() / vcpkg::u8path("CONTROL");
         paths.get_filesystem().write_contents(binary_control_file, start, VCPKG_LINE_INFO);
     }
 
@@ -648,14 +646,14 @@ namespace vcpkg::Build
                                   {"CMD", "BUILD"},
                                   {"DOWNLOADS", paths.downloads},
                                   {"TARGET_TRIPLET", triplet.canonical_name()},
-                                  {"TARGET_TRIPLET_FILE", vcpkg::Files::u8string(paths.get_triplet_file_path(triplet))},
+                                  {"TARGET_TRIPLET_FILE", vcpkg::u8string(paths.get_triplet_file_path(triplet))},
                                   {"VCPKG_BASE_VERSION", Commands::Version::base_version()},
                                   {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
                                   {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
                               });
         if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
         {
-            const stdfs::path& git_exe_path = paths.get_tool_exe(Tools::GIT);
+            const path& git_exe_path = paths.get_tool_exe(Tools::GIT);
             out_vars.push_back({"GIT", git_exe_path});
         }
     }
@@ -691,13 +689,12 @@ namespace vcpkg::Build
             Checks::check_exit(VCPKG_LINE_INFO,
                                !err.value(),
                                "Failed to create directory '%s', code: %d",
-                               vcpkg::Files::u8string(buildpath),
+                               vcpkg::u8string(buildpath),
                                err.value());
         }
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
         std::ofstream out_file(stdoutlog.native().c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, out_file, "Failed to open '%s' for writing", vcpkg::Files::u8string(stdoutlog));
+        Checks::check_exit(VCPKG_LINE_INFO, out_file, "Failed to open '%s' for writing", vcpkg::u8string(stdoutlog));
         CompilerInfo compiler_info;
         std::string buf;
         int rc = cmd_execute_and_stream_lines(
@@ -722,7 +719,7 @@ namespace vcpkg::Build
                 Strings::append(buf, s, '\n');
                 out_file.write(s.data(), s.size()).put('\n');
                 Checks::check_exit(
-                    VCPKG_LINE_INFO, out_file, "Error occurred while writing '%s'", vcpkg::Files::u8string(stdoutlog));
+                    VCPKG_LINE_INFO, out_file, "Error occurred while writing '%s'", vcpkg::u8string(stdoutlog));
             },
             env);
         out_file.close();
@@ -736,7 +733,7 @@ namespace vcpkg::Build
                          "\n");
 
             print2("Error: while detecting compiler information:\nThe log content at ",
-                   vcpkg::Files::u8string(stdoutlog),
+                   vcpkg::u8string(stdoutlog),
                    " is:\n",
                    buf);
             Checks::exit_with_message(VCPKG_LINE_INFO,
@@ -804,14 +801,13 @@ namespace vcpkg::Build
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
         {
-            const stdfs::path port_config_path =
-                paths.installed / vcpkg::Files::u8path(dependency.triplet().canonical_name()) /
-                vcpkg::Files::u8path("share") / vcpkg::Files::u8path(dependency.name()) /
-                vcpkg::Files::u8path("vcpkg-port-config.cmake");
+            const path port_config_path = paths.installed / vcpkg::u8path(dependency.triplet().canonical_name()) /
+                                          vcpkg::u8path("share") / vcpkg::u8path(dependency.name()) /
+                                          vcpkg::u8path("vcpkg-port-config.cmake");
 
             if (fs.is_regular_file(port_config_path))
             {
-                port_configs.emplace_back(vcpkg::Files::u8string(port_config_path));
+                port_configs.emplace_back(vcpkg::u8string(port_config_path));
             }
         }
 
@@ -829,43 +825,43 @@ namespace vcpkg::Build
                (cmake_system_name.empty() || cmake_system_name == "WindowsStore");
     }
 
-    stdfs::path PreBuildInfo::toolchain_file() const
+    path PreBuildInfo::toolchain_file() const
     {
         if (auto p = external_toolchain_file.get())
         {
-            return vcpkg::Files::u8path(*p);
+            return vcpkg::u8path(*p);
         }
         else if (cmake_system_name == "Linux")
         {
-            return m_paths.scripts / vcpkg::Files::u8path("toolchains/linux.cmake");
+            return m_paths.scripts / vcpkg::u8path("toolchains/linux.cmake");
         }
         else if (cmake_system_name == "Darwin")
         {
-            return m_paths.scripts / vcpkg::Files::u8path("toolchains/osx.cmake");
+            return m_paths.scripts / vcpkg::u8path("toolchains/osx.cmake");
         }
         else if (cmake_system_name == "FreeBSD")
         {
-            return m_paths.scripts / vcpkg::Files::u8path("toolchains/freebsd.cmake");
+            return m_paths.scripts / vcpkg::u8path("toolchains/freebsd.cmake");
         }
         else if (cmake_system_name == "OpenBSD")
         {
-            return m_paths.scripts / vcpkg::Files::u8path("toolchains/openbsd.cmake");
+            return m_paths.scripts / vcpkg::u8path("toolchains/openbsd.cmake");
         }
         else if (cmake_system_name == "Android")
         {
-            return m_paths.scripts / vcpkg::Files::u8path("toolchains/android.cmake");
+            return m_paths.scripts / vcpkg::u8path("toolchains/android.cmake");
         }
         else if (cmake_system_name == "iOS")
         {
-            return m_paths.scripts / vcpkg::Files::u8path("toolchains/ios.cmake");
+            return m_paths.scripts / vcpkg::u8path("toolchains/ios.cmake");
         }
         else if (cmake_system_name == "MinGW")
         {
-            return m_paths.scripts / vcpkg::Files::u8path("toolchains/mingw.cmake");
+            return m_paths.scripts / vcpkg::u8path("toolchains/mingw.cmake");
         }
         else if (cmake_system_name.empty() || cmake_system_name == "Windows" || cmake_system_name == "WindowsStore")
         {
-            return m_paths.scripts / vcpkg::Files::u8path("toolchains/windows.cmake");
+            return m_paths.scripts / vcpkg::u8path("toolchains/windows.cmake");
         }
         else
         {
@@ -887,25 +883,22 @@ namespace vcpkg::Build
         auto&& scfl = action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO);
 
         Triplet triplet = action.spec.triplet();
-        const auto& triplet_file_path = vcpkg::Files::u8string(paths.get_triplet_file_path(triplet));
+        const auto& triplet_file_path = vcpkg::u8string(paths.get_triplet_file_path(triplet));
 
-        if (Strings::case_insensitive_ascii_starts_with(triplet_file_path,
-                                                        vcpkg::Files::u8string(paths.community_triplets)))
+        if (Strings::case_insensitive_ascii_starts_with(triplet_file_path, vcpkg::u8string(paths.community_triplets)))
         {
             vcpkg::printf(vcpkg::Color::warning,
                           "-- Using community triplet %s. This triplet configuration is not guaranteed to succeed.\n",
                           triplet.canonical_name());
             vcpkg::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
-        else if (!Strings::case_insensitive_ascii_starts_with(triplet_file_path,
-                                                              vcpkg::Files::u8string(paths.triplets)))
+        else if (!Strings::case_insensitive_ascii_starts_with(triplet_file_path, vcpkg::u8string(paths.triplets)))
         {
             vcpkg::printf("-- [OVERLAY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
 
-        auto u8portdir = vcpkg::Files::u8string(scfl.source_location);
-        if (!Strings::case_insensitive_ascii_starts_with(u8portdir,
-                                                         vcpkg::Files::u8string(paths.builtin_ports_directory())))
+        auto u8portdir = vcpkg::u8string(scfl.source_location);
+        if (!Strings::case_insensitive_ascii_starts_with(u8portdir, vcpkg::u8string(paths.builtin_ports_directory())))
         {
             vcpkg::printf("-- Installing port from location: %s\n", u8portdir);
         }
@@ -924,20 +917,19 @@ namespace vcpkg::Build
             Checks::check_exit(VCPKG_LINE_INFO,
                                !err.value(),
                                "Failed to create directory '%s', code: %d",
-                               vcpkg::Files::u8string(buildpath),
+                               vcpkg::u8string(buildpath),
                                err.value());
         }
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
         std::ofstream out_file(stdoutlog.native().c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, out_file, "Failed to open '%s' for writing", vcpkg::Files::u8string(stdoutlog));
+        Checks::check_exit(VCPKG_LINE_INFO, out_file, "Failed to open '%s' for writing", vcpkg::u8string(stdoutlog));
         const int return_code = cmd_execute_and_stream_data(
             command,
             [&](StringView sv) {
                 print2(sv);
                 out_file.write(sv.data(), sv.size());
                 Checks::check_exit(
-                    VCPKG_LINE_INFO, out_file, "Error occurred while writing '%s'", vcpkg::Files::u8string(stdoutlog));
+                    VCPKG_LINE_INFO, out_file, "Error occurred while writing '%s'", vcpkg::u8string(stdoutlog));
             },
             env);
         out_file.close();
@@ -1024,7 +1016,7 @@ namespace vcpkg::Build
                 if (fs.is_directory(file)) // Will only keep the logs
                 {
                     std::error_code ec;
-                    stdfs::path failure_point;
+                    path failure_point;
                     fs.remove_all(file, ec, failure_point);
                 }
             }
@@ -1058,7 +1050,7 @@ namespace vcpkg::Build
     {
         const std::string* triplet_abi;
         std::string tag;
-        stdfs::path tag_file;
+        path tag_file;
     };
 
     static Optional<AbiTagAndFile> compute_abi_tag(const VcpkgPaths& paths,
@@ -1108,10 +1100,10 @@ namespace vcpkg::Build
         size_t port_file_count = 0;
         for (auto& port_file : stdfs::recursive_directory_iterator(port_dir))
         {
-            if (vcpkg::Files::is_regular_file(fs.status(VCPKG_LINE_INFO, port_file)))
+            if (vcpkg::is_regular_file(fs.status(VCPKG_LINE_INFO, port_file)))
             {
                 abi_tag_entries.emplace_back(
-                    vcpkg::Files::u8string(port_file.path().filename()),
+                    vcpkg::u8string(port_file.path().filename()),
                     vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha256));
 
                 ++port_file_count;
@@ -1130,7 +1122,7 @@ namespace vcpkg::Build
 #endif
 
         auto& helpers = paths.get_cmake_script_hashes();
-        auto portfile_contents = fs.read_contents(port_dir / vcpkg::Files::u8path("portfile.cmake"), VCPKG_LINE_INFO);
+        auto portfile_contents = fs.read_contents(port_dir / vcpkg::u8path("portfile.cmake"), VCPKG_LINE_INFO);
         for (auto&& helper : helpers)
         {
             if (Strings::case_insensitive_ascii_contains(portfile_contents, helper.first))
@@ -1290,8 +1282,8 @@ namespace vcpkg::Build
 
         auto& abi_file = *abi_info.abi_tag_file.get();
 
-        const stdfs::path abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
-        const stdfs::path abi_file_in_package = paths.package_dir(spec) / "share" / spec.name() / "vcpkg_abi_info.txt";
+        const path abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
+        const path abi_file_in_package = paths.package_dir(spec) / "share" / spec.name() / "vcpkg_abi_info.txt";
         if (action.has_package_abi())
         {
             auto restore = binaries_provider.try_restore(paths, action);
@@ -1324,7 +1316,7 @@ namespace vcpkg::Build
         {
             Checks::exit_with_message(VCPKG_LINE_INFO,
                                       Strings::format("Could not create %s: %s (%d)",
-                                                      vcpkg::Files::u8string(abi_package_dir).c_str(),
+                                                      vcpkg::u8string(abi_package_dir).c_str(),
                                                       ec.message().c_str(),
                                                       ec.value()));
         }
@@ -1334,8 +1326,8 @@ namespace vcpkg::Build
         {
             Checks::exit_with_message(VCPKG_LINE_INFO,
                                       Strings::format("Could not copy %s -> %s: %s (%d)",
-                                                      vcpkg::Files::u8string(abi_file).c_str(),
-                                                      vcpkg::Files::u8string(abi_file_in_package).c_str(),
+                                                      vcpkg::u8string(abi_file).c_str(),
+                                                      vcpkg::u8string(abi_file_in_package).c_str(),
                                                       ec.message().c_str(),
                                                       ec.value()));
         }
@@ -1462,7 +1454,7 @@ namespace vcpkg::Build
         return build_info;
     }
 
-    BuildInfo read_build_info(const Filesystem& fs, const stdfs::path& filepath)
+    BuildInfo read_build_info(const Filesystem& fs, const path& filepath)
     {
         const ExpectedS<Parse::Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
         Checks::check_maybe_upgrade(
@@ -1528,7 +1520,7 @@ namespace vcpkg::Build
                     platform_toolset = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
                     break;
                 case VcpkgTripletVar::VISUAL_STUDIO_PATH:
-                    visual_studio_path = variable_value.empty() ? nullopt : Optional<stdfs::path>{variable_value};
+                    visual_studio_path = variable_value.empty() ? nullopt : Optional<path>{variable_value};
                     break;
                 case VcpkgTripletVar::CHAINLOAD_TOOLCHAIN_FILE:
                     external_toolchain_file = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};

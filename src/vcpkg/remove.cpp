@@ -46,7 +46,7 @@ namespace vcpkg::Remove
 
         if (const auto lines = maybe_lines.get())
         {
-            std::vector<stdfs::path> dirs_touched;
+            std::vector<path> dirs_touched;
             for (auto&& suffix : *lines)
             {
                 if (!suffix.empty() && suffix.back() == '\r') suffix.pop_back();
@@ -58,15 +58,15 @@ namespace vcpkg::Remove
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
                 {
-                    print2(Color::error, "failed: status(", vcpkg::Files::u8string(target), "): ", ec.message(), "\n");
+                    print2(Color::error, "failed: status(", vcpkg::u8string(target), "): ", ec.message(), "\n");
                     continue;
                 }
 
-                if (vcpkg::Files::is_directory(status))
+                if (vcpkg::is_directory(status))
                 {
                     dirs_touched.push_back(target);
                 }
-                else if (vcpkg::Files::is_regular_file(status) || vcpkg::Files::is_symlink(status))
+                else if (vcpkg::is_regular_file(status) || vcpkg::is_symlink(status))
                 {
                     fs.remove(target, ec);
                     if (ec)
@@ -78,22 +78,20 @@ namespace vcpkg::Remove
                         if (ec)
                         {
                             vcpkg::printf(
-                                Color::error, "failed: remove(%s): %s\n", vcpkg::Files::u8string(target), ec.message());
+                                Color::error, "failed: remove(%s): %s\n", vcpkg::u8string(target), ec.message());
                         }
 #else
-                        vcpkg::printf(
-                            Color::error, "failed: remove(%s): %s\n", vcpkg::Files::u8string(target), ec.message());
+                        vcpkg::printf(Color::error, "failed: remove(%s): %s\n", vcpkg::u8string(target), ec.message());
 #endif
                     }
                 }
-                else if (!vcpkg::Files::exists(status))
+                else if (!vcpkg::exists(status))
                 {
-                    vcpkg::printf(Color::warning, "Warning: %s: file not found\n", vcpkg::Files::u8string(target));
+                    vcpkg::printf(Color::warning, "Warning: %s: file not found\n", vcpkg::u8string(target));
                 }
                 else
                 {
-                    vcpkg::printf(
-                        Color::warning, "Warning: %s: cannot handle file type\n", vcpkg::Files::u8string(target));
+                    vcpkg::printf(Color::warning, "Warning: %s: cannot handle file type\n", vcpkg::u8string(target));
                 }
             }
 

@@ -1024,7 +1024,7 @@ namespace vcpkg::Json
     }
 
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Filesystem& fs,
-                                                                                           const stdfs::path& path,
+                                                                                           const path& path,
                                                                                            std::error_code& ec) noexcept
     {
         auto res = fs.read_contents(path);
@@ -1039,30 +1039,28 @@ namespace vcpkg::Json
         }
     }
 
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo linfo,
-                                           const Filesystem& fs,
-                                           const stdfs::path& path) noexcept
+    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo linfo, const Filesystem& fs, const path& path) noexcept
     {
         std::error_code ec;
         auto ret = parse_file(fs, path, ec);
         if (ec)
         {
-            print2(Color::error, "Failed to read ", vcpkg::Files::u8string(path), ": ", ec.message(), "\n");
+            print2(Color::error, "Failed to read ", vcpkg::u8string(path), ": ", ec.message(), "\n");
             Checks::exit_fail(linfo);
         }
         else if (!ret)
         {
-            print2(Color::error, "Failed to parse ", vcpkg::Files::u8string(path), ":\n");
+            print2(Color::error, "Failed to parse ", vcpkg::u8string(path), ":\n");
             print2(ret.error()->format());
             Checks::exit_fail(linfo);
         }
         return ret.value_or_exit(linfo);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(
-        StringView json, const stdfs::path& filepath) noexcept
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
+                                                                                      const path& filepath) noexcept
     {
-        return Parser::parse(json, vcpkg::Files::u8string(filepath));
+        return Parser::parse(json, vcpkg::u8string(filepath));
     }
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
                                                                                       StringView origin) noexcept

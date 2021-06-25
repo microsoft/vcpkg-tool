@@ -13,7 +13,7 @@ namespace
 {
     std::string remove_trailing_slashes(std::string argument)
     {
-        using vcpkg::Files::is_slash;
+        using vcpkg::is_slash;
         argument.erase(std::find_if_not(argument.rbegin(), argument.rend(), is_slash).base(), argument.end());
         return argument;
     }
@@ -38,8 +38,7 @@ namespace vcpkg::Commands::Create
         std::vector<CMakeVariable> cmake_args{
             {"CMD", "CREATE"},
             {"PORT", port_name},
-            {"PORT_PATH",
-             vcpkg::Files::generic_u8string(paths.builtin_ports_directory() / vcpkg::Files::u8path(port_name))},
+            {"PORT_PATH", vcpkg::generic_u8string(paths.builtin_ports_directory() / vcpkg::u8path(port_name))},
             {"URL", url},
             {"VCPKG_BASE_VERSION", Commands::Version::base_version()},
         };

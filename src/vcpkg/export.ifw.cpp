@@ -39,61 +39,51 @@ namespace vcpkg::Export::IFW
             return std::regex_replace(text, standalone_ampersand, "&amp;");
         }
 
-        stdfs::path get_packages_dir_path(const std::string& export_id,
-                                          const Options& ifw_options,
-                                          const VcpkgPaths& paths)
+        path get_packages_dir_path(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
             return ifw_options.maybe_packages_dir_path.has_value()
-                       ? stdfs::path(ifw_options.maybe_packages_dir_path.value_or_exit(VCPKG_LINE_INFO))
+                       ? path(ifw_options.maybe_packages_dir_path.value_or_exit(VCPKG_LINE_INFO))
                        : paths.root / (export_id + "-ifw-packages");
         }
 
-        stdfs::path get_repository_dir_path(const std::string& export_id,
-                                            const Options& ifw_options,
-                                            const VcpkgPaths& paths)
+        path get_repository_dir_path(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
             return ifw_options.maybe_repository_dir_path.has_value()
-                       ? stdfs::path(ifw_options.maybe_repository_dir_path.value_or_exit(VCPKG_LINE_INFO))
+                       ? path(ifw_options.maybe_repository_dir_path.value_or_exit(VCPKG_LINE_INFO))
                        : paths.root / (export_id + "-ifw-repository");
         }
 
-        stdfs::path get_config_file_path(const std::string& export_id,
-                                         const Options& ifw_options,
-                                         const VcpkgPaths& paths)
+        path get_config_file_path(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
             return ifw_options.maybe_config_file_path.has_value()
-                       ? stdfs::path(ifw_options.maybe_config_file_path.value_or_exit(VCPKG_LINE_INFO))
+                       ? path(ifw_options.maybe_config_file_path.value_or_exit(VCPKG_LINE_INFO))
                        : paths.root / (export_id + "-ifw-configuration.xml");
         }
 
-        stdfs::path get_installer_file_path(const std::string& export_id,
-                                            const Options& ifw_options,
-                                            const VcpkgPaths& paths)
+        path get_installer_file_path(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
             return ifw_options.maybe_installer_file_path.has_value()
-                       ? stdfs::path(ifw_options.maybe_installer_file_path.value_or_exit(VCPKG_LINE_INFO))
+                       ? path(ifw_options.maybe_installer_file_path.value_or_exit(VCPKG_LINE_INFO))
                        : paths.root / (export_id + "-ifw-installer.exe");
         }
 
-        stdfs::path export_real_package(const stdfs::path& ifw_packages_dir_path,
-                                        const ExportPlanAction& action,
-                                        Filesystem& fs)
+        path export_real_package(const path& ifw_packages_dir_path, const ExportPlanAction& action, Filesystem& fs)
         {
             std::error_code ec;
 
             const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
             // Prepare meta dir
-            const stdfs::path package_xml_file_path =
+            const path package_xml_file_path =
                 ifw_packages_dir_path /
                 Strings::format("packages.%s.%s", action.spec.name(), action.spec.triplet().canonical_name()) / "meta" /
                 "package.xml";
-            const stdfs::path package_xml_dir_path = package_xml_file_path.parent_path();
+            const path package_xml_dir_path = package_xml_file_path.parent_path();
             fs.create_directories(package_xml_dir_path, ec);
             Checks::check_exit(VCPKG_LINE_INFO,
                                !ec,
                                "Could not create directory for package file %s",
-                               vcpkg::Files::generic_u8string(package_xml_file_path));
+                               vcpkg::generic_u8string(package_xml_file_path));
 
             auto deps = Strings::join(
                 ",", binary_paragraph.dependencies, [](const auto& dep) { return "packages." + dep.name() + ":"; });
@@ -125,7 +115,7 @@ namespace vcpkg::Export::IFW
                    "data" / "installed";
         }
 
-        void export_unique_packages(const stdfs::path& raw_exported_dir_path,
+        void export_unique_packages(const path& raw_exported_dir_path,
                                     std::map<std::string, const ExportPlanAction*> unique_packages,
                                     Filesystem& fs)
         {
@@ -133,13 +123,13 @@ namespace vcpkg::Export::IFW
 
             // packages
 
-            stdfs::path package_xml_file_path = raw_exported_dir_path / "packages" / "meta" / "package.xml";
-            stdfs::path package_xml_dir_path = package_xml_file_path.parent_path();
+            path package_xml_file_path = raw_exported_dir_path / "packages" / "meta" / "package.xml";
+            path package_xml_dir_path = package_xml_file_path.parent_path();
             fs.create_directories(package_xml_dir_path, ec);
             Checks::check_exit(VCPKG_LINE_INFO,
                                !ec,
                                "Could not create directory for package file %s",
-                               vcpkg::Files::generic_u8string(package_xml_file_path));
+                               vcpkg::generic_u8string(package_xml_file_path));
             fs.write_contents(package_xml_file_path,
                               Strings::format(
                                   R"###(<?xml version="1.0"?>
@@ -164,7 +154,7 @@ namespace vcpkg::Export::IFW
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    !ec,
                                    "Could not create directory for package file %s",
-                                   vcpkg::Files::generic_u8string(package_xml_file_path));
+                                   vcpkg::generic_u8string(package_xml_file_path));
 
                 fs.write_contents(package_xml_file_path,
                                   Strings::format(
@@ -184,7 +174,7 @@ namespace vcpkg::Export::IFW
             }
         }
 
-        void export_unique_triplets(const stdfs::path& raw_exported_dir_path,
+        void export_unique_triplets(const path& raw_exported_dir_path,
                                     std::set<std::string> unique_triplets,
                                     Filesystem& fs)
         {
@@ -192,13 +182,13 @@ namespace vcpkg::Export::IFW
 
             // triplets
 
-            stdfs::path package_xml_file_path = raw_exported_dir_path / "triplets" / "meta" / "package.xml";
-            stdfs::path package_xml_dir_path = package_xml_file_path.parent_path();
+            path package_xml_file_path = raw_exported_dir_path / "triplets" / "meta" / "package.xml";
+            path package_xml_dir_path = package_xml_file_path.parent_path();
             fs.create_directories(package_xml_dir_path, ec);
             Checks::check_exit(VCPKG_LINE_INFO,
                                !ec,
                                "Could not create directory for package file %s",
-                               vcpkg::Files::generic_u8string(package_xml_file_path));
+                               vcpkg::generic_u8string(package_xml_file_path));
             fs.write_contents(package_xml_file_path,
                               Strings::format(
                                   R"###(<?xml version="1.0"?>
@@ -220,7 +210,7 @@ namespace vcpkg::Export::IFW
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    !ec,
                                    "Could not create directory for package file %s",
-                                   vcpkg::Files::generic_u8string(package_xml_file_path));
+                                   vcpkg::generic_u8string(package_xml_file_path));
                 fs.write_contents(package_xml_file_path,
                                   Strings::format(
                                       R"###(<?xml version="1.0"?>
@@ -236,18 +226,18 @@ namespace vcpkg::Export::IFW
             }
         }
 
-        void export_integration(const stdfs::path& raw_exported_dir_path, Filesystem& fs)
+        void export_integration(const path& raw_exported_dir_path, Filesystem& fs)
         {
             std::error_code ec;
 
             // integration
-            stdfs::path package_xml_file_path = raw_exported_dir_path / "integration" / "meta" / "package.xml";
-            stdfs::path package_xml_dir_path = package_xml_file_path.parent_path();
+            path package_xml_file_path = raw_exported_dir_path / "integration" / "meta" / "package.xml";
+            path package_xml_dir_path = package_xml_file_path.parent_path();
             fs.create_directories(package_xml_dir_path, ec);
             Checks::check_exit(VCPKG_LINE_INFO,
                                !ec,
                                "Could not create directory for package file %s",
-                               vcpkg::Files::generic_u8string(package_xml_file_path));
+                               vcpkg::generic_u8string(package_xml_file_path));
 
             fs.write_contents(package_xml_file_path,
                               Strings::format(
@@ -267,14 +257,14 @@ namespace vcpkg::Export::IFW
             std::error_code ec;
             Filesystem& fs = paths.get_filesystem();
 
-            const stdfs::path config_xml_file_path = get_config_file_path(export_id, ifw_options, paths);
+            const path config_xml_file_path = get_config_file_path(export_id, ifw_options, paths);
 
-            stdfs::path config_xml_dir_path = config_xml_file_path.parent_path();
+            path config_xml_dir_path = config_xml_file_path.parent_path();
             fs.create_directories(config_xml_dir_path, ec);
             Checks::check_exit(VCPKG_LINE_INFO,
                                !ec,
                                "Could not create directory for configuration file %s",
-                               vcpkg::Files::generic_u8string(config_xml_file_path));
+                               vcpkg::generic_u8string(config_xml_file_path));
 
             std::string formatted_repo_url;
             std::string ifw_repo_url = ifw_options.maybe_repository_url.value_or("");
@@ -303,34 +293,31 @@ namespace vcpkg::Export::IFW
                               VCPKG_LINE_INFO);
         }
 
-        void export_maintenance_tool(const stdfs::path& ifw_packages_dir_path, const VcpkgPaths& paths)
+        void export_maintenance_tool(const path& ifw_packages_dir_path, const VcpkgPaths& paths)
         {
             print2("Exporting maintenance tool...\n");
 
             std::error_code ec;
             Filesystem& fs = paths.get_filesystem();
 
-            const stdfs::path& installerbase_exe = paths.get_tool_exe(Tools::IFW_INSTALLER_BASE);
-            stdfs::path tempmaintenancetool =
-                ifw_packages_dir_path / "maintenance" / "data" / "tempmaintenancetool.exe";
+            const path& installerbase_exe = paths.get_tool_exe(Tools::IFW_INSTALLER_BASE);
+            path tempmaintenancetool = ifw_packages_dir_path / "maintenance" / "data" / "tempmaintenancetool.exe";
             fs.create_directories(tempmaintenancetool.parent_path(), ec);
             Checks::check_exit(VCPKG_LINE_INFO,
                                !ec,
                                "Could not create directory for package file %s",
-                               vcpkg::Files::generic_u8string(tempmaintenancetool));
+                               vcpkg::generic_u8string(tempmaintenancetool));
             fs.copy_file(installerbase_exe, tempmaintenancetool, stdfs::copy_options::overwrite_existing, ec);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               !ec,
-                               "Could not write package file %s",
-                               vcpkg::Files::generic_u8string(tempmaintenancetool));
+            Checks::check_exit(
+                VCPKG_LINE_INFO, !ec, "Could not write package file %s", vcpkg::generic_u8string(tempmaintenancetool));
 
-            stdfs::path package_xml_file_path = ifw_packages_dir_path / "maintenance" / "meta" / "package.xml";
-            stdfs::path package_xml_dir_path = package_xml_file_path.parent_path();
+            path package_xml_file_path = ifw_packages_dir_path / "maintenance" / "meta" / "package.xml";
+            path package_xml_dir_path = package_xml_file_path.parent_path();
             fs.create_directories(package_xml_dir_path, ec);
             Checks::check_exit(VCPKG_LINE_INFO,
                                !ec,
                                "Could not create directory for package file %s",
-                               vcpkg::Files::generic_u8string(package_xml_file_path));
+                               vcpkg::generic_u8string(package_xml_file_path));
             fs.write_contents(package_xml_file_path,
                               Strings::format(
                                   R"###(<?xml version="1.0"?>
@@ -347,34 +334,32 @@ namespace vcpkg::Export::IFW
 )###",
                                   create_release_date()),
                               VCPKG_LINE_INFO);
-            const stdfs::path script_source = paths.root / "scripts" / "ifw" / "maintenance.qs";
-            const stdfs::path script_destination = ifw_packages_dir_path / "maintenance" / "meta" / "maintenance.qs";
+            const path script_source = paths.root / "scripts" / "ifw" / "maintenance.qs";
+            const path script_destination = ifw_packages_dir_path / "maintenance" / "meta" / "maintenance.qs";
             fs.copy_file(script_source, script_destination, stdfs::copy_options::overwrite_existing, ec);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               !ec,
-                               "Could not write package file %s",
-                               vcpkg::Files::generic_u8string(script_destination));
+            Checks::check_exit(
+                VCPKG_LINE_INFO, !ec, "Could not write package file %s", vcpkg::generic_u8string(script_destination));
 
             print2("Exporting maintenance tool... done\n");
         }
 
         void do_repository(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
-            const stdfs::path& repogen_exe = paths.get_tool_exe(Tools::IFW_REPOGEN);
-            const stdfs::path packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
-            const stdfs::path repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
+            const path& repogen_exe = paths.get_tool_exe(Tools::IFW_REPOGEN);
+            const path packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
+            const path repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
 
-            print2("Generating repository ", vcpkg::Files::generic_u8string(repository_dir), "...\n");
+            print2("Generating repository ", vcpkg::generic_u8string(repository_dir), "...\n");
 
             std::error_code ec;
-            stdfs::path failure_point;
+            path failure_point;
             Filesystem& fs = paths.get_filesystem();
 
             fs.remove_all(repository_dir, ec, failure_point);
             Checks::check_exit(VCPKG_LINE_INFO,
                                !ec,
                                "Could not remove outdated repository directory %s due to file %s",
-                               vcpkg::Files::generic_u8string(repository_dir),
+                               vcpkg::generic_u8string(repository_dir),
                                failure_point.string());
 
             auto cmd_line =
@@ -384,18 +369,18 @@ namespace vcpkg::Export::IFW
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW repository generating failed");
 
             vcpkg::printf(
-                Color::success, "Generating repository %s... done.\n", vcpkg::Files::generic_u8string(repository_dir));
+                Color::success, "Generating repository %s... done.\n", vcpkg::generic_u8string(repository_dir));
         }
 
         void do_installer(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
-            const stdfs::path& binarycreator_exe = paths.get_tool_exe(Tools::IFW_BINARYCREATOR);
-            const stdfs::path config_file = get_config_file_path(export_id, ifw_options, paths);
-            const stdfs::path packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
-            const stdfs::path repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
-            const stdfs::path installer_file = get_installer_file_path(export_id, ifw_options, paths);
+            const path& binarycreator_exe = paths.get_tool_exe(Tools::IFW_BINARYCREATOR);
+            const path config_file = get_config_file_path(export_id, ifw_options, paths);
+            const path packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
+            const path repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
+            const path installer_file = get_installer_file_path(export_id, ifw_options, paths);
 
-            vcpkg::printf("Generating installer %s...\n", vcpkg::Files::generic_u8string(installer_file));
+            vcpkg::printf("Generating installer %s...\n", vcpkg::generic_u8string(installer_file));
 
             Command cmd_line;
 
@@ -424,7 +409,7 @@ namespace vcpkg::Export::IFW
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW installer generating failed");
 
             vcpkg::printf(
-                Color::success, "Generating installer %s... done.\n", vcpkg::Files::generic_u8string(installer_file));
+                Color::success, "Generating installer %s... done.\n", vcpkg::generic_u8string(installer_file));
         }
     }
 
@@ -434,29 +419,29 @@ namespace vcpkg::Export::IFW
                    const VcpkgPaths& paths)
     {
         std::error_code ec;
-        stdfs::path failure_point;
+        path failure_point;
         Filesystem& fs = paths.get_filesystem();
 
         // Prepare packages directory
-        const stdfs::path ifw_packages_dir_path = get_packages_dir_path(export_id, ifw_options, paths);
+        const path ifw_packages_dir_path = get_packages_dir_path(export_id, ifw_options, paths);
 
         fs.remove_all(ifw_packages_dir_path, ec, failure_point);
         Checks::check_exit(VCPKG_LINE_INFO,
                            !ec,
                            "Could not remove outdated packages directory %s due to file %s",
-                           vcpkg::Files::generic_u8string(ifw_packages_dir_path),
+                           vcpkg::generic_u8string(ifw_packages_dir_path),
                            failure_point.string());
 
         fs.create_directory(ifw_packages_dir_path, ec);
         Checks::check_exit(VCPKG_LINE_INFO,
                            !ec,
                            "Could not create packages directory %s",
-                           vcpkg::Files::generic_u8string(ifw_packages_dir_path));
+                           vcpkg::generic_u8string(ifw_packages_dir_path));
 
         // Export maintenance tool
         export_maintenance_tool(ifw_packages_dir_path, paths);
 
-        vcpkg::printf("Exporting packages %s...\n", vcpkg::Files::generic_u8string(ifw_packages_dir_path));
+        vcpkg::printf("Exporting packages %s...\n", vcpkg::generic_u8string(ifw_packages_dir_path));
 
         // execute the plan
         std::map<std::string, const ExportPlanAction*> unique_packages;
@@ -476,7 +461,7 @@ namespace vcpkg::Export::IFW
             unique_triplets.insert(action.spec.triplet().canonical_name());
 
             // Export real package and return data dir for installation
-            stdfs::path ifw_package_dir_path = export_real_package(ifw_packages_dir_path, action, fs);
+            path ifw_package_dir_path = export_real_package(ifw_packages_dir_path, action, fs);
 
             // Copy package data
             const InstallDir dirs = InstallDir::from_destination_root(ifw_package_dir_path,
@@ -487,11 +472,11 @@ namespace vcpkg::Export::IFW
             Install::install_package_and_write_listfile(paths, action.spec, dirs);
         }
 
-        vcpkg::printf("Exporting packages %s... done\n", vcpkg::Files::generic_u8string(ifw_packages_dir_path));
+        vcpkg::printf("Exporting packages %s... done\n", vcpkg::generic_u8string(ifw_packages_dir_path));
 
-        const stdfs::path config_file = get_config_file_path(export_id, ifw_options, paths);
+        const path config_file = get_config_file_path(export_id, ifw_options, paths);
 
-        vcpkg::printf("Generating configuration %s...\n", vcpkg::Files::generic_u8string(config_file));
+        vcpkg::printf("Generating configuration %s...\n", vcpkg::generic_u8string(config_file));
 
         // Unique packages
         export_unique_packages(ifw_packages_dir_path, unique_packages, fs);
@@ -507,7 +492,7 @@ namespace vcpkg::Export::IFW
         // Configuration
         export_config(export_id, ifw_options, paths);
 
-        vcpkg::printf("Generating configuration %s... done.\n", vcpkg::Files::generic_u8string(config_file));
+        vcpkg::printf("Generating configuration %s... done.\n", vcpkg::generic_u8string(config_file));
 
         // Do repository (optional)
         std::string ifw_repo_url = ifw_options.maybe_repository_url.value_or("");

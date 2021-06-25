@@ -82,10 +82,9 @@ namespace vcpkg::Commands::PortsDiff
     {
         std::error_code ec;
         auto& fs = paths.get_filesystem();
-        const stdfs::path dot_git_dir = paths.root / ".git";
-        const std::string ports_dir_name_as_string = vcpkg::Files::u8string(paths.builtin_ports_directory().filename());
-        const stdfs::path temp_checkout_path =
-            paths.root / Strings::format("%s-%s", ports_dir_name_as_string, git_commit_id);
+        const path dot_git_dir = paths.root / ".git";
+        const std::string ports_dir_name_as_string = vcpkg::u8string(paths.builtin_ports_directory().filename());
+        const path temp_checkout_path = paths.root / Strings::format("%s-%s", ports_dir_name_as_string, git_commit_id);
         fs.create_directory(temp_checkout_path, ec);
         const auto checkout_this_dir =
             Strings::format(R"(.\%s)", ports_dir_name_as_string); // Must be relative to the root of the repository

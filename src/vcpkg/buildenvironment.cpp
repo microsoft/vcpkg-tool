@@ -6,7 +6,7 @@
 namespace vcpkg
 {
     Command make_cmake_cmd(const VcpkgPaths& paths,
-                           const stdfs::path& cmake_script,
+                           const path& cmake_script,
                            std::vector<CMakeVariable>&& pass_variables)
     {
         auto local_variables = std::move(pass_variables);

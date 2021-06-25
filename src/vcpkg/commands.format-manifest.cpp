@@ -17,14 +17,14 @@ namespace
     struct ToWrite
     {
         SourceControlFile scf;
-        stdfs::path file_to_write;
-        stdfs::path original_path;
+        path file_to_write;
+        path original_path;
         std::string original_source;
     };
 
-    Optional<ToWrite> read_manifest(Filesystem& fs, stdfs::path&& manifest_path)
+    Optional<ToWrite> read_manifest(Filesystem& fs, path&& manifest_path)
     {
-        auto path_string = vcpkg::Files::u8string(manifest_path);
+        auto path_string = vcpkg::u8string(manifest_path);
         Debug::print("Reading ", path_string, "\n");
         auto contents = fs.read_contents(manifest_path, VCPKG_LINE_INFO);
         auto parsed_json_opt = Json::parse(contents, manifest_path);
@@ -59,14 +59,14 @@ namespace
         };
     }
 
-    Optional<ToWrite> read_control_file(Filesystem& fs, stdfs::path&& control_path)
+    Optional<ToWrite> read_control_file(Filesystem& fs, path&& control_path)
     {
         std::error_code ec;
-        auto control_path_string = vcpkg::Files::u8string(control_path);
+        auto control_path_string = vcpkg::u8string(control_path);
         Debug::print("Reading ", control_path_string, "\n");
 
         auto manifest_path = control_path.parent_path();
-        manifest_path /= vcpkg::Files::u8path("vcpkg.json");
+        manifest_path /= vcpkg::u8path("vcpkg.json");
 
         auto contents = fs.read_contents(control_path, VCPKG_LINE_INFO);
         auto paragraphs = Paragraphs::parse_paragraphs(contents, control_path_string);
@@ -77,7 +77,7 @@ namespace
                 Color::error, "Failed to read paragraphs from %s: %s\n", control_path_string, paragraphs.error());
             return {};
         }
-        auto scf_res = SourceControlFile::parse_control_file(vcpkg::Files::u8string(control_path),
+        auto scf_res = SourceControlFile::parse_control_file(vcpkg::u8string(control_path),
                                                              std::move(paragraphs).value_or_exit(VCPKG_LINE_INFO));
         if (!scf_res)
         {
@@ -96,8 +96,8 @@ namespace
 
     void write_file(Filesystem& fs, const ToWrite& data)
     {
-        auto original_path_string = vcpkg::Files::u8string(data.original_path);
-        auto file_to_write_string = vcpkg::Files::u8string(data.file_to_write);
+        auto original_path_string = vcpkg::u8string(data.original_path);
+        auto file_to_write_string = vcpkg::u8string(data.file_to_write);
         if (data.file_to_write == data.original_path)
         {
             Debug::print("Formatting ", file_to_write_string, "\n");
@@ -108,7 +108,7 @@ namespace
         }
         auto res = serialize_manifest(data.scf);
 
-        auto check = SourceControlFile::parse_manifest_file(stdfs::path{}, res);
+        auto check = SourceControlFile::parse_manifest_file(path{}, res);
         if (!check)
         {
             vcpkg::printf(Color::error,
@@ -224,13 +224,13 @@ namespace vcpkg::Commands::FormatManifest
 
         for (const auto& arg : args.command_arguments)
         {
-            auto path = vcpkg::Files::u8path(arg);
+            auto path = vcpkg::u8path(arg);
             if (path.is_relative())
             {
                 path = paths.original_cwd / path;
             }
 
-            if (path.filename() == vcpkg::Files::u8path("CONTROL"))
+            if (path.filename() == vcpkg::u8path("CONTROL"))
             {
                 add_file(read_control_file(fs, std::move(path)));
             }
@@ -244,15 +244,15 @@ namespace vcpkg::Commands::FormatManifest
         {
             for (const auto& dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
             {
-                auto control_path = dir.path() / vcpkg::Files::u8path("CONTROL");
-                auto manifest_path = dir.path() / vcpkg::Files::u8path("vcpkg.json");
+                auto control_path = dir.path() / vcpkg::u8path("CONTROL");
+                auto manifest_path = dir.path() / vcpkg::u8path("vcpkg.json");
                 auto manifest_exists = fs.exists(manifest_path);
                 auto control_exists = fs.exists(control_path);
 
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    !manifest_exists || !control_exists,
                                    "Both a manifest file and a CONTROL file exist in port directory: %s",
-                                   vcpkg::Files::u8string(dir.path()));
+                                   vcpkg::u8string(dir.path()));
 
                 if (manifest_exists)
                 {

@@ -17,11 +17,9 @@ namespace vcpkg::Export::Prefab
     using Dependencies::ExportPlanType;
     using Install::InstallDir;
 
-    static std::vector<stdfs::path> find_modules(const VcpkgPaths& system,
-                                                 const stdfs::path& root,
-                                                 const std::string& ext)
+    static std::vector<path> find_modules(const VcpkgPaths& system, const path& root, const std::string& ext)
     {
-        std::vector<stdfs::path> paths;
+        std::vector<path> paths;
         Filesystem& utils = system.get_filesystem();
         std::error_code error_code;
         if (!utils.exists(root, error_code) || !utils.is_directory(root)) return paths;
@@ -195,7 +193,7 @@ namespace vcpkg::Export::Prefab
         return {};
     }
 
-    static void compress_directory(const VcpkgPaths& paths, const stdfs::path& source, const stdfs::path& destination)
+    static void compress_directory(const VcpkgPaths& paths, const path& source, const path& destination)
     {
         auto& fs = paths.get_filesystem();
 
@@ -203,12 +201,12 @@ namespace vcpkg::Export::Prefab
 
         fs.remove(destination, ec);
         Checks::check_exit(
-            VCPKG_LINE_INFO, !fs.exists(destination), "Could not remove file: %s", vcpkg::Files::u8string(destination));
+            VCPKG_LINE_INFO, !fs.exists(destination), "Could not remove file: %s", vcpkg::u8string(destination));
 #if defined(_WIN32)
         auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
 
         cmd_execute_and_capture_output(
-            Command(seven_zip_exe).string_arg("a").path_arg(destination).path_arg(source / vcpkg::Files::u8path("*")),
+            Command(seven_zip_exe).string_arg("a").path_arg(destination).path_arg(source / vcpkg::u8path("*")),
             get_clean_environment());
 #else
         cmd_execute_clean(Command{"zip"}.string_arg("--quiet").string_arg("-r").path_arg(destination).string_arg("*"),
@@ -216,7 +214,7 @@ namespace vcpkg::Export::Prefab
 #endif
     }
 
-    static void maven_install(const stdfs::path& aar, const stdfs::path& pom, const Options& prefab_options)
+    static void maven_install(const path& aar, const path& pom, const Options& prefab_options)
     {
         if (prefab_options.enable_debug)
         {
@@ -228,11 +226,11 @@ namespace vcpkg::Export::Prefab
             cmd_line.string_arg("-q");
         }
         cmd_line.string_arg("install:install-file")
-            .string_arg(Strings::concat("-Dfile=", vcpkg::Files::u8string(aar)))
-            .string_arg(Strings::concat("-DpomFile=", vcpkg::Files::u8string(pom)));
+            .string_arg(Strings::concat("-Dfile=", vcpkg::u8string(aar)))
+            .string_arg(Strings::concat("-DpomFile=", vcpkg::u8string(pom)));
         const int exit_code = cmd_execute_clean(cmd_line);
         Checks::check_exit(
-            VCPKG_LINE_INFO, exit_code == 0, "Error: %s installing maven file", vcpkg::Files::generic_u8string(aar));
+            VCPKG_LINE_INFO, exit_code == 0, "Error: %s installing maven file", vcpkg::generic_u8string(aar));
     }
 
     static std::unique_ptr<Build::PreBuildInfo> build_info_from_triplet(
@@ -311,18 +309,18 @@ namespace vcpkg::Export::Prefab
 
         Filesystem& utils = paths.get_filesystem();
 
-        const stdfs::path ndk_location = android_ndk_home.value_or_exit(VCPKG_LINE_INFO);
+        const path ndk_location = android_ndk_home.value_or_exit(VCPKG_LINE_INFO);
 
         Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
                                     utils.exists(ndk_location),
                                     "Error: ANDROID_NDK_HOME Directory does not exists %s",
-                                    vcpkg::Files::generic_u8string(ndk_location));
-        const stdfs::path source_properties_location = ndk_location / "source.properties";
+                                    vcpkg::generic_u8string(ndk_location));
+        const path source_properties_location = ndk_location / "source.properties";
 
         Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
                                     utils.exists(ndk_location),
                                     "Error: source.properties missing in ANDROID_NDK_HOME directory %s",
-                                    vcpkg::Files::generic_u8string(source_properties_location));
+                                    vcpkg::generic_u8string(source_properties_location));
 
         std::string content = utils.read_contents(source_properties_location, VCPKG_LINE_INFO);
 
@@ -331,7 +329,7 @@ namespace vcpkg::Export::Prefab
         Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
                                     version_opt.has_value(),
                                     "Error: NDK version missing %s",
-                                    vcpkg::Files::generic_u8string(source_properties_location));
+                                    vcpkg::generic_u8string(source_properties_location));
 
         NdkVersion version = to_version(version_opt.value_or_exit(VCPKG_LINE_INFO)).value_or_exit(VCPKG_LINE_INFO);
 
@@ -405,7 +403,7 @@ namespace vcpkg::Export::Prefab
                 continue;
             }
 
-            const stdfs::path per_package_dir_path = paths.prefab / vcpkg::Files::u8path(name);
+            const path per_package_dir_path = paths.prefab / vcpkg::u8path(name);
 
             const auto& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
             const std::string norm_version = binary_paragraph.version;
@@ -414,9 +412,9 @@ namespace vcpkg::Export::Prefab
 
             print2("\nExporting package ", name, "...\n");
 
-            stdfs::path package_directory = per_package_dir_path / "aar";
-            stdfs::path prefab_directory = package_directory / "prefab";
-            stdfs::path modules_directory = prefab_directory / "modules";
+            path package_directory = per_package_dir_path / "aar";
+            path prefab_directory = package_directory / "prefab";
+            path modules_directory = prefab_directory / "modules";
 
             utils.create_directories(modules_directory, error_code);
 
@@ -434,15 +432,15 @@ namespace vcpkg::Export::Prefab
             Strings::inplace_replace_all(manifest, "@MIN_SDK_VERSION@", sdk_min_version);
             Strings::inplace_replace_all(manifest, "@SDK_TARGET_VERSION@", sdk_target_version);
 
-            stdfs::path manifest_path = package_directory / "AndroidManifest.xml";
-            stdfs::path prefab_path = prefab_directory / "prefab.json";
+            path manifest_path = package_directory / "AndroidManifest.xml";
+            path prefab_path = prefab_directory / "prefab.json";
 
-            stdfs::path meta_dir = package_directory / "META-INF";
+            path meta_dir = package_directory / "META-INF";
 
             utils.create_directories(meta_dir, error_code);
 
-            const stdfs::path share_root =
-                paths.packages / vcpkg::Files::u8path(Strings::format("%s_%s", name, action.spec.triplet()));
+            const path share_root =
+                paths.packages / vcpkg::u8path(Strings::format("%s_%s", name, action.spec.triplet()));
 
             utils.copy_file(share_root / "share" / name / "copyright",
                             meta_dir / "LICENSE",
@@ -502,8 +500,8 @@ namespace vcpkg::Export::Prefab
             if (prefab_options.enable_debug)
             {
                 print2(Strings::format("[DEBUG]\n\tWriting manifest\n\tTo %s\n\tWriting prefab meta data\n\tTo %s\n\n",
-                                       vcpkg::Files::generic_u8string(manifest_path),
-                                       vcpkg::Files::generic_u8string(prefab_path)));
+                                       vcpkg::generic_u8string(manifest_path),
+                                       vcpkg::generic_u8string(prefab_path)));
             }
 
             utils.write_contents(manifest_path, manifest, VCPKG_LINE_INFO);
@@ -522,30 +520,28 @@ namespace vcpkg::Export::Prefab
 
             for (const auto& triplet : triplets)
             {
-                const stdfs::path listfile =
-                    paths.vcpkg_dir_info /
-                    vcpkg::Files::u8path(Strings::format("%s_%s_%s", name, norm_version, triplet) + ".list");
-                const stdfs::path installed_dir =
-                    paths.packages / vcpkg::Files::u8path(Strings::format("%s_%s", name, triplet));
+                const path listfile = paths.vcpkg_dir_info /
+                                      vcpkg::u8path(Strings::format("%s_%s_%s", name, norm_version, triplet) + ".list");
+                const path installed_dir = paths.packages / vcpkg::u8path(Strings::format("%s_%s", name, triplet));
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    utils.exists(listfile),
                                    "Error: Packages not installed %s:%s %s",
                                    name,
                                    triplet,
-                                   vcpkg::Files::generic_u8string(listfile));
+                                   vcpkg::generic_u8string(listfile));
 
-                stdfs::path libs = installed_dir / vcpkg::Files::u8path("lib");
+                path libs = installed_dir / vcpkg::u8path("lib");
 
-                std::vector<stdfs::path> modules;
+                std::vector<path> modules;
 
-                std::vector<stdfs::path> modules_shared = find_modules(paths, libs, ".so");
+                std::vector<path> modules_shared = find_modules(paths, libs, ".so");
 
                 for (const auto& module : modules_shared)
                 {
                     modules.push_back(module);
                 }
 
-                std::vector<stdfs::path> modules_static = find_modules(paths, libs, ".a");
+                std::vector<path> modules_static = find_modules(paths, libs, ".a");
                 for (const auto& module : modules_static)
                 {
                     modules.push_back(module);
@@ -554,14 +550,14 @@ namespace vcpkg::Export::Prefab
                 // header only libs
                 if (modules.empty())
                 {
-                    stdfs::path module_dir = modules_directory / name;
-                    stdfs::path module_libs_dir = module_dir / vcpkg::Files::u8path("libs");
+                    path module_dir = modules_directory / name;
+                    path module_libs_dir = module_dir / vcpkg::u8path("libs");
                     utils.create_directories(module_libs_dir, error_code);
-                    stdfs::path installed_headers_dir = installed_dir / vcpkg::Files::u8path("include");
-                    stdfs::path exported_headers_dir = module_dir / vcpkg::Files::u8path("include");
+                    path installed_headers_dir = installed_dir / vcpkg::u8path("include");
+                    path exported_headers_dir = module_dir / vcpkg::u8path("include");
 
                     ModuleMetadata meta;
-                    stdfs::path module_meta_path = module_dir / vcpkg::Files::u8path("module.json");
+                    path module_meta_path = module_dir / vcpkg::u8path("module.json");
                     utils.write_contents(module_meta_path, meta.to_json(), VCPKG_LINE_INFO);
 
                     utils.copy(installed_headers_dir, exported_headers_dir, stdfs::copy_options::recursive);
@@ -571,8 +567,8 @@ namespace vcpkg::Export::Prefab
                 {
                     for (const auto& module : modules)
                     {
-                        std::string module_name = vcpkg::Files::generic_u8string(module.stem());
-                        std::string extension = vcpkg::Files::generic_u8string(module.extension());
+                        std::string module_name = vcpkg::generic_u8string(module.stem());
+                        std::string extension = vcpkg::generic_u8string(module.extension());
 
                         ABIMetadata ab;
                         ab.abi = triplet_abi_map[triplet];
@@ -592,21 +588,21 @@ namespace vcpkg::Export::Prefab
                         {
                             module_name = module_name.substr(3);
                         }
-                        stdfs::path module_dir = (modules_directory / module_name);
-                        stdfs::path module_libs_dir = module_dir / "libs" / Strings::format("android.%s", ab.abi);
+                        path module_dir = (modules_directory / module_name);
+                        path module_libs_dir = module_dir / "libs" / Strings::format("android.%s", ab.abi);
                         utils.create_directories(module_libs_dir, error_code);
 
-                        stdfs::path abi_path = module_libs_dir / "abi.json";
+                        path abi_path = module_libs_dir / "abi.json";
 
                         if (prefab_options.enable_debug)
                         {
                             print2(Strings::format("\tWriting abi metadata\n\tTo %s\n",
-                                                   vcpkg::Files::generic_u8string(abi_path)));
+                                                   vcpkg::generic_u8string(abi_path)));
                         }
                         utils.write_contents(abi_path, ab.to_string(), VCPKG_LINE_INFO);
 
-                        stdfs::path installed_module_path = libs / module.filename();
-                        stdfs::path exported_module_path = module_libs_dir / module.filename();
+                        path installed_module_path = libs / module.filename();
+                        path exported_module_path = module_libs_dir / module.filename();
 
                         utils.copy_file(installed_module_path,
                                         exported_module_path,
@@ -615,29 +611,29 @@ namespace vcpkg::Export::Prefab
                         if (prefab_options.enable_debug)
                         {
                             print2(Strings::format("\tCopying libs\n\tFrom %s\n\tTo %s\n",
-                                                   vcpkg::Files::generic_u8string(installed_module_path),
-                                                   vcpkg::Files::generic_u8string(exported_module_path)));
+                                                   vcpkg::generic_u8string(installed_module_path),
+                                                   vcpkg::generic_u8string(exported_module_path)));
                         }
-                        stdfs::path installed_headers_dir = installed_dir / "include";
-                        stdfs::path exported_headers_dir = module_libs_dir / "include";
+                        path installed_headers_dir = installed_dir / "include";
+                        path exported_headers_dir = module_libs_dir / "include";
 
                         if (prefab_options.enable_debug)
                         {
                             print2(Strings::format("\tCopying headers\n\tFrom %s\n\tTo %s\n",
-                                                   vcpkg::Files::generic_u8string(installed_headers_dir),
-                                                   vcpkg::Files::generic_u8string(exported_headers_dir)));
+                                                   vcpkg::generic_u8string(installed_headers_dir),
+                                                   vcpkg::generic_u8string(exported_headers_dir)));
                         }
 
                         utils.copy(installed_headers_dir, exported_headers_dir, stdfs::copy_options::recursive);
 
                         ModuleMetadata meta;
 
-                        stdfs::path module_meta_path = module_dir / "module.json";
+                        path module_meta_path = module_dir / "module.json";
 
                         if (prefab_options.enable_debug)
                         {
                             print2(Strings::format("\tWriting module metadata\n\tTo %s\n\n",
-                                                   vcpkg::Files::generic_u8string(module_meta_path)));
+                                                   vcpkg::generic_u8string(module_meta_path)));
                         }
 
                         utils.write_contents(module_meta_path, meta.to_json(), VCPKG_LINE_INFO);
@@ -645,14 +641,14 @@ namespace vcpkg::Export::Prefab
                 }
             }
 
-            stdfs::path exported_archive_path = per_package_dir_path / Strings::format("%s-%s.aar", name, norm_version);
-            stdfs::path pom_path = per_package_dir_path / "pom.xml";
+            path exported_archive_path = per_package_dir_path / Strings::format("%s-%s.aar", name, norm_version);
+            path pom_path = per_package_dir_path / "pom.xml";
 
             if (prefab_options.enable_debug)
             {
                 print2(Strings::format("[DEBUG] Exporting AAR And POM\n\tAAR Path %s\n\tPOM Path %s\n",
-                                       vcpkg::Files::generic_u8string(exported_archive_path),
-                                       vcpkg::Files::generic_u8string(pom_path)));
+                                       vcpkg::generic_u8string(exported_archive_path),
+                                       vcpkg::generic_u8string(pom_path)));
             }
 
             compress_directory(paths, package_directory, exported_archive_path);
@@ -713,7 +709,7 @@ namespace vcpkg::Export::Prefab
             }
             print2(Color::success,
                    Strings::format(
-                       "Successfuly exported %s. Checkout %s  \n", name, vcpkg::Files::generic_u8string(paths.prefab)));
+                       "Successfuly exported %s. Checkout %s  \n", name, vcpkg::generic_u8string(paths.prefab)));
         }
     }
 }

@@ -22,7 +22,7 @@ namespace stdfs = std::filesystem;
 namespace stdfs = std::experimental::filesystem;
 #endif
 
-namespace vcpkg::Files
+namespace vcpkg
 {
 #if defined(_WIN32)
     struct IsSlash
@@ -38,25 +38,24 @@ namespace vcpkg::Files
 
     constexpr IsSlash is_slash;
 
-    stdfs::path u8path(vcpkg::StringView s);
-    inline stdfs::path u8path(const char* first, const char* last) { return u8path(vcpkg::StringView{first, last}); }
-    inline stdfs::path u8path(std::initializer_list<char> il)
-    {
-        return u8path(vcpkg::StringView{il.begin(), il.end()});
-    }
-    inline stdfs::path u8path(const char* s) { return u8path(vcpkg::StringView{s, s + ::strlen(s)}); }
+    using stdfs::path;
 
-    inline stdfs::path u8path(std::string::const_iterator first, std::string::const_iterator last)
+    path u8path(StringView s);
+    inline path u8path(const char* first, const char* last) { return u8path(StringView{first, last}); }
+    inline path u8path(std::initializer_list<char> il) { return u8path(StringView{il.begin(), il.end()}); }
+    inline path u8path(const char* s) { return u8path(StringView{s, s + ::strlen(s)}); }
+
+    inline path u8path(std::string::const_iterator first, std::string::const_iterator last)
     {
         auto firstp = &*first;
-        return u8path(vcpkg::StringView{firstp, firstp + (last - first)});
+        return u8path(StringView{firstp, firstp + (last - first)});
     }
 
-    std::string u8string(const stdfs::path& p);
-    std::string generic_u8string(const stdfs::path& p);
+    std::string u8string(const path& p);
+    std::string generic_u8string(const path& p);
 
     // equivalent to p.lexically_normal()
-    stdfs::path lexically_normal(const stdfs::path& p);
+    path lexically_normal(const path& p);
 
 #if defined(_WIN32)
     enum class file_type
@@ -166,90 +165,82 @@ namespace vcpkg
 {
     struct Filesystem
     {
-        std::string read_contents(const stdfs::path& file_path, LineInfo linfo) const;
-        virtual Expected<std::string> read_contents(const stdfs::path& file_path) const = 0;
+        std::string read_contents(const path& file_path, LineInfo linfo) const;
+        virtual Expected<std::string> read_contents(const path& file_path) const = 0;
         /// <summary>Read text lines from a file</summary>
         /// <remarks>Lines will have up to one trailing carriage-return character stripped (CRLF)</remarks>
-        virtual Expected<std::vector<std::string>> read_lines(const stdfs::path& file_path) const = 0;
-        std::vector<std::string> read_lines(const stdfs::path& file_path, LineInfo linfo) const;
-        virtual stdfs::path find_file_recursively_up(const stdfs::path& starting_dir,
-                                                     const stdfs::path& filename) const = 0;
-        virtual std::vector<stdfs::path> get_files_recursive(const stdfs::path& dir) const = 0;
-        virtual std::vector<stdfs::path> get_files_non_recursive(const stdfs::path& dir) const = 0;
-        void write_lines(const stdfs::path& file_path, const std::vector<std::string>& lines, LineInfo linfo);
-        virtual void write_lines(const stdfs::path& file_path,
-                                 const std::vector<std::string>& lines,
-                                 std::error_code& ec) = 0;
-        void write_contents(const stdfs::path& path, const std::string& data, LineInfo linfo);
-        virtual void write_contents(const stdfs::path& file_path, const std::string& data, std::error_code& ec) = 0;
-        void write_rename_contents(const stdfs::path& path,
-                                   const stdfs::path& tmpext,
-                                   const std::string& data,
-                                   LineInfo linfo);
-        void write_contents_and_dirs(const stdfs::path& path, const std::string& data, LineInfo linfo);
-        virtual void write_contents_and_dirs(const stdfs::path& file_path,
-                                             const std::string& data,
-                                             std::error_code& ec) = 0;
-        void rename(const stdfs::path& oldpath, const stdfs::path& newpath, LineInfo linfo);
-        void rename_with_retry(const stdfs::path& oldpath, const stdfs::path& newpath, std::error_code& ec);
-        virtual void rename(const stdfs::path& oldpath, const stdfs::path& newpath, std::error_code& ec) = 0;
-        virtual void rename_or_copy(const stdfs::path& oldpath,
-                                    const stdfs::path& newpath,
+        virtual Expected<std::vector<std::string>> read_lines(const path& file_path) const = 0;
+        std::vector<std::string> read_lines(const path& file_path, LineInfo linfo) const;
+        virtual path find_file_recursively_up(const path& starting_dir, const path& filename) const = 0;
+        virtual std::vector<path> get_files_recursive(const path& dir) const = 0;
+        virtual std::vector<path> get_files_non_recursive(const path& dir) const = 0;
+        void write_lines(const path& file_path, const std::vector<std::string>& lines, LineInfo linfo);
+        virtual void write_lines(const path& file_path, const std::vector<std::string>& lines, std::error_code& ec) = 0;
+        void write_contents(const path& path, const std::string& data, LineInfo linfo);
+        virtual void write_contents(const path& file_path, const std::string& data, std::error_code& ec) = 0;
+        void write_rename_contents(const path& p, const path& tmpext, const std::string& data, LineInfo linfo);
+        void write_contents_and_dirs(const path& path, const std::string& data, LineInfo linfo);
+        virtual void write_contents_and_dirs(const path& file_path, const std::string& data, std::error_code& ec) = 0;
+        void rename(const path& oldpath, const path& newpath, LineInfo linfo);
+        void rename_with_retry(const path& oldpath, const path& newpath, std::error_code& ec);
+        virtual void rename(const path& oldpath, const path& newpath, std::error_code& ec) = 0;
+        virtual void rename_or_copy(const path& oldpath,
+                                    const path& newpath,
                                     StringLiteral temp_suffix,
                                     std::error_code& ec) = 0;
-        bool remove(const stdfs::path& path, LineInfo linfo);
-        bool remove(const stdfs::path& path, ignore_errors_t);
-        virtual bool remove(const stdfs::path& path, std::error_code& ec) = 0;
+        bool remove(const path& path, LineInfo linfo);
+        bool remove(const path& path, ignore_errors_t);
+        virtual bool remove(const path& path, std::error_code& ec) = 0;
 
-        virtual void remove_all(const stdfs::path& path, std::error_code& ec, stdfs::path& failure_point) = 0;
-        void remove_all(const stdfs::path& path, LineInfo li);
-        void remove_all(const stdfs::path& path, ignore_errors_t);
-        virtual void remove_all_inside(const stdfs::path& path, std::error_code& ec, stdfs::path& failure_point) = 0;
-        void remove_all_inside(const stdfs::path& path, LineInfo li);
-        void remove_all_inside(const stdfs::path& path, ignore_errors_t);
-        bool exists(const stdfs::path& path, std::error_code& ec) const;
-        bool exists(LineInfo li, const stdfs::path& path) const;
-        bool exists(const stdfs::path& path, ignore_errors_t = ignore_errors) const;
-        virtual bool is_directory(const stdfs::path& path) const = 0;
-        virtual bool is_regular_file(const stdfs::path& path) const = 0;
-        virtual bool is_empty(const stdfs::path& path) const = 0;
-        virtual bool create_directory(const stdfs::path& path, std::error_code& ec) = 0;
-        bool create_directory(const stdfs::path& path, ignore_errors_t);
-        bool create_directory(const stdfs::path& path, LineInfo li);
-        virtual bool create_directories(const stdfs::path& path, std::error_code& ec) = 0;
-        bool create_directories(const stdfs::path& path, ignore_errors_t);
-        bool create_directories(const stdfs::path& path, LineInfo);
-        virtual void create_symlink(const stdfs::path& to, const stdfs::path& from, std::error_code& ec) = 0;
-        virtual void create_hard_link(const stdfs::path& to, const stdfs::path& from, std::error_code& ec) = 0;
-        void create_best_link(const stdfs::path& to, const stdfs::path& from, std::error_code& ec);
-        void create_best_link(const stdfs::path& to, const stdfs::path& from, LineInfo);
-        virtual void copy(const stdfs::path& oldpath, const stdfs::path& newpath, stdfs::copy_options opts) = 0;
-        virtual bool copy_file(const stdfs::path& oldpath,
-                               const stdfs::path& newpath,
+        virtual void remove_all(const path& base, std::error_code& ec, path& failure_point) = 0;
+        void remove_all(const path& path, LineInfo li);
+        void remove_all(const path& path, ignore_errors_t);
+        virtual void remove_all_inside(const path& base, std::error_code& ec, path& failure_point) = 0;
+        void remove_all_inside(const path& base, LineInfo li);
+        void remove_all_inside(const path& base, ignore_errors_t);
+        bool exists(const path& path, std::error_code& ec) const;
+        bool exists(LineInfo li, const path& path) const;
+        bool exists(const path& path, ignore_errors_t = ignore_errors) const;
+        virtual bool is_directory(const path& path) const = 0;
+        virtual bool is_regular_file(const path& path) const = 0;
+        virtual bool is_empty(const path& path) const = 0;
+        virtual bool create_directory(const path& path, std::error_code& ec) = 0;
+        bool create_directory(const path& path, ignore_errors_t);
+        bool create_directory(const path& path, LineInfo li);
+        virtual bool create_directories(const path& path, std::error_code& ec) = 0;
+        bool create_directories(const path& path, ignore_errors_t);
+        bool create_directories(const path& path, LineInfo);
+        virtual void create_symlink(const path& to, const path& from, std::error_code& ec) = 0;
+        virtual void create_hard_link(const path& to, const path& from, std::error_code& ec) = 0;
+        void create_best_link(const path& to, const path& from, std::error_code& ec);
+        void create_best_link(const path& to, const path& from, LineInfo);
+        virtual void copy(const path& oldpath, const path& newpath, stdfs::copy_options opts) = 0;
+        virtual bool copy_file(const path& oldpath,
+                               const path& newpath,
                                stdfs::copy_options opts,
                                std::error_code& ec) = 0;
-        void copy_file(const stdfs::path& oldpath, const stdfs::path& newpath, stdfs::copy_options opts, LineInfo li);
-        virtual void copy_symlink(const stdfs::path& oldpath, const stdfs::path& newpath, std::error_code& ec) = 0;
-        virtual vcpkg::Files::file_status status(const stdfs::path& path, std::error_code& ec) const = 0;
-        virtual vcpkg::Files::file_status symlink_status(const stdfs::path& path, std::error_code& ec) const = 0;
-        vcpkg::Files::file_status status(LineInfo li, const stdfs::path& p) const noexcept;
-        vcpkg::Files::file_status status(const stdfs::path& p, ignore_errors_t) const noexcept;
-        vcpkg::Files::file_status symlink_status(LineInfo li, const stdfs::path& p) const noexcept;
-        vcpkg::Files::file_status symlink_status(const stdfs::path& p, ignore_errors_t) const noexcept;
-        virtual stdfs::path absolute(const stdfs::path& path, std::error_code& ec) const = 0;
-        stdfs::path absolute(LineInfo li, const stdfs::path& path) const;
+        void copy_file(const path& oldpath, const path& newpath, stdfs::copy_options opts, LineInfo li);
+        virtual void copy_symlink(const path& oldpath, const path& newpath, std::error_code& ec) = 0;
+        virtual file_status status(const path& path, std::error_code& ec) const = 0;
+        virtual file_status symlink_status(const path& path, std::error_code& ec) const = 0;
+        file_status status(LineInfo li, const path& p) const noexcept;
+        file_status status(const path& p, ignore_errors_t) const noexcept;
+        file_status symlink_status(LineInfo li, const path& p) const noexcept;
+        file_status symlink_status(const path& p, ignore_errors_t) const noexcept;
+        virtual path absolute(const path& path, std::error_code& ec) const = 0;
+        path absolute(LineInfo li, const path& path) const;
         // absolute/system_complete + lexically_normal + fixup_win32_path_case
         // we don't use real canonical due to issues like:
         // https://github.com/microsoft/vcpkg/issues/16614 (canonical breaking on some older Windows Server containers)
         // https://github.com/microsoft/vcpkg/issues/18208 (canonical removing subst despite our recommendation to use
         // subst)
-        virtual stdfs::path almost_canonical(const stdfs::path& path, std::error_code& ec) const = 0;
-        stdfs::path almost_canonical(LineInfo li, const stdfs::path& path) const;
-        stdfs::path almost_canonical(const stdfs::path& path, ignore_errors_t) const;
-        virtual stdfs::path current_path(std::error_code&) const = 0;
-        stdfs::path current_path(LineInfo li) const;
-        virtual void current_path(const stdfs::path& path, std::error_code&) = 0;
-        void current_path(const stdfs::path& path, LineInfo li);
+        virtual path almost_canonical(const path& path, std::error_code& ec) const = 0;
+        path almost_canonical(LineInfo li, const path& path) const;
+        path almost_canonical(const path& path, ignore_errors_t) const;
+        virtual path current_path(std::error_code&) const = 0;
+        path current_path(LineInfo li) const;
+        virtual void current_path(const path& path, std::error_code&) = 0;
+        void current_path(const path& path, LineInfo li);
 
         // if the path does not exist, then (try_|)take_exclusive_file_lock attempts to create the file
         // (but not any path members above the file itself)
@@ -258,12 +249,12 @@ namespace vcpkg
         // however, if `/a/b` doesn't exist, then the functions will fail.
 
         // waits forever for the file lock
-        virtual vcpkg::Files::SystemHandle take_exclusive_file_lock(const stdfs::path& path, std::error_code&) = 0;
+        virtual SystemHandle take_exclusive_file_lock(const path& path, std::error_code&) = 0;
         // waits, at most, 1.5 seconds, for the file lock
-        virtual vcpkg::Files::SystemHandle try_take_exclusive_file_lock(const stdfs::path& path, std::error_code&) = 0;
-        virtual void unlock_file_lock(vcpkg::Files::SystemHandle handle, std::error_code&) = 0;
+        virtual SystemHandle try_take_exclusive_file_lock(const path& path, std::error_code&) = 0;
+        virtual void unlock_file_lock(SystemHandle handle, std::error_code&) = 0;
 
-        virtual std::vector<stdfs::path> find_from_PATH(const std::string& name) const = 0;
+        virtual std::vector<path> find_from_PATH(const std::string& name) const = 0;
     };
 
     Filesystem& get_real_filesystem();
@@ -272,11 +263,11 @@ namespace vcpkg
 
     bool has_invalid_chars_for_filesystem(const std::string& s);
 
-    void print_paths(const std::vector<stdfs::path>& paths);
+    void print_paths(const std::vector<path>& paths);
 
     // Performs "lhs / rhs" according to the C++17 Filesystem Library Specification.
     // This function exists as a workaround for TS implementations.
-    stdfs::path combine(const stdfs::path& lhs, const stdfs::path& rhs);
+    path combine(const path& lhs, const path& rhs);
 
 #if defined(_WIN32)
     constexpr char preferred_separator = '\\';
@@ -285,7 +276,7 @@ namespace vcpkg
 #endif // _WIN32
 
 #if defined(_WIN32)
-    stdfs::path win32_fix_path_case(const stdfs::path& source);
+    path win32_fix_path_case(const path& source);
 #endif // _WIN32
 
     struct ExclusiveFileLock
@@ -300,7 +291,7 @@ namespace vcpkg
         ExclusiveFileLock(ExclusiveFileLock&&) = delete;
         ExclusiveFileLock& operator=(ExclusiveFileLock&&) = delete;
 
-        ExclusiveFileLock(Wait wait, Filesystem& fs, const stdfs::path& path_, std::error_code& ec) : m_fs(&fs)
+        ExclusiveFileLock(Wait wait, Filesystem& fs, const path& path_, std::error_code& ec) : m_fs(&fs)
         {
             switch (wait)
             {
@@ -318,13 +309,13 @@ namespace vcpkg
             if (m_fs && m_handle.is_valid())
             {
                 std::error_code ignore;
-                m_fs->unlock_file_lock(std::exchange(m_handle, vcpkg::Files::SystemHandle{}), ignore);
+                m_fs->unlock_file_lock(std::exchange(m_handle, SystemHandle{}), ignore);
             }
         }
 
     private:
         Filesystem* m_fs;
-        vcpkg::Files::SystemHandle m_handle;
+        SystemHandle m_handle;
     };
 
 }

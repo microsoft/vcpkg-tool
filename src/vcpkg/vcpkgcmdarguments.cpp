@@ -136,7 +136,7 @@ namespace vcpkg
             if (arg.size() > 0 && arg[0] == '@')
             {
                 arg.erase(arg.begin());
-                auto lines = fs.read_lines(vcpkg::Files::u8path(arg));
+                auto lines = fs.read_lines(vcpkg::u8path(arg));
                 if (!lines.has_value())
                 {
                     print2(Color::error, "Error: Could not open response file ", arg, '\n');

@@ -41,7 +41,7 @@ namespace vcpkg::Commands::SetInstalled
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              Dependencies::ActionPlan action_plan,
                              DryRun dry_run,
-                             const Optional<stdfs::path>& maybe_pkgsconfig,
+                             const Optional<path>& maybe_pkgsconfig,
                              Triplet host_triplet)
     {
         cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
@@ -96,7 +96,7 @@ namespace vcpkg::Commands::SetInstalled
             auto pkgsconfig_path = combine(paths.original_cwd, *p_pkgsconfig);
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
-            print2("Wrote NuGet packages config information to ", vcpkg::Files::u8string(pkgsconfig_path), "\n");
+            print2("Wrote NuGet packages config information to ", vcpkg::u8string(pkgsconfig_path), "\n");
         }
 
         if (dry_run == DryRun::Yes)
@@ -147,7 +147,7 @@ namespace vcpkg::Commands::SetInstalled
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
-        Optional<stdfs::path> pkgsconfig;
+        Optional<path> pkgsconfig;
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
