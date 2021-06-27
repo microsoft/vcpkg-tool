@@ -554,11 +554,13 @@ namespace
                             std::vector<std::string>&& write_sources,
                             std::vector<fs::path>&& read_configs,
                             std::vector<fs::path>&& write_configs,
+                            std::string&& timeout,
                             bool interactive)
             : m_read_sources(std::move(read_sources))
             , m_write_sources(std::move(write_sources))
             , m_read_configs(std::move(read_configs))
             , m_write_configs(std::move(write_configs))
+            , m_timeout(std::move(timeout))
             , m_interactive(interactive)
             , m_use_nuget_cache(false)
         {
@@ -826,8 +828,7 @@ namespace
                         .path_arg(nupkg_path)
                         .string_arg("-ForceEnglishOutput")
                         .string_arg("-Timeout")
-                        // One hour and one second
-                        .string_arg("3601")
+                        .string_arg(m_timeout)
                         .string_arg("-Source")
                         .string_arg(write_src);
 
@@ -858,8 +859,7 @@ namespace
                         .path_arg(nupkg_path)
                         .string_arg("-ForceEnglishOutput")
                         .string_arg("-Timeout")
-                        // One hour and one second
-                        .string_arg("3601")
+                        .string_arg(m_timeout)
                         .string_arg("-ConfigFile")
                         .path_arg(write_cfg);
                     if (!m_interactive)
@@ -893,6 +893,7 @@ namespace
         std::vector<fs::path> m_write_configs;
 
         std::set<PackageSpec> m_restored;
+        std::string m_timeout;
         bool m_interactive;
         bool m_use_nuget_cache;
     };
@@ -1149,6 +1150,7 @@ namespace
     {
         bool m_cleared = false;
         bool interactive = false;
+        std::string nugettimeout = "100";
 
         std::vector<fs::path> archives_to_read;
         std::vector<fs::path> archives_to_write;
@@ -1171,6 +1173,7 @@ namespace
         {
             m_cleared = true;
             interactive = false;
+            nugettimeout = "100";
             archives_to_read.clear();
             archives_to_write.clear();
             url_templates_to_get.clear();
@@ -1292,6 +1295,32 @@ namespace
                     return add_error("unexpected arguments: binary config 'nuget' requires 1 or 2 arguments",
                                      segments[3].first);
                 }
+            }
+            else if (segments[0].second == "nugettimeout")
+            {
+                if (segments.size() != 2)
+                {
+                    return add_error(
+                        "expected arguments: binary config 'nugettimeout' expects a single positive integer argument");
+                }
+
+                auto&& t = segments[1].second;
+                if (t.empty())
+                {
+                    return add_error(
+                        "unexpected arguments: binary config 'nugettimeout' requires non-empty nugettimeout");
+                }
+                char* end;
+                long timeout = std::strtol(t.c_str(), &end, 0);
+                if (*end != '\0')
+                {
+                    return add_error("invalid value: binary config 'nugettimeout' requires a valid integer");
+                }
+                if (timeout <= 0)
+                {
+                    return add_error("invalid value: binary config 'nugettimeout' requires integers greater than 0");
+                }
+                state->nugettimeout = std::to_string(timeout);
             }
             else if (segments[0].second == "default")
             {
@@ -1652,6 +1681,7 @@ ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_c
                                                                   std::move(s.sources_to_write),
                                                                   std::move(s.configs_to_read),
                                                                   std::move(s.configs_to_write),
+                                                                  std::move(s.nugettimeout),
                                                                   s.interactive));
     }
 
@@ -1843,6 +1873,9 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
     tbl.format("nugetconfig,<path>[,<rw>]",
                "Adds a NuGet-config-file-based source; equivalent to the `-Config` parameter of the NuGet CLI. This "
                "config should specify `defaultPushSource` for uploads.");
+    tbl.format("nugettimeout,<seconds>",
+               "Specifies a nugettimeout for NuGet network operations; equivalent to the `-Timeout` parameter of the "
+               "NuGet CLI.");
     tbl.format("x-azblob,<url>,<sas>[,<rw>]",
                "**Experimental: will change or be removed without warning** Adds an Azure Blob Storage source. Uses "
                "Shared Access Signature validation. URL should include the container path.");
