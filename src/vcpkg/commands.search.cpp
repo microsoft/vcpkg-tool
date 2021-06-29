@@ -180,7 +180,8 @@ namespace vcpkg::Commands::Search
 
         if (!enable_json)
         {
-            print2("\nIf your library is not listed, please open an issue at and/or consider making a pull request:\n"
+            print2("The search result may be outdated. Run `git pull` to get the latest results.\n"
+                   "\nIf your library is not listed, please open an issue at and/or consider making a pull request:\n"
                    "    https://github.com/Microsoft/vcpkg/issues\n");
         }
 
