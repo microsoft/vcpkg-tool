@@ -665,9 +665,9 @@ namespace vcpkg::Hash
     }
 
     // TODO: use Filesystem to open a file
-    std::string get_file_hash(const Filesystem&, const path& path, Algorithm algo, std::error_code& ec) noexcept
+    std::string get_file_hash(const Filesystem&, const path& target, Algorithm algo, std::error_code& ec) noexcept
     {
-        auto file = std::fstream(path.c_str(), std::ios_base::in | std::ios_base::binary);
+        auto file = std::fstream(target.c_str(), std::ios_base::in | std::ios_base::binary);
         if (!file)
         {
             ec.assign(ENOENT, std::system_category());

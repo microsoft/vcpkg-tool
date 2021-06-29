@@ -178,7 +178,10 @@ namespace vcpkg::Downloads
         return details::SplitURIView{scheme, {}, {sep + 1, uri.end()}};
     }
 
-    static std::string format_hash_mismatch(StringView url, const path& path, StringView expected, StringView actual)
+    static std::string format_hash_mismatch(StringView url,
+                                            const path& downloaded_path,
+                                            StringView expected,
+                                            StringView actual)
     {
         return Strings::format("File does not have the expected hash:\n"
                                "             url : [ %s ]\n"
@@ -186,17 +189,18 @@ namespace vcpkg::Downloads
                                "   Expected hash : [ %s ]\n"
                                "     Actual hash : [ %s ]\n",
                                url,
-                               vcpkg::u8string(path),
+                               vcpkg::u8string(downloaded_path),
                                expected,
                                actual);
     }
 
     static Optional<std::string> try_verify_downloaded_file_hash(const Filesystem& fs,
                                                                  const std::string& sanitized_url,
-                                                                 const path& path,
+                                                                 const path& downloaded_path,
                                                                  const std::string& sha512)
     {
-        std::string actual_hash = vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, path, Hash::Algorithm::Sha512);
+        std::string actual_hash =
+            vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, downloaded_path, Hash::Algorithm::Sha512);
 
         // <HACK to handle NuGet.org changing nupkg hashes.>
         // This is the NEW hash for 7zip
@@ -211,17 +215,17 @@ namespace vcpkg::Downloads
 
         if (sha512 != actual_hash)
         {
-            return format_hash_mismatch(sanitized_url, vcpkg::u8string(path), sha512, actual_hash);
+            return format_hash_mismatch(sanitized_url, vcpkg::u8string(downloaded_path), sha512, actual_hash);
         }
         return nullopt;
     }
 
     void verify_downloaded_file_hash(const Filesystem& fs,
                                      const std::string& url,
-                                     const path& path,
+                                     const path& downloaded_path,
                                      const std::string& sha512)
     {
-        auto maybe_error = try_verify_downloaded_file_hash(fs, url, path, sha512);
+        auto maybe_error = try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512);
         if (auto err = maybe_error.get())
         {
             Checks::exit_with_message(VCPKG_LINE_INFO, *err);
@@ -623,13 +627,13 @@ namespace vcpkg::Downloads
     }
 
     ExpectedS<int> DownloadManager::put_file_to_mirror(const Filesystem& fs,
-                                                       const path& path,
+                                                       const path& file_to_put,
                                                        const std::string& sha512) const
     {
         auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            return Downloads::put_file(fs, maybe_mirror_url, m_config.m_write_headers, path);
+            return Downloads::put_file(fs, maybe_mirror_url, m_config.m_write_headers, file_to_put);
         }
         return 0;
     }

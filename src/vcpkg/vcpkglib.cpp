@@ -164,7 +164,7 @@ namespace vcpkg
         std::sort(lines->begin(), lines->end());
 
         // Replace the listfile on disk
-        const path updated_listfile_path = listfile_path.generic_string() + "_updated";
+        const path updated_listfile_path = generic_u8string(listfile_path) + "_updated";
         fs.write_lines(updated_listfile_path, *lines, VCPKG_LINE_INFO);
         fs.rename(updated_listfile_path, listfile_path, VCPKG_LINE_INFO);
     }

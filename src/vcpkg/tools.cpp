@@ -153,7 +153,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const = 0;
 
         virtual void add_special_paths(std::vector<path>& out_candidate_paths) const { (void)out_candidate_paths; }
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const path& path_to_exe) const = 0;
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const path& exe_path) const = 0;
     };
 
     static Optional<PathAndVersion> find_first_with_sufficient_version(const VcpkgPaths& paths,
@@ -298,14 +298,14 @@ namespace vcpkg
             (void)out_candidate_paths;
 #endif
         }
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& path_to_exe) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
         {
-            auto cmd = Command(path_to_exe).string_arg("--version");
+            auto cmd = Command(exe_path).string_arg("--version");
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
                 return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(path_to_exe), "\n"),
+                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
                         expected_right_tag};
             }
 
@@ -327,14 +327,14 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {3, 5, 1}; }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& path_to_exe) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
         {
-            auto cmd = Command(path_to_exe).string_arg("--version");
+            auto cmd = Command(exe_path).string_arg("--version");
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
                 return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(path_to_exe), "\n"),
+                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
                         expected_right_tag};
             }
 
@@ -353,7 +353,7 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {4, 6, 2}; }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const path& path_to_exe) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const path& exe_path) const override
         {
             Command cmd;
 #ifndef _WIN32
@@ -361,7 +361,7 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
 #else
             (void)paths;
 #endif
-            cmd.path_arg(path_to_exe);
+            cmd.path_arg(exe_path);
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
@@ -369,14 +369,14 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
                 return {Strings::concat(
                             std::move(rc.output),
                             "\n\nFailed to get version of ",
-                            vcpkg::u8string(path_to_exe),
+                            vcpkg::u8string(exe_path),
                             "\nThis may be caused by an incomplete mono installation. Full mono is "
                             "available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may "
                             "need a newer version of mono, available at https://www.mono-project.com/download/stable/"),
                         expected_right_tag};
 #else
                 return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(path_to_exe), "\n"),
+                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
                         expected_right_tag};
 #endif
             }
@@ -415,14 +415,14 @@ Type 'NuGet help <command>' for help on a specific command.
 #endif
         }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& path_to_exe) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
         {
-            auto cmd = Command(path_to_exe).string_arg("--version");
+            auto cmd = Command(exe_path).string_arg("--version");
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
                 return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(path_to_exe), "\n"),
+                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
                         expected_right_tag};
             }
 
@@ -444,13 +444,13 @@ git version 2.17.1.windows.2
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {0, 0, 0}; }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& path_to_exe) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
         {
-            auto rc = cmd_execute_and_capture_output(Command(path_to_exe).string_arg("--version"));
+            auto rc = cmd_execute_and_capture_output(Command(exe_path).string_arg("--version"));
             if (rc.exit_code != 0)
             {
                 return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(path_to_exe), "\n"),
+                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
                         expected_right_tag};
             }
 
@@ -472,14 +472,14 @@ Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {4, 56, 0}; }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& path_to_exe) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
         {
-            auto cmd = Command(path_to_exe).string_arg("version");
+            auto cmd = Command(exe_path).string_arg("version");
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
                 return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(path_to_exe), "\n"),
+                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
                         expected_right_tag};
             }
 
@@ -515,14 +515,14 @@ gsutil version: 4.58
             // "Qt" / "QtIFW-3.1.0" / "bin" / "installerbase.exe");
         }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& path_to_exe) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
         {
-            auto cmd = Command(path_to_exe).string_arg("--framework-version");
+            auto cmd = Command(exe_path).string_arg("--framework-version");
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
                 return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(path_to_exe), "\n"),
+                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
                         expected_right_tag};
             }
 
@@ -542,13 +542,13 @@ gsutil version: 4.58
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {7, 0, 3}; }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& path_to_exe) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
         {
-            auto rc = cmd_execute_and_capture_output(Command(path_to_exe).string_arg("--version"));
+            auto rc = cmd_execute_and_capture_output(Command(exe_path).string_arg("--version"));
             if (rc.exit_code != 0)
             {
                 return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(path_to_exe), "\n"),
+                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
                         expected_right_tag};
             }
 

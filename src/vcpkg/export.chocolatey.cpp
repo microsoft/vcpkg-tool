@@ -202,7 +202,7 @@ if (Test-Path $installedDir)
             Install::install_package_and_write_listfile(paths, action.spec, dirs);
 
             const std::string nuspec_file_content = create_nuspec_file_contents(
-                per_package_dir_path.string(), binary_paragraph, packages_version, chocolatey_options);
+                u8string(per_package_dir_path), binary_paragraph, packages_version, chocolatey_options);
             const path nuspec_file_path =
                 per_package_dir_path / Strings::concat(binary_paragraph.spec.name(), ".nuspec");
             fs.write_contents(nuspec_file_path, nuspec_file_content, VCPKG_LINE_INFO);

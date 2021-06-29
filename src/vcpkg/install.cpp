@@ -189,9 +189,9 @@ namespace vcpkg::Install
     static SortedVector<std::string> build_list_of_package_files(const Filesystem& fs, const path& package_dir)
     {
         const std::vector<path> package_file_paths = fs.get_files_recursive(package_dir);
-        const size_t package_remove_char_count = package_dir.generic_string().size() + 1; // +1 for the slash
-        auto package_files = Util::fmap(package_file_paths, [package_remove_char_count](const path& path) {
-            return std::string(path.generic_string(), package_remove_char_count);
+        const size_t package_remove_char_count = generic_u8string(package_dir).size() + 1; // +1 for the slash
+        auto package_files = Util::fmap(package_file_paths, [package_remove_char_count](const path& target) {
+            return std::string(generic_u8string(target), package_remove_char_count);
         });
 
         return SortedVector<std::string>(std::move(package_files));
@@ -247,7 +247,7 @@ namespace vcpkg::Install
             const path triplet_install_path = paths.installed / triplet.canonical_name();
             vcpkg::printf(Color::error,
                           "The following files are already installed in %s and are in conflict with %s\n\n",
-                          triplet_install_path.generic_string(),
+                          generic_u8string(triplet_install_path),
                           bcf.core_paragraph.spec);
 
             auto i = intersection.begin();

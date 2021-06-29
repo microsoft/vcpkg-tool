@@ -230,7 +230,8 @@ namespace vcpkg::VisualStudio
                 // Locate the "best" MSVC toolchain version
                 const path msvc_path = vc_dir / "Tools" / "MSVC";
                 std::vector<path> msvc_subdirectories = fs.get_files_non_recursive(msvc_path);
-                Util::erase_remove_if(msvc_subdirectories, [&fs](const path& path) { return !fs.is_directory(path); });
+                Util::erase_remove_if(msvc_subdirectories,
+                                      [&fs](const path& target) { return !fs.is_directory(target); });
 
                 // Sort them so that latest comes first
                 std::sort(msvc_subdirectories.begin(),
@@ -365,9 +366,9 @@ namespace vcpkg::VisualStudio
         {
             Debug::print("Could not locate a complete Visual Studio instance\n");
             Debug::print("The following paths were examined:\n");
-            for (const path& path : paths_examined)
+            for (const path& examinee : paths_examined)
             {
-                Debug::print("    ", vcpkg::u8string(path), '\n');
+                Debug::print("    ", vcpkg::u8string(examinee), '\n');
             }
         }
 

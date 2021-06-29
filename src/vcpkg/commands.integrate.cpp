@@ -46,7 +46,7 @@ namespace vcpkg::Commands::Integrate
 #if defined(_WIN32)
     static std::string create_nuget_targets_file_contents(const path& msbuild_vcpkg_targets_file) noexcept
     {
-        const std::string as_string = msbuild_vcpkg_targets_file.string();
+        const std::string as_string = u8string(msbuild_vcpkg_targets_file);
 
         return Strings::format(R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -112,7 +112,7 @@ namespace vcpkg::Commands::Integrate
 )";
 
         std::string content = Strings::replace_all(CONTENT_TEMPLATE, "@NUGET_ID@", nuget_id);
-        Strings::inplace_replace_all(content, "@VCPKG_DIR@", vcpkg_root_dir.string());
+        Strings::inplace_replace_all(content, "@VCPKG_DIR@", u8string(vcpkg_root_dir));
         Strings::inplace_replace_all(content, "@VERSION@", nupkg_version);
         return content;
     }
@@ -187,7 +187,7 @@ namespace vcpkg::Commands::Integrate
             if (fs.exists(old_system_wide_targets_file))
             {
                 const std::string param =
-                    Strings::format(R"(/c "DEL "%s" /Q > nul")", old_system_wide_targets_file.string());
+                    Strings::format(R"(/c "DEL "%s" /Q > nul")", u8string(old_system_wide_targets_file));
                 const ElevationPromptChoice user_choice = elevated_cmd_execute(param);
                 switch (user_choice)
                 {
@@ -219,9 +219,9 @@ namespace vcpkg::Commands::Integrate
             fs.write_contents(sys_src_path, create_system_targets_shortcut(), VCPKG_LINE_INFO);
 
             const std::string param = Strings::format(R"(/c "mkdir "%s" & copy "%s" "%s" /Y > nul")",
-                                                      SYSTEM_WIDE_TARGETS_FILE.parent_path().string(),
-                                                      sys_src_path.string(),
-                                                      SYSTEM_WIDE_TARGETS_FILE.string());
+                                                      u8string(SYSTEM_WIDE_TARGETS_FILE.parent_path()),
+                                                      u8string(sys_src_path),
+                                                      u8string(SYSTEM_WIDE_TARGETS_FILE));
             const ElevationPromptChoice user_choice = elevated_cmd_execute(param);
             switch (user_choice)
             {
@@ -235,7 +235,7 @@ namespace vcpkg::Commands::Integrate
             Checks::check_exit(VCPKG_LINE_INFO,
                                fs.exists(SYSTEM_WIDE_TARGETS_FILE),
                                "Error: failed to copy targets file to %s",
-                               SYSTEM_WIDE_TARGETS_FILE.string());
+                               u8string(SYSTEM_WIDE_TARGETS_FILE));
         }
     }
 #endif

@@ -18,8 +18,8 @@ namespace vcpkg::CoffFileReader
     };
 
 #if defined(_WIN32)
-    DllInfo read_dll(const path& path);
+    DllInfo read_dll(const path& dll);
 
-    LibInfo read_lib(const path& path);
+    LibInfo read_lib(const path& lib);
 #endif
 }

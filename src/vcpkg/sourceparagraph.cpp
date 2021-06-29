@@ -1105,10 +1105,10 @@ namespace vcpkg
         return nullopt;
     }
 
-    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_file(const path& path_to_manifest,
+    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_file(const path& manifest_path,
                                                                                    const Json::Object& manifest)
     {
-        return parse_manifest_object(vcpkg::u8string(path_to_manifest), manifest);
+        return parse_manifest_object(vcpkg::u8string(manifest_path), manifest);
     }
 
     void print_error_message(Span<const std::unique_ptr<Parse::ParseControlErrorInfo>> error_info_list)

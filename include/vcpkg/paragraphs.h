@@ -23,9 +23,9 @@ namespace vcpkg::Paragraphs
 
     ExpectedS<std::vector<Paragraph>> parse_paragraphs(const std::string& str, const std::string& origin);
 
-    bool is_port_directory(const Filesystem& fs, const path& path);
+    bool is_port_directory(const Filesystem& fs, const path& maybe_directory);
 
-    Parse::ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const path& path);
+    Parse::ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const path& port_directory);
     Parse::ParseExpected<SourceControlFile> try_load_port_text(const std::string& text,
                                                                const std::string& origin,
                                                                bool is_manifest);

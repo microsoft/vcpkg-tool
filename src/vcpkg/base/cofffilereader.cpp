@@ -231,10 +231,10 @@ namespace vcpkg::CoffFileReader
         verify_equal_strings(VCPKG_LINE_INFO, FILE_START, {file_start, FILE_START_SIZE}, "LIB FILE_START");
     }
 
-    DllInfo read_dll(const path& path)
+    DllInfo read_dll(const path& dll)
     {
-        std::fstream fs(path, std::ios::in | std::ios::binary | std::ios::ate);
-        Checks::check_exit(VCPKG_LINE_INFO, fs.is_open(), "Could not open file %s for reading", path.generic_string());
+        std::fstream fs(dll, std::ios::in | std::ios::binary | std::ios::ate);
+        Checks::check_exit(VCPKG_LINE_INFO, fs.is_open(), "Could not open file %s for reading", generic_u8string(dll));
 
         read_and_verify_pe_signature(fs);
         CoffFileHeader header = CoffFileHeader::read(fs);
@@ -256,10 +256,10 @@ namespace vcpkg::CoffFileReader
         fpos_t m_absolute_position = 0;
     };
 
-    LibInfo read_lib(const path& path)
+    LibInfo read_lib(const path& lib)
     {
-        std::fstream fs(path, std::ios::in | std::ios::binary | std::ios::ate);
-        Checks::check_exit(VCPKG_LINE_INFO, fs.is_open(), "Could not open file %s for reading", path.generic_string());
+        std::fstream fs(lib, std::ios::in | std::ios::binary | std::ios::ate);
+        Checks::check_exit(VCPKG_LINE_INFO, fs.is_open(), "Could not open file %s for reading", generic_u8string(lib));
 
         read_and_verify_archive_file_signature(fs);
 

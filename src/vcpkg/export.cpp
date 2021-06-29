@@ -157,7 +157,7 @@ namespace vcpkg::Export
         fs.write_contents(props_redirect, props_redirect_content, VCPKG_LINE_INFO);
 
         const std::string nuspec_file_content = create_nuspec_file_contents(
-            raw_exported_dir.string(), targets_redirect, props_redirect, nuget_id, nuget_version, nuget_description);
+            u8string(raw_exported_dir), targets_redirect, props_redirect, nuget_id, nuget_version, nuget_description);
         const path nuspec_file_path = paths.buildsystems / "tmp" / "vcpkg.export.nuspec";
         fs.write_contents(nuspec_file_path, nuspec_file_content, VCPKG_LINE_INFO);
 
@@ -235,7 +235,7 @@ namespace vcpkg::Export
 
         const int exit_code = cmd_execute_clean(cmd, InWorkingDirectory{raw_exported_dir.parent_path()});
         Checks::check_exit(
-            VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", exported_archive_path.generic_string());
+            VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", generic_u8string(exported_archive_path));
         return exported_archive_path;
     }
 
@@ -499,7 +499,7 @@ namespace vcpkg::Export
     static void print_next_step_info(const path& prefix)
     {
         const path cmake_toolchain = prefix / "scripts" / "buildsystems" / "vcpkg.cmake";
-        const CMakeVariable cmake_variable = CMakeVariable("CMAKE_TOOLCHAIN_FILE", cmake_toolchain.generic_string());
+        const CMakeVariable cmake_variable = CMakeVariable("CMAKE_TOOLCHAIN_FILE", generic_u8string(cmake_toolchain));
         print2("\n"
                "To use the exported libraries in CMake projects use:"
                "\n"
@@ -569,7 +569,7 @@ namespace vcpkg::Export
         {
             print2("Packing nuget package...\n");
 
-            const std::string nuget_id = opts.maybe_nuget_id.value_or(raw_exported_dir_path.filename().string());
+            const std::string nuget_id = opts.maybe_nuget_id.value_or(u8string(raw_exported_dir_path.filename()));
             const std::string nuget_version = opts.maybe_nuget_version.value_or("1.0.0");
             const std::string nuget_description = opts.maybe_nuget_description.value_or("Vcpkg NuGet export");
             const path output_path = do_nuget_export(

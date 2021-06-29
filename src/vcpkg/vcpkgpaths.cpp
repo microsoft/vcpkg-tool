@@ -1120,7 +1120,7 @@ namespace vcpkg
             Checks::check_exit(VCPKG_LINE_INFO,
                                !candidates.empty(),
                                "Could not find Visual Studio instance at %s.",
-                               vs_root_path.generic_string());
+                               generic_u8string(vs_root_path));
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !candidates.empty(), "No suitable Visual Studio instances were found");

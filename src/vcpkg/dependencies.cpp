@@ -325,10 +325,10 @@ namespace vcpkg::Dependencies
                 .first->second;
         }
 
-        const Cluster& find_or_exit(const PackageSpec& spec, LineInfo linfo) const
+        const Cluster& find_or_exit(const PackageSpec& spec, LineInfo li) const
         {
             auto it = m_graph.find(spec);
-            Checks::check_exit(linfo, it != m_graph.end(), "Failed to locate spec in graph: %s", spec);
+            Checks::check_exit(li, it != m_graph.end(), "Failed to locate spec in graph: %s", spec);
             return it->second;
         }
 
@@ -481,9 +481,9 @@ namespace vcpkg::Dependencies
         if (abi_info.get()->package_abi.empty()) return nullopt;
         return abi_info.get()->package_abi;
     }
-    const Build::PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo linfo) const
+    const Build::PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
-        return *abi_info.value_or_exit(linfo).pre_build_info.get();
+        return *abi_info.value_or_exit(li).pre_build_info.get();
     }
 
     bool InstallPlanAction::compare_by_name(const InstallPlanAction* left, const InstallPlanAction* right)

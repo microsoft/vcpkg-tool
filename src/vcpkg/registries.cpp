@@ -272,7 +272,7 @@ namespace
     // or (equivalently) if the baseline does not exist.
     ExpectedS<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin);
     ExpectedS<Optional<Baseline>> load_baseline_versions(const VcpkgPaths& paths,
-                                                         const path& path_to_baseline,
+                                                         const path& baseline_path,
                                                          StringView identifier = {});
 
     void load_all_port_names_from_registry_versions(std::vector<std::string>& out,
@@ -1151,13 +1151,13 @@ namespace
     }
 
     ExpectedS<Optional<Baseline>> load_baseline_versions(const VcpkgPaths& paths,
-                                                         const path& path_to_baseline,
+                                                         const path& baseline_path,
                                                          StringView baseline)
     {
-        auto maybe_contents = paths.get_filesystem().read_contents(path_to_baseline);
+        auto maybe_contents = paths.get_filesystem().read_contents(baseline_path);
         if (auto contents = maybe_contents.get())
         {
-            return parse_baseline_versions(*contents, baseline, vcpkg::u8string(path_to_baseline));
+            return parse_baseline_versions(*contents, baseline, vcpkg::u8string(baseline_path));
         }
         else if (maybe_contents.error() == std::errc::no_such_file_or_directory)
         {
@@ -1167,7 +1167,7 @@ namespace
         else
         {
             return Strings::format("Error: failed to read file `%s`: %s",
-                                   vcpkg::u8string(path_to_baseline),
+                                   vcpkg::u8string(baseline_path),
                                    maybe_contents.error().message());
         }
     }

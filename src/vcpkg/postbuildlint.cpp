@@ -18,7 +18,7 @@ namespace vcpkg::PostBuildLint
 {
     static auto not_extension_pred(const Filesystem& fs, const std::string& ext)
     {
-        return [&fs, ext](const path& path) { return fs.is_directory(path) || path.extension() != ext; };
+        return [&fs, ext](const path& target) { return fs.is_directory(target) || target.extension() != ext; };
     }
 
     enum class LintStatus
@@ -207,8 +207,8 @@ namespace vcpkg::PostBuildLint
 
         std::vector<path> files_found = fs.get_files_recursive(debug_include_dir);
 
-        Util::erase_remove_if(files_found,
-                              [&fs](const path& path) { return fs.is_directory(path) || path.extension() == ".ifc"; });
+        Util::erase_remove_if(
+            files_found, [&fs](const path& target) { return fs.is_directory(target) || target.extension() == ".ifc"; });
 
         if (!files_found.empty())
         {
@@ -365,7 +365,7 @@ namespace vcpkg::PostBuildLint
 
             for (auto&& src_file : fs.get_files_non_recursive(src_dir))
             {
-                const std::string filename = src_file.filename().string();
+                const std::string filename = u8string(src_file.filename());
 
                 if (filename == "LICENSE" || filename == "LICENSE.txt" || filename == "COPYING")
                 {
@@ -387,8 +387,8 @@ namespace vcpkg::PostBuildLint
             const path relative_path = found_relative_native;
             vcpkg::printf("\n    configure_file(\"${CURRENT_BUILDTREES_DIR}/%s/%s\" "
                           "\"${CURRENT_PACKAGES_DIR}/share/%s/copyright\" COPYONLY)\n",
-                          relative_path.generic_string(),
-                          found_file.filename().generic_string(),
+                          generic_u8string(relative_path),
+                          generic_u8string(found_file.filename()),
                           spec.name());
         }
         else if (potential_copyright_files.size() > 1)
@@ -531,9 +531,9 @@ namespace vcpkg::PostBuildLint
         for (const path& file : files)
         {
             Checks::check_exit(VCPKG_LINE_INFO,
-                               file.extension() == ".dll",
+                               file.extension() == vcpkg::u8path(".dll"),
                                "The file extension was not .dll: %s",
-                               file.generic_string());
+                               generic_u8string(file));
             const CoffFileReader::DllInfo info = CoffFileReader::read_dll(file);
             const std::string actual_architecture = get_actual_architecture(info.machine_type);
 
@@ -561,9 +561,9 @@ namespace vcpkg::PostBuildLint
         for (const path& file : files)
         {
             Checks::check_exit(VCPKG_LINE_INFO,
-                               file.extension() == ".lib",
+                               file.extension() == vcpkg::u8path(".lib"),
                                "The file extension was not .lib: %s",
-                               file.generic_string());
+                               generic_u8string(file));
             CoffFileReader::LibInfo info = CoffFileReader::read_lib(file);
 
             // This is zero for folly's debug library
@@ -573,7 +573,7 @@ namespace vcpkg::PostBuildLint
             Checks::check_exit(VCPKG_LINE_INFO,
                                info.machine_types.size() == 1,
                                "Found more than 1 architecture in file %s",
-                               file.generic_string());
+                               generic_u8string(file));
 
             const std::string actual_architecture = get_actual_architecture(info.machine_types.at(0));
             if (expected_architecture != actual_architecture)
@@ -776,7 +776,7 @@ namespace vcpkg::PostBuildLint
                           expected_build_type.to_string());
             for (const BuildTypeAndFile& btf : libs_with_invalid_crt)
             {
-                vcpkg::printf("    %s: %s\n", btf.file.generic_string(), btf.build_type.to_string());
+                vcpkg::printf("    %s: %s\n", generic_u8string(btf.file), btf.build_type.to_string());
             }
             print2("\n");
 
@@ -838,15 +838,15 @@ namespace vcpkg::PostBuildLint
     static LintStatus check_no_files_in_dir(const Filesystem& fs, const path& dir)
     {
         std::vector<path> misplaced_files = fs.get_files_non_recursive(dir);
-        Util::erase_remove_if(misplaced_files, [&fs](const path& path) {
-            const std::string filename = path.filename().generic_string();
+        Util::erase_remove_if(misplaced_files, [&fs](const path& target) {
+            const std::string filename = generic_u8string(target.filename());
             if (Strings::case_insensitive_ascii_equals(filename, "CONTROL") ||
                 Strings::case_insensitive_ascii_equals(filename, "BUILD_INFO"))
             {
                 return true;
             }
 
-            return fs.is_directory(path);
+            return fs.is_directory(target);
         });
 
         if (!misplaced_files.empty())

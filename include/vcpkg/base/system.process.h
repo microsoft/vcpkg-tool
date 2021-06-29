@@ -16,7 +16,7 @@ namespace vcpkg
     {
         CMakeVariable(const StringView varname, const char* varvalue);
         CMakeVariable(const StringView varname, const std::string& varvalue);
-        CMakeVariable(const StringView varname, const path& path);
+        CMakeVariable(const StringView varname, const path& varvalue);
         CMakeVariable(std::string var);
 
         std::string s;

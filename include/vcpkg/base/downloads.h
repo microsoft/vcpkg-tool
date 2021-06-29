@@ -24,7 +24,7 @@ namespace vcpkg::Downloads
 
     void verify_downloaded_file_hash(const Filesystem& fs,
                                      const std::string& sanitized_url,
-                                     const path& path,
+                                     const path& downloaded_path,
                                      const std::string& sha512);
 
     View<std::string> azure_blob_headers();
@@ -72,7 +72,9 @@ namespace vcpkg::Downloads
                                   const path& download_path,
                                   const std::string& sha512) const;
 
-        ExpectedS<int> put_file_to_mirror(const Filesystem& fs, const path& path, const std::string& sha512) const;
+        ExpectedS<int> put_file_to_mirror(const Filesystem& fs,
+                                          const path& file_to_put,
+                                          const std::string& sha512) const;
 
     private:
         DownloadManagerConfig m_config;

@@ -359,8 +359,8 @@ namespace vcpkg::Export::IFW
             Checks::check_exit(VCPKG_LINE_INFO,
                                !ec,
                                "Could not remove outdated repository directory %s due to file %s",
-                               vcpkg::generic_u8string(repository_dir),
-                               failure_point.string());
+                               generic_u8string(repository_dir),
+                               u8string(failure_point));
 
             auto cmd_line =
                 Command(repogen_exe).string_arg("--packages").path_arg(packages_dir).path_arg(repository_dir);
@@ -429,8 +429,8 @@ namespace vcpkg::Export::IFW
         Checks::check_exit(VCPKG_LINE_INFO,
                            !ec,
                            "Could not remove outdated packages directory %s due to file %s",
-                           vcpkg::generic_u8string(ifw_packages_dir_path),
-                           failure_point.string());
+                           generic_u8string(ifw_packages_dir_path),
+                           u8string(failure_point));
 
         fs.create_directory(ifw_packages_dir_path, ec);
         Checks::check_exit(VCPKG_LINE_INFO,

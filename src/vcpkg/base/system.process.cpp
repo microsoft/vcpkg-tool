@@ -176,8 +176,8 @@ namespace vcpkg
         : CMakeVariable(varname, varvalue.c_str())
     {
     }
-    CMakeVariable::CMakeVariable(const StringView varname, const path& path)
-        : CMakeVariable(varname, vcpkg::generic_u8string(path))
+    CMakeVariable::CMakeVariable(const StringView varname, const path& varvalue)
+        : CMakeVariable(varname, vcpkg::generic_u8string(varvalue))
     {
     }
     CMakeVariable::CMakeVariable(std::string var) : s(std::move(var)) { }
