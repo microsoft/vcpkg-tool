@@ -13,6 +13,7 @@ namespace vcpkg::Chrono
     private:
         using duration = std::chrono::high_resolution_clock::time_point::duration;
         duration m_duration;
+
     public:
         constexpr ElapsedTime() noexcept : m_duration() { }
         constexpr ElapsedTime(duration d) noexcept : m_duration(d) { }

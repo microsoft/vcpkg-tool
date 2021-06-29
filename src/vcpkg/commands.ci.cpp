@@ -68,6 +68,7 @@ namespace
                 }
             }
         }
+
     private:
         fs::path base_path;
     };

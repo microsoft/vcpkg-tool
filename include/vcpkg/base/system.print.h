@@ -57,11 +57,11 @@ namespace vcpkg::System
             }
         }
         ~BufferedPrint() { ::vcpkg::System::details::print(stdout_buffer); }
+
     private:
         ::std::string stdout_buffer;
         static constexpr ::std::size_t buffer_size_target = 2048;
         static constexpr ::std::size_t expected_maximum_print = 256;
         static constexpr ::std::size_t alloc_size = buffer_size_target + expected_maximum_print;
-
     };
 }
