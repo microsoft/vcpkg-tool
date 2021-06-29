@@ -195,7 +195,7 @@ namespace vcpkg::Downloads
     }
 
     static Optional<std::string> try_verify_downloaded_file_hash(const Files::Filesystem& fs,
-                                                                 const std::string& url,
+                                                                 const std::string& sanitized_url,
                                                                  const fs::path& path,
                                                                  const std::string& sha512)
     {
@@ -214,7 +214,7 @@ namespace vcpkg::Downloads
 
         if (sha512 != actual_hash)
         {
-            return format_hash_mismatch(url, fs::u8string(path), sha512, actual_hash);
+            return format_hash_mismatch(sanitized_url, fs::u8string(path), sha512, actual_hash);
         }
         return nullopt;
     }
@@ -271,6 +271,17 @@ namespace vcpkg::Downloads
         if (i != urls.size()) url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret);
 
         return ret;
+    }
+
+    std::string replace_secrets(std::string input, View<std::string> secrets)
+    {
+        static constexpr StringLiteral replacement{"*** SECRET ***"};
+        for (const auto& secret : secrets)
+        {
+            Strings::inplace_replace_all(input, secret, replacement);
+        }
+
+        return input;
     }
 
     static void download_files_inner(Files::Filesystem&,
@@ -381,15 +392,6 @@ namespace vcpkg::Downloads
         return code;
     }
 
-    void download_file(Files::Filesystem& fs,
-                       const std::string& url,
-                       View<std::string> headers,
-                       const fs::path& download_path,
-                       const std::string& sha512)
-    {
-        download_file(fs, {&url, 1}, headers, download_path, sha512);
-    }
-
 #if defined(_WIN32)
     namespace
     {
@@ -423,6 +425,7 @@ namespace vcpkg::Downloads
                                      const fs::path& download_path_part_path,
                                      details::SplitURIView split_uri,
                                      const std::string& url,
+                                     const std::vector<std::string>& secrets,
                                      std::string& errors)
         {
             // `download_winhttp` does not support user or port syntax in authorities
@@ -447,26 +450,27 @@ namespace vcpkg::Downloads
 
             WriteFlushFile f(download_path_part_path);
 
-            Debug::print("Downloading ", url, "\n");
+            const auto sanitized_url = replace_secrets(url, secrets);
+            Debug::print("Downloading ", sanitized_url, "\n");
             static auto s = WinHttpSession::make().value_or_exit(VCPKG_LINE_INFO);
             auto conn = WinHttpConnection::make(s.m_hSession.get(), hostname, port);
             if (!conn)
             {
-                Strings::append(errors, url, ": ", conn.error(), '\n');
+                Strings::append(errors, sanitized_url, ": ", conn.error(), '\n');
                 return false;
             }
             auto req = WinHttpRequest::make(
                 conn.get()->m_hConnect.get(), split_uri.path_query_fragment, split_uri.scheme == "https");
             if (!req)
             {
-                Strings::append(errors, url, ": ", req.error(), '\n');
+                Strings::append(errors, sanitized_url, ": ", req.error(), '\n');
                 return false;
             }
             auto forall_data =
                 req.get()->forall_data([&f](Span<char> span) { fwrite(span.data(), 1, span.size(), f.f); });
             if (!forall_data)
             {
-                Strings::append(errors, url, ": ", forall_data.error(), '\n');
+                Strings::append(errors, sanitized_url, ": ", forall_data.error(), '\n');
                 return false;
             }
             return true;
@@ -479,6 +483,7 @@ namespace vcpkg::Downloads
                                   View<std::string> headers,
                                   const fs::path& download_path,
                                   const std::string& sha512,
+                                  const std::vector<std::string>& secrets,
                                   std::string& errors)
     {
         auto download_path_part_path = download_path;
@@ -498,7 +503,7 @@ namespace vcpkg::Downloads
                 // This check causes complex URLs (non-default port, embedded basic auth) to be passed down to curl.exe
                 if (Strings::find_first_of(authority, ":@") == authority.end())
                 {
-                    if (download_winhttp(fs, download_path_part_path, split_uri, url, errors))
+                    if (download_winhttp(fs, download_path_part_path, split_uri, url, secrets, errors))
                     {
                         auto maybe_error = try_verify_downloaded_file_hash(fs, url, download_path_part_path, sha512);
                         if (auto err = maybe_error.get())
@@ -533,13 +538,14 @@ namespace vcpkg::Downloads
             cmd.string_arg("-H").string_arg(header);
         }
         const auto out = System::cmd_execute_and_capture_output(cmd);
+        const auto sanitized_url = replace_secrets(url, secrets);
         if (out.exit_code != 0)
         {
-            Strings::append(errors, url, ": ", out.output, '\n');
+            Strings::append(errors, sanitized_url, ": ", out.output, '\n');
             return false;
         }
 
-        auto maybe_error = try_verify_downloaded_file_hash(fs, url, download_path_part_path, sha512);
+        auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_path_part_path, sha512);
         if (auto err = maybe_error.get())
         {
             Strings::append(errors, *err);
@@ -557,52 +563,20 @@ namespace vcpkg::Downloads
                                                            View<std::string> headers,
                                                            const fs::path& download_path,
                                                            const std::string& sha512,
+                                                           const std::vector<std::string>& secrets,
                                                            std::string& errors)
     {
         for (auto&& url : urls)
         {
-            if (try_download_file(fs, url, headers, download_path, sha512, errors)) return url;
+            if (try_download_file(fs, url, headers, download_path, sha512, secrets, errors)) return url;
         }
         return nullopt;
-    }
-
-    std::string download_file(vcpkg::Files::Filesystem& fs,
-                              View<std::string> urls,
-                              View<std::string> headers,
-                              const fs::path& download_path,
-                              const std::string& sha512)
-    {
-        Checks::check_exit(VCPKG_LINE_INFO, urls.size(), "Error: No urls specified to download SHA: %s", sha512);
-
-        std::string errors;
-        auto maybe_url = try_download_files(fs, urls, headers, download_path, sha512, errors);
-        if (auto url = maybe_url.get())
-        {
-            return *url;
-        }
-        else
-        {
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to download from mirror set:\n%s", errors);
-        }
     }
 
     View<std::string> azure_blob_headers()
     {
         static std::string s_headers[2] = {"x-ms-version: 2020-04-08", "x-ms-blob-type: BlockBlob"};
         return s_headers;
-    }
-
-    DownloadManager::DownloadManager(Optional<std::string> read_url_template,
-                                     std::vector<std::string> read_headers,
-                                     Optional<std::string> write_url_template,
-                                     std::vector<std::string> write_headers,
-                                     bool block_origin)
-        : DownloadManagerConfig{std::move(read_url_template),
-                                std::move(read_headers),
-                                std::move(write_url_template),
-                                std::move(write_headers),
-                                block_origin}
-    {
     }
 
     void DownloadManager::download_file(Files::Filesystem& fs,
@@ -621,14 +595,15 @@ namespace vcpkg::Downloads
                                                const std::string& sha512) const
     {
         std::string errors;
-        if (auto read_template = m_read_url_template.get())
+        if (auto read_template = m_config.m_read_url_template.get())
         {
             auto read_url = Strings::replace_all(std::string(*read_template), "<SHA>", sha512);
-            if (Downloads::try_download_file(fs, read_url, m_read_headers, download_path, sha512, errors))
+            if (Downloads::try_download_file(
+                    fs, read_url, m_config.m_read_headers, download_path, sha512, m_config.m_secrets, errors))
                 return read_url;
         }
 
-        if (!m_block_origin)
+        if (!m_config.m_block_origin)
         {
             if (urls.size() == 0)
             {
@@ -636,7 +611,8 @@ namespace vcpkg::Downloads
             }
             else
             {
-                auto maybe_url = try_download_files(fs, urls, headers, download_path, sha512, errors);
+                auto maybe_url =
+                    try_download_files(fs, urls, headers, download_path, sha512, m_config.m_secrets, errors);
                 if (auto url = maybe_url.get())
                 {
                     auto maybe_push = put_file_to_mirror(fs, download_path, sha512);
@@ -656,10 +632,10 @@ namespace vcpkg::Downloads
                                                        const fs::path& path,
                                                        const std::string& sha512) const
     {
-        auto maybe_mirror_url = Strings::replace_all(m_write_url_template.value_or(""), "<SHA>", sha512);
+        auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            return Downloads::put_file(fs, maybe_mirror_url, m_write_headers, path);
+            return Downloads::put_file(fs, maybe_mirror_url, m_config.m_write_headers, path);
         }
         return 0;
     }
