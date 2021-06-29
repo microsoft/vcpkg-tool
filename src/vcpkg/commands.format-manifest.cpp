@@ -225,6 +225,27 @@ namespace vcpkg::Commands::FormatManifest
                 has_error = true;
         };
 
+        const auto handle_port_dir = [&](const auto& port_dir, bool convert_control) {
+            auto control_path = port_dir / fs::u8path("CONTROL");
+            auto manifest_path = port_dir / fs::u8path("vcpkg.json");
+            auto manifest_exists = fs.exists(manifest_path);
+            auto control_exists = fs.exists(control_path);
+
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               !manifest_exists || !control_exists,
+                               "Both a manifest file and a CONTROL file exist in port directory: %s",
+                               fs::u8string(port_dir));
+
+            if (manifest_exists)
+            {
+                add_file(read_manifest(fs, std::move(manifest_path)));
+            }
+            if (convert_control && control_exists)
+            {
+                add_file(read_control_file(fs, std::move(control_path)));
+            }
+        };
+
         for (const auto& arg : args.command_arguments)
         {
             auto path = fs::u8path(arg);
@@ -233,7 +254,23 @@ namespace vcpkg::Commands::FormatManifest
                 path = paths.original_cwd / path;
             }
 
-            if (path.filename() == fs::u8path("CONTROL"))
+            if (!fs.exists(path) || fs.is_directory(path))
+            {
+                const auto port_dir = paths.builtin_ports_directory() / arg;
+                if (!fs.exists(port_dir))
+                {
+                    System::printf(System::Color::warning,
+                                   "Neither the dir %s nor %s exists. Skipping argument %s.\n",
+                                   path.c_str(),
+                                   port_dir.c_str(),
+                                   arg.c_str());
+                }
+                else
+                {
+                    handle_port_dir(port_dir, true);
+                }
+            }
+            else if (path.filename() == fs::u8path("CONTROL"))
             {
                 add_file(read_control_file(fs, std::move(path)));
             }
@@ -247,24 +284,7 @@ namespace vcpkg::Commands::FormatManifest
         {
             for (const auto& dir : fs::directory_iterator(paths.builtin_ports_directory()))
             {
-                auto control_path = dir.path() / fs::u8path("CONTROL");
-                auto manifest_path = dir.path() / fs::u8path("vcpkg.json");
-                auto manifest_exists = fs.exists(manifest_path);
-                auto control_exists = fs.exists(control_path);
-
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   !manifest_exists || !control_exists,
-                                   "Both a manifest file and a CONTROL file exist in port directory: %s",
-                                   fs::u8string(dir.path()));
-
-                if (manifest_exists)
-                {
-                    add_file(read_manifest(fs, std::move(manifest_path)));
-                }
-                if (convert_control && control_exists)
-                {
-                    add_file(read_control_file(fs, std::move(control_path)));
-                }
+                handle_port_dir(dir.path(), convert_control);
             }
         }
 
@@ -279,7 +299,10 @@ namespace vcpkg::Commands::FormatManifest
         }
         else
         {
-            System::print2("Succeeded in formatting the manifest files.\n");
+            if (to_write.empty())
+                System::print2("No file was formatted.\n");
+            else
+                System::print2("Succeeded in formatting the manifest files.\n");
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }
