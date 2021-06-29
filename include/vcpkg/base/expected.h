@@ -103,9 +103,8 @@ namespace vcpkg
     };
 
     template<class T, class S>
-    class ExpectedT
+    struct ExpectedT
     {
-    public:
         constexpr ExpectedT() = default;
 
         // Constructors are intentionally implicit
