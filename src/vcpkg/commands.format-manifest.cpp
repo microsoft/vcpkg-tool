@@ -266,6 +266,22 @@ namespace vcpkg::Commands::FormatManifest
                     add_file(read_control_file(fs, std::move(control_path)));
                 }
             }
+
+            auto changed = paths.git_changed_port_files();
+            Checks::check_exit(VCPKG_LINE_INFO, static_cast<bool>(changed), changed.error());
+            for (auto& path : std::move(changed).value_or_exit(VCPKG_LINE_INFO))
+            {
+                if (!fs.exists(path)) continue;
+
+                if (path.filename() == "CONTROL")
+                {
+                    add_file(read_control_file(fs, std::move(path)));
+                }
+                else if (path.filename() == "vcpkg.json")
+                {
+                    add_file(read_manifest(fs, std::move(path)));
+                }
+            }
         }
 
         for (auto const& el : to_write)
