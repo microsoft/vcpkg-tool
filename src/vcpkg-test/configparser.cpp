@@ -403,6 +403,7 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
+        CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
     }
     {
         Downloads::DownloadManagerConfig dm =
@@ -410,6 +411,7 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
+        CHECK(dm.m_secrets == std::vector<std::string>{"?foo"});
     }
     {
         Downloads::DownloadManagerConfig dm = Test::unwrap(parse_download_configuration("x-azurl,https://abc/123"));
@@ -432,6 +434,7 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == "https://abc/123/<SHA>?foo");
         Test::check_ranges(dm.m_write_headers, Downloads::azure_blob_headers());
+        CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
     }
 }
 
