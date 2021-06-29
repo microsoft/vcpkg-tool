@@ -10,6 +10,10 @@ namespace vcpkg::Chrono
 {
     struct ElapsedTime
     {
+    private:
+        using duration = std::chrono::high_resolution_clock::time_point::duration;
+        duration m_duration;
+    public:
         constexpr ElapsedTime() noexcept : m_duration() { }
         constexpr ElapsedTime(duration d) noexcept : m_duration(d) { }
 
@@ -21,10 +25,6 @@ namespace vcpkg::Chrono
 
         std::string to_string() const;
         void to_string(std::string& into) const;
-
-    private:
-        using duration = std::chrono::high_resolution_clock::time_point::duration;
-        std::chrono::high_resolution_clock::time_point::duration m_duration;
     };
 
     struct ElapsedTimer
