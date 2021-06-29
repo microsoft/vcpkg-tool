@@ -573,27 +573,6 @@ namespace vcpkg::Downloads
         return nullopt;
     }
 
-    std::string download_file(vcpkg::Files::Filesystem& fs,
-                              View<std::string> urls,
-                              View<std::string> headers,
-                              const fs::path& download_path,
-                              const std::vector<std::string>& secrets,
-                              const std::string& sha512)
-    {
-        Checks::check_exit(VCPKG_LINE_INFO, urls.size(), "Error: No urls specified to download SHA: %s", sha512);
-
-        std::string errors;
-        auto maybe_url = try_download_files(fs, urls, headers, download_path, sha512, secrets, errors);
-        if (auto url = maybe_url.get())
-        {
-            return *url;
-        }
-        else
-        {
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to download from mirror set:\n%s", errors);
-        }
-    }
-
     View<std::string> azure_blob_headers()
     {
         static std::string s_headers[2] = {"x-ms-version: 2020-04-08", "x-ms-blob-type: BlockBlob"};
