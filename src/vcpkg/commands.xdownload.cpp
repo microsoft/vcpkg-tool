@@ -42,7 +42,8 @@ namespace vcpkg::Commands::X_Download
     void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
-        auto download_manager = create_download_manager(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO);
+        Downloads::DownloadManager download_manager{
+            parse_download_configuration(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO)};
         path file = fs.absolute(VCPKG_LINE_INFO, vcpkg::u8path(args.command_arguments[0]));
 
         std::string sha = Strings::ascii_to_lowercase(std::string(args.command_arguments[1]));

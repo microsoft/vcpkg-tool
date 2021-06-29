@@ -331,16 +331,7 @@ namespace
                     continue;
                 }
 
-                auto errors = std::move(maybe_success).error();
-
-                if (!Debug::g_debugging.load(std::memory_order_relaxed))
-                {
-                    for (const auto& secret : m_secrets)
-                    {
-                        Strings::inplace_replace_all(errors, secret, "*** SECRET ***");
-                    }
-                }
-
+                auto errors = Downloads::replace_secrets(std::move(maybe_success).error(), m_secrets);
                 print2(Color::warning, errors);
             }
 
@@ -1393,8 +1384,6 @@ namespace
         bool block_origin = false;
         std::vector<std::string> url_templates_to_get;
         std::vector<std::string> azblob_templates_to_put;
-
-        // Note: the download manager does not currently respect secrets
         std::vector<std::string> secrets;
 
         void clear()
@@ -1500,9 +1489,9 @@ namespace
     };
 }
 
-ExpectedS<Downloads::DownloadManager> vcpkg::create_download_manager(const Optional<std::string>& arg)
+ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
 {
-    if (!arg || arg.get()->empty()) return Downloads::DownloadManager{};
+    if (!arg || arg.get()->empty()) return Downloads::DownloadManagerConfig{};
 
     Metrics::g_metrics.lock()->track_property("asset-source", "defined");
 
@@ -1543,8 +1532,12 @@ ExpectedS<Downloads::DownloadManager> vcpkg::create_download_manager(const Optio
         put_headers.assign(v.begin(), v.end());
     }
 
-    return Downloads::DownloadManager{
-        std::move(get_url), std::vector<std::string>{}, std::move(put_url), std::move(put_headers), s.block_origin};
+    return Downloads::DownloadManagerConfig{std::move(get_url),
+                                            std::vector<std::string>{},
+                                            std::move(put_url),
+                                            std::move(put_headers),
+                                            std::move(s.secrets),
+                                            s.block_origin};
 }
 
 ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_configs(View<std::string> args)

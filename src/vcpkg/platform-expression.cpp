@@ -100,9 +100,8 @@ namespace vcpkg::PlatformExpression
             }
         };
 
-        class ExpressionParser : public Parse::ParserBase
+        struct ExpressionParser : Parse::ParserBase
         {
-        public:
             ExpressionParser(StringView str, MultipleBinaryOperators multiple_binary_operators)
                 : Parse::ParserBase(str, "CONTROL"), multiple_binary_operators(multiple_binary_operators)
             {

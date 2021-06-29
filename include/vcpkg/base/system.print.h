@@ -42,14 +42,8 @@ namespace vcpkg
         ::vcpkg::details::print(Strings::concat_or_view(args...));
     }
 
-    class BufferedPrint
+    struct BufferedPrint
     {
-        ::std::string stdout_buffer;
-        static constexpr ::std::size_t buffer_size_target = 2048;
-        static constexpr ::std::size_t expected_maximum_print = 256;
-        static constexpr ::std::size_t alloc_size = buffer_size_target + expected_maximum_print;
-
-    public:
         BufferedPrint() { stdout_buffer.reserve(alloc_size); }
         BufferedPrint(const BufferedPrint&) = delete;
         BufferedPrint& operator=(const BufferedPrint&) = delete;
@@ -62,6 +56,13 @@ namespace vcpkg
                 stdout_buffer.clear();
             }
         }
+
         ~BufferedPrint() { ::vcpkg::details::print(stdout_buffer); }
+
+    private:
+        ::std::string stdout_buffer;
+        static constexpr ::std::size_t buffer_size_target = 2048;
+        static constexpr ::std::size_t expected_maximum_print = 256;
+        static constexpr ::std::size_t alloc_size = buffer_size_target + expected_maximum_print;
     };
 }

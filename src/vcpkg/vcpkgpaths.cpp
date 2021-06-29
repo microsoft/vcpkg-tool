@@ -394,8 +394,8 @@ namespace vcpkg
             process_output_directory(filesystem, root, args.buildtrees_root_dir.get(), "buildtrees", VCPKG_LINE_INFO);
         downloads =
             process_output_directory(filesystem, root, args.downloads_root_dir.get(), "downloads", VCPKG_LINE_INFO);
-        m_pimpl->m_download_manager =
-            create_download_manager(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO);
+        m_pimpl->m_download_manager = Downloads::DownloadManager{
+            parse_download_configuration(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO)};
         packages =
             process_output_directory(filesystem, root, args.packages_root_dir.get(), "packages", VCPKG_LINE_INFO);
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);

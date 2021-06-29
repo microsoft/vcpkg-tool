@@ -31,11 +31,8 @@ namespace
     const path dot_log = vcpkg::u8path(".log");
     const path readme_dot_log = vcpkg::u8path("readme.log");
 
-    class CiBuildLogsRecorder final : public IBuildLogsRecorder
+    struct CiBuildLogsRecorder final : IBuildLogsRecorder
     {
-        path base_path;
-
-    public:
         CiBuildLogsRecorder(const path& base_path_) : base_path(base_path_) { }
 
         virtual void record_build_result(const VcpkgPaths& paths,
@@ -71,6 +68,9 @@ namespace
                 }
             }
         }
+
+    private:
+        path base_path;
     };
 }
 
