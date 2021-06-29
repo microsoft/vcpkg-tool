@@ -28,7 +28,7 @@ namespace vcpkg::Metrics
         bool metrics_enabled();
 
         void upload(const std::string& payload);
-        void flush(Files::Filesystem& fs);
+        void flush(Filesystem& fs);
     };
 
     extern Util::LockGuarded<Metrics> g_metrics;

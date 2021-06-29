@@ -17,7 +17,7 @@ namespace vcpkg::Commands
 
     struct BasicCommand
     {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs) const = 0;
+        virtual void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const = 0;
         virtual ~BasicCommand() = default;
     };
 

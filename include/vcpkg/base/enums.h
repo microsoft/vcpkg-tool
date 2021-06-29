@@ -3,7 +3,7 @@
 #include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/lineinfo.h>
 
-namespace vcpkg::Enums
+namespace vcpkg::Util
 {
     std::string nullvalue_to_string(const CStringView enum_name);
 

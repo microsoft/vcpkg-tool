@@ -1,7 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/enums.h>
 
-namespace vcpkg::Enums
+namespace vcpkg::Util
 {
     std::string nullvalue_to_string(const CStringView enum_name) { return Strings::format("%s_NULLVALUE", enum_name); }
 

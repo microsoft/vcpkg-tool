@@ -80,7 +80,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (outdated_packages.empty())
             {
-                System::print2("All installed packages are up-to-date with the local portfiles.\n");
+                print2("All installed packages are up-to-date with the local portfiles.\n");
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
 
@@ -139,30 +139,27 @@ namespace vcpkg::Commands::Upgrade
 
             if (!up_to_date.empty())
             {
-                System::print2(System::Color::success, "The following packages are up-to-date:\n");
-                System::print2(Strings::join("",
-                                             up_to_date,
-                                             [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                               '\n');
+                print2(Color::success, "The following packages are up-to-date:\n");
+                print2(Strings::join(
+                           "", up_to_date, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
+                       '\n');
             }
 
             if (!not_installed.empty())
             {
-                System::print2(System::Color::error, "The following packages are not installed:\n");
-                System::print2(Strings::join("",
-                                             not_installed,
-                                             [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                               '\n');
+                print2(Color::error, "The following packages are not installed:\n");
+                print2(Strings::join(
+                           "", not_installed, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
+                       '\n');
             }
 
             if (!no_control_file.empty())
             {
-                System::print2(System::Color::error,
-                               "The following packages do not have a valid CONTROL or vcpkg.json:\n");
-                System::print2(Strings::join("",
-                                             no_control_file,
-                                             [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                               '\n');
+                print2(Color::error, "The following packages do not have a valid CONTROL or vcpkg.json:\n");
+                print2(Strings::join("",
+                                     no_control_file,
+                                     [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
+                       '\n');
             }
 
             Checks::check_exit(VCPKG_LINE_INFO, not_installed.empty() && no_control_file.empty());
@@ -185,9 +182,9 @@ namespace vcpkg::Commands::Upgrade
 
         if (!no_dry_run)
         {
-            System::print2(System::Color::warning,
-                           "If you are sure you want to rebuild the above packages, run this command with the "
-                           "--no-dry-run option.\n");
+            print2(Color::warning,
+                   "If you are sure you want to rebuild the above packages, run this command with the "
+                   "--no-dry-run option.\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -203,7 +200,7 @@ namespace vcpkg::Commands::Upgrade
                              Build::null_build_logs_recorder(),
                              var_provider);
 
-        System::print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
+        print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {

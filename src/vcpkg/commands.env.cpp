@@ -61,39 +61,42 @@ namespace vcpkg::Commands::Env
         const bool add_python = Util::Sets::contains(options.switches, OPTION_PYTHON);
 
         std::vector<std::string> path_vars;
-        if (add_bin) path_vars.push_back(fs::u8string(paths.installed / triplet.to_string() / "bin"));
-        if (add_debug_bin) path_vars.push_back(fs::u8string(paths.installed / triplet.to_string() / "debug" / "bin"));
-        if (add_include) extra_env.emplace("INCLUDE", fs::u8string(paths.installed / triplet.to_string() / "include"));
+        if (add_bin) path_vars.push_back(vcpkg::u8string(paths.installed / triplet.to_string() / "bin"));
+        if (add_debug_bin)
+            path_vars.push_back(vcpkg::u8string(paths.installed / triplet.to_string() / "debug" / "bin"));
+        if (add_include)
+            extra_env.emplace("INCLUDE", vcpkg::u8string(paths.installed / triplet.to_string() / "include"));
         if (add_tools)
         {
             auto tools_dir = paths.installed / triplet.to_string() / "tools";
             auto tool_files = fs.get_files_non_recursive(tools_dir);
-            path_vars.push_back(fs::u8string(tools_dir));
+            path_vars.push_back(vcpkg::u8string(tools_dir));
             for (auto&& tool_dir : tool_files)
             {
-                if (fs.is_directory(tool_dir)) path_vars.push_back(fs::u8string(tool_dir));
+                if (fs.is_directory(tool_dir)) path_vars.push_back(vcpkg::u8string(tool_dir));
             }
         }
         if (add_python)
-            extra_env.emplace("PYTHONPATH",
-                              fs::u8string(paths.installed / fs::u8path(triplet.to_string()) / fs::u8path("python")));
+            extra_env.emplace(
+                "PYTHONPATH",
+                vcpkg::u8string(paths.installed / vcpkg::u8path(triplet.to_string()) / vcpkg::u8path("python")));
         if (path_vars.size() > 0) extra_env.emplace("PATH", Strings::join(";", path_vars));
         for (auto&& passthrough : pre_build_info.passthrough_env_vars)
         {
-            if (auto e = System::get_environment_variable(passthrough))
+            if (auto e = get_environment_variable(passthrough))
             {
                 extra_env.emplace(passthrough, e.value_or_exit(VCPKG_LINE_INFO));
             }
         }
 
         auto env = [&] {
-            auto clean_env = System::get_modified_clean_environment(extra_env);
+            auto clean_env = get_modified_clean_environment(extra_env);
             if (build_env_cmd.empty())
                 return clean_env;
             else
             {
 #ifdef _WIN32
-                return System::cmd_execute_modify_env(build_env_cmd, clean_env);
+                return cmd_execute_modify_env(build_env_cmd, clean_env);
 #else
                 Checks::exit_with_message(VCPKG_LINE_INFO,
                                           "Build environment commands are not supported on this platform");
@@ -101,17 +104,17 @@ namespace vcpkg::Commands::Env
             }
         }();
 
-        System::Command cmd("cmd");
+        Command cmd("cmd");
         if (!args.command_arguments.empty())
         {
             cmd.string_arg("/c").raw_arg(args.command_arguments.at(0));
         }
 #ifdef _WIN32
-        System::enter_interactive_subprocess();
+        enter_interactive_subprocess();
 #endif
-        auto rc = System::cmd_execute(cmd, env);
+        auto rc = cmd_execute(cmd, env);
 #ifdef _WIN32
-        System::exit_interactive_subprocess();
+        exit_interactive_subprocess();
 #endif
         Checks::exit_with_code(VCPKG_LINE_INFO, rc);
     }

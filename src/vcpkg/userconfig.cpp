@@ -7,19 +7,19 @@
 
 namespace vcpkg
 {
-    fs::path get_user_dir()
+    path get_user_dir()
     {
 #if defined(_WIN32)
-        return System::get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg";
+        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg";
 #else
-        auto maybe_home = System::get_environment_variable("HOME");
-        return fs::path(maybe_home.value_or("/var")) / ".vcpkg";
+        auto maybe_home = get_environment_variable("HOME");
+        return path(maybe_home.value_or("/var")) / ".vcpkg";
 #endif
     }
 
-    static fs::path get_config_path() { return get_user_dir() / "config"; }
+    static path get_config_path() { return get_user_dir() / "config"; }
 
-    UserConfig UserConfig::try_read_data(const Files::Filesystem& fs)
+    UserConfig UserConfig::try_read_data(const Filesystem& fs)
     {
         UserConfig ret;
         try
@@ -51,7 +51,7 @@ namespace vcpkg
         return ret;
     }
 
-    void UserConfig::try_write_data(Files::Filesystem& fs) const
+    void UserConfig::try_write_data(Filesystem& fs) const
     {
         try
         {
