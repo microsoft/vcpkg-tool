@@ -53,14 +53,14 @@ namespace vcpkg::Downloads
     };
 
     // Handles downloading and uploading to a content addressable mirror
-    struct DownloadManager : private DownloadManagerConfig
+    class DownloadManager
     {
+        DownloadManagerConfig m_config;
+
+    public:
         DownloadManager() = default;
-        explicit DownloadManager(Optional<std::string> read_url_template,
-                                 std::vector<std::string> read_headers,
-                                 Optional<std::string> write_url_template,
-                                 std::vector<std::string> write_headers,
-                                 bool block_origin);
+        explicit DownloadManager(const DownloadManagerConfig& config) : m_config(config) { }
+        explicit DownloadManager(DownloadManagerConfig&& config) : m_config(std::move(config)) { }
 
         void download_file(Files::Filesystem& fs,
                            const std::string& url,
@@ -85,9 +85,5 @@ namespace vcpkg::Downloads
         ExpectedS<int> put_file_to_mirror(const Files::Filesystem& fs,
                                           const fs::path& path,
                                           const std::string& sha512) const;
-
-        const DownloadManagerConfig& internal_get_config() const { return *this; }
-
-        bool block_origin() const { return m_block_origin; }
     };
 }

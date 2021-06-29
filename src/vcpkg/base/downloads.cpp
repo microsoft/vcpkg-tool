@@ -592,19 +592,6 @@ namespace vcpkg::Downloads
         return s_headers;
     }
 
-    DownloadManager::DownloadManager(Optional<std::string> read_url_template,
-                                     std::vector<std::string> read_headers,
-                                     Optional<std::string> write_url_template,
-                                     std::vector<std::string> write_headers,
-                                     bool block_origin)
-        : DownloadManagerConfig{std::move(read_url_template),
-                                std::move(read_headers),
-                                std::move(write_url_template),
-                                std::move(write_headers),
-                                block_origin}
-    {
-    }
-
     void DownloadManager::download_file(Files::Filesystem& fs,
                                         const std::string& url,
                                         View<std::string> headers,
@@ -621,14 +608,14 @@ namespace vcpkg::Downloads
                                                const std::string& sha512) const
     {
         std::string errors;
-        if (auto read_template = m_read_url_template.get())
+        if (auto read_template = m_config.m_read_url_template.get())
         {
             auto read_url = Strings::replace_all(std::string(*read_template), "<SHA>", sha512);
-            if (Downloads::try_download_file(fs, read_url, m_read_headers, download_path, sha512, errors))
+            if (Downloads::try_download_file(fs, read_url, m_config.m_read_headers, download_path, sha512, errors))
                 return read_url;
         }
 
-        if (!m_block_origin)
+        if (!m_config.m_block_origin)
         {
             if (urls.size() == 0)
             {
@@ -656,10 +643,10 @@ namespace vcpkg::Downloads
                                                        const fs::path& path,
                                                        const std::string& sha512) const
     {
-        auto maybe_mirror_url = Strings::replace_all(m_write_url_template.value_or(""), "<SHA>", sha512);
+        auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            return Downloads::put_file(fs, maybe_mirror_url, m_write_headers, path);
+            return Downloads::put_file(fs, maybe_mirror_url, m_config.m_write_headers, path);
         }
         return 0;
     }

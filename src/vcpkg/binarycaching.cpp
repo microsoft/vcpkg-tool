@@ -1504,9 +1504,9 @@ namespace
     };
 }
 
-ExpectedS<Downloads::DownloadManager> vcpkg::create_download_manager(const Optional<std::string>& arg)
+ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
 {
-    if (!arg || arg.get()->empty()) return Downloads::DownloadManager{};
+    if (!arg || arg.get()->empty()) return Downloads::DownloadManagerConfig{};
 
     Metrics::g_metrics.lock()->track_property("asset-source", "defined");
 
@@ -1547,7 +1547,7 @@ ExpectedS<Downloads::DownloadManager> vcpkg::create_download_manager(const Optio
         put_headers.assign(v.begin(), v.end());
     }
 
-    return Downloads::DownloadManager{
+    return Downloads::DownloadManagerConfig{
         std::move(get_url), std::vector<std::string>{}, std::move(put_url), std::move(put_headers), s.block_origin};
 }
 
