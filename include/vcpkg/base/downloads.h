@@ -45,11 +45,8 @@ namespace vcpkg::Downloads
     };
 
     // Handles downloading and uploading to a content addressable mirror
-    class DownloadManager
+    struct DownloadManager
     {
-        DownloadManagerConfig m_config;
-
-    public:
         DownloadManager() = default;
         explicit DownloadManager(const DownloadManagerConfig& config) : m_config(config) { }
         explicit DownloadManager(DownloadManagerConfig&& config) : m_config(std::move(config)) { }
@@ -78,5 +75,8 @@ namespace vcpkg::Downloads
         ExpectedS<int> put_file_to_mirror(const Files::Filesystem& fs,
                                           const fs::path& path,
                                           const std::string& sha512) const;
+
+    private:
+        DownloadManagerConfig m_config;
     };
 }

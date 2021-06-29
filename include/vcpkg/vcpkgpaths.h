@@ -36,7 +36,7 @@ namespace vcpkg
 
     namespace Downloads
     {
-        class DownloadManager;
+        struct DownloadManager;
     }
 
     namespace Build
