@@ -455,6 +455,79 @@ namespace vcpkg::Files
         }
     }
 
+    bool IFilesystemStatusProvider::exists(const fs::path& path, std::error_code& ec) const noexcept
+    {
+        return fs::exists(this->status(path, ec));
+    }
+    bool IFilesystemStatusProvider::exists(LineInfo li, const fs::path& path) const noexcept
+    {
+        return fs::exists(this->status(li, path));
+    }
+    bool IFilesystemStatusProvider::exists(const fs::path& path, ignore_errors_t) const noexcept
+    {
+        return fs::exists(this->status(path, ignore_errors));
+    }
+    bool IFilesystemStatusProvider::is_directory(const fs::path& path, std::error_code& ec) const noexcept
+    {
+        return fs::is_directory(this->status(path, ec));
+    }
+    bool IFilesystemStatusProvider::is_directory(LineInfo li, const fs::path& path) const noexcept
+    {
+        return fs::is_directory(this->status(li, path));
+    }
+    bool IFilesystemStatusProvider::is_directory(const fs::path& path, ignore_errors_t) const noexcept
+    {
+        return fs::is_directory(this->status(path, ignore_errors));
+    }
+    bool IFilesystemStatusProvider::is_regular_file(const fs::path& path, std::error_code& ec) const noexcept
+    {
+        return fs::is_regular_file(this->status(path, ec));
+    }
+    bool IFilesystemStatusProvider::is_regular_file(LineInfo li, const fs::path& path) const noexcept
+    {
+        return fs::is_regular_file(this->status(li, path));
+    }
+    bool IFilesystemStatusProvider::is_regular_file(const fs::path& path, ignore_errors_t) const noexcept
+    {
+        return fs::is_regular_file(this->status(path, ignore_errors));
+    }
+
+    fs::file_status IFilesystemStatusProvider::status(LineInfo li, const fs::path& p) const noexcept
+    {
+        std::error_code ec;
+        auto result = this->status(p, ec);
+        if (ec)
+        {
+            vcpkg::Checks::exit_with_message(li, "error getting status of path %s: %s", p.string(), ec.message());
+        }
+
+        return result;
+    }
+
+    fs::file_status IFilesystemStatusProvider::status(const fs::path& p, ignore_errors_t) const noexcept
+    {
+        std::error_code ec;
+        return this->status(p, ec);
+    }
+
+    fs::file_status IFilesystemStatusProvider::symlink_status(LineInfo li, const fs::path& p) const noexcept
+    {
+        std::error_code ec;
+        auto result = this->symlink_status(p, ec);
+        if (ec)
+        {
+            vcpkg::Checks::exit_with_message(li, "error getting status of path %s: %s", p.string(), ec.message());
+        }
+
+        return result;
+    }
+
+    fs::file_status IFilesystemStatusProvider::symlink_status(const fs::path& p, ignore_errors_t) const noexcept
+    {
+        std::error_code ec;
+        return this->symlink_status(p, ec);
+    }
+
     std::vector<std::string> Filesystem::read_lines(const fs::path& path, LineInfo linfo) const
     {
         auto maybe_lines = this->read_lines(path);
@@ -551,26 +624,6 @@ namespace vcpkg::Files
         return this->remove(path, ec);
     }
 
-    bool Filesystem::exists(const fs::path& path, std::error_code& ec) const
-    {
-        return fs::exists(this->symlink_status(path, ec));
-    }
-
-    bool Filesystem::exists(LineInfo li, const fs::path& path) const
-    {
-        std::error_code ec;
-        auto result = this->exists(path, ec);
-        if (ec)
-            Checks::exit_with_message(li, "error checking existence of file %s: %s", fs::u8string(path), ec.message());
-        return result;
-    }
-
-    bool Filesystem::exists(const fs::path& path, ignore_errors_t) const
-    {
-        std::error_code ec;
-        return this->exists(path, ec);
-    }
-
     bool Filesystem::create_directory(const fs::path& path, ignore_errors_t)
     {
         std::error_code ec;
@@ -635,42 +688,6 @@ namespace vcpkg::Files
             vcpkg::Checks::exit_with_message(
                 li, "error copying file from %s to %s: %s", fs::u8string(oldpath), fs::u8string(newpath), ec.message());
         }
-    }
-
-    fs::file_status Filesystem::status(vcpkg::LineInfo li, const fs::path& p) const noexcept
-    {
-        std::error_code ec;
-        auto result = this->status(p, ec);
-        if (ec)
-        {
-            vcpkg::Checks::exit_with_message(li, "error getting status of path %s: %s", p.string(), ec.message());
-        }
-
-        return result;
-    }
-
-    fs::file_status Filesystem::status(const fs::path& p, ignore_errors_t) const noexcept
-    {
-        std::error_code ec;
-        return this->status(p, ec);
-    }
-
-    fs::file_status Filesystem::symlink_status(vcpkg::LineInfo li, const fs::path& p) const noexcept
-    {
-        std::error_code ec;
-        auto result = this->symlink_status(p, ec);
-        if (ec)
-        {
-            vcpkg::Checks::exit_with_message(li, "error getting status of path %s: %s", p.string(), ec.message());
-        }
-
-        return result;
-    }
-
-    fs::file_status Filesystem::symlink_status(const fs::path& p, ignore_errors_t) const noexcept
-    {
-        std::error_code ec;
-        return this->symlink_status(p, ec);
     }
 
     void Filesystem::write_lines(const fs::path& path, const std::vector<std::string>& lines, LineInfo linfo)
@@ -1190,8 +1207,6 @@ namespace vcpkg::Files
             failure_point = first->path();
         }
 
-        virtual bool is_directory(const fs::path& path) const override { return fs::stdfs::is_directory(path); }
-        virtual bool is_regular_file(const fs::path& path) const override { return fs::stdfs::is_regular_file(path); }
         virtual bool is_empty(const fs::path& path) const override { return fs::stdfs::is_empty(path); }
         virtual bool create_directory(const fs::path& path, std::error_code& ec) override
         {
@@ -1225,11 +1240,11 @@ namespace vcpkg::Files
             return Files::copy_symlink_implementation(oldpath, newpath, ec);
         }
 
-        virtual fs::file_status status(const fs::path& path, std::error_code& ec) const override
+        virtual fs::file_status status(const fs::path& path, std::error_code& ec) const noexcept override
         {
             return Files::status(path, ec);
         }
-        virtual fs::file_status symlink_status(const fs::path& path, std::error_code& ec) const override
+        virtual fs::file_status symlink_status(const fs::path& path, std::error_code& ec) const noexcept override
         {
             return Files::symlink_status(path, ec);
         }
