@@ -2,6 +2,7 @@
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/system.debug.h>
 
 #include <stdio.h>
 
@@ -12,23 +13,6 @@ namespace vcpkg::CoffFileReader
     static uint16_t read_uint16_le(const char* data) noexcept
     {
         return static_cast<unsigned char>(data[0]) | static_cast<unsigned char>(data[1]) << 8;
-    }
-    static uint32_t read_uint32_le(const char* data) noexcept
-    {
-        return static_cast<unsigned char>(data[0]) | static_cast<unsigned char>(data[1]) << 8 |
-               static_cast<unsigned char>(data[2]) << 16 | static_cast<unsigned char>(data[3]) << 24;
-    }
-
-    template<class T>
-    static Optional<T> read_value_from_stream(const ReadFilePointer& fs)
-    {
-        T data;
-        if (fs.read(&data, sizeof(T), 1) == 1)
-        {
-            return data;
-        }
-
-        return nullopt;
     }
 
     template<class T>
@@ -67,18 +51,18 @@ namespace vcpkg::CoffFileReader
         static constexpr size_t PE_SIGNATURE_SIZE = 4;
 
         Checks::check_exit(VCPKG_LINE_INFO, fs.seek(OFFSET_TO_PE_SIGNATURE_OFFSET, SEEK_SET) == 0);
-        const auto offset_to_pe_signature = read_value_from_stream<int32_t>(fs);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.seek(offset_to_pe_signature.value_or_exit(VCPKG_LINE_INFO), SEEK_SET) == 0);
+        int32_t offset_to_pe_signature;
+        Checks::check_exit(VCPKG_LINE_INFO, fs.read(&offset_to_pe_signature, sizeof(int32_t), 1) == 1);
+        Checks::check_exit(VCPKG_LINE_INFO, fs.seek(offset_to_pe_signature, SEEK_SET) == 0);
 
         char signature[PE_SIGNATURE_SIZE];
         Checks::check_exit(VCPKG_LINE_INFO, fs.read(signature, sizeof(char), PE_SIGNATURE_SIZE) == PE_SIGNATURE_SIZE);
         verify_equal_strings(VCPKG_LINE_INFO, PE_SIGNATURE, {signature, PE_SIGNATURE_SIZE}, "PE_SIGNATURE");
     }
 
-    static fpos_t align_to_size(const uint64_t unaligned, const uint64_t alignment_size)
+    static uint64_t align_to_size(const uint64_t unaligned, const uint64_t alignment_size)
     {
-        fpos_t aligned = unaligned - 1;
+        uint64_t aligned = unaligned - 1;
         aligned /= alignment_size;
         aligned += 1;
         aligned *= alignment_size;
@@ -145,46 +129,10 @@ namespace vcpkg::CoffFileReader
             const std::string as_string = data.substr(HEADER_SIZE_OFFSET, HEADER_SIZE_FIELD_SIZE);
             // This is in ASCII decimal representation
             const uint64_t value = std::strtoull(as_string.c_str(), nullptr, 10);
-
-            const uint64_t aligned = align_to_size(value, ALIGNMENT_SIZE);
-            return aligned;
+            return align_to_size(value, ALIGNMENT_SIZE);
         }
 
         std::string data;
-    };
-
-    struct OffsetsArray
-    {
-        static OffsetsArray read(const ReadFilePointer& fs, const uint32_t offset_count)
-        {
-            static constexpr uint32_t OFFSET_WIDTH = 4;
-            Checks::check_exit(VCPKG_LINE_INFO, offset_count <= UINT32_MAX / OFFSET_WIDTH);
-
-            std::string raw_offsets;
-            const uint32_t raw_offset_size = offset_count * OFFSET_WIDTH;
-            raw_offsets.resize(raw_offset_size);
-            Checks::check_exit(VCPKG_LINE_INFO, fs.read(&raw_offsets[0], OFFSET_WIDTH, offset_count) == offset_count);
-
-            OffsetsArray ret;
-            for (uint32_t i = 0; i < offset_count; ++i)
-            {
-                const std::string value_as_string = raw_offsets.substr(OFFSET_WIDTH * static_cast<size_t>(i),
-                                                                       OFFSET_WIDTH * (static_cast<size_t>(i) + 1));
-                const auto value = read_uint32_le(value_as_string.c_str());
-
-                // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
-                if (value != 0)
-                {
-                    ret.data.push_back(value);
-                }
-            }
-
-            // Sort the offsets, because it is possible for them to be unsorted. See vcpkg github #292
-            std::sort(ret.data.begin(), ret.data.end());
-            return ret;
-        }
-
-        std::vector<uint32_t> data;
     };
 
     struct ImportHeader
@@ -250,73 +198,68 @@ namespace vcpkg::CoffFileReader
         return {machine};
     }
 
-    struct Marker
-    {
-        void set_to_offset(const fpos_t position) { this->m_absolute_position = position; }
-
-        void set_to_current_pos(const ReadFilePointer& fs)
-        {
-            Checks::check_exit(VCPKG_LINE_INFO, fs.getpos(&m_absolute_position) == 0);
-        }
-
-        void seek_to_marker(const ReadFilePointer& fs) const
-        {
-            Checks::check_exit(VCPKG_LINE_INFO, fs.setpos(&m_absolute_position) == 0);
-        }
-
-        void advance_by(const uint64_t offset) { this->m_absolute_position += offset; }
-
-    private:
-        fpos_t m_absolute_position = 0;
-    };
-
     LibInfo read_lib(const ReadFilePointer& fs)
     {
         read_and_verify_archive_file_signature(fs);
-
-        Marker marker;
-        marker.set_to_current_pos(fs);
 
         // First Linker Member
         const ArchiveMemberHeader first_linker_member_header = ArchiveMemberHeader::read(fs);
         Checks::check_exit(VCPKG_LINE_INFO,
                            first_linker_member_header.name().substr(0, 2) == "/ ",
                            "Could not find proper first linker member");
-        marker.advance_by(ArchiveMemberHeader::HEADER_SIZE + first_linker_member_header.member_size());
-        marker.seek_to_marker(fs);
+        Checks::check_exit(VCPKG_LINE_INFO, fs.seek(first_linker_member_header.member_size(), SEEK_CUR) == 0);
 
         const ArchiveMemberHeader second_linker_member_header = ArchiveMemberHeader::read(fs);
         Checks::check_exit(VCPKG_LINE_INFO,
                            second_linker_member_header.name().substr(0, 2) == "/ ",
                            "Could not find proper second linker member");
+
+        const auto second_size = second_linker_member_header.member_size();
         // The first 4 bytes contains the number of archive members
-        const auto archive_member_count = read_value_from_stream<uint32_t>(fs);
-        const OffsetsArray offsets = OffsetsArray::read(fs, archive_member_count.value_or_exit(VCPKG_LINE_INFO));
-        marker.advance_by(ArchiveMemberHeader::HEADER_SIZE + second_linker_member_header.member_size());
-        marker.seek_to_marker(fs);
+        uint32_t archive_member_count;
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           second_size >= sizeof(archive_member_count),
+                           "Second linker member was too small to contain a single uint32_t");
+        Checks::check_exit(VCPKG_LINE_INFO, fs.read(&archive_member_count, sizeof(archive_member_count), 1) == 1);
+        const auto maximum_possible_archive_members = (second_size / sizeof(uint32_t)) - 1;
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           archive_member_count <= maximum_possible_archive_members,
+                           "Second linker member was too small to contain the expected number of archive members");
+        std::vector<uint32_t> offsets(archive_member_count);
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           fs.read(&offsets[0], sizeof(uint32_t), archive_member_count) == archive_member_count);
 
-        const bool has_longname_member_header =
-            peek_value_from_stream<uint16_t>(fs).value_or_exit(VCPKG_LINE_INFO) == 0x2F2F;
-        if (has_longname_member_header)
-        {
-            const ArchiveMemberHeader longnames_member_header = ArchiveMemberHeader::read(fs);
-            marker.advance_by(ArchiveMemberHeader::HEADER_SIZE + longnames_member_header.member_size());
-            marker.seek_to_marker(fs);
-        }
+        // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
+        offsets.erase(std::remove(offsets.begin(), offsets.end(), 0u), offsets.end());
+        // Sort the offsets, because it is possible for them to be unsorted. See vcpkg github #292
+        std::sort(offsets.begin(), offsets.end());
+        uint64_t leftover = second_size - sizeof(uint32_t) - (archive_member_count * sizeof(uint32_t));
+        Checks::check_exit(VCPKG_LINE_INFO, fs.seek(leftover, SEEK_CUR) == 0);
 
-        std::set<MachineType> machine_types;
+        // const bool has_longname_member_header = peek_value_from_stream<uint16_t>(fs).value_or_exit(VCPKG_LINE_INFO)
+        // == 0x2F2F; if (has_longname_member_header)
+        //{
+        //    const ArchiveMemberHeader longnames_member_header = ArchiveMemberHeader::read(fs);
+        //    marker.advance_by(ArchiveMemberHeader::HEADER_SIZE + longnames_member_header.member_size());
+        //    marker.seek_to_marker(fs);
+        //}
+
+        std::vector<MachineType> machine_types{offsets.size()};
         // Next we have the obj and pseudo-object files
-        for (const uint32_t offset : offsets.data)
+        for (size_t idx = 0; idx < archive_member_count; ++idx)
         {
-            marker.set_to_offset(offset + ArchiveMemberHeader::HEADER_SIZE); // Skip the header, no need to read it.
-            marker.seek_to_marker(fs);
+            const auto offset = offsets[idx];
+            // Skip the header, no need to read it
+            Checks::check_exit(VCPKG_LINE_INFO, fs.seek(offset + ArchiveMemberHeader::HEADER_SIZE, SEEK_SET) == 0);
             const auto first_two_bytes = peek_value_from_stream<uint16_t>(fs).value_or_exit(VCPKG_LINE_INFO);
             const bool is_import_header = to_machine_type(first_two_bytes) == MachineType::UNKNOWN;
             const MachineType machine =
                 is_import_header ? ImportHeader::read(fs).machine_type() : CoffFileHeader::read(fs).machine_type();
-            machine_types.insert(machine);
+            machine_types[idx] = machine;
         }
 
-        return {std::vector<MachineType>(machine_types.cbegin(), machine_types.cend())};
+        std::sort(machine_types.begin(), machine_types.end());
+        machine_types.erase(std::unique(machine_types.begin(), machine_types.end()), machine_types.end());
+        return {std::move(machine_types)};
     }
 }
