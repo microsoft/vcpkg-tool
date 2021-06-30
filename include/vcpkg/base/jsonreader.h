@@ -268,10 +268,10 @@ namespace vcpkg::Json
         StringLiteral type_name_;
     };
 
-    struct PathDeserializer final : IDeserializer<fs::path>
+    struct PathDeserializer final : IDeserializer<path>
     {
         virtual StringView type_name() const override { return "a path"; }
-        virtual Optional<fs::path> visit_string(Reader&, StringView sv) override { return fs::u8path(sv); }
+        virtual Optional<path> visit_string(Reader&, StringView sv) override { return vcpkg::u8path(sv); }
 
         static PathDeserializer instance;
     };

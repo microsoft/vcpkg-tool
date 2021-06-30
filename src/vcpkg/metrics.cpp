@@ -257,7 +257,7 @@ namespace vcpkg::Metrics
             return "{}";
         }
 
-        auto getmac = System::cmd_execute_and_capture_output(System::Command("getmac"));
+        auto getmac = cmd_execute_and_capture_output(Command("getmac"));
 
         if (getmac.exit_code != 0) return "0";
 
@@ -437,7 +437,7 @@ namespace vcpkg::Metrics
 #endif // ^^^ !_WIN32
     }
 
-    void Metrics::flush(Files::Filesystem& fs)
+    void Metrics::flush(Filesystem& fs)
     {
         if (!metrics_enabled())
         {
@@ -452,8 +452,8 @@ namespace vcpkg::Metrics
         wchar_t temp_folder[MAX_PATH];
         GetTempPathW(MAX_PATH, temp_folder);
 
-        const fs::path temp_folder_path = fs::path(temp_folder) / "vcpkg";
-        const fs::path temp_folder_path_exe =
+        const path temp_folder_path = path(temp_folder) / "vcpkg";
+        const path temp_folder_path_exe =
             temp_folder_path / Strings::format("vcpkg-%s.exe", Commands::Version::base_version());
 #endif
 
@@ -461,27 +461,26 @@ namespace vcpkg::Metrics
 #if defined(_WIN32)
         fs.create_directories(temp_folder_path, ec);
         if (ec) return;
-        fs.copy_file(
-            System::get_exe_path_of_current_process(), temp_folder_path_exe, fs::copy_options::skip_existing, ec);
+        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, stdfs::copy_options::skip_existing, ec);
         if (ec) return;
 #else
         if (!fs.exists("/tmp")) return;
-        const fs::path temp_folder_path = "/tmp/vcpkg";
+        const path temp_folder_path = "/tmp/vcpkg";
         fs.create_directory(temp_folder_path, ignore_errors);
 #endif
-        const fs::path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
+        const path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
         fs.write_contents(vcpkg_metrics_txt_path, payload, ec);
         if (ec) return;
 
 #if defined(_WIN32)
-        System::Command builder;
+        Command builder;
         builder.path_arg(temp_folder_path_exe);
         builder.string_arg("x-upload-metrics");
         builder.path_arg(vcpkg_metrics_txt_path);
-        System::cmd_execute_background(builder);
+        cmd_execute_background(builder);
 #else
         // TODO: convert to cmd_execute_background or something.
-        auto curl = System::Command("curl")
+        auto curl = Command("curl")
                         .string_arg("https://dc.services.visualstudio.com/v2/track")
                         .string_arg("--max-time")
                         .string_arg("3")
@@ -491,13 +490,13 @@ namespace vcpkg::Metrics
                         .string_arg("POST")
                         .string_arg("--tlsv1.2")
                         .string_arg("--data")
-                        .string_arg(Strings::concat("@", fs::u8string(vcpkg_metrics_txt_path)))
+                        .string_arg(Strings::concat("@", vcpkg::u8string(vcpkg_metrics_txt_path)))
                         .raw_arg(">/dev/null")
                         .raw_arg("2>&1");
-        auto remove = System::Command("rm").path_arg(vcpkg_metrics_txt_path);
-        System::Command cmd_line;
+        auto remove = Command("rm").path_arg(vcpkg_metrics_txt_path);
+        Command cmd_line;
         cmd_line.raw_arg("(").raw_arg(curl.command_line()).raw_arg(";").raw_arg(remove.command_line()).raw_arg(") &");
-        System::cmd_execute_clean(cmd_line);
+        cmd_execute_clean(cmd_line);
 #endif
     }
 }

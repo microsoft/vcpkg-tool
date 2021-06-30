@@ -35,7 +35,7 @@ namespace vcpkg::Commands::Search
             }
         }
 
-        System::print2(Json::stringify(obj, Json::JsonStyle{}));
+        print2(Json::stringify(obj, Json::JsonStyle{}));
     }
     static constexpr const int s_name_and_ver_columns = 41;
     static void do_print(const SourceParagraph& source_paragraph, bool full_desc)
@@ -43,10 +43,10 @@ namespace vcpkg::Commands::Search
         auto full_version = VersionT(source_paragraph.version, source_paragraph.port_version).to_string();
         if (full_desc)
         {
-            System::printf("%-20s %-16s %s\n",
-                           source_paragraph.name,
-                           full_version,
-                           Strings::join("\n    ", source_paragraph.description));
+            vcpkg::printf("%-20s %-16s %s\n",
+                          source_paragraph.name,
+                          full_version,
+                          Strings::join("\n    ", source_paragraph.description));
         }
         else
         {
@@ -61,12 +61,12 @@ namespace vcpkg::Commands::Search
             used_columns += std::max<size_t>(full_version.size(), ver_size) + 1;
             size_t description_size = used_columns < (119 - 40) ? 119 - used_columns : 40;
 
-            System::printf("%-*s %-*s %s\n",
-                           name_columns,
-                           source_paragraph.name,
-                           ver_size,
-                           full_version,
-                           vcpkg::shorten_text(description, description_size));
+            vcpkg::printf("%-*s %-*s %s\n",
+                          name_columns,
+                          source_paragraph.name,
+                          ver_size,
+                          full_version,
+                          vcpkg::shorten_text(description, description_size));
         }
     }
 
@@ -75,7 +75,7 @@ namespace vcpkg::Commands::Search
         auto full_feature_name = Strings::concat(name, "[", feature_paragraph.name, "]");
         if (full_desc)
         {
-            System::printf("%-37s %s\n", full_feature_name, Strings::join("\n   ", feature_paragraph.description));
+            vcpkg::printf("%-37s %s\n", full_feature_name, Strings::join("\n   ", feature_paragraph.description));
         }
         else
         {
@@ -86,7 +86,7 @@ namespace vcpkg::Commands::Search
             }
             size_t desc_length =
                 119 - std::min<size_t>(60, 1 + std::max<size_t>(s_name_and_ver_columns, full_feature_name.size()));
-            System::printf(
+            vcpkg::printf(
                 "%-*s %s\n", s_name_and_ver_columns, full_feature_name, vcpkg::shorten_text(description, desc_length));
         }
     }
@@ -180,9 +180,9 @@ namespace vcpkg::Commands::Search
 
         if (!enable_json)
         {
-            System::print2(
-                "\nIf your library is not listed, please open an issue at and/or consider making a pull request:\n"
-                "    https://github.com/Microsoft/vcpkg/issues\n");
+            print2("The search result may be outdated. Run `git pull` to get the latest results.\n"
+                   "\nIf your library is not listed, please open an issue at and/or consider making a pull request:\n"
+                   "    https://github.com/Microsoft/vcpkg/issues\n");
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

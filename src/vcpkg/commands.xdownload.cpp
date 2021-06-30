@@ -39,11 +39,12 @@ namespace vcpkg::Commands::X_Download
     }
     static bool is_lower_sha512(StringView sha) { return sha.size() == 128 && is_lower_hex(sha); }
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs)
+    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
-        auto download_manager = create_download_manager(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO);
-        fs::path file = fs.absolute(VCPKG_LINE_INFO, fs::u8path(args.command_arguments[0]));
+        Downloads::DownloadManager download_manager{
+            parse_download_configuration(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO)};
+        path file = fs.absolute(VCPKG_LINE_INFO, vcpkg::u8path(args.command_arguments[0]));
 
         std::string sha = Strings::ascii_to_lowercase(std::string(args.command_arguments[1]));
         if (!is_lower_sha512(sha))
@@ -56,10 +57,10 @@ namespace vcpkg::Commands::X_Download
         if (Util::Sets::contains(parsed.switches, OPTION_STORE))
         {
             auto s = fs.status(VCPKG_LINE_INFO, file);
-            if (s.type() != fs::file_type::regular)
+            if (s.type() != vcpkg::file_type::regular)
             {
                 Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Error: path was not a regular file: %s", fs::u8string(file));
+                    VCPKG_LINE_INFO, "Error: path was not a regular file: %s", vcpkg::u8string(file));
             }
             auto hash =
                 Strings::ascii_to_lowercase(Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha512));
@@ -90,7 +91,7 @@ namespace vcpkg::Commands::X_Download
         }
     }
 
-    void XDownloadCommand::perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs) const
+    void XDownloadCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         X_Download::perform_and_exit(args, fs);
     }

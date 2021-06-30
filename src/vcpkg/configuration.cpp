@@ -23,10 +23,10 @@ namespace
 
         virtual Optional<Configuration> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
-        ConfigurationDeserializer(const fs::path& configuration_directory);
+        ConfigurationDeserializer(const path& configuration_directory);
 
     private:
-        fs::path configuration_directory;
+        path configuration_directory;
     };
 
     constexpr StringLiteral ConfigurationDeserializer::DEFAULT_REGISTRY;
@@ -56,15 +56,14 @@ namespace
         return Configuration{std::move(registries)};
     }
 
-    ConfigurationDeserializer::ConfigurationDeserializer(const fs::path& configuration_directory)
+    ConfigurationDeserializer::ConfigurationDeserializer(const path& configuration_directory)
         : configuration_directory(configuration_directory)
     {
     }
 
 }
 
-std::unique_ptr<Json::IDeserializer<Configuration>> vcpkg::make_configuration_deserializer(
-    const fs::path& config_directory)
+std::unique_ptr<Json::IDeserializer<Configuration>> vcpkg::make_configuration_deserializer(const path& config_directory)
 {
     return std::make_unique<ConfigurationDeserializer>(config_directory);
 }
@@ -77,10 +76,10 @@ namespace vcpkg
         {
             Metrics::g_metrics.lock()->track_property("registries-error-registry-modification-without-feature-flag",
                                                       "defined");
-            System::printf(System::Color::warning,
-                           "Warning: configuration specified the \"registries\" or \"default-registries\" field, but "
-                           "the %s feature flag was not enabled.\n",
-                           VcpkgCmdArguments::REGISTRIES_FEATURE);
+            vcpkg::printf(Color::warning,
+                          "Warning: configuration specified the \"registries\" or \"default-registries\" field, but "
+                          "the %s feature flag was not enabled.\n",
+                          VcpkgCmdArguments::REGISTRIES_FEATURE);
             registry_set = RegistrySet();
         }
     }

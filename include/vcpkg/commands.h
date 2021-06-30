@@ -15,7 +15,7 @@ namespace vcpkg::Commands
     Span<const PackageNameAndFunction<const PathsCommand*>> get_available_paths_commands();
     Span<const PackageNameAndFunction<const TripletCommand*>> get_available_triplet_commands();
 
-    template<typename T>
+    template<class T>
     T find(StringView command_name, Span<const PackageNameAndFunction<T>> available_commands)
     {
         for (const PackageNameAndFunction<T>& cmd : available_commands)

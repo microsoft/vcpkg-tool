@@ -76,7 +76,7 @@ namespace vcpkg::Commands::Info
                 }
                 if (auto err = parser.get_error())
                 {
-                    System::print2(err->format(), "\n");
+                    print2(err->format(), "\n");
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
@@ -106,7 +106,7 @@ namespace vcpkg::Commands::Info
                 }
             }
             response.insert("results", std::move(results));
-            System::print2(Json::stringify(response, {}));
+            print2(Json::stringify(response, {}));
         }
         else
         {
@@ -124,7 +124,7 @@ namespace vcpkg::Commands::Info
                 }
                 if (auto err = parser.get_error())
                 {
-                    System::print2(err->format(), "\n");
+                    print2(err->format(), "\n");
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
@@ -141,7 +141,7 @@ namespace vcpkg::Commands::Info
                 }
             }
             response.insert("results", std::move(results));
-            System::print2(Json::stringify(response, {}));
+            print2(Json::stringify(response, {}));
         }
     }
 }

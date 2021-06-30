@@ -10,13 +10,13 @@
 #include <unordered_map>
 #include <vector>
 
-namespace vcpkg::System
+namespace vcpkg
 {
     struct CMakeVariable
     {
         CMakeVariable(const StringView varname, const char* varvalue);
         CMakeVariable(const StringView varname, const std::string& varvalue);
-        CMakeVariable(const StringView varname, const fs::path& path);
+        CMakeVariable(const StringView varname, const path& varvalue);
         CMakeVariable(std::string var);
 
         std::string s;
@@ -25,12 +25,12 @@ namespace vcpkg::System
     struct Command
     {
         Command() = default;
-        explicit Command(const fs::path& p) { path_arg(p); }
+        explicit Command(const path& p) { path_arg(p); }
         explicit Command(StringView s) { string_arg(s); }
         explicit Command(const std::string& s) { string_arg(s); }
         explicit Command(const char* s) { string_arg({s, ::strlen(s)}); }
 
-        Command& path_arg(const fs::path& p) & { return string_arg(fs::u8string(p)); }
+        Command& path_arg(const path& p) & { return string_arg(vcpkg::u8string(p)); }
         Command& string_arg(StringView s) &;
         Command& raw_arg(StringView s) &
         {
@@ -39,7 +39,7 @@ namespace vcpkg::System
             return *this;
         }
 
-        Command&& path_arg(const fs::path& p) && { return std::move(path_arg(p)); }
+        Command&& path_arg(const path& p) && { return std::move(path_arg(p)); }
         Command&& string_arg(StringView s) && { return std::move(string_arg(s)); };
         Command&& raw_arg(StringView s) && { return std::move(raw_arg(s)); }
 
@@ -61,11 +61,11 @@ namespace vcpkg::System
         }
     };
 
-    Command make_basic_cmake_cmd(const fs::path& cmake_tool_path,
-                                 const fs::path& cmake_script,
+    Command make_basic_cmake_cmd(const path& cmake_tool_path,
+                                 const path& cmake_script,
                                  const std::vector<CMakeVariable>& pass_variables);
 
-    fs::path get_exe_path_of_current_process();
+    path get_exe_path_of_current_process();
 
     struct ExitCodeAndOutput
     {
@@ -86,19 +86,19 @@ namespace vcpkg::System
 
     struct InWorkingDirectory
     {
-        const fs::path& working_directory;
+        const path& working_directory;
     };
 
     int cmd_execute(const Command& cmd_line, InWorkingDirectory wd, const Environment& env = {});
     inline int cmd_execute(const Command& cmd_line, const Environment& env = {})
     {
-        return cmd_execute(cmd_line, InWorkingDirectory{fs::path()}, env);
+        return cmd_execute(cmd_line, InWorkingDirectory{path()}, env);
     }
 
     int cmd_execute_clean(const Command& cmd_line, InWorkingDirectory wd);
     inline int cmd_execute_clean(const Command& cmd_line)
     {
-        return cmd_execute_clean(cmd_line, InWorkingDirectory{fs::path()});
+        return cmd_execute_clean(cmd_line, InWorkingDirectory{path()});
     }
 
 #if defined(_WIN32)
@@ -112,7 +112,7 @@ namespace vcpkg::System
                                                      const Environment& env = {});
     inline ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line, const Environment& env = {})
     {
-        return cmd_execute_and_capture_output(cmd_line, InWorkingDirectory{fs::path()}, env);
+        return cmd_execute_and_capture_output(cmd_line, InWorkingDirectory{path()}, env);
     }
 
     int cmd_execute_and_stream_lines(const Command& cmd_line,
@@ -123,7 +123,7 @@ namespace vcpkg::System
                                             std::function<void(StringView)> per_line_cb,
                                             const Environment& env = {})
     {
-        return cmd_execute_and_stream_lines(cmd_line, InWorkingDirectory{fs::path()}, std::move(per_line_cb), env);
+        return cmd_execute_and_stream_lines(cmd_line, InWorkingDirectory{path()}, std::move(per_line_cb), env);
     }
 
     int cmd_execute_and_stream_data(const Command& cmd_line,
@@ -134,7 +134,7 @@ namespace vcpkg::System
                                            std::function<void(StringView)> data_cb,
                                            const Environment& env = {})
     {
-        return cmd_execute_and_stream_data(cmd_line, InWorkingDirectory{fs::path()}, std::move(data_cb), env);
+        return cmd_execute_and_stream_data(cmd_line, InWorkingDirectory{path()}, std::move(data_cb), env);
     }
 
     void register_console_ctrl_handler();

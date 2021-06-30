@@ -7,9 +7,8 @@
 namespace vcpkg
 {
     template<class T>
-    class SortedVector
+    struct SortedVector
     {
-    public:
         using size_type = typename std::vector<T>::size_type;
         using iterator = typename std::vector<T>::const_iterator;
 

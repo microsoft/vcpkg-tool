@@ -13,7 +13,7 @@ namespace
 {
     std::string remove_trailing_slashes(std::string argument)
     {
-        using fs::is_slash;
+        using vcpkg::is_slash;
         argument.erase(std::find_if_not(argument.rbegin(), argument.rend(), is_slash).base(), argument.end());
         return argument;
     }
@@ -35,10 +35,10 @@ namespace vcpkg::Commands::Create
         const std::string port_name = args.command_arguments.at(0);
         const std::string url = remove_trailing_slashes(args.command_arguments.at(1));
 
-        std::vector<System::CMakeVariable> cmake_args{
+        std::vector<CMakeVariable> cmake_args{
             {"CMD", "CREATE"},
             {"PORT", port_name},
-            {"PORT_PATH", fs::generic_u8string(paths.builtin_ports_directory() / fs::u8path(port_name))},
+            {"PORT_PATH", vcpkg::generic_u8string(paths.builtin_ports_directory() / vcpkg::u8path(port_name))},
             {"URL", url},
             {"VCPKG_BASE_VERSION", Commands::Version::base_version()},
         };
@@ -47,15 +47,15 @@ namespace vcpkg::Commands::Create
         {
             const std::string& zip_file_name = args.command_arguments.at(2);
             Checks::check_exit(VCPKG_LINE_INFO,
-                               !Files::has_invalid_chars_for_filesystem(zip_file_name),
+                               !has_invalid_chars_for_filesystem(zip_file_name),
                                R"(Filename cannot contain invalid chars %s, but was %s)",
-                               Files::FILESYSTEM_INVALID_CHARACTERS,
+                               FILESYSTEM_INVALID_CHARACTERS,
                                zip_file_name);
             cmake_args.emplace_back("FILENAME", zip_file_name);
         }
 
         auto cmd_launch_cmake = make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
-        return System::cmd_execute_clean(cmd_launch_cmake);
+        return cmd_execute_clean(cmd_launch_cmake);
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)

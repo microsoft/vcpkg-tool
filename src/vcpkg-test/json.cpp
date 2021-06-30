@@ -231,7 +231,7 @@ TEST_CASE ("JSON parse full file", "[json]")
 
 TEST_CASE ("JSON track newlines", "[json]")
 {
-    auto res = Json::parse("{\n,", fs::u8path("filename"));
+    auto res = Json::parse("{\n,", vcpkg::u8path("filename"));
     REQUIRE(!res);
     REQUIRE(res.error()->format() ==
             R"(filename:2:1: error: Unexpected character; expected property name

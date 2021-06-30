@@ -14,7 +14,7 @@ namespace vcpkg::Commands::SetInstalled
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              Dependencies::ActionPlan action_plan,
                              DryRun dry_run,
-                             const Optional<fs::path>& pkgsconfig_path,
+                             const Optional<path>& pkgsconfig_path,
                              Triplet host_triplet);
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
