@@ -23,7 +23,7 @@
 
 namespace vcpkg
 {
-    class BinaryCache;
+    struct BinaryCache;
     struct Environment;
 }
 

@@ -37,21 +37,8 @@ namespace vcpkg
 
     struct IBinaryProvider;
 
-    class CacheStatus
+    struct CacheStatus
     {
-        CacheStatusState m_status;
-
-        union
-        {
-            // The set of providers who know they do not have the associated cache entry.
-            // Flat vector because N is tiny.
-            std::vector<const IBinaryProvider*> m_known_unavailable_providers; // active iff m_status == unknown
-
-            // The provider who affirmatively has the associated cache entry.
-            const IBinaryProvider* m_available_provider; // active iff m_status == available
-        };
-
-    public:
         CacheStatus() noexcept;
         CacheStatus(const CacheStatus&);
         CacheStatus(CacheStatus&&) noexcept;
@@ -69,6 +56,19 @@ namespace vcpkg
         void mark_unavailable(const IBinaryProvider* sender);
         void mark_available(const IBinaryProvider* sender) noexcept;
         void mark_restored() noexcept;
+
+    private:
+        CacheStatusState m_status;
+
+        union
+        {
+            // The set of providers who know they do not have the associated cache entry.
+            // Flat vector because N is tiny.
+            std::vector<const IBinaryProvider*> m_known_unavailable_providers; // active iff m_status == unknown
+
+            // The provider who affirmatively has the associated cache entry.
+            const IBinaryProvider* m_available_provider; // active iff m_status == available
+        };
     };
 
     struct IBinaryProvider
@@ -106,12 +106,8 @@ namespace vcpkg
     ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs_pure(
         const std::string& env_string, View<std::string> args);
 
-    class BinaryCache
+    struct BinaryCache
     {
-        std::unordered_map<std::string, CacheStatus> m_status;
-        std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
-
-    public:
         BinaryCache() = default;
         explicit BinaryCache(const VcpkgCmdArguments& args);
 
@@ -133,6 +129,10 @@ namespace vcpkg
         /// Returns a vector where each index corresponds to the matching index in `actions`.
         std::vector<CacheAvailability> precheck(const VcpkgPaths& paths,
                                                 const std::vector<Dependencies::InstallPlanAction>& actions);
+
+    private:
+        std::unordered_map<std::string, CacheStatus> m_status;
+        std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
     };
 
     ExpectedS<Downloads::DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
