@@ -1196,7 +1196,7 @@ namespace vcpkg
         switch (other.m_status)
         {
             case CacheStatusState::unknown:
-                ::new (&m_known_unavailable_providers)
+                new (&m_known_unavailable_providers)
                     std::vector<const IBinaryProvider*>(other.m_known_unavailable_providers);
                 break;
             case CacheStatusState::available: m_available_provider = other.m_available_provider; break;
@@ -1210,7 +1210,7 @@ namespace vcpkg
         switch (other.m_status)
         {
             case CacheStatusState::unknown:
-                ::new (&m_known_unavailable_providers)
+                new (&m_known_unavailable_providers)
                     std::vector<const IBinaryProvider*>(std::move(other.m_known_unavailable_providers));
                 break;
             case CacheStatusState::available: m_available_provider = other.m_available_provider; break;
@@ -1243,7 +1243,7 @@ namespace vcpkg
         switch (other.m_status)
         {
             case CacheStatusState::unknown:
-                ::new (&m_known_unavailable_providers)
+                new (&m_known_unavailable_providers)
                     std::vector<const IBinaryProvider*>(other.m_known_unavailable_providers);
                 break;
             case CacheStatusState::available: m_available_provider = other.m_available_provider; break;
@@ -1279,7 +1279,7 @@ namespace vcpkg
         switch (other.m_status)
         {
             case CacheStatusState::unknown:
-                ::new (&m_known_unavailable_providers)
+                new (&m_known_unavailable_providers)
                     std::vector<const IBinaryProvider*>(std::move(other.m_known_unavailable_providers));
                 break;
             case CacheStatusState::available: m_available_provider = other.m_available_provider; break;
@@ -1371,9 +1371,7 @@ namespace vcpkg
     {
         switch (m_status)
         {
-            case CacheStatusState::unknown:
-                m_known_unavailable_providers.~vector();
-                // fallthrough
+            case CacheStatusState::unknown: m_known_unavailable_providers.~vector(); [[fallthrough]];
             case CacheStatusState::available: m_status = CacheStatusState::restored; break;
             case CacheStatusState::restored: break;
             default: Checks::unreachable(VCPKG_LINE_INFO);

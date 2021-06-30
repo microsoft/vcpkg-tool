@@ -19,20 +19,20 @@ namespace vcpkg
     enum class RestoreResult
     {
         unavailable,
-        restored
+        restored,
     };
 
     enum class CacheAvailability
     {
         unavailable,
-        available
+        available,
     };
 
     enum class CacheStatusState
     {
         unknown,   // the cache status of the indicated package ABI is unknown
         available, // the cache is known to contain the package ABI, but it has not been restored
-        restored   // the cache contains the ABI and it has been restored to the packages tree
+        restored,  // the cache contains the ABI and it has been restored to the packages tree
     };
 
     struct IBinaryProvider;
@@ -63,7 +63,7 @@ namespace vcpkg
         union
         {
             // The set of providers who know they do not have the associated cache entry.
-            // Flat vector because N is tiny.
+            // Flat vector set because N is tiny.
             std::vector<const IBinaryProvider*> m_known_unavailable_providers; // active iff m_status == unknown
 
             // The provider who affirmatively has the associated cache entry.
