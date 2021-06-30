@@ -7,7 +7,6 @@
 #include <stdio.h>
 
 #include <algorithm>
-#include <locale>
 #include <string>
 #include <vector>
 

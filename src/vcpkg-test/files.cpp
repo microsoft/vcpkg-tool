@@ -283,6 +283,29 @@ TEST_CASE ("lexically_normal", "[files]")
 #endif
 }
 
+TEST_CASE ("LinesCollector", "[files]")
+{
+    using vcpkg::LinesCollector;
+    LinesCollector lc;
+    CHECK(lc.extract().empty());
+    lc.append("a\nb\r\nc\rd\r\r\r\r\r\n\n\n\ne", 18);
+    CHECK(lc.extract() == std::vector<std::string>{"a", "b", "c", "d", "e"});
+    CHECK(lc.extract().empty());
+    lc.append("hello ", 6);
+    lc.append("there ", 6);
+    lc.append("world", 5);
+    CHECK(lc.extract() == std::vector<std::string>{"hello there world"});
+    lc.append("\r\nhello \r\n", 10);
+    lc.append("\r\nworld", 7);
+    CHECK(lc.extract() == std::vector<std::string>{"hello ", "world"});
+    lc.append("\r\n\r\n\r\n", 6);
+    CHECK(lc.extract().empty());
+    lc.append("a", 1);
+    lc.append("b\nc", 3);
+    lc.append("d", 1);
+    CHECK(lc.extract() == std::vector<std::string>{"ab", "cd"});
+}
+
 #if defined(_WIN32)
 TEST_CASE ("win32_fix_path_case", "[files]")
 {

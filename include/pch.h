@@ -23,11 +23,7 @@
 #include <cassert>
 #include <cctype>
 #include <chrono>
-#include <codecvt>
-#include <fstream>
 #include <functional>
-#include <iomanip>
-#include <iostream>
 #include <iterator>
 #include <limits>
 #include <map>

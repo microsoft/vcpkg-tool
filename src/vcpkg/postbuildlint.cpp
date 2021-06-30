@@ -524,17 +524,20 @@ namespace vcpkg::PostBuildLint
         }
     }
 
-    static LintStatus check_dll_architecture(const std::string& expected_architecture, const std::vector<path>& files)
+    static LintStatus check_dll_architecture(const std::string& expected_architecture,
+                                             const std::vector<path>& files,
+                                             const Filesystem& fs)
     {
+        const auto dot_dll = vcpkg::u8path(".dll");
         std::vector<FileAndArch> binaries_with_invalid_architecture;
 
         for (const path& file : files)
         {
             Checks::check_exit(VCPKG_LINE_INFO,
-                               file.extension() == vcpkg::u8path(".dll"),
+                               file.extension() == dot_dll,
                                "The file extension was not .dll: %s",
                                generic_u8string(file));
-            const CoffFileReader::DllInfo info = CoffFileReader::read_dll(file);
+            const CoffFileReader::DllInfo info = CoffFileReader::read_dll(fs.read_file(VCPKG_LINE_INFO, file));
             const std::string actual_architecture = get_actual_architecture(info.machine_type);
 
             if (expected_architecture != actual_architecture)
@@ -553,18 +556,21 @@ namespace vcpkg::PostBuildLint
     }
 #endif
 
-    static LintStatus check_lib_architecture(const std::string& expected_architecture, const std::vector<path>& files)
+    static LintStatus check_lib_architecture(const std::string& expected_architecture,
+                                             const std::vector<path>& files,
+                                             const Filesystem& fs)
     {
 #if defined(_WIN32)
+        const auto dot_lib = vcpkg::u8path(".lib");
         std::vector<FileAndArch> binaries_with_invalid_architecture;
 
         for (const path& file : files)
         {
             Checks::check_exit(VCPKG_LINE_INFO,
-                               file.extension() == vcpkg::u8path(".lib"),
+                               file.extension() == dot_lib,
                                "The file extension was not .lib: %s",
                                generic_u8string(file));
-            CoffFileReader::LibInfo info = CoffFileReader::read_lib(file);
+            CoffFileReader::LibInfo info = CoffFileReader::read_lib(fs.read_file(VCPKG_LINE_INFO, file));
 
             // This is zero for folly's debug library
             // TODO: Why?
@@ -839,7 +845,7 @@ namespace vcpkg::PostBuildLint
     {
         std::vector<path> misplaced_files = fs.get_files_non_recursive(dir);
         Util::erase_remove_if(misplaced_files, [&fs](const path& target) {
-            const std::string filename = generic_u8string(target.filename());
+            const std::string filename = u8string(target.filename());
             if (Strings::case_insensitive_ascii_equals(filename, "CONTROL") ||
                 Strings::case_insensitive_ascii_equals(filename, "BUILD_INFO"))
             {
@@ -912,7 +918,7 @@ namespace vcpkg::PostBuildLint
             std::vector<path> libs;
             libs.insert(libs.cend(), debug_libs.cbegin(), debug_libs.cend());
             libs.insert(libs.cend(), release_libs.cbegin(), release_libs.cend());
-            error_count += check_lib_architecture(pre_build_info.target_architecture, libs);
+            error_count += check_lib_architecture(pre_build_info.target_architecture, libs, fs);
         }
 
         std::vector<path> debug_dlls = fs.get_files_recursive(debug_bin_dir);
@@ -946,7 +952,7 @@ namespace vcpkg::PostBuildLint
                 }
 
 #if defined(_WIN32)
-                error_count += check_dll_architecture(pre_build_info.target_architecture, dlls);
+                error_count += check_dll_architecture(pre_build_info.target_architecture, dlls, fs);
 #endif
                 break;
             }

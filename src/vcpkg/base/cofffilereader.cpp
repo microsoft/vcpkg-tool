@@ -1,34 +1,49 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/cofffilereader.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringliteral.h>
+
+#include <stdio.h>
 
 using namespace std;
 
 namespace vcpkg::CoffFileReader
 {
-#if defined(_WIN32)
-    template<class T>
-    static T reinterpret_bytes(const char* data)
+    static uint16_t read_uint16_le(const char* data) noexcept
     {
-        return (*reinterpret_cast<const T*>(&data[0]));
+        return static_cast<unsigned char>(data[0]) | static_cast<unsigned char>(data[1]) << 8;
+    }
+    static uint32_t read_uint32_le(const char* data) noexcept
+    {
+        return static_cast<unsigned char>(data[0]) | static_cast<unsigned char>(data[1]) << 8 |
+               static_cast<unsigned char>(data[2]) << 16 | static_cast<unsigned char>(data[3]) << 24;
     }
 
     template<class T>
-    static T read_value_from_stream(fstream& fs)
+    static Optional<T> read_value_from_stream(const ReadFilePointer& fs)
     {
         T data;
-        fs.read(reinterpret_cast<char*>(&data), sizeof data);
-        return data;
+        if (fs.read(&data, sizeof(T), 1) == 1)
+        {
+            return data;
+        }
+
+        return nullopt;
     }
 
     template<class T>
-    static T peek_value_from_stream(fstream& fs)
+    static Optional<T> peek_value_from_stream(const ReadFilePointer& fs)
     {
-        const std::streampos original_pos = fs.tellg();
         T data;
-        fs.read(reinterpret_cast<char*>(&data), sizeof data);
-        fs.seekg(original_pos);
-        return data;
+        if (fs.read(&data, sizeof(T), 1) == 1)
+        {
+            if (fs.seek(-static_cast<long>(sizeof(T)), SEEK_CUR) == 0)
+            {
+                return data;
+            }
+        }
+
+        return nullopt;
     }
 
     static void verify_equal_strings(const LineInfo& line_info,
@@ -41,24 +56,24 @@ namespace vcpkg::CoffFileReader
                            "Incorrect string (%s) found. Expected: (%s) but found (%s)",
                            label,
                            expected,
-                           actual);
+                           actual); // FIXME HEX
     }
 
-    static void read_and_verify_pe_signature(fstream& fs)
+    static void read_and_verify_pe_signature(const ReadFilePointer& fs)
     {
-        static constexpr size_t OFFSET_TO_PE_SIGNATURE_OFFSET = 0x3c;
+        static constexpr long OFFSET_TO_PE_SIGNATURE_OFFSET = 0x3c;
 
         static constexpr StringLiteral PE_SIGNATURE = "PE\0\0";
         static constexpr size_t PE_SIGNATURE_SIZE = 4;
 
-        fs.seekg(OFFSET_TO_PE_SIGNATURE_OFFSET, ios_base::beg);
+        Checks::check_exit(VCPKG_LINE_INFO, fs.seek(OFFSET_TO_PE_SIGNATURE_OFFSET, SEEK_SET) == 0);
         const auto offset_to_pe_signature = read_value_from_stream<int32_t>(fs);
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           fs.seek(offset_to_pe_signature.value_or_exit(VCPKG_LINE_INFO), SEEK_SET) == 0);
 
-        fs.seekg(offset_to_pe_signature);
         char signature[PE_SIGNATURE_SIZE];
-        fs.read(signature, PE_SIGNATURE_SIZE);
+        Checks::check_exit(VCPKG_LINE_INFO, fs.read(signature, sizeof(char), PE_SIGNATURE_SIZE) == PE_SIGNATURE_SIZE);
         verify_equal_strings(VCPKG_LINE_INFO, PE_SIGNATURE, {signature, PE_SIGNATURE_SIZE}, "PE_SIGNATURE");
-        fs.seekg(offset_to_pe_signature + PE_SIGNATURE_SIZE, ios_base::beg);
     }
 
     static fpos_t align_to_size(const uint64_t unaligned, const uint64_t alignment_size)
@@ -74,21 +89,17 @@ namespace vcpkg::CoffFileReader
     {
         static constexpr size_t HEADER_SIZE = 20;
 
-        static CoffFileHeader read(fstream& fs)
+        static CoffFileHeader read(const ReadFilePointer& fs)
         {
             CoffFileHeader ret;
             ret.data.resize(HEADER_SIZE);
-            fs.read(&ret.data[0], HEADER_SIZE);
+            Checks::check_exit(VCPKG_LINE_INFO, fs.read(&ret.data[0], HEADER_SIZE, 1) == 1);
             return ret;
         }
 
         MachineType machine_type() const
         {
-            static constexpr size_t MACHINE_TYPE_OFFSET = 0;
-            static constexpr size_t MACHINE_TYPE_SIZE = 2;
-
-            std::string machine_field_as_string = data.substr(MACHINE_TYPE_OFFSET, MACHINE_TYPE_SIZE);
-            const auto machine = reinterpret_bytes<uint16_t>(machine_field_as_string.c_str());
+            const auto machine = read_uint16_le(data.c_str());
             return to_machine_type(machine);
         }
 
@@ -100,7 +111,7 @@ namespace vcpkg::CoffFileReader
     {
         static constexpr size_t HEADER_SIZE = 60;
 
-        static ArchiveMemberHeader read(fstream& fs)
+        static ArchiveMemberHeader read(const ReadFilePointer& fs)
         {
             static constexpr size_t HEADER_END_OFFSET = 58;
             static constexpr StringLiteral HEADER_END = "`\n";
@@ -108,8 +119,7 @@ namespace vcpkg::CoffFileReader
 
             ArchiveMemberHeader ret;
             ret.data.resize(HEADER_SIZE);
-            fs.read(&ret.data[0], HEADER_SIZE);
-
+            Checks::check_exit(VCPKG_LINE_INFO, fs.read(&ret.data[0], HEADER_SIZE, 1) == 1);
             if (ret.data[0] != '\0') // Due to freeglut. github issue #223
             {
                 const std::string header_end = ret.data.substr(HEADER_END_OFFSET, HEADER_END_SIZE);
@@ -145,21 +155,22 @@ namespace vcpkg::CoffFileReader
 
     struct OffsetsArray
     {
-        static OffsetsArray read(fstream& fs, const uint32_t offset_count)
+        static OffsetsArray read(const ReadFilePointer& fs, const uint32_t offset_count)
         {
             static constexpr uint32_t OFFSET_WIDTH = 4;
+            Checks::check_exit(VCPKG_LINE_INFO, offset_count <= UINT32_MAX / OFFSET_WIDTH);
 
             std::string raw_offsets;
             const uint32_t raw_offset_size = offset_count * OFFSET_WIDTH;
             raw_offsets.resize(raw_offset_size);
-            fs.read(&raw_offsets[0], raw_offset_size);
+            Checks::check_exit(VCPKG_LINE_INFO, fs.read(&raw_offsets[0], OFFSET_WIDTH, offset_count) == offset_count);
 
             OffsetsArray ret;
             for (uint32_t i = 0; i < offset_count; ++i)
             {
                 const std::string value_as_string = raw_offsets.substr(OFFSET_WIDTH * static_cast<size_t>(i),
                                                                        OFFSET_WIDTH * (static_cast<size_t>(i) + 1));
-                const auto value = reinterpret_bytes<uint32_t>(value_as_string.c_str());
+                const auto value = read_uint32_le(value_as_string.c_str());
 
                 // Ignore offsets that point to offset 0. See vcpkg github #223 #288 #292
                 if (value != 0)
@@ -180,7 +191,7 @@ namespace vcpkg::CoffFileReader
     {
         static constexpr size_t HEADER_SIZE = 20;
 
-        static ImportHeader read(fstream& fs)
+        static ImportHeader read(const ReadFilePointer& fs)
         {
             static constexpr size_t SIG1_OFFSET = 0;
             static constexpr auto SIG1 = static_cast<uint16_t>(MachineType::UNKNOWN);
@@ -192,14 +203,14 @@ namespace vcpkg::CoffFileReader
 
             ImportHeader ret;
             ret.data.resize(HEADER_SIZE);
-            fs.read(&ret.data[0], HEADER_SIZE);
+            Checks::check_exit(VCPKG_LINE_INFO, fs.read(&ret.data[0], HEADER_SIZE, 1) == 1);
 
             const std::string sig1_as_string = ret.data.substr(SIG1_OFFSET, SIG1_SIZE);
-            const auto sig1 = reinterpret_bytes<uint16_t>(sig1_as_string.c_str());
+            const auto sig1 = read_uint16_le(sig1_as_string.c_str());
             Checks::check_exit(VCPKG_LINE_INFO, sig1 == SIG1, "Sig1 was incorrect. Expected %s but got %s", SIG1, sig1);
 
             const std::string sig2_as_string = ret.data.substr(SIG2_OFFSET, SIG2_SIZE);
-            const auto sig2 = reinterpret_bytes<uint16_t>(sig2_as_string.c_str());
+            const auto sig2 = read_uint16_le(sig2_as_string.c_str());
             Checks::check_exit(VCPKG_LINE_INFO, sig2 == SIG2, "Sig2 was incorrect. Expected %s but got %s", SIG2, sig2);
 
             return ret;
@@ -211,7 +222,7 @@ namespace vcpkg::CoffFileReader
             static constexpr size_t MACHINE_TYPE_SIZE = 2;
 
             std::string machine_field_as_string = data.substr(MACHINE_TYPE_OFFSET, MACHINE_TYPE_SIZE);
-            const auto machine = reinterpret_bytes<uint16_t>(machine_field_as_string.c_str());
+            const auto machine = read_uint16_le(machine_field_as_string.c_str());
             return to_machine_type(machine);
         }
 
@@ -219,23 +230,20 @@ namespace vcpkg::CoffFileReader
         std::string data;
     };
 
-    static void read_and_verify_archive_file_signature(fstream& fs)
+    static void read_and_verify_archive_file_signature(const ReadFilePointer& fs)
     {
         static constexpr StringLiteral FILE_START = "!<arch>\n";
         static constexpr size_t FILE_START_SIZE = 8;
 
-        fs.seekg(std::fstream::beg);
+        Checks::check_exit(VCPKG_LINE_INFO, fs.seek(0, SEEK_SET) == 0);
 
         char file_start[FILE_START_SIZE];
-        fs.read(file_start, FILE_START_SIZE);
+        Checks::check_exit(VCPKG_LINE_INFO, fs.read(&file_start, FILE_START_SIZE, 1) == 1);
         verify_equal_strings(VCPKG_LINE_INFO, FILE_START, {file_start, FILE_START_SIZE}, "LIB FILE_START");
     }
 
-    DllInfo read_dll(const path& dll)
+    DllInfo read_dll(const ReadFilePointer& fs)
     {
-        std::fstream fs(dll, std::ios::in | std::ios::binary | std::ios::ate);
-        Checks::check_exit(VCPKG_LINE_INFO, fs.is_open(), "Could not open file %s for reading", generic_u8string(dll));
-
         read_and_verify_pe_signature(fs);
         CoffFileHeader header = CoffFileHeader::read(fs);
         const MachineType machine = header.machine_type();
@@ -246,9 +254,15 @@ namespace vcpkg::CoffFileReader
     {
         void set_to_offset(const fpos_t position) { this->m_absolute_position = position; }
 
-        void set_to_current_pos(fstream& fs) { this->m_absolute_position = fs.tellg(); }
+        void set_to_current_pos(const ReadFilePointer& fs)
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, fs.getpos(&m_absolute_position) == 0);
+        }
 
-        void seek_to_marker(fstream& fs) const { fs.seekg(this->m_absolute_position, ios_base::beg); }
+        void seek_to_marker(const ReadFilePointer& fs) const
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, fs.setpos(&m_absolute_position) == 0);
+        }
 
         void advance_by(const uint64_t offset) { this->m_absolute_position += offset; }
 
@@ -256,11 +270,8 @@ namespace vcpkg::CoffFileReader
         fpos_t m_absolute_position = 0;
     };
 
-    LibInfo read_lib(const path& lib)
+    LibInfo read_lib(const ReadFilePointer& fs)
     {
-        std::fstream fs(lib, std::ios::in | std::ios::binary | std::ios::ate);
-        Checks::check_exit(VCPKG_LINE_INFO, fs.is_open(), "Could not open file %s for reading", generic_u8string(lib));
-
         read_and_verify_archive_file_signature(fs);
 
         Marker marker;
@@ -280,11 +291,12 @@ namespace vcpkg::CoffFileReader
                            "Could not find proper second linker member");
         // The first 4 bytes contains the number of archive members
         const auto archive_member_count = read_value_from_stream<uint32_t>(fs);
-        const OffsetsArray offsets = OffsetsArray::read(fs, archive_member_count);
+        const OffsetsArray offsets = OffsetsArray::read(fs, archive_member_count.value_or_exit(VCPKG_LINE_INFO));
         marker.advance_by(ArchiveMemberHeader::HEADER_SIZE + second_linker_member_header.member_size());
         marker.seek_to_marker(fs);
 
-        const bool has_longname_member_header = peek_value_from_stream<uint16_t>(fs) == 0x2F2F;
+        const bool has_longname_member_header =
+            peek_value_from_stream<uint16_t>(fs).value_or_exit(VCPKG_LINE_INFO) == 0x2F2F;
         if (has_longname_member_header)
         {
             const ArchiveMemberHeader longnames_member_header = ArchiveMemberHeader::read(fs);
@@ -298,7 +310,7 @@ namespace vcpkg::CoffFileReader
         {
             marker.set_to_offset(offset + ArchiveMemberHeader::HEADER_SIZE); // Skip the header, no need to read it.
             marker.seek_to_marker(fs);
-            const auto first_two_bytes = peek_value_from_stream<uint16_t>(fs);
+            const auto first_two_bytes = peek_value_from_stream<uint16_t>(fs).value_or_exit(VCPKG_LINE_INFO);
             const bool is_import_header = to_machine_type(first_two_bytes) == MachineType::UNKNOWN;
             const MachineType machine =
                 is_import_header ? ImportHeader::read(fs).machine_type() : CoffFileHeader::read(fs).machine_type();
@@ -307,5 +319,4 @@ namespace vcpkg::CoffFileReader
 
         return {std::vector<MachineType>(machine_types.cbegin(), machine_types.cend())};
     }
-#endif
 }

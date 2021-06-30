@@ -22,7 +22,6 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <cassert>
-#include <fstream>
 #include <memory>
 #include <random>
 
