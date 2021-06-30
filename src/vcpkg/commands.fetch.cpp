@@ -18,8 +18,8 @@ namespace vcpkg::Commands::Fetch
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         const std::string tool = args.command_arguments[0];
-        const fs::path tool_path = paths.get_tool_exe(tool);
-        System::print2(fs::u8string(tool_path), '\n');
+        const path tool_path = paths.get_tool_exe(tool);
+        print2(vcpkg::u8string(tool_path), '\n');
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

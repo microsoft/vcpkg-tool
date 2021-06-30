@@ -74,7 +74,7 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
             core->port_version = version.port_version();
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
-            it2 = it->second.emplace(version, SourceControlFileLocation{std::move(scf), fs::u8path(name)}).first;
+            it2 = it->second.emplace(version, SourceControlFileLocation{std::move(scf), vcpkg::u8path(name)}).first;
         }
         return it2->second;
     }
@@ -196,7 +196,7 @@ struct MockOverlayProvider : PortFileProvider::IOverlayProvider
             core->port_version = version.port_version();
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
-            it = mappings.emplace(name, SourceControlFileLocation{std::move(scf), fs::u8path(name)}).first;
+            it = mappings.emplace(name, SourceControlFileLocation{std::move(scf), vcpkg::u8path(name)}).first;
         }
         return it->second;
     }

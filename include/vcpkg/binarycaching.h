@@ -57,7 +57,7 @@ namespace vcpkg
     ExpectedS<std::unique_ptr<IBinaryProvider>> create_binary_provider_from_configs_pure(const std::string& env_string,
                                                                                          View<std::string> args);
 
-    ExpectedS<Downloads::DownloadManager> create_download_manager(const Optional<std::string>& arg);
+    ExpectedS<Downloads::DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const Dependencies::ActionPlan& action);
 

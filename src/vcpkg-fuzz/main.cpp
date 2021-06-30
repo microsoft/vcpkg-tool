@@ -68,14 +68,14 @@ namespace
                     }
                     else
                     {
-                        System::print2(System::Color::error, "Invalid kind: ", value, "\n");
-                        System::print2(System::Color::error, "  Expected one of: utf-8, json, platform-expr\n\n");
+                        print2(Color::error, "Invalid kind: ", value, "\n");
+                        print2(Color::error, "  Expected one of: utf-8, json, platform-expr\n\n");
                         print_help_and_exit(true);
                     }
                 }
                 else
                 {
-                    System::print2("Unknown option: ", key, "\n\n");
+                    print2("Unknown option: ", key, "\n\n");
                     print_help_and_exit(true);
                 }
             }
@@ -109,9 +109,9 @@ Options:
   --kind=...                One of {utf-8, json}
 )";
 
-            auto color = invalid ? System::Color::error : System::Color::success;
+            auto color = invalid ? Color::error : Color::success;
 
-            System::print2(color, help);
+            print2(color, help);
             if (invalid)
             {
                 Checks::exit_fail(VCPKG_LINE_INFO);

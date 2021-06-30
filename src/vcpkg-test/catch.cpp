@@ -6,7 +6,7 @@
 
 int main(int argc, char** argv)
 {
-    if (vcpkg::System::get_environment_variable("VCPKG_DEBUG").value_or("") == "1") vcpkg::Debug::g_debugging = true;
+    if (vcpkg::get_environment_variable("VCPKG_DEBUG").value_or("") == "1") vcpkg::Debug::g_debugging = true;
 
     return Catch::Session().run(argc, argv);
 }

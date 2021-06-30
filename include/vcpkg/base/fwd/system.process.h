@@ -1,6 +1,6 @@
 #pragma once
 
-namespace vcpkg::System
+namespace vcpkg
 {
     struct CMakeVariable;
     struct Command;

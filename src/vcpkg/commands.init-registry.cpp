@@ -14,14 +14,14 @@ namespace vcpkg::Commands::InitRegistry
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs)
+    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
-        auto path = fs::u8path(args.command_arguments.front());
-        path = Files::combine(fs.current_path(VCPKG_LINE_INFO), path);
-        const auto ports = path / fs::u8path("ports");
-        const auto baseline = path / fs::u8path("versions") / fs::u8path("baseline.json");
+        auto path = vcpkg::u8path(args.command_arguments.front());
+        path = combine(fs.current_path(VCPKG_LINE_INFO), path);
+        const auto ports = path / vcpkg::u8path("ports");
+        const auto baseline = path / vcpkg::u8path("versions") / vcpkg::u8path("baseline.json");
         if (!fs.exists(ports))
         {
             fs.create_directories(ports, VCPKG_LINE_INFO);
@@ -33,11 +33,11 @@ namespace vcpkg::Commands::InitRegistry
 })";
             fs.write_contents_and_dirs(baseline, content, VCPKG_LINE_INFO);
         }
-        System::print2("Sucessfully created registry at ", fs::u8string(path), "\n");
+        print2("Sucessfully created registry at ", vcpkg::u8string(path), "\n");
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void InitRegistryCommand::perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs) const
+    void InitRegistryCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         InitRegistry::perform_and_exit(args, fs);
     }
