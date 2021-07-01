@@ -21,4 +21,5 @@ namespace vcpkg
     };
 
     std::unique_ptr<Json::IDeserializer<Configuration>> make_configuration_deserializer(const path& config_directory);
+    Json::Object serialize_configuration(const Configuration& config);
 }

@@ -67,6 +67,8 @@ namespace vcpkg
 
         virtual Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const = 0;
 
+        virtual Json::Object serialize() const;
+
         virtual ~RegistryImplementation() = default;
     };
 
@@ -136,4 +138,6 @@ namespace vcpkg
     ExpectedS<std::map<std::string, VersionT, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
+
+    Json::Object serialize_registry_set(const RegistrySet& config);
 }
