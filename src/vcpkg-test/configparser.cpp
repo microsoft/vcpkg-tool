@@ -104,6 +104,42 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
     }
 }
 
+TEST_CASE ("BinaryConfigParser nuget timeout", "[binaryconfigparser]")
+{
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,3601", {});
+        REQUIRE(parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,nonsense", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,0", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,12x", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,-321", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,321,123", {});
+        REQUIRE(!parsed.has_value());
+    }
+}
+
 TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
 {
     {
