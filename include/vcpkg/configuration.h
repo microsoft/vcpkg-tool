@@ -20,5 +20,6 @@ namespace vcpkg
         void validate_feature_flags(const FeatureFlagSettings& flags);
     };
 
-    std::unique_ptr<Json::IDeserializer<Configuration>> make_configuration_deserializer(const Path& config_directory);
+    std::unique_ptr<Json::IDeserializer<Configuration>> make_configuration_deserializer(const path& config_directory);
+    Json::Object serialize_configuration(const Configuration& config);
 }
