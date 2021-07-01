@@ -1028,29 +1028,31 @@ Json::Object RegistryImplementation::serialize() const
     return obj;
 }
 
-Json::Object BuiltinRegistry::serialize() const {
+Json::Object BuiltinRegistry::serialize() const
+{
     Json::Object obj{RegistryImplementation::serialize()};
-    if(!m_baseline_identifier.empty())
+    if (!m_baseline_identifier.empty())
         obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
     return obj;
 }
 
-Json::Object GitRegistry::serialize() const {
+Json::Object GitRegistry::serialize() const
+{
     Json::Object obj{RegistryImplementation::serialize()};
-    if(!m_baseline_identifier.empty())
+    if (!m_baseline_identifier.empty())
         obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
     obj.insert(RegistryImplDeserializer::REPO, Json::Value::string(m_repo));
     return obj;
 }
 
-Json::Object FilesystemRegistry::serialize() const {
+Json::Object FilesystemRegistry::serialize() const
+{
     Json::Object obj{RegistryImplementation::serialize()};
-    if(!m_baseline_identifier.empty())
+    if (!m_baseline_identifier.empty())
         obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
     obj.insert(RegistryImplDeserializer::PATH, Json::Value::string(m_path.u8string()));
     return obj;
 }
-
 
 namespace vcpkg
 {
