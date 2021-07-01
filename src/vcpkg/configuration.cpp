@@ -65,16 +65,18 @@ namespace
     {
         Json::Object obj;
 
-        if(config.registry_set.default_registry())
+        if (config.registry_set.default_registry())
         {
-            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, config.registry_set.default_registry()->serialize());
+            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY,
+                       config.registry_set.default_registry()->serialize());
         }
 
         auto reg_view = config.registry_set.registries();
-        if(reg_view.size() > 0) {
+        if (reg_view.size() > 0)
+        {
             auto& reg_arr = obj.insert(ConfigurationDeserializer::REGISTRIES, Json::Array());
-            for(const auto& reg : reg_view) 
-            {   
+            for (const auto& reg : reg_view)
+            {
                 reg_arr.push_back(reg.implementation().serialize());
             }
         }
