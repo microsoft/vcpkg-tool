@@ -1,6 +1,6 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
-$builtinRegistryArgs = $commonArgs + @("--x-builtin-registry-versions-dir=$PSScriptRoot/../e2e_ports/versions")
+$builtinRegistryArgs = $commonArgs
 
 Run-Vcpkg install @builtinRegistryArgs 'vcpkg-internal-e2e-test-port'
 Throw-IfNotFailed

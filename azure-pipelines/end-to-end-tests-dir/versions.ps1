@@ -2,18 +2,34 @@
 
 $versionFilesPath = "$PSScriptRoot/../e2e_ports/version-files"
 
+# create custom registry for testing
+$RegistryRootComplete = Join-Path $TestingRoot 'registry_for_versions_complete'
+& $GitExe init $RegistryRootComplete
+Throw-IfFailed
+$RegistryRootIncomplete = Join-Path $TestingRoot 'registry_for_versions_incomplete'
+& $GitExe init $RegistryRootIncomplete
+Throw-IfFailed
+
 # Test verify versions
-mkdir $VersionFilesRoot | Out-Null
-Copy-Item -Recurse "$versionFilesPath/versions_incomplete" $VersionFilesRoot
+Copy-Item -Recurse "$versionFilesPath/versions" "$RegistryRootComplete/versions"
+Copy-Item -Recurse "$versionFilesPath/ports" "$RegistryRootComplete/ports"
+& $GitExe -C "$RegistryRootComplete" add -A 
+Throw-IfFailed
+& $GitExe -C "$RegistryRootComplete" -c user.name='vcpkg-tool' -c user.email='ci@vcpkg.io' commit -m "add files"
+Throw-IfFailed
+Copy-Item -Recurse "$versionFilesPath/versions_incomplete" "$RegistryRootIncomplete/versions"
+Copy-Item -Recurse "$versionFilesPath/ports_incomplete" "$RegistryRootIncomplete/ports"
+& $GitExe -C "$RegistryRootIncomplete" add -A
+Throw-IfFailed
+& $GitExe -C "$RegistryRootIncomplete" -c user.name='vcpkg-tool' -c user.email='ci@vcpkg.io' commit -m "add files"
+Throw-IfFailed
 $portsRedirectArgsOK = @(
     "--feature-flags=versions",
-    "--x-builtin-ports-root=$versionFilesPath/ports",
-    "--x-builtin-registry-versions-dir=$versionFilesPath/versions"
+    "--x-registry-root=$RegistryRootComplete"
 )
 $portsRedirectArgsIncomplete = @(
     "--feature-flags=versions",
-    "--x-builtin-ports-root=$versionFilesPath/ports_incomplete",
-    "--x-builtin-registry-versions-dir=$VersionFilesRoot/versions_incomplete"
+    "--x-registry-root=$RegistryRootIncomplete"
 )
 $CurrentTest = "x-verify-ci-versions (All files OK)"
 Write-Host $CurrentTest
@@ -78,23 +94,20 @@ foreach ($opt_registries in @("",",registries"))
     Remove-Item -Recurse $buildtreesRoot/versioning -ErrorAction SilentlyContinue
     Run-Vcpkg @commonArgs "--feature-flags=versions$opt_registries" install `
         "--dry-run" `
-        "--x-manifest-root=$versionFilesPath/without-default-baseline-2" `
-        "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"
+        "--x-manifest-root=$versionFilesPath/without-default-baseline-2"
     Throw-IfFailed
     Require-FileNotExists $buildtreesRoot/versioning
 
     $CurrentTest = "default baseline 2"
     Run-Vcpkg @commonArgs "--feature-flags=versions$opt_registries" install `
         "--dry-run" `
-        "--x-manifest-root=$versionFilesPath/default-baseline-2" `
-        "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"
+        "--x-manifest-root=$versionFilesPath/default-baseline-2"
     Throw-IfFailed
     Require-FileExists $buildtreesRoot/versioning
 
     $CurrentTest = "using version features fails without flag"
     Run-Vcpkg @commonArgs "--feature-flags=-versions$opt_registries" install `
         "--dry-run" `
-        "--x-manifest-root=$versionFilesPath/default-baseline-2" `
-        "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"
+        "--x-manifest-root=$versionFilesPath/default-baseline-2"
     Throw-IfNotFailed
 }

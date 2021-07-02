@@ -17,6 +17,14 @@ $commonArgs = @(
 )
 $Script:CurrentTest = 'unassigned'
 $env:X_VCPKG_REGISTRIES_CACHE = Join-Path $TestingRoot 'registries'
+if ($IsWindows)
+{
+    $GitExe = 'git.exe'
+}
+else
+{
+    $GitExe = 'git'
+}
 
 function Refresh-TestRoot {
     Remove-Item -Recurse -Force $TestingRoot -ErrorAction SilentlyContinue
