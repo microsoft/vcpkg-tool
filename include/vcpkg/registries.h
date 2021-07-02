@@ -137,8 +137,7 @@ namespace vcpkg
                                                                                 StringView port_name);
 
     ExpectedS<std::map<std::string, VersionT, std::less<>>> get_baseline(const VcpkgPaths& paths,
-                                                                         const path& dot_git_dir,
-                                                                         const path& versions_dir);
+                                                                         const path& registry_root);
     ExpectedS<std::map<std::string, VersionT, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);

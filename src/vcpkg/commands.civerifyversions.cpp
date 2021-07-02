@@ -367,7 +367,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 continue;
             }
 
-            auto versions_file_path = paths.builtin_registry_versions / vcpkg::u8path({port_name[0], '-'}) /
+            auto versions_file_path = paths.current_versions_directory() / vcpkg::u8path({port_name[0], '-'}) /
                                       vcpkg::u8path(Strings::concat(port_name, ".json"));
             if (!fs.exists(versions_file_path))
             {

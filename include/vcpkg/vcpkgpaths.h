@@ -101,13 +101,10 @@ namespace vcpkg
         path community_triplets;
         path scripts;
         path prefab;
-        path builtin_ports;
-        path builtin_registry_versions;
-
-        // When we are in a custom registry, these values are different from builtin_ports, otherwise they are the same
-        path current_registry_dot_git_dir;
-        path current_registry_ports;
-        path current_registry_versions;
+        path builtin_registry_root;
+        // When we are in a custom registry, this path is different from builtin_registry_root, otherwise they are the
+        // same
+        path current_registry_root;
 
         path tools;
         path buildsystems;
@@ -140,9 +137,7 @@ namespace vcpkg
         ExpectedS<std::string> get_current_git_sha(const path& dot_git_dir) const;
         std::string get_current_git_sha_message(const path& dot_git_dir) const;
         ExpectedS<path> git_checkout_builtin_baseline(StringView commit_sha) const;
-        ExpectedS<path> git_checkout_baseline(const path& dot_git_dir,
-                                              const path& versions_dir,
-                                              StringView commit_sha) const;
+        ExpectedS<path> git_checkout_baseline(const path& registry_root, StringView commit_sha) const;
         ExpectedS<path> git_checkout_port(StringView port_name, StringView git_tree, const path& dot_git_dir) const;
         ExpectedS<std::string> git_show(const std::string& treeish, const path& dot_git_dir) const;
 
@@ -187,7 +182,12 @@ namespace vcpkg
 
         // the directory of the builtin ports
         // this should be used only for helper commands, not core commands like `install`.
-        path builtin_ports_directory() const { return this->builtin_ports; }
+        path builtin_ports_directory() const { return this->root / u8path("ports"); }
+        path builtin_versions_directory() const { return this->root / u8path("versions"); }
+
+        path current_git_directory() const { return current_registry_root / u8path(".git"); }
+        path current_ports_directory() const { return current_registry_root / u8path("ports"); }
+        path current_versions_directory() const { return current_registry_root / u8path("versions"); }
 
     private:
         std::unique_ptr<details::VcpkgPathsImpl> m_pimpl;

@@ -399,10 +399,6 @@ namespace vcpkg
         packages =
             process_output_directory(filesystem, root, args.packages_root_dir.get(), "packages", VCPKG_LINE_INFO);
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);
-        builtin_ports =
-            process_output_directory(filesystem, root, args.builtin_ports_root_dir.get(), "ports", VCPKG_LINE_INFO);
-        builtin_registry_versions = process_output_directory(
-            filesystem, root, args.builtin_registry_versions_dir.get(), "versions", VCPKG_LINE_INFO);
         prefab = root / vcpkg::u8path("prefab");
 
         if (args.default_visual_studio_path)
@@ -447,71 +443,38 @@ namespace vcpkg
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
 
         // detect custom registry
-        if (args.registry_ports_dir || args.registry_versions_dir || args.registry_root_dir)
+        if (args.registry_root_dir)
         {
-            const auto canonical = [&](const auto& arg) {
-                return filesystem.almost_canonical(VCPKG_LINE_INFO, u8path(*arg));
-            };
-            auto registry_root = args.registry_root_dir ? canonical(args.registry_ports_dir) : original_cwd;
-            const auto find_dir = [&](const path& filename) {
-                path path;
-                if (args.registry_root_dir)
-                {
-                    path = registry_root / filename;
-                }
-                else
-                {
-                    path = filesystem.find_file_recursively_up(original_cwd, filename);
-                }
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   !path.empty() && filesystem.exists(path),
-                                   "Error: Could not detect " + u8string(filename) + " dir for custom registry at " +
-                                       u8string(registry_root));
-                return path;
-            };
-            current_registry_ports = args.registry_ports_dir ? canonical(args.registry_ports_dir) : find_dir("ports");
-            current_registry_versions =
-                args.registry_versions_dir ? canonical(args.registry_versions_dir) : find_dir("versions");
-            auto git_dir_root = filesystem.find_file_recursively_up(registry_root, ".git");
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               !git_dir_root.empty(),
-                               "Error: Could not detect .git dir for custom registry at " + u8string(registry_root));
-            current_registry_dot_git_dir = git_dir_root / ".git";
+            current_registry_root = filesystem.almost_canonical(VCPKG_LINE_INFO, u8path(*args.registry_root_dir));
         }
         else
         {
-            auto registry_root = filesystem.find_file_recursively_up(original_cwd, "ports");
-            if (!registry_root.empty())
+            current_registry_root = filesystem.find_file_recursively_up(original_cwd, "ports");
+            if (!current_registry_root.empty())
             {
-                current_registry_ports = registry_root / u8path("ports");
-                current_registry_versions = registry_root / u8path("versions");
-                if (filesystem.exists(current_registry_versions))
-                {
-                    auto git_dir = filesystem.find_file_recursively_up(registry_root, ".git");
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       !git_dir.empty(),
-                                       "Error: Could not detect .git dir for custom registry at " +
-                                           u8string(registry_root));
-                    current_registry_dot_git_dir = git_dir / u8path(".git");
-                }
-                else
+                const auto current_registry_versions = current_registry_root / u8path("versions");
+                if (!filesystem.exists(current_registry_versions))
                 {
                     Debug::print("Found ports dir ",
-                                 u8string(current_registry_ports),
+                                 u8string(current_registry_root / u8path("ports")),
                                  " but versions dir ",
                                  u8string(current_registry_versions),
                                  " does not exists\n");
+                    current_registry_root.clear();
                 }
             }
-            if (current_registry_dot_git_dir.empty())
+            if (current_registry_root.empty())
             {
-                current_registry_ports = this->builtin_ports;
-                current_registry_versions = this->builtin_registry_versions;
-                current_registry_dot_git_dir = this->root / u8path(".git");
+                current_registry_root = this->root;
             }
-            Debug::print("Using current_registry_ports: ", u8string(current_registry_ports), '\n');
-            Debug::print("Using current_registry_versions: ", u8string(current_registry_versions), '\n');
-            Debug::print("Using current_registry_dot_git_dir: ", u8string(current_registry_dot_git_dir), '\n');
+        }
+        Debug::print("Using current_registry_root: ", u8string(current_registry_root), '\n');
+        for (auto& dir_name : {".git", "ports", "versions"})
+        {
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               !(current_registry_root / u8path(dir_name)).empty(),
+                               "Error: There is no " + std::string(dir_name) + " dir for current registry at " +
+                                   u8string(current_registry_root));
         }
     }
 
@@ -791,23 +754,16 @@ namespace vcpkg
         return git_get_port_treeish_map(builtin_ports_directory());
     }
 
-    ExpectedS<path> VcpkgPaths::git_checkout_builtin_baseline(StringView commit_sha) const
-    {
-        return git_checkout_baseline(this->root / u8path(".git"), this->root / u8path("versions"), commit_sha);
-    }
-    ExpectedS<path> VcpkgPaths::git_checkout_baseline(const path& dot_git_dir,
-                                                      const path& versions_dir,
-                                                      StringView commit_sha) const
+    ExpectedS<path> VcpkgPaths::git_checkout_baseline(const path& registry_root, StringView commit_sha) const
     {
         Filesystem& fs = get_filesystem();
         const path destination_parent = this->baselines_output / vcpkg::u8path(commit_sha);
         path destination = destination_parent / vcpkg::u8path("baseline.json");
-
         if (!fs.exists(destination))
         {
             const path destination_tmp = destination_parent / u8path("baseline.json.tmp");
-            auto treeish = Strings::concat(commit_sha, ":", u8string(versions_dir), "/baseline.json");
-            auto maybe_contents = git_show(treeish, dot_git_dir);
+            auto treeish = Strings::concat(commit_sha, ":versions/baseline.json");
+            auto maybe_contents = git_show(treeish, registry_root / u8path(".git"));
             if (auto contents = maybe_contents.get())
             {
                 std::error_code ec;
