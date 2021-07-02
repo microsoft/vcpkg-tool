@@ -484,15 +484,14 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
 
     static void integrate_zsh(const VcpkgPaths& paths)
     {
-        const auto home_path = System::get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
-        const fs::path zshrc_path = fs::path{home_path} / ".zshrc";
+        const auto home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
+        const path zshrc_path = path{home_path} / ".zshrc";
 
         auto& fs = paths.get_filesystem();
-        const fs::path completion_script_path = paths.scripts / "vcpkg_completion.zsh";
+        const path completion_script_path = paths.scripts / "vcpkg_completion.zsh";
 
         Expected<std::vector<std::string>> maybe_zshrc_content = fs.read_lines(zshrc_path);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, maybe_zshrc_content.has_value(), "Unable to read %s", fs::u8string(zshrc_path));
+        Checks::check_exit(VCPKG_LINE_INFO, maybe_zshrc_content.has_value(), "Unable to read %s", u8string(zshrc_path));
 
         std::vector<std::string> zshrc_content = maybe_zshrc_content.value_or_exit(VCPKG_LINE_INFO);
 
@@ -520,16 +519,16 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
 
         if (!matches.empty())
         {
-            System::printf("vcpkg zsh completion is already imported to your %s file.\n"
-                           "The following entries were found:\n"
-                           "    %s\n"
-                           "Please make sure you have started a new zsh shell for the changes to take effect.\n",
-                           fs::u8string(zshrc_path),
-                           Strings::join("\n    ", matches));
+            printf("vcpkg zsh completion is already imported to your %s file.\n"
+                   "The following entries were found:\n"
+                   "    %s\n"
+                   "Please make sure you have started a new zsh shell for the changes to take effect.\n",
+                   u8string(zshrc_path),
+                   Strings::join("\n    ", matches));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        System::printf("Adding vcpkg completion entry to %s\n", fs::u8string(zshrc_path));
+        printf("Adding vcpkg completion entry to %s\n", u8string(zshrc_path));
         if (!has_autoload_bashcompinit)
         {
             zshrc_content.push_back("autoload bashcompinit");
@@ -538,7 +537,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         {
             zshrc_content.push_back("bashcompinit");
         }
-        zshrc_content.push_back(Strings::format("source %s", fs::u8string(completion_script_path)));
+        zshrc_content.push_back(Strings::format("source %s", u8string(completion_script_path)));
         fs.write_contents(zshrc_path, Strings::join("\n", zshrc_content) + '\n', VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
