@@ -119,6 +119,23 @@ namespace vcpkg::Commands::SetInstalled
 
         System::print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
 
+        // TODO: this only shows the usage information when the packages are installed the first time
+        //       the behavior of vcpkg install is to always show the usage information, even if nothing is installed
+        // TODO: add some -x-manifest-show-usage-blah flag to enable this behavior
+        for (auto&& result : summary.results)
+        {
+            if (!result.action) continue;
+            //if (result.action->request_type != RequestType::USER_REQUESTED) continue;
+            auto bpgh = result.get_binary_paragraph();
+            if (!bpgh) continue;
+            auto usage = Install::get_cmake_usage(*bpgh, paths);
+
+            if (!usage.message.empty())
+            {
+                System::print2(usage.message);
+            }
+        }
+
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
