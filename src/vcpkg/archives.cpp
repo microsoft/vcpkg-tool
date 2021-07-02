@@ -8,12 +8,12 @@
 
 namespace vcpkg::Archives
 {
-    void extract_archive(const VcpkgPaths& paths, const fs::path& archive, const fs::path& to_path)
+    void extract_archive(const VcpkgPaths& paths, const path& archive, const path& to_path)
     {
-        Files::Filesystem& fs = paths.get_filesystem();
-        const fs::path to_path_partial = fs::u8string(to_path) + ".partial"
+        Filesystem& fs = paths.get_filesystem();
+        const path to_path_partial = vcpkg::u8string(to_path) + ".partial"
 #if defined(_WIN32)
-                                         + "." + std::to_string(GetCurrentProcessId())
+                                     + "." + std::to_string(GetCurrentProcessId())
 #endif
             ;
 
@@ -31,7 +31,7 @@ namespace vcpkg::Archives
             recursion_limiter_sevenzip_old = true;
             const auto nuget_exe = paths.get_tool_exe(Tools::NUGET);
 
-            const std::string stem = fs::u8string(archive.stem());
+            const std::string stem = vcpkg::u8string(archive.stem());
             // assuming format of [name].[version in the form d.d.d]
             // This assumption may not always hold
             std::smatch match;
@@ -39,31 +39,31 @@ namespace vcpkg::Archives
             Checks::check_exit(VCPKG_LINE_INFO,
                                has_match,
                                "Could not deduce nuget id and version from filename: %s",
-                               fs::u8string(archive));
+                               vcpkg::u8string(archive));
 
             const std::string nugetid = match[1];
             const std::string version = match[2];
 
-            const auto code_and_output = System::cmd_execute_and_capture_output(System::Command{nuget_exe}
-                                                                                    .string_arg("install")
-                                                                                    .string_arg(nugetid)
-                                                                                    .string_arg("-Version")
-                                                                                    .string_arg(version)
-                                                                                    .string_arg("-OutputDirectory")
-                                                                                    .path_arg(to_path_partial)
-                                                                                    .string_arg("-Source")
-                                                                                    .path_arg(paths.downloads)
-                                                                                    .string_arg("-nocache")
-                                                                                    .string_arg("-DirectDownload")
-                                                                                    .string_arg("-NonInteractive")
-                                                                                    .string_arg("-ForceEnglishOutput")
-                                                                                    .string_arg("-PackageSaveMode")
-                                                                                    .string_arg("nuspec"));
+            const auto code_and_output = cmd_execute_and_capture_output(Command{nuget_exe}
+                                                                            .string_arg("install")
+                                                                            .string_arg(nugetid)
+                                                                            .string_arg("-Version")
+                                                                            .string_arg(version)
+                                                                            .string_arg("-OutputDirectory")
+                                                                            .path_arg(to_path_partial)
+                                                                            .string_arg("-Source")
+                                                                            .path_arg(paths.downloads)
+                                                                            .string_arg("-nocache")
+                                                                            .string_arg("-DirectDownload")
+                                                                            .string_arg("-NonInteractive")
+                                                                            .string_arg("-ForceEnglishOutput")
+                                                                            .string_arg("-PackageSaveMode")
+                                                                            .string_arg("nuspec"));
 
             Checks::check_exit(VCPKG_LINE_INFO,
                                code_and_output.exit_code == 0,
                                "Failed to extract '%s' with message:\n%s",
-                               fs::u8string(archive),
+                               vcpkg::u8string(archive),
                                code_and_output.output);
             recursion_limiter_sevenzip_old = false;
         }
@@ -73,35 +73,36 @@ namespace vcpkg::Archives
             Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
             recursion_limiter_sevenzip = true;
             const auto seven_zip = paths.get_tool_exe(Tools::SEVEN_ZIP);
-            const auto code_and_output = System::cmd_execute_and_capture_output(
-                System::Command{seven_zip}
+            const auto code_and_output = cmd_execute_and_capture_output(
+                Command{seven_zip}
                     .string_arg("x")
                     .path_arg(archive)
-                    .string_arg(Strings::format("-o%s", fs::u8string(to_path_partial)))
+                    .string_arg(Strings::format("-o%s", vcpkg::u8string(to_path_partial)))
                     .string_arg("-y"));
             Checks::check_exit(VCPKG_LINE_INFO,
                                code_and_output.exit_code == 0,
                                "7zip failed while extracting '%s' with message:\n%s",
-                               fs::u8string(archive),
+                               vcpkg::u8string(archive),
                                code_and_output.output);
             recursion_limiter_sevenzip = false;
         }
 #else
         if (ext == ".gz" && ext.extension() != ".tar")
         {
-            const auto code = System::cmd_execute(System::Command{"tar"}.string_arg("xzf").path_arg(archive),
-                                                  System::InWorkingDirectory{to_path_partial});
-            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", fs::u8string(archive));
+            const auto code =
+                cmd_execute(Command{"tar"}.string_arg("xzf").path_arg(archive), InWorkingDirectory{to_path_partial});
+            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", vcpkg::u8string(archive));
         }
         else if (ext == ".zip")
         {
-            const auto code = System::cmd_execute(System::Command{"unzip"}.string_arg("-qqo").path_arg(archive),
-                                                  System::InWorkingDirectory{to_path_partial});
-            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", fs::u8string(archive));
+            const auto code =
+                cmd_execute(Command{"unzip"}.string_arg("-qqo").path_arg(archive), InWorkingDirectory{to_path_partial});
+            Checks::check_exit(
+                VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", vcpkg::u8string(archive));
         }
         else
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unexpected archive extension: %s", fs::u8string(ext));
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unexpected archive extension: %s", vcpkg::u8string(ext));
         }
 #endif
 
@@ -123,8 +124,8 @@ namespace vcpkg::Archives
                            !ec,
                            "Failed to do post-extract rename-in-place.\n"
                            "fs.rename(%s, %s, %s)",
-                           fs::u8string(to_path_partial),
-                           fs::u8string(to_path),
+                           vcpkg::u8string(to_path_partial),
+                           vcpkg::u8string(to_path),
                            ec.message());
     }
 }

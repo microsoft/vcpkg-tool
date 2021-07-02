@@ -20,7 +20,7 @@ namespace vcpkg::Commands::Hash
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
 
-        const fs::path file_to_hash = args.command_arguments[0];
+        const path file_to_hash = args.command_arguments[0];
 
         auto algorithm = vcpkg::Hash::Algorithm::Sha512;
         if (args.command_arguments.size() == 2)
@@ -30,7 +30,7 @@ namespace vcpkg::Commands::Hash
 
         const std::string hash =
             vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, paths.get_filesystem(), file_to_hash, algorithm);
-        System::print2(hash, '\n');
+        print2(hash, '\n');
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

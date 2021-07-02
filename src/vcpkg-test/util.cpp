@@ -146,7 +146,7 @@ namespace vcpkg::Test
 
     AllowSymlinks can_create_symlinks() noexcept { return CAN_CREATE_SYMLINKS; }
 
-    static fs::path internal_base_temporary_directory()
+    static path internal_base_temporary_directory()
     {
 #if defined(_WIN32)
         wchar_t* tmp = static_cast<wchar_t*>(std::calloc(32'767, 2));
@@ -157,7 +157,7 @@ namespace vcpkg::Test
             std::abort();
         }
 
-        fs::path result = tmp;
+        path result = tmp;
         std::free(tmp);
 
         return result / L"vcpkg-test";
@@ -166,9 +166,9 @@ namespace vcpkg::Test
 #endif
     }
 
-    const fs::path& base_temporary_directory() noexcept
+    const path& base_temporary_directory() noexcept
     {
-        const static fs::path BASE_TEMPORARY_DIRECTORY = internal_base_temporary_directory();
+        const static path BASE_TEMPORARY_DIRECTORY = internal_base_temporary_directory();
         return BASE_TEMPORARY_DIRECTORY;
     }
 
@@ -177,15 +177,15 @@ namespace vcpkg::Test
         "<filesystem> doesn't exist; on windows, we don't attempt to use the win32 calls to create symlinks";
 #endif
 
-    void create_symlink(const fs::path& target, const fs::path& file, std::error_code& ec)
+    void create_symlink(const path& target, const path& file, std::error_code& ec)
     {
 #if FILESYSTEM_SYMLINK == FILESYSTEM_SYMLINK_STD
         if (can_create_symlinks())
         {
-            fs::path targetp = target.native();
-            fs::path filep = file.native();
+            path targetp = target.native();
+            path filep = file.native();
 
-            fs::stdfs::create_symlink(targetp, filep, ec);
+            stdfs::create_symlink(targetp, filep, ec);
         }
         else
         {
@@ -204,7 +204,7 @@ namespace vcpkg::Test
 #endif
     }
 
-    void create_directory_symlink(const fs::path& target, const fs::path& file, std::error_code& ec)
+    void create_directory_symlink(const path& target, const path& file, std::error_code& ec)
     {
 #if FILESYSTEM_SYMLINK == FILESYSTEM_SYMLINK_STD
         if (can_create_symlinks())

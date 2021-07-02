@@ -15,16 +15,16 @@
 #pragma warning(disable : 6237)
 #endif
 
+using vcpkg::CPUArchitecture;
+using vcpkg::get_environment_variable;
+using vcpkg::guess_visual_studio_prompt_target_architecture;
 using vcpkg::nullopt;
 using vcpkg::Optional;
+using vcpkg::set_environment_variable;
 using vcpkg::StringView;
+using vcpkg::to_cpu_architecture;
 using vcpkg::ZStringView;
 using vcpkg::Checks::check_exit;
-using vcpkg::System::CPUArchitecture;
-using vcpkg::System::get_environment_variable;
-using vcpkg::System::guess_visual_studio_prompt_target_architecture;
-using vcpkg::System::set_environment_variable;
-using vcpkg::System::to_cpu_architecture;
 
 namespace
 {
@@ -127,10 +127,10 @@ TEST_CASE ("guess_visual_studio_prompt", "[system]")
 
 TEST_CASE ("cmdlinebuilder", "[system]")
 {
-    using vcpkg::System::Command;
+    using vcpkg::Command;
 
     Command cmd;
-    cmd.path_arg(fs::u8path("relative/path.exe"));
+    cmd.path_arg(vcpkg::u8path("relative/path.exe"));
     cmd.string_arg("abc");
     cmd.string_arg("hello world!");
     cmd.string_arg("|");
@@ -139,7 +139,7 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 
     cmd.clear();
 
-    cmd.path_arg(fs::u8path("trailing\\slash\\"));
+    cmd.path_arg(vcpkg::u8path("trailing\\slash\\"));
     cmd.string_arg("inner\"quotes");
 #ifdef _WIN32
     REQUIRE(cmd.command_line() == "\"trailing\\slash\\\\\" \"inner\\\"quotes\"");

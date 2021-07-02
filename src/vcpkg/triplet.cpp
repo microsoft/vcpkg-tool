@@ -42,9 +42,8 @@ namespace vcpkg
     void Triplet::to_string(std::string& out) const { out.append(this->canonical_name()); }
     size_t Triplet::hash_code() const { return m_instance->hash; }
 
-    Optional<System::CPUArchitecture> Triplet::guess_architecture() const noexcept
+    Optional<CPUArchitecture> Triplet::guess_architecture() const noexcept
     {
-        using System::CPUArchitecture;
         if (Strings::starts_with(this->canonical_name(), "x86-"))
         {
             return CPUArchitecture::X86;
@@ -88,7 +87,7 @@ namespace vcpkg
 #else
         StringLiteral operating_system = "linux-musl";
 #endif
-        auto host_proc = System::get_host_processor();
+        auto host_proc = get_host_processor();
         auto canonical_name = Strings::format("%s-%s", to_zstring_view(host_proc), operating_system);
         return Triplet::from_canonical_name(std::move(canonical_name));
     }

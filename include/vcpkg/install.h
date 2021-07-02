@@ -44,19 +44,19 @@ namespace vcpkg::Install
 
     struct InstallDir
     {
-        static InstallDir from_destination_root(const fs::path& destination_root,
+        static InstallDir from_destination_root(const path& destination_root,
                                                 const std::string& destination_subdirectory,
-                                                const fs::path& listfile);
+                                                const path& listfile);
 
     private:
-        fs::path m_destination;
+        path m_destination;
         std::string m_destination_subdirectory;
-        fs::path m_listfile;
+        path m_listfile;
 
     public:
-        const fs::path& destination() const;
+        const path& destination() const;
         const std::string& destination_subdirectory() const;
-        const fs::path& listfile() const;
+        const path& listfile() const;
     };
 
     Build::ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
@@ -75,9 +75,9 @@ namespace vcpkg::Install
 
     void install_package_and_write_listfile(const VcpkgPaths& paths, const PackageSpec& spec, const InstallDir& dirs);
 
-    void install_files_and_write_listfile(Files::Filesystem& fs,
-                                          const fs::path& source_dir,
-                                          const std::vector<fs::path>& files,
+    void install_files_and_write_listfile(Filesystem& fs,
+                                          const path& source_dir,
+                                          const std::vector<path>& files,
                                           const InstallDir& destination_dir);
 
     InstallResult install_package(const VcpkgPaths& paths,

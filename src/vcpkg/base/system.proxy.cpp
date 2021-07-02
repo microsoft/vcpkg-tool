@@ -1,12 +1,12 @@
 #include <vcpkg/base/system.proxy.h>
 
-vcpkg::Optional<vcpkg::System::IEProxySetting> vcpkg::System::get_windows_ie_proxy_server()
+vcpkg::Optional<vcpkg::IEProxySetting> vcpkg::get_windows_ie_proxy_server()
 {
 #if defined(_WIN32)
     WINHTTP_CURRENT_USER_IE_PROXY_CONFIG ieProxy;
     if (WinHttpGetIEProxyConfigForCurrentUser(&ieProxy) && ieProxy.lpszProxy != nullptr)
     {
-        vcpkg::System::IEProxySetting ieProxySetting;
+        vcpkg::IEProxySetting ieProxySetting;
 
         ieProxySetting.server = ieProxy.lpszProxy;
 
@@ -18,8 +18,8 @@ vcpkg::Optional<vcpkg::System::IEProxySetting> vcpkg::System::get_windows_ie_pro
 
         return ieProxySetting;
     }
-    return vcpkg::Optional<vcpkg::System::IEProxySetting>();
+    return vcpkg::Optional<vcpkg::IEProxySetting>();
 #else
-    return vcpkg::Optional<vcpkg::System::IEProxySetting>();
+    return vcpkg::Optional<vcpkg::IEProxySetting>();
 #endif
 }

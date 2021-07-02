@@ -8,11 +8,10 @@
 
 namespace vcpkg::Chrono
 {
-    class ElapsedTime
+    struct ElapsedTime
     {
         using duration = std::chrono::high_resolution_clock::time_point::duration;
 
-    public:
         constexpr ElapsedTime() noexcept : m_duration() { }
         constexpr ElapsedTime(duration d) noexcept : m_duration(d) { }
 
@@ -26,12 +25,11 @@ namespace vcpkg::Chrono
         void to_string(std::string& into) const;
 
     private:
-        std::chrono::high_resolution_clock::time_point::duration m_duration;
+        duration m_duration;
     };
 
-    class ElapsedTimer
+    struct ElapsedTimer
     {
-    public:
         static ElapsedTimer create_started();
 
         constexpr ElapsedTimer() noexcept : m_start_tick() { }
@@ -50,9 +48,8 @@ namespace vcpkg::Chrono
         std::chrono::high_resolution_clock::time_point m_start_tick;
     };
 
-    class CTime
+    struct CTime
     {
-    public:
         static Optional<CTime> get_current_date_time();
         static Optional<CTime> parse(CStringView str);
 

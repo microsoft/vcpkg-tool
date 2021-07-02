@@ -56,13 +56,13 @@ TEST_CASE ("reformat_version generic", "[reformat_version]")
 
 TEST_CASE ("generate_nuspec", "[generate_nuspec]")
 {
-    auto& fsWrapper = Files::get_real_filesystem();
+    auto& fsWrapper = get_real_filesystem();
     VcpkgCmdArguments args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     args.imbue_from_environment();
     args.packages_root_dir = std::make_unique<std::string>("/");
-    auto pkgPath = fsWrapper.absolute(VCPKG_LINE_INFO, fs::u8path("/zlib2_x64-windows")) / fs::u8path("**");
+    auto pkgPath = fsWrapper.absolute(VCPKG_LINE_INFO, vcpkg::u8path("/zlib2_x64-windows")) / vcpkg::u8path("**");
     pkgPath.make_preferred();
-    const auto pkgPathStr = fs::u8string(pkgPath);
+    const auto pkgPathStr = vcpkg::u8string(pkgPath);
     VcpkgPaths paths(fsWrapper, args);
 
     auto pghs = Paragraphs::parse_paragraphs(R"(
@@ -80,9 +80,9 @@ Build-Depends: bzip
 )",
                                              "<testdata>");
     REQUIRE(pghs.has_value());
-    auto maybe_scf = SourceControlFile::parse_control_file(fs::u8string(fs::path()), std::move(*pghs.get()));
+    auto maybe_scf = SourceControlFile::parse_control_file(vcpkg::u8string(path()), std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
-    SourceControlFileLocation scfl{std::move(*maybe_scf.get()), fs::path()};
+    SourceControlFileLocation scfl{std::move(*maybe_scf.get()), path()};
 
     Dependencies::InstallPlanAction ipa(PackageSpec{"zlib2", Test::X64_WINDOWS},
                                         scfl,
@@ -253,9 +253,9 @@ Description: a spiffy compression library wrapper
 )",
                                              "<testdata>");
     REQUIRE(pghs.has_value());
-    auto maybe_scf = SourceControlFile::parse_control_file(fs::u8string(fs::path()), std::move(*pghs.get()));
+    auto maybe_scf = SourceControlFile::parse_control_file(vcpkg::u8string(path()), std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
-    SourceControlFileLocation scfl{std::move(*maybe_scf.get()), fs::path()};
+    SourceControlFileLocation scfl{std::move(*maybe_scf.get()), path()};
     plan.install_actions.push_back(Dependencies::InstallPlanAction());
     plan.install_actions[0].spec = PackageSpec("zlib", Test::X64_ANDROID);
     plan.install_actions[0].source_control_file_location = scfl;
@@ -276,9 +276,9 @@ Description: a spiffy compression library wrapper
 )",
                                               "<testdata>");
     REQUIRE(pghs2.has_value());
-    auto maybe_scf2 = SourceControlFile::parse_control_file(fs::u8string(fs::path()), std::move(*pghs2.get()));
+    auto maybe_scf2 = SourceControlFile::parse_control_file(vcpkg::u8string(path()), std::move(*pghs2.get()));
     REQUIRE(maybe_scf2.has_value());
-    SourceControlFileLocation scfl2{std::move(*maybe_scf2.get()), fs::path()};
+    SourceControlFileLocation scfl2{std::move(*maybe_scf2.get()), path()};
     plan.install_actions.push_back(Dependencies::InstallPlanAction());
     plan.install_actions[1].spec = PackageSpec("zlib2", Test::X64_ANDROID);
     plan.install_actions[1].source_control_file_location = scfl2;

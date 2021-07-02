@@ -17,7 +17,7 @@ namespace vcpkg::Commands::UploadMetrics
         1,
     };
 
-    void UploadMetricsCommand::perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs) const
+    void UploadMetricsCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         const auto& payload_path = args.command_arguments[0];

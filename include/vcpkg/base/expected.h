@@ -103,9 +103,8 @@ namespace vcpkg
     };
 
     template<class T, class S>
-    class ExpectedT
+    struct ExpectedT
     {
-    public:
         constexpr ExpectedT() = default;
 
         // Constructors are intentionally implicit
@@ -228,7 +227,7 @@ namespace vcpkg
         {
             if (m_s.has_error())
             {
-                System::print2(System::Color::error, m_s.to_string(), "\n");
+                print2(Color::error, m_s.to_string(), "\n");
                 Checks::exit_fail(line_info);
             }
         }

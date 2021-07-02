@@ -28,15 +28,12 @@ namespace
 {
     using namespace vcpkg::Build;
 
-    const fs::path dot_log = fs::u8path(".log");
-    const fs::path readme_dot_log = fs::u8path("readme.log");
+    const path dot_log = vcpkg::u8path(".log");
+    const path readme_dot_log = vcpkg::u8path("readme.log");
 
-    class CiBuildLogsRecorder final : public IBuildLogsRecorder
+    struct CiBuildLogsRecorder final : IBuildLogsRecorder
     {
-        fs::path base_path;
-
-    public:
-        CiBuildLogsRecorder(const fs::path& base_path_) : base_path(base_path_) { }
+        CiBuildLogsRecorder(const path& base_path_) : base_path(base_path_) { }
 
         virtual void record_build_result(const VcpkgPaths& paths,
                                          const PackageSpec& spec,
@@ -50,8 +47,8 @@ namespace
             auto& filesystem = paths.get_filesystem();
             const auto source_path = paths.build_dir(spec);
             auto children = filesystem.get_files_non_recursive(source_path);
-            Util::erase_remove_if(children, [](const fs::path& p) { return p.extension() != dot_log; });
-            const auto target_path = base_path / fs::u8path(spec.name());
+            Util::erase_remove_if(children, [](const path& p) { return p.extension() != dot_log; });
+            const auto target_path = base_path / vcpkg::u8path(spec.name());
             (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
             if (children.empty())
             {
@@ -64,13 +61,16 @@ namespace
             }
             else
             {
-                for (const fs::path& p : children)
+                for (const path& p : children)
                 {
                     filesystem.copy_file(
-                        p, target_path / p.filename(), fs::copy_options::overwrite_existing, VCPKG_LINE_INFO);
+                        p, target_path / p.filename(), stdfs::copy_options::overwrite_existing, VCPKG_LINE_INFO);
                 }
             }
         }
+
+    private:
+        path base_path;
     };
 }
 
@@ -353,7 +353,7 @@ namespace vcpkg::Commands::CI
 
         auto precheck_results = binary_provider_precheck(paths, action_plan, binaryprovider);
         {
-            vcpkg::System::BufferedPrint stdout_print;
+            vcpkg::BufferedPrint stdout_print;
 
             for (auto&& action : action_plan.install_actions)
             {
@@ -440,7 +440,7 @@ namespace vcpkg::Commands::CI
             ret->plan.install_actions.push_back(std::move(**it));
         }
 
-        System::printf("Time to determine pass/fail: %s\n", timer.elapsed());
+        vcpkg::printf("Time to determine pass/fail: %s\n", timer.elapsed());
         return ret;
     }
 
@@ -489,10 +489,10 @@ namespace vcpkg::Commands::CI
             auto it_failure_logs = settings.find(OPTION_FAILURE_LOGS);
             if (it_failure_logs != settings.end())
             {
-                auto raw_path = fs::u8path(it_failure_logs->second);
-                System::printf("Creating failure logs output directory %s\n", it_failure_logs->second);
+                auto raw_path = vcpkg::u8path(it_failure_logs->second);
+                vcpkg::printf("Creating failure logs output directory %s\n", it_failure_logs->second);
                 filesystem.create_directories(raw_path, VCPKG_LINE_INFO);
-                build_logs_recorder_storage = filesystem.canonical(VCPKG_LINE_INFO, raw_path);
+                build_logs_recorder_storage = filesystem.almost_canonical(VCPKG_LINE_INFO, raw_path);
             }
         }
 
@@ -610,15 +610,15 @@ namespace vcpkg::Commands::CI
 
         for (auto&& result : results)
         {
-            System::print2("\nTriplet: ", result.triplet, "\n");
-            System::print2("Total elapsed time: ", result.summary.total_elapsed_time, "\n");
+            print2("\nTriplet: ", result.triplet, "\n");
+            print2("Total elapsed time: ", result.summary.total_elapsed_time, "\n");
             result.summary.print();
         }
 
         auto it_xunit = settings.find(OPTION_XUNIT);
         if (it_xunit != settings.end())
         {
-            filesystem.write_contents(fs::u8path(it_xunit->second), xunitTestResults.build_xml(), VCPKG_LINE_INFO);
+            filesystem.write_contents(vcpkg::u8path(it_xunit->second), xunitTestResults.build_xml(), VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

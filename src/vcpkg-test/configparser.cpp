@@ -2,6 +2,8 @@
 
 #include <vcpkg/binarycaching.h>
 
+#include <vcpkg-test/util.h>
+
 using namespace vcpkg;
 
 #if defined(_WIN32)
@@ -98,6 +100,42 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_provider_from_configs_pure("nuget,,readwrite", {});
+        REQUIRE(!parsed.has_value());
+    }
+}
+
+TEST_CASE ("BinaryConfigParser nuget timeout", "[binaryconfigparser]")
+{
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,3601", {});
+        REQUIRE(parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,nonsense", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,0", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,12x", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,-321", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = create_binary_provider_from_configs_pure("nugettimeout,321,123", {});
         REQUIRE(!parsed.has_value());
     }
 }
@@ -369,44 +407,78 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
 
 TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
 {
-    CHECK(create_download_manager({}));
-    CHECK(!create_download_manager("x-azurl"));
-    CHECK(!create_download_manager("x-azurl,"));
-    CHECK(create_download_manager("x-azurl,value"));
-    CHECK(create_download_manager("x-azurl,value,"));
-    CHECK(!create_download_manager("x-azurl,value,,"));
-    CHECK(!create_download_manager("x-azurl,value,,invalid"));
-    CHECK(create_download_manager("x-azurl,value,,read"));
-    CHECK(create_download_manager("x-azurl,value,,readwrite"));
-    CHECK(!create_download_manager("x-azurl,value,,readwrite,"));
-    CHECK(create_download_manager("x-azurl,https://abc/123,?foo"));
-    CHECK(create_download_manager("x-azurl,https://abc/123,foo"));
-    CHECK(create_download_manager("x-azurl,ftp://magic,none"));
-    CHECK(create_download_manager("x-azurl,ftp://magic,none"));
-    auto value_or = [](auto o, auto v) {
-        if (o)
-            return std::move(*o.get());
-        else
-            return std::move(v);
-    };
+    CHECK(parse_download_configuration({}));
+    CHECK(!parse_download_configuration("x-azurl"));
+    CHECK(!parse_download_configuration("x-azurl,"));
+    CHECK(parse_download_configuration("x-azurl,value"));
+    CHECK(parse_download_configuration("x-azurl,value,"));
+    CHECK(!parse_download_configuration("x-azurl,value,,"));
+    CHECK(!parse_download_configuration("x-azurl,value,,invalid"));
+    CHECK(parse_download_configuration("x-azurl,value,,read"));
+    CHECK(parse_download_configuration("x-azurl,value,,readwrite"));
+    CHECK(!parse_download_configuration("x-azurl,value,,readwrite,"));
+    CHECK(parse_download_configuration("x-azurl,https://abc/123,?foo"));
+    CHECK(parse_download_configuration("x-azurl,https://abc/123,foo"));
+    CHECK(parse_download_configuration("x-azurl,ftp://magic,none"));
+    CHECK(parse_download_configuration("x-azurl,ftp://magic,none"));
 
-    Downloads::DownloadManager empty;
-
-    CHECK(value_or(create_download_manager("x-azurl,https://abc/123,foo"), empty).internal_get_read_url_template() ==
-          "https://abc/123/<SHA>?foo");
-    CHECK(value_or(create_download_manager("x-azurl,https://abc/123/,foo"), empty).internal_get_read_url_template() ==
-          "https://abc/123/<SHA>?foo");
-    CHECK(value_or(create_download_manager("x-azurl,https://abc/123,?foo"), empty).internal_get_read_url_template() ==
-          "https://abc/123/<SHA>?foo");
-    CHECK(value_or(create_download_manager("x-azurl,https://abc/123"), empty).internal_get_read_url_template() ==
-          "https://abc/123/<SHA>");
+    {
+        Downloads::DownloadManagerConfig empty;
+        CHECK(empty.m_write_headers.empty());
+        CHECK(empty.m_read_headers.empty());
+    }
+    {
+        Downloads::DownloadManagerConfig dm = Test::unwrap(parse_download_configuration("x-azurl,https://abc/123,foo"));
+        CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
+        CHECK(dm.m_read_headers.empty());
+        CHECK(dm.m_write_url_template == nullopt);
+    }
+    {
+        Downloads::DownloadManagerConfig dm =
+            Test::unwrap(parse_download_configuration("x-azurl,https://abc/123/,foo"));
+        CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
+        CHECK(dm.m_read_headers.empty());
+        CHECK(dm.m_write_url_template == nullopt);
+        CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
+    }
+    {
+        Downloads::DownloadManagerConfig dm =
+            Test::unwrap(parse_download_configuration("x-azurl,https://abc/123,?foo"));
+        CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
+        CHECK(dm.m_read_headers.empty());
+        CHECK(dm.m_write_url_template == nullopt);
+        CHECK(dm.m_secrets == std::vector<std::string>{"?foo"});
+    }
+    {
+        Downloads::DownloadManagerConfig dm = Test::unwrap(parse_download_configuration("x-azurl,https://abc/123"));
+        CHECK(dm.m_read_url_template == "https://abc/123/<SHA>");
+        CHECK(dm.m_read_headers.empty());
+        CHECK(dm.m_write_url_template == nullopt);
+    }
+    {
+        Downloads::DownloadManagerConfig dm =
+            Test::unwrap(parse_download_configuration("x-azurl,https://abc/123,,readwrite"));
+        CHECK(dm.m_read_url_template == "https://abc/123/<SHA>");
+        CHECK(dm.m_read_headers.empty());
+        CHECK(dm.m_write_url_template == "https://abc/123/<SHA>");
+        Test::check_ranges(dm.m_write_headers, Downloads::azure_blob_headers());
+    }
+    {
+        Downloads::DownloadManagerConfig dm =
+            Test::unwrap(parse_download_configuration("x-azurl,https://abc/123,foo,readwrite"));
+        CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
+        CHECK(dm.m_read_headers.empty());
+        CHECK(dm.m_write_url_template == "https://abc/123/<SHA>?foo");
+        Test::check_ranges(dm.m_write_headers, Downloads::azure_blob_headers());
+        CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
+    }
 }
 
 TEST_CASE ("AssetConfigParser clear provider", "[assetconfigparser]")
 {
-    CHECK(create_download_manager("clear"));
-    CHECK(!create_download_manager("clear,"));
-    CHECK(create_download_manager("x-azurl,value;clear"));
+    CHECK(parse_download_configuration("clear"));
+    CHECK(!parse_download_configuration("clear,"));
+    CHECK(parse_download_configuration("x-azurl,value;clear"));
     auto value_or = [](auto o, auto v) {
         if (o)
             return std::move(*o.get());
@@ -414,18 +486,18 @@ TEST_CASE ("AssetConfigParser clear provider", "[assetconfigparser]")
             return std::move(v);
     };
 
-    Downloads::DownloadManager empty;
+    Downloads::DownloadManagerConfig empty;
 
-    CHECK(value_or(create_download_manager("x-azurl,https://abc/123,foo;clear"), empty)
-              .internal_get_read_url_template() == nullopt);
-    CHECK(value_or(create_download_manager("clear;x-azurl,https://abc/123/,foo"), empty)
-              .internal_get_read_url_template() == "https://abc/123/<SHA>?foo");
+    CHECK(value_or(parse_download_configuration("x-azurl,https://abc/123,foo;clear"), empty).m_read_url_template ==
+          nullopt);
+    CHECK(value_or(parse_download_configuration("clear;x-azurl,https://abc/123/,foo"), empty).m_read_url_template ==
+          "https://abc/123/<SHA>?foo");
 }
 
 TEST_CASE ("AssetConfigParser x-block-origin provider", "[assetconfigparser]")
 {
-    CHECK(create_download_manager("x-block-origin"));
-    CHECK(!create_download_manager("x-block-origin,"));
+    CHECK(parse_download_configuration("x-block-origin"));
+    CHECK(!parse_download_configuration("x-block-origin,"));
     auto value_or = [](auto o, auto v) {
         if (o)
             return std::move(*o.get());
@@ -433,9 +505,9 @@ TEST_CASE ("AssetConfigParser x-block-origin provider", "[assetconfigparser]")
             return std::move(v);
     };
 
-    Downloads::DownloadManager empty;
+    Downloads::DownloadManagerConfig empty;
 
-    CHECK(!value_or(create_download_manager({}), empty).block_origin());
-    CHECK(value_or(create_download_manager("x-block-origin"), empty).block_origin());
-    CHECK(!value_or(create_download_manager("x-block-origin;clear"), empty).block_origin());
+    CHECK(!value_or(parse_download_configuration({}), empty).m_block_origin);
+    CHECK(value_or(parse_download_configuration("x-block-origin"), empty).m_block_origin);
+    CHECK(!value_or(parse_download_configuration("x-block-origin;clear"), empty).m_block_origin);
 }
