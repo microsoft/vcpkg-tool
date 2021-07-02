@@ -101,7 +101,7 @@ namespace vcpkg::Downloads
             // If the environment variable HTTPS_PROXY is set
             // use that variable as proxy. This situation might exist when user is in a company network
             // with restricted network/proxy settings
-            auto maybe_https_proxy_env = System::get_environment_variable("HTTPS_PROXY");
+            auto maybe_https_proxy_env = get_environment_variable("HTTPS_PROXY");
             if (auto p_https_proxy = maybe_https_proxy_env.get())
             {
                 std::wstring env_proxy_settings = Strings::to_utf16(*p_https_proxy);
@@ -117,7 +117,7 @@ namespace vcpkg::Downloads
             {
                 // We do not use WPAD anymore
                 // Directly read IE Proxy setting
-                auto ieProxy = System::get_windows_ie_proxy_server();
+                auto ieProxy = get_windows_ie_proxy_server();
                 if (ieProxy.has_value())
                 {
                     WINHTTP_PROXY_INFO proxy;
@@ -179,7 +179,7 @@ namespace vcpkg::Downloads
     }
 
     static std::string format_hash_mismatch(StringView url,
-                                            const fs::path& path,
+                                            const path& downloaded_path,
                                             StringView expected,
                                             StringView actual)
     {
@@ -189,17 +189,18 @@ namespace vcpkg::Downloads
                                "   Expected hash : [ %s ]\n"
                                "     Actual hash : [ %s ]\n",
                                url,
-                               fs::u8string(path),
+                               vcpkg::u8string(downloaded_path),
                                expected,
                                actual);
     }
 
-    static Optional<std::string> try_verify_downloaded_file_hash(const Files::Filesystem& fs,
-                                                                 const std::string& url,
-                                                                 const fs::path& path,
+    static Optional<std::string> try_verify_downloaded_file_hash(const Filesystem& fs,
+                                                                 const std::string& sanitized_url,
+                                                                 const path& downloaded_path,
                                                                  const std::string& sha512)
     {
-        std::string actual_hash = vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, path, Hash::Algorithm::Sha512);
+        std::string actual_hash =
+            vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, downloaded_path, Hash::Algorithm::Sha512);
 
         // <HACK to handle NuGet.org changing nupkg hashes.>
         // This is the NEW hash for 7zip
@@ -214,17 +215,17 @@ namespace vcpkg::Downloads
 
         if (sha512 != actual_hash)
         {
-            return format_hash_mismatch(url, fs::u8string(path), sha512, actual_hash);
+            return format_hash_mismatch(sanitized_url, vcpkg::u8string(downloaded_path), sha512, actual_hash);
         }
         return nullopt;
     }
 
-    void verify_downloaded_file_hash(const Files::Filesystem& fs,
+    void verify_downloaded_file_hash(const Filesystem& fs,
                                      const std::string& url,
-                                     const fs::path& path,
+                                     const path& downloaded_path,
                                      const std::string& sha512)
     {
-        auto maybe_error = try_verify_downloaded_file_hash(fs, url, path, sha512);
+        auto maybe_error = try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512);
         if (auto err = maybe_error.get())
         {
             Checks::exit_with_message(VCPKG_LINE_INFO, *err);
@@ -235,7 +236,7 @@ namespace vcpkg::Downloads
     {
         static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
-        System::Command cmd;
+        Command cmd;
         cmd.string_arg("curl")
             .string_arg("--head")
             .string_arg("--location")
@@ -249,7 +250,7 @@ namespace vcpkg::Downloads
         {
             cmd.string_arg(url);
         }
-        auto res = System::cmd_execute_and_stream_lines(cmd, [out](StringView line) {
+        auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
             if (Strings::starts_with(line, guid_marker))
             {
                 out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
@@ -273,16 +274,25 @@ namespace vcpkg::Downloads
         return ret;
     }
 
-    static void download_files_inner(Files::Filesystem&,
-                                     View<std::pair<std::string, fs::path>> url_pairs,
-                                     std::vector<int>* out)
+    std::string replace_secrets(std::string input, View<std::string> secrets)
+    {
+        static constexpr StringLiteral replacement{"*** SECRET ***"};
+        for (const auto& secret : secrets)
+        {
+            Strings::inplace_replace_all(input, secret, replacement);
+        }
+
+        return input;
+    }
+
+    static void download_files_inner(Filesystem&, View<std::pair<std::string, path>> url_pairs, std::vector<int>* out)
     {
         for (auto i : {100, 1000, 10000, 0})
         {
             size_t start_size = out->size();
             static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
-            System::Command cmd;
+            Command cmd;
             cmd.string_arg("curl")
                 .string_arg("--location")
                 .string_arg("-w")
@@ -291,7 +301,7 @@ namespace vcpkg::Downloads
             {
                 cmd.string_arg(url.first).string_arg("-o").path_arg(url.second);
             }
-            auto res = System::cmd_execute_and_stream_lines(cmd, [out](StringView line) {
+            auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
                 if (Strings::starts_with(line, guid_marker))
                 {
                     out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
@@ -302,10 +312,10 @@ namespace vcpkg::Downloads
             if (start_size + url_pairs.size() > out->size())
             {
                 // curl stopped before finishing all downloads; retry after some time
-                System::print2(System::Color::warning, "Warning: an unexpected error occurred during bulk download.\n");
+                print2(Color::warning, "Warning: an unexpected error occurred during bulk download.\n");
                 std::this_thread::sleep_for(std::chrono::milliseconds(i));
-                url_pairs = View<std::pair<std::string, fs::path>>{url_pairs.begin() + out->size() - start_size,
-                                                                   url_pairs.end()};
+                url_pairs =
+                    View<std::pair<std::string, path>>{url_pairs.begin() + out->size() - start_size, url_pairs.end()};
             }
             else
             {
@@ -313,7 +323,7 @@ namespace vcpkg::Downloads
             }
         }
     }
-    std::vector<int> download_files(Files::Filesystem& fs, View<std::pair<std::string, fs::path>> url_pairs)
+    std::vector<int> download_files(Filesystem& fs, View<std::pair<std::string, path>> url_pairs)
     {
         static constexpr size_t batch_size = 50;
 
@@ -337,18 +347,18 @@ namespace vcpkg::Downloads
         return ret;
     }
 
-    ExpectedS<int> put_file(const Files::Filesystem&, StringView url, View<std::string> headers, const fs::path& file)
+    ExpectedS<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
         if (Strings::starts_with(url, "ftp://"))
         {
             // HTTP headers are ignored for FTP clients
-            System::Command cmd;
+            Command cmd;
             cmd.string_arg("curl");
             cmd.string_arg(url);
             cmd.string_arg("-T").path_arg(file);
-            auto res = System::cmd_execute_and_capture_output(cmd);
+            auto res = cmd_execute_and_capture_output(cmd);
             if (res.exit_code != 0)
             {
                 Debug::print(res.output, '\n');
@@ -357,7 +367,7 @@ namespace vcpkg::Downloads
             }
             return 0;
         }
-        System::Command cmd;
+        Command cmd;
         cmd.string_arg("curl").string_arg("-X").string_arg("PUT");
         for (auto&& header : headers)
         {
@@ -367,7 +377,7 @@ namespace vcpkg::Downloads
         cmd.string_arg(url);
         cmd.string_arg("-T").path_arg(file);
         int code = 0;
-        auto res = System::cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
+        auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
             if (Strings::starts_with(line, guid_marker))
             {
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
@@ -381,27 +391,18 @@ namespace vcpkg::Downloads
         return code;
     }
 
-    void download_file(Files::Filesystem& fs,
-                       const std::string& url,
-                       View<std::string> headers,
-                       const fs::path& download_path,
-                       const std::string& sha512)
-    {
-        download_file(fs, {&url, 1}, headers, download_path, sha512);
-    }
-
 #if defined(_WIN32)
     namespace
     {
         struct WriteFlushFile
         {
-            WriteFlushFile(const fs::path& p)
+            WriteFlushFile(const path& p)
             {
                 auto err = _wfopen_s(&f, p.c_str(), L"wb");
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    !err,
                                    "Failed to open file %s. Error code was %s",
-                                   fs::u8string(p),
+                                   vcpkg::u8string(p),
                                    std::to_string(err));
                 ASSUME(f != nullptr);
             }
@@ -419,10 +420,11 @@ namespace vcpkg::Downloads
         /// <summary>
         /// Download a file using WinHTTP -- only supports HTTP and HTTPS
         /// </summary>
-        static bool download_winhttp(Files::Filesystem& fs,
-                                     const fs::path& download_path_part_path,
+        static bool download_winhttp(Filesystem& fs,
+                                     const path& download_path_part_path,
                                      details::SplitURIView split_uri,
                                      const std::string& url,
+                                     const std::vector<std::string>& secrets,
                                      std::string& errors)
         {
             // `download_winhttp` does not support user or port syntax in authorities
@@ -447,26 +449,27 @@ namespace vcpkg::Downloads
 
             WriteFlushFile f(download_path_part_path);
 
-            Debug::print("Downloading ", url, "\n");
+            const auto sanitized_url = replace_secrets(url, secrets);
+            Debug::print("Downloading ", sanitized_url, "\n");
             static auto s = WinHttpSession::make().value_or_exit(VCPKG_LINE_INFO);
             auto conn = WinHttpConnection::make(s.m_hSession.get(), hostname, port);
             if (!conn)
             {
-                Strings::append(errors, url, ": ", conn.error(), '\n');
+                Strings::append(errors, sanitized_url, ": ", conn.error(), '\n');
                 return false;
             }
             auto req = WinHttpRequest::make(
                 conn.get()->m_hConnect.get(), split_uri.path_query_fragment, split_uri.scheme == "https");
             if (!req)
             {
-                Strings::append(errors, url, ": ", req.error(), '\n');
+                Strings::append(errors, sanitized_url, ": ", req.error(), '\n');
                 return false;
             }
             auto forall_data =
                 req.get()->forall_data([&f](Span<char> span) { fwrite(span.data(), 1, span.size(), f.f); });
             if (!forall_data)
             {
-                Strings::append(errors, url, ": ", forall_data.error(), '\n');
+                Strings::append(errors, sanitized_url, ": ", forall_data.error(), '\n');
                 return false;
             }
             return true;
@@ -474,18 +477,19 @@ namespace vcpkg::Downloads
     }
 #endif
 
-    static bool try_download_file(vcpkg::Files::Filesystem& fs,
+    static bool try_download_file(vcpkg::Filesystem& fs,
                                   const std::string& url,
                                   View<std::string> headers,
-                                  const fs::path& download_path,
+                                  const path& download_path,
                                   const std::string& sha512,
+                                  const std::vector<std::string>& secrets,
                                   std::string& errors)
     {
         auto download_path_part_path = download_path;
 #if defined(_WIN32)
-        download_path_part_path += fs::u8path(Strings::concat(".", _getpid(), ".part"));
+        download_path_part_path += vcpkg::u8path(Strings::concat(".", _getpid(), ".part"));
 #else
-        download_path_part_path += fs::u8path(Strings::concat(".", getpid(), ".part"));
+        download_path_part_path += vcpkg::u8path(Strings::concat(".", getpid(), ".part"));
 #endif
 
 #if defined(_WIN32)
@@ -498,7 +502,7 @@ namespace vcpkg::Downloads
                 // This check causes complex URLs (non-default port, embedded basic auth) to be passed down to curl.exe
                 if (Strings::find_first_of(authority, ":@") == authority.end())
                 {
-                    if (download_winhttp(fs, download_path_part_path, split_uri, url, errors))
+                    if (download_winhttp(fs, download_path_part_path, split_uri, url, secrets, errors))
                     {
                         auto maybe_error = try_verify_downloaded_file_hash(fs, url, download_path_part_path, sha512);
                         if (auto err = maybe_error.get())
@@ -520,7 +524,7 @@ namespace vcpkg::Downloads
             }
         }
 #endif
-        System::Command cmd;
+        Command cmd;
         cmd.string_arg("curl")
             .string_arg("--fail")
             .string_arg("-L")
@@ -532,14 +536,15 @@ namespace vcpkg::Downloads
         {
             cmd.string_arg("-H").string_arg(header);
         }
-        const auto out = System::cmd_execute_and_capture_output(cmd);
+        const auto out = cmd_execute_and_capture_output(cmd);
+        const auto sanitized_url = replace_secrets(url, secrets);
         if (out.exit_code != 0)
         {
-            Strings::append(errors, url, ": ", out.output, '\n');
+            Strings::append(errors, sanitized_url, ": ", out.output, '\n');
             return false;
         }
 
-        auto maybe_error = try_verify_downloaded_file_hash(fs, url, download_path_part_path, sha512);
+        auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_path_part_path, sha512);
         if (auto err = maybe_error.get())
         {
             Strings::append(errors, *err);
@@ -552,38 +557,19 @@ namespace vcpkg::Downloads
         }
     }
 
-    static Optional<const std::string&> try_download_files(vcpkg::Files::Filesystem& fs,
+    static Optional<const std::string&> try_download_files(vcpkg::Filesystem& fs,
                                                            View<std::string> urls,
                                                            View<std::string> headers,
-                                                           const fs::path& download_path,
+                                                           const path& download_path,
                                                            const std::string& sha512,
+                                                           const std::vector<std::string>& secrets,
                                                            std::string& errors)
     {
         for (auto&& url : urls)
         {
-            if (try_download_file(fs, url, headers, download_path, sha512, errors)) return url;
+            if (try_download_file(fs, url, headers, download_path, sha512, secrets, errors)) return url;
         }
         return nullopt;
-    }
-
-    std::string download_file(vcpkg::Files::Filesystem& fs,
-                              View<std::string> urls,
-                              View<std::string> headers,
-                              const fs::path& download_path,
-                              const std::string& sha512)
-    {
-        Checks::check_exit(VCPKG_LINE_INFO, urls.size(), "Error: No urls specified to download SHA: %s", sha512);
-
-        std::string errors;
-        auto maybe_url = try_download_files(fs, urls, headers, download_path, sha512, errors);
-        if (auto url = maybe_url.get())
-        {
-            return *url;
-        }
-        else
-        {
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to download from mirror set:\n%s", errors);
-        }
     }
 
     View<std::string> azure_blob_headers()
@@ -592,43 +578,31 @@ namespace vcpkg::Downloads
         return s_headers;
     }
 
-    DownloadManager::DownloadManager(Optional<std::string> read_url_template,
-                                     std::vector<std::string> read_headers,
-                                     Optional<std::string> write_url_template,
-                                     std::vector<std::string> write_headers,
-                                     bool block_origin)
-        : DownloadManagerConfig{std::move(read_url_template),
-                                std::move(read_headers),
-                                std::move(write_url_template),
-                                std::move(write_headers),
-                                block_origin}
-    {
-    }
-
-    void DownloadManager::download_file(Files::Filesystem& fs,
+    void DownloadManager::download_file(Filesystem& fs,
                                         const std::string& url,
                                         View<std::string> headers,
-                                        const fs::path& download_path,
+                                        const path& download_path,
                                         const std::string& sha512) const
     {
         this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512);
     }
 
-    std::string DownloadManager::download_file(Files::Filesystem& fs,
+    std::string DownloadManager::download_file(Filesystem& fs,
                                                View<std::string> urls,
                                                View<std::string> headers,
-                                               const fs::path& download_path,
+                                               const path& download_path,
                                                const std::string& sha512) const
     {
         std::string errors;
-        if (auto read_template = m_read_url_template.get())
+        if (auto read_template = m_config.m_read_url_template.get())
         {
             auto read_url = Strings::replace_all(std::string(*read_template), "<SHA>", sha512);
-            if (Downloads::try_download_file(fs, read_url, m_read_headers, download_path, sha512, errors))
+            if (Downloads::try_download_file(
+                    fs, read_url, m_config.m_read_headers, download_path, sha512, m_config.m_secrets, errors))
                 return read_url;
         }
 
-        if (!m_block_origin)
+        if (!m_config.m_block_origin)
         {
             if (urls.size() == 0)
             {
@@ -636,14 +610,14 @@ namespace vcpkg::Downloads
             }
             else
             {
-                auto maybe_url = try_download_files(fs, urls, headers, download_path, sha512, errors);
+                auto maybe_url =
+                    try_download_files(fs, urls, headers, download_path, sha512, m_config.m_secrets, errors);
                 if (auto url = maybe_url.get())
                 {
                     auto maybe_push = put_file_to_mirror(fs, download_path, sha512);
                     if (!maybe_push.has_value())
                     {
-                        System::print2(
-                            System::Color::warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
+                        print2(Color::warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
                     }
                     return *url;
                 }
@@ -652,14 +626,14 @@ namespace vcpkg::Downloads
         Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Failed to download from mirror set:\n%s", errors);
     }
 
-    ExpectedS<int> DownloadManager::put_file_to_mirror(const Files::Filesystem& fs,
-                                                       const fs::path& path,
+    ExpectedS<int> DownloadManager::put_file_to_mirror(const Filesystem& fs,
+                                                       const path& file_to_put,
                                                        const std::string& sha512) const
     {
-        auto maybe_mirror_url = Strings::replace_all(m_write_url_template.value_or(""), "<SHA>", sha512);
+        auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            return Downloads::put_file(fs, maybe_mirror_url, m_write_headers, path);
+            return Downloads::put_file(fs, maybe_mirror_url, m_config.m_write_headers, file_to_put);
         }
         return 0;
     }

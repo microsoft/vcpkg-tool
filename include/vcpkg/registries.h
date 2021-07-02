@@ -49,7 +49,7 @@ namespace vcpkg
     {
         virtual View<VersionT> get_port_versions() const = 0;
 
-        virtual ExpectedS<fs::path> get_path_to_version(const VcpkgPaths& paths, const VersionT& version) const = 0;
+        virtual ExpectedS<path> get_path_to_version(const VcpkgPaths& paths, const VersionT& version) const = 0;
 
         virtual ~RegistryEntry() = default;
     };
@@ -125,20 +125,20 @@ namespace vcpkg
     };
 
     std::unique_ptr<Json::IDeserializer<std::unique_ptr<RegistryImplementation>>>
-    get_registry_implementation_deserializer(const fs::path& configuration_directory);
+    get_registry_implementation_deserializer(const path& configuration_directory);
 
     std::unique_ptr<Json::IDeserializer<std::vector<Registry>>> get_registry_array_deserializer(
-        const fs::path& configuration_directory);
+        const path& configuration_directory);
 
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name);
-    ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_versions(const Files::Filesystem& fs,
-                                                                                const fs::path& versions_dir,
+    ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_versions(const Filesystem& fs,
+                                                                                const path& versions_dir,
                                                                                 StringView port_name);
 
     ExpectedS<std::map<std::string, VersionT, std::less<>>> get_baseline(const VcpkgPaths& paths,
-                                                                         const fs::path& dot_git_dir,
-                                                                         const fs::path& versions_dir);
+                                                                         const path& dot_git_dir,
+                                                                         const path& versions_dir);
     ExpectedS<std::map<std::string, VersionT, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);

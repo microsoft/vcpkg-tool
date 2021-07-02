@@ -21,8 +21,8 @@ namespace vcpkg
         }
 
         // Intentionally show the lowercased string
-        System::print2(System::Color::error, expected_spec.error());
-        System::print2(example_text);
+        print2(Color::error, expected_spec.error());
+        print2(example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
@@ -30,7 +30,7 @@ namespace vcpkg
     {
         if (!paths.is_valid_triplet(t))
         {
-            System::print2(System::Color::error, "Error: invalid triplet: ", t, '\n');
+            print2(Color::error, "Error: invalid triplet: ", t, '\n');
             Metrics::g_metrics.lock()->track_property("error", "invalid triplet: " + t.to_string());
             Help::help_topic_valid_triplet(paths);
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -49,8 +49,8 @@ namespace vcpkg
         }
 
         // Intentionally show the lowercased string
-        System::print2(System::Color::error, expected_spec.error());
-        System::print2(example_text);
+        print2(Color::error, expected_spec.error());
+        print2(example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 }

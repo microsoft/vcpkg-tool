@@ -12,7 +12,7 @@
  * by HTTP(S)_PROXY variables).
  */
 
-namespace vcpkg::System
+namespace vcpkg
 {
     struct IEProxySetting
     {

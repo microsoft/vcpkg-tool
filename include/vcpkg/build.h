@@ -24,10 +24,6 @@
 namespace vcpkg
 {
     struct IBinaryProvider;
-}
-
-namespace vcpkg::System
-{
     struct Environment;
 }
 
@@ -229,23 +225,23 @@ namespace vcpkg::Build
         std::string cmake_system_name;
         std::string cmake_system_version;
         Optional<std::string> platform_toolset;
-        Optional<fs::path> visual_studio_path;
+        Optional<path> visual_studio_path;
         Optional<std::string> external_toolchain_file;
         Optional<ConfigurationType> build_type;
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
 
-        fs::path toolchain_file() const;
+        path toolchain_file() const;
         bool using_vcvars() const;
 
     private:
         const VcpkgPaths& m_paths;
     };
 
-    System::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
-                                       const Toolset& toolset,
-                                       View<Toolset> all_toolsets);
+    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
+                                      const Toolset& toolset,
+                                      View<Toolset> all_toolsets);
 
     struct ExtendedBuildResult
     {
@@ -323,7 +319,7 @@ namespace vcpkg::Build
         BuildPolicies policies;
     };
 
-    BuildInfo read_build_info(const Files::Filesystem& fs, const fs::path& filepath);
+    BuildInfo read_build_info(const Filesystem& fs, const path& filepath);
 
     struct AbiEntry
     {
@@ -352,7 +348,7 @@ namespace vcpkg::Build
         Optional<const Toolset&> toolset;
         Optional<const std::string&> triplet_abi;
         std::string package_abi;
-        Optional<fs::path> abi_tag_file;
+        Optional<path> abi_tag_file;
         Optional<const CompilerInfo&> compiler_info;
     };
 
@@ -365,7 +361,7 @@ namespace vcpkg::Build
     {
         explicit EnvCache(bool compiler_tracking) : m_compiler_tracking(compiler_tracking) { }
 
-        const System::Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
+        const Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
         const std::string& get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
         const CompilerInfo& get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
 
@@ -376,14 +372,14 @@ namespace vcpkg::Build
             Cache<std::string, std::string> compiler_hashes;
             Cache<std::string, CompilerInfo> compiler_info;
         };
-        Cache<fs::path, TripletMapEntry> m_triplet_cache;
-        Cache<fs::path, std::string> m_toolchain_cache;
+        Cache<path, TripletMapEntry> m_triplet_cache;
+        Cache<path, std::string> m_toolchain_cache;
 
 #if defined(_WIN32)
         struct EnvMapEntry
         {
             std::unordered_map<std::string, std::string> env_map;
-            Cache<System::Command, System::Environment, System::CommandLess> cmd_cache;
+            Cache<vcpkg::Command, Environment, CommandLess> cmd_cache;
         };
 
         Cache<std::vector<std::string>, EnvMapEntry> envs;

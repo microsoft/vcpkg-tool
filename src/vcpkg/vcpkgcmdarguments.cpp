@@ -26,8 +26,7 @@ namespace vcpkg
             {
                 if (place.has_value())
                 {
-                    System::printf(
-                        System::Color::error, "Error: both %s and -%s were specified as feature flags\n", flag, flag);
+                    vcpkg::printf(Color::error, "Error: both %s and -%s were specified as feature flags\n", flag, flag);
                     Metrics::g_metrics.lock()->track_property("error", "error feature flag +-" + flag.to_string());
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
@@ -66,7 +65,7 @@ namespace vcpkg
     {
         if (nullptr != option_field)
         {
-            System::printf(System::Color::error, "Error: --%s specified multiple times\n", option_name);
+            vcpkg::printf(Color::error, "Error: --%s specified multiple times\n", option_name);
             Metrics::g_metrics.lock()->track_property("error", "error option specified multiple times");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -79,7 +78,7 @@ namespace vcpkg
     {
         if (option_field && option_field != new_setting)
         {
-            System::print2(System::Color::error, "Error: conflicting values specified for --", option_name, '\n');
+            print2(Color::error, "Error: conflicting values specified for --", option_name, '\n');
             Metrics::g_metrics.lock()->track_property("error", "error conflicting switches");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -93,7 +92,7 @@ namespace vcpkg
     {
         if (new_value.size() == 0)
         {
-            System::print2(System::Color::error, "Error: expected value after ", option_name, '\n');
+            print2(Color::error, "Error: expected value after ", option_name, '\n');
             Metrics::g_metrics.lock()->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -108,7 +107,7 @@ namespace vcpkg
     {
         if (new_value.size() == 0)
         {
-            System::print2(System::Color::error, "Error: expected value after ", option_name, '\n');
+            print2(Color::error, "Error: expected value after ", option_name, '\n');
             Metrics::g_metrics.lock()->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -120,7 +119,7 @@ namespace vcpkg
         }
     }
 
-    VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const Files::Filesystem& fs,
+    VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const Filesystem& fs,
                                                                   const int argc,
                                                                   const CommandLineCharType* const* const argv)
     {
@@ -137,10 +136,10 @@ namespace vcpkg
             if (arg.size() > 0 && arg[0] == '@')
             {
                 arg.erase(arg.begin());
-                auto lines = fs.read_lines(fs::u8path(arg));
+                auto lines = fs.read_lines(vcpkg::u8path(arg));
                 if (!lines.has_value())
                 {
-                    System::print2(System::Color::error, "Error: Could not open response file ", arg, '\n');
+                    print2(Color::error, "Error: Could not open response file ", arg, '\n');
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
                 std::copy(lines.get()->begin(), lines.get()->end(), std::back_inserter(v));
@@ -180,7 +179,7 @@ namespace vcpkg
                     return TryParseArgumentResult::FoundAndConsumedLookahead;
                 }
 
-                System::print2(System::Color::error, "Error: expected value after ", option, '\n');
+                print2(Color::error, "Error: expected value after ", option, '\n');
                 Metrics::g_metrics.lock()->track_property("error", "error option name");
                 print_usage();
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -391,11 +390,11 @@ namespace vcpkg
         {
             if (actual_arg_count != command_structure.minimum_arity)
             {
-                System::printf(System::Color::error,
-                               "Error: '%s' requires %u arguments, but %u were provided.\n",
-                               this->command,
-                               command_structure.minimum_arity,
-                               actual_arg_count);
+                vcpkg::printf(Color::error,
+                              "Error: '%s' requires %u arguments, but %u were provided.\n",
+                              this->command,
+                              command_structure.minimum_arity,
+                              actual_arg_count);
                 failed = true;
             }
         }
@@ -403,20 +402,20 @@ namespace vcpkg
         {
             if (actual_arg_count < command_structure.minimum_arity)
             {
-                System::printf(System::Color::error,
-                               "Error: '%s' requires at least %u arguments, but %u were provided\n",
-                               this->command,
-                               command_structure.minimum_arity,
-                               actual_arg_count);
+                vcpkg::printf(Color::error,
+                              "Error: '%s' requires at least %u arguments, but %u were provided\n",
+                              this->command,
+                              command_structure.minimum_arity,
+                              actual_arg_count);
                 failed = true;
             }
             if (actual_arg_count > command_structure.maximum_arity)
             {
-                System::printf(System::Color::error,
-                               "Error: '%s' requires at most %u arguments, but %u were provided\n",
-                               this->command,
-                               command_structure.maximum_arity,
-                               actual_arg_count);
+                vcpkg::printf(Color::error,
+                              "Error: '%s' requires at most %u arguments, but %u were provided\n",
+                              this->command,
+                              command_structure.maximum_arity,
+                              actual_arg_count);
                 failed = true;
             }
         }
@@ -446,8 +445,7 @@ namespace vcpkg
             if (option_it != options_copy.end())
             {
                 // This means that the switch was passed like '--a=xyz'
-                System::printf(
-                    System::Color::error, "Error: The option '--%s' does not accept an argument.\n", switch_.name);
+                vcpkg::printf(Color::error, "Error: The option '--%s' does not accept an argument.\n", switch_.name);
                 options_copy.erase(option_it);
                 failed = true;
             }
@@ -466,16 +464,14 @@ namespace vcpkg
 
                 if (value.size() > 1)
                 {
-                    System::printf(
-                        System::Color::error, "Error: The option '%s' can only be passed once.\n", option.name);
+                    vcpkg::printf(Color::error, "Error: The option '%s' can only be passed once.\n", option.name);
                     failed = true;
                 }
                 else if (value.front().empty())
                 {
                     // Fail when not given a value, e.g.: "vcpkg install sqlite3 --additional-ports="
-                    System::printf(System::Color::error,
-                                   "Error: The option '--%s' must be passed a non-empty argument.\n",
-                                   option.name);
+                    vcpkg::printf(
+                        Color::error, "Error: The option '--%s' must be passed a non-empty argument.\n", option.name);
                     failed = true;
                 }
                 else
@@ -488,8 +484,7 @@ namespace vcpkg
             if (switch_it != switches_copy.end())
             {
                 // This means that the option was passed like '--a'
-                System::printf(
-                    System::Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
+                vcpkg::printf(Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
                 switches_copy.erase(switch_it);
                 failed = true;
             }
@@ -505,9 +500,9 @@ namespace vcpkg
                 {
                     if (v.empty())
                     {
-                        System::printf(System::Color::error,
-                                       "Error: The option '--%s' must be passed non-empty arguments.\n",
-                                       option.name);
+                        vcpkg::printf(Color::error,
+                                      "Error: The option '--%s' must be passed non-empty arguments.\n",
+                                      option.name);
                         failed = true;
                     }
                     else
@@ -521,8 +516,7 @@ namespace vcpkg
             if (switch_it != switches_copy.end())
             {
                 // This means that the option was passed like '--a'
-                System::printf(
-                    System::Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
+                vcpkg::printf(Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
                 switches_copy.erase(switch_it);
                 failed = true;
             }
@@ -530,16 +524,16 @@ namespace vcpkg
 
         if (!switches_copy.empty() || !options_copy.empty())
         {
-            System::printf(System::Color::error, "Unknown option(s) for command '%s':\n", this->command);
+            vcpkg::printf(Color::error, "Unknown option(s) for command '%s':\n", this->command);
             for (auto&& switch_ : switches_copy)
             {
-                System::print2("    '--", switch_, "'\n");
+                print2("    '--", switch_, "'\n");
             }
             for (auto&& option : options_copy)
             {
-                System::print2("    '--", option.first, "'\n");
+                print2("    '--", option.first, "'\n");
             }
-            System::print2("\n");
+            print2("\n");
             failed = true;
         }
 
@@ -587,7 +581,7 @@ namespace vcpkg
         table.format("@response_file", "Specify a response file to provide additional parameters");
         table.blank();
         table.example("For more help (including examples) see the accompanying README.md and docs folder.");
-        System::print2(table.m_str);
+        print2(table.m_str);
     }
 
     void print_usage(const CommandStructure& command_structure)
@@ -613,7 +607,7 @@ namespace vcpkg
         }
 
         VcpkgCmdArguments::append_common_options(table);
-        System::print2(table.m_str);
+        print2(table.m_str);
     }
 
     void VcpkgCmdArguments::append_common_options(HelpTableFormatter& table)
@@ -653,7 +647,7 @@ namespace vcpkg
     {
         if (dst) return;
 
-        auto maybe_val = System::get_environment_variable(var);
+        auto maybe_val = get_environment_variable(var);
         if (auto val = maybe_val.get())
         {
             dst = std::make_unique<std::string>(std::move(*val));
@@ -663,14 +657,14 @@ namespace vcpkg
     {
         if (dst) return;
 
-        dst = System::get_environment_variable(var);
+        dst = get_environment_variable(var);
     }
 
     void VcpkgCmdArguments::imbue_from_environment()
     {
         if (!disable_metrics)
         {
-            const auto vcpkg_disable_metrics_env = System::get_environment_variable(DISABLE_METRICS_ENV);
+            const auto vcpkg_disable_metrics_env = get_environment_variable(DISABLE_METRICS_ENV);
             if (vcpkg_disable_metrics_env.has_value())
             {
                 disable_metrics = true;
@@ -685,7 +679,7 @@ namespace vcpkg
         from_env(ASSET_SOURCES_ENV, asset_sources_template);
 
         {
-            const auto vcpkg_disable_lock = System::get_environment_variable(IGNORE_LOCK_FAILURES_ENV);
+            const auto vcpkg_disable_lock = get_environment_variable(IGNORE_LOCK_FAILURES_ENV);
             if (vcpkg_disable_lock.has_value() && !ignore_lock_failures.has_value())
             {
                 ignore_lock_failures = true;
@@ -693,7 +687,7 @@ namespace vcpkg
         }
 
         {
-            const auto vcpkg_overlay_ports_env = System::get_environment_variable(OVERLAY_PORTS_ENV);
+            const auto vcpkg_overlay_ports_env = get_environment_variable(OVERLAY_PORTS_ENV);
             if (const auto unpacked = vcpkg_overlay_ports_env.get())
             {
                 auto overlays = Strings::split_paths(*unpacked);
@@ -701,7 +695,7 @@ namespace vcpkg
             }
         }
         {
-            const auto vcpkg_overlay_triplets_env = System::get_environment_variable(OVERLAY_TRIPLETS_ENV);
+            const auto vcpkg_overlay_triplets_env = get_environment_variable(OVERLAY_TRIPLETS_ENV);
             if (const auto unpacked = vcpkg_overlay_triplets_env.get())
             {
                 auto triplets = Strings::split_paths(*unpacked);
@@ -709,7 +703,7 @@ namespace vcpkg
             }
         }
         {
-            const auto vcpkg_feature_flags_env = System::get_environment_variable(FEATURE_FLAGS_ENV);
+            const auto vcpkg_feature_flags_env = get_environment_variable(FEATURE_FLAGS_ENV);
             if (const auto v = vcpkg_feature_flags_env.get())
             {
                 auto flags = Strings::split(*v, ',');
@@ -728,11 +722,16 @@ namespace vcpkg
             "called once per process.");
         s_reentrancy_guard = true;
 
-        auto maybe_vcpkg_recursive_data = System::get_environment_variable(RECURSIVE_DATA_ENV);
+        auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
             auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
             const auto& obj = rec_doc.object();
+
+            if (auto entry = obj.get(VCPKG_ROOT_DIR_ENV))
+            {
+                args.vcpkg_root_dir = std::make_unique<std::string>(entry->string().to_string());
+            }
 
             if (auto entry = obj.get(DOWNLOADS_ROOT_DIR_ENV))
             {
@@ -751,11 +750,16 @@ namespace vcpkg
 
             // Setting the recursive data to 'poison' prevents more than one level of recursion because
             // Json::parse() will fail.
-            System::set_environment_variable(RECURSIVE_DATA_ENV, "poison");
+            set_environment_variable(RECURSIVE_DATA_ENV, "poison");
         }
         else
         {
             Json::Object obj;
+            if (args.vcpkg_root_dir)
+            {
+                obj.insert(VCPKG_ROOT_DIR_ENV, Json::Value::string(*args.vcpkg_root_dir.get()));
+            }
+
             if (args.downloads_root_dir)
             {
                 obj.insert(DOWNLOADS_ROOT_DIR_ENV, Json::Value::string(*args.downloads_root_dir.get()));
@@ -771,7 +775,7 @@ namespace vcpkg
                 obj.insert(DISABLE_METRICS_ENV, Json::Value::boolean(true));
             }
 
-            System::set_environment_variable(RECURSIVE_DATA_ENV, Json::stringify(obj, Json::JsonStyle::with_spaces(0)));
+            set_environment_variable(RECURSIVE_DATA_ENV, Json::stringify(obj, Json::JsonStyle::with_spaces(0)));
         }
     }
 
@@ -790,11 +794,11 @@ namespace vcpkg
         {
             if (el.is_inconsistent)
             {
-                System::printf(System::Color::warning,
-                               "Warning: %s feature specifically turned off, but --%s was specified.\n",
-                               el.flag,
-                               el.option);
-                System::printf(System::Color::warning, "Warning: Defaulting to %s being on.\n", el.flag);
+                vcpkg::printf(Color::warning,
+                              "Warning: %s feature specifically turned off, but --%s was specified.\n",
+                              el.flag,
+                              el.option);
+                vcpkg::printf(Color::warning, "Warning: Defaulting to %s being on.\n", el.flag);
                 Metrics::g_metrics.lock()->track_property(
                     "warning", Strings::format("warning %s alongside %s", el.flag, el.option));
             }

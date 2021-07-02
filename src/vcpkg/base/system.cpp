@@ -10,11 +10,9 @@
 #include <sys/sysctl.h>
 #endif
 
-using namespace vcpkg::System;
-
 namespace vcpkg
 {
-    long System::get_process_id()
+    long get_process_id()
     {
 #ifdef _WIN32
         return ::_getpid();
@@ -23,7 +21,7 @@ namespace vcpkg
 #endif
     }
 
-    Optional<CPUArchitecture> System::to_cpu_architecture(StringView arch)
+    Optional<CPUArchitecture> to_cpu_architecture(StringView arch)
     {
         if (Strings::case_insensitive_ascii_equals(arch, "x86")) return CPUArchitecture::X86;
         if (Strings::case_insensitive_ascii_equals(arch, "x64")) return CPUArchitecture::X64;
@@ -35,7 +33,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    ZStringView System::to_zstring_view(CPUArchitecture arch) noexcept
+    ZStringView to_zstring_view(CPUArchitecture arch) noexcept
     {
         switch (arch)
         {
@@ -45,11 +43,11 @@ namespace vcpkg
             case CPUArchitecture::ARM64: return "arm64";
             case CPUArchitecture::S390X: return "s390x";
             case CPUArchitecture::PPC64LE: return "ppc64le";
-            default: Checks::exit_with_message(VCPKG_LINE_INFO, "unexpected vcpkg::System::CPUArchitecture");
+            default: Checks::exit_with_message(VCPKG_LINE_INFO, "unexpected vcpkg::CPUArchitecture");
         }
     }
 
-    CPUArchitecture System::get_host_processor()
+    CPUArchitecture get_host_processor()
     {
 #if defined(_WIN32)
         auto w6432 = get_environment_variable("PROCESSOR_ARCHITEW6432");
@@ -92,7 +90,7 @@ namespace vcpkg
 #endif // defined(_WIN32)
     }
 
-    std::vector<CPUArchitecture> System::get_supported_host_architectures()
+    std::vector<CPUArchitecture> get_supported_host_architectures()
     {
         std::vector<CPUArchitecture> supported_architectures;
         supported_architectures.push_back(get_host_processor());
@@ -119,7 +117,7 @@ namespace vcpkg
         return supported_architectures;
     }
 
-    Optional<std::string> System::get_environment_variable(ZStringView varname) noexcept
+    Optional<std::string> get_environment_variable(ZStringView varname) noexcept
     {
 #if defined(_WIN32)
         const auto w_varname = Strings::to_utf16(varname);
@@ -140,7 +138,7 @@ namespace vcpkg
 #endif // defined(_WIN32)
     }
 
-    void System::set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept
+    void set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept
     {
 #if defined(_WIN32)
         const auto w_varname = Strings::to_utf16(varname);
@@ -168,22 +166,22 @@ namespace vcpkg
 #endif // defined(_WIN32)
     }
 
-    const ExpectedS<fs::path>& System::get_home_dir() noexcept
+    const ExpectedS<path>& get_home_dir() noexcept
     {
-        static ExpectedS<fs::path> s_home = []() -> ExpectedS<fs::path> {
+        static ExpectedS<path> s_home = []() -> ExpectedS<path> {
 #ifdef _WIN32
 #define HOMEVAR "%USERPROFILE%"
-            auto maybe_home = System::get_environment_variable("USERPROFILE");
+            auto maybe_home = get_environment_variable("USERPROFILE");
             if (!maybe_home.has_value() || maybe_home.get()->empty())
                 return {"unable to read " HOMEVAR, ExpectedRightTag{}};
 #else
 #define HOMEVAR "$HOME"
-            auto maybe_home = System::get_environment_variable("HOME");
+            auto maybe_home = get_environment_variable("HOME");
             if (!maybe_home.has_value() || maybe_home.get()->empty())
                 return {"unable to read " HOMEVAR, ExpectedRightTag{}};
 #endif
 
-            auto p = fs::u8path(*maybe_home.get());
+            auto p = vcpkg::u8path(*maybe_home.get());
             if (!p.is_absolute()) return {HOMEVAR " was not an absolute path", ExpectedRightTag{}};
 
             return {std::move(p), ExpectedLeftTag{}};
@@ -193,27 +191,27 @@ namespace vcpkg
     }
 
 #ifdef _WIN32
-    const ExpectedS<fs::path>& System::get_appdata_local() noexcept
+    const ExpectedS<path>& get_appdata_local() noexcept
     {
-        static ExpectedS<fs::path> s_home = []() -> ExpectedS<fs::path> {
-            auto maybe_home = System::get_environment_variable("LOCALAPPDATA");
+        static ExpectedS<path> s_home = []() -> ExpectedS<path> {
+            auto maybe_home = get_environment_variable("LOCALAPPDATA");
             if (!maybe_home.has_value() || maybe_home.get()->empty())
             {
                 // Consult %APPDATA% as a workaround for Service accounts
                 // Microsoft/vcpkg#12285
-                maybe_home = System::get_environment_variable("APPDATA");
+                maybe_home = get_environment_variable("APPDATA");
                 if (!maybe_home.has_value() || maybe_home.get()->empty())
                 {
                     return {"unable to read %LOCALAPPDATA% or %APPDATA%", ExpectedRightTag{}};
                 }
 
-                auto p = fs::u8path(*maybe_home.get()).parent_path();
+                auto p = vcpkg::u8path(*maybe_home.get()).parent_path();
                 p /= "Local";
                 if (!p.is_absolute()) return {"%APPDATA% was not an absolute path", ExpectedRightTag{}};
                 return {std::move(p), ExpectedLeftTag{}};
             }
 
-            auto p = fs::u8path(*maybe_home.get());
+            auto p = vcpkg::u8path(*maybe_home.get());
             if (!p.is_absolute()) return {"%LOCALAPPDATA% was not an absolute path", ExpectedRightTag{}};
 
             return {std::move(p), ExpectedLeftTag{}};
@@ -221,18 +219,18 @@ namespace vcpkg
         return s_home;
     }
 #else
-    static const ExpectedS<fs::path>& get_xdg_cache_home() noexcept
+    static const ExpectedS<path>& get_xdg_cache_home() noexcept
     {
-        static ExpectedS<fs::path> s_home = [] {
-            auto maybe_home = System::get_environment_variable("XDG_CACHE_HOME");
+        static ExpectedS<path> s_home = [] {
+            auto maybe_home = get_environment_variable("XDG_CACHE_HOME");
             if (auto p = maybe_home.get())
             {
-                return ExpectedS<fs::path>(fs::u8path(*p));
+                return ExpectedS<path>(vcpkg::u8path(*p));
             }
             else
             {
-                return System::get_home_dir().map([](fs::path home) {
-                    home /= fs::u8path(".cache");
+                return get_home_dir().map([](path home) {
+                    home /= vcpkg::u8path(".cache");
                     return home;
                 });
             }
@@ -241,10 +239,10 @@ namespace vcpkg
     }
 #endif
 
-    const ExpectedS<fs::path>& System::get_platform_cache_home() noexcept
+    const ExpectedS<path>& get_platform_cache_home() noexcept
     {
 #ifdef _WIN32
-        return System::get_appdata_local();
+        return get_appdata_local();
 #else
         return get_xdg_cache_home();
 #endif
@@ -256,7 +254,7 @@ namespace vcpkg
         return hkey_type == REG_SZ || hkey_type == REG_MULTI_SZ || hkey_type == REG_EXPAND_SZ;
     }
 
-    Optional<std::string> System::get_registry_string(void* base_hkey, StringView sub_key, StringView valuename)
+    Optional<std::string> get_registry_string(void* base_hkey, StringView sub_key, StringView valuename)
     {
         HKEY k = nullptr;
         const LSTATUS ec =
@@ -283,13 +281,13 @@ namespace vcpkg
         return Strings::to_utf8(ret);
     }
 #else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
-    Optional<std::string> System::get_registry_string(void*, StringView, StringView) { return nullopt; }
+    Optional<std::string> get_registry_string(void*, StringView, StringView) { return nullopt; }
 #endif // defined(_WIN32)
 
-    static const Optional<fs::path>& get_program_files()
+    static const Optional<path>& get_program_files()
     {
-        static const auto PROGRAMFILES = []() -> Optional<fs::path> {
-            auto value = System::get_environment_variable("PROGRAMFILES");
+        static const auto PROGRAMFILES = []() -> Optional<path> {
+            auto value = get_environment_variable("PROGRAMFILES");
             if (auto v = value.get())
             {
                 return *v;
@@ -301,10 +299,10 @@ namespace vcpkg
         return PROGRAMFILES;
     }
 
-    const Optional<fs::path>& System::get_program_files_32_bit()
+    const Optional<path>& get_program_files_32_bit()
     {
-        static const auto PROGRAMFILES_x86 = []() -> Optional<fs::path> {
-            auto value = System::get_environment_variable("ProgramFiles(x86)");
+        static const auto PROGRAMFILES_x86 = []() -> Optional<path> {
+            auto value = get_environment_variable("ProgramFiles(x86)");
             if (auto v = value.get())
             {
                 return *v;
@@ -314,10 +312,10 @@ namespace vcpkg
         return PROGRAMFILES_x86;
     }
 
-    const Optional<fs::path>& System::get_program_files_platform_bitness()
+    const Optional<path>& get_program_files_platform_bitness()
     {
-        static const auto ProgramW6432 = []() -> Optional<fs::path> {
-            auto value = System::get_environment_variable("ProgramW6432");
+        static const auto ProgramW6432 = []() -> Optional<path> {
+            auto value = get_environment_variable("ProgramW6432");
             if (auto v = value.get())
             {
                 return *v;
@@ -327,21 +325,21 @@ namespace vcpkg
         return ProgramW6432;
     }
 
-    int System::get_num_logical_cores() { return std::thread::hardware_concurrency(); }
+    int get_num_logical_cores() { return std::thread::hardware_concurrency(); }
 
-    Optional<CPUArchitecture> System::guess_visual_studio_prompt_target_architecture()
+    Optional<CPUArchitecture> guess_visual_studio_prompt_target_architecture()
     {
         // Check for the "vsdevcmd" infrastructure used by Visual Studio 2017 and later
-        const auto vscmd_arg_tgt_arch_env = System::get_environment_variable("VSCMD_ARG_TGT_ARCH");
+        const auto vscmd_arg_tgt_arch_env = get_environment_variable("VSCMD_ARG_TGT_ARCH");
         if (vscmd_arg_tgt_arch_env)
         {
             return to_cpu_architecture(vscmd_arg_tgt_arch_env.value_or_exit(VCPKG_LINE_INFO));
         }
 
         // Check for the "vcvarsall" infrastructure used by Visual Studio 2015
-        if (System::get_environment_variable("VCINSTALLDIR"))
+        if (get_environment_variable("VCINSTALLDIR"))
         {
-            const auto Platform = System::get_environment_variable("Platform");
+            const auto Platform = get_environment_variable("Platform");
             if (Platform)
             {
                 return to_cpu_architecture(Platform.value_or_exit(VCPKG_LINE_INFO));

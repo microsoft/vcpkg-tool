@@ -1023,14 +1023,14 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Files::Filesystem& fs,
-                                                                                           const fs::path& path,
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Filesystem& fs,
+                                                                                           const path& json_file,
                                                                                            std::error_code& ec) noexcept
     {
-        auto res = fs.read_contents(path);
+        auto res = fs.read_contents(json_file);
         if (auto buf = res.get())
         {
-            return parse(*buf, path);
+            return parse(*buf, json_file);
         }
         else
         {
@@ -1039,30 +1039,28 @@ namespace vcpkg::Json
         }
     }
 
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo linfo,
-                                           const Files::Filesystem& fs,
-                                           const fs::path& path) noexcept
+    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const path& json_file) noexcept
     {
         std::error_code ec;
-        auto ret = parse_file(fs, path, ec);
+        auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            System::print2(System::Color::error, "Failed to read ", fs::u8string(path), ": ", ec.message(), "\n");
-            Checks::exit_fail(linfo);
+            print2(Color::error, "Failed to read ", vcpkg::u8string(json_file), ": ", ec.message(), "\n");
+            Checks::exit_fail(li);
         }
         else if (!ret)
         {
-            System::print2(System::Color::error, "Failed to parse ", fs::u8string(path), ":\n");
-            System::print2(ret.error()->format());
-            Checks::exit_fail(linfo);
+            print2(Color::error, "Failed to parse ", vcpkg::u8string(json_file), ":\n");
+            print2(ret.error()->format());
+            Checks::exit_fail(li);
         }
-        return ret.value_or_exit(linfo);
+        return ret.value_or_exit(li);
     }
 
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
-                                                                                      const fs::path& filepath) noexcept
+                                                                                      const path& filepath) noexcept
     {
-        return Parser::parse(json, fs::u8string(filepath));
+        return Parser::parse(json, vcpkg::u8string(filepath));
     }
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
                                                                                       StringView origin) noexcept

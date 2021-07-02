@@ -154,11 +154,11 @@ if (Test-Path $installedDir)
         Checks::check_exit(
             VCPKG_LINE_INFO, chocolatey_options.maybe_maintainer.has_value(), "--x-maintainer option is required.");
 
-        Files::Filesystem& fs = paths.get_filesystem();
-        const fs::path vcpkg_root_path = paths.root;
-        const fs::path raw_exported_dir_path = vcpkg_root_path / "chocolatey";
-        const fs::path exported_dir_path = vcpkg_root_path / "chocolatey_exports";
-        const fs::path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
+        Filesystem& fs = paths.get_filesystem();
+        const path vcpkg_root_path = paths.root;
+        const path raw_exported_dir_path = vcpkg_root_path / "chocolatey";
+        const path exported_dir_path = vcpkg_root_path / "chocolatey_exports";
+        const path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
 
         std::error_code ec;
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
@@ -188,9 +188,9 @@ if (Test-Path $installedDir)
         for (const ExportPlanAction& action : export_plan)
         {
             const std::string display_name = action.spec.to_string();
-            System::print2("Exporting package ", display_name, "...\n");
+            print2("Exporting package ", display_name, "...\n");
 
-            const fs::path per_package_dir_path = raw_exported_dir_path / action.spec.name();
+            const path per_package_dir_path = raw_exported_dir_path / action.spec.name();
 
             const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
@@ -202,30 +202,29 @@ if (Test-Path $installedDir)
             Install::install_package_and_write_listfile(paths, action.spec, dirs);
 
             const std::string nuspec_file_content = create_nuspec_file_contents(
-                per_package_dir_path.string(), binary_paragraph, packages_version, chocolatey_options);
-            const fs::path nuspec_file_path =
+                u8string(per_package_dir_path), binary_paragraph, packages_version, chocolatey_options);
+            const path nuspec_file_path =
                 per_package_dir_path / Strings::concat(binary_paragraph.spec.name(), ".nuspec");
             fs.write_contents(nuspec_file_path, nuspec_file_content, VCPKG_LINE_INFO);
 
             fs.create_directory(per_package_dir_path / "tools", ec);
 
             const std::string chocolatey_install_content = create_chocolatey_install_contents();
-            const fs::path chocolatey_install_file_path = per_package_dir_path / "tools" / "chocolateyInstall.ps1";
+            const path chocolatey_install_file_path = per_package_dir_path / "tools" / "chocolateyInstall.ps1";
             fs.write_contents(chocolatey_install_file_path, chocolatey_install_content, VCPKG_LINE_INFO);
 
             const std::string chocolatey_uninstall_content = create_chocolatey_uninstall_contents(binary_paragraph);
-            const fs::path chocolatey_uninstall_file_path = per_package_dir_path / "tools" / "chocolateyUninstall.ps1";
+            const path chocolatey_uninstall_file_path = per_package_dir_path / "tools" / "chocolateyUninstall.ps1";
             fs.write_contents(chocolatey_uninstall_file_path, chocolatey_uninstall_content, VCPKG_LINE_INFO);
 
-            auto cmd_line = System::Command(nuget_exe)
+            auto cmd_line = Command(nuget_exe)
                                 .string_arg("pack")
                                 .string_arg("-OutputDirectory")
                                 .path_arg(exported_dir_path)
                                 .path_arg(nuspec_file_path)
                                 .string_arg("-NoDefaultExcludes");
 
-            const int exit_code =
-                System::cmd_execute_and_capture_output(cmd_line, System::get_clean_environment()).exit_code;
+            const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
         }
     }

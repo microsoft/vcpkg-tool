@@ -285,7 +285,7 @@ namespace vcpkg::Commands::DependInfo
                 });
 
             const std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
-            System::print2(graph_as_string, '\n');
+            print2(graph_as_string, '\n');
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -319,16 +319,16 @@ namespace vcpkg::Commands::DependInfo
 
                 if (show_depth)
                 {
-                    System::print2(System::Color::error, "(", info.depth, ") ");
+                    print2(Color::error, "(", info.depth, ") ");
                 }
-                System::print2(System::Color::success, info.package);
+                print2(Color::success, info.package);
                 if (!features.empty())
                 {
-                    System::print2("[");
-                    System::print2(System::Color::warning, features);
-                    System::print2("]");
+                    print2("[");
+                    print2(Color::warning, features);
+                    print2("]");
                 }
-                System::print2(": ", dependencies, "\n");
+                print2(": ", dependencies, "\n");
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);
