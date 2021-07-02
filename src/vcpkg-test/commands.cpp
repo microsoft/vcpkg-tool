@@ -64,6 +64,7 @@ TEST_CASE ("get_available_paths_commands works", "[commands]")
         "x-vsinstances",
         "x-ci-verify-versions",
         "x-add-version",
+        "x-export-for-website",
         });
 }
 

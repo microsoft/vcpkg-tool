@@ -1240,7 +1240,7 @@ namespace vcpkg
                dep.constraint.type == Versions::Constraint::Type::None && !dep.host;
     }
 
-    static Json::Object serialize_manifest_impl(const SourceControlFile& scf, bool debug)
+    static Json::Object serialize_manifest_impl(const SourceControlFile& scf, bool debug, bool forExport = false)
     {
         auto serialize_paragraph =
             [&](Json::Object& obj, StringLiteral name, const std::vector<std::string>& pgh, bool always = false) {
@@ -1254,7 +1254,7 @@ namespace vcpkg
                         }
                         return;
                     }
-                    if (pgh.size() == 1)
+                    if (pgh.size() == 1 && !forExport)
                     {
                         obj.insert(name, Json::Value::string(pgh.front()));
                         return;
@@ -1284,7 +1284,7 @@ namespace vcpkg
             }
         };
         auto serialize_dependency = [&](Json::Array& arr, const Dependency& dep) {
-            if (is_dependency_trivial(dep))
+            if (!forExport && is_dependency_trivial(dep))
             {
                 arr.push_back(Json::Value::string(dep.name));
             }
@@ -1414,4 +1414,9 @@ namespace vcpkg
     Json::Object serialize_debug_manifest(const SourceControlFile& scf) { return serialize_manifest_impl(scf, true); }
 
     Json::Object serialize_manifest(const SourceControlFile& scf) { return serialize_manifest_impl(scf, false); }
+
+    Json::Object serialize_manifest_for_export(const SourceControlFile& scf, bool includeEmptyFields)
+    {
+        return serialize_manifest_impl(scf, includeEmptyFields, true);
+    }
 }
