@@ -242,7 +242,7 @@ namespace vcpkg::Commands::FormatManifest
 
         if (format_all)
         {
-            for (const auto& dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+            for (const auto& dir : stdfs::directory_iterator(paths.current_registry_ports_dir()))
             {
                 auto control_path = dir.path() / vcpkg::u8path("CONTROL");
                 auto manifest_path = dir.path() / vcpkg::u8path("vcpkg.json");

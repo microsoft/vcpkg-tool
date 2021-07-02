@@ -38,7 +38,7 @@ namespace vcpkg::Commands::Create
         std::vector<CMakeVariable> cmake_args{
             {"CMD", "CREATE"},
             {"PORT", port_name},
-            {"PORT_PATH", vcpkg::generic_u8string(paths.builtin_ports_directory() / vcpkg::u8path(port_name))},
+            {"PORT_PATH", vcpkg::generic_u8string(paths.current_registry_ports_dir() / vcpkg::u8path(port_name))},
             {"URL", url},
             {"VCPKG_BASE_VERSION", Commands::Version::base_version()},
         };

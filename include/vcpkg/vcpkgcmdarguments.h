@@ -133,10 +133,9 @@ namespace vcpkg
         std::unique_ptr<std::string> packages_root_dir;
         constexpr static StringLiteral SCRIPTS_ROOT_DIR_ARG = "x-scripts-root";
         std::unique_ptr<std::string> scripts_root_dir;
-        constexpr static StringLiteral BUILTIN_PORTS_ROOT_DIR_ARG = "x-builtin-ports-root";
-        std::unique_ptr<std::string> builtin_ports_root_dir;
-        constexpr static StringLiteral BUILTIN_REGISTRY_VERSIONS_DIR_ARG = "x-builtin-registry-versions-dir";
-        std::unique_ptr<std::string> builtin_registry_versions_dir;
+
+        constexpr static StringLiteral REGISTRY_ROOT_DIR_ARG = "x-registry-root";
+        std::unique_ptr<std::string> registry_root_dir;
 
         constexpr static StringLiteral DEFAULT_VISUAL_STUDIO_PATH_ENV = "VCPKG_VISUAL_STUDIO_PATH";
         std::unique_ptr<std::string> default_visual_studio_path;

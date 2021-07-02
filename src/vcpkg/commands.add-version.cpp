@@ -174,7 +174,7 @@ namespace
             return;
         }
 
-        auto maybe_versions = get_builtin_versions(paths, port_name);
+        auto maybe_versions = get_versions(paths.get_filesystem(), paths.current_registry_versions_dir(), port_name);
         if (auto versions = maybe_versions.get())
         {
             const auto& versions_end = versions->end();
@@ -288,7 +288,7 @@ namespace vcpkg::Commands::AddVersion
         const bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
 
         auto& fs = paths.get_filesystem();
-        auto baseline_path = paths.builtin_registry_versions / vcpkg::u8path("baseline.json");
+        auto baseline_path = paths.current_registry_versions_dir() / u8path("baseline.json");
         if (!fs.exists(VCPKG_LINE_INFO, baseline_path))
         {
             vcpkg::printf(Color::error, "Error: Couldn't find required file `%s`\n.", vcpkg::u8string(baseline_path));
@@ -316,7 +316,7 @@ namespace vcpkg::Commands::AddVersion
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            for (auto&& port_dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+            for (auto&& port_dir : stdfs::directory_iterator(paths.current_registry_ports_dir()))
             {
                 port_names.emplace_back(vcpkg::u8string(port_dir.path().stem()));
             }
@@ -328,18 +328,18 @@ namespace vcpkg::Commands::AddVersion
                 std::map<std::string, vcpkg::VersionT, std::less<>> ret;
                 return ret;
             }
-            auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
+            auto maybe_baseline_map = vcpkg::get_baseline(paths, paths.current_registry_root);
             return maybe_baseline_map.value_or_exit(VCPKG_LINE_INFO);
         }();
 
         // Get tree-ish from local repository state.
-        auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
+        auto maybe_git_tree_map = paths.git_get_port_treeish_map(paths.current_registry_ports_dir());
         auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         for (auto&& port_name : port_names)
         {
             // Get version information of the local port
-            auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / vcpkg::u8path(port_name));
+            auto maybe_scf = Paragraphs::try_load_port(fs, paths.current_registry_ports_dir() / u8path(port_name));
             if (!maybe_scf.has_value())
             {
                 if (add_all) continue;
@@ -353,7 +353,7 @@ namespace vcpkg::Commands::AddVersion
             {
                 // check if manifest file is property formatted
                 const auto path_to_manifest =
-                    paths.builtin_ports_directory() / vcpkg::u8path(port_name) / vcpkg::u8path("vcpkg.json");
+                    paths.current_registry_ports_dir() / u8path(port_name) / u8path("vcpkg.json");
                 if (fs.exists(path_to_manifest))
                 {
                     const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
@@ -386,8 +386,8 @@ namespace vcpkg::Commands::AddVersion
             }
             const auto& git_tree = git_tree_it->second;
 
-            auto port_versions_path = paths.builtin_registry_versions / vcpkg::u8path({port_name[0], '-'}) /
-                                      vcpkg::u8path(Strings::concat(port_name, ".json"));
+            auto port_versions_path = paths.current_registry_versions_dir() / u8path({port_name[0], '-'}) /
+                                      u8path(Strings::concat(port_name, ".json"));
             update_version_db_file(
                 paths, port_name, schemed_version, git_tree, port_versions_path, overwrite_version, verbose, add_all);
             update_baseline_version(paths, port_name, schemed_version.versiont, baseline_path, baseline_map, verbose);

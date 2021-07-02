@@ -561,7 +561,7 @@ namespace vcpkg::Commands::CI
 
         if (is_dry_run)
         {
-            Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+            Dependencies::print_plan(action_plan, true, paths.builtin_registry_ports_dir());
         }
         else
         {
