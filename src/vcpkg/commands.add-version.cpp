@@ -12,6 +12,8 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versions.h>
 
+#include <optional>
+
 using namespace vcpkg;
 
 namespace
@@ -174,7 +176,7 @@ namespace
             return;
         }
 
-        auto maybe_versions = get_builtin_versions(paths, port_name);
+        auto maybe_versions = get_versions(paths.get_filesystem(), paths.current_registry_versions_dir(), port_name);
         if (auto versions = maybe_versions.get())
         {
             const auto& versions_end = versions->end();
@@ -262,20 +264,29 @@ namespace vcpkg::Commands::AddVersion
     static constexpr StringLiteral OPTION_ALL = "all";
     static constexpr StringLiteral OPTION_OVERWRITE_VERSION = "overwrite-version";
     static constexpr StringLiteral OPTION_SKIP_FORMATTING_CHECK = "skip-formatting-check";
+    static constexpr StringLiteral OPTION_COMMIT = "commit";
+    static constexpr StringLiteral OPTION_COMMIT_AMEND = "amend";
+    static constexpr StringLiteral OPTION_COMMIT_MESSAGE = "commit-message";
     static constexpr StringLiteral OPTION_VERBOSE = "verbose";
 
     const CommandSwitch COMMAND_SWITCHES[] = {
         {OPTION_ALL, "Process versions for all ports."},
         {OPTION_OVERWRITE_VERSION, "Overwrite `git-tree` of an existing version."},
         {OPTION_SKIP_FORMATTING_CHECK, "Skips the formatting check of vcpkg.json files."},
+        {OPTION_COMMIT, "Commits the results."},
+        {OPTION_COMMIT_AMEND, "Amend the result to the last commit instead of creating a new one."},
         {OPTION_VERBOSE, "Print success messages instead of just errors."},
+    };
+
+    const CommandSetting COMMAND_SETTINGS[] = {
+        {OPTION_COMMIT_MESSAGE, "The commit message when creating a new commit."},
     };
 
     const CommandStructure COMMAND_STRUCTURE{
         create_example_string(R"###(x-add-version <port name>)###"),
         0,
         1,
-        {{COMMAND_SWITCHES}, {}, {}},
+        {{COMMAND_SWITCHES}, {COMMAND_SETTINGS}, {}},
         nullptr,
     };
 
@@ -286,9 +297,32 @@ namespace vcpkg::Commands::AddVersion
         const bool overwrite_version = Util::Sets::contains(parsed_args.switches, OPTION_OVERWRITE_VERSION);
         const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_FORMATTING_CHECK);
         const bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
+        const bool commit = Util::Sets::contains(parsed_args.switches, OPTION_COMMIT);
+        const bool amend = Util::Sets::contains(parsed_args.switches, OPTION_COMMIT_AMEND);
+
+        std::optional<std::string> commit_message;
+        const auto iter_commit_message = parsed_args.settings.find(OPTION_COMMIT_MESSAGE);
+        if (iter_commit_message != parsed_args.settings.end())
+        {
+            commit_message.emplace(iter_commit_message->second);
+            if (commit_message.value().empty())
+            {
+                print2(Color::error, "Error: The specified commit message must be not empty.\n.");
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
+        if ((amend || commit_message) && !commit)
+        {
+            printf(Color::warning,
+                   "Warning: `--%s` or `--%s` was specified, assuming `--%s`\n",
+                   OPTION_COMMIT_AMEND,
+                   OPTION_COMMIT_MESSAGE,
+                   OPTION_COMMIT);
+        }
 
         auto& fs = paths.get_filesystem();
-        auto baseline_path = paths.builtin_registry_versions / vcpkg::u8path("baseline.json");
+        auto baseline_path = paths.current_registry_versions_dir() / u8path("baseline.json");
         if (!fs.exists(VCPKG_LINE_INFO, baseline_path))
         {
             vcpkg::printf(Color::error, "Error: Couldn't find required file `%s`\n.", vcpkg::u8string(baseline_path));
@@ -316,7 +350,7 @@ namespace vcpkg::Commands::AddVersion
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            for (auto&& port_dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+            for (auto&& port_dir : stdfs::directory_iterator(paths.current_registry_ports_dir()))
             {
                 port_names.emplace_back(vcpkg::u8string(port_dir.path().stem()));
             }
@@ -328,18 +362,19 @@ namespace vcpkg::Commands::AddVersion
                 std::map<std::string, vcpkg::VersionT, std::less<>> ret;
                 return ret;
             }
-            auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
+            auto maybe_baseline_map = vcpkg::get_baseline(paths, paths.current_registry_root);
             return maybe_baseline_map.value_or_exit(VCPKG_LINE_INFO);
         }();
 
         // Get tree-ish from local repository state.
-        auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
+        auto maybe_git_tree_map = paths.git_get_port_treeish_map(paths.current_registry_ports_dir());
         auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
+        std::vector<path> updated_files;
 
         for (auto&& port_name : port_names)
         {
             // Get version information of the local port
-            auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / vcpkg::u8path(port_name));
+            auto maybe_scf = Paragraphs::try_load_port(fs, paths.current_registry_ports_dir() / u8path(port_name));
             if (!maybe_scf.has_value())
             {
                 if (add_all) continue;
@@ -353,7 +388,7 @@ namespace vcpkg::Commands::AddVersion
             {
                 // check if manifest file is property formatted
                 const auto path_to_manifest =
-                    paths.builtin_ports_directory() / vcpkg::u8path(port_name) / vcpkg::u8path("vcpkg.json");
+                    paths.current_registry_ports_dir() / u8path(port_name) / u8path("vcpkg.json");
                 if (fs.exists(path_to_manifest))
                 {
                     const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
@@ -386,11 +421,25 @@ namespace vcpkg::Commands::AddVersion
             }
             const auto& git_tree = git_tree_it->second;
 
-            auto port_versions_path = paths.builtin_registry_versions / vcpkg::u8path({port_name[0], '-'}) /
-                                      vcpkg::u8path(Strings::concat(port_name, ".json"));
+            auto port_versions_path = paths.current_registry_versions_dir() / u8path({port_name[0], '-'}) /
+                                      u8path(Strings::concat(port_name, ".json"));
+            updated_files.push_back(port_versions_path);
             update_version_db_file(
                 paths, port_name, schemed_version, git_tree, port_versions_path, overwrite_version, verbose, add_all);
             update_baseline_version(paths, port_name, schemed_version.versiont, baseline_path, baseline_map, verbose);
+        }
+        if (!updated_files.empty()) updated_files.push_back(baseline_path);
+        if (commit)
+        {
+            const auto result = paths.git_commit(paths.current_registry_dot_git_dir(),
+                                                 std::move(updated_files),
+                                                 commit_message.value_or(amend ? "" : "Add version files"),
+                                                 amend);
+            if (result.exit_code != 0)
+            {
+                printf(Color::error, "Error: Failed to commit the changes. The git output is: %s\n", result.output);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }

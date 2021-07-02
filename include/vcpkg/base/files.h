@@ -229,6 +229,8 @@ namespace vcpkg
         file_status symlink_status(const path& target, ignore_errors_t) const noexcept;
         virtual path absolute(const path& target, std::error_code& ec) const = 0;
         path absolute(LineInfo li, const path& target) const;
+        virtual path relative(const path& file, const path& base, std::error_code& ec) const = 0;
+        path relative(LineInfo li, const path& file, const path& base) const;
         // absolute/system_complete + lexically_normal + fixup_win32_path_case
         // we don't use real canonical due to issues like:
         // https://github.com/microsoft/vcpkg/issues/16614 (canonical breaking on some older Windows Server containers)
