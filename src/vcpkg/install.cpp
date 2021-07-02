@@ -1038,7 +1038,7 @@ namespace vcpkg::Install
         }
 #endif // defined(_WIN32)
 
-        Dependencies::print_plan(action_plan, is_recursive, paths.builtin_ports_directory());
+        Dependencies::print_plan(action_plan, is_recursive, paths.builtin_registry_ports_dir());
 
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())

@@ -115,7 +115,7 @@ namespace vcpkg::Commands::Edit
 
             // TODO: Support edit for --overlay-ports
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
-                const auto portpath = paths.builtin_ports_directory() / port_name;
+                const auto portpath = paths.builtin_registry_ports_dir() / port_name;
                 const auto portfile = portpath / "portfile.cmake";
                 const auto buildtrees_current_dir = paths.build_dir(port_name);
                 const auto pattern = port_name + "_";
@@ -145,7 +145,7 @@ namespace vcpkg::Commands::Edit
         }
 
         return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
-            const auto portpath = paths.builtin_ports_directory() / port_name;
+            const auto portpath = paths.builtin_registry_ports_dir() / port_name;
             const auto portfile = portpath / "portfile.cmake";
             return Strings::format(R"###("%s" "%s")###", vcpkg::u8string(portpath), vcpkg::u8string(portfile));
         });
@@ -160,7 +160,7 @@ namespace vcpkg::Commands::Edit
         const std::vector<std::string>& ports = args.command_arguments;
         for (auto&& port_name : ports)
         {
-            const path portpath = paths.builtin_ports_directory() / port_name;
+            const path portpath = paths.builtin_registry_ports_dir() / port_name;
             Checks::check_maybe_upgrade(
                 VCPKG_LINE_INFO, fs.is_directory(portpath), R"(Could not find port named "%s")", port_name);
         }

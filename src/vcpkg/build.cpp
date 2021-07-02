@@ -898,7 +898,8 @@ namespace vcpkg::Build
         }
 
         auto u8portdir = vcpkg::u8string(scfl.source_location);
-        if (!Strings::case_insensitive_ascii_starts_with(u8portdir, vcpkg::u8string(paths.builtin_ports_directory())))
+        if (!Strings::case_insensitive_ascii_starts_with(u8portdir,
+                                                         vcpkg::u8string(paths.builtin_registry_ports_dir())))
         {
             vcpkg::printf("-- Installing port from location: %s\n", u8portdir);
         }

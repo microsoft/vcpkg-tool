@@ -472,9 +472,10 @@ namespace vcpkg
         for (auto& dir_name : {".git", "ports", "versions"})
         {
             Checks::check_exit(VCPKG_LINE_INFO,
-                               !(current_registry_root / u8path(dir_name)).empty(),
-                               "Error: There is no " + std::string(dir_name) + " dir for current registry at " +
-                                   u8string(current_registry_root));
+                               get_filesystem().exists(VCPKG_LINE_INFO, current_registry_root / u8path(dir_name)),
+                               "Error: There is no %s directory for current registry at %s",
+                               dir_name,
+                               u8string(current_registry_root));
         }
     }
 
@@ -751,7 +752,7 @@ namespace vcpkg
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
-        return git_get_port_treeish_map(builtin_ports_directory());
+        return git_get_port_treeish_map(builtin_registry_ports_dir());
     }
 
     ExpectedS<path> VcpkgPaths::git_checkout_baseline(const path& registry_root, StringView commit_sha) const

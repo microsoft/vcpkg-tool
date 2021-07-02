@@ -60,7 +60,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                                        bool verify_git_trees)
     {
         auto maybe_versions =
-            vcpkg::get_versions(paths.get_filesystem(), paths.current_versions_directory(), port_name);
+            vcpkg::get_versions(paths.get_filesystem(), paths.current_registry_versions_dir(), port_name);
         if (!maybe_versions.has_value())
         {
             return {
@@ -93,7 +93,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 for (const std::string& control_file : {"CONTROL", "vcpkg.json"})
                 {
                     auto treeish = Strings::concat(version_entry.second, ':', control_file);
-                    auto maybe_file = paths.git_show(Strings::concat(treeish), paths.current_git_directory());
+                    auto maybe_file = paths.git_show(Strings::concat(treeish), paths.current_registry_dot_git_dir());
                     if (!maybe_file.has_value()) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
@@ -302,7 +302,7 @@ namespace vcpkg::Commands::CIVerifyVersions
             exclusion_set.insert(exclusions.begin(), exclusions.end());
         }
 
-        auto maybe_port_git_tree_map = paths.git_get_port_treeish_map(paths.current_ports_directory());
+        auto maybe_port_git_tree_map = paths.git_get_port_treeish_map(paths.current_registry_ports_dir());
         Checks::check_exit(VCPKG_LINE_INFO,
                            maybe_port_git_tree_map.has_value(),
                            "Fatal error: Failed to obtain git SHAs for local ports.\n%s",
@@ -313,7 +313,7 @@ namespace vcpkg::Commands::CIVerifyVersions
         auto baseline = get_baseline(paths, paths.current_registry_root).value_or_exit(VCPKG_LINE_INFO);
         auto& fs = paths.get_filesystem();
         std::set<std::string> errors;
-        for (const auto& dir : stdfs::directory_iterator(paths.current_ports_directory()))
+        for (const auto& dir : stdfs::directory_iterator(paths.current_registry_ports_dir()))
         {
             const auto& port_path = dir.path();
 
@@ -368,7 +368,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 continue;
             }
 
-            auto versions_file_path = paths.current_versions_directory() / vcpkg::u8path({port_name[0], '-'}) /
+            auto versions_file_path = paths.current_registry_versions_dir() / vcpkg::u8path({port_name[0], '-'}) /
                                       vcpkg::u8path(Strings::concat(port_name, ".json"));
             if (!fs.exists(versions_file_path))
             {

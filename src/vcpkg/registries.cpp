@@ -307,11 +307,11 @@ namespace
         const auto& fs = paths.get_filesystem();
         if (!m_baseline_identifier.empty())
         {
-            auto versions_path = paths.builtin_versions_directory() / relative_path_to_versions(port_name);
+            auto versions_path = paths.builtin_registry_versions_dir() / relative_path_to_versions(port_name);
             if (fs.exists(versions_path))
             {
                 auto maybe_version_entries =
-                    load_versions_file(fs, VersionDbType::Git, paths.builtin_versions_directory(), port_name);
+                    load_versions_file(fs, VersionDbType::Git, paths.builtin_registry_versions_dir(), port_name);
                 Checks::check_maybe_upgrade(
                     VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: " + maybe_version_entries.error());
                 auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
@@ -328,7 +328,7 @@ namespace
         }
 
         // Fall back to current available version
-        auto port_directory = paths.builtin_ports_directory() / vcpkg::u8path(port_name);
+        auto port_directory = paths.builtin_registry_ports_dir() / vcpkg::u8path(port_name);
         if (fs.exists(port_directory))
         {
             auto found_scf = Paragraphs::try_load_port(fs, port_directory);
@@ -437,7 +437,7 @@ namespace
         }
 
         // if a baseline is not specified, use the ports directory version
-        auto port_path = paths.builtin_ports_directory() / vcpkg::u8path(port_name);
+        auto port_path = paths.builtin_registry_ports_dir() / vcpkg::u8path(port_name);
         auto maybe_scf = Paragraphs::try_load_port(paths.get_filesystem(), port_path);
         if (auto pscf = maybe_scf.get())
         {
@@ -452,16 +452,16 @@ namespace
     {
         const auto& fs = paths.get_filesystem();
 
-        if (!m_baseline_identifier.empty() && fs.exists(paths.builtin_versions_directory()))
+        if (!m_baseline_identifier.empty() && fs.exists(paths.builtin_registry_versions_dir()))
         {
-            load_all_port_names_from_registry_versions(out, paths, paths.builtin_versions_directory());
+            load_all_port_names_from_registry_versions(out, paths, paths.builtin_registry_versions_dir());
         }
         std::error_code ec;
-        stdfs::directory_iterator dir_it(paths.builtin_ports_directory(), ec);
+        stdfs::directory_iterator dir_it(paths.builtin_registry_ports_dir(), ec);
         Checks::check_exit(VCPKG_LINE_INFO,
                            !ec,
                            "Error: failed while enumerating the builtin ports directory %s: %s",
-                           vcpkg::u8string(paths.builtin_ports_directory()),
+                           vcpkg::u8string(paths.builtin_registry_ports_dir()),
                            ec.message());
         for (auto port_directory : dir_it)
         {
@@ -1313,7 +1313,7 @@ namespace vcpkg
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name)
     {
-        return get_versions(paths.get_filesystem(), paths.builtin_versions_directory(), port_name);
+        return get_versions(paths.get_filesystem(), paths.builtin_registry_versions_dir(), port_name);
     }
 
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_versions(const Filesystem& fs,

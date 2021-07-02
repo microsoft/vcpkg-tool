@@ -4,24 +4,24 @@ $versionFilesPath = "$PSScriptRoot/../e2e_ports/version-files"
 
 # create custom registry for testing
 $RegistryRootComplete = Join-Path $TestingRoot 'registry_for_versions_complete'
-& $GitExe init $RegistryRootComplete
+& git init $RegistryRootComplete
 Throw-IfFailed
 $RegistryRootIncomplete = Join-Path $TestingRoot 'registry_for_versions_incomplete'
-& $GitExe init $RegistryRootIncomplete
+& git init $RegistryRootIncomplete
 Throw-IfFailed
 
 # Test verify versions
 Copy-Item -Recurse "$versionFilesPath/versions" "$RegistryRootComplete/versions"
 Copy-Item -Recurse "$versionFilesPath/ports" "$RegistryRootComplete/ports"
-& $GitExe -C "$RegistryRootComplete" add -A 
+& git -C "$RegistryRootComplete" add -A 
 Throw-IfFailed
-& $GitExe -C "$RegistryRootComplete" -c user.name='vcpkg-tool' -c user.email='ci@vcpkg.io' commit -m "add files"
+& git -C "$RegistryRootComplete" -c user.name='vcpkg-tool' -c user.email='ci@vcpkg.io' commit -m "add files"
 Throw-IfFailed
 Copy-Item -Recurse "$versionFilesPath/versions_incomplete" "$RegistryRootIncomplete/versions"
 Copy-Item -Recurse "$versionFilesPath/ports_incomplete" "$RegistryRootIncomplete/ports"
-& $GitExe -C "$RegistryRootIncomplete" add -A
+& git -C "$RegistryRootIncomplete" add -A
 Throw-IfFailed
-& $GitExe -C "$RegistryRootIncomplete" -c user.name='vcpkg-tool' -c user.email='ci@vcpkg.io' commit -m "add files"
+& git -C "$RegistryRootIncomplete" -c user.name='vcpkg-tool' -c user.email='ci@vcpkg.io' commit -m "add files"
 Throw-IfFailed
 $portsRedirectArgsOK = @(
     "--feature-flags=versions",

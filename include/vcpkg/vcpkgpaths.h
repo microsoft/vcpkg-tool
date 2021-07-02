@@ -182,12 +182,12 @@ namespace vcpkg
 
         // the directory of the builtin ports
         // this should be used only for helper commands, not core commands like `install`.
-        path builtin_ports_directory() const { return this->root / u8path("ports"); }
-        path builtin_versions_directory() const { return this->root / u8path("versions"); }
+        path builtin_registry_ports_dir() const { return this->root / u8path("ports"); }
+        path builtin_registry_versions_dir() const { return this->root / u8path("versions"); }
 
-        path current_git_directory() const { return current_registry_root / u8path(".git"); }
-        path current_ports_directory() const { return current_registry_root / u8path("ports"); }
-        path current_versions_directory() const { return current_registry_root / u8path("versions"); }
+        path current_registry_dot_git_dir() const { return current_registry_root / u8path(".git"); }
+        path current_registry_ports_dir() const { return current_registry_root / u8path("ports"); }
+        path current_registry_versions_dir() const { return current_registry_root / u8path("versions"); }
 
     private:
         std::unique_ptr<details::VcpkgPathsImpl> m_pimpl;

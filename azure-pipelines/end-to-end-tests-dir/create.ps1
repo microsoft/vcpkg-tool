@@ -4,7 +4,7 @@
 $Script:CurrentTest = "create zlib"
 Write-Host $Script:CurrentTest
 $RegistryRoot = Join-Path $TestingRoot 'registry_for_create'
-& $GitExe init $RegistryRoot
+& git init $RegistryRoot
 Throw-IfFailed
 Run-Vcpkg x-init-registry $RegistryRoot
 Throw-IfFailed
