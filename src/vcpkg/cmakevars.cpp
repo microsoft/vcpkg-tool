@@ -183,7 +183,8 @@ endmacro()
         const auto ec_data = cmd_execute_and_capture_output(cmd_launch_cmake);
         Checks::check_exit(VCPKG_LINE_INFO, ec_data.exit_code == 0, ec_data.output);
 
-        const std::vector<std::string> lines = Strings::split(ec_data.output, '\n');
+        std::vector<std::string> lines = Strings::split(ec_data.output, '\n');
+        Strings::trim_all_and_remove_whitespace_strings(&lines);
 
         const auto end = lines.cend();
 
