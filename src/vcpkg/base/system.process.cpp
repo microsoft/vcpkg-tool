@@ -677,17 +677,35 @@ namespace vcpkg
             cmd_line,
             wd,
             [&](StringView sv) {
-                auto prev_size = buf.size();
-                Strings::append(buf, sv);
-
-                auto it = std::find(buf.begin() + prev_size, buf.end(), '\n');
-                while (it != buf.end())
+                const auto e = sv.end();
+                auto cur_begin = sv.begin();
+                auto it = std::find(cur_begin, e, '\n');
+                if (it != e)
                 {
-                    std::string s(buf.begin(), it);
-                    per_line_cb(s);
-                    buf.erase(buf.begin(), it + 1);
-                    it = std::find(buf.begin(), buf.end(), '\n');
+                    {
+                        const auto next_begin = it + 1;
+                        buf.append(cur_begin, it);
+                        // omit trailing \r
+                        if (!buf.empty() && buf.back() == '\r') buf.pop_back();
+                        per_line_cb(buf);
+                        buf.clear();
+                        cur_begin = next_begin;
+                    }
+                    it = std::find(cur_begin, e, '\n');
+                    while (it != e)
+                    {
+                        {
+                            const auto next_begin = it + 1;
+                            // omit trailing \r
+                            if (it != cur_begin && it[-1] == '\r') --it;
+                            per_line_cb({cur_begin, it});
+                            cur_begin = next_begin;
+                        }
+                        it = std::find(cur_begin, e, '\n');
+                    }
                 }
+
+                buf.append(cur_begin, e);
             },
             env);
 
