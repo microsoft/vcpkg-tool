@@ -676,36 +676,33 @@ namespace vcpkg
         auto rc = cmd_execute_and_stream_data(
             cmd_line,
             wd,
-            [&](StringView sv) {
-                const auto e = sv.end();
-                auto cur_begin = sv.begin();
-                auto it = std::find(cur_begin, e, '\n');
-                if (it != e)
+            [&](const StringView sv) {
+                const auto last = sv.end();
+                auto start = sv.begin();
+                auto it = std::find(start, last, '\n');
+                if (it != last)
                 {
+                    // include the prefix of this line from the last callback
+                    buf.append(start, it);
+                    // omit trailing \r
+                    if (!buf.empty() && buf.back() == '\r') buf.pop_back();
+                    per_line_cb(buf);
+                    buf.clear();
+                    while (start = it + 1, it = std::find(start, last, '\n'), it != last)
                     {
-                        const auto next_begin = it + 1;
-                        buf.append(cur_begin, it);
-                        // omit trailing \r
-                        if (!buf.empty() && buf.back() == '\r') buf.pop_back();
-                        per_line_cb(buf);
-                        buf.clear();
-                        cur_begin = next_begin;
-                    }
-                    it = std::find(cur_begin, e, '\n');
-                    while (it != e)
-                    {
+                        if (it != start && *(it - 1) == '\r')
                         {
-                            const auto next_begin = it + 1;
                             // omit trailing \r
-                            if (it != cur_begin && it[-1] == '\r') --it;
-                            per_line_cb({cur_begin, it});
-                            cur_begin = next_begin;
+                            per_line_cb({start, it - 1});
                         }
-                        it = std::find(cur_begin, e, '\n');
+                        else
+                        {
+                            per_line_cb({start, it});
+                        }
                     }
                 }
 
-                buf.append(cur_begin, e);
+                buf.append(start, last);
             },
             env);
 
