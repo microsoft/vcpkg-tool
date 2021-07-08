@@ -64,8 +64,9 @@ namespace vcpkg::CoffFileReader
         void check_end_of_header() const
         {
             // The name[0] == '\0' check is for freeglut, see GitHub issue #223
-            Checks::check_exit(
-                VCPKG_LINE_INFO, name[0] == '\0' ||(end_of_header[0] == '`' && end_of_header[1] == '\n'), "Incorrect lib header end");
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               name[0] == '\0' || (end_of_header[0] == '`' && end_of_header[1] == '\n'),
+                               "Incorrect lib header end");
         }
 
         uint64_t decoded_size() const
