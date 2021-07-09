@@ -1,5 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -671,42 +672,12 @@ namespace vcpkg
                                      std::function<void(StringView)> per_line_cb,
                                      const Environment& env)
     {
-        std::string buf;
+        Strings::LinesStream lines;
 
         auto rc = cmd_execute_and_stream_data(
-            cmd_line,
-            wd,
-            [&](const StringView sv) {
-                const auto last = sv.end();
-                auto start = sv.begin();
-                auto it = std::find(start, last, '\n');
-                if (it != last)
-                {
-                    // include the prefix of this line from the last callback
-                    buf.append(start, it);
-                    // omit trailing \r
-                    if (!buf.empty() && buf.back() == '\r') buf.pop_back();
-                    per_line_cb(buf);
-                    buf.clear();
-                    while (start = it + 1, it = std::find(start, last, '\n'), it != last)
-                    {
-                        if (it != start && *(it - 1) == '\r')
-                        {
-                            // omit trailing \r
-                            per_line_cb({start, it - 1});
-                        }
-                        else
-                        {
-                            per_line_cb({start, it});
-                        }
-                    }
-                }
+            cmd_line, wd, [&](const StringView sv) { lines.on_data(sv, per_line_cb); }, env);
 
-                buf.append(start, last);
-            },
-            env);
-
-        per_line_cb(buf);
+        lines.on_end(per_line_cb);
         return rc;
     }
 

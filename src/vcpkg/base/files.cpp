@@ -312,60 +312,6 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
     }
 
-    void LinesCollector::append(const char* data, size_t data_size)
-    {
-        struct IsNewline
-        {
-            bool operator()(const char c) const noexcept { return c == '\n' || c == '\r'; }
-        };
-
-        static constexpr IsNewline is_newline;
-
-        {
-            const auto after_newline = std::find_if_not(data, data + data_size, is_newline);
-            data_size -= after_newline - data;
-            data = after_newline;
-        }
-
-        while (data_size != 0)
-        {
-            const auto end = data + data_size;
-            const auto newline = std::find_if(data, end, is_newline);
-            if (newline == end)
-            {
-                previous_partial.append(data, newline - data);
-                return;
-            }
-            else if (previous_partial.empty())
-            {
-                results.emplace_back(data, newline - data);
-            }
-            else
-            {
-                previous_partial.append(data, newline - data);
-                results.push_back(std::move(previous_partial));
-                previous_partial.clear();
-            }
-
-            const auto after_newline = std::find_if_not(newline, end, is_newline);
-            data_size -= after_newline - data;
-            data = after_newline;
-        }
-    }
-
-    std::vector<std::string> LinesCollector::extract()
-    {
-        if (!previous_partial.empty())
-        {
-            results.push_back(std::move(previous_partial));
-            previous_partial.clear();
-        }
-
-        auto ret = std::move(results);
-        results.clear();
-        return ret;
-    }
-
     static const std::regex FILESYSTEM_INVALID_CHARACTERS_REGEX = std::regex(R"([\/:*?"<>|])");
 
     namespace
@@ -942,7 +888,7 @@ namespace vcpkg
                 return ec;
             }
 
-            LinesCollector output;
+            Strings::LinesCollector output;
             constexpr std::size_t buffer_size = 1024 * 32;
             char buffer[buffer_size];
             do
@@ -950,7 +896,7 @@ namespace vcpkg
                 const auto this_read = file.read(buffer, 1, buffer_size);
                 if (this_read != 0)
                 {
-                    output.append(buffer, this_read);
+                    output.append({buffer, this_read});
                 }
                 else if (file.error())
                 {

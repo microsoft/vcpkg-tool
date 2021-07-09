@@ -241,16 +241,6 @@ namespace vcpkg
         int put(int c) const noexcept { return ::fputc(c, m_fs); }
     };
 
-    class LinesCollector
-    {
-        std::vector<std::string> results;
-        std::string previous_partial;
-
-    public:
-        void append(const char* data, size_t data_size);
-        std::vector<std::string> extract();
-    };
-
     struct Filesystem
     {
         std::string read_contents(const path& file_path, LineInfo li) const;

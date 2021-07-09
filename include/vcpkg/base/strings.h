@@ -303,4 +303,66 @@ namespace vcpkg::Strings
     // Implements https://en.wikipedia.org/wiki/Levenshtein_distance with a "give-up" clause for large strings
     // Guarantees 0 for equal strings and nonzero for inequal strings.
     size_t byte_edit_distance(StringView a, StringView b);
+
+    struct LinesStream
+    {
+        struct IsNewline
+        {
+            constexpr bool operator()(const char c) const noexcept { return c == '\n' || c == '\r'; }
+        };
+        static constexpr IsNewline is_newline{};
+
+        template<class Fn>
+        void on_data(const StringView sv, Fn cb)
+        {
+            const auto last = sv.end();
+            auto start = sv.begin();
+            auto it = std::find_if(start, last, is_newline);
+            if (it != last)
+            {
+                // include the prefix of this line from the last callback
+                buf.append(start, it);
+                if (!(last_was_cr && buf.empty() && *it == '\n'))
+                {
+                    cb(StringView{buf});
+                }
+                buf.clear();
+                for (;;)
+                {
+                    last_was_cr = *it == '\r';
+                    start = it + 1;
+                    it = std::find_if(start, last, is_newline);
+                    if (it == last) break;
+                    if (!(last_was_cr && it == start && *it == '\n'))
+                    {
+                        cb(StringView{start, it});
+                    }
+                }
+            }
+
+            buf.append(start, last);
+        }
+        template<class Fn>
+        void on_end(Fn cb)
+        {
+            cb(StringView{buf});
+            buf.clear();
+        }
+
+    private:
+        bool last_was_cr = false;
+        std::string buf;
+    };
+
+    struct LinesCollector
+    {
+        void append(StringView sv);
+        std::vector<std::string> extract();
+
+    private:
+        struct CB;
+
+        LinesStream stream;
+        std::vector<std::string> lines;
+    };
 }

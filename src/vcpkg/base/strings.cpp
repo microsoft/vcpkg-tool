@@ -377,4 +377,18 @@ namespace vcpkg::Strings
 
     std::string b32_encode(std::uint64_t x) noexcept { return b32_encode_implementation(x); }
 
+    struct LinesCollector::CB
+    {
+        LinesCollector* parent;
+
+        void operator()(const StringView sv) const { parent->lines.push_back(sv.to_string()); }
+    };
+
+    void LinesCollector::append(StringView sv) { stream.on_data(sv, CB{this}); }
+    std::vector<std::string> LinesCollector::extract()
+    {
+        stream.on_end(CB{this});
+        return std::move(this->lines);
+    }
+
 }
