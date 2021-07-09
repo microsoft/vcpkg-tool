@@ -283,7 +283,7 @@ namespace vcpkg
 #if defined(_WIN32)
         ec.assign(::_wfopen_s(&m_fs, file_path.c_str(), L"rb"), std::generic_category());
 #else // ^^^ _WIN32 / !_WIN32 vvv
-        m_fs = ::fopen(path.c_str(), "rb");
+        m_fs = ::fopen(file_path.c_str(), "rb");
         if (m_fs)
         {
             ec.clear();
@@ -300,7 +300,7 @@ namespace vcpkg
 #if defined(_WIN32)
         ec.assign(::_wfopen_s(&m_fs, file_path.c_str(), L"wb"), std::generic_category());
 #else // ^^^ _WIN32 / !_WIN32 vvv
-        m_fs = ::fopen(path.c_str(), "wb");
+        m_fs = ::fopen(file_path.c_str(), "wb");
         if (m_fs)
         {
             ec.clear();
