@@ -545,7 +545,7 @@ namespace vcpkg::Build
         });
 
         return triplet_entry.compiler_hashes.get_lazy(toolchain_hash, [&]() -> std::string {
-            if (m_compiler_tracking)
+            if (m_compiler_tracking && !abi_info.pre_build_info->no_compiler_tracking)
             {
                 auto& compiler_info = triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
                     if (m_compiler_tracking)
@@ -1480,6 +1480,7 @@ namespace vcpkg::Build
             ENV_PASSTHROUGH_UNTRACKED,
             PUBLIC_ABI_OVERRIDE,
             LOAD_VCVARS_ENV,
+            NO_COMPILER_TRACKING,
         };
 
         static const std::vector<std::pair<std::string, VcpkgTripletVar>> VCPKG_OPTIONS = {
@@ -1494,6 +1495,7 @@ namespace vcpkg::Build
             {"VCPKG_ENV_PASSTHROUGH_UNTRACKED", VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED},
             {"VCPKG_PUBLIC_ABI_OVERRIDE", VcpkgTripletVar::PUBLIC_ABI_OVERRIDE},
             {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
+            {"VCPKG_NO_COMPILER_TRACKING", VcpkgTripletVar::NO_COMPILER_TRACKING},
         };
 
         std::string empty;
@@ -1572,6 +1574,14 @@ namespace vcpkg::Build
                                                   "Unknown boolean setting for VCPKG_LOAD_VCVARS_ENV: %s. Valid "
                                                   "settings are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.",
                                                   variable_value);
+                    }
+                    break;
+                case VcpkgTripletVar::NO_COMPILER_TRACKING:
+                    if (Strings::case_insensitive_ascii_equals(variable_value, "1") ||
+                        Strings::case_insensitive_ascii_equals(variable_value, "on") ||
+                        Strings::case_insensitive_ascii_equals(variable_value, "true"))
+                    {
+                        no_compiler_tracking = true;
                     }
                     break;
             }
