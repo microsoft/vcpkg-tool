@@ -447,7 +447,7 @@ namespace vcpkg::Metrics
         const std::string payload = g_metricmessage.format_event_data_template();
         if (g_should_print_metrics)
         {
-            fprintf(stderr, "%s", payload.c_str());
+            fprintf(stderr, "%s\n", payload.c_str());
         }
 
         if (!g_should_send_metrics)
