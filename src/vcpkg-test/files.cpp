@@ -307,6 +307,12 @@ TEST_CASE ("LinesCollector", "[files]")
     lc.on_data({"a\r", 2});
     lc.on_data({"\nb", 2});
     CHECK(lc.extract() == std::vector<std::string>{"a", "b"});
+    lc.on_data({"a\r", 2});
+    CHECK(lc.extract() == std::vector<std::string>{"a", ""});
+    lc.on_data({"\n", 1});
+    CHECK(lc.extract() == std::vector<std::string>{"", ""});
+    lc.on_data({"\rabc\n", 5});
+    CHECK(lc.extract() == std::vector<std::string>{"", "abc", ""});
 }
 
 #if defined(_WIN32)

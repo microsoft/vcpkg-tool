@@ -326,10 +326,10 @@ namespace vcpkg::Strings
                     cb(StringView{previous_partial_line});
                     previous_partial_line.clear();
                 }
-                else if (!last_was_cr || *newline != '\n')
+                else if (!last_was_cr || *newline != '\n' || newline != start)
                 {
                     // implement \r\n, \r, \n newlines by logically generating all newlines,
-                    // and skippimg emission of a \n newline iff immediately followed by \r
+                    // and skipping emission of an empty \n newline iff immediately following \r
                     cb(StringView{start, newline});
                 }
 
