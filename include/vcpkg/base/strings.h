@@ -306,57 +306,60 @@ namespace vcpkg::Strings
 
     struct LinesStream
     {
+        template<class Fn>
+        void on_data(const StringView sv, Fn cb)
+        {
+            const auto last = sv.end();
+            auto start = sv.begin();
+            for (;;)
+            {
+                const auto newline = std::find_if(start, last, is_newline);
+                if (newline == last)
+                {
+                    previous_partial_line.append(start, newline);
+                    return;
+                }
+                else if (!previous_partial_line.empty())
+                {
+                    // include the prefix of this line from the last callback
+                    previous_partial_line.append(start, newline);
+                    cb(StringView{previous_partial_line});
+                    previous_partial_line.clear();
+                }
+                else if (!last_was_cr || *newline != '\n')
+                {
+                    // implement \r\n, \r, \n newlines by logically generating all newlines,
+                    // and skippimg emission of a \n newline iff immediately followed by \r
+                    cb(StringView{start, newline});
+                }
+
+                last_was_cr = *newline == '\r';
+                start = newline + 1;
+            }
+        }
+
+        template<class Fn>
+        void on_end(Fn cb)
+        {
+            cb(StringView{previous_partial_line});
+            previous_partial_line.clear();
+            last_was_cr = false;
+        }
+
+    private:
         struct IsNewline
         {
             constexpr bool operator()(const char c) const noexcept { return c == '\n' || c == '\r'; }
         };
         static constexpr IsNewline is_newline{};
 
-        template<class Fn>
-        void on_data(const StringView sv, Fn cb)
-        {
-            const auto last = sv.end();
-            auto start = sv.begin();
-            auto it = std::find_if(start, last, is_newline);
-            if (it != last)
-            {
-                // include the prefix of this line from the last callback
-                buf.append(start, it);
-                if (!(last_was_cr && buf.empty() && *it == '\n'))
-                {
-                    cb(StringView{buf});
-                }
-                buf.clear();
-                for (;;)
-                {
-                    last_was_cr = *it == '\r';
-                    start = it + 1;
-                    it = std::find_if(start, last, is_newline);
-                    if (it == last) break;
-                    if (!(last_was_cr && it == start && *it == '\n'))
-                    {
-                        cb(StringView{start, it});
-                    }
-                }
-            }
-
-            buf.append(start, last);
-        }
-        template<class Fn>
-        void on_end(Fn cb)
-        {
-            cb(StringView{buf});
-            buf.clear();
-        }
-
-    private:
         bool last_was_cr = false;
-        std::string buf;
+        std::string previous_partial_line;
     };
 
     struct LinesCollector
     {
-        void append(StringView sv);
+        void on_data(StringView sv);
         std::vector<std::string> extract();
 
     private:

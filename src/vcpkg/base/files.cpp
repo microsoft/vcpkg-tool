@@ -896,7 +896,7 @@ namespace vcpkg
                 const auto this_read = file.read(buffer, 1, buffer_size);
                 if (this_read != 0)
                 {
-                    output.append({buffer, this_read});
+                    output.on_data({buffer, this_read});
                 }
                 else if (file.error())
                 {

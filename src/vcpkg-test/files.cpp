@@ -288,24 +288,24 @@ TEST_CASE ("LinesCollector", "[files]")
     using vcpkg::Strings::LinesCollector;
     LinesCollector lc;
     CHECK(lc.extract() == std::vector<std::string>{""});
-    lc.append({"a\nb\r\nc\rd\r\r\n\ne\n\rx", 16});
+    lc.on_data({"a\nb\r\nc\rd\r\r\n\ne\n\rx", 16});
     CHECK(lc.extract() == std::vector<std::string>{"a", "b", "c", "d", "", "", "e", "", "x"});
     CHECK(lc.extract() == std::vector<std::string>{""});
-    lc.append({"hello ", 6});
-    lc.append({"there ", 6});
-    lc.append({"world", 5});
+    lc.on_data({"hello ", 6});
+    lc.on_data({"there ", 6});
+    lc.on_data({"world", 5});
     CHECK(lc.extract() == std::vector<std::string>{"hello there world"});
-    lc.append({"\r\nhello \r\n", 10});
-    lc.append({"\r\nworld", 7});
+    lc.on_data({"\r\nhello \r\n", 10});
+    lc.on_data({"\r\nworld", 7});
     CHECK(lc.extract() == std::vector<std::string>{"", "hello ", "", "world"});
-    lc.append({"\r\n\r\n\r\n", 6});
+    lc.on_data({"\r\n\r\n\r\n", 6});
     CHECK(lc.extract() == std::vector<std::string>{"", "", "", ""});
-    lc.append({"a", 1});
-    lc.append({"b\nc", 3});
-    lc.append({"d", 1});
+    lc.on_data({"a", 1});
+    lc.on_data({"b\nc", 3});
+    lc.on_data({"d", 1});
     CHECK(lc.extract() == std::vector<std::string>{"ab", "cd"});
-    lc.append({"a\r", 2});
-    lc.append({"\nb", 2});
+    lc.on_data({"a\r", 2});
+    lc.on_data({"\nb", 2});
     CHECK(lc.extract() == std::vector<std::string>{"a", "b"});
 }
 
