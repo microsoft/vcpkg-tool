@@ -596,6 +596,7 @@ namespace vcpkg::PostBuildLint
 #endif
         (void)expected_architecture;
         (void)files;
+        (void)fs;
         return LintStatus::SUCCESS;
     }
 
