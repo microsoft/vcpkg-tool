@@ -332,11 +332,11 @@ namespace vcpkg
 
         virtual std::vector<path> find_from_PATH(const std::string& name) const = 0;
 
-        virtual ReadFilePointer read_file(const path& file_path, std::error_code& ec) const = 0;
-        ReadFilePointer read_file(LineInfo li, const path& file_path) const;
+        virtual ReadFilePointer open_for_read(const path& file_path, std::error_code& ec) const = 0;
+        ReadFilePointer open_for_read(LineInfo li, const path& file_path) const;
 
-        virtual WriteFilePointer write_file(const path& file_path, std::error_code& ec) = 0;
-        WriteFilePointer write_file(LineInfo li, const path& file_path);
+        virtual WriteFilePointer open_for_write(const path& file_path, std::error_code& ec) = 0;
+        WriteFilePointer open_for_write(LineInfo li, const path& file_path);
     };
 
     Filesystem& get_real_filesystem();

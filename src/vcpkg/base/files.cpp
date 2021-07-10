@@ -823,10 +823,10 @@ namespace vcpkg
         }
     }
 
-    ReadFilePointer Filesystem::read_file(LineInfo li, const path& file_path) const
+    ReadFilePointer Filesystem::open_for_read(LineInfo li, const path& file_path) const
     {
         std::error_code ec;
-        auto ret = this->read_file(file_path, ec);
+        auto ret = this->open_for_read(file_path, ec);
         if (ec)
         {
             Checks::exit_with_message(li, "Could not open file %s for reading (%s)", u8string(file_path), ec.message());
@@ -835,10 +835,10 @@ namespace vcpkg
         return ret;
     }
 
-    WriteFilePointer Filesystem::write_file(LineInfo li, const path& file_path)
+    WriteFilePointer Filesystem::open_for_write(LineInfo li, const path& file_path)
     {
         std::error_code ec;
-        auto ret = this->write_file(file_path, ec);
+        auto ret = this->open_for_write(file_path, ec);
         if (ec)
         {
             Checks::exit_with_message(li, "Could not open file %s for writing (%s)", u8string(file_path), ec.message());
@@ -1564,12 +1564,12 @@ namespace vcpkg
             return ret;
         }
 
-        virtual ReadFilePointer read_file(const path& file_path, std::error_code& ec) const override
+        virtual ReadFilePointer open_for_read(const path& file_path, std::error_code& ec) const override
         {
             return ReadFilePointer{file_path, ec};
         }
 
-        virtual WriteFilePointer write_file(const path& file_path, std::error_code& ec) override
+        virtual WriteFilePointer open_for_write(const path& file_path, std::error_code& ec) override
         {
             return WriteFilePointer{file_path, ec};
         }

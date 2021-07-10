@@ -94,7 +94,7 @@ namespace
         };
     }
 
-    void write_file(Filesystem& fs, const ToWrite& data)
+    void open_for_write(Filesystem& fs, const ToWrite& data)
     {
         auto original_path_string = vcpkg::u8string(data.original_path);
         auto file_to_write_string = vcpkg::u8string(data.file_to_write);
@@ -267,7 +267,7 @@ namespace vcpkg::Commands::FormatManifest
 
         for (auto const& el : to_write)
         {
-            write_file(fs, el);
+            open_for_write(fs, el);
         }
 
         if (has_error)

@@ -537,7 +537,7 @@ namespace vcpkg::PostBuildLint
                                file.extension() == dot_dll,
                                "The file extension was not .dll: %s",
                                generic_u8string(file));
-            const CoffFileReader::DllInfo info = CoffFileReader::read_dll(fs.read_file(VCPKG_LINE_INFO, file));
+            const CoffFileReader::DllInfo info = CoffFileReader::read_dll(fs.open_for_read(VCPKG_LINE_INFO, file));
             const std::string actual_architecture = get_actual_architecture(info.machine_type);
 
             if (expected_architecture != actual_architecture)
@@ -570,7 +570,7 @@ namespace vcpkg::PostBuildLint
                                file.extension() == dot_lib,
                                "The file extension was not .lib: %s",
                                generic_u8string(file));
-            CoffFileReader::LibInfo info = CoffFileReader::read_lib(fs.read_file(VCPKG_LINE_INFO, file));
+            CoffFileReader::LibInfo info = CoffFileReader::read_lib(fs.open_for_read(VCPKG_LINE_INFO, file));
 
             // This is zero for folly's debug library
             // TODO: Why?

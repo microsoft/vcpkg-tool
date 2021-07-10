@@ -666,7 +666,7 @@ namespace vcpkg::Hash
 
     std::string get_file_hash(const Filesystem& fs, const path& path, Algorithm algo, std::error_code& ec) noexcept
     {
-        auto file = fs.read_file(path, ec);
+        auto file = fs.open_for_read(path, ec);
         if (ec)
         {
             return std::string();
