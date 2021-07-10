@@ -351,7 +351,7 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
     }
 
 #if defined(WIN32)
-    static void integrate_project(const VcpkgPaths& paths)
+    static void integrate_project(const VcpkgPaths& paths, const Optional<std::string>& nuget_package_name)
     {
         auto& fs = paths.get_filesystem();
 
@@ -366,7 +366,7 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
         const path targets_file_path = tmp_dir / "vcpkg.nuget.targets";
         const path props_file_path = tmp_dir / "vcpkg.nuget.props";
         const path nuspec_file_path = tmp_dir / "vcpkg.nuget.nuspec";
-        const std::string nuget_id = get_nuget_id(paths.root);
+        const std::string nuget_id = nuget_package_name.value_or(get_nuget_id(paths.root));
         const std::string nupkg_version = "1.0.0";
 
         fs.write_contents(
@@ -557,11 +557,17 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         };
     }
 
+    static constexpr StringLiteral OPTION_NUGUT_PACKAGE_NAME = "nuget-package-name";
+
+    const CommandSetting COMMAND_SETTINGS[] = {
+        {OPTION_NUGUT_PACKAGE_NAME, "Sets the name for the generated nuget package (`integrate project`)"},
+    };
+
     const CommandStructure COMMAND_STRUCTURE = {
         "Commands:\n" + get_helpstring(),
         1,
         1,
-        {},
+        {{}, COMMAND_SETTINGS, {}},
         &valid_arguments,
     };
 
@@ -569,6 +575,20 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
 
+        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const auto nuget_package_name = [&]() -> Optional<std::string> {
+            const auto iter = options.settings.find(OPTION_NUGUT_PACKAGE_NAME);
+            return iter == options.settings.end() ? nullopt : Optional<std::string>(iter->second);
+        }();
+
+        if (nuget_package_name.has_value() && args.command_arguments[0] != Subcommand::PROJECT)
+        {
+            print2(Color::error,
+                   "Error: The option %s is only available when using the subcommand %s\n",
+                   OPTION_NUGUT_PACKAGE_NAME,
+                   Subcommand::PROJECT);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
         if (args.command_arguments[0] == Subcommand::INSTALL)
         {
             return integrate_install(paths);
@@ -580,7 +600,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
 #if defined(_WIN32)
         if (args.command_arguments[0] == Subcommand::PROJECT)
         {
-            return integrate_project(paths);
+            return integrate_project(paths, std::move(nuget_package_name));
         }
         if (args.command_arguments[0] == Subcommand::POWERSHELL)
         {
