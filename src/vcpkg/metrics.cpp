@@ -425,7 +425,7 @@ namespace vcpkg::Metrics
 #ifndef NDEBUG
             __debugbreak();
             auto err = GetLastError();
-            std::cerr << "[DEBUG] failed to connect to server: " << err << "\n";
+            fprintf(stderr, "[DEBUG] failed to connect to server: %08lu\n", err);
 #endif // NDEBUG
         }
 
@@ -445,8 +445,15 @@ namespace vcpkg::Metrics
         }
 
         const std::string payload = g_metricmessage.format_event_data_template();
-        if (g_should_print_metrics) std::cerr << payload << "\n";
-        if (!g_should_send_metrics) return;
+        if (g_should_print_metrics)
+        {
+            fprintf(stderr, "%s\n", payload.c_str());
+        }
+
+        if (!g_should_send_metrics)
+        {
+            return;
+        }
 
 #if defined(_WIN32)
         wchar_t temp_folder[MAX_PATH];

@@ -303,4 +303,69 @@ namespace vcpkg::Strings
     // Implements https://en.wikipedia.org/wiki/Levenshtein_distance with a "give-up" clause for large strings
     // Guarantees 0 for equal strings and nonzero for inequal strings.
     size_t byte_edit_distance(StringView a, StringView b);
+
+    struct LinesStream
+    {
+        template<class Fn>
+        void on_data(const StringView sv, Fn cb)
+        {
+            const auto last = sv.end();
+            auto start = sv.begin();
+            for (;;)
+            {
+                const auto newline = std::find_if(start, last, is_newline);
+                if (newline == last)
+                {
+                    previous_partial_line.append(start, newline);
+                    return;
+                }
+                else if (!previous_partial_line.empty())
+                {
+                    // include the prefix of this line from the last callback
+                    previous_partial_line.append(start, newline);
+                    cb(StringView{previous_partial_line});
+                    previous_partial_line.clear();
+                }
+                else if (!last_was_cr || *newline != '\n' || newline != start)
+                {
+                    // implement \r\n, \r, \n newlines by logically generating all newlines,
+                    // and skipping emission of an empty \n newline iff immediately following \r
+                    cb(StringView{start, newline});
+                }
+
+                last_was_cr = *newline == '\r';
+                start = newline + 1;
+            }
+        }
+
+        template<class Fn>
+        void on_end(Fn cb)
+        {
+            cb(StringView{previous_partial_line});
+            previous_partial_line.clear();
+            last_was_cr = false;
+        }
+
+    private:
+        struct IsNewline
+        {
+            constexpr bool operator()(const char c) const noexcept { return c == '\n' || c == '\r'; }
+        };
+        static constexpr IsNewline is_newline{};
+
+        bool last_was_cr = false;
+        std::string previous_partial_line;
+    };
+
+    struct LinesCollector
+    {
+        void on_data(StringView sv);
+        std::vector<std::string> extract();
+
+    private:
+        struct CB;
+
+        LinesStream stream;
+        std::vector<std::string> lines;
+    };
 }

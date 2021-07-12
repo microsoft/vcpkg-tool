@@ -4,6 +4,7 @@
 #include <vcpkg/base/ignore_errors.h>
 #include <vcpkg/base/pragmas.h>
 
+#include <stdio.h>
 #include <string.h>
 
 #if !defined(VCPKG_USE_STD_FILESYSTEM)
@@ -163,12 +164,88 @@ void is_directory(const stdfs::path& p, std::error_code& ec) = delete;
 
 namespace vcpkg
 {
+    struct FilePointer
+    {
+    protected:
+        FILE* m_fs;
+
+    public:
+        FilePointer() noexcept : m_fs(nullptr) { }
+
+        FilePointer(const FilePointer&) = delete;
+        FilePointer(FilePointer&& other) noexcept : m_fs(other.m_fs) { other.m_fs = nullptr; }
+
+        FilePointer& operator=(const FilePointer&) = delete;
+        explicit operator bool() const noexcept { return m_fs != nullptr; }
+
+        int seek(int offset, int origin) const noexcept { return ::fseek(m_fs, offset, origin); }
+        int seek(unsigned int offset, int origin) const noexcept
+        {
+            return this->seek(static_cast<long long>(offset), origin);
+        }
+        int seek(long offset, int origin) const noexcept { return ::fseek(m_fs, offset, origin); }
+        int seek(unsigned long offset, int origin) const noexcept
+        {
+#if defined(_WIN32)
+            return ::_fseeki64(m_fs, static_cast<long long>(offset), origin);
+#else // ^^^ _WIN32 / !_WIN32 vvv
+            Checks::check_exit(VCPKG_LINE_INFO, offset < LLONG_MAX);
+            return ::fseek(m_fs, offset, origin);
+#endif // ^^^ !_WIN32
+        }
+        int seek(long long offset, int origin) const noexcept
+        {
+#if defined(_WIN32)
+            return ::_fseeki64(m_fs, offset, origin);
+#else // ^^^ _WIN32 / !_WIN32 vvv
+            return ::fseek(m_fs, offset, origin);
+#endif // ^^^ !_WIN32
+        }
+        int seek(unsigned long long offset, int origin) const noexcept
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, offset < LLONG_MAX);
+            return this->seek(static_cast<long long>(offset), origin);
+        }
+        int eof() const noexcept { return ::feof(m_fs); }
+        int error() const noexcept { return ::ferror(m_fs); }
+
+        ~FilePointer()
+        {
+            if (m_fs)
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, ::fclose(m_fs) == 0);
+            }
+        }
+    };
+
+    struct ReadFilePointer : FilePointer
+    {
+        ReadFilePointer() = default;
+        explicit ReadFilePointer(const path& file_path, std::error_code& ec) noexcept;
+
+        size_t read(void* buffer, size_t element_size, size_t element_count) const noexcept
+        {
+            return ::fread(buffer, element_size, element_count, m_fs);
+        }
+    };
+
+    struct WriteFilePointer : FilePointer
+    {
+        WriteFilePointer() = default;
+        explicit WriteFilePointer(const path& file_path, std::error_code& ec) noexcept;
+
+        size_t write(const void* buffer, size_t element_size, size_t element_count) const noexcept
+        {
+            return ::fwrite(buffer, element_size, element_count, m_fs);
+        }
+
+        int put(int c) const noexcept { return ::fputc(c, m_fs); }
+    };
+
     struct Filesystem
     {
         std::string read_contents(const path& file_path, LineInfo li) const;
         virtual Expected<std::string> read_contents(const path& file_path) const = 0;
-        /// <summary>Read text lines from a file</summary>
-        /// <remarks>Lines will have up to one trailing carriage-return character stripped (CRLF)</remarks>
         virtual Expected<std::vector<std::string>> read_lines(const path& file_path) const = 0;
         std::vector<std::string> read_lines(const path& file_path, LineInfo li) const;
         virtual path find_file_recursively_up(const path& starting_dir, const path& filename) const = 0;
@@ -255,6 +332,12 @@ namespace vcpkg
         virtual void unlock_file_lock(SystemHandle handle, std::error_code&) = 0;
 
         virtual std::vector<path> find_from_PATH(const std::string& name) const = 0;
+
+        virtual ReadFilePointer open_for_read(const path& file_path, std::error_code& ec) const = 0;
+        ReadFilePointer open_for_read(LineInfo li, const path& file_path) const;
+
+        virtual WriteFilePointer open_for_write(const path& file_path, std::error_code& ec) = 0;
+        WriteFilePointer open_for_write(LineInfo li, const path& file_path);
     };
 
     Filesystem& get_real_filesystem();

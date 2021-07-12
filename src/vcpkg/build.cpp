@@ -693,36 +693,41 @@ namespace vcpkg::Build
                                err.value());
         }
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
-        std::ofstream out_file(stdoutlog.native().c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
-        Checks::check_exit(VCPKG_LINE_INFO, out_file, "Failed to open '%s' for writing", vcpkg::u8string(stdoutlog));
         CompilerInfo compiler_info;
         std::string buf;
-        int rc = cmd_execute_and_stream_lines(
-            command,
-            [&](StringView s) {
-                static const StringLiteral s_hash_marker = "#COMPILER_HASH#";
-                if (Strings::starts_with(s, s_hash_marker))
-                {
-                    compiler_info.hash = s.data() + s_hash_marker.size();
-                }
-                static const StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
-                if (Strings::starts_with(s, s_version_marker))
-                {
-                    compiler_info.version = s.data() + s_version_marker.size();
-                }
-                static const StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
-                if (Strings::starts_with(s, s_id_marker))
-                {
-                    compiler_info.id = s.data() + s_id_marker.size();
-                }
-                Debug::print(s, '\n');
-                Strings::append(buf, s, '\n');
-                out_file.write(s.data(), s.size()).put('\n');
-                Checks::check_exit(
-                    VCPKG_LINE_INFO, out_file, "Error occurred while writing '%s'", vcpkg::u8string(stdoutlog));
-            },
-            env);
-        out_file.close();
+
+        int rc;
+        {
+            const auto out_file = fs.open_for_write(VCPKG_LINE_INFO, stdoutlog);
+            rc = cmd_execute_and_stream_lines(
+                command,
+                [&](StringView s) {
+                    static const StringLiteral s_hash_marker = "#COMPILER_HASH#";
+                    if (Strings::starts_with(s, s_hash_marker))
+                    {
+                        compiler_info.hash = s.data() + s_hash_marker.size();
+                    }
+                    static const StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
+                    if (Strings::starts_with(s, s_version_marker))
+                    {
+                        compiler_info.version = s.data() + s_version_marker.size();
+                    }
+                    static const StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
+                    if (Strings::starts_with(s, s_id_marker))
+                    {
+                        compiler_info.id = s.data() + s_id_marker.size();
+                    }
+                    Debug::print(s, '\n');
+                    const auto old_buf_size = buf.size();
+                    Strings::append(buf, s, '\n');
+                    const auto write_size = buf.size() - old_buf_size;
+                    Checks::check_exit(VCPKG_LINE_INFO,
+                                       out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
+                                       "Error occurred while writing '%s'",
+                                       u8string(stdoutlog));
+                },
+                env);
+        } // close out_file
 
         if (compiler_info.hash.empty() || rc != 0)
         {
@@ -921,18 +926,20 @@ namespace vcpkg::Build
                                err.value());
         }
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
-        std::ofstream out_file(stdoutlog.native().c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
-        Checks::check_exit(VCPKG_LINE_INFO, out_file, "Failed to open '%s' for writing", vcpkg::u8string(stdoutlog));
-        const int return_code = cmd_execute_and_stream_data(
-            command,
-            [&](StringView sv) {
-                print2(sv);
-                out_file.write(sv.data(), sv.size());
-                Checks::check_exit(
-                    VCPKG_LINE_INFO, out_file, "Error occurred while writing '%s'", vcpkg::u8string(stdoutlog));
-            },
-            env);
-        out_file.close();
+        int return_code;
+        {
+            auto out_file = fs.open_for_write(VCPKG_LINE_INFO, stdoutlog);
+            return_code = cmd_execute_and_stream_data(
+                command,
+                [&](StringView sv) {
+                    print2(sv);
+                    Checks::check_exit(VCPKG_LINE_INFO,
+                                       out_file.write(sv.data(), 1, sv.size()) == sv.size(),
+                                       "Error occurred while writing '%s'",
+                                       u8string(stdoutlog));
+                },
+                env);
+        } // close out_file
 
         // With the exception of empty packages, builds in "Download Mode" always result in failure.
         if (action.build_options.only_downloads == Build::OnlyDownloads::YES)

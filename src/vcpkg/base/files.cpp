@@ -278,6 +278,40 @@ namespace vcpkg
         return std::move(normalized);
     }
 
+    ReadFilePointer::ReadFilePointer(const path& file_path, std::error_code& ec) noexcept
+    {
+#if defined(_WIN32)
+        ec.assign(::_wfopen_s(&m_fs, file_path.c_str(), L"rb"), std::generic_category());
+#else // ^^^ _WIN32 / !_WIN32 vvv
+        m_fs = ::fopen(file_path.c_str(), "rb");
+        if (m_fs)
+        {
+            ec.clear();
+        }
+        else
+        {
+            ec.assign(errno, std::generic_category());
+        }
+#endif // ^^^ !_WIN32
+    }
+
+    WriteFilePointer::WriteFilePointer(const path& file_path, std::error_code& ec) noexcept
+    {
+#if defined(_WIN32)
+        ec.assign(::_wfopen_s(&m_fs, file_path.c_str(), L"wb"), std::generic_category());
+#else // ^^^ _WIN32 / !_WIN32 vvv
+        m_fs = ::fopen(file_path.c_str(), "wb");
+        if (m_fs)
+        {
+            ec.clear();
+        }
+        else
+        {
+            ec.assign(errno, std::generic_category());
+        }
+#endif // ^^^ !_WIN32
+    }
+
     static const std::regex FILESYSTEM_INVALID_CHARACTERS_REGEX = std::regex(R"([\/:*?"<>|])");
 
     namespace
@@ -789,52 +823,91 @@ namespace vcpkg
         }
     }
 
+    ReadFilePointer Filesystem::open_for_read(LineInfo li, const path& file_path) const
+    {
+        std::error_code ec;
+        auto ret = this->open_for_read(file_path, ec);
+        if (ec)
+        {
+            Checks::exit_with_message(li, "Could not open file %s for reading (%s)", u8string(file_path), ec.message());
+        }
+
+        return ret;
+    }
+
+    WriteFilePointer Filesystem::open_for_write(LineInfo li, const path& file_path)
+    {
+        std::error_code ec;
+        auto ret = this->open_for_write(file_path, ec);
+        if (ec)
+        {
+            Checks::exit_with_message(li, "Could not open file %s for writing (%s)", u8string(file_path), ec.message());
+        }
+
+        return ret;
+    }
+
     struct RealFilesystem final : Filesystem
     {
         virtual Expected<std::string> read_contents(const path& file_path) const override
         {
-            std::fstream file_stream(file_path, std::ios_base::in | std::ios_base::binary);
-            if (file_stream.fail())
+            std::error_code ec;
+            ReadFilePointer file{file_path, ec};
+            if (ec)
             {
                 Debug::print("Failed to open: ", vcpkg::u8string(file_path), '\n');
-                return std::make_error_code(std::errc::no_such_file_or_directory);
-            }
-
-            file_stream.seekg(0, file_stream.end);
-            auto length = file_stream.tellg();
-            file_stream.seekg(0, file_stream.beg);
-
-            if (length == std::streampos(-1))
-            {
-                return std::make_error_code(std::errc::io_error);
+                return ec;
             }
 
             std::string output;
-            output.resize(static_cast<size_t>(length));
-            file_stream.read(&output[0], length);
+            constexpr std::size_t buffer_size = 1024 * 32;
+            char buffer[buffer_size];
+            do
+            {
+                const auto this_read = file.read(buffer, 1, buffer_size);
+                if (this_read != 0)
+                {
+                    output.append(buffer, this_read);
+                }
+                else if (file.error())
+                {
+                    ec = std::io_errc::stream;
+                    return std::string();
+                }
+            } while (!file.eof());
 
             return output;
         }
         virtual Expected<std::vector<std::string>> read_lines(const path& file_path) const override
         {
-            std::fstream file_stream(file_path, std::ios_base::in | std::ios_base::binary);
-            if (file_stream.fail())
+            std::error_code ec;
+            ReadFilePointer file{file_path, ec};
+            if (ec)
             {
                 Debug::print("Failed to open: ", vcpkg::u8string(file_path), '\n');
-                return std::make_error_code(std::errc::no_such_file_or_directory);
+                return ec;
             }
-            std::vector<std::string> output;
-            std::string line;
-            while (std::getline(file_stream, line))
+
+            Strings::LinesCollector output;
+            constexpr std::size_t buffer_size = 1024 * 32;
+            char buffer[buffer_size];
+            do
             {
-                // Remove the trailing \r to accomodate Windows line endings.
-                if ((!line.empty()) && (line.back() == '\r')) line.pop_back();
+                const auto this_read = file.read(buffer, 1, buffer_size);
+                if (this_read != 0)
+                {
+                    output.on_data({buffer, this_read});
+                }
+                else if (file.error())
+                {
+                    ec = std::io_errc::stream;
+                    return std::vector<std::string>();
+                }
+            } while (!file.eof());
 
-                output.push_back(line);
-            }
-
-            return output;
+            return output.extract();
         }
+
         virtual path find_file_recursively_up(const path& starting_dir, const path& filename) const override
         {
             path current_dir = starting_dir;
@@ -909,24 +982,17 @@ namespace vcpkg
                                  const std::vector<std::string>& lines,
                                  std::error_code& ec) override
         {
-            std::fstream output(file_path, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
-            auto first = lines.begin();
-            const auto last = lines.end();
-            for (;;)
+            vcpkg::WriteFilePointer output{file_path, ec};
+            if (!ec)
             {
-                if (!output)
+                for (const auto& line : lines)
                 {
-                    ec.assign(static_cast<int>(std::errc::io_error), std::generic_category());
-                    return;
+                    if (output.write(line.c_str(), 1, line.size()) != line.size() || output.put('\n') != '\n')
+                    {
+                        ec.assign(errno, std::generic_category());
+                        return;
+                    }
                 }
-
-                if (first == last)
-                {
-                    return;
-                }
-
-                output << *first << "\n";
-                ++first;
             }
         }
         virtual void rename(const path& old_path, const path& new_path, std::error_code& ec) override
@@ -1496,6 +1562,16 @@ namespace vcpkg
             }
 
             return ret;
+        }
+
+        virtual ReadFilePointer open_for_read(const path& file_path, std::error_code& ec) const override
+        {
+            return ReadFilePointer{file_path, ec};
+        }
+
+        virtual WriteFilePointer open_for_write(const path& file_path, std::error_code& ec) override
+        {
+            return WriteFilePointer{file_path, ec};
         }
     };
 
