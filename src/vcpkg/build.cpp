@@ -705,17 +705,17 @@ namespace vcpkg::Build
                     static const StringLiteral s_hash_marker = "#COMPILER_HASH#";
                     if (Strings::starts_with(s, s_hash_marker))
                     {
-                        compiler_info.hash = s.data() + s_hash_marker.size();
+                        compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
                     }
                     static const StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
                     if (Strings::starts_with(s, s_version_marker))
                     {
-                        compiler_info.version = s.data() + s_version_marker.size();
+                        compiler_info.version = s.substr(s_version_marker.size()).to_string();
                     }
                     static const StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
                     if (Strings::starts_with(s, s_id_marker))
                     {
-                        compiler_info.id = s.data() + s_id_marker.size();
+                        compiler_info.id = s.substr(s_id_marker.size()).to_string();
                     }
                     Debug::print(s, '\n');
                     const auto old_buf_size = buf.size();
