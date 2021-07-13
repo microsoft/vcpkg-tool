@@ -1708,6 +1708,22 @@ TEST_CASE ("version install self features", "[versionplan]")
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x", "y"});
 }
 
+TEST_CASE ("version install nonexisting features", "[versionplan]")
+{
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
+    a_scf->feature_paragraphs.push_back(make_fpgh("x"));
+
+    MockCMakeVarProvider var_provider;
+
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a", {"y"}}}, {}, toplevel_spec());
+
+    REQUIRE_FALSE(install_plan.has_value());
+}
+
 static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
                                           MockBaselineProvider& bp,
                                           std::vector<Dependency> deps)

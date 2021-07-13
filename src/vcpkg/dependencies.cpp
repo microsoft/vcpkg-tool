@@ -1909,6 +1909,21 @@ namespace vcpkg::Dependencies
                         }
                     }
 
+                    for (auto& requested_feature : node.features)
+                    {
+                        if (requested_feature == "core")
+                        {
+                            continue;
+                        }
+                        if (!p_vnode->scfl->source_control_file->find_feature(requested_feature))
+                        {
+                            return Strings::format("Error: The port %s@%s does not have the feature \"%s\"",
+                                                   spec,
+                                                   new_ver,
+                                                   requested_feature);
+                        }
+                    }
+
                     // -> Add stack frame
                     auto maybe_vars = m_var_provider.get_dep_info_vars(spec);
 
