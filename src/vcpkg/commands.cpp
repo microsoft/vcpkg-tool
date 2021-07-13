@@ -29,6 +29,7 @@
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/commands.upload-metrics.h>
+#include <vcpkg/commands.usage.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
@@ -125,6 +126,7 @@ namespace vcpkg::Commands
         static const Export::ExportCommand export_command{};
         static const DependInfo::DependInfoCommand depend_info{};
         static const CheckSupport::CheckSupportCommand check_support{};
+        static const Usage::UsageCommand usage{};
 
         static std::vector<PackageNameAndFunction<const TripletCommand*>> t = {
             {"install", &install},
@@ -138,6 +140,7 @@ namespace vcpkg::Commands
             {"export", &export_command},
             {"depend-info", &depend_info},
             {"x-check-support", &check_support},
+            {"x-usage", &usage},
         };
         return t;
     }

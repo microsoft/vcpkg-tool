@@ -1,6 +1,6 @@
 #include <vcpkg/base/checks.h>
 
-#include <vcpkg/install.h>
+#include <vcpkg/commands.usage.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -170,10 +170,10 @@ namespace vcpkg
         {
             iobj.insert("features", std::move(features));
         }
-        auto usage = Install::get_cmake_usage(ipv.core->package, paths);
-        if (!usage.message.empty())
+        auto usage = to_string(Commands::Usage::get_cmake_usage(ipv.core->package, paths));
+        if (!usage.empty())
         {
-            iobj.insert("usage", Json::Value::string(std::move(usage.message)));
+            iobj.insert("usage", Json::Value::string(std::move(usage)));
         }
         auto owns_files = fs.read_lines(paths.listfile_path(ipv.core->package), VCPKG_LINE_INFO);
         Json::Array owns;

@@ -8,6 +8,7 @@
 #include <vcpkg/build.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.setinstalled.h>
+#include <vcpkg/commands.usage.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
@@ -603,169 +604,6 @@ namespace vcpkg::Install
         nullptr,
     };
 
-    static void print_cmake_information(const BinaryParagraph& bpgh, const VcpkgPaths& paths)
-    {
-        auto usage = get_cmake_usage(bpgh, paths);
-
-        if (!usage.message.empty())
-        {
-            print2(usage.message);
-        }
-    }
-
-    CMakeUsageInfo get_cmake_usage(const BinaryParagraph& bpgh, const VcpkgPaths& paths)
-    {
-        static const std::regex cmake_library_regex(R"(\badd_library\(([^\$\s\)]+)\s)",
-                                                    std::regex_constants::ECMAScript);
-
-        CMakeUsageInfo ret;
-
-        auto& fs = paths.get_filesystem();
-
-        auto usage_file = paths.installed / bpgh.spec.triplet().canonical_name() / "share" / bpgh.spec.name() / "usage";
-        if (fs.exists(usage_file))
-        {
-            ret.usage_file = true;
-            auto maybe_contents = fs.read_contents(usage_file);
-            if (auto p_contents = maybe_contents.get())
-            {
-                ret.message = std::move(*p_contents);
-                ret.message.push_back('\n');
-            }
-            return ret;
-        }
-
-        auto files = fs.read_lines(paths.listfile_path(bpgh));
-        if (auto p_lines = files.get())
-        {
-            std::map<std::string, std::string> config_files;
-            std::map<std::string, std::vector<std::string>> library_targets;
-            bool is_header_only = true;
-            std::string header_path;
-
-            for (auto&& suffix : *p_lines)
-            {
-                if (Strings::case_insensitive_ascii_contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
-                {
-                    // CMake file is inside the share folder
-                    auto path = paths.installed / suffix;
-                    auto maybe_contents = fs.read_contents(path);
-                    auto find_package_name = vcpkg::u8string(path.parent_path().filename());
-                    if (auto p_contents = maybe_contents.get())
-                    {
-                        std::sregex_iterator next(p_contents->begin(), p_contents->end(), cmake_library_regex);
-                        std::sregex_iterator last;
-
-                        while (next != last)
-                        {
-                            auto match = *next;
-                            auto& targets = library_targets[find_package_name];
-                            if (std::find(targets.cbegin(), targets.cend(), match[1]) == targets.cend())
-                                targets.push_back(match[1]);
-                            ++next;
-                        }
-                    }
-
-                    auto filename = vcpkg::u8string(vcpkg::u8path(suffix).filename());
-
-                    if (Strings::ends_with(filename, "Config.cmake"))
-                    {
-                        auto root = filename.substr(0, filename.size() - 12);
-                        if (Strings::case_insensitive_ascii_equals(root, find_package_name))
-                            config_files[find_package_name] = root;
-                    }
-                    else if (Strings::ends_with(filename, "-config.cmake"))
-                    {
-                        auto root = filename.substr(0, filename.size() - 13);
-                        if (Strings::case_insensitive_ascii_equals(root, find_package_name))
-                            config_files[find_package_name] = root;
-                    }
-                }
-                if (Strings::case_insensitive_ascii_contains(suffix, "/lib/") ||
-                    Strings::case_insensitive_ascii_contains(suffix, "/bin/"))
-                {
-                    if (!Strings::ends_with(suffix, ".pc") && !Strings::ends_with(suffix, "/")) is_header_only = false;
-                }
-
-                if (is_header_only && header_path.empty())
-                {
-                    auto it = suffix.find("/include/");
-                    if (it != std::string::npos && !Strings::ends_with(suffix, "/"))
-                    {
-                        header_path = suffix.substr(it + 9);
-                    }
-                }
-            }
-
-            ret.header_only = is_header_only;
-
-            if (library_targets.empty())
-            {
-                if (is_header_only && !header_path.empty())
-                {
-                    static auto cmakeify = [](std::string name) {
-                        auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
-                        if (n.empty() || Parse::ParserBase::is_ascii_digit(n[0]))
-                        {
-                            n.insert(n.begin(), '_');
-                        }
-                        return n;
-                    };
-
-                    const auto name = cmakeify(bpgh.spec.name());
-                    auto msg = Strings::concat(
-                        "The package ", bpgh.spec, " is header only and can be used from CMake via:\n\n");
-                    Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
-                    Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
-
-                    ret.message = std::move(msg);
-                }
-            }
-            else
-            {
-                auto msg = Strings::concat("The package ", bpgh.spec, " provides CMake targets:\n\n");
-
-                for (auto&& library_target_pair : library_targets)
-                {
-                    auto config_it = config_files.find(library_target_pair.first);
-                    if (config_it != config_files.end())
-                        Strings::append(msg, "    find_package(", config_it->second, " CONFIG REQUIRED)\n");
-                    else
-                        Strings::append(msg, "    find_package(", library_target_pair.first, " CONFIG REQUIRED)\n");
-
-                    std::sort(library_target_pair.second.begin(),
-                              library_target_pair.second.end(),
-                              [](const std::string& l, const std::string& r) {
-                                  if (l.size() < r.size()) return true;
-                                  if (l.size() > r.size()) return false;
-                                  return l < r;
-                              });
-
-                    if (library_target_pair.second.size() <= 4)
-                    {
-                        Strings::append(msg,
-                                        "    target_link_libraries(main PRIVATE ",
-                                        Strings::join(" ", library_target_pair.second),
-                                        ")\n\n");
-                    }
-                    else
-                    {
-                        auto omitted = library_target_pair.second.size() - 4;
-                        library_target_pair.second.erase(library_target_pair.second.begin() + 4,
-                                                         library_target_pair.second.end());
-                        msg += Strings::format("    # Note: %zd target(s) were omitted.\n"
-                                               "    target_link_libraries(main PRIVATE %s)\n\n",
-                                               omitted,
-                                               Strings::join(" ", library_target_pair.second));
-                    }
-                }
-                ret.message = std::move(msg);
-            }
-            ret.cmake_targets_map = std::move(library_targets);
-        }
-        return ret;
-    }
-
     ///
     /// <summary>
     /// Run "install" command.
@@ -1095,7 +933,11 @@ namespace vcpkg::Install
             if (result.action->request_type != RequestType::USER_REQUESTED) continue;
             auto bpgh = result.get_binary_paragraph();
             if (!bpgh) continue;
-            print_cmake_information(*bpgh, paths);
+            auto usage = to_string(Commands::Usage::get_cmake_usage(*bpgh, paths));
+            if (!usage.empty())
+            {
+                System::print2(usage);
+            }
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
