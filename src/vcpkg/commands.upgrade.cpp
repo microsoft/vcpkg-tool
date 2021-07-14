@@ -53,8 +53,7 @@ namespace vcpkg::Commands::Upgrade
         const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
         const KeepGoing keep_going = to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING));
 
-        auto binaryprovider = create_binary_provider_from_configs(args.binary_sources).value_or_exit(VCPKG_LINE_INFO);
-
+        BinaryCache binary_cache{args};
         StatusParagraphs status_db = database_load_check(paths);
 
         // Load ports from ports dirs
@@ -190,15 +189,14 @@ namespace vcpkg::Commands::Upgrade
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
-        const Install::InstallSummary summary =
-            Install::perform(args,
-                             action_plan,
-                             keep_going,
-                             paths,
-                             status_db,
-                             args.binary_caching_enabled() ? *binaryprovider : null_binary_provider(),
-                             Build::null_build_logs_recorder(),
-                             var_provider);
+        const Install::InstallSummary summary = Install::perform(args,
+                                                                 action_plan,
+                                                                 keep_going,
+                                                                 paths,
+                                                                 status_db,
+                                                                 binary_cache,
+                                                                 Build::null_build_logs_recorder(),
+                                                                 var_provider);
 
         print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
 

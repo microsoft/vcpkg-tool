@@ -63,13 +63,13 @@ namespace vcpkg::Build
                                       Triplet host_triplet,
                                       const SourceControlFileLocation& scfl,
                                       const PathsPortFileProvider& provider,
-                                      IBinaryProvider& binaryprovider,
+                                      BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const VcpkgPaths& paths)
     {
         Checks::exit_with_code(
             VCPKG_LINE_INFO,
-            perform_ex(args, full_spec, host_triplet, scfl, provider, binaryprovider, build_logs_recorder, paths));
+            perform_ex(args, full_spec, host_triplet, scfl, provider, binary_cache, build_logs_recorder, paths));
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -93,7 +93,7 @@ namespace vcpkg::Build
                             Triplet host_triplet,
                             const SourceControlFileLocation& scfl,
                             const PathsPortFileProvider& provider,
-                            IBinaryProvider& binaryprovider,
+                            BinaryCache& binary_cache,
                             const IBuildLogsRecorder& build_logs_recorder,
                             const VcpkgPaths& paths)
     {
@@ -144,7 +144,7 @@ namespace vcpkg::Build
         action->build_options.clean_packages = CleanPackages::NO;
 
         const auto build_timer = Chrono::ElapsedTimer::create_started();
-        const auto result = Build::build_package(args, paths, *action, binaryprovider, build_logs_recorder, status_db);
+        const auto result = Build::build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
         print2("Elapsed time for package ", spec, ": ", build_timer, '\n');
 
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
@@ -180,8 +180,7 @@ namespace vcpkg::Build
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         std::string first_arg = args.command_arguments.at(0);
 
-        auto binaryprovider = create_binary_provider_from_configs(args.binary_sources).value_or_exit(VCPKG_LINE_INFO);
-
+        BinaryCache binary_cache{args};
         const FullPackageSpec spec = Input::check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text);
 
@@ -194,14 +193,8 @@ namespace vcpkg::Build
         Checks::check_maybe_upgrade(VCPKG_LINE_INFO, scfl != nullptr, "Error: Couldn't find port '%s'", port_name);
         ASSUME(scfl != nullptr);
 
-        return perform_ex(args,
-                          spec,
-                          host_triplet,
-                          *scfl,
-                          provider,
-                          args.binary_caching_enabled() ? *binaryprovider : null_binary_provider(),
-                          Build::null_build_logs_recorder(),
-                          paths);
+        return perform_ex(
+            args, spec, host_triplet, *scfl, provider, binary_cache, Build::null_build_logs_recorder(), paths);
     }
 
     void BuildCommand::perform_and_exit(const VcpkgCmdArguments& args,
@@ -1242,7 +1235,7 @@ namespace vcpkg::Build
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
                                       const Dependencies::InstallPlanAction& action,
-                                      IBinaryProvider& binaries_provider,
+                                      BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db)
     {
@@ -1291,24 +1284,18 @@ namespace vcpkg::Build
 
         const path abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
         const path abi_file_in_package = paths.package_dir(spec) / "share" / spec.name() / "vcpkg_abi_info.txt";
-        if (action.has_package_abi())
+        auto restore = binary_cache.try_restore(paths, action);
+        if (restore == RestoreResult::restored)
         {
-            auto restore = binaries_provider.try_restore(paths, action);
-            if (restore == RestoreResult::build_failed)
-            {
-                return BuildResult::BUILD_FAILED;
-            }
-            else if (restore == RestoreResult::success)
-            {
-                auto maybe_bcf = Paragraphs::try_load_cached_package(paths, spec);
-                auto bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
-                return {BuildResult::SUCCEEDED, std::move(bcf)};
-            }
-            else
-            {
-                // missing package, proceed to build.
-            }
+            auto maybe_bcf = Paragraphs::try_load_cached_package(paths, spec);
+            auto bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
+            return {BuildResult::SUCCEEDED, std::move(bcf)};
         }
+        else
+        {
+            // missing package, proceed to build.
+        }
+
         if (action.build_options.build_missing == BuildMissing::NO)
         {
             return BuildResult::CACHE_MISSING;
@@ -1339,9 +1326,9 @@ namespace vcpkg::Build
                                                       ec.value()));
         }
 
-        if (action.has_package_abi() && result.code == BuildResult::SUCCEEDED)
+        if (result.code == BuildResult::SUCCEEDED)
         {
-            binaries_provider.push_success(paths, action);
+            binary_cache.push_success(paths, action);
         }
 
         return result;

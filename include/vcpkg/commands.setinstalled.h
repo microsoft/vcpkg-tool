@@ -10,7 +10,7 @@ namespace vcpkg::Commands::SetInstalled
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
                              const PortFileProvider::PathsPortFileProvider& provider,
-                             IBinaryProvider& binary_provider,
+                             BinaryCache& binary_cache,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              Dependencies::ActionPlan action_plan,
                              DryRun dry_run,

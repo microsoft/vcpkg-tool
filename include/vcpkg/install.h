@@ -89,7 +89,7 @@ namespace vcpkg::Install
                            const KeepGoing keep_going,
                            const VcpkgPaths& paths,
                            StatusParagraphs& status_db,
-                           IBinaryProvider& binaryprovider,
+                           BinaryCache& binary_cache,
                            const Build::IBuildLogsRecorder& build_logs_recorder,
                            const CMakeVars::CMakeVarProvider& var_provider);
 

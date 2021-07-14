@@ -39,6 +39,7 @@ namespace vcpkg
 
     constexpr IsSlash is_slash;
 
+    using stdfs::copy_options;
     using stdfs::path;
 
     path u8path(StringView s);
@@ -291,12 +292,12 @@ namespace vcpkg
         virtual void create_hard_link(const path& to, const path& from, std::error_code& ec) = 0;
         void create_best_link(const path& to, const path& from, std::error_code& ec);
         void create_best_link(const path& to, const path& from, LineInfo);
-        virtual void copy(const path& source, const path& destination, stdfs::copy_options opts) = 0;
+        virtual void copy(const path& source, const path& destination, copy_options options) = 0;
         virtual bool copy_file(const path& source,
                                const path& destination,
-                               stdfs::copy_options options,
+                               copy_options options,
                                std::error_code& ec) = 0;
-        void copy_file(const path& source, const path& destination, stdfs::copy_options options, LineInfo li);
+        void copy_file(const path& source, const path& destination, copy_options options, LineInfo li);
         virtual void copy_symlink(const path& source, const path& destination, std::error_code& ec) = 0;
         virtual file_status status(const path& target, std::error_code& ec) const = 0;
         virtual file_status symlink_status(const path& target, std::error_code& ec) const = 0;
