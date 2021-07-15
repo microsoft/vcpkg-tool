@@ -97,8 +97,13 @@ namespace vcpkg::CoffFileReader
         } tmp;
 
         Checks::check_exit(VCPKG_LINE_INFO, fs.read(&tmp, sizeof(tmp), 1) == 1);
-        Checks::check_exit(VCPKG_LINE_INFO, tmp.sig2 == 0xFFFF, "Import member SIG2 was incorrect");
-        return to_machine_type(tmp.machine);
+        if (tmp.sig2 == 0xFFFF)
+        {
+            return to_machine_type(tmp.machine);
+        }
+
+        // This can happen, for example, if this is a .drectve member
+        return MachineType::UNKNOWN;
     }
 
     static void read_and_verify_archive_file_signature(const ReadFilePointer& fs)
@@ -160,7 +165,7 @@ namespace vcpkg::CoffFileReader
     static std::vector<MachineType> read_machine_types_from_archive_members(const vcpkg::ReadFilePointer& fs,
                                                                             const std::vector<uint32_t>& member_offsets)
     {
-        std::vector<MachineType> machine_types{member_offsets.size()};
+        std::vector<MachineType> machine_types; // used as a set because n is tiny
         // Next we have the obj and pseudo-object files
         for (size_t idx = 0; idx < member_offsets.size(); ++idx)
         {
@@ -175,11 +180,16 @@ namespace vcpkg::CoffFileReader
                 result_machine_type = read_import_machine_type_after_sig1(fs);
             }
 
-            machine_types[idx] = result_machine_type;
+            if (result_machine_type == MachineType::UNKNOWN ||
+                std::find(machine_types.begin(), machine_types.end(), result_machine_type) != machine_types.end())
+            {
+                continue;
+            }
+
+            machine_types.push_back(result_machine_type);
         }
 
         std::sort(machine_types.begin(), machine_types.end());
-        machine_types.erase(std::unique(machine_types.begin(), machine_types.end()), machine_types.end());
         return machine_types;
     }
 
