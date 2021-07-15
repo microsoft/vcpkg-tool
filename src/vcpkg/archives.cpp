@@ -22,7 +22,7 @@ namespace vcpkg::Archives
         // TODO: check this error code
         std::error_code ec;
         fs.create_directories(to_path_partial, ec);
-        const auto ext = archive.extension();
+        const auto ext = vcpkg::u8string(archive.extension());
 #if defined(_WIN32)
         if (ext == ".nupkg")
         {
@@ -66,6 +66,26 @@ namespace vcpkg::Archives
                                vcpkg::u8string(archive),
                                code_and_output.output);
             recursion_limiter_sevenzip_old = false;
+        }
+        else if (ext == ".msi")
+        {
+            // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
+            // until it finishes (wrap in cmd /c).
+            const auto code_and_output = cmd_execute_and_capture_output(
+                Command{"cmd"}
+                    .string_arg("/c")
+                    .string_arg("msiexec")
+                    .string_arg("/a")
+                    .path_arg(archive)
+                    .string_arg("/qn")
+                    // msiexec requires quotes to be after "TARGETDIR=":
+                    //      TARGETDIR="C:\full\path\to\dest"
+                    .raw_arg(Strings::concat("TARGETDIR=", Command{to_path_partial}.extract())));
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               code_and_output.exit_code == 0,
+                               "msiexec failed while extracting '%s' with message:\n%s",
+                               vcpkg::u8string(archive),
+                               code_and_output.output);
         }
         else
         {
