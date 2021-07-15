@@ -63,7 +63,7 @@ namespace vcpkg::Archives
             Checks::check_exit(VCPKG_LINE_INFO,
                                code_and_output.exit_code == 0,
                                "Failed to extract '%s' with message:\n%s",
-                               vcpkg::u8string(archive),
+                               u8string(archive),
                                code_and_output.output);
             recursion_limiter_sevenzip_old = false;
         }
@@ -75,6 +75,7 @@ namespace vcpkg::Archives
                 Command{"cmd"}
                     .string_arg("/c")
                     .string_arg("msiexec")
+                    // "/a" is administrative mode, which unpacks without modifying the system
                     .string_arg("/a")
                     .path_arg(archive)
                     .string_arg("/qn")
