@@ -188,8 +188,8 @@ namespace vcpkg::Strings
         return join(delimiter, v, [](const Element& x) -> const Element& { return x; });
     }
 
-    std::string replace_all(const std::string& s, StringView search, StringView rep);
-    std::string replace_all(std::string&& s, StringView search, StringView rep);
+    [[nodiscard]] std::string replace_all(const std::string& s, StringView search, StringView rep);
+    [[nodiscard]] std::string replace_all(std::string&& s, StringView search, StringView rep);
 
     void inplace_replace_all(std::string& s, StringView search, StringView rep);
 

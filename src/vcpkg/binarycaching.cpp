@@ -304,16 +304,16 @@ namespace
                 return;
             }
 
-            const auto abi_tag = action.package_abi().get();
+            const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             auto& fs = paths.get_filesystem();
-            const auto archive_subpath = make_archive_subpath(*abi_tag);
+            const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees, spec);
             compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
             size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
-                auto url = Strings::replace_all(std::string(put_url_template), "<SHA>", *abi_tag);
+                auto url = Strings::replace_all(std::string(put_url_template), "<SHA>", abi_tag);
                 auto maybe_success = Downloads::put_file(fs, url, Downloads::azure_blob_headers(), tmp_archive_path);
                 if (maybe_success.has_value())
                 {
@@ -332,7 +332,7 @@ namespace
 
             for (const auto& archives_root_dir : m_write_dirs)
             {
-                auto archive_path = archives_root_dir / archive_subpath;
+                const auto archive_path = archives_root_dir / archive_subpath;
                 fs.create_directories(archive_path.parent_path(), ignore_errors);
                 std::error_code ec;
                 if (m_write_dirs.size() > 1)
@@ -609,17 +609,17 @@ namespace
 
         static void generate_packages_config(Filesystem& fs,
                                              const path& packages_config,
-                                             const std::vector<NuGetPrefetchAttempt>& nuget_refs)
+                                             const std::vector<NuGetPrefetchAttempt>& attempts)
         {
             XmlSerializer xml;
             xml.emit_declaration().line_break();
             xml.open_tag("packages").line_break();
 
-            for (auto&& nuget_ref : nuget_refs)
+            for (auto&& attempt : attempts)
             {
                 xml.start_complex_open_tag("package")
-                    .text_attr("id", nuget_ref.reference.id)
-                    .text_attr("version", nuget_ref.reference.version)
+                    .text_attr("id", attempt.reference.id)
+                    .text_attr("version", attempt.reference.version)
                     .finish_self_closing_complex_tag()
                     .line_break();
             }
@@ -639,7 +639,7 @@ namespace
 
             auto& fs = paths.get_filesystem();
 
-            std::vector<NuGetPrefetchAttempt> nuget_refs;
+            std::vector<NuGetPrefetchAttempt> attempts;
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 auto&& action = actions[idx];
@@ -651,15 +651,15 @@ namespace
 
                 auto& spec = action.spec;
                 fs.remove_all(paths.package_dir(spec), VCPKG_LINE_INFO);
-                nuget_refs.push_back({spec, make_nugetref(action, get_nuget_prefix()), idx});
+                attempts.push_back({spec, make_nugetref(action, get_nuget_prefix()), idx});
             }
 
-            if (nuget_refs.empty())
+            if (attempts.empty())
             {
                 return;
             }
 
-            print2("Attempting to fetch ", nuget_refs.size(), " packages from nuget.\n");
+            print2("Attempting to fetch ", attempts.size(), " packages from nuget.\n");
 
             auto packages_config = paths.buildtrees / vcpkg::u8path("packages.config");
             const auto& nuget_exe = paths.get_tool_exe("nuget");
@@ -731,17 +731,17 @@ namespace
                 cmdlines.push_back(std::move(cmdline));
             }
 
-            const size_t total_restore_attempts = nuget_refs.size();
+            const size_t total_restore_attempts = attempts.size();
             for (const auto& cmdline : cmdlines)
             {
-                if (nuget_refs.empty())
+                if (attempts.empty())
                 {
                     break;
                 }
 
-                generate_packages_config(fs, packages_config, nuget_refs);
+                generate_packages_config(fs, packages_config, attempts);
                 run_nuget_commandline(cmdline);
-                Util::erase_remove_if(nuget_refs, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
+                Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
                     auto nupkg_path =
                         paths.package_dir(nuget_ref.spec) / vcpkg::u8path(nuget_ref.reference.id + ".nupkg");
                     if (fs.exists(nupkg_path, ignore_errors))
@@ -760,7 +760,7 @@ namespace
             }
 
             print2("Restored ",
-                   total_restore_attempts - nuget_refs.size(),
+                   total_restore_attempts - attempts.size(),
                    " packages from NuGet. Use --debug for more information.\n");
         }
 
@@ -1194,119 +1194,6 @@ namespace vcpkg
         }
 
         return results;
-    }
-
-    CacheStatus::CacheStatus() noexcept : m_status(CacheStatusState::unknown), m_known_unavailable_providers() { }
-
-    CacheStatus::CacheStatus(const CacheStatus& other) : m_status(other.m_status)
-    {
-        switch (other.m_status)
-        {
-            case CacheStatusState::unknown:
-                new (&m_known_unavailable_providers)
-                    std::vector<const IBinaryProvider*>(other.m_known_unavailable_providers);
-                break;
-            case CacheStatusState::available: m_available_provider = other.m_available_provider; break;
-            case CacheStatusState::restored: break;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
-
-    CacheStatus::CacheStatus(CacheStatus&& other) noexcept : m_status(other.m_status)
-    {
-        switch (other.m_status)
-        {
-            case CacheStatusState::unknown:
-                new (&m_known_unavailable_providers)
-                    std::vector<const IBinaryProvider*>(std::move(other.m_known_unavailable_providers));
-                break;
-            case CacheStatusState::available: m_available_provider = other.m_available_provider; break;
-            case CacheStatusState::restored: break;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
-
-    CacheStatus& CacheStatus::operator=(const CacheStatus& other)
-    {
-        if (m_status == other.m_status)
-        {
-            switch (m_status)
-            {
-                case CacheStatusState::unknown:
-                    m_known_unavailable_providers = other.m_known_unavailable_providers;
-                    return *this;
-                case CacheStatusState::available: m_available_provider = other.m_available_provider; return *this;
-                case CacheStatusState::restored: return *this;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
-        }
-
-        if (m_status == CacheStatusState::unknown)
-        {
-            // EH: unknown -> anything else is nothrow, so we can do this early
-            m_known_unavailable_providers.~vector();
-        }
-
-        switch (other.m_status)
-        {
-            case CacheStatusState::unknown:
-                new (&m_known_unavailable_providers)
-                    std::vector<const IBinaryProvider*>(other.m_known_unavailable_providers);
-                break;
-            case CacheStatusState::available: m_available_provider = other.m_available_provider; break;
-            case CacheStatusState::restored: break;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-
-        m_status = other.m_status; // EH: defer in case the new throws
-        return *this;
-    }
-
-    CacheStatus& CacheStatus::operator=(CacheStatus&& other) noexcept
-    {
-        if (m_status == other.m_status)
-        {
-            switch (m_status)
-            {
-                case CacheStatusState::unknown:
-                    m_known_unavailable_providers = std::move(other.m_known_unavailable_providers);
-                    return *this;
-                case CacheStatusState::available: m_available_provider = other.m_available_provider; return *this;
-                case CacheStatusState::restored: return *this;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
-        }
-
-        if (m_status == CacheStatusState::unknown)
-        {
-            // EH: unknown -> anything else is nothrow, so we can do this early
-            m_known_unavailable_providers.~vector();
-        }
-
-        switch (other.m_status)
-        {
-            case CacheStatusState::unknown:
-                new (&m_known_unavailable_providers)
-                    std::vector<const IBinaryProvider*>(std::move(other.m_known_unavailable_providers));
-                break;
-            case CacheStatusState::available: m_available_provider = other.m_available_provider; break;
-            case CacheStatusState::restored: break;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-
-        m_status = other.m_status; // EH: defer in case the new throws
-        return *this;
-    }
-
-    CacheStatus::~CacheStatus()
-    {
-        switch (m_status)
-        {
-            case CacheStatusState::unknown: m_known_unavailable_providers.~vector(); break;
-            case CacheStatusState::available:
-            case CacheStatusState::restored: break;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
     }
 
     bool CacheStatus::should_attempt_precheck(const IBinaryProvider* sender) const noexcept

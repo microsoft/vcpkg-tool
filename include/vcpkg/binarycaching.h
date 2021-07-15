@@ -39,13 +39,6 @@ namespace vcpkg
 
     struct CacheStatus
     {
-        CacheStatus() noexcept;
-        CacheStatus(const CacheStatus&);
-        CacheStatus(CacheStatus&&) noexcept;
-        CacheStatus& operator=(const CacheStatus&);
-        CacheStatus& operator=(CacheStatus&&) noexcept;
-        ~CacheStatus();
-
         bool should_attempt_precheck(const IBinaryProvider* sender) const noexcept;
         bool should_attempt_restore(const IBinaryProvider* sender) const noexcept;
 
@@ -58,17 +51,14 @@ namespace vcpkg
         void mark_restored() noexcept;
 
     private:
-        CacheStatusState m_status;
+        CacheStatusState m_status = CacheStatusState::unknown;
 
-        union
-        {
-            // The set of providers who know they do not have the associated cache entry.
-            // Flat vector set because N is tiny.
-            std::vector<const IBinaryProvider*> m_known_unavailable_providers; // active iff m_status == unknown
+        // The set of providers who know they do not have the associated cache entry.
+        // Flat vector set because N is tiny.
+        std::vector<const IBinaryProvider*> m_known_unavailable_providers; // meaningful iff m_status == unknown
 
-            // The provider who affirmatively has the associated cache entry.
-            const IBinaryProvider* m_available_provider; // active iff m_status == available
-        };
+        // The provider who affirmatively has the associated cache entry.
+        const IBinaryProvider* m_available_provider = nullptr; // meaningful iff m_status == available
     };
 
     struct IBinaryProvider
