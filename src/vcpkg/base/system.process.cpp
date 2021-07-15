@@ -1,5 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -671,27 +672,12 @@ namespace vcpkg
                                      std::function<void(StringView)> per_line_cb,
                                      const Environment& env)
     {
-        std::string buf;
+        Strings::LinesStream lines;
 
         auto rc = cmd_execute_and_stream_data(
-            cmd_line,
-            wd,
-            [&](StringView sv) {
-                auto prev_size = buf.size();
-                Strings::append(buf, sv);
+            cmd_line, wd, [&](const StringView sv) { lines.on_data(sv, per_line_cb); }, env);
 
-                auto it = std::find(buf.begin() + prev_size, buf.end(), '\n');
-                while (it != buf.end())
-                {
-                    std::string s(buf.begin(), it);
-                    per_line_cb(s);
-                    buf.erase(buf.begin(), it + 1);
-                    it = std::find(buf.begin(), buf.end(), '\n');
-                }
-            },
-            env);
-
-        per_line_cb(buf);
+        lines.on_end(per_line_cb);
         return rc;
     }
 

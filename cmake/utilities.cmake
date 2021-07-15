@@ -212,7 +212,7 @@ function(vcpkg_target_add_warning_options TARGET)
                     -Wno-range-loop-analysis
                     )
             else()
-                target_compile_options(${TARGET} PRIVATE -analyze)
+                target_compile_options(${TARGET} PRIVATE -analyze -analyze:stacksize 39000)
             endif()
         else()
             target_compile_options(${TARGET} PRIVATE -W3)

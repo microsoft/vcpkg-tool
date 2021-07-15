@@ -180,19 +180,27 @@ endmacro()
         static constexpr CStringView BLOCK_END_GUID = "e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f";
 
         const auto cmd_launch_cmake = vcpkg::make_cmake_cmd(paths, script_path, {});
-        const auto ec_data = cmd_execute_and_capture_output(cmd_launch_cmake);
-        Checks::check_exit(VCPKG_LINE_INFO, ec_data.exit_code == 0, ec_data.output);
 
-        const std::vector<std::string> lines = Strings::split(ec_data.output, '\n');
+        std::vector<std::string> lines;
+        auto const exit_code = cmd_execute_and_stream_lines(
+            cmd_launch_cmake, [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); });
+
+        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, exit_code == 0 ? "" : Strings::join("\n", lines));
 
         const auto end = lines.cend();
 
         auto port_start = std::find(lines.cbegin(), end, PORT_START_GUID);
         auto port_end = std::find(port_start, end, PORT_END_GUID);
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           port_start != end && port_end != end,
+                           "Failed to parse CMake console output to locate port start/end markers");
 
         for (auto var_itr = vars.begin(); port_start != end && var_itr != vars.end(); ++var_itr)
         {
             auto block_start = std::find(port_start, port_end, BLOCK_START_GUID);
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               block_start != port_end,
+                               "Failed to parse CMake console output to locate block start marker");
             auto block_end = std::find(++block_start, port_end, BLOCK_END_GUID);
 
             while (block_start != port_end)

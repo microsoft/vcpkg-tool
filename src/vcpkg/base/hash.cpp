@@ -664,37 +664,31 @@ namespace vcpkg::Hash
         return get_bytes_hash(sv.data(), sv.data() + sv.size(), algo);
     }
 
-    // TODO: use Filesystem to open a file
-    std::string get_file_hash(const Filesystem&, const path& target, Algorithm algo, std::error_code& ec) noexcept
+    std::string get_file_hash(const Filesystem& fs, const path& path, Algorithm algo, std::error_code& ec) noexcept
     {
-        auto file = std::fstream(target.c_str(), std::ios_base::in | std::ios_base::binary);
-        if (!file)
+        auto file = fs.open_for_read(path, ec);
+        if (ec)
         {
-            ec.assign(ENOENT, std::system_category());
-            return {};
+            return std::string();
         }
 
         return do_hash(algo, [&file, &ec](Hasher& hasher) {
             constexpr std::size_t buffer_size = 1024 * 32;
-            auto buffer = std::make_unique<char[]>(buffer_size);
-            for (;;)
+            char buffer[buffer_size];
+            do
             {
-                file.read(buffer.get(), buffer_size);
-                if (file.eof())
+                const auto this_read = file.read(buffer, 1, buffer_size);
+                if (this_read != 0)
                 {
-                    hasher.add_bytes(buffer.get(), buffer.get() + file.gcount());
-                    return hasher.get_hash();
+                    hasher.add_bytes(buffer, buffer + this_read);
                 }
-                else if (file)
-                {
-                    hasher.add_bytes(buffer.get(), buffer.get() + buffer_size);
-                }
-                else
+                else if (file.error())
                 {
                     ec = std::io_errc::stream;
                     return std::string();
                 }
-            }
+            } while (!file.eof());
+            return hasher.get_hash();
         });
     }
 }
