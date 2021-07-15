@@ -22,7 +22,7 @@ namespace vcpkg::Archives
         // TODO: check this error code
         std::error_code ec;
         fs.create_directories(to_path_partial, ec);
-        const auto ext = archive.extension();
+        const auto ext = vcpkg::u8string(archive.extension());
 #if defined(_WIN32)
         if (ext == ".nupkg")
         {
@@ -63,9 +63,30 @@ namespace vcpkg::Archives
             Checks::check_exit(VCPKG_LINE_INFO,
                                code_and_output.exit_code == 0,
                                "Failed to extract '%s' with message:\n%s",
-                               vcpkg::u8string(archive),
+                               u8string(archive),
                                code_and_output.output);
             recursion_limiter_sevenzip_old = false;
+        }
+        else if (ext == ".msi")
+        {
+            // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
+            // until it finishes (wrap in cmd /c).
+            const auto code_and_output = cmd_execute_and_capture_output(
+                Command{"cmd"}
+                    .string_arg("/c")
+                    .string_arg("msiexec")
+                    // "/a" is administrative mode, which unpacks without modifying the system
+                    .string_arg("/a")
+                    .path_arg(archive)
+                    .string_arg("/qn")
+                    // msiexec requires quotes to be after "TARGETDIR=":
+                    //      TARGETDIR="C:\full\path\to\dest"
+                    .raw_arg(Strings::concat("TARGETDIR=", Command{to_path_partial}.extract())));
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               code_and_output.exit_code == 0,
+                               "msiexec failed while extracting '%s' with message:\n%s",
+                               vcpkg::u8string(archive),
+                               code_and_output.output);
         }
         else
         {
@@ -87,7 +108,7 @@ namespace vcpkg::Archives
             recursion_limiter_sevenzip = false;
         }
 #else
-        if (ext == ".gz" && ext.extension() != ".tar")
+        if (ext == ".gz")
         {
             const auto code =
                 cmd_execute(Command{"tar"}.string_arg("xzf").path_arg(archive), InWorkingDirectory{to_path_partial});
@@ -102,7 +123,7 @@ namespace vcpkg::Archives
         }
         else
         {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unexpected archive extension: %s", vcpkg::u8string(ext));
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unexpected archive extension: %s", ext);
         }
 #endif
 
