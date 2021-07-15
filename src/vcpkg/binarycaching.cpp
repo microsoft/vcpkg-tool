@@ -742,6 +742,7 @@ namespace
                 generate_packages_config(fs, packages_config, attempts);
                 run_nuget_commandline(cmdline);
                 Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
+                    // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the output directory
                     auto nupkg_path =
                         paths.package_dir(nuget_ref.spec) / vcpkg::u8path(nuget_ref.reference.id + ".nupkg");
                     if (fs.exists(nupkg_path, ignore_errors))
