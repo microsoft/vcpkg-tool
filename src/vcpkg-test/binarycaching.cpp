@@ -25,13 +25,13 @@ struct KnowNothingBinaryProvider : IBinaryProvider
 
     virtual void push_success(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override { }
     virtual void prefetch(const VcpkgPaths&,
-                          const std::vector<Dependencies::InstallPlanAction>&,
-                          const std::vector<CacheStatus*>&) const override
+                          View<const Dependencies::InstallPlanAction>,
+                          View<CacheStatus* const>) const override
     {
     }
     virtual void precheck(const VcpkgPaths&,
-                          const std::vector<Dependencies::InstallPlanAction>&,
-                          const std::vector<CacheStatus*>& cache_status) const override
+                          View<const Dependencies::InstallPlanAction>,
+                          View<CacheStatus* const> cache_status) const override
     {
         for (const auto c : cache_status)
         {

@@ -247,8 +247,8 @@ namespace
         }
 
         void prefetch(const VcpkgPaths& paths,
-                      const std::vector<Dependencies::InstallPlanAction>& actions,
-                      const std::vector<CacheStatus*>& cache_status) const override
+                      View<const Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus* const> cache_status) const override
         {
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
@@ -362,8 +362,8 @@ namespace
         }
 
         void precheck(const VcpkgPaths& paths,
-                      const std::vector<Dependencies::InstallPlanAction>& actions,
-                      const std::vector<CacheStatus*>& cache_status) const override
+                      View<const Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus* const> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
             for (size_t idx = 0; idx < actions.size(); ++idx)
@@ -415,8 +415,8 @@ namespace
         void push_success(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override { }
 
         void prefetch(const VcpkgPaths& paths,
-                      const std::vector<Dependencies::InstallPlanAction>& actions,
-                      const std::vector<CacheStatus*>& cache_status) const override
+                      View<const Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus* const> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
             size_t this_restore_count = 0;
@@ -473,8 +473,8 @@ namespace
         }
 
         void precheck(const VcpkgPaths&,
-                      const std::vector<Dependencies::InstallPlanAction>& actions,
-                      const std::vector<CacheStatus*>& cache_status) const override
+                      View<const Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus* const> cache_status) const override
         {
             std::vector<CacheAvailability> actions_present{actions.size()};
             std::vector<std::string> urls;
@@ -629,8 +629,8 @@ namespace
         }
 
         void prefetch(const VcpkgPaths& paths,
-                      const std::vector<Dependencies::InstallPlanAction>& actions,
-                      const std::vector<CacheStatus*>& cache_status) const override
+                      View<const Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus* const> cache_status) const override
         {
             if (m_read_sources.empty() && m_read_configs.empty())
             {
@@ -869,8 +869,8 @@ namespace
         }
 
         void precheck(const VcpkgPaths&,
-                      const std::vector<Dependencies::InstallPlanAction>&,
-                      const std::vector<CacheStatus*>&) const override
+                      View<const Dependencies::InstallPlanAction>,
+                      View<CacheStatus* const>) const override
         {
         }
 
@@ -935,8 +935,8 @@ namespace
         }
 
         void prefetch(const VcpkgPaths& paths,
-                      const std::vector<Dependencies::InstallPlanAction>& actions,
-                      const std::vector<CacheStatus*>& cache_status) const override
+                      View<const Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus* const> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
 
@@ -1011,8 +1011,8 @@ namespace
         }
 
         void precheck(const VcpkgPaths&,
-                      const std::vector<Dependencies::InstallPlanAction>& actions,
-                      const std::vector<CacheStatus*>& cache_status) const override
+                      View<const Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus* const> cache_status) const override
         {
             std::vector<CacheAvailability> actions_availability{actions.size()};
             for (const auto& prefix : m_read_prefixes)
@@ -1144,9 +1144,8 @@ namespace vcpkg
         }
     }
 
-    static std::vector<CacheStatus*> build_cache_status_vector(
-        const std::vector<Dependencies::InstallPlanAction>& actions,
-        std::unordered_map<std::string, CacheStatus>& status)
+    static std::vector<CacheStatus*> build_cache_status_vector(View<const Dependencies::InstallPlanAction> actions,
+                                                               std::unordered_map<std::string, CacheStatus>& status)
     {
         std::vector<CacheStatus*> results{actions.size()};
         for (size_t idx = 0; idx < actions.size(); ++idx)
@@ -1161,7 +1160,7 @@ namespace vcpkg
         return results;
     }
 
-    void BinaryCache::prefetch(const VcpkgPaths& paths, const std::vector<Dependencies::InstallPlanAction>& actions)
+    void BinaryCache::prefetch(const VcpkgPaths& paths, View<const Dependencies::InstallPlanAction> actions)
     {
         auto cache_status = build_cache_status_vector(actions, m_status);
         for (auto&& provider : m_providers)
@@ -1178,7 +1177,7 @@ namespace vcpkg
     }
 
     std::vector<CacheAvailability> BinaryCache::precheck(const VcpkgPaths& paths,
-                                                         const std::vector<Dependencies::InstallPlanAction>& actions)
+                                                         View<const Dependencies::InstallPlanAction> actions)
     {
         auto cache_status = build_cache_status_vector(actions, m_status);
         for (auto&& provider : m_providers)

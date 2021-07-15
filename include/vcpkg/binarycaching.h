@@ -79,16 +79,16 @@ namespace vcpkg
         /// `cache_status` is a vector with the same number of entries of actions, where each index corresponds
         /// to the action at the same index in `actions`. The provider must mark the cache status as appropriate.
         virtual void prefetch(const VcpkgPaths& paths,
-                              const std::vector<Dependencies::InstallPlanAction>& actions,
-                              const std::vector<CacheStatus*>& cache_status) const = 0;
+                              View<const Dependencies::InstallPlanAction> actions,
+                              View<CacheStatus* const> cache_status) const = 0;
 
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.
-        /// `cache_status` is a vector with the same number of entries of actions, where each index corresponds
+        /// `cache_status` is a view with the same number of entries of actions, where each index corresponds
         /// to the action at the same index in `actions`. The provider must mark the cache status as appropriate.
         virtual void precheck(const VcpkgPaths& paths,
-                              const std::vector<Dependencies::InstallPlanAction>& actions,
-                              const std::vector<CacheStatus*>& cache_status) const = 0;
+                              View<const Dependencies::InstallPlanAction> actions,
+                              View<CacheStatus* const> cache_status) const = 0;
     };
 
     ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs(
@@ -112,13 +112,13 @@ namespace vcpkg
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
-        void prefetch(const VcpkgPaths& paths, const std::vector<Dependencies::InstallPlanAction>& actions);
+        void prefetch(const VcpkgPaths& paths, View<const Dependencies::InstallPlanAction> actions);
 
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.
         /// Returns a vector where each index corresponds to the matching index in `actions`.
         std::vector<CacheAvailability> precheck(const VcpkgPaths& paths,
-                                                const std::vector<Dependencies::InstallPlanAction>& actions);
+                                                View<const Dependencies::InstallPlanAction> actions);
 
     private:
         std::unordered_map<std::string, CacheStatus> m_status;
