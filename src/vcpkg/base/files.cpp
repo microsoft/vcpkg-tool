@@ -654,7 +654,7 @@ namespace vcpkg
         if (!ec) return;
         this->create_symlink(to, from, ec);
         if (!ec) return;
-        this->copy_file(from, to, stdfs::copy_options::none, ec);
+        this->copy_file(from, to, copy_options::none, ec);
     }
     void Filesystem::create_best_link(const path& to, const path& from, LineInfo li)
     {
@@ -667,7 +667,7 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::copy_file(const path& source, const path& destination, stdfs::copy_options options, LineInfo li)
+    void Filesystem::copy_file(const path& source, const path& destination, copy_options options, LineInfo li)
     {
         std::error_code ec;
         this->copy_file(source, destination, options, ec);
@@ -1282,13 +1282,13 @@ namespace vcpkg
         {
             stdfs::create_hard_link(to, from, ec);
         }
-        virtual void copy(const path& source, const path& destination, stdfs::copy_options options) override
+        virtual void copy(const path& source, const path& destination, copy_options options) override
         {
             stdfs::copy(source, destination, options);
         }
         virtual bool copy_file(const path& source,
                                const path& destination,
-                               stdfs::copy_options options,
+                               copy_options options,
                                std::error_code& ec) override
         {
             return stdfs::copy_file(source, destination, options, ec);
