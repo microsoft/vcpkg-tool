@@ -468,7 +468,7 @@ namespace vcpkg::Metrics
 #if defined(_WIN32)
         fs.create_directories(temp_folder_path, ec);
         if (ec) return;
-        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, stdfs::copy_options::skip_existing, ec);
+        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, copy_options::skip_existing, ec);
         if (ec) return;
 #else
         if (!fs.exists("/tmp")) return;
