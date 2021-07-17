@@ -537,8 +537,8 @@ namespace vcpkg::PostBuildLint
                                file.extension() == dot_dll,
                                "The file extension was not .dll: %s",
                                generic_u8string(file));
-            const CoffFileReader::DllInfo info = CoffFileReader::read_dll(fs.open_for_read(VCPKG_LINE_INFO, file));
-            const std::string actual_architecture = get_actual_architecture(info.machine_type);
+            const auto machine_type = read_dll_machine_type(fs.open_for_read(VCPKG_LINE_INFO, file));
+            const std::string actual_architecture = get_actual_architecture(machine_type);
 
             if (expected_architecture != actual_architecture)
             {
@@ -570,18 +570,18 @@ namespace vcpkg::PostBuildLint
                                file.extension() == dot_lib,
                                "The file extension was not .lib: %s",
                                generic_u8string(file));
-            CoffFileReader::LibInfo info = CoffFileReader::read_lib(fs.open_for_read(VCPKG_LINE_INFO, file));
+            const auto machine_types = read_lib_machine_types(fs.open_for_read(VCPKG_LINE_INFO, file));
 
             // This is zero for folly's debug library
             // TODO: Why?
-            if (info.machine_types.size() == 0) return LintStatus::SUCCESS;
+            if (machine_types.empty()) return LintStatus::SUCCESS;
 
             Checks::check_exit(VCPKG_LINE_INFO,
-                               info.machine_types.size() == 1,
+                               machine_types.size() == 1,
                                "Found more than 1 architecture in file %s",
                                generic_u8string(file));
 
-            const std::string actual_architecture = get_actual_architecture(info.machine_types.at(0));
+            const std::string actual_architecture = get_actual_architecture(machine_types.front());
             if (expected_architecture != actual_architecture)
             {
                 binaries_with_invalid_architecture.push_back({file, actual_architecture});
