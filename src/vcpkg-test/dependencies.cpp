@@ -1708,6 +1708,15 @@ TEST_CASE ("version install self features", "[versionplan]")
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x", "y"});
 }
 
+static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
+                                          MockBaselineProvider& bp,
+                                          std::vector<Dependency> deps)
+{
+    MockCMakeVarProvider var_provider;
+
+    return create_versioned_install_plan(vp, bp, var_provider, deps, {}, toplevel_spec());
+}
+
 TEST_CASE ("version install nonexisting features", "[versionplan]")
 {
     MockBaselineProvider bp;
@@ -1717,20 +1726,68 @@ TEST_CASE ("version install nonexisting features", "[versionplan]")
     auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
     a_scf->feature_paragraphs.push_back(make_fpgh("x"));
 
-    MockCMakeVarProvider var_provider;
-
-    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a", {"y"}}}, {}, toplevel_spec());
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {"y"}}});
 
     REQUIRE_FALSE(install_plan.has_value());
 }
 
-static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
-                                          MockBaselineProvider& bp,
-                                          std::vector<Dependency> deps)
+TEST_CASE ("version install transitive missing features", "[versionplan]")
 {
-    MockCMakeVarProvider var_provider;
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+    bp.v["b"] = {"1", 0};
 
-    return create_versioned_install_plan(vp, bp, var_provider, deps, {}, toplevel_spec());
+    MockVersionedPortfileProvider vp;
+    auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
+    a_scf->core_paragraph->dependencies.push_back({"b", {"y"}});
+    vp.emplace("b", {"1", 0});
+
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}});
+
+    REQUIRE_FALSE(install_plan.has_value());
+}
+
+TEST_CASE ("version remove features during upgrade", "[versionplan]")
+{
+    // This case tests the removal of a feature from a package (and corresponding removal of the requirement by other
+    // dependents).
+
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+    bp.v["b"] = {"1", 0};
+    bp.v["c"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    // a@0 -> b[x], c>=1
+    auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
+    a_scf->core_paragraph->dependencies.push_back({"b", {"x"}});
+    a_scf->core_paragraph->dependencies.push_back({"c", {}, {}, {Constraint::Type::Minimum, "1", 1}});
+    // a@1 -> b
+    auto& a1_scf = vp.emplace("a", {"1", 1}).source_control_file;
+    a1_scf->core_paragraph->dependencies.push_back({"b"});
+    // b@0 : [x]
+    auto& b_scf = vp.emplace("b", {"1", 0}).source_control_file;
+    b_scf->feature_paragraphs.push_back(make_fpgh("x"));
+    // b@1 -> c
+    auto& b1_scf = vp.emplace("b", {"1", 1}).source_control_file;
+    b1_scf->core_paragraph->dependencies.push_back({"c"});
+    vp.emplace("c", {"1", 0});
+    vp.emplace("c", {"1", 1});
+
+    auto install_plan =
+        unwrap(create_versioned_install_plan(vp,
+                                             bp,
+{
+                                                 Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1"}},
+                                                 Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1", 1}},
+                                                 Dependency{"b", {}, {}, {Constraint::Type::Minimum, "1", 1}},
+                                                 Dependency{"c"},
+                                             }));
+
+    REQUIRE(install_plan.size() == 3);
+    check_name_and_version(install_plan.install_actions[0], "c", {"1", 1});
+    check_name_and_version(install_plan.install_actions[1], "b", {"1", 1});
+    check_name_and_version(install_plan.install_actions[2], "a", {"1", 1});
 }
 
 TEST_CASE ("version install host tool", "[versionplan]")
