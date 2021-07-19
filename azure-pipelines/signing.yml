@@ -11,7 +11,7 @@ jobs:
     displayName: "Windows"
     dependsOn:
     pool:
-      name: 'VSEng-MicroBuildVS2019'
+      name: 'VSEngSS-MicroBuild2019'
       demands:
         - CMAKE
     steps:
@@ -102,7 +102,7 @@ jobs:
     displayName: 'MacOS Sign'
     dependsOn: macos_build
     pool:
-      name: VSEng-MicroBuildVS2019
+      name: VSEngSS-MicroBuild2019
     steps:
       - checkout: none
       - task: DownloadBuildArtifacts@0
