@@ -123,7 +123,7 @@ namespace vcpkg::Install
                                vcpkg::u8string(target),
                                " was already present and will be overwritten\n");
                     }
-                    fs.copy_file(file, target, stdfs::copy_options::overwrite_existing, ec);
+                    fs.copy_file(file, target, copy_options::overwrite_existing, ec);
                     if (ec)
                     {
                         vcpkg::printf(Color::error, "failed: %s: %s\n", vcpkg::u8string(target), ec.message());

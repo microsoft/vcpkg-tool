@@ -1315,7 +1315,7 @@ namespace vcpkg::Build
                                                       ec.value()));
         }
 
-        filesystem.copy_file(abi_file, abi_file_in_package, stdfs::copy_options::none, ec);
+        filesystem.copy_file(abi_file, abi_file_in_package, copy_options::none, ec);
         if (ec)
         {
             Checks::exit_with_message(VCPKG_LINE_INFO,

@@ -444,7 +444,7 @@ namespace vcpkg::Export::Prefab
 
             utils.copy_file(share_root / "share" / name / "copyright",
                             meta_dir / "LICENSE",
-                            stdfs::copy_options::overwrite_existing,
+                            copy_options::overwrite_existing,
                             error_code);
 
             PackageMetadata pm;
@@ -560,7 +560,7 @@ namespace vcpkg::Export::Prefab
                     path module_meta_path = module_dir / vcpkg::u8path("module.json");
                     utils.write_contents(module_meta_path, meta.to_json(), VCPKG_LINE_INFO);
 
-                    utils.copy(installed_headers_dir, exported_headers_dir, stdfs::copy_options::recursive);
+                    utils.copy(installed_headers_dir, exported_headers_dir, copy_options::recursive);
                     break;
                 }
                 else
@@ -604,10 +604,8 @@ namespace vcpkg::Export::Prefab
                         path installed_module_path = libs / module.filename();
                         path exported_module_path = module_libs_dir / module.filename();
 
-                        utils.copy_file(installed_module_path,
-                                        exported_module_path,
-                                        stdfs::copy_options::overwrite_existing,
-                                        error_code);
+                        utils.copy_file(
+                            installed_module_path, exported_module_path, copy_options::overwrite_existing, error_code);
                         if (prefab_options.enable_debug)
                         {
                             print2(Strings::format("\tCopying libs\n\tFrom %s\n\tTo %s\n",
@@ -624,7 +622,7 @@ namespace vcpkg::Export::Prefab
                                                    vcpkg::generic_u8string(exported_headers_dir)));
                         }
 
-                        utils.copy(installed_headers_dir, exported_headers_dir, stdfs::copy_options::recursive);
+                        utils.copy(installed_headers_dir, exported_headers_dir, copy_options::recursive);
 
                         ModuleMetadata meta;
 

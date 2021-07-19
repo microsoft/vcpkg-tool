@@ -307,7 +307,7 @@ namespace vcpkg::Export::IFW
                                !ec,
                                "Could not create directory for package file %s",
                                vcpkg::generic_u8string(tempmaintenancetool));
-            fs.copy_file(installerbase_exe, tempmaintenancetool, stdfs::copy_options::overwrite_existing, ec);
+            fs.copy_file(installerbase_exe, tempmaintenancetool, copy_options::overwrite_existing, ec);
             Checks::check_exit(
                 VCPKG_LINE_INFO, !ec, "Could not write package file %s", vcpkg::generic_u8string(tempmaintenancetool));
 
@@ -336,7 +336,7 @@ namespace vcpkg::Export::IFW
                               VCPKG_LINE_INFO);
             const path script_source = paths.root / "scripts" / "ifw" / "maintenance.qs";
             const path script_destination = ifw_packages_dir_path / "maintenance" / "meta" / "maintenance.qs";
-            fs.copy_file(script_source, script_destination, stdfs::copy_options::overwrite_existing, ec);
+            fs.copy_file(script_source, script_destination, copy_options::overwrite_existing, ec);
             Checks::check_exit(
                 VCPKG_LINE_INFO, !ec, "Could not write package file %s", vcpkg::generic_u8string(script_destination));
 

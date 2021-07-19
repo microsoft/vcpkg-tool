@@ -259,8 +259,7 @@ namespace vcpkg::Commands::Integrate
                               VCPKG_LINE_INFO);
             auto appdata_dst_path = get_appdata_targets_path();
 
-            const auto rc =
-                fs.copy_file(appdata_src_path, appdata_dst_path, stdfs::copy_options::overwrite_existing, ec);
+            const auto rc = fs.copy_file(appdata_src_path, appdata_dst_path, copy_options::overwrite_existing, ec);
 
             if (!rc || ec)
             {
@@ -279,8 +278,7 @@ namespace vcpkg::Commands::Integrate
                               VCPKG_LINE_INFO);
             auto appdata_dst_path2 = get_appdata_props_path();
 
-            const auto rc2 =
-                fs.copy_file(appdata_src_path2, appdata_dst_path2, stdfs::copy_options::overwrite_existing, ec);
+            const auto rc2 = fs.copy_file(appdata_src_path2, appdata_dst_path2, copy_options::overwrite_existing, ec);
 
             if (!rc2 || ec)
             {
