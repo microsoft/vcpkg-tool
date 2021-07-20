@@ -1870,8 +1870,7 @@ namespace vcpkg::Dependencies
             auto push = [&emitted, this, &stack](const PackageSpec& spec,
                                                  const Versions::Version& new_ver,
                                                  const PackageSpec& origin,
-                                                 View<std::string> features) -> Optional<std::string>
-            {
+                                                 View<std::string> features) -> Optional<std::string> {
                 auto&& node = m_graph[spec];
                 auto overlay = m_o_provider.get_control_file(spec.name());
                 auto over_it = m_overrides.find(spec.name());

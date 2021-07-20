@@ -1777,7 +1777,7 @@ TEST_CASE ("version remove features during upgrade", "[versionplan]")
     auto install_plan =
         unwrap(create_versioned_install_plan(vp,
                                              bp,
-{
+                                             {
                                                  Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1"}},
                                                  Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1", 1}},
                                                  Dependency{"b", {}, {}, {Constraint::Type::Minimum, "1", 1}},
