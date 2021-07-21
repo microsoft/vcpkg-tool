@@ -27,8 +27,8 @@ jobs:
         arguments: '-Triplet x64-linux -WorkingRoot work -VcpkgRoot $(VCPKG_ROOT)'
         workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
         pwsh: true
-- job: linux-gcc-7
-  displayName: 'Linux'
+- job: linux_gcc_7
+  displayName: 'Ubuntu 18.04 with GCC 7'
   pool:
     vmImage: 'ubuntu-18.04'
   variables:
