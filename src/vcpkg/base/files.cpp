@@ -1362,7 +1362,7 @@ namespace vcpkg
 #else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
             if (target.is_absolute())
             {
-                return path;
+                return target;
             }
             else
             {
