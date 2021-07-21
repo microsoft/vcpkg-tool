@@ -16,6 +16,7 @@ namespace vcpkg::VisualStudio
     static constexpr CStringView V_140 = "v140";
     static constexpr CStringView V_141 = "v141";
     static constexpr CStringView V_142 = "v142";
+    static constexpr CStringView V_143 = "v143";
 
     struct VisualStudioInstance
     {
@@ -258,6 +259,11 @@ namespace vcpkg::VisualStudio
                     {
                         toolset_version = V_142;
                         vcvars_option = "-vcvars_ver=14.2";
+                    }
+                    else if (toolset_version_prefix[3] == '3')
+                    {
+                        toolset_version = V_143;
+                        vcvars_option = "-vcvars_ver=14.3";
                     }
                     else
                     {
