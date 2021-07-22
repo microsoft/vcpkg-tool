@@ -192,10 +192,6 @@ namespace vcpkg::Hash
         }
 
         static std::uint32_t shr32(std::uint32_t value, int by) noexcept { return value >> by; }
-        static std::uint32_t rol32(std::uint32_t value, int by) noexcept
-        {
-            return (value << by) | (value >> (32 - by));
-        }
         static std::uint32_t ror32(std::uint32_t value, int by) noexcept
         {
             return (value >> by) | (value << (32 - by));

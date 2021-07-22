@@ -282,7 +282,7 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         ec.assign(::_wfopen_s(&m_fs, file_path.c_str(), L"rb"), std::generic_category());
-#else  // ^^^ _WIN32 / !_WIN32 vvv
+#else // ^^^ _WIN32 / !_WIN32 vvv
         m_fs = ::fopen(file_path.c_str(), "rb");
         if (m_fs)
         {
@@ -299,7 +299,7 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         ec.assign(::_wfopen_s(&m_fs, file_path.c_str(), L"wb"), std::generic_category());
-#else  // ^^^ _WIN32 / !_WIN32 vvv
+#else // ^^^ _WIN32 / !_WIN32 vvv
         m_fs = ::fopen(file_path.c_str(), "wb");
         if (m_fs)
         {
@@ -340,7 +340,7 @@ namespace vcpkg
             {
                 ec.assign(GetLastError(), std::system_category());
             }
-#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
             struct stat s;
             if (lstat(target.c_str(), &s))
             {
@@ -938,7 +938,7 @@ namespace vcpkg
                 auto written_bytes = sendfile(o_fd, i_fd, &bytes, info.st_size);
 #elif defined(__APPLE__)
                 auto written_bytes = fcopyfile(i_fd, o_fd, 0, COPYFILE_ALL);
-#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
+#else // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
                 ssize_t written_bytes = 0;
                 {
                     constexpr std::size_t buffer_length = 4096;
@@ -1035,7 +1035,7 @@ namespace vcpkg
                         {
                             ec.assign(GetLastError(), std::system_category());
                         }
-#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
                         if (rmdir(current_path.c_str()))
                         {
                             ec.assign(errno, std::system_category());
@@ -1048,7 +1048,7 @@ namespace vcpkg
                         stdfs::remove(current_path, ec);
                         if (check_ec(ec, current_path, err)) return;
                     }
-#else  // ^^^  VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
+#else // ^^^  VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
                     else
                     {
                         if (unlink(current_path.c_str()))
@@ -1239,7 +1239,7 @@ namespace vcpkg
         {
 #if VCPKG_USE_STD_FILESYSTEM
             return stdfs::absolute(target, ec);
-#else  // ^^^ VCPKG_USE_STD_FILESYSTEM  /  !VCPKG_USE_STD_FILESYSTEM  vvv
+#else // ^^^ VCPKG_USE_STD_FILESYSTEM  /  !VCPKG_USE_STD_FILESYSTEM  vvv
             if (target.is_absolute())
             {
                 return target;
@@ -1419,7 +1419,7 @@ namespace vcpkg
         {
 #if defined(_WIN32)
             static constexpr wchar_t const* EXTS[] = {L".cmd", L".exe", L".bat"};
-#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
             static constexpr char const* EXTS[] = {""};
 #endif // ^^^!defined(_WIN32)
             const auto pname = vcpkg::u8path(name);
@@ -1491,7 +1491,7 @@ namespace vcpkg
     {
 #if VCPKG_USE_STD_FILESYSTEM
         return lhs / rhs;
-#else  // ^^^ std::filesystem // std::experimental::filesystem vvv
+#else // ^^^ std::filesystem // std::experimental::filesystem vvv
         if (rhs.is_absolute())
         {
             return rhs;

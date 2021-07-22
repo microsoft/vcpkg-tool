@@ -40,9 +40,9 @@ namespace vcpkg
     constexpr IsSlash is_slash;
 
     using stdfs::copy_options;
-    using stdfs::path;
-    using stdfs::file_type;
     using stdfs::file_status;
+    using stdfs::file_type;
+    using stdfs::path;
 
     path u8path(StringView s);
     inline path u8path(const char* first, const char* last) { return u8path(StringView{first, last}); }
