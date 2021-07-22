@@ -282,7 +282,7 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         ec.assign(::_wfopen_s(&m_fs, file_path.c_str(), L"rb"), std::generic_category());
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
         m_fs = ::fopen(file_path.c_str(), "rb");
         if (m_fs)
         {
@@ -299,7 +299,7 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         ec.assign(::_wfopen_s(&m_fs, file_path.c_str(), L"wb"), std::generic_category());
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
         m_fs = ::fopen(file_path.c_str(), "wb");
         if (m_fs)
         {
@@ -312,142 +312,14 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
     }
 
-    static const std::regex FILESYSTEM_INVALID_CHARACTERS_REGEX = std::regex(R"([\/:*?"<>|])");
-
     namespace
     {
-        vcpkg::file_status status_implementation(bool follow_symlinks, const path& target, std::error_code& ec) noexcept
+        void translate_not_found_to_success(std::error_code& ec)
         {
-            using stdfs::perms;
-            using vcpkg::file_type;
-#if defined(_WIN32)
-            WIN32_FILE_ATTRIBUTE_DATA file_attributes;
-            auto ft = file_type::unknown;
-            auto permissions = perms::unknown;
-            ec.clear();
-            if (!GetFileAttributesExW(target.c_str(), GetFileExInfoStandard, &file_attributes))
-            {
-                const auto err = GetLastError();
-                if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND)
-                {
-                    ft = file_type::not_found;
-                }
-                else
-                {
-                    ec.assign(err, std::system_category());
-                }
-            }
-            else if (!follow_symlinks && file_attributes.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-            {
-                // this also gives junctions file_type::directory_symlink
-                if (file_attributes.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                {
-                    ft = file_type::directory_symlink;
-                }
-                else
-                {
-                    ft = file_type::symlink;
-                }
-            }
-            else if (file_attributes.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            {
-                ft = file_type::directory;
-            }
-            else
-            {
-                // otherwise, the file is a regular file
-                ft = file_type::regular;
-            }
-
-            if (file_attributes.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
-            {
-                constexpr auto all_write = perms::group_write | perms::owner_write | perms::others_write;
-                permissions = perms::all & ~all_write;
-            }
-            else if (ft != file_type::none)
-            {
-                permissions = perms::all;
-            }
-
-            return vcpkg::file_status(ft, permissions);
-
-#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
-            auto result = follow_symlinks ? stdfs::status(target, ec) : stdfs::symlink_status(target, ec);
-            // libstdc++ doesn't correctly not-set ec on nonexistent paths
-            if (ec.value() == ENOENT || ec.value() == ENOTDIR)
+            if (ec && (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory))
             {
                 ec.clear();
-                return vcpkg::file_status(file_type::not_found, perms::unknown);
             }
-            return vcpkg::file_status(result.type(), result.permissions());
-#endif // ^^^ !defined(_WIN32)
-        }
-
-        vcpkg::file_status status(const path& target, std::error_code& ec) noexcept
-        {
-            return status_implementation(true, target, ec);
-        }
-        vcpkg::file_status symlink_status(const path& target, std::error_code& ec) noexcept
-        {
-            return status_implementation(false, target, ec);
-        }
-
-#if defined(_WIN32) && !VCPKG_USE_STD_FILESYSTEM
-        path read_symlink_implementation(const path& source, std::error_code& ec)
-        {
-            ec.clear();
-            auto handle = CreateFileW(source.c_str(),
-                                      0, // open just the metadata
-                                      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                                      nullptr /* no security attributes */,
-                                      OPEN_EXISTING,
-                                      FILE_ATTRIBUTE_NORMAL,
-                                      nullptr /* no template file */);
-            if (handle == INVALID_HANDLE_VALUE)
-            {
-                ec.assign(GetLastError(), std::system_category());
-                return oldpath;
-            }
-            path target;
-            const DWORD maxsize = 32768;
-            const std::unique_ptr<wchar_t[]> buffer(new wchar_t[maxsize]);
-            const auto rc = GetFinalPathNameByHandleW(handle, buffer.get(), maxsize, 0);
-            if (rc > 0 && rc < maxsize)
-            {
-                target = buffer.get();
-            }
-            else
-            {
-                ec.assign(GetLastError(), std::system_category());
-            }
-            CloseHandle(handle);
-            return target;
-        }
-#endif // ^^^ defined(_WIN32) && !VCPKG_USE_STD_FILESYSTEM
-
-        void copy_symlink_implementation(const path& source, const path& destination, std::error_code& ec)
-        {
-#if defined(_WIN32) && !VCPKG_USE_STD_FILESYSTEM
-            const auto target = read_symlink_implementation(source, ec);
-            if (ec) return;
-
-            const DWORD flags =
-#if defined(SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)
-                SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
-#else
-                0;
-#endif
-            if (!CreateSymbolicLinkW(source.c_str(), target.c_str(), flags))
-            {
-                const auto err = GetLastError();
-                ec.assign(err, std::system_category());
-                return;
-            }
-            ec.clear();
-            return;
-#else // ^^^ defined(_WIN32) && !VCPKG_USE_STD_FILESYSTEM // !defined(_WIN32) || VCPKG_USE_STD_FILESYSTEM vvv
-            return stdfs::copy_symlink(source, destination, ec);
-#endif // ^^^ !defined(_WIN32) || VCPKG_USE_STD_FILESYSTEM
         }
 
         // does _not_ follow symlinks
@@ -468,7 +340,7 @@ namespace vcpkg
             {
                 ec.assign(GetLastError(), std::system_category());
             }
-#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
             struct stat s;
             if (lstat(target.c_str(), &s))
             {
@@ -623,7 +495,7 @@ namespace vcpkg
         if (ec)
         {
             vcpkg::Checks::exit_with_message(
-                li, "error creating directory %s", vcpkg::u8string(new_directory), ec.message());
+                li, "error creating directory %s: %s", vcpkg::u8string(new_directory), ec.message());
         }
 
         return result;
@@ -642,10 +514,47 @@ namespace vcpkg
         if (ec)
         {
             vcpkg::Checks::exit_with_message(
-                li, "error creating directories %s", vcpkg::u8string(new_directory), ec.message());
+                li, "error creating directories %s: %s", vcpkg::u8string(new_directory), ec.message());
         }
 
         return result;
+    }
+
+    void Filesystem::create_symlink(const path& to, const path& from, ignore_errors_t)
+    {
+        std::error_code ec;
+        this->create_symlink(to, from, ec);
+    }
+
+    void Filesystem::create_symlink(const path& to, const path& from, LineInfo li)
+    {
+        std::error_code ec;
+        this->create_symlink(to, from, ec);
+        if (ec)
+        {
+            vcpkg::Checks::exit_with_message(
+                li, "error creating symlink %s -> %s: %s", vcpkg::u8string(from), vcpkg::u8string(to), ec.message());
+        }
+    }
+
+    void Filesystem::create_directory_symlink(const path& to, const path& from, ignore_errors_t)
+    {
+        std::error_code ec;
+        this->create_directory_symlink(to, from, ec);
+    }
+
+    void Filesystem::create_directory_symlink(const path& to, const path& from, LineInfo li)
+    {
+        std::error_code ec;
+        this->create_directory_symlink(to, from, ec);
+        if (ec)
+        {
+            vcpkg::Checks::exit_with_message(li,
+                                             "error creating directory symlink %s -> %s: %s",
+                                             vcpkg::u8string(from),
+                                             vcpkg::u8string(to),
+                                             ec.message());
+        }
     }
 
     void Filesystem::create_best_link(const path& to, const path& from, std::error_code& ec)
@@ -1029,7 +938,7 @@ namespace vcpkg
                 auto written_bytes = sendfile(o_fd, i_fd, &bytes, info.st_size);
 #elif defined(__APPLE__)
                 auto written_bytes = fcopyfile(i_fd, o_fd, 0, COPYFILE_ALL);
-#else // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
+#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
                 ssize_t written_bytes = 0;
                 {
                     constexpr std::size_t buffer_length = 4096;
@@ -1102,7 +1011,7 @@ namespace vcpkg
                 static void do_remove(const path& current_path, ErrorInfo& err)
                 {
                     std::error_code ec;
-                    const auto path_status = vcpkg::symlink_status(current_path, ec);
+                    const auto path_status = get_real_filesystem().symlink_status(current_path, ec);
                     if (check_ec(ec, current_path, err)) return;
                     if (!vcpkg::exists(path_status)) return;
 
@@ -1126,7 +1035,7 @@ namespace vcpkg
                         {
                             ec.assign(GetLastError(), std::system_category());
                         }
-#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
                         if (rmdir(current_path.c_str()))
                         {
                             ec.assign(errno, std::system_category());
@@ -1139,23 +1048,7 @@ namespace vcpkg
                         stdfs::remove(current_path, ec);
                         if (check_ec(ec, current_path, err)) return;
                     }
-#else // ^^^  VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
-#if defined(_WIN32)
-                    else if (path_type == vcpkg::file_type::directory_symlink)
-                    {
-                        if (!RemoveDirectoryW(current_path.c_str()))
-                        {
-                            ec.assign(GetLastError(), std::system_category());
-                        }
-                    }
-                    else
-                    {
-                        if (!DeleteFileW(current_path.c_str()))
-                        {
-                            ec.assign(GetLastError(), std::system_category());
-                        }
-                    }
-#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else  // ^^^  VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
                     else
                     {
                         if (unlink(current_path.c_str()))
@@ -1163,7 +1056,6 @@ namespace vcpkg
                             ec.assign(errno, std::system_category());
                         }
                     }
-#endif // ^^^ !defined(_WIN32)
 #endif // ^^^ !VCPKG_USE_STD_FILESYSTEM
 
                     check_ec(ec, current_path, err);
@@ -1278,6 +1170,10 @@ namespace vcpkg
         {
             stdfs::create_symlink(to, from, ec);
         }
+        virtual void create_directory_symlink(const path& to, const path& from, std::error_code& ec) override
+        {
+            stdfs::create_directory_symlink(to, from, ec);
+        }
         virtual void create_hard_link(const path& to, const path& from, std::error_code& ec) override
         {
             stdfs::create_hard_link(to, from, ec);
@@ -1295,42 +1191,30 @@ namespace vcpkg
         }
         virtual void copy_symlink(const path& source, const path& destination, std::error_code& ec) override
         {
-            return copy_symlink_implementation(source, destination, ec);
+            return stdfs::copy_symlink(source, destination, ec);
         }
 
         virtual vcpkg::file_status status(const path& target, std::error_code& ec) const override
         {
-            return vcpkg::status(target, ec);
+            auto result = stdfs::status(target, ec);
+            translate_not_found_to_success(ec);
+            return result;
         }
         virtual vcpkg::file_status symlink_status(const path& target, std::error_code& ec) const override
         {
-            return vcpkg::symlink_status(target, ec);
+            auto result = stdfs::symlink_status(target, ec);
+            translate_not_found_to_success(ec);
+            return result;
         }
         virtual void write_contents(const path& file_path, const std::string& data, std::error_code& ec) override
         {
-            ec.clear();
-
-            FILE* f = nullptr;
-#if defined(_WIN32)
-            auto err = _wfopen_s(&f, file_path.native().c_str(), L"wb");
-#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
-            f = fopen(file_path.native().c_str(), "wb");
-            int err = f != nullptr ? 0 : 1;
-#endif // ^^^ !defined(_WIN32)
-            if (err != 0)
+            auto f = open_for_write(file_path, ec);
+            if (!ec)
             {
-                ec.assign(err, std::system_category());
-                return;
-            }
-
-            if (f != nullptr)
-            {
-                auto count = fwrite(data.data(), sizeof(data[0]), data.size(), f);
-                fclose(f);
-
+                auto count = f.write(data.data(), 1, data.size());
                 if (count != data.size())
                 {
-                    ec = std::make_error_code(std::errc::no_space_on_device);
+                    ec.assign(errno, std::generic_category());
                 }
             }
         }
@@ -1355,11 +1239,7 @@ namespace vcpkg
         {
 #if VCPKG_USE_STD_FILESYSTEM
             return stdfs::absolute(target, ec);
-#else // ^^^ VCPKG_USE_STD_FILESYSTEM  /  !VCPKG_USE_STD_FILESYSTEM  vvv
-#if defined(_WIN32)
-            // absolute was called system_complete in experimental filesystem
-            return stdfs::system_complete(target, ec);
-#else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
+#else  // ^^^ VCPKG_USE_STD_FILESYSTEM  /  !VCPKG_USE_STD_FILESYSTEM  vvv
             if (target.is_absolute())
             {
                 return target;
@@ -1370,7 +1250,6 @@ namespace vcpkg
                 if (ec) return path();
                 return std::move(current_path) / target;
             }
-#endif // ^^^ !defined(_WIN32)
 #endif // ^^^ !VCPKG_USE_STD_FILESYSTEM
         }
 
@@ -1540,7 +1419,7 @@ namespace vcpkg
         {
 #if defined(_WIN32)
             static constexpr wchar_t const* EXTS[] = {L".cmd", L".exe", L".bat"};
-#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
             static constexpr char const* EXTS[] = {""};
 #endif // ^^^!defined(_WIN32)
             const auto pname = vcpkg::u8path(name);
@@ -1583,7 +1462,18 @@ namespace vcpkg
 
     bool has_invalid_chars_for_filesystem(const std::string& s)
     {
-        return std::regex_search(s, FILESYSTEM_INVALID_CHARACTERS_REGEX);
+        for (const char& c : s)
+        {
+            for (const char& invalid : {'[', '/', '\\', ':', '*', '"', '<', '>', '|', ']'})
+            {
+                if (c == invalid)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     void print_paths(const std::vector<path>& paths)
@@ -1601,8 +1491,7 @@ namespace vcpkg
     {
 #if VCPKG_USE_STD_FILESYSTEM
         return lhs / rhs;
-#else // ^^^ std::filesystem // std::experimental::filesystem vvv
-#if !defined(_WIN32)
+#else  // ^^^ std::filesystem // std::experimental::filesystem vvv
         if (rhs.is_absolute())
         {
             return rhs;
@@ -1611,37 +1500,6 @@ namespace vcpkg
         {
             return lhs / rhs;
         }
-#else // ^^^ unix // windows vvv
-        auto rhs_root_directory = rhs.root_directory();
-        auto rhs_root_name = rhs.root_name();
-
-        if (rhs_root_directory.empty() && rhs_root_name.empty())
-        {
-            return lhs / rhs;
-        }
-        else if (rhs_root_directory.empty())
-        {
-            // !rhs_root_name.empty()
-            if (rhs_root_name == lhs.root_name())
-            {
-                return lhs / rhs.relative_path();
-            }
-            else
-            {
-                return rhs;
-            }
-        }
-        else if (rhs_root_name.empty())
-        {
-            // !rhs_root_directory.empty()
-            return lhs.root_name() / rhs;
-        }
-        else
-        {
-            // rhs.absolute()
-            return rhs;
-        }
-#endif // ^^^ windows
 #endif // ^^^ std::experimental::filesystem
     }
 

@@ -346,41 +346,29 @@ size_t Strings::byte_edit_distance(StringView a, StringView b)
 
 namespace vcpkg::Strings
 {
-    namespace
+    std::string b32_encode(std::uint64_t value) noexcept
     {
-        template<class Integral>
-        std::string b32_encode_implementation(Integral x)
+        // 32 values, plus the implicit \0
+        constexpr static char map[33] = "ABCDEFGHIJKLMNOP"
+                                        "QRSTUVWXYZ234567";
+
+        // log2(32)
+        constexpr static int shift = 5;
+        // 32 - 1
+        constexpr static auto mask = 31;
+
+        // ceiling(bitsize(Integral) / log2(32))
+        constexpr static auto result_size = (sizeof(value) * CHAR_BIT + shift - 1) / shift;
+
+        std::string result;
+        for (std::size_t i = 0; i < result_size; ++i)
         {
-            static_assert(std::is_integral<Integral>::value, "b64url_encode must take an integer type");
-            using Unsigned = std::make_unsigned_t<Integral>;
-            auto value = static_cast<Unsigned>(x);
-
-            // 32 values, plus the implicit \0
-            constexpr static char map[33] = "ABCDEFGHIJKLMNOP"
-                                            "QRSTUVWXYZ234567";
-
-            // log2(32)
-            constexpr static int shift = 5;
-            // 32 - 1
-            constexpr static auto mask = 31;
-
-            // ceiling(bitsize(Integral) / log2(32))
-            constexpr static auto result_size = (sizeof(value) * 8 + shift - 1) / shift;
-
-            std::string result;
-            result.reserve(result_size);
-
-            for (std::size_t i = 0; i < result_size; ++i)
-            {
-                result.push_back(map[value & mask]);
-                value >>= shift;
-            }
-
-            return result;
+            result.push_back(map[value & mask]);
+            value >>= shift;
         }
-    }
 
-    std::string b32_encode(std::uint64_t x) noexcept { return b32_encode_implementation(x); }
+        return result;
+    }
 
     struct LinesCollector::CB
     {
