@@ -46,7 +46,6 @@ namespace
         // each of the remaining ~30% to be regular files, directory symlinks,
         // and regular symlinks
         constexpr std::uint32_t directory_min_tag = 0;
-        constexpr std::uint32_t directory_max_tag = 6;
         constexpr std::uint32_t regular_file_tag = 7;
         constexpr std::uint32_t regular_symlink_tag = 8;
         constexpr std::uint32_t directory_symlink_tag = 9;
