@@ -158,14 +158,7 @@ int main() {}
             # We don't support versions of libc++ < 7.0.0, and libc++ 7.0.0 has <filesystem>
             set(_VCPKG_USE_STD_FILESYSTEM ON)
         elseif(VCPKG_STANDARD_LIBRARY STREQUAL "msvc-stl")
-            check_cxx_source_compiles(
-                "#include <ciso646>
-                #if !defined(_MSVC_STL_UPDATE) || _MSVC_STL_UPDATE < 201803
-                #error \"MSVC STL before 15.7 does not support <filesystem>\"
-                #endif
-                int main() {}"
-                _VCPKG_USE_STD_FILESYSTEM)
-
+            set(_VCPKG_USE_STD_FILESYSTEM ON)
             set(_VCPKG_CXXFS_LIBRARY OFF)
         endif()
 
@@ -194,12 +187,7 @@ endfunction()
 function(vcpkg_target_add_warning_options TARGET)
     if(MSVC)
         # either MSVC, or clang-cl
-        target_compile_options(${TARGET} PRIVATE -FC)
-
-        if (MSVC_VERSION GREATER 1900)
-            # Visual Studio 2017 or later
-            target_compile_options(${TARGET} PRIVATE -permissive- -utf-8)
-        endif()
+        target_compile_options(${TARGET} PRIVATE -FC -permissive- -utf-8)
 
         if(VCPKG_DEVELOPMENT_WARNINGS)
             target_compile_options(${TARGET} PRIVATE -W4)

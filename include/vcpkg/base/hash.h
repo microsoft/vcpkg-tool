@@ -8,7 +8,6 @@ namespace vcpkg::Hash
 {
     enum class Algorithm
     {
-        Sha1,
         Sha256,
         Sha512,
     };

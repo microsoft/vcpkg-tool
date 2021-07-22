@@ -1,41 +1,18 @@
-#include <vcpkg/base/system_headers.h>
-
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/checks.h>
-#include <vcpkg/base/files.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/statusparagraph.h>
 
-#include <vcpkg-test/util.h>
+#include <stdlib.h>
 
-// used to get the implementation specific compiler flags (i.e., __cpp_lib_filesystem)
-#include <ciso646>
 #include <iostream>
 #include <memory>
+#include <vector>
 
-#if defined(_WIN32)
-#include <windows.h>
-#endif
-
-#define FILESYSTEM_SYMLINK_STD 0
-#define FILESYSTEM_SYMLINK_UNIX 1
-#define FILESYSTEM_SYMLINK_NONE 2
-
-#if VCPKG_USE_STD_FILESYSTEM
-
-#define FILESYSTEM_SYMLINK FILESYSTEM_SYMLINK_STD
-
-#elif !defined(_MSC_VER)
-
-#define FILESYSTEM_SYMLINK FILESYSTEM_SYMLINK_UNIX
-
-#else
-
-#define FILESYSTEM_SYMLINK FILESYSTEM_SYMLINK_NONE
-
-#endif
+#include <vcpkg-test/util.h>
 
 namespace vcpkg::Test
 {
@@ -114,53 +91,10 @@ namespace vcpkg::Test
         return {name, triplet};
     }
 
-    static AllowSymlinks internal_can_create_symlinks() noexcept
-    {
-#if FILESYSTEM_SYMLINK == FILESYSTEM_SYMLINK_NONE
-        return AllowSymlinks::No;
-#elif FILESYSTEM_SYMLINK == FILESYSTEM_SYMLINK_UNIX
-        return AllowSymlinks::Yes;
-#elif !defined(_WIN32) // FILESYSTEM_SYMLINK == FILESYSTEM_SYMLINK_STD
-        return AllowSymlinks::Yes;
-#else
-        constexpr static const wchar_t regkey[] = LR"(SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock)";
-        constexpr static const wchar_t regkey_member[] = LR"(AllowDevelopmentWithoutDevLicense)";
-
-        DWORD data;
-        DWORD dataSize = sizeof(data);
-        const auto status =
-            RegGetValueW(HKEY_LOCAL_MACHINE, regkey, regkey_member, RRF_RT_DWORD, nullptr, &data, &dataSize);
-
-        if (status == ERROR_SUCCESS && data == 1)
-        {
-            return AllowSymlinks::Yes;
-        }
-        else
-        {
-            std::cout << "Symlinks are not allowed on this system\n";
-            return AllowSymlinks::No;
-        }
-#endif
-    }
-    const static AllowSymlinks CAN_CREATE_SYMLINKS = internal_can_create_symlinks();
-
-    AllowSymlinks can_create_symlinks() noexcept { return CAN_CREATE_SYMLINKS; }
-
     static path internal_base_temporary_directory()
     {
 #if defined(_WIN32)
-        wchar_t* tmp = static_cast<wchar_t*>(std::calloc(32'767, 2));
-
-        if (!GetEnvironmentVariableW(L"TEMP", tmp, 32'767))
-        {
-            std::cerr << "No temporary directory found.\n";
-            std::abort();
-        }
-
-        path result = tmp;
-        std::free(tmp);
-
-        return result / L"vcpkg-test";
+        return vcpkg::u8path(vcpkg::get_environment_variable("TEMP").value_or_exit(VCPKG_LINE_INFO) + "/vcpkg-test");
 #else
         return "/tmp/vcpkg-test";
 #endif
@@ -170,61 +104,5 @@ namespace vcpkg::Test
     {
         const static path BASE_TEMPORARY_DIRECTORY = internal_base_temporary_directory();
         return BASE_TEMPORARY_DIRECTORY;
-    }
-
-#if FILESYSTEM_SYMLINK == FILESYSTEM_SYMLINK_NONE
-    constexpr char no_filesystem_message[] =
-        "<filesystem> doesn't exist; on windows, we don't attempt to use the win32 calls to create symlinks";
-#endif
-
-    void create_symlink(const path& target, const path& file, std::error_code& ec)
-    {
-#if FILESYSTEM_SYMLINK == FILESYSTEM_SYMLINK_STD
-        if (can_create_symlinks())
-        {
-            path targetp = target.native();
-            path filep = file.native();
-
-            stdfs::create_symlink(targetp, filep, ec);
-        }
-        else
-        {
-            vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "Symlinks are not allowed on this system");
-        }
-#elif FILESYSTEM_SYMLINK == FILESYSTEM_SYMLINK_UNIX
-        if (symlink(target.c_str(), file.c_str()) != 0)
-        {
-            ec.assign(errno, std::system_category());
-        }
-#else
-        (void)target;
-        (void)file;
-        (void)ec;
-        vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, no_filesystem_message);
-#endif
-    }
-
-    void create_directory_symlink(const path& target, const path& file, std::error_code& ec)
-    {
-#if FILESYSTEM_SYMLINK == FILESYSTEM_SYMLINK_STD
-        if (can_create_symlinks())
-        {
-            std::filesystem::path targetp = target.native();
-            std::filesystem::path filep = file.native();
-
-            std::filesystem::create_directory_symlink(targetp, filep, ec);
-        }
-        else
-        {
-            vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "Symlinks are not allowed on this system");
-        }
-#elif FILESYSTEM_SYMLINK == FILESYSTEM_SYMLINK_UNIX
-        ::vcpkg::Test::create_symlink(target, file, ec);
-#else
-        (void)target;
-        (void)file;
-        (void)ec;
-        vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, no_filesystem_message);
-#endif
     }
 }

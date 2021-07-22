@@ -40,6 +40,8 @@ namespace vcpkg
     constexpr IsSlash is_slash;
 
     using stdfs::copy_options;
+    using stdfs::file_status;
+    using stdfs::file_type;
     using stdfs::path;
 
     path u8path(StringView s);
@@ -60,41 +62,6 @@ namespace vcpkg
     path lexically_normal(const path& p);
 
 #if defined(_WIN32)
-    enum class file_type
-    {
-        none = 0,
-        not_found = -1,
-        regular = 1,
-        directory = 2,
-        symlink = 3,
-        block = 4,
-        character = 5,
-        fifo = 6,
-        socket = 7,
-        unknown = 8,
-        // also stands for a junction
-        directory_symlink = 42
-    };
-
-    struct file_status
-    {
-        explicit file_status(file_type type = file_type::none,
-                             stdfs::perms permissions = stdfs::perms::unknown) noexcept
-            : m_type(type), m_permissions(permissions)
-        {
-        }
-
-        file_type type() const noexcept { return m_type; }
-        void type(file_type type) noexcept { m_type = type; }
-
-        stdfs::perms permissions() const noexcept { return m_permissions; }
-        void permissions(stdfs::perms perm) noexcept { m_permissions = perm; }
-
-    private:
-        file_type m_type;
-        stdfs::perms m_permissions;
-    };
-
     struct SystemHandle
     {
         using type = intptr_t; // HANDLE
@@ -102,19 +69,7 @@ namespace vcpkg
 
         bool is_valid() const { return system_handle != -1; }
     };
-
 #else
-
-    using stdfs::file_type;
-    // to set up ADL correctly on `file_status` objects, we are defining
-    // this in our own namespace
-    struct file_status : private stdfs::file_status
-    {
-        using stdfs::file_status::file_status;
-        using stdfs::file_status::permissions;
-        using stdfs::file_status::type;
-    };
-
     struct SystemHandle
     {
         using type = int; // file descriptor
@@ -131,13 +86,7 @@ namespace vcpkg
     }
     inline bool operator!=(SystemHandle lhs, SystemHandle rhs) noexcept { return !(lhs == rhs); }
 
-    inline bool is_symlink(file_status s) noexcept
-    {
-#if defined(_WIN32)
-        if (s.type() == file_type::directory_symlink) return true;
-#endif
-        return s.type() == file_type::symlink;
-    }
+    inline bool is_symlink(file_status s) { return stdfs::is_symlink(s); }
     inline bool is_regular_file(file_status s) { return s.type() == file_type::regular; }
     inline bool is_directory(file_status s) { return s.type() == file_type::directory; }
     inline bool exists(file_status s) { return s.type() != file_type::not_found && s.type() != file_type::none; }
@@ -289,6 +238,11 @@ namespace vcpkg
         bool create_directories(const path& new_directory, ignore_errors_t);
         bool create_directories(const path& new_directory, LineInfo);
         virtual void create_symlink(const path& to, const path& from, std::error_code& ec) = 0;
+        void create_symlink(const path& to, const path& from, ignore_errors_t);
+        void create_symlink(const path& to, const path& from, LineInfo);
+        virtual void create_directory_symlink(const path& to, const path& from, std::error_code& ec) = 0;
+        void create_directory_symlink(const path& to, const path& from, ignore_errors_t);
+        void create_directory_symlink(const path& to, const path& from, LineInfo);
         virtual void create_hard_link(const path& to, const path& from, std::error_code& ec) = 0;
         void create_best_link(const path& to, const path& from, std::error_code& ec);
         void create_best_link(const path& to, const path& from, LineInfo);
