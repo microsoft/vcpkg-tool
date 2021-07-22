@@ -1462,18 +1462,7 @@ namespace vcpkg
 
     bool has_invalid_chars_for_filesystem(const std::string& s)
     {
-        for (const char& c : s)
-        {
-            for (const char& invalid : {'[', '/', '\\', ':', '*', '"', '<', '>', '|', ']'})
-            {
-                if (c == invalid)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return s.find_first_of(R"([/\:*"<>|])") == std::string::npos;
     }
 
     void print_paths(const std::vector<path>& paths)
