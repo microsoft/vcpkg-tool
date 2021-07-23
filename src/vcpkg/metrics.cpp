@@ -471,7 +471,7 @@ namespace vcpkg::Metrics
         fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, copy_options::skip_existing, ec);
         if (ec) return;
 #else
-        if (!fs.exists("/tmp")) return;
+        if (!fs.exists("/tmp", IgnoreErrors{})) return;
         const path temp_folder_path = "/tmp/vcpkg";
         fs.create_directory(temp_folder_path, IgnoreErrors{});
 #endif
