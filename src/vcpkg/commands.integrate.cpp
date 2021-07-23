@@ -449,14 +449,8 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         auto& fs = paths.get_filesystem();
         const path completion_script_path = paths.scripts / "vcpkg_completion.bash";
 
-        Expected<std::vector<std::string>> maybe_bashrc_content = fs.read_lines(bashrc_path);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, maybe_bashrc_content.has_value(), "Unable to read %s", vcpkg::u8string(bashrc_path));
-
-        std::vector<std::string> bashrc_content = maybe_bashrc_content.value_or_exit(VCPKG_LINE_INFO);
-
         std::vector<std::string> matches;
-        for (auto&& line : bashrc_content)
+        for (auto&& line : fs.read_lines(bashrc_path, VCPKG_LINE_INFO))
         {
             std::smatch match;
             if (std::regex_match(line, match, std::regex{R"###(^source.*scripts/vcpkg_completion.bash$)###"}))
