@@ -18,7 +18,7 @@ namespace vcpkg::PostBuildLint
 {
     static auto not_extension_pred(const Filesystem& fs, const std::string& ext)
     {
-        return [&fs, ext](const path& target) { return fs.is_directory(target) || target.extension() != ext; };
+        return [&fs, ext](const path& target) { return target.extension() != ext; };
     }
 
     enum class LintStatus
@@ -89,7 +89,7 @@ namespace vcpkg::PostBuildLint
 
         if (policies.is_enabled(BuildPolicy::CMAKE_HELPER_PORT))
         {
-            if (fs.exists(include_dir))
+            if (fs.exists(include_dir, IgnoreErrors{}))
             {
                 print2(Color::warning,
                        "The folder /include exists in a cmake helper port; this is incorrect, since only cmake "
@@ -102,7 +102,7 @@ namespace vcpkg::PostBuildLint
             }
         }
 
-        if (!fs.exists(include_dir) || fs.is_empty(include_dir))
+        if (!fs.exists(include_dir, IgnoreErrors{}) || fs.is_empty(include_dir))
         {
             print2(Color::warning,
                    "The folder /include is empty or not present. This indicates the library was not correctly "
@@ -172,7 +172,7 @@ namespace vcpkg::PostBuildLint
         static constexpr Span<const StringLiteral> restricted_lists[] = {
             restricted_sys_filenames, restricted_crt_filenames, restricted_general_filenames};
         const path include_dir = package_dir / "include";
-        auto files = fs.get_files_non_recursive(include_dir);
+        auto files = fs.get_files_non_recursive(include_dir, IgnoreErrors{});
         auto filenames_v = Util::fmap(files, [](const auto& file) { return vcpkg::u8string(file.filename()); });
         std::set<std::string> filenames_s(filenames_v.begin(), filenames_v.end());
 
@@ -205,10 +205,9 @@ namespace vcpkg::PostBuildLint
     {
         const path debug_include_dir = package_dir / "debug" / "include";
 
-        std::vector<path> files_found = fs.get_files_recursive(debug_include_dir);
+        std::vector<path> files_found = fs.get_regular_files_recursive(debug_include_dir, IgnoreErrors{});
 
-        Util::erase_remove_if(
-            files_found, [&fs](const path& target) { return fs.is_directory(target) || target.extension() == ".ifc"; });
+        Util::erase_remove_if(files_found, [&fs](const path& target) { return target.extension() == ".ifc"; });
 
         if (!files_found.empty())
         {
@@ -226,7 +225,7 @@ namespace vcpkg::PostBuildLint
     {
         const path debug_share = package_dir / "debug" / "share";
 
-        if (fs.exists(debug_share))
+        if (fs.exists(debug_share, IgnoreErrors{}))
         {
             print2(Color::warning,
                    "/debug/share should not exist. Please reorganize any important files, then use\n"
@@ -248,7 +247,7 @@ namespace vcpkg::PostBuildLint
 
         if (policies.is_enabled(BuildPolicy::CMAKE_HELPER_PORT))
         {
-            if (!fs.exists(absolute_path))
+            if (!fs.exists(absolute_path, IgnoreErrors{}))
             {
                 print2(Color::warning,
                        "The /",
@@ -264,7 +263,7 @@ namespace vcpkg::PostBuildLint
     static LintStatus check_folder_lib_cmake(const Filesystem& fs, const path& package_dir, const PackageSpec& spec)
     {
         const path lib_cmake = package_dir / "lib" / "cmake";
-        if (fs.exists(lib_cmake))
+        if (fs.exists(lib_cmake, IgnoreErrors{}))
         {
             vcpkg::printf(Color::warning,
                           "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to "
@@ -290,11 +289,12 @@ namespace vcpkg::PostBuildLint
         std::vector<path> misplaced_cmake_files;
         for (auto&& dir : dirs)
         {
-            auto files = fs.get_files_recursive(dir);
-            for (auto&& file : files)
+            for (auto&& file : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
             {
-                if (!fs.is_directory(file) && file.extension() == ".cmake")
+                if (Strings::case_insensitive_ascii_equals(vcpkg::u8string(file.extension()), ".cmake"))
+                {
                     misplaced_cmake_files.push_back(std::move(file));
+                }
             }
         }
 
@@ -317,7 +317,7 @@ namespace vcpkg::PostBuildLint
                                                    const PackageSpec& spec)
     {
         const path lib_cmake_debug = package_dir / "debug" / "lib" / "cmake";
-        if (fs.exists(lib_cmake_debug))
+        if (fs.exists(lib_cmake_debug, IgnoreErrors{}))
         {
             vcpkg::printf(Color::warning,
                           "The /debug/lib/cmake folder should be merged with /lib/cmake into /share/%s\n",
@@ -330,7 +330,7 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_for_dlls_in_lib_dir(const Filesystem& fs, const path& package_dir)
     {
-        std::vector<path> dlls = fs.get_files_recursive(package_dir / "lib");
+        std::vector<path> dlls = fs.get_regular_files_recursive(package_dir / "lib", IgnoreErrors{});
         Util::erase_remove_if(dlls, not_extension_pred(fs, ".dll"));
 
         if (!dlls.empty())
@@ -349,7 +349,7 @@ namespace vcpkg::PostBuildLint
     {
         const path packages_dir = paths.packages / spec.dir();
         const path copyright_file = packages_dir / "share" / spec.name() / "copyright";
-        if (fs.exists(copyright_file))
+        if (fs.exists(copyright_file, IgnoreErrors{}))
         {
             return LintStatus::SUCCESS;
         }
@@ -358,15 +358,12 @@ namespace vcpkg::PostBuildLint
 
         std::vector<path> potential_copyright_files;
         // We only search in the root of each unpacked source archive to reduce false positives
-        auto src_dirs = fs.get_files_non_recursive(current_buildtrees_dir_src);
+        auto src_dirs = fs.get_directories_non_recursive(current_buildtrees_dir_src, IgnoreErrors{});
         for (auto&& src_dir : src_dirs)
         {
-            if (!fs.is_directory(src_dir)) continue;
-
-            for (auto&& src_file : fs.get_files_non_recursive(src_dir))
+            for (auto&& src_file : fs.get_regular_files_non_recursive(src_dir, IgnoreErrors{}))
             {
                 const std::string filename = u8string(src_file.filename());
-
                 if (filename == "LICENSE" || filename == "LICENSE.txt" || filename == "COPYING")
                 {
                     potential_copyright_files.push_back(src_file);
@@ -401,7 +398,7 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_for_exes(const Filesystem& fs, const path& package_dir)
     {
-        std::vector<path> exes = fs.get_files_recursive(package_dir / "bin");
+        std::vector<path> exes = fs.get_regular_files_recursive(package_dir / "bin", IgnoreErrors{});
         Util::erase_remove_if(exes, not_extension_pred(fs, ".exe"));
 
         if (!exes.empty())
@@ -675,12 +672,14 @@ namespace vcpkg::PostBuildLint
         const path bin = package_dir / "bin";
         const path debug_bin = package_dir / "debug" / "bin";
 
-        if (!fs.exists(bin) && !fs.exists(debug_bin))
+        const bool bin_exists = fs.exists(bin, IgnoreErrors{});
+        const bool debug_bin_exists = fs.exists(debug_bin, IgnoreErrors{});
+        if (!bin_exists && !debug_bin_exists)
         {
             return LintStatus::SUCCESS;
         }
 
-        if (fs.exists(bin))
+        if (bin_exists)
         {
             vcpkg::printf(Color::warning,
                           R"(There should be no bin\ directory in a static build, but %s is present.)"
@@ -688,7 +687,7 @@ namespace vcpkg::PostBuildLint
                           vcpkg::u8string(bin));
         }
 
-        if (fs.exists(debug_bin))
+        if (debug_bin_exists)
         {
             vcpkg::printf(Color::warning,
                           R"(There should be no debug\bin\ directory in a static build, but %s is present.)"
@@ -713,11 +712,8 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_no_empty_folders(const Filesystem& fs, const path& dir)
     {
-        std::vector<path> empty_directories = fs.get_files_recursive(dir);
-
-        Util::erase_remove_if(empty_directories, [&fs](const path& current) {
-            return !fs.is_directory(current) || !fs.is_empty(current);
-        });
+        std::vector<path> empty_directories = fs.get_directories_recursive(dir, IgnoreErrors{});
+        Util::erase_remove_if(empty_directories, [&fs](const path& current) { return !fs.is_empty(current); });
 
         if (!empty_directories.empty())
         {
@@ -844,16 +840,11 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_no_files_in_dir(const Filesystem& fs, const path& dir)
     {
-        std::vector<path> misplaced_files = fs.get_files_non_recursive(dir);
+        std::vector<path> misplaced_files = fs.get_regular_files_non_recursive(dir, IgnoreErrors{});
         Util::erase_remove_if(misplaced_files, [&fs](const path& target) {
             const std::string filename = u8string(target.filename());
-            if (Strings::case_insensitive_ascii_equals(filename, "CONTROL") ||
-                Strings::case_insensitive_ascii_equals(filename, "BUILD_INFO"))
-            {
-                return true;
-            }
-
-            return fs.is_directory(target);
+            return Strings::case_insensitive_ascii_equals(filename, "CONTROL") ||
+                   Strings::case_insensitive_ascii_equals(filename, "BUILD_INFO");
         });
 
         if (!misplaced_files.empty())
@@ -906,9 +897,9 @@ namespace vcpkg::PostBuildLint
         const path debug_bin_dir = package_dir / "debug" / "bin";
         const path release_bin_dir = package_dir / "bin";
 
-        std::vector<path> debug_libs = fs.get_files_recursive(debug_lib_dir);
+        std::vector<path> debug_libs = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
         Util::erase_remove_if(debug_libs, not_extension_pred(fs, ".lib"));
-        std::vector<path> release_libs = fs.get_files_recursive(release_lib_dir);
+        std::vector<path> release_libs = fs.get_regular_files_recursive(release_lib_dir, IgnoreErrors{});
         Util::erase_remove_if(release_libs, not_extension_pred(fs, ".lib"));
 
         if (!pre_build_info.build_type && !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
@@ -922,9 +913,9 @@ namespace vcpkg::PostBuildLint
             error_count += check_lib_architecture(pre_build_info.target_architecture, libs, fs);
         }
 
-        std::vector<path> debug_dlls = fs.get_files_recursive(debug_bin_dir);
+        std::vector<path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
         Util::erase_remove_if(debug_dlls, not_extension_pred(fs, ".dll"));
-        std::vector<path> release_dlls = fs.get_files_recursive(release_bin_dir);
+        std::vector<path> release_dlls = fs.get_regular_files_recursive(release_bin_dir, IgnoreErrors{});
         Util::erase_remove_if(release_dlls, not_extension_pred(fs, ".dll"));
 
         switch (build_info.library_linkage)

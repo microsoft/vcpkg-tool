@@ -802,7 +802,7 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
     {
         const auto control = dir / vcpkg::u8path("CONTROL");
         const auto manifest = dir / vcpkg::u8path("vcpkg.json");
-        if (fs.exists(control))
+        if (fs.exists(control, IgnoreErrors{}))
         {
             INFO(vcpkg::u8string(control));
             auto contents = fs.read_contents(control, VCPKG_LINE_INFO);
@@ -820,7 +820,7 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
 
             scfs.push_back(std::move(*scf.value_or_exit(VCPKG_LINE_INFO)));
         }
-        else if (fs.exists(manifest))
+        else if (fs.exists(manifest, IgnoreErrors{}))
         {
             std::error_code ec;
             auto contents = Json::parse_file(fs, manifest, ec);

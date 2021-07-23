@@ -39,6 +39,42 @@ namespace
         bool is_dot() const { return (last - first) == 1 && *first == '.'; }
         bool is_dot_dot() const { return (last - first) == 2 && *first == '.' && *(first + 1) == '.'; }
     };
+
+    void append_filesystem_stringish(std::string&) { }
+
+    template<class StringIsh>
+    void append_filesystem_stringish(std::string& target, StringIsh&& str)
+    {
+        vcpkg::StringView as_string_view{str};
+        target.push_back('"');
+        target.append(as_string_view.data(), as_string_view.size());
+        target.push_back('"');
+    }
+
+    template<class StringIsh0, class... StringIshN>
+    void append_filesystem_stringish(std::string& target, StringIsh0&& str0, StringIshN&&... strN)
+    {
+        vcpkg::StringView as_string_view{str0};
+        target.push_back('"');
+        target.append(as_string_view.data(), as_string_view.size());
+        target.append("\", ");
+        append_filesystem_stringish(target, std::forward<StringIshN>(strN)...);
+    }
+
+    template<class... StringIsh>
+    [[noreturn]] void exit_filesystem_call_error(vcpkg::LineInfo li,
+                                                 const std::error_code& ec,
+                                                 vcpkg::StringView call_name,
+                                                 StringIsh&&... strs)
+    {
+        std::string message;
+        message.append(call_name.data(), call_name.size());
+        message.push_back('(');
+        append_filesystem_stringish(message, std::forward<StringIsh>(strs)...);
+        message.append(")\n");
+        message.append(ec.message());
+        vcpkg::Checks::exit_with_message(li, message);
+    }
 }
 
 #if defined(_WIN32)
@@ -364,34 +400,107 @@ namespace vcpkg
 
     std::vector<std::string> Filesystem::read_lines(const path& file_path, LineInfo li) const
     {
-        auto maybe_lines = this->read_lines(file_path);
-        if (auto p = maybe_lines.get())
+        std::error_code ec;
+        auto maybe_lines = this->read_lines(file_path, ec);
+        if (ec)
         {
-            return std::move(*p);
+            exit_filesystem_call_error(li, ec, "read_lines", vcpkg::u8string(file_path));
         }
 
-        Checks::exit_with_message(
-            li, "error reading file: %s: %s", vcpkg::u8string(file_path), maybe_lines.error().message());
+        return maybe_lines;
     }
 
     std::string Filesystem::read_contents(const path& file_path, LineInfo li) const
     {
-        auto maybe_contents = this->read_contents(file_path);
-        if (auto p = maybe_contents.get())
+        std::error_code ec;
+        auto maybe_contents = this->read_contents(file_path, ec);
+        if (ec)
         {
-            return std::move(*p);
+            exit_filesystem_call_error(li, ec, "read_contents", vcpkg::u8string(file_path));
         }
 
-        Checks::exit_with_message(
-            li, "error reading file: %s: %s", vcpkg::u8string(file_path), maybe_contents.error().message());
+        return maybe_contents;
     }
+
+    std::vector<path> Filesystem::get_files_recursive(const path& dir, LineInfo li) const
+    {
+        std::error_code ec;
+        auto maybe_files = this->get_files_recursive(dir, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "get_files_recursive", vcpkg::u8string(dir));
+        }
+
+        return maybe_files;
+    }
+
+    std::vector<path> Filesystem::get_files_non_recursive(const path& dir, LineInfo li) const
+    {
+        std::error_code ec;
+        auto maybe_files = this->get_files_non_recursive(dir, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "get_files_non_recursive", vcpkg::u8string(dir));
+        }
+
+        return maybe_files;
+    }
+
+    std::vector<path> Filesystem::get_directories_recursive(const path& dir, LineInfo li) const
+    {
+        std::error_code ec;
+        auto maybe_directories = this->get_directories_recursive(dir, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "get_directories_recursive", vcpkg::u8string(dir));
+        }
+
+        return maybe_directories;
+    }
+
+    std::vector<path> Filesystem::get_directories_non_recursive(const path& dir, LineInfo li) const
+    {
+        std::error_code ec;
+        auto maybe_directories = this->get_directories_non_recursive(dir, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "get_directories_non_recursive", vcpkg::u8string(dir));
+        }
+
+        return maybe_directories;
+    }
+
+    std::vector<path> Filesystem::get_regular_files_recursive(const path& dir, LineInfo li) const
+    {
+        std::error_code ec;
+        auto maybe_directories = this->get_regular_files_recursive(dir, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "get_regular_files_recursive", vcpkg::u8string(dir));
+        }
+
+        return maybe_directories;
+    }
+
+    std::vector<path> Filesystem::get_regular_files_non_recursive(const path& dir, LineInfo li) const
+    {
+        std::error_code ec;
+        auto maybe_directories = this->get_regular_files_non_recursive(dir, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "get_regular_files_non_recursive", vcpkg::u8string(dir));
+        }
+
+        return maybe_directories;
+    }
+
     void Filesystem::write_contents(const path& file_path, const std::string& data, LineInfo li)
     {
         std::error_code ec;
         this->write_contents(file_path, data, ec);
         if (ec)
         {
-            Checks::exit_with_message(li, "error writing file: %s: %s", vcpkg::u8string(file_path), ec.message());
+            exit_filesystem_call_error(li, ec, "write_contents", vcpkg::u8string(file_path));
         }
     }
     void Filesystem::write_rename_contents(const path& file_path,
@@ -410,8 +519,7 @@ namespace vcpkg
         this->write_contents_and_dirs(file_path, data, ec);
         if (ec)
         {
-            Checks::exit_with_message(
-                li, "error writing file and creating directories: %s: %s", vcpkg::u8string(file_path), ec.message());
+            exit_filesystem_call_error(li, ec, "write_contents_and_dirs", vcpkg::u8string(file_path));
         }
     }
     void Filesystem::rename(const path& old_path, const path& new_path, LineInfo li)
@@ -420,11 +528,7 @@ namespace vcpkg
         this->rename(old_path, new_path, ec);
         if (ec)
         {
-            Checks::exit_with_message(li,
-                                      "error renaming file: %s: %s: %s",
-                                      vcpkg::u8string(old_path),
-                                      vcpkg::u8string(new_path),
-                                      ec.message());
+            exit_filesystem_call_error(li, ec, "rename", vcpkg::u8string(old_path), vcpkg::u8string(new_path));
         }
     }
     void Filesystem::rename_with_retry(const path& old_path, const path& new_path, std::error_code& ec)
@@ -449,16 +553,10 @@ namespace vcpkg
         auto r = this->remove(target, ec);
         if (ec)
         {
-            Checks::exit_with_message(li, "error removing file: %s: %s", vcpkg::u8string(target), ec.message());
+            exit_filesystem_call_error(li, ec, "remove", vcpkg::u8string(target));
         }
 
         return r;
-    }
-
-    bool Filesystem::remove(const path& target, ignore_errors_t)
-    {
-        std::error_code ec;
-        return this->remove(target, ec);
     }
 
     bool Filesystem::exists(const path& target, std::error_code& ec) const
@@ -471,21 +569,11 @@ namespace vcpkg
         std::error_code ec;
         auto result = this->exists(target, ec);
         if (ec)
-            Checks::exit_with_message(
-                li, "error checking existence of file %s: %s", vcpkg::u8string(target), ec.message());
+        {
+            exit_filesystem_call_error(li, ec, "exists", vcpkg::u8string(target));
+        }
+
         return result;
-    }
-
-    bool Filesystem::exists(const path& target, ignore_errors_t) const
-    {
-        std::error_code ec;
-        return this->exists(target, ec);
-    }
-
-    bool Filesystem::create_directory(const path& new_directory, ignore_errors_t)
-    {
-        std::error_code ec;
-        return this->create_directory(new_directory, ec);
     }
 
     bool Filesystem::create_directory(const path& new_directory, LineInfo li)
@@ -494,17 +582,10 @@ namespace vcpkg
         bool result = this->create_directory(new_directory, ec);
         if (ec)
         {
-            vcpkg::Checks::exit_with_message(
-                li, "error creating directory %s: %s", vcpkg::u8string(new_directory), ec.message());
+            exit_filesystem_call_error(li, ec, "create_directory", vcpkg::u8string(new_directory));
         }
 
         return result;
-    }
-
-    bool Filesystem::create_directories(const path& new_directory, ignore_errors_t)
-    {
-        std::error_code ec;
-        return this->create_directories(new_directory, ec);
     }
 
     bool Filesystem::create_directories(const path& new_directory, LineInfo li)
@@ -513,17 +594,10 @@ namespace vcpkg
         bool result = this->create_directories(new_directory, ec);
         if (ec)
         {
-            vcpkg::Checks::exit_with_message(
-                li, "error creating directories %s: %s", vcpkg::u8string(new_directory), ec.message());
+            exit_filesystem_call_error(li, ec, "create_directories", vcpkg::u8string(new_directory));
         }
 
         return result;
-    }
-
-    void Filesystem::create_symlink(const path& to, const path& from, ignore_errors_t)
-    {
-        std::error_code ec;
-        this->create_symlink(to, from, ec);
     }
 
     void Filesystem::create_symlink(const path& to, const path& from, LineInfo li)
@@ -532,15 +606,8 @@ namespace vcpkg
         this->create_symlink(to, from, ec);
         if (ec)
         {
-            vcpkg::Checks::exit_with_message(
-                li, "error creating symlink %s -> %s: %s", vcpkg::u8string(from), vcpkg::u8string(to), ec.message());
+            exit_filesystem_call_error(li, ec, "create_symlink", vcpkg::u8string(to), vcpkg::u8string(from));
         }
-    }
-
-    void Filesystem::create_directory_symlink(const path& to, const path& from, ignore_errors_t)
-    {
-        std::error_code ec;
-        this->create_directory_symlink(to, from, ec);
     }
 
     void Filesystem::create_directory_symlink(const path& to, const path& from, LineInfo li)
@@ -549,11 +616,17 @@ namespace vcpkg
         this->create_directory_symlink(to, from, ec);
         if (ec)
         {
-            vcpkg::Checks::exit_with_message(li,
-                                             "error creating directory symlink %s -> %s: %s",
-                                             vcpkg::u8string(from),
-                                             vcpkg::u8string(to),
-                                             ec.message());
+            exit_filesystem_call_error(li, ec, "create_directory_symlink", vcpkg::u8string(to), vcpkg::u8string(from));
+        }
+    }
+
+    void Filesystem::create_hard_link(const path& to, const path& from, LineInfo li)
+    {
+        std::error_code ec;
+        this->create_hard_link(to, from, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "create_hard_link", vcpkg::u8string(to), vcpkg::u8string(from));
         }
     }
 
@@ -565,14 +638,24 @@ namespace vcpkg
         if (!ec) return;
         this->copy_file(from, to, copy_options::none, ec);
     }
+
     void Filesystem::create_best_link(const path& to, const path& from, LineInfo li)
     {
         std::error_code ec;
         this->create_best_link(to, from, ec);
         if (ec)
         {
-            vcpkg::Checks::exit_with_message(
-                li, "Error: could not link %s to %s: %s", vcpkg::u8string(from), vcpkg::u8string(to), ec.message());
+            exit_filesystem_call_error(li, ec, "create_best_link", vcpkg::u8string(to), vcpkg::u8string(from));
+        }
+    }
+
+    void Filesystem::copy(const path& source, const path& destination, copy_options options, LineInfo li)
+    {
+        std::error_code ec;
+        this->copy(source, destination, options, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "copy", vcpkg::u8string(source), vcpkg::u8string(destination));
         }
     }
 
@@ -582,8 +665,17 @@ namespace vcpkg
         this->copy_file(source, destination, options, ec);
         if (ec)
         {
-            vcpkg::Checks::exit_with_message(
-                li, "error copying file from %s to %s: %s", u8string(source), u8string(destination), ec.message());
+            exit_filesystem_call_error(li, ec, "copy_file", vcpkg::u8string(source), vcpkg::u8string(destination));
+        }
+    }
+
+    void Filesystem::copy_symlink(const path& source, const path& destination, LineInfo li)
+    {
+        std::error_code ec;
+        this->copy_symlink(source, destination, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "copy_symlink", vcpkg::u8string(source), vcpkg::u8string(destination));
         }
     }
 
@@ -593,16 +685,10 @@ namespace vcpkg
         auto result = this->status(target, ec);
         if (ec)
         {
-            vcpkg::Checks::exit_with_message(li, "error getting status of path %s: %s", u8string(target), ec.message());
+            exit_filesystem_call_error(li, ec, "status", vcpkg::u8string(target));
         }
 
         return result;
-    }
-
-    vcpkg::file_status Filesystem::status(const path& target, ignore_errors_t) const noexcept
-    {
-        std::error_code ec;
-        return this->status(target, ec);
     }
 
     vcpkg::file_status Filesystem::symlink_status(vcpkg::LineInfo li, const path& target) const noexcept
@@ -611,16 +697,10 @@ namespace vcpkg
         auto result = this->symlink_status(target, ec);
         if (ec)
         {
-            vcpkg::Checks::exit_with_message(li, "error getting status of path %s: %s", u8string(target), ec.message());
+            exit_filesystem_call_error(li, ec, "symlink_status", vcpkg::u8string(target));
         }
 
         return result;
-    }
-
-    vcpkg::file_status Filesystem::symlink_status(const path& target, ignore_errors_t) const noexcept
-    {
-        std::error_code ec;
-        return this->symlink_status(target, ec);
     }
 
     void Filesystem::write_lines(const path& file_path, const std::vector<std::string>& lines, LineInfo li)
@@ -629,7 +709,7 @@ namespace vcpkg
         this->write_lines(file_path, lines, ec);
         if (ec)
         {
-            Checks::exit_with_message(li, "error writing lines: %s: %s", vcpkg::u8string(file_path), ec.message());
+            exit_filesystem_call_error(li, ec, "write_lines", vcpkg::u8string(file_path));
         }
     }
 
@@ -643,18 +723,16 @@ namespace vcpkg
         if (ec)
         {
             Checks::exit_with_message(li,
-                                      "Failure to remove_all(%s) due to file %s: %s",
+                                      "Failure to remove_all(\"%s\") due to file \"%s\": %s",
                                       u8string(base),
                                       u8string(failure_point),
                                       ec.message());
         }
     }
 
-    void Filesystem::remove_all(const path& base, ignore_errors_t)
+    void Filesystem::remove_all(const path& base, std::error_code& ec)
     {
-        std::error_code ec;
         path failure_point;
-
         this->remove_all(base, ec, failure_point);
     }
 
@@ -668,18 +746,16 @@ namespace vcpkg
         if (ec)
         {
             Checks::exit_with_message(li,
-                                      "Failure to remove_all_inside(%s) due to file %s: %s",
+                                      "Failure to remove_all_inside(\"%s\") due to file \"%s\": %s",
                                       u8string(base),
                                       u8string(failure_point),
                                       ec.message());
         }
     }
 
-    void Filesystem::remove_all_inside(const path& base, ignore_errors_t)
+    void Filesystem::remove_all_inside(const path& base, std::error_code& ec)
     {
-        std::error_code ec;
         path failure_point;
-
         this->remove_all_inside(base, ec, failure_point);
     }
 
@@ -689,7 +765,7 @@ namespace vcpkg
         const auto result = this->absolute(target, ec);
         if (ec)
         {
-            Checks::exit_with_message(li, "Error getting absolute path of %s: %s", u8string(target), ec.message());
+            exit_filesystem_call_error(li, ec, "absolute", vcpkg::u8string(target));
         }
 
         return result;
@@ -701,23 +777,19 @@ namespace vcpkg
         const auto result = this->almost_canonical(target, ec);
         if (ec)
         {
-            Checks::exit_with_message(li, "Error getting canonicalization of %s: %s", u8string(target), ec.message());
+            exit_filesystem_call_error(li, ec, "almost_canonical", vcpkg::u8string(target));
         }
 
         return result;
     }
-    path Filesystem::almost_canonical(const path& target, ignore_errors_t) const
-    {
-        std::error_code ec;
-        return this->almost_canonical(target, ec);
-    }
+
     path Filesystem::current_path(LineInfo li) const
     {
         std::error_code ec;
         const auto result = this->current_path(ec);
         if (ec)
         {
-            Checks::exit_with_message(li, "Error getting current path: %s", ec.message());
+            exit_filesystem_call_error(li, ec, "current_path");
         }
 
         return result;
@@ -728,8 +800,20 @@ namespace vcpkg
         this->current_path(new_current_path, ec);
         if (ec)
         {
-            Checks::exit_with_message(li, "Error setting current path: %s", ec.message());
+            exit_filesystem_call_error(li, ec, "current_path", vcpkg::u8string(new_current_path));
         }
+    }
+
+    SystemHandle Filesystem::take_exclusive_file_lock(const path& lockfile, LineInfo li)
+    {
+        std::error_code ec;
+        auto sh = this->take_exclusive_file_lock(lockfile, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "take_exclusive_file_lock", vcpkg::u8string(lockfile));
+        }
+
+        return sh;
     }
 
     ReadFilePointer Filesystem::open_for_read(LineInfo li, const path& file_path) const
@@ -738,7 +822,7 @@ namespace vcpkg
         auto ret = this->open_for_read(file_path, ec);
         if (ec)
         {
-            Checks::exit_with_message(li, "Could not open file %s for reading (%s)", u8string(file_path), ec.message());
+            exit_filesystem_call_error(li, ec, "open_for_read", vcpkg::u8string(file_path));
         }
 
         return ret;
@@ -750,7 +834,7 @@ namespace vcpkg
         auto ret = this->open_for_write(file_path, ec);
         if (ec)
         {
-            Checks::exit_with_message(li, "Could not open file %s for writing (%s)", u8string(file_path), ec.message());
+            exit_filesystem_call_error(li, ec, "open_for_write", vcpkg::u8string(file_path));
         }
 
         return ret;
@@ -758,14 +842,13 @@ namespace vcpkg
 
     struct RealFilesystem final : Filesystem
     {
-        virtual Expected<std::string> read_contents(const path& file_path) const override
+        virtual std::string read_contents(const path& file_path, std::error_code& ec) const override
         {
-            std::error_code ec;
             ReadFilePointer file{file_path, ec};
             if (ec)
             {
                 Debug::print("Failed to open: ", vcpkg::u8string(file_path), '\n');
-                return ec;
+                return std::string();
             }
 
             std::string output;
@@ -787,14 +870,13 @@ namespace vcpkg
 
             return output;
         }
-        virtual Expected<std::vector<std::string>> read_lines(const path& file_path) const override
+        virtual std::vector<std::string> read_lines(const path& file_path, std::error_code& ec) const override
         {
-            std::error_code ec;
             ReadFilePointer file{file_path, ec};
             if (ec)
             {
                 Debug::print("Failed to open: ", vcpkg::u8string(file_path), '\n');
-                return ec;
+                return std::vector<std::string>();
             }
 
             Strings::LinesCollector output;
@@ -857,34 +939,122 @@ namespace vcpkg
             }
         }
 
-        virtual std::vector<path> get_files_recursive(const path& dir) const override
+        template<class Iter>
+        static std::vector<path> get_files_impl(const path& dir, std::error_code& ec)
         {
             std::vector<path> ret;
-
-            std::error_code ec;
-            stdfs::recursive_directory_iterator b(dir, ec), e{};
-            if (ec) return ret;
-            for (; b != e; ++b)
+            Iter b(dir, ec), e{};
+            while (b != e)
             {
+                if (ec)
+                {
+                    ret.clear();
+                    break;
+                }
+
                 ret.push_back(b->path());
+                b.increment(ec);
             }
 
             return ret;
         }
 
-        virtual std::vector<path> get_files_non_recursive(const path& dir) const override
+        virtual std::vector<path> get_files_recursive(const path& dir, std::error_code& ec) const override
+        {
+            return get_files_impl<stdfs::recursive_directory_iterator>(dir, ec);
+        }
+
+        virtual std::vector<path> get_files_non_recursive(const path& dir, std::error_code& ec) const override
+        {
+            return get_files_impl<stdfs::directory_iterator>(dir, ec);
+        }
+
+        template<class Iter>
+        static std::vector<path> get_directories_impl(const path& dir, std::error_code& ec)
         {
             std::vector<path> ret;
-
-            std::error_code ec;
-            stdfs::directory_iterator b(dir, ec), e{};
-            if (ec) return ret;
-            for (; b != e; ++b)
+            Iter b(dir, ec), e{};
+            while (b != e)
             {
-                ret.push_back(b->path());
+                if (ec)
+                {
+                    ret.clear();
+                    break;
+                }
+
+#if VCPKG_USE_STD_FILESYSTEM
+                if (b->is_directory(ec))
+#else // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
+                if (stdfs::is_directory(b->path(), ec))
+#endif // VCPKG_USE_STD_FILESYSTEM
+                {
+                    ret.push_back(b->path());
+                }
+
+                if (ec)
+                {
+                    ret.clear();
+                    break;
+                }
+
+                b.increment(ec);
             }
 
             return ret;
+        }
+
+        virtual std::vector<path> get_directories_recursive(const path& dir, std::error_code& ec) const override
+        {
+            return get_directories_impl<stdfs::recursive_directory_iterator>(dir, ec);
+        }
+
+        virtual std::vector<path> get_directories_non_recursive(const path& dir, std::error_code& ec) const override
+        {
+            return get_directories_impl<stdfs::directory_iterator>(dir, ec);
+        }
+
+        template<class Iter>
+        static std::vector<path> get_regular_files_impl(const path& dir, std::error_code& ec)
+        {
+            std::vector<path> ret;
+            Iter b(dir, ec), e{};
+            while (b != e)
+            {
+                if (ec)
+                {
+                    ret.clear();
+                    break;
+                }
+
+#if VCPKG_USE_STD_FILESYSTEM
+                if (b->is_regular_file(ec))
+#else // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
+                if (stdfs::is_regular_file(b->path(), ec))
+#endif // VCPKG_USE_STD_FILESYSTEM
+                {
+                    ret.push_back(b->path());
+                }
+
+                if (ec)
+                {
+                    ret.clear();
+                    break;
+                }
+
+                b.increment(ec);
+            }
+
+            return ret;
+        }
+
+        virtual std::vector<path> get_regular_files_recursive(const path& dir, std::error_code& ec) const override
+        {
+            return get_regular_files_impl<stdfs::recursive_directory_iterator>(dir, ec);
+        }
+
+        virtual std::vector<path> get_regular_files_non_recursive(const path& dir, std::error_code& ec) const override
+        {
+            return get_regular_files_impl<stdfs::directory_iterator>(dir, ec);
         }
 
         virtual void write_lines(const path& file_path,
@@ -1178,9 +1348,12 @@ namespace vcpkg
         {
             stdfs::create_hard_link(to, from, ec);
         }
-        virtual void copy(const path& source, const path& destination, copy_options options) override
+        virtual void copy(const path& source,
+                          const path& destination,
+                          copy_options options,
+                          std::error_code& ec) override
         {
-            stdfs::copy(source, destination, options);
+            stdfs::copy(source, destination, options, ec);
         }
         virtual bool copy_file(const path& source,
                                const path& destination,
@@ -1432,7 +1605,7 @@ namespace vcpkg
                 for (auto&& ext : EXTS)
                 {
                     auto with_extension = vcpkg::path(path_base_name.native() + ext);
-                    if (Util::find(ret, with_extension) == ret.end() && this->exists(with_extension, ignore_errors))
+                    if (Util::find(ret, with_extension) == ret.end() && this->exists(with_extension, IgnoreErrors{}))
                     {
                         Debug::print("Found path: ", vcpkg::u8string(with_extension), '\n');
                         ret.push_back(std::move(with_extension));

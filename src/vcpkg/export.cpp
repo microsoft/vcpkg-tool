@@ -263,7 +263,7 @@ namespace vcpkg::Export
         {
             const path source = paths.root / file;
             path destination = raw_exported_dir_path / file;
-            fs.create_directories(destination.parent_path(), ignore_errors);
+            fs.create_directories(destination.parent_path(), IgnoreErrors{});
             fs.copy_file(source, destination, copy_options::overwrite_existing, VCPKG_LINE_INFO);
         }
         fs.write_contents(raw_exported_dir_path / vcpkg::u8path(".vcpkg-root"), "", VCPKG_LINE_INFO);

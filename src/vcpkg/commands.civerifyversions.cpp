@@ -343,8 +343,8 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             auto control_path = port_path / vcpkg::u8path("CONTROL");
             auto manifest_path = port_path / vcpkg::u8path("vcpkg.json");
-            auto manifest_exists = fs.exists(manifest_path);
-            auto control_exists = fs.exists(control_path);
+            auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
+            auto control_exists = fs.exists(control_path, IgnoreErrors{});
 
             if (manifest_exists && control_exists)
             {
@@ -369,7 +369,7 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             auto versions_file_path = paths.builtin_registry_versions / vcpkg::u8path({port_name[0], '-'}) /
                                       vcpkg::u8path(Strings::concat(port_name, ".json"));
-            if (!fs.exists(versions_file_path))
+            if (!fs.exists(versions_file_path, IgnoreErrors{}))
             {
                 vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
                 errors.emplace(Strings::format("Error: While validating port %s.\n"

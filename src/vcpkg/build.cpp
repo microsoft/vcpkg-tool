@@ -675,7 +675,7 @@ namespace vcpkg::Build
 
         const auto& env = paths.get_action_env(abi_info);
         auto& fs = paths.get_filesystem();
-        if (!fs.exists(buildpath))
+        if (!fs.exists(buildpath, IgnoreErrors{}))
         {
             std::error_code err;
             fs.create_directory(buildpath, err);
@@ -908,7 +908,7 @@ namespace vcpkg::Build
         const auto& env = paths.get_action_env(action.abi_info.value_or_exit(VCPKG_LINE_INFO));
 
         auto buildpath = paths.buildtrees / action.spec.name();
-        if (!fs.exists(buildpath))
+        if (!fs.exists(buildpath, IgnoreErrors{}))
         {
             std::error_code err;
             fs.create_directory(buildpath, err);
@@ -1010,15 +1010,11 @@ namespace vcpkg::Build
         if (action.build_options.clean_buildtrees == CleanBuildtrees::YES)
         {
             auto& fs = paths.get_filesystem();
-            auto buildtree_files = fs.get_files_non_recursive(paths.build_dir(action.spec));
-            for (auto&& file : buildtree_files)
+            // Will keep the logs, which are regular files
+            auto buildtree_dirs = fs.get_directories_non_recursive(paths.build_dir(action.spec), IgnoreErrors{});
+            for (auto&& dir : buildtree_dirs)
             {
-                if (fs.is_directory(file)) // Will only keep the logs
-                {
-                    std::error_code ec;
-                    path failure_point;
-                    fs.remove_all(file, ec, failure_point);
-                }
+                fs.remove_all(dir, IgnoreErrors{});
             }
         }
 

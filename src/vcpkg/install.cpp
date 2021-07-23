@@ -52,9 +52,9 @@ namespace vcpkg::Install
         auto& fs = paths.get_filesystem();
         auto source_dir = paths.package_dir(spec);
         Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.exists(source_dir),
+                           fs.exists(source_dir, IgnoreErrors{}),
                            Strings::concat("Source directory ", vcpkg::u8string(source_dir), "does not exist"));
-        auto files = fs.get_files_recursive(source_dir);
+        auto files = fs.get_files_recursive(source_dir, VCPKG_LINE_INFO);
         install_files_and_write_listfile(fs, source_dir, files, destination_dir);
     }
     void install_files_and_write_listfile(Filesystem& fs,
@@ -116,7 +116,7 @@ namespace vcpkg::Install
                 }
                 case vcpkg::file_type::regular:
                 {
-                    if (fs.exists(target))
+                    if (fs.exists(target, IgnoreErrors{}))
                     {
                         print2(Color::warning,
                                "File ",
@@ -133,7 +133,7 @@ namespace vcpkg::Install
                 }
                 case vcpkg::file_type::symlink:
                 {
-                    if (fs.exists(target))
+                    if (fs.exists(target, IgnoreErrors{}))
                     {
                         print2(Color::warning,
                                "File ",
@@ -188,7 +188,7 @@ namespace vcpkg::Install
 
     static SortedVector<std::string> build_list_of_package_files(const Filesystem& fs, const path& package_dir)
     {
-        const std::vector<path> package_file_paths = fs.get_files_recursive(package_dir);
+        const std::vector<path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
         const size_t package_remove_char_count = generic_u8string(package_dir).size() + 1; // +1 for the slash
         auto package_files = Util::fmap(package_file_paths, [package_remove_char_count](const path& target) {
             return std::string(generic_u8string(target), package_remove_char_count);
@@ -384,12 +384,9 @@ namespace vcpkg::Install
                 auto& fs = paths.get_filesystem();
                 const path download_dir = paths.downloads;
                 std::error_code ec;
-                for (auto& p : fs.get_files_non_recursive(download_dir))
+                for (auto& p : fs.get_regular_files_non_recursive(download_dir, IgnoreErrors{}))
                 {
-                    if (!fs.is_directory(p))
-                    {
-                        fs.remove(p, VCPKG_LINE_INFO);
-                    }
+                    fs.remove(p, VCPKG_LINE_INFO);
                 }
             }
 
@@ -610,40 +607,42 @@ namespace vcpkg::Install
 
         CMakeUsageInfo ret;
 
+        std::error_code ec;
         auto& fs = paths.get_filesystem();
 
         auto usage_file = paths.installed / bpgh.spec.triplet().canonical_name() / "share" / bpgh.spec.name() / "usage";
-        if (fs.exists(usage_file))
+        if (fs.exists(usage_file, IgnoreErrors{}))
         {
             ret.usage_file = true;
-            auto maybe_contents = fs.read_contents(usage_file);
-            if (auto p_contents = maybe_contents.get())
+            auto contents = fs.read_contents(usage_file, ec);
+            if (!ec)
             {
-                ret.message = std::move(*p_contents);
+                ret.message = std::move(contents);
                 ret.message.push_back('\n');
             }
+
             return ret;
         }
 
-        auto files = fs.read_lines(paths.listfile_path(bpgh));
-        if (auto p_lines = files.get())
+        auto files = fs.read_lines(paths.listfile_path(bpgh), ec);
+        if (!ec)
         {
             std::map<std::string, std::string> config_files;
             std::map<std::string, std::vector<std::string>> library_targets;
             bool is_header_only = true;
             std::string header_path;
 
-            for (auto&& suffix : *p_lines)
+            for (auto&& suffix : files)
             {
                 if (Strings::case_insensitive_ascii_contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
                 {
                     // CMake file is inside the share folder
                     auto path = paths.installed / suffix;
-                    auto maybe_contents = fs.read_contents(path);
+                    auto contents = fs.read_contents(path, ec);
                     auto find_package_name = vcpkg::u8string(path.parent_path().filename());
-                    if (auto p_contents = maybe_contents.get())
+                    if (!ec)
                     {
-                        std::sregex_iterator next(p_contents->begin(), p_contents->end(), cmake_library_regex);
+                        std::sregex_iterator next(contents.begin(), contents.end(), cmake_library_regex);
                         std::sregex_iterator last;
 
                         while (next != last)

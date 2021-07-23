@@ -42,17 +42,13 @@ namespace vcpkg::Remove
             write_update(paths, spgh);
         }
 
-        auto maybe_lines = fs.read_lines(paths.listfile_path(ipv.core->package));
-
-        if (const auto lines = maybe_lines.get())
+        std::error_code ec;
+        auto lines = fs.read_lines(paths.listfile_path(ipv.core->package), ec);
+        if (!ec)
         {
             std::vector<path> dirs_touched;
-            for (auto&& suffix : *lines)
+            for (auto&& suffix : lines)
             {
-                if (!suffix.empty() && suffix.back() == '\r') suffix.pop_back();
-
-                std::error_code ec;
-
                 auto target = paths.installed / suffix;
 
                 const auto status = fs.symlink_status(target, ec);
@@ -85,13 +81,13 @@ namespace vcpkg::Remove
 #endif
                     }
                 }
-                else if (!vcpkg::exists(status))
+                else if (vcpkg::exists(status))
                 {
-                    vcpkg::printf(Color::warning, "Warning: %s: file not found\n", vcpkg::u8string(target));
+                    vcpkg::printf(Color::warning, "Warning: %s: cannot handle file type\n", vcpkg::u8string(target));
                 }
                 else
                 {
-                    vcpkg::printf(Color::warning, "Warning: %s: cannot handle file type\n", vcpkg::u8string(target));
+                    vcpkg::printf(Color::warning, "Warning: %s: file not found\n", vcpkg::u8string(target));
                 }
             }
 
@@ -101,7 +97,6 @@ namespace vcpkg::Remove
             {
                 if (fs.is_empty(*b))
                 {
-                    std::error_code ec;
                     fs.remove(*b, ec);
                     if (ec)
                     {

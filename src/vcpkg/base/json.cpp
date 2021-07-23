@@ -1027,16 +1027,13 @@ namespace vcpkg::Json
                                                                                            const path& json_file,
                                                                                            std::error_code& ec) noexcept
     {
-        auto res = fs.read_contents(json_file);
-        if (auto buf = res.get())
+        auto res = fs.read_contents(json_file, ec);
+        if (ec)
         {
-            return parse(*buf, json_file);
-        }
-        else
-        {
-            ec = res.error();
             return std::unique_ptr<Parse::IParseError>();
         }
+
+        return parse(std::move(res), json_file);
     }
 
     std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const path& json_file) noexcept

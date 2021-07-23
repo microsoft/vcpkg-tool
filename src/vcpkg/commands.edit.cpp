@@ -111,7 +111,7 @@ namespace vcpkg::Commands::Edit
         if (Util::Sets::contains(options.switches, OPTION_ALL))
         {
             const auto& fs = paths.get_filesystem();
-            auto packages = fs.get_files_non_recursive(paths.packages);
+            auto packages = fs.get_files_non_recursive(paths.packages, VCPKG_LINE_INFO);
 
             // TODO: Support edit for --overlay-ports
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
@@ -239,7 +239,7 @@ namespace vcpkg::Commands::Edit
         }
 #endif
 
-        const auto it = Util::find_if(candidate_paths, [&](const path& p) { return fs.exists(p); });
+        const auto it = Util::find_if(candidate_paths, [&](const path& p) { return fs.exists(p, IgnoreErrors{}); });
         if (it == candidate_paths.cend())
         {
             print2(

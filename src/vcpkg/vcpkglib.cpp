@@ -13,9 +13,9 @@ namespace vcpkg
                                                   const path& vcpkg_dir_status_file,
                                                   const path& vcpkg_dir_status_file_old)
     {
-        if (!fs.exists(vcpkg_dir_status_file))
+        if (!fs.exists(vcpkg_dir_status_file, IgnoreErrors{}))
         {
-            if (!fs.exists(vcpkg_dir_status_file_old))
+            if (!fs.exists(vcpkg_dir_status_file_old, IgnoreErrors{}))
             {
                 // no status file, use empty db
                 return StatusParagraphs();
@@ -41,11 +41,10 @@ namespace vcpkg
 
         const auto updates_dir = paths.vcpkg_dir_updates;
 
-        std::error_code ec;
-        fs.create_directory(paths.installed, ec);
-        fs.create_directory(paths.vcpkg_dir, ec);
-        fs.create_directory(paths.vcpkg_dir_info, ec);
-        fs.create_directory(updates_dir, ec);
+        fs.create_directory(paths.installed, VCPKG_LINE_INFO);
+        fs.create_directory(paths.vcpkg_dir, VCPKG_LINE_INFO);
+        fs.create_directory(paths.vcpkg_dir_info, VCPKG_LINE_INFO);
+        fs.create_directory(updates_dir, VCPKG_LINE_INFO);
 
         const path& status_file = paths.vcpkg_dir_status_file;
         const path status_file_old = status_file.parent_path() / "status-old";
@@ -53,7 +52,7 @@ namespace vcpkg
 
         StatusParagraphs current_status_db = load_current_database(fs, status_file, status_file_old);
 
-        auto update_files = fs.get_files_non_recursive(updates_dir);
+        auto update_files = fs.get_regular_files_non_recursive(updates_dir, VCPKG_LINE_INFO);
         Util::sort(update_files);
         if (update_files.empty())
         {
@@ -62,7 +61,6 @@ namespace vcpkg
         }
         for (auto&& file : update_files)
         {
-            if (!fs.is_regular_file(file)) continue;
             if (file.filename() == "incomplete") continue;
 
             auto pghs = Paragraphs::get_paragraphs(fs, file).value_or_exit(VCPKG_LINE_INFO);
@@ -78,8 +76,6 @@ namespace vcpkg
 
         for (auto&& file : update_files)
         {
-            if (!fs.is_regular_file(file)) continue;
-
             fs.remove(file, VCPKG_LINE_INFO);
         }
 

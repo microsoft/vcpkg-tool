@@ -184,7 +184,7 @@ namespace vcpkg::Commands::Integrate
         // TODO: This block of code should eventually be removed
         for (auto&& old_system_wide_targets_file : OLD_SYSTEM_TARGET_FILES)
         {
-            if (fs.exists(old_system_wide_targets_file))
+            if (fs.exists(old_system_wide_targets_file, IgnoreErrors{}))
             {
                 const std::string param =
                     Strings::format(R"(/c "DEL "%s" /Q > nul")", u8string(old_system_wide_targets_file));
@@ -200,12 +200,13 @@ namespace vcpkg::Commands::Integrate
             }
         }
         bool should_install_system = true;
-        const Expected<std::string> system_wide_file_contents = fs.read_contents(SYSTEM_WIDE_TARGETS_FILE);
+        std::error_code ec;
+        std::string system_wide_file_contents = fs.read_contents(SYSTEM_WIDE_TARGETS_FILE, ec);
         static const std::regex RE(R"###(<!-- version (\d+) -->)###");
-        if (const auto contents_data = system_wide_file_contents.get())
+        if (!ec)
         {
             std::match_results<std::string::const_iterator> match;
-            const auto found = std::regex_search(*contents_data, match, RE);
+            const auto found = std::regex_search(system_wide_file_contents, match, RE);
             if (found)
             {
                 const int ver = atoi(match[1].str().c_str());
@@ -233,7 +234,7 @@ namespace vcpkg::Commands::Integrate
             }
 
             Checks::check_exit(VCPKG_LINE_INFO,
-                               fs.exists(SYSTEM_WIDE_TARGETS_FILE),
+                               fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}),
                                "Error: failed to copy targets file to %s",
                                u8string(SYSTEM_WIDE_TARGETS_FILE));
         }
@@ -383,8 +384,9 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
         const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
 
         const path nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, exit_code == 0 && fs.exists(nuget_package), "Error: NuGet package creation failed");
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           exit_code == 0 && fs.exists(nuget_package, IgnoreErrors{}),
+                           "Error: NuGet package creation failed");
         print2(Color::success, "Created nupkg: ", vcpkg::u8string(nuget_package), '\n');
 
         auto source_path = vcpkg::u8string(buildsystems_dir);

@@ -164,7 +164,7 @@ namespace vcpkg
         }
 
         auto path_to_config = config_dir / vcpkg::u8path("vcpkg-configuration.json");
-        if (!fs.exists(path_to_config))
+        if (!fs.exists(path_to_config, IgnoreErrors{}))
         {
             return {};
         }
@@ -485,14 +485,12 @@ namespace vcpkg
             Filesystem& fs = this->get_filesystem();
             for (auto&& triplets_dir : m_pimpl->triplets_dirs)
             {
-                for (auto&& path : fs.get_files_non_recursive(triplets_dir))
+                for (auto&& path : fs.get_regular_files_non_recursive(triplets_dir, VCPKG_LINE_INFO))
                 {
-                    if (vcpkg::is_regular_file(fs.status(VCPKG_LINE_INFO, path)))
-                    {
-                        output.emplace_back(TripletFile(vcpkg::u8string(path.stem().filename()), triplets_dir));
-                    }
+                    output.emplace_back(TripletFile(vcpkg::u8string(path.stem().filename()), triplets_dir));
                 }
             }
+
             return output;
         });
     }
@@ -502,7 +500,7 @@ namespace vcpkg
         return m_pimpl->cmake_script_hashes.get_lazy([this]() -> std::map<std::string, std::string> {
             auto& fs = this->get_filesystem();
             std::map<std::string, std::string> helpers;
-            auto files = fs.get_files_non_recursive(this->scripts / vcpkg::u8path("cmake"));
+            auto files = fs.get_regular_files_non_recursive(this->scripts / vcpkg::u8path("cmake"), VCPKG_LINE_INFO);
             for (auto&& file : files)
             {
                 helpers.emplace(vcpkg::u8string(file.stem()),
@@ -592,7 +590,7 @@ namespace vcpkg
                 for (const auto& triplet_dir : m_pimpl->triplets_dirs)
                 {
                     auto path = triplet_dir / (triplet.canonical_name() + ".cmake");
-                    if (this->get_filesystem().exists(path))
+                    if (this->get_filesystem().exists(path, IgnoreErrors{}))
                     {
                         return path;
                     }
@@ -716,7 +714,7 @@ namespace vcpkg
         const path destination_parent = this->baselines_output / vcpkg::u8path(commit_sha);
         path destination = destination_parent / vcpkg::u8path("baseline.json");
 
-        if (!fs.exists(destination))
+        if (!fs.exists(destination, IgnoreErrors{}))
         {
             const path destination_tmp = destination_parent / vcpkg::u8path("baseline.json.tmp");
             auto treeish = Strings::concat(commit_sha, ":versions/baseline.json");
@@ -777,7 +775,7 @@ namespace vcpkg
          */
         Filesystem& fs = get_filesystem();
         path destination = this->versions_output / vcpkg::u8path(port_name) / vcpkg::u8path(git_tree);
-        if (fs.exists(destination))
+        if (fs.exists(destination, IgnoreErrors{}))
         {
             return destination;
         }
@@ -978,7 +976,7 @@ namespace vcpkg
         fs.create_directories(m_pimpl->registries_git_trees, VCPKG_LINE_INFO);
 
         auto git_tree_final = m_pimpl->registries_git_trees / vcpkg::u8path(object);
-        if (fs.exists(git_tree_final))
+        if (fs.exists(git_tree_final, IgnoreErrors{}))
         {
             return std::move(git_tree_final);
         }
@@ -1010,7 +1008,7 @@ namespace vcpkg
 
         auto untar_output = cmd_execute_and_capture_output(untar, InWorkingDirectory{git_tree_temp});
         // Attempt to remove temporary files, though non-critical.
-        fs.remove(git_tree_temp_tar, ignore_errors);
+        fs.remove(git_tree_temp_tar, IgnoreErrors{});
         if (untar_output.exit_code != 0)
         {
             return {Strings::format("cmake's untar failed with message:\n%s", untar_output.output), expected_right_tag};
@@ -1019,7 +1017,7 @@ namespace vcpkg
         std::error_code ec;
         fs.rename(git_tree_temp, git_tree_final, ec);
 
-        if (fs.exists(git_tree_final))
+        if (fs.exists(git_tree_final, IgnoreErrors{}))
         {
             return git_tree_final;
         }

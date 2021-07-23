@@ -354,7 +354,7 @@ namespace vcpkg::Commands::AddVersion
                 // check if manifest file is property formatted
                 const auto path_to_manifest =
                     paths.builtin_ports_directory() / vcpkg::u8path(port_name) / vcpkg::u8path("vcpkg.json");
-                if (fs.exists(path_to_manifest))
+                if (fs.exists(path_to_manifest, IgnoreErrors{}))
                 {
                     const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
                     const auto json = serialize_manifest(*scf);

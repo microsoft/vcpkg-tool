@@ -164,7 +164,7 @@ namespace vcpkg
         const auto& fs = paths.get_filesystem();
         for (auto&& candidate : candidates)
         {
-            if (!fs.exists(candidate)) continue;
+            if (!fs.exists(candidate, IgnoreErrors{})) continue;
             auto maybe_version = tool_provider.get_version(paths, candidate);
             const auto version = maybe_version.get();
             if (!version) continue;
@@ -201,7 +201,7 @@ namespace vcpkg
                       tool_name,
                       version_as_string);
         auto& fs = paths.get_filesystem();
-        if (!fs.exists(tool_data.download_path))
+        if (!fs.exists(tool_data.download_path, IgnoreErrors{}))
         {
             print2("Downloading ", tool_name, "...\n");
             print2("  ", tool_data.url, " -> ", vcpkg::u8string(tool_data.download_path), "\n");
@@ -225,7 +225,7 @@ namespace vcpkg
         }
 
         Checks::check_exit(VCPKG_LINE_INFO,
-                           fs.exists(tool_data.exe_path),
+                           fs.exists(tool_data.exe_path, IgnoreErrors{}),
                            "Expected %s to exist after fetching",
                            vcpkg::u8string(tool_data.exe_path));
 
@@ -636,7 +636,7 @@ gsutil version: 4.58
                 auto maybe_tool_data = parse_tool_data_from_xml(paths, tool);
                 if (auto p_tool_data = maybe_tool_data.get())
                 {
-                    if (paths.get_filesystem().exists(p_tool_data->exe_path))
+                    if (paths.get_filesystem().exists(p_tool_data->exe_path, IgnoreErrors{}))
                     {
                         return {p_tool_data->exe_path, p_tool_data->sha512};
                     }

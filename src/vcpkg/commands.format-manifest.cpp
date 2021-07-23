@@ -246,8 +246,8 @@ namespace vcpkg::Commands::FormatManifest
             {
                 auto control_path = dir.path() / vcpkg::u8path("CONTROL");
                 auto manifest_path = dir.path() / vcpkg::u8path("vcpkg.json");
-                auto manifest_exists = fs.exists(manifest_path);
-                auto control_exists = fs.exists(control_path);
+                auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
+                auto control_exists = fs.exists(control_path, IgnoreErrors{});
 
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    !manifest_exists || !control_exists,

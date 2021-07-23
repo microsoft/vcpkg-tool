@@ -473,7 +473,7 @@ namespace vcpkg::Metrics
 #else
         if (!fs.exists("/tmp")) return;
         const path temp_folder_path = "/tmp/vcpkg";
-        fs.create_directory(temp_folder_path, ignore_errors);
+        fs.create_directory(temp_folder_path, IgnoreErrors{});
 #endif
         const path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
         fs.write_contents(vcpkg_metrics_txt_path, payload, ec);

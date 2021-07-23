@@ -196,12 +196,7 @@ namespace vcpkg::Export::Prefab
     static void compress_directory(const VcpkgPaths& paths, const path& source, const path& destination)
     {
         auto& fs = paths.get_filesystem();
-
-        std::error_code ec;
-
-        fs.remove(destination, ec);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, !fs.exists(destination), "Could not remove file: %s", vcpkg::u8string(destination));
+        fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
         auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
 
@@ -312,13 +307,13 @@ namespace vcpkg::Export::Prefab
         const path ndk_location = android_ndk_home.value_or_exit(VCPKG_LINE_INFO);
 
         Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                    utils.exists(ndk_location),
+                                    utils.exists(ndk_location, IgnoreErrors{}),
                                     "Error: ANDROID_NDK_HOME Directory does not exists %s",
                                     vcpkg::generic_u8string(ndk_location));
         const path source_properties_location = ndk_location / "source.properties";
 
         Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                    utils.exists(ndk_location),
+                                    utils.exists(ndk_location, IgnoreErrors{}),
                                     "Error: source.properties missing in ANDROID_NDK_HOME directory %s",
                                     vcpkg::generic_u8string(source_properties_location));
 
@@ -524,7 +519,7 @@ namespace vcpkg::Export::Prefab
                                       vcpkg::u8path(Strings::format("%s_%s_%s", name, norm_version, triplet) + ".list");
                 const path installed_dir = paths.packages / vcpkg::u8path(Strings::format("%s_%s", name, triplet));
                 Checks::check_exit(VCPKG_LINE_INFO,
-                                   utils.exists(listfile),
+                                   utils.exists(listfile, IgnoreErrors{}),
                                    "Error: Packages not installed %s:%s %s",
                                    name,
                                    triplet,
@@ -560,7 +555,7 @@ namespace vcpkg::Export::Prefab
                     path module_meta_path = module_dir / vcpkg::u8path("module.json");
                     utils.write_contents(module_meta_path, meta.to_json(), VCPKG_LINE_INFO);
 
-                    utils.copy(installed_headers_dir, exported_headers_dir, copy_options::recursive);
+                    utils.copy(installed_headers_dir, exported_headers_dir, copy_options::recursive, VCPKG_LINE_INFO);
                     break;
                 }
                 else
@@ -622,7 +617,8 @@ namespace vcpkg::Export::Prefab
                                                    vcpkg::generic_u8string(exported_headers_dir)));
                         }
 
-                        utils.copy(installed_headers_dir, exported_headers_dir, copy_options::recursive);
+                        utils.copy(
+                            installed_headers_dir, exported_headers_dir, copy_options::recursive, VCPKG_LINE_INFO);
 
                         ModuleMetadata meta;
 

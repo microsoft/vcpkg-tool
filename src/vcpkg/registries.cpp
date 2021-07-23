@@ -308,7 +308,7 @@ namespace
         if (!m_baseline_identifier.empty())
         {
             auto versions_path = paths.builtin_registry_versions / relative_path_to_versions(port_name);
-            if (fs.exists(versions_path))
+            if (fs.exists(versions_path, IgnoreErrors{}))
             {
                 auto maybe_version_entries =
                     load_versions_file(fs, VersionDbType::Git, paths.builtin_registry_versions, port_name);
@@ -329,7 +329,7 @@ namespace
 
         // Fall back to current available version
         auto port_directory = paths.builtin_ports_directory() / vcpkg::u8path(port_name);
-        if (fs.exists(port_directory))
+        if (fs.exists(port_directory, IgnoreErrors{}))
         {
             auto found_scf = Paragraphs::try_load_port(fs, port_directory);
             if (auto scfp = found_scf.get())
@@ -445,7 +445,7 @@ namespace
     {
         const auto& fs = paths.get_filesystem();
 
-        if (!m_baseline_identifier.empty() && fs.exists(paths.builtin_registry_versions))
+        if (!m_baseline_identifier.empty() && fs.exists(paths.builtin_registry_versions, IgnoreErrors{}))
         {
             load_all_port_names_from_registry_versions(out, paths, paths.builtin_registry_versions);
         }
@@ -1065,20 +1065,20 @@ namespace
 
         auto versions_file_path = registry_versions / relative_path_to_versions(port_name);
 
-        if (!fs.exists(versions_file_path))
+        if (!fs.exists(versions_file_path, IgnoreErrors{}))
         {
             return Strings::format("Couldn't find the versions database file: %s", vcpkg::u8string(versions_file_path));
         }
 
-        auto maybe_contents = fs.read_contents(versions_file_path);
-        if (!maybe_contents.has_value())
+        std::error_code ec;
+        auto maybe_contents = fs.read_contents(versions_file_path, ec);
+        if (ec)
         {
-            return Strings::format("Failed to load the versions database file %s: %s",
-                                   vcpkg::u8string(versions_file_path),
-                                   maybe_contents.error().message());
+            return Strings::format(
+                "Failed to load the versions database file %s: %s", vcpkg::u8string(versions_file_path), ec.message());
         }
 
-        auto maybe_versions_json = Json::parse(*maybe_contents.get());
+        auto maybe_versions_json = Json::parse(std::move(maybe_contents));
         if (!maybe_versions_json.has_value())
         {
             return Strings::format(
@@ -1154,22 +1154,21 @@ namespace
                                                          const path& baseline_path,
                                                          StringView baseline)
     {
-        auto maybe_contents = paths.get_filesystem().read_contents(baseline_path);
-        if (auto contents = maybe_contents.get())
+        std::error_code ec;
+        auto maybe_contents = paths.get_filesystem().read_contents(baseline_path, ec);
+        if (ec)
         {
-            return parse_baseline_versions(*contents, baseline, vcpkg::u8string(baseline_path));
+            if (ec == std::errc::no_such_file_or_directory)
+            {
+                Debug::print("Failed to find baseline.json\n");
+                return {nullopt, expected_left_tag};
+            }
+
+            return Strings::format(
+                "Error: failed to read baseline file \"%s\": %s", vcpkg::u8string(baseline_path), ec.message());
         }
-        else if (maybe_contents.error() == std::errc::no_such_file_or_directory)
-        {
-            Debug::print("Failed to find baseline.json\n");
-            return {nullopt, expected_left_tag};
-        }
-        else
-        {
-            return Strings::format("Error: failed to read file `%s`: %s",
-                                   vcpkg::u8string(baseline_path),
-                                   maybe_contents.error().message());
-        }
+
+        return parse_baseline_versions(std::move(maybe_contents), baseline, vcpkg::u8string(baseline_path));
     }
 }
 
