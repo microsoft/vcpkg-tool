@@ -163,7 +163,7 @@ namespace vcpkg::Remove
         switch (action.plan_type)
         {
             case RemovePlanType::NOT_INSTALLED:
-                vcpkg::printf(Color::success, "Package %s is not installed\n", display_name);
+                vcpkg::printf(Color::error, "Package %s is not installed\n", display_name);
                 break;
             case RemovePlanType::REMOVE:
                 vcpkg::printf("Removing package %s...\n", display_name);
