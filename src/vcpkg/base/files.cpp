@@ -944,16 +944,18 @@ namespace vcpkg
         {
             std::vector<path> ret;
             Iter b(dir, ec), e{};
-            while (b != e)
+            if (!ec)
             {
-                if (ec)
+                while (b != e)
                 {
-                    ret.clear();
-                    break;
+                    ret.push_back(b->path());
+                    b.increment(ec);
+                    if (ec)
+                    {
+                        ret.clear();
+                        break;
+                    }
                 }
-
-                ret.push_back(b->path());
-                b.increment(ec);
             }
 
             return ret;
@@ -974,30 +976,32 @@ namespace vcpkg
         {
             std::vector<path> ret;
             Iter b(dir, ec), e{};
-            while (b != e)
+            if (!ec)
             {
-                if (ec)
+                while (b != e)
                 {
-                    ret.clear();
-                    break;
-                }
-
 #if VCPKG_USE_STD_FILESYSTEM
-                if (b->is_directory(ec))
+                    if (b->is_directory(ec))
 #else // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
-                if (stdfs::is_directory(b->path(), ec))
+                    if (stdfs::is_directory(b->path(), ec))
 #endif // VCPKG_USE_STD_FILESYSTEM
-                {
-                    ret.push_back(b->path());
-                }
+                    {
+                        ret.push_back(b->path());
+                    }
 
-                if (ec)
-                {
-                    ret.clear();
-                    break;
-                }
+                    if (ec)
+                    {
+                        ret.clear();
+                        break;
+                    }
 
-                b.increment(ec);
+                    b.increment(ec);
+                    if (ec)
+                    {
+                        ret.clear();
+                        break;
+                    }
+                }
             }
 
             return ret;
@@ -1018,30 +1022,32 @@ namespace vcpkg
         {
             std::vector<path> ret;
             Iter b(dir, ec), e{};
-            while (b != e)
+            if (!ec)
             {
-                if (ec)
+                while (b != e)
                 {
-                    ret.clear();
-                    break;
-                }
-
 #if VCPKG_USE_STD_FILESYSTEM
-                if (b->is_regular_file(ec))
+                    if (b->is_regular_file(ec))
 #else // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
-                if (stdfs::is_regular_file(b->path(), ec))
+                    if (stdfs::is_regular_file(b->path(), ec))
 #endif // VCPKG_USE_STD_FILESYSTEM
-                {
-                    ret.push_back(b->path());
-                }
+                    {
+                        ret.push_back(b->path());
+                    }
 
-                if (ec)
-                {
-                    ret.clear();
-                    break;
-                }
+                    if (ec)
+                    {
+                        ret.clear();
+                        break;
+                    }
 
-                b.increment(ec);
+                    b.increment(ec);
+                    if (ec)
+                    {
+                        ret.clear();
+                        break;
+                    }
+                }
             }
 
             return ret;
