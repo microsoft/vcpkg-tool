@@ -1094,20 +1094,17 @@ namespace vcpkg::Build
 
         auto&& port_dir = action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).source_location;
         size_t port_file_count = 0;
-        for (auto& port_file : stdfs::recursive_directory_iterator(port_dir))
+        for (auto& port_file : fs.get_regular_files_recursive(port_dir, VCPKG_LINE_INFO))
         {
-            if (vcpkg::is_regular_file(fs.status(VCPKG_LINE_INFO, port_file)))
-            {
-                abi_tag_entries.emplace_back(
-                    vcpkg::u8string(port_file.path().filename()),
-                    vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha256));
+            abi_tag_entries.emplace_back(
+                vcpkg::u8string(port_file.filename()),
+                vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha256));
 
-                ++port_file_count;
-                if (port_file_count > max_port_file_count)
-                {
-                    abi_tag_entries.emplace_back("no_hash_max_portfile", "");
-                    break;
-                }
+            ++port_file_count;
+            if (port_file_count > max_port_file_count)
+            {
+                abi_tag_entries.emplace_back("no_hash_max_portfile", "");
+                break;
             }
         }
 

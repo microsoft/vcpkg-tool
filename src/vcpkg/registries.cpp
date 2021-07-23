@@ -276,17 +276,15 @@ namespace
                                                          StringView identifier = {});
 
     void load_all_port_names_from_registry_versions(std::vector<std::string>& out,
-                                                    const VcpkgPaths& paths,
+                                                    const Filesystem& fs,
                                                     const path& port_versions_path)
     {
-        for (auto super_directory : stdfs::directory_iterator(port_versions_path))
+        for (auto super_directory : fs.get_directories_non_recursive(port_versions_path, VCPKG_LINE_INFO))
         {
-            if (!vcpkg::is_directory(paths.get_filesystem().status(VCPKG_LINE_INFO, super_directory))) continue;
-
-            for (auto file : stdfs::directory_iterator(super_directory))
+            for (auto file : fs.get_regular_files_non_recursive(super_directory, VCPKG_LINE_INFO))
             {
-                auto filename = vcpkg::u8string(file.path().filename());
-                if (!Strings::ends_with(filename, ".json")) continue;
+                auto filename = vcpkg::u8string(file.filename());
+                if (!Strings::case_insensitive_ascii_ends_with(filename, ".json")) continue;
 
                 auto port_name = filename.substr(0, filename.size() - 5);
                 if (!Json::PackageNameDeserializer::is_package_name(port_name))
@@ -294,6 +292,7 @@ namespace
                     Checks::exit_maybe_upgrade(
                         VCPKG_LINE_INFO, "Error: found invalid port version file name: `%s`.", vcpkg::u8string(file));
                 }
+
                 out.push_back(std::move(port_name));
             }
         }
@@ -447,7 +446,7 @@ namespace
 
         if (!m_baseline_identifier.empty() && fs.exists(paths.builtin_registry_versions, IgnoreErrors{}))
         {
-            load_all_port_names_from_registry_versions(out, paths, paths.builtin_registry_versions);
+            load_all_port_names_from_registry_versions(out, fs, paths.builtin_registry_versions);
         }
         std::error_code ec;
         stdfs::directory_iterator dir_it(paths.builtin_ports_directory(), ec);
@@ -528,7 +527,7 @@ namespace
 
     void FilesystemRegistry::get_all_port_names(std::vector<std::string>& out, const VcpkgPaths& paths) const
     {
-        load_all_port_names_from_registry_versions(out, paths, m_path / registry_versions_dir_name);
+        load_all_port_names_from_registry_versions(out, paths.get_filesystem(), m_path / registry_versions_dir_name);
     }
     // } FilesystemRegistry::RegistryImplementation
 
@@ -640,7 +639,7 @@ namespace
     void GitRegistry::get_all_port_names(std::vector<std::string>& out, const VcpkgPaths& paths) const
     {
         auto versions_path = get_versions_tree_path(paths);
-        load_all_port_names_from_registry_versions(out, paths, versions_path);
+        load_all_port_names_from_registry_versions(out, paths.get_filesystem(), versions_path);
     }
     // } GitRegistry::RegistryImplementation
 

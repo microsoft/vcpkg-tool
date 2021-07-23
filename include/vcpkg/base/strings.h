@@ -143,6 +143,7 @@ namespace vcpkg::Strings
     std::string ascii_to_uppercase(std::string&& s);
 
     bool case_insensitive_ascii_starts_with(StringView s, StringView pattern);
+    bool case_insensitive_ascii_ends_with(StringView s, StringView pattern);
     bool ends_with(StringView s, StringView pattern);
     bool starts_with(StringView s, StringView pattern);
 

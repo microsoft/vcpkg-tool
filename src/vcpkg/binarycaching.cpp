@@ -1287,14 +1287,7 @@ namespace
                 Metrics::g_metrics.lock()->track_property("VCPKG_DEFAULT_BINARY_CACHE", "defined");
                 auto path = vcpkg::u8path(*p_str);
                 path.make_preferred();
-                const auto status = stdfs::status(path);
-                if (!stdfs::exists(status))
-                {
-                    return {"Path to VCPKG_DEFAULT_BINARY_CACHE does not exist: " + vcpkg::u8string(path),
-                            expected_right_tag};
-                }
-
-                if (!stdfs::is_directory(status))
+                if (!get_real_filesystem().is_directory(path))
                 {
                     return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not a directory: " +
                                 vcpkg::u8string(path),

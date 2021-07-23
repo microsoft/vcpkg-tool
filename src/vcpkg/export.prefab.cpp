@@ -19,22 +19,20 @@ namespace vcpkg::Export::Prefab
 
     static std::vector<path> find_modules(const VcpkgPaths& system, const path& root, const std::string& ext)
     {
-        std::vector<path> paths;
-        Filesystem& utils = system.get_filesystem();
-        std::error_code error_code;
-        if (!utils.exists(root, error_code) || !utils.is_directory(root)) return paths;
-
-        stdfs::recursive_directory_iterator it(root);
-        stdfs::recursive_directory_iterator endit;
-
-        while (it != endit)
+        Filesystem& fs = system.get_filesystem();
+        std::error_code ec;
+        auto paths = fs.get_regular_files_recursive(root, ec);
+        if (ec && !(ec == std::errc::not_a_directory || ec == std::errc::no_such_file_or_directory))
         {
-            if (utils.is_regular_file(*it) && it->path().extension() == ext)
-            {
-                paths.push_back(it->path().filename());
-            }
-            ++it;
+            Checks::exit_with_message(VCPKG_LINE_INFO,
+                                      "Could not enumerate directory to find modules in \"%s\": %s\n",
+                                      vcpkg::u8string(root),
+                                      ec.message());
         }
+
+        Util::erase_remove_if(paths, [&](path& p) {
+            return !Strings::case_insensitive_ascii_equals(vcpkg::u8string(p.extension()), ext);
+        });
         return paths;
     }
 

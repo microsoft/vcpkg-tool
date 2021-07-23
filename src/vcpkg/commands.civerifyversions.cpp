@@ -312,10 +312,8 @@ namespace vcpkg::Commands::CIVerifyVersions
         auto baseline = get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
         auto& fs = paths.get_filesystem();
         std::set<std::string> errors;
-        for (const auto& dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+        for (const auto& port_path : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
         {
-            const auto& port_path = dir.path();
-
             auto&& port_name = vcpkg::u8string(port_path.stem());
             if (Util::Sets::contains(exclusion_set, port_name))
             {

@@ -316,9 +316,9 @@ namespace vcpkg::Commands::AddVersion
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            for (auto&& port_dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+            for (auto&& port_dir : fs.get_files_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
-                port_names.emplace_back(vcpkg::u8string(port_dir.path().stem()));
+                port_names.emplace_back(vcpkg::u8string(port_dir.stem()));
             }
         }
 

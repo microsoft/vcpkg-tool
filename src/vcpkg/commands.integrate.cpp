@@ -497,7 +497,8 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         }
         fish_completions_path = fish_completions_path / "fish" / "completions" / "vcpkg.fish";
 
-        if (stdfs::exists(fish_completions_path))
+        auto& fs = paths.get_filesystem();
+        if (fs.exists(fish_completions_path, IgnoreErrors{}))
         {
             vcpkg::printf("vcpkg fish completion is already added at %s.\n", vcpkg::u8string(fish_completions_path));
             Checks::exit_success(VCPKG_LINE_INFO);
@@ -506,7 +507,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         const path completion_script_path = paths.scripts / "vcpkg_completion.fish";
 
         vcpkg::printf("Adding vcpkg completion entry at %s.\n", vcpkg::u8string(fish_completions_path));
-        stdfs::create_symlink(completion_script_path, fish_completions_path);
+        fs.create_symlink(completion_script_path, fish_completions_path, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 #endif

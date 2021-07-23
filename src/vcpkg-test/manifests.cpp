@@ -798,7 +798,7 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
 
     std::vector<SourceControlFile> scfs;
 
-    for (auto dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+    for (auto dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
     {
         const auto control = dir / vcpkg::u8path("CONTROL");
         const auto manifest = dir / vcpkg::u8path("vcpkg.json");
