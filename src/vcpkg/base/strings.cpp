@@ -12,16 +12,14 @@
 
 namespace
 {
-    struct icase_eq_t
+    constexpr struct
     {
-        bool operator()(char a, char b)
+        bool operator()(char a, char b) const noexcept
         {
             using vcpkg::Strings::details::tolower_char;
-            return tolower_char{}(a) == tolower_char{}(b);
+            return tolower_char(a) == tolower_char(b);
         }
-    };
-
-    constexpr icase_eq_t icase_eq;
+    } icase_eq;
 }
 
 namespace vcpkg::Strings::details
