@@ -422,6 +422,19 @@ namespace vcpkg
         return maybe_contents;
     }
 
+    path Filesystem::find_file_recursively_up(const path& starting_dir, const path& filename, LineInfo li) const
+    {
+        std::error_code ec;
+        auto result = this->find_file_recursively_up(starting_dir, filename, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(
+                li, ec, "find_file_recursively_up", vcpkg::u8string(starting_dir), vcpkg::u8string(filename));
+        }
+
+        return result;
+    }
+
     std::vector<path> Filesystem::get_files_recursive(const path& dir, LineInfo li) const
     {
         std::error_code ec;
@@ -564,13 +577,25 @@ namespace vcpkg
         return vcpkg::exists(this->symlink_status(target, ec));
     }
 
-    bool Filesystem::exists(LineInfo li, const path& target) const
+    bool Filesystem::exists(const path& target, LineInfo li) const
     {
         std::error_code ec;
         auto result = this->exists(target, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, "exists", vcpkg::u8string(target));
+        }
+
+        return result;
+    }
+
+    bool Filesystem::is_empty(const path& target, LineInfo li) const
+    {
+        std::error_code ec;
+        auto result = this->is_empty(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, "is_empty", vcpkg::u8string(target));
         }
 
         return result;
@@ -771,7 +796,7 @@ namespace vcpkg
         return result;
     }
 
-    path Filesystem::almost_canonical(LineInfo li, const path& target) const
+    path Filesystem::almost_canonical(const path& target, LineInfo li) const
     {
         std::error_code ec;
         const auto result = this->almost_canonical(target, ec);
@@ -899,11 +924,19 @@ namespace vcpkg
             return output.extract();
         }
 
-        virtual path find_file_recursively_up(const path& starting_dir, const path& filename) const override
+        virtual path find_file_recursively_up(const path& starting_dir,
+                                              const path& filename,
+                                              std::error_code& ec) const override
         {
             path current_dir = starting_dir;
-            if (exists(VCPKG_LINE_INFO, current_dir / filename))
+            if (exists(current_dir / filename, ec))
             {
+                return current_dir;
+            }
+
+            if (ec)
+            {
+                current_dir.clear();
                 return current_dir;
             }
 
@@ -927,8 +960,14 @@ namespace vcpkg
                 current_dir = std::move(parent);
 
                 const path candidate = current_dir / filename;
-                if (exists(VCPKG_LINE_INFO, candidate))
+                if (exists(candidate, ec))
                 {
+                    return current_dir;
+                }
+
+                if (ec)
+                {
+                    current_dir.clear();
                     return current_dir;
                 }
 
@@ -1333,7 +1372,10 @@ namespace vcpkg
 
         virtual bool is_directory(const path& target) const override { return stdfs::is_directory(target); }
         virtual bool is_regular_file(const path& target) const override { return stdfs::is_regular_file(target); }
-        virtual bool is_empty(const path& target) const override { return stdfs::is_empty(target); }
+        virtual bool is_empty(const path& target, std::error_code& ec) const override
+        {
+            return stdfs::is_empty(target, ec);
+        }
         virtual bool create_directory(const path& new_directory, std::error_code& ec) override
         {
             return stdfs::create_directory(new_directory, ec);

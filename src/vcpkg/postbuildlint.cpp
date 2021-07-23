@@ -102,7 +102,7 @@ namespace vcpkg::PostBuildLint
             }
         }
 
-        if (!fs.exists(include_dir, IgnoreErrors{}) || fs.is_empty(include_dir))
+        if (!fs.exists(include_dir, IgnoreErrors{}) || fs.is_empty(include_dir, IgnoreErrors{}))
         {
             print2(Color::warning,
                    "The folder /include is empty or not present. This indicates the library was not correctly "
@@ -713,7 +713,8 @@ namespace vcpkg::PostBuildLint
     static LintStatus check_no_empty_folders(const Filesystem& fs, const path& dir)
     {
         std::vector<path> empty_directories = fs.get_directories_recursive(dir, IgnoreErrors{});
-        Util::erase_remove_if(empty_directories, [&fs](const path& current) { return !fs.is_empty(current); });
+        Util::erase_remove_if(empty_directories,
+                              [&fs](const path& current) { return !fs.is_empty(current, IgnoreErrors{}); });
 
         if (!empty_directories.empty())
         {

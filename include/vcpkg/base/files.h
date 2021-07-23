@@ -208,7 +208,10 @@ namespace vcpkg
         virtual std::vector<std::string> read_lines(const path& file_path, std::error_code& ec) const = 0;
         std::vector<std::string> read_lines(const path& file_path, LineInfo li) const;
 
-        virtual path find_file_recursively_up(const path& starting_dir, const path& filename) const = 0;
+        virtual path find_file_recursively_up(const path& starting_dir,
+                                              const path& filename,
+                                              std::error_code& ec) const = 0;
+        path find_file_recursively_up(const path& starting_dir, const path& filename, LineInfo li) const;
 
         virtual std::vector<path> get_files_recursive(const path& dir, std::error_code& ec) const = 0;
         std::vector<path> get_files_recursive(const path& dir, LineInfo li) const;
@@ -260,10 +263,13 @@ namespace vcpkg
         void remove_all_inside(const path& base, LineInfo li);
 
         bool exists(const path& target, std::error_code& ec) const;
-        bool exists(LineInfo li, const path& target) const;
+        bool exists(const path& target, LineInfo li) const;
+
         virtual bool is_directory(const path& target) const = 0;
         virtual bool is_regular_file(const path& target) const = 0;
-        virtual bool is_empty(const path& target) const = 0;
+
+        virtual bool is_empty(const path& target, std::error_code& ec) const = 0;
+        bool is_empty(const path& target, LineInfo li) const;
 
         virtual bool create_directory(const path& new_directory, std::error_code& ec) = 0;
         bool create_directory(const path& new_directory, LineInfo li);
@@ -310,7 +316,7 @@ namespace vcpkg
         // https://github.com/microsoft/vcpkg/issues/18208 (canonical removing subst despite our recommendation to use
         // subst)
         virtual path almost_canonical(const path& target, std::error_code& ec) const = 0;
-        path almost_canonical(LineInfo li, const path& target) const;
+        path almost_canonical(const path& target, LineInfo li) const;
 
         virtual path current_path(std::error_code&) const = 0;
         path current_path(LineInfo li) const;

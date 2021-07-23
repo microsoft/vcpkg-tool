@@ -479,7 +479,7 @@ namespace vcpkg::Commands::CI
                 auto raw_path = vcpkg::u8path(it_failure_logs->second);
                 vcpkg::printf("Creating failure logs output directory %s\n", it_failure_logs->second);
                 filesystem.create_directories(raw_path, VCPKG_LINE_INFO);
-                build_logs_recorder_storage = filesystem.almost_canonical(VCPKG_LINE_INFO, raw_path);
+                build_logs_recorder_storage = filesystem.almost_canonical(raw_path, VCPKG_LINE_INFO);
             }
         }
 

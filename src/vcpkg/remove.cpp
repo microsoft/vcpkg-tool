@@ -95,7 +95,7 @@ namespace vcpkg::Remove
             const auto e = dirs_touched.rend();
             for (; b != e; ++b)
             {
-                if (fs.is_empty(*b))
+                if (fs.is_empty(*b, IgnoreErrors{}))
                 {
                     fs.remove(*b, ec);
                     if (ec)

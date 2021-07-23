@@ -160,7 +160,7 @@ namespace
                                        bool keep_going)
     {
         auto& fs = paths.get_filesystem();
-        if (!fs.exists(VCPKG_LINE_INFO, version_db_file_path))
+        if (!fs.exists(version_db_file_path, VCPKG_LINE_INFO))
         {
             std::vector<VersionGitTree> new_entry{{version, git_tree}};
             write_versions_file(fs, new_entry, version_db_file_path);
@@ -289,7 +289,7 @@ namespace vcpkg::Commands::AddVersion
 
         auto& fs = paths.get_filesystem();
         auto baseline_path = paths.builtin_registry_versions / vcpkg::u8path("baseline.json");
-        if (!fs.exists(VCPKG_LINE_INFO, baseline_path))
+        if (!fs.exists(baseline_path, VCPKG_LINE_INFO))
         {
             vcpkg::printf(Color::error, "Error: Couldn't find required file `%s`\n.", vcpkg::u8string(baseline_path));
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -323,7 +323,7 @@ namespace vcpkg::Commands::AddVersion
         }
 
         auto baseline_map = [&]() -> std::map<std::string, vcpkg::VersionT, std::less<>> {
-            if (!fs.exists(VCPKG_LINE_INFO, baseline_path))
+            if (!fs.exists(baseline_path, VCPKG_LINE_INFO))
             {
                 std::map<std::string, vcpkg::VersionT, std::less<>> ret;
                 return ret;

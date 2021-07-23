@@ -31,7 +31,7 @@ namespace
         if (option)
         {
             // input directories must exist, so we use canonical
-            return filesystem.almost_canonical(li, vcpkg::u8path(*option));
+            return filesystem.almost_canonical(vcpkg::u8path(*option), li);
         }
         else
         {
@@ -292,15 +292,17 @@ namespace vcpkg
 
         if (args.vcpkg_root_dir)
         {
-            root = filesystem.almost_canonical(VCPKG_LINE_INFO, vcpkg::u8path(*args.vcpkg_root_dir));
+            root = filesystem.almost_canonical(vcpkg::u8path(*args.vcpkg_root_dir), VCPKG_LINE_INFO);
         }
         else
         {
-            root = filesystem.find_file_recursively_up(original_cwd, ".vcpkg-root");
+            root = filesystem.find_file_recursively_up(original_cwd, ".vcpkg-root", VCPKG_LINE_INFO);
             if (root.empty())
             {
                 root = filesystem.find_file_recursively_up(
-                    filesystem.almost_canonical(VCPKG_LINE_INFO, get_exe_path_of_current_process()), ".vcpkg-root");
+                    filesystem.almost_canonical(get_exe_path_of_current_process(), VCPKG_LINE_INFO),
+                    ".vcpkg-root",
+                    VCPKG_LINE_INFO);
             }
         }
 
@@ -313,11 +315,12 @@ namespace vcpkg
             if (args.manifest_root_dir)
             {
                 manifest_root_dir =
-                    filesystem.almost_canonical(VCPKG_LINE_INFO, vcpkg::u8path(*args.manifest_root_dir));
+                    filesystem.almost_canonical(vcpkg::u8path(*args.manifest_root_dir), VCPKG_LINE_INFO);
             }
             else
             {
-                manifest_root_dir = filesystem.find_file_recursively_up(original_cwd, vcpkg::u8path("vcpkg.json"));
+                manifest_root_dir =
+                    filesystem.find_file_recursively_up(original_cwd, vcpkg::u8path("vcpkg.json"), VCPKG_LINE_INFO);
             }
         }
 
@@ -408,11 +411,11 @@ namespace vcpkg
         if (args.default_visual_studio_path)
         {
             m_pimpl->default_vs_path =
-                filesystem.almost_canonical(VCPKG_LINE_INFO, vcpkg::u8path(*args.default_visual_studio_path));
+                filesystem.almost_canonical(vcpkg::u8path(*args.default_visual_studio_path), VCPKG_LINE_INFO);
         }
 
-        triplets = filesystem.almost_canonical(VCPKG_LINE_INFO, root / vcpkg::u8path("triplets"));
-        community_triplets = filesystem.almost_canonical(VCPKG_LINE_INFO, triplets / vcpkg::u8path("community"));
+        triplets = filesystem.almost_canonical(root / vcpkg::u8path("triplets"), VCPKG_LINE_INFO);
+        community_triplets = filesystem.almost_canonical(triplets / vcpkg::u8path("community"), VCPKG_LINE_INFO);
 
         tools = downloads / vcpkg::u8path("tools");
         buildsystems = scripts / vcpkg::u8path("buildsystems");
@@ -436,12 +439,12 @@ namespace vcpkg
         versions_work_tree = versioning_tmp / vcpkg::u8path("versions-worktree");
         versions_output = versioning_output / vcpkg::u8path("versions");
 
-        ports_cmake = filesystem.almost_canonical(VCPKG_LINE_INFO, scripts / vcpkg::u8path("ports.cmake"));
+        ports_cmake = filesystem.almost_canonical(scripts / vcpkg::u8path("ports.cmake"), VCPKG_LINE_INFO);
 
         for (auto&& overlay_triplets_dir : args.overlay_triplets)
         {
             m_pimpl->triplets_dirs.emplace_back(
-                filesystem.almost_canonical(VCPKG_LINE_INFO, vcpkg::u8path(overlay_triplets_dir)));
+                filesystem.almost_canonical(vcpkg::u8path(overlay_triplets_dir), VCPKG_LINE_INFO));
         }
         m_pimpl->triplets_dirs.emplace_back(triplets);
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
