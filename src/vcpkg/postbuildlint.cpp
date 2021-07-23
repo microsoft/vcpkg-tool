@@ -16,9 +16,11 @@ using vcpkg::Build::PreBuildInfo;
 
 namespace vcpkg::PostBuildLint
 {
-    static auto not_extension_pred(const std::string& ext)
+    static auto not_extension_pred(StringView ext)
     {
-        return [&ext](const path& target) { return target.extension() != ext; };
+        return [ext](const path& target) {
+            return !Strings::case_insensitive_ascii_equals(vcpkg::u8string(target.extension()), ext);
+        };
     }
 
     enum class LintStatus
