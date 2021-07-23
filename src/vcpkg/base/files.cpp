@@ -26,54 +26,25 @@
 
 namespace
 {
+    using namespace vcpkg;
     struct NativeStringView
     {
-        const vcpkg::path::value_type* first;
-        const vcpkg::path::value_type* last;
+        const path::value_type* first;
+        const path::value_type* last;
         NativeStringView() = default;
-        NativeStringView(const vcpkg::path::value_type* first, const vcpkg::path::value_type* last)
-            : first(first), last(last)
-        {
-        }
+        NativeStringView(const path::value_type* first, const path::value_type* last) : first(first), last(last) { }
         bool empty() const { return first == last; }
         bool is_dot() const { return (last - first) == 1 && *first == '.'; }
         bool is_dot_dot() const { return (last - first) == 2 && *first == '.' && *(first + 1) == '.'; }
     };
 
-    void append_filesystem_stringish(std::string&) { }
-
-    template<class StringIsh>
-    void append_filesystem_stringish(std::string& target, StringIsh&& str)
-    {
-        vcpkg::StringView as_string_view{str};
-        target.push_back('"');
-        target.append(as_string_view.data(), as_string_view.size());
-        target.push_back('"');
-    }
-
-    template<class StringIsh0, class... StringIshN>
-    void append_filesystem_stringish(std::string& target, StringIsh0&& str0, StringIshN&&... strN)
-    {
-        vcpkg::StringView as_string_view{str0};
-        target.push_back('"');
-        target.append(as_string_view.data(), as_string_view.size());
-        target.append("\", ");
-        append_filesystem_stringish(target, std::forward<StringIshN>(strN)...);
-    }
-
-    template<class... StringIsh>
-    [[noreturn]] void exit_filesystem_call_error(vcpkg::LineInfo li,
+    [[noreturn]] void exit_filesystem_call_error(LineInfo li,
                                                  const std::error_code& ec,
-                                                 vcpkg::StringView call_name,
-                                                 StringIsh&&... strs)
+                                                 StringView call_name,
+                                                 std::initializer_list<StringView> args)
     {
-        std::string message;
-        message.append(call_name.data(), call_name.size());
-        message.push_back('(');
-        append_filesystem_stringish(message, std::forward<StringIsh>(strs)...);
-        message.append(")\n");
-        message.append(ec.message());
-        vcpkg::Checks::exit_with_message(li, message);
+        Checks::exit_with_message(
+            li, Strings::concat(call_name, "(", Strings::join(", ", args.begin(), args.end()), "): ", ec.message()));
     }
 }
 
@@ -404,7 +375,7 @@ namespace vcpkg
         auto maybe_lines = this->read_lines(file_path, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "read_lines", vcpkg::u8string(file_path));
+            exit_filesystem_call_error(li, ec, "read_lines", {vcpkg::u8string(file_path)});
         }
 
         return maybe_lines;
@@ -416,7 +387,7 @@ namespace vcpkg
         auto maybe_contents = this->read_contents(file_path, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "read_contents", vcpkg::u8string(file_path));
+            exit_filesystem_call_error(li, ec, "read_contents", {vcpkg::u8string(file_path)});
         }
 
         return maybe_contents;
@@ -429,7 +400,7 @@ namespace vcpkg
         if (ec)
         {
             exit_filesystem_call_error(
-                li, ec, "find_file_recursively_up", vcpkg::u8string(starting_dir), vcpkg::u8string(filename));
+                li, ec, "find_file_recursively_up", {vcpkg::u8string(starting_dir), vcpkg::u8string(filename)});
         }
 
         return result;
@@ -441,7 +412,7 @@ namespace vcpkg
         auto maybe_files = this->get_files_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "get_files_recursive", vcpkg::u8string(dir));
+            exit_filesystem_call_error(li, ec, "get_files_recursive", {vcpkg::u8string(dir)});
         }
 
         return maybe_files;
@@ -453,7 +424,7 @@ namespace vcpkg
         auto maybe_files = this->get_files_non_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "get_files_non_recursive", vcpkg::u8string(dir));
+            exit_filesystem_call_error(li, ec, "get_files_non_recursive", {vcpkg::u8string(dir)});
         }
 
         return maybe_files;
@@ -465,7 +436,7 @@ namespace vcpkg
         auto maybe_directories = this->get_directories_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "get_directories_recursive", vcpkg::u8string(dir));
+            exit_filesystem_call_error(li, ec, "get_directories_recursive", {vcpkg::u8string(dir)});
         }
 
         return maybe_directories;
@@ -477,7 +448,7 @@ namespace vcpkg
         auto maybe_directories = this->get_directories_non_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "get_directories_non_recursive", vcpkg::u8string(dir));
+            exit_filesystem_call_error(li, ec, "get_directories_non_recursive", {vcpkg::u8string(dir)});
         }
 
         return maybe_directories;
@@ -489,7 +460,7 @@ namespace vcpkg
         auto maybe_directories = this->get_regular_files_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "get_regular_files_recursive", vcpkg::u8string(dir));
+            exit_filesystem_call_error(li, ec, "get_regular_files_recursive", {vcpkg::u8string(dir)});
         }
 
         return maybe_directories;
@@ -501,7 +472,7 @@ namespace vcpkg
         auto maybe_directories = this->get_regular_files_non_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "get_regular_files_non_recursive", vcpkg::u8string(dir));
+            exit_filesystem_call_error(li, ec, "get_regular_files_non_recursive", {vcpkg::u8string(dir)});
         }
 
         return maybe_directories;
@@ -513,7 +484,7 @@ namespace vcpkg
         this->write_contents(file_path, data, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "write_contents", vcpkg::u8string(file_path));
+            exit_filesystem_call_error(li, ec, "write_contents", {vcpkg::u8string(file_path)});
         }
     }
     void Filesystem::write_rename_contents(const path& file_path,
@@ -532,7 +503,7 @@ namespace vcpkg
         this->write_contents_and_dirs(file_path, data, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "write_contents_and_dirs", vcpkg::u8string(file_path));
+            exit_filesystem_call_error(li, ec, "write_contents_and_dirs", {vcpkg::u8string(file_path)});
         }
     }
     void Filesystem::rename(const path& old_path, const path& new_path, LineInfo li)
@@ -541,7 +512,7 @@ namespace vcpkg
         this->rename(old_path, new_path, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "rename", vcpkg::u8string(old_path), vcpkg::u8string(new_path));
+            exit_filesystem_call_error(li, ec, "rename", {vcpkg::u8string(old_path), vcpkg::u8string(new_path)});
         }
     }
     void Filesystem::rename_with_retry(const path& old_path, const path& new_path, std::error_code& ec)
@@ -566,7 +537,7 @@ namespace vcpkg
         auto r = this->remove(target, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "remove", vcpkg::u8string(target));
+            exit_filesystem_call_error(li, ec, "remove", {vcpkg::u8string(target)});
         }
 
         return r;
@@ -583,7 +554,7 @@ namespace vcpkg
         auto result = this->exists(target, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "exists", vcpkg::u8string(target));
+            exit_filesystem_call_error(li, ec, "exists", {vcpkg::u8string(target)});
         }
 
         return result;
@@ -595,7 +566,7 @@ namespace vcpkg
         auto result = this->is_empty(target, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "is_empty", vcpkg::u8string(target));
+            exit_filesystem_call_error(li, ec, "is_empty", {vcpkg::u8string(target)});
         }
 
         return result;
@@ -607,7 +578,7 @@ namespace vcpkg
         bool result = this->create_directory(new_directory, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "create_directory", vcpkg::u8string(new_directory));
+            exit_filesystem_call_error(li, ec, "create_directory", {vcpkg::u8string(new_directory)});
         }
 
         return result;
@@ -619,7 +590,7 @@ namespace vcpkg
         bool result = this->create_directories(new_directory, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "create_directories", vcpkg::u8string(new_directory));
+            exit_filesystem_call_error(li, ec, "create_directories", {vcpkg::u8string(new_directory)});
         }
 
         return result;
@@ -631,7 +602,7 @@ namespace vcpkg
         this->create_symlink(to, from, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "create_symlink", vcpkg::u8string(to), vcpkg::u8string(from));
+            exit_filesystem_call_error(li, ec, "create_symlink", {vcpkg::u8string(to), vcpkg::u8string(from)});
         }
     }
 
@@ -641,7 +612,8 @@ namespace vcpkg
         this->create_directory_symlink(to, from, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "create_directory_symlink", vcpkg::u8string(to), vcpkg::u8string(from));
+            exit_filesystem_call_error(
+                li, ec, "create_directory_symlink", {vcpkg::u8string(to), vcpkg::u8string(from)});
         }
     }
 
@@ -651,7 +623,7 @@ namespace vcpkg
         this->create_hard_link(to, from, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "create_hard_link", vcpkg::u8string(to), vcpkg::u8string(from));
+            exit_filesystem_call_error(li, ec, "create_hard_link", {vcpkg::u8string(to), vcpkg::u8string(from)});
         }
     }
 
@@ -670,7 +642,7 @@ namespace vcpkg
         this->create_best_link(to, from, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "create_best_link", vcpkg::u8string(to), vcpkg::u8string(from));
+            exit_filesystem_call_error(li, ec, "create_best_link", {vcpkg::u8string(to), vcpkg::u8string(from)});
         }
     }
 
@@ -680,7 +652,7 @@ namespace vcpkg
         this->copy(source, destination, options, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "copy", vcpkg::u8string(source), vcpkg::u8string(destination));
+            exit_filesystem_call_error(li, ec, "copy", {vcpkg::u8string(source), vcpkg::u8string(destination)});
         }
     }
 
@@ -690,7 +662,7 @@ namespace vcpkg
         this->copy_file(source, destination, options, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "copy_file", vcpkg::u8string(source), vcpkg::u8string(destination));
+            exit_filesystem_call_error(li, ec, "copy_file", {vcpkg::u8string(source), vcpkg::u8string(destination)});
         }
     }
 
@@ -700,7 +672,7 @@ namespace vcpkg
         this->copy_symlink(source, destination, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "copy_symlink", vcpkg::u8string(source), vcpkg::u8string(destination));
+            exit_filesystem_call_error(li, ec, "copy_symlink", {vcpkg::u8string(source), vcpkg::u8string(destination)});
         }
     }
 
@@ -710,7 +682,7 @@ namespace vcpkg
         auto result = this->status(target, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "status", vcpkg::u8string(target));
+            exit_filesystem_call_error(li, ec, "status", {vcpkg::u8string(target)});
         }
 
         return result;
@@ -722,7 +694,7 @@ namespace vcpkg
         auto result = this->symlink_status(target, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "symlink_status", vcpkg::u8string(target));
+            exit_filesystem_call_error(li, ec, "symlink_status", {vcpkg::u8string(target)});
         }
 
         return result;
@@ -734,7 +706,7 @@ namespace vcpkg
         this->write_lines(file_path, lines, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "write_lines", vcpkg::u8string(file_path));
+            exit_filesystem_call_error(li, ec, "write_lines", {vcpkg::u8string(file_path)});
         }
     }
 
@@ -790,7 +762,7 @@ namespace vcpkg
         const auto result = this->absolute(target, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "absolute", vcpkg::u8string(target));
+            exit_filesystem_call_error(li, ec, "absolute", {vcpkg::u8string(target)});
         }
 
         return result;
@@ -802,7 +774,7 @@ namespace vcpkg
         const auto result = this->almost_canonical(target, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "almost_canonical", vcpkg::u8string(target));
+            exit_filesystem_call_error(li, ec, "almost_canonical", {vcpkg::u8string(target)});
         }
 
         return result;
@@ -814,7 +786,7 @@ namespace vcpkg
         const auto result = this->current_path(ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "current_path");
+            exit_filesystem_call_error(li, ec, "current_path", {});
         }
 
         return result;
@@ -825,7 +797,7 @@ namespace vcpkg
         this->current_path(new_current_path, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "current_path", vcpkg::u8string(new_current_path));
+            exit_filesystem_call_error(li, ec, "current_path", {vcpkg::u8string(new_current_path)});
         }
     }
 
@@ -835,7 +807,7 @@ namespace vcpkg
         auto sh = this->take_exclusive_file_lock(lockfile, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "take_exclusive_file_lock", vcpkg::u8string(lockfile));
+            exit_filesystem_call_error(li, ec, "take_exclusive_file_lock", {vcpkg::u8string(lockfile)});
         }
 
         return sh;
@@ -847,7 +819,7 @@ namespace vcpkg
         auto ret = this->open_for_read(file_path, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "open_for_read", vcpkg::u8string(file_path));
+            exit_filesystem_call_error(li, ec, "open_for_read", {vcpkg::u8string(file_path)});
         }
 
         return ret;
@@ -859,7 +831,7 @@ namespace vcpkg
         auto ret = this->open_for_write(file_path, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, "open_for_write", vcpkg::u8string(file_path));
+            exit_filesystem_call_error(li, ec, "open_for_write", {vcpkg::u8string(file_path)});
         }
 
         return ret;
