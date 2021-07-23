@@ -449,8 +449,9 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         auto& fs = paths.get_filesystem();
         const path completion_script_path = paths.scripts / "vcpkg_completion.bash";
 
+        auto bashrc_content = fs.read_lines(bashrc_path, VCPKG_LINE_INFO);
         std::vector<std::string> matches;
-        for (auto&& line : fs.read_lines(bashrc_path, VCPKG_LINE_INFO))
+        for (auto&& line : bashrc_content)
         {
             std::smatch match;
             if (std::regex_match(line, match, std::regex{R"###(^source.*scripts/vcpkg_completion.bash$)###"}))
