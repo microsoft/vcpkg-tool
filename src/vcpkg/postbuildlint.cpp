@@ -16,9 +16,9 @@ using vcpkg::Build::PreBuildInfo;
 
 namespace vcpkg::PostBuildLint
 {
-    static auto not_extension_pred(const Filesystem& fs, const std::string& ext)
+    static auto not_extension_pred(const std::string& ext)
     {
-        return [&fs, ext](const path& target) { return target.extension() != ext; };
+        return [&ext](const path& target) { return target.extension() != ext; };
     }
 
     enum class LintStatus
@@ -207,7 +207,9 @@ namespace vcpkg::PostBuildLint
 
         std::vector<path> files_found = fs.get_regular_files_recursive(debug_include_dir, IgnoreErrors{});
 
-        Util::erase_remove_if(files_found, [&fs](const path& target) { return target.extension() == ".ifc"; });
+        Util::erase_remove_if(files_found, [](const path& target) {
+            return Strings::case_insensitive_ascii_equals(vcpkg::u8string(target.extension()), ".ifc");
+        });
 
         if (!files_found.empty())
         {
@@ -331,7 +333,7 @@ namespace vcpkg::PostBuildLint
     static LintStatus check_for_dlls_in_lib_dir(const Filesystem& fs, const path& package_dir)
     {
         std::vector<path> dlls = fs.get_regular_files_recursive(package_dir / "lib", IgnoreErrors{});
-        Util::erase_remove_if(dlls, not_extension_pred(fs, ".dll"));
+        Util::erase_remove_if(dlls, not_extension_pred(".dll"));
 
         if (!dlls.empty())
         {
@@ -399,7 +401,7 @@ namespace vcpkg::PostBuildLint
     static LintStatus check_for_exes(const Filesystem& fs, const path& package_dir)
     {
         std::vector<path> exes = fs.get_regular_files_recursive(package_dir / "bin", IgnoreErrors{});
-        Util::erase_remove_if(exes, not_extension_pred(fs, ".exe"));
+        Util::erase_remove_if(exes, not_extension_pred(".exe"));
 
         if (!exes.empty())
         {
@@ -842,7 +844,7 @@ namespace vcpkg::PostBuildLint
     static LintStatus check_no_files_in_dir(const Filesystem& fs, const path& dir)
     {
         std::vector<path> misplaced_files = fs.get_regular_files_non_recursive(dir, IgnoreErrors{});
-        Util::erase_remove_if(misplaced_files, [&fs](const path& target) {
+        Util::erase_remove_if(misplaced_files, [](const path& target) {
             const std::string filename = u8string(target.filename());
             return Strings::case_insensitive_ascii_equals(filename, "CONTROL") ||
                    Strings::case_insensitive_ascii_equals(filename, "BUILD_INFO");
@@ -899,9 +901,9 @@ namespace vcpkg::PostBuildLint
         const path release_bin_dir = package_dir / "bin";
 
         std::vector<path> debug_libs = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(debug_libs, not_extension_pred(fs, ".lib"));
+        Util::erase_remove_if(debug_libs, not_extension_pred(".lib"));
         std::vector<path> release_libs = fs.get_regular_files_recursive(release_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(release_libs, not_extension_pred(fs, ".lib"));
+        Util::erase_remove_if(release_libs, not_extension_pred(".lib"));
 
         if (!pre_build_info.build_type && !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
             error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs);
@@ -915,9 +917,9 @@ namespace vcpkg::PostBuildLint
         }
 
         std::vector<path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
-        Util::erase_remove_if(debug_dlls, not_extension_pred(fs, ".dll"));
+        Util::erase_remove_if(debug_dlls, not_extension_pred(".dll"));
         std::vector<path> release_dlls = fs.get_regular_files_recursive(release_bin_dir, IgnoreErrors{});
-        Util::erase_remove_if(release_dlls, not_extension_pred(fs, ".dll"));
+        Util::erase_remove_if(release_dlls, not_extension_pred(".dll"));
 
         switch (build_info.library_linkage)
         {
