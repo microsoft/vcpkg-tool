@@ -383,11 +383,16 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
 
         const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
 
-        const path nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
+        const path nuget_package =
+            buildsystems_dir / vcpkg::u8path(Strings::format("%s.%s.nupkg", nuget_id, nupkg_version));
+        const auto nuget_package_str = vcpkg::u8string(nuget_package);
+        Checks::check_exit(
+            VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed with exit code: %d", exit_code);
         Checks::check_exit(VCPKG_LINE_INFO,
-                           exit_code == 0 && fs.exists(nuget_package, IgnoreErrors{}),
-                           "Error: NuGet package creation failed");
-        print2(Color::success, "Created nupkg: ", vcpkg::u8string(nuget_package), '\n');
+                           fs.exists(nuget_package, IgnoreErrors{}),
+                           "Error: NuGet package creation \"succeeded\", but no .nupkg was produced. Expected %s",
+                           nuget_package_str);
+        print2(Color::success, "Created nupkg: ", nuget_package_str, '\n');
 
         auto source_path = vcpkg::u8string(buildsystems_dir);
         Strings::inplace_replace_all(source_path, "`", "``");
