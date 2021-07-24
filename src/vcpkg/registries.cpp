@@ -279,9 +279,9 @@ namespace
                                                     const Filesystem& fs,
                                                     const path& port_versions_path)
     {
-        for (auto super_directory : fs.get_directories_non_recursive(port_versions_path, VCPKG_LINE_INFO))
+        for (auto&& super_directory : fs.get_directories_non_recursive(port_versions_path, VCPKG_LINE_INFO))
         {
-            for (auto file : fs.get_regular_files_non_recursive(super_directory, VCPKG_LINE_INFO))
+            for (auto&& file : fs.get_regular_files_non_recursive(super_directory, VCPKG_LINE_INFO))
             {
                 auto filename = vcpkg::u8string(file.filename());
                 if (!Strings::case_insensitive_ascii_ends_with(filename, ".json")) continue;
@@ -456,16 +456,15 @@ namespace
             load_all_port_names_from_registry_versions(out, fs, paths.builtin_registry_versions);
         }
         std::error_code ec;
-        stdfs::directory_iterator dir_it(paths.builtin_ports_directory(), ec);
+        auto port_directories = fs.get_directories_non_recursive(paths.builtin_ports_directory(), ec);
         Checks::check_exit(VCPKG_LINE_INFO,
                            !ec,
                            "Error: failed while enumerating the builtin ports directory %s: %s",
                            vcpkg::u8string(paths.builtin_ports_directory()),
                            ec.message());
-        for (auto port_directory : dir_it)
+        for (auto&& port_directory : port_directories)
         {
-            if (!vcpkg::is_directory(fs.status(VCPKG_LINE_INFO, port_directory))) continue;
-            auto filename = vcpkg::u8string(port_directory.path().filename());
+            auto filename = vcpkg::u8string(port_directory.filename());
             if (filename == ".DS_Store") continue;
             out.push_back(filename);
         }

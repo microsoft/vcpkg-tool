@@ -1173,7 +1173,7 @@ namespace vcpkg::Dependencies
         if (!remove_specs.empty())
         {
             std::string msg = "The following packages will be removed:\n";
-            for (auto spec : remove_specs)
+            for (auto&& spec : remove_specs)
             {
                 Strings::append(msg, to_output_string(RequestType::USER_REQUESTED, spec.to_string()), '\n');
             }

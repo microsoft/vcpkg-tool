@@ -99,7 +99,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
          Versions::Scheme::Semver,
          "1.2.3-rc3"},
     };
-    for (auto v : data)
+    for (auto&& v : data)
     {
         auto m_pgh = test_parse_manifest(std::get<0>(v));
 
@@ -483,7 +483,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
          Versions::Scheme::Semver,
          "1.2.3-rc3"},
     };
-    for (auto v : data)
+    for (auto&& v : data)
     {
         auto m_pgh = test_parse_manifest(std::get<0>(v));
 
@@ -798,7 +798,7 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
 
     std::vector<SourceControlFile> scfs;
 
-    for (auto dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
+    for (auto&& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
     {
         const auto control = dir / vcpkg::u8path("CONTROL");
         const auto manifest = dir / vcpkg::u8path("vcpkg.json");

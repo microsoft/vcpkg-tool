@@ -688,9 +688,9 @@ namespace vcpkg
             return Strings::format("Error: Couldn't get local treeish objects for ports.\n%s", output.output);
 
         std::map<std::string, std::string, std::less<>> ret;
-        auto lines = Strings::split(output.output, '\n');
+        const auto lines = Strings::split(output.output, '\n');
         // The first line of the output is always the parent directory itself.
-        for (auto line : lines)
+        for (auto&& line : lines)
         {
             // The default output comes in the format:
             // <mode> SP <type> SP <object> TAB <file>

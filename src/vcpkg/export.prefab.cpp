@@ -379,16 +379,13 @@ namespace vcpkg::Export::Prefab
             if (is_empty_package)
             {
                 empty_package_dependencies[name] = std::set<PackageSpec>();
-                for (auto dependency : dependencies)
+                for (auto&& dependency : dependencies)
                 {
                     if (empty_package_dependencies.find(dependency.name()) != empty_package_dependencies.end())
                     {
                         auto& child_deps = empty_package_dependencies[name];
                         auto& parent_deps = empty_package_dependencies[dependency.name()];
-                        for (auto parent_dep : parent_deps)
-                        {
-                            child_deps.insert(parent_dep);
-                        }
+                        child_deps.insert(parent_deps.begin(), parent_deps.end());
                     }
                     else
                     {
@@ -449,7 +446,7 @@ namespace vcpkg::Export::Prefab
 
             std::set<PackageSpec> dependencies_minus_empty_packages;
 
-            for (auto dependency : dependencies)
+            for (auto&& dependency : dependencies)
             {
                 if (empty_package_dependencies.find(dependency.name()) != empty_package_dependencies.end())
                 {
@@ -505,7 +502,7 @@ namespace vcpkg::Export::Prefab
             if (prefab_options.enable_debug)
             {
                 std::vector<std::string> triplet_names;
-                for (auto triplet : triplets)
+                for (auto&& triplet : triplets)
                 {
                     triplet_names.push_back(triplet.canonical_name());
                 }
