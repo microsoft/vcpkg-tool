@@ -71,9 +71,9 @@ namespace vcpkg::Help
         tbl.header("Manifests can place three kinds of constraints upon the versions used");
         tbl.format("builtin-baseline",
                    "The baseline references a commit within the vcpkg repository that establishes a minimum version on "
-                   "every dependency in the graph. If no other constraints are specified (directly or transitively), "
-                   "then the version from the baseline of the top level manifest will be used. Baselines of transitive "
-                   "dependencies are ignored.");
+                   "every dependency in the graph. For example, if no other constraints are specified (directly or "
+                   "transitively), then the version will resolve to the baseline of the top level manifest. Baselines "
+                   "of transitive dependencies are ignored.");
         tbl.blank();
         tbl.format("version>=",
                    "Within the \"dependencies\" field, each dependency can have a minimum constraint listed. These "

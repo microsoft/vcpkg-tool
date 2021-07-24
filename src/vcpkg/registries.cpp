@@ -361,52 +361,26 @@ namespace
     ExpectedS<Baseline> try_parse_builtin_baseline(const VcpkgPaths& paths, StringView baseline_identifier)
     {
         if (baseline_identifier.size() == 0) return Baseline{};
-        auto path_to_baseline = paths.builtin_registry_versions / vcpkg::u8path("baseline.json");
-        auto res_baseline = load_baseline_versions(paths, path_to_baseline, baseline_identifier);
 
+        auto maybe_path = paths.git_checkout_baseline(baseline_identifier);
+        if (!maybe_path.has_value())
+        {
+            return Strings::concat(maybe_path.error(), "\n\n", paths.get_current_git_sha_baseline_message());
+        }
+
+        auto res_baseline = load_baseline_versions(paths, *maybe_path.get());
         if (!res_baseline.has_value())
         {
             return res_baseline.error();
         }
-
         auto opt_baseline = res_baseline.get();
         if (auto p = opt_baseline->get())
         {
             return std::move(*p);
         }
 
-        if (baseline_identifier == "default")
-        {
-            return Strings::format(
-                "Error: Couldn't find explicitly specified baseline `\"default\"` in baseline file: %s",
-                vcpkg::u8string(path_to_baseline));
-        }
-
-        // attempt to check out the baseline:
-        auto maybe_path = paths.git_checkout_baseline(baseline_identifier);
-        if (!maybe_path.has_value())
-        {
-            return Strings::format("Error: Couldn't find explicitly specified baseline `\"%s\"` in the baseline file, "
-                                   "and there was no baseline at that commit or the commit didn't exist.\n%s\n%s",
-                                   baseline_identifier,
-                                   maybe_path.error(),
-                                   paths.get_current_git_sha_message());
-        }
-
-        res_baseline = load_baseline_versions(paths, *maybe_path.get());
-        if (!res_baseline.has_value())
-        {
-            return res_baseline.error();
-        }
-        opt_baseline = res_baseline.get();
-        if (auto p = opt_baseline->get())
-        {
-            return std::move(*p);
-        }
-
-        return Strings::format("Error: Couldn't find explicitly specified baseline `\"%s\"` in the baseline "
-                               "file, and the `\"default\"` baseline does not exist at that commit.",
-                               baseline_identifier);
+        return Strings::concat(
+            "Error: The baseline file at commit ", baseline_identifier, " was invalid (no \"default\" field)");
     }
 
     Baseline parse_builtin_baseline(const VcpkgPaths& paths, StringView baseline_identifier)
@@ -1125,7 +1099,7 @@ namespace
 
         if (!value.first.is_object())
         {
-            return Strings::concat("Error: baseline does not have a top-level object: ", origin);
+            return Strings::concat("Error: baseline file ", origin, " does not have a top-level object");
         }
 
         auto real_baseline = baseline.size() == 0 ? "default" : baseline;

@@ -641,12 +641,13 @@ namespace vcpkg
             return {Strings::trim(std::move(output.output)), expected_left_tag};
         }
     }
-    std::string VcpkgPaths::get_current_git_sha_message() const
+    std::string VcpkgPaths::get_current_git_sha_baseline_message() const
     {
         auto maybe_cur_sha = get_current_git_sha();
         if (auto p_sha = maybe_cur_sha.get())
         {
-            return Strings::concat("The current commit is \"", *p_sha, '"');
+            return Strings::concat(
+                "You can use the current commit as a baseline, which is:\n    \"builtin-baseline\": \"", *p_sha, '"');
         }
         else
         {
@@ -756,9 +757,10 @@ namespace vcpkg
             }
             else
             {
-                return {Strings::format("Error: while checking out baseline '%s':\n%s\nThis may be fixed by updating "
-                                        "vcpkg to the latest master via `git pull`.",
-                                        treeish,
+                return {Strings::format("Error: while checking out baseline from commit '%s' at subpath "
+                                        "'versions/baseline.json':\n%s\nThis may be fixed by updating vcpkg to the "
+                                        "latest master via `git pull` or fetching commits via `git fetch`.",
+                                        commit_sha,
                                         maybe_contents.error()),
                         expected_right_tag};
             }

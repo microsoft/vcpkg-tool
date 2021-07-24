@@ -905,16 +905,14 @@ namespace vcpkg::Install
             if (auto p_baseline = manifest_scf.core_paragraph->builtin_baseline.get())
             {
                 Metrics::g_metrics.lock()->track_property("manifest_baseline", "defined");
-                if (p_baseline->size() != 40 || !std::all_of(p_baseline->begin(), p_baseline->end(), [](char ch) {
-                        return (ch >= 'a' || ch <= 'f') || Parse::ParserBase::is_ascii_digit(ch);
-                    }))
+                if (!is_git_commit_sha(*p_baseline))
                 {
                     Metrics::g_metrics.lock()->track_property("versioning-error-baseline", "defined");
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline (%s) was not a valid commit sha: "
                                                "expected 40 lowercase hexadecimal characters.\n%s\n",
                                                *p_baseline,
-                                               paths.get_current_git_sha_message());
+                                               paths.get_current_git_sha_baseline_message());
                 }
 
                 paths.get_configuration().registry_set.set_default_builtin_registry_baseline(*p_baseline);
