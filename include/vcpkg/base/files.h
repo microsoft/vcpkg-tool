@@ -302,13 +302,13 @@ namespace vcpkg
         void copy_symlink(const path& source, const path& destination, LineInfo li);
 
         virtual file_status status(const path& target, std::error_code& ec) const = 0;
-        file_status status(LineInfo li, const path& target) const noexcept;
+        file_status status(const path& target, LineInfo li) const noexcept;
 
         virtual file_status symlink_status(const path& target, std::error_code& ec) const = 0;
-        file_status symlink_status(LineInfo li, const path& target) const noexcept;
+        file_status symlink_status(const path& target, LineInfo li) const noexcept;
 
         virtual path absolute(const path& target, std::error_code& ec) const = 0;
-        path absolute(LineInfo li, const path& target) const;
+        path absolute(const path& target, LineInfo li) const;
 
         // absolute/system_complete + lexically_normal + fixup_win32_path_case
         // we don't use real canonical due to issues like:
@@ -342,10 +342,10 @@ namespace vcpkg
         virtual std::vector<path> find_from_PATH(const std::string& name) const = 0;
 
         virtual ReadFilePointer open_for_read(const path& file_path, std::error_code& ec) const = 0;
-        ReadFilePointer open_for_read(LineInfo li, const path& file_path) const;
+        ReadFilePointer open_for_read(const path& file_path, LineInfo li) const;
 
         virtual WriteFilePointer open_for_write(const path& file_path, std::error_code& ec) = 0;
-        WriteFilePointer open_for_write(LineInfo li, const path& file_path);
+        WriteFilePointer open_for_write(const path& file_path, LineInfo li);
     };
 
     Filesystem& get_real_filesystem();

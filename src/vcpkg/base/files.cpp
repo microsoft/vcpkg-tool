@@ -674,7 +674,7 @@ namespace vcpkg
         }
     }
 
-    vcpkg::file_status Filesystem::status(vcpkg::LineInfo li, const path& target) const noexcept
+    vcpkg::file_status Filesystem::status(const path& target, vcpkg::LineInfo li) const noexcept
     {
         std::error_code ec;
         auto result = this->status(target, ec);
@@ -686,7 +686,7 @@ namespace vcpkg
         return result;
     }
 
-    vcpkg::file_status Filesystem::symlink_status(vcpkg::LineInfo li, const path& target) const noexcept
+    vcpkg::file_status Filesystem::symlink_status(const path& target, vcpkg::LineInfo li) const noexcept
     {
         std::error_code ec;
         auto result = this->symlink_status(target, ec);
@@ -754,7 +754,7 @@ namespace vcpkg
         this->remove_all_inside(base, ec, failure_point);
     }
 
-    path Filesystem::absolute(LineInfo li, const path& target) const
+    path Filesystem::absolute(const path& target, LineInfo li) const
     {
         std::error_code ec;
         const auto result = this->absolute(target, ec);
@@ -811,7 +811,7 @@ namespace vcpkg
         return sh;
     }
 
-    ReadFilePointer Filesystem::open_for_read(LineInfo li, const path& file_path) const
+    ReadFilePointer Filesystem::open_for_read(const path& file_path, LineInfo li) const
     {
         std::error_code ec;
         auto ret = this->open_for_read(file_path, ec);
@@ -823,7 +823,7 @@ namespace vcpkg
         return ret;
     }
 
-    WriteFilePointer Filesystem::open_for_write(LineInfo li, const path& file_path)
+    WriteFilePointer Filesystem::open_for_write(const path& file_path, LineInfo li)
     {
         std::error_code ec;
         auto ret = this->open_for_write(file_path, ec);
@@ -1170,7 +1170,24 @@ namespace vcpkg
             }
 #endif // ^^^ !defined(_WIN32)
         }
-        virtual bool remove(const path& target, std::error_code& ec) override { return stdfs::remove(target, ec); }
+        virtual bool remove(const path& target, std::error_code& ec) override
+        {
+            bool result = stdfs::remove(target, ec);
+#if defined(_WIN32)
+            if (ec && ec == std::error_code(ERROR_ACCESS_DENIED, std::system_category()))
+            {
+                set_writeable(target, ec);
+                if (ec)
+                {
+                    return false;
+                }
+
+                stdfs::remove(target, ec);
+            }
+#endif // _WIN32
+
+            return result;
+        }
         virtual void remove_all(const path& base, std::error_code& ec, path& failure_point) override
         {
             /*

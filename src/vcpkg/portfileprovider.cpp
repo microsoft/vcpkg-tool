@@ -255,7 +255,7 @@ namespace vcpkg::PortFileProvider
                     Debug::print("Using overlay: ", s_overlay, "\n");
 
                     Checks::check_exit(VCPKG_LINE_INFO,
-                                       vcpkg::is_directory(m_fs.status(VCPKG_LINE_INFO, overlay)),
+                                       vcpkg::is_directory(m_fs.status(overlay, VCPKG_LINE_INFO)),
                                        "Error: Overlay path \"%s\" must exist and must be a directory",
                                        s_overlay);
                 }

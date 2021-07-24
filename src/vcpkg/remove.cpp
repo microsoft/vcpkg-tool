@@ -67,18 +67,7 @@ namespace vcpkg::Remove
                     fs.remove(target, ec);
                     if (ec)
                     {
-                        // TODO: this is racy; should we ignore this error?
-#if defined(_WIN32)
-                        stdfs::permissions(target, stdfs::perms::owner_all | stdfs::perms::group_all, ec);
-                        fs.remove(target, ec);
-                        if (ec)
-                        {
-                            vcpkg::printf(
-                                Color::error, "failed: remove(%s): %s\n", vcpkg::u8string(target), ec.message());
-                        }
-#else
                         vcpkg::printf(Color::error, "failed: remove(%s): %s\n", vcpkg::u8string(target), ec.message());
-#endif
                     }
                 }
                 else if (vcpkg::exists(status))

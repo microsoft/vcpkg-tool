@@ -691,7 +691,7 @@ namespace vcpkg::Build
 
         int rc;
         {
-            const auto out_file = fs.open_for_write(VCPKG_LINE_INFO, stdoutlog);
+            const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             rc = cmd_execute_and_stream_lines(
                 command,
                 [&](StringView s) {
@@ -921,7 +921,7 @@ namespace vcpkg::Build
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
         int return_code;
         {
-            auto out_file = fs.open_for_write(VCPKG_LINE_INFO, stdoutlog);
+            auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(
                 command,
                 [&](StringView sv) {

@@ -53,7 +53,7 @@ namespace
         if (option)
         {
             // output directories might not exist, so we use merely absolute
-            return filesystem.absolute(li, vcpkg::u8path(*option));
+            return filesystem.absolute(vcpkg::u8path(*option), li);
         }
         else
         {
@@ -196,14 +196,14 @@ namespace vcpkg
                         Metrics::g_metrics.lock()->track_property("X_VCPKG_REGISTRIES_CACHE", "defined");
                         auto path = vcpkg::u8path(*p_str);
                         path.make_preferred();
-                        const auto status = stdfs::status(path);
-                        if (!stdfs::exists(status))
+                        const auto status = get_real_filesystem().status(path, VCPKG_LINE_INFO);
+                        if (!vcpkg::exists(status))
                         {
                             return {"Path to X_VCPKG_REGISTRIES_CACHE does not exist: " + vcpkg::u8string(path),
                                     expected_right_tag};
                         }
 
-                        if (!stdfs::is_directory(status))
+                        if (!vcpkg::is_directory(status))
                         {
                             return {"Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: " +
                                         vcpkg::u8string(path),

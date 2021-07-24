@@ -531,7 +531,7 @@ namespace vcpkg::PostBuildLint
                                Strings::case_insensitive_ascii_equals(vcpkg::u8string(file.extension()), ".dll"),
                                "The file extension was not .dll: %s",
                                u8string(file));
-            const auto machine_type = read_dll_machine_type(fs.open_for_read(VCPKG_LINE_INFO, file));
+            const auto machine_type = read_dll_machine_type(fs.open_for_read(file, VCPKG_LINE_INFO));
             const std::string actual_architecture = get_actual_architecture(machine_type);
 
             if (expected_architecture != actual_architecture)
@@ -563,7 +563,7 @@ namespace vcpkg::PostBuildLint
                                Strings::case_insensitive_ascii_equals(vcpkg::u8string(file.extension()), ".lib"),
                                "The file extension was not .lib: %s",
                                u8string(file));
-            const auto machine_types = read_lib_machine_types(fs.open_for_read(VCPKG_LINE_INFO, file));
+            const auto machine_types = read_lib_machine_types(fs.open_for_read(file, VCPKG_LINE_INFO));
 
             // This is zero for folly's debug library
             // TODO: Why?
