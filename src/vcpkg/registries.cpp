@@ -1076,14 +1076,15 @@ namespace
         }
 
         std::error_code ec;
-        auto maybe_contents = fs.read_contents(versions_file_path, ec);
+        auto contents = fs.read_contents(versions_file_path, ec);
         if (ec)
         {
-            return Strings::format(
-                "Failed to load the versions database file %s: %s", vcpkg::u8string(versions_file_path), ec.message());
+            return Strings::format("Error: Failed to load the versions database file %s: %s",
+                                   vcpkg::u8string(versions_file_path),
+                                   ec.message());
         }
 
-        auto maybe_versions_json = Json::parse(std::move(maybe_contents));
+        auto maybe_versions_json = Json::parse(std::move(contents));
         if (!maybe_versions_json.has_value())
         {
             return Strings::format(
@@ -1160,7 +1161,7 @@ namespace
                                                          StringView baseline)
     {
         std::error_code ec;
-        auto maybe_contents = paths.get_filesystem().read_contents(baseline_path, ec);
+        auto contents = paths.get_filesystem().read_contents(baseline_path, ec);
         if (ec)
         {
             if (ec == std::errc::no_such_file_or_directory)
@@ -1173,7 +1174,7 @@ namespace
                 "Error: failed to read baseline file \"%s\": %s", vcpkg::u8string(baseline_path), ec.message());
         }
 
-        return parse_baseline_versions(std::move(maybe_contents), baseline, vcpkg::u8string(baseline_path));
+        return parse_baseline_versions(std::move(contents), baseline, vcpkg::u8string(baseline_path));
     }
 }
 

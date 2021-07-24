@@ -61,7 +61,7 @@ namespace vcpkg
         }
         for (auto&& file : update_files)
         {
-            if (file.filename() == "incomplete") continue;
+            if (vcpkg::u8string(file.filename()) == "incomplete") continue;
 
             auto pghs = Paragraphs::get_paragraphs(fs, file).value_or_exit(VCPKG_LINE_INFO);
             for (auto&& p : pghs)
