@@ -12,7 +12,6 @@ namespace vcpkg
 {
     Json::IDeserializer<VersionT>& get_versiont_deserializer_instance();
     Json::IDeserializer<VersionT>& get_versiontag_deserializer_instance();
-    std::unique_ptr<Json::IDeserializer<std::string>> make_version_deserializer(StringLiteral type_name);
 
     struct SchemedVersion
     {
@@ -25,12 +24,10 @@ namespace vcpkg
         VersionT versiont;
     };
 
-    Optional<SchemedVersion> visit_optional_schemed_deserializer(StringView parent_type,
-                                                                 Json::Reader& r,
-                                                                 const Json::Object& obj);
     SchemedVersion visit_required_schemed_deserializer(StringView parent_type,
                                                        Json::Reader& r,
-                                                       const Json::Object& obj);
+                                                       const Json::Object& obj,
+                                                       bool allow_hash_portversion = false);
     View<StringView> schemed_deserializer_fields();
 
     void serialize_schemed_version(Json::Object& out_obj,
