@@ -16,13 +16,6 @@ using vcpkg::Build::PreBuildInfo;
 
 namespace vcpkg::PostBuildLint
 {
-    static auto not_extension_pred(StringView ext)
-    {
-        return [ext](const path& target) {
-            return !Strings::case_insensitive_ascii_equals(vcpkg::u8string(target.extension()), ext);
-        };
-    }
-
     enum class LintStatus
     {
         SUCCESS = 0,
@@ -209,9 +202,8 @@ namespace vcpkg::PostBuildLint
 
         std::vector<path> files_found = fs.get_regular_files_recursive(debug_include_dir, IgnoreErrors{});
 
-        Util::erase_remove_if(files_found, [](const path& target) {
-            return Strings::case_insensitive_ascii_equals(vcpkg::u8string(target.extension()), ".ifc");
-        });
+        Util::erase_remove_if(files_found,
+                              [](const path& target) { return vcpkg::u8string(target.extension()) == ".ifc"; });
 
         if (!files_found.empty())
         {
@@ -335,7 +327,7 @@ namespace vcpkg::PostBuildLint
     static LintStatus check_for_dlls_in_lib_dir(const Filesystem& fs, const path& package_dir)
     {
         std::vector<path> dlls = fs.get_regular_files_recursive(package_dir / "lib", IgnoreErrors{});
-        Util::erase_remove_if(dlls, not_extension_pred(".dll"));
+        Util::erase_remove_if(dlls, NotExtensionCaseInsensitive{".dll"});
 
         if (!dlls.empty())
         {
@@ -368,7 +360,9 @@ namespace vcpkg::PostBuildLint
             for (auto&& src_file : fs.get_regular_files_non_recursive(src_dir, IgnoreErrors{}))
             {
                 const std::string filename = u8string(src_file.filename());
-                if (filename == "LICENSE" || filename == "LICENSE.txt" || filename == "COPYING")
+                if (Strings::case_insensitive_ascii_equals(filename, "LICENSE") ||
+                    Strings::case_insensitive_ascii_equals(filename, "LICENSE.txt") ||
+                    Strings::case_insensitive_ascii_equals(filename, "COPYING"))
                 {
                     potential_copyright_files.push_back(src_file);
                 }
@@ -403,7 +397,7 @@ namespace vcpkg::PostBuildLint
     static LintStatus check_for_exes(const Filesystem& fs, const path& package_dir)
     {
         std::vector<path> exes = fs.get_regular_files_recursive(package_dir / "bin", IgnoreErrors{});
-        Util::erase_remove_if(exes, not_extension_pred(".exe"));
+        Util::erase_remove_if(exes, NotExtensionCaseInsensitive{".exe"});
 
         if (!exes.empty())
         {
@@ -529,15 +523,14 @@ namespace vcpkg::PostBuildLint
                                              const std::vector<path>& files,
                                              const Filesystem& fs)
     {
-        const auto dot_dll = vcpkg::u8path(".dll");
         std::vector<FileAndArch> binaries_with_invalid_architecture;
 
         for (const path& file : files)
         {
             Checks::check_exit(VCPKG_LINE_INFO,
-                               file.extension() == dot_dll,
+                               Strings::case_insensitive_ascii_equals(vcpkg::u8string(file.extension()), ".dll"),
                                "The file extension was not .dll: %s",
-                               generic_u8string(file));
+                               u8string(file));
             const auto machine_type = read_dll_machine_type(fs.open_for_read(VCPKG_LINE_INFO, file));
             const std::string actual_architecture = get_actual_architecture(machine_type);
 
@@ -562,15 +555,14 @@ namespace vcpkg::PostBuildLint
                                              const Filesystem& fs)
     {
 #if defined(_WIN32)
-        const auto dot_lib = vcpkg::u8path(".lib");
         std::vector<FileAndArch> binaries_with_invalid_architecture;
 
         for (const path& file : files)
         {
             Checks::check_exit(VCPKG_LINE_INFO,
-                               file.extension() == dot_lib,
+                               Strings::case_insensitive_ascii_equals(vcpkg::u8string(file.extension()), ".lib"),
                                "The file extension was not .lib: %s",
-                               generic_u8string(file));
+                               u8string(file));
             const auto machine_types = read_lib_machine_types(fs.open_for_read(VCPKG_LINE_INFO, file));
 
             // This is zero for folly's debug library
@@ -580,7 +572,7 @@ namespace vcpkg::PostBuildLint
             Checks::check_exit(VCPKG_LINE_INFO,
                                machine_types.size() == 1,
                                "Found more than 1 architecture in file %s",
-                               generic_u8string(file));
+                               u8string(file));
 
             const std::string actual_architecture = get_actual_architecture(machine_types.front());
             if (expected_architecture != actual_architecture)
@@ -784,7 +776,7 @@ namespace vcpkg::PostBuildLint
                           expected_build_type.to_string());
             for (const BuildTypeAndFile& btf : libs_with_invalid_crt)
             {
-                vcpkg::printf("    %s: %s\n", generic_u8string(btf.file), btf.build_type.to_string());
+                vcpkg::printf("    %s: %s\n", u8string(btf.file), btf.build_type.to_string());
             }
             print2("\n");
 
@@ -848,8 +840,7 @@ namespace vcpkg::PostBuildLint
         std::vector<path> misplaced_files = fs.get_regular_files_non_recursive(dir, IgnoreErrors{});
         Util::erase_remove_if(misplaced_files, [](const path& target) {
             const std::string filename = u8string(target.filename());
-            return Strings::case_insensitive_ascii_equals(filename, "CONTROL") ||
-                   Strings::case_insensitive_ascii_equals(filename, "BUILD_INFO");
+            return filename == "CONTROL" || filename == "BUILD_INFO";
         });
 
         if (!misplaced_files.empty())
@@ -903,9 +894,9 @@ namespace vcpkg::PostBuildLint
         const path release_bin_dir = package_dir / "bin";
 
         std::vector<path> debug_libs = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(debug_libs, not_extension_pred(".lib"));
+        Util::erase_remove_if(debug_libs, NotExtensionCaseInsensitive{".lib"});
         std::vector<path> release_libs = fs.get_regular_files_recursive(release_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(release_libs, not_extension_pred(".lib"));
+        Util::erase_remove_if(release_libs, NotExtensionCaseInsensitive{".lib"});
 
         if (!pre_build_info.build_type && !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
             error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs);
@@ -919,9 +910,9 @@ namespace vcpkg::PostBuildLint
         }
 
         std::vector<path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
-        Util::erase_remove_if(debug_dlls, not_extension_pred(".dll"));
+        Util::erase_remove_if(debug_dlls, NotExtensionCaseInsensitive{".dll"});
         std::vector<path> release_dlls = fs.get_regular_files_recursive(release_bin_dir, IgnoreErrors{});
-        Util::erase_remove_if(release_dlls, not_extension_pred(".dll"));
+        Util::erase_remove_if(release_dlls, NotExtensionCaseInsensitive{".dll"});
 
         switch (build_info.library_linkage)
         {

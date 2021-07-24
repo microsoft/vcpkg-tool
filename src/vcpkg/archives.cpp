@@ -24,7 +24,7 @@ namespace vcpkg::Archives
         fs.create_directories(to_path_partial, ec);
         const auto ext = vcpkg::u8string(archive.extension());
 #if defined(_WIN32)
-        if (ext == ".nupkg")
+        if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
             static bool recursion_limiter_sevenzip_old = false;
             Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip_old);
@@ -67,7 +67,7 @@ namespace vcpkg::Archives
                                code_and_output.output);
             recursion_limiter_sevenzip_old = false;
         }
-        else if (ext == ".msi")
+        else if (Strings::case_insensitive_ascii_equals(ext, ".msi"))
         {
             // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
             // until it finishes (wrap in cmd /c).

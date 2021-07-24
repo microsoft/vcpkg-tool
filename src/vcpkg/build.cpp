@@ -883,20 +883,20 @@ namespace vcpkg::Build
         Triplet triplet = action.spec.triplet();
         const auto& triplet_file_path = vcpkg::u8string(paths.get_triplet_file_path(triplet));
 
-        if (Strings::case_insensitive_ascii_starts_with(triplet_file_path, vcpkg::u8string(paths.community_triplets)))
+        if (Strings::starts_with(triplet_file_path, vcpkg::u8string(paths.community_triplets)))
         {
             vcpkg::printf(vcpkg::Color::warning,
                           "-- Using community triplet %s. This triplet configuration is not guaranteed to succeed.\n",
                           triplet.canonical_name());
             vcpkg::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
-        else if (!Strings::case_insensitive_ascii_starts_with(triplet_file_path, vcpkg::u8string(paths.triplets)))
+        else if (!Strings::starts_with(triplet_file_path, vcpkg::u8string(paths.triplets)))
         {
             vcpkg::printf("-- [OVERLAY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
 
         auto u8portdir = vcpkg::u8string(scfl.source_location);
-        if (!Strings::case_insensitive_ascii_starts_with(u8portdir, vcpkg::u8string(paths.builtin_ports_directory())))
+        if (!Strings::starts_with(u8portdir, vcpkg::u8string(paths.builtin_ports_directory())))
         {
             vcpkg::printf("-- Installing port from location: %s\n", u8portdir);
         }
@@ -1541,14 +1541,12 @@ namespace vcpkg::Build
                         load_vcvars_env = true;
                         if (external_toolchain_file) load_vcvars_env = false;
                     }
-                    else if (Strings::case_insensitive_ascii_equals(variable_value, "1") ||
-                             Strings::case_insensitive_ascii_equals(variable_value, "on") ||
+                    else if (variable_value == "1" || Strings::case_insensitive_ascii_equals(variable_value, "on") ||
                              Strings::case_insensitive_ascii_equals(variable_value, "true"))
                     {
                         load_vcvars_env = true;
                     }
-                    else if (Strings::case_insensitive_ascii_equals(variable_value, "0") ||
-                             Strings::case_insensitive_ascii_equals(variable_value, "off") ||
+                    else if (variable_value == "0" || Strings::case_insensitive_ascii_equals(variable_value, "off") ||
                              Strings::case_insensitive_ascii_equals(variable_value, "false"))
                     {
                         load_vcvars_env = false;

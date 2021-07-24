@@ -286,6 +286,13 @@ namespace
                 auto filename = vcpkg::u8string(file.filename());
                 if (!Strings::case_insensitive_ascii_ends_with(filename, ".json")) continue;
 
+                if (!Strings::ends_with(filename, ".json"))
+                {
+                    Checks::exit_with_message(VCPKG_LINE_INFO,
+                                              "Error: the JSON file %s must have a .json (all lowercase) extension.",
+                                              vcpkg::u8string(file));
+                }
+
                 auto port_name = filename.substr(0, filename.size() - 5);
                 if (!Json::PackageNameDeserializer::is_package_name(port_name))
                 {

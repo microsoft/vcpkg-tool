@@ -409,4 +409,18 @@ namespace vcpkg
         SystemHandle m_handle;
     };
 
+    struct NotExtensionCaseSensitive
+    {
+        StringView ext;
+        bool operator()(const path& target) const { return vcpkg::u8string(target.extension()) != ext; }
+    };
+
+    struct NotExtensionCaseInsensitive
+    {
+        StringView ext;
+        bool operator()(const path& target) const
+        {
+            return !Strings::case_insensitive_ascii_equals(vcpkg::u8string(target.extension()), ext);
+        }
+    };
 }

@@ -547,8 +547,8 @@ namespace
             , m_use_nuget_cache(false)
         {
             const std::string use_nuget_cache = get_environment_variable("VCPKG_USE_NUGET_CACHE").value_or("");
-            m_use_nuget_cache = Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") ||
-                                Strings::case_insensitive_ascii_equals(use_nuget_cache, "1");
+            m_use_nuget_cache =
+                Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
         int run_nuget_commandline(const Command& cmdline) const

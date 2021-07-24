@@ -235,7 +235,7 @@ namespace vcpkg::Export
 
         const int exit_code = cmd_execute_clean(cmd, InWorkingDirectory{raw_exported_dir.parent_path()});
         Checks::check_exit(
-            VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", generic_u8string(exported_archive_path));
+            VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", u8string(exported_archive_path));
         return exported_archive_path;
     }
 

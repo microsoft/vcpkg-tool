@@ -88,10 +88,9 @@ namespace vcpkg::Install
                 continue;
             }
 
-            const std::string filename = vcpkg::generic_u8string(file.filename());
-            if (vcpkg::is_regular_file(status) && (Strings::case_insensitive_ascii_equals(filename, "CONTROL") ||
-                                                   Strings::case_insensitive_ascii_equals(filename, "vcpkg.json") ||
-                                                   Strings::case_insensitive_ascii_equals(filename, "BUILD_INFO")))
+            const std::string filename = vcpkg::u8string(file.filename());
+            if (vcpkg::is_regular_file(status) &&
+                (filename == "CONTROL" || filename == "vcpkg.json" || filename == "BUILD_INFO"))
             {
                 // Do not copy the control file or manifest file
                 continue;
@@ -634,7 +633,7 @@ namespace vcpkg::Install
 
             for (auto&& suffix : files)
             {
-                if (Strings::case_insensitive_ascii_contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
+                if (Strings::contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
                 {
                     // CMake file is inside the share folder
                     auto path = paths.installed / suffix;
@@ -670,8 +669,7 @@ namespace vcpkg::Install
                             config_files[find_package_name] = root;
                     }
                 }
-                if (Strings::case_insensitive_ascii_contains(suffix, "/lib/") ||
-                    Strings::case_insensitive_ascii_contains(suffix, "/bin/"))
+                if (Strings::contains(suffix, "/lib/") || Strings::contains(suffix, "/bin/"))
                 {
                     if (!Strings::ends_with(suffix, ".pc") && !Strings::ends_with(suffix, "/")) is_header_only = false;
                 }

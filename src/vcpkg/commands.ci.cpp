@@ -28,7 +28,6 @@ namespace
 {
     using namespace vcpkg::Build;
 
-    const path dot_log = vcpkg::u8path(".log");
     const path readme_dot_log = vcpkg::u8path("readme.log");
 
     struct CiBuildLogsRecorder final : IBuildLogsRecorder
@@ -47,7 +46,7 @@ namespace
             auto& filesystem = paths.get_filesystem();
             const auto source_path = paths.build_dir(spec);
             auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
-            Util::erase_remove_if(children, [](const path& p) { return p.extension() != dot_log; });
+            Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
             const auto target_path = base_path / vcpkg::u8path(spec.name());
             (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
             if (children.empty())
