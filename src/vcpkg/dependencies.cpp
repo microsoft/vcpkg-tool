@@ -1275,6 +1275,7 @@ namespace vcpkg::Dependencies
                 Optional<std::unique_ptr<VersionSchemeInfo>> date;
                 std::set<std::string> features;
                 bool default_features = true;
+                bool user_requested = false;
 
                 VersionSchemeInfo* get_node(const Versions::Version& ver);
                 VersionSchemeInfo& emplace_node(Versions::Scheme scheme, const Versions::Version& ver);
@@ -1738,6 +1739,7 @@ namespace vcpkg::Dependencies
                 auto spec = dep_to_spec(dep);
 
                 auto& node = emplace_package(spec);
+                node.second.user_requested = true;
 
                 auto maybe_overlay = m_o_provider.get_control_file(dep.name);
                 auto over_it = m_overrides.find(dep.name);
@@ -1912,8 +1914,12 @@ namespace vcpkg::Dependencies
                     // -> Add stack frame
                     auto maybe_vars = m_var_provider.get_dep_info_vars(spec);
 
-                    InstallPlanAction ipa(
-                        spec, *p_vnode->scfl, RequestType::USER_REQUESTED, m_host_triplet, std::move(p_vnode->deps));
+                    InstallPlanAction ipa(spec,
+                                          *p_vnode->scfl,
+                                          node.user_requested ? RequestType::USER_REQUESTED
+                                                              : RequestType::AUTO_SELECTED,
+                                          m_host_triplet,
+                                          std::move(p_vnode->deps));
                     std::vector<DepSpec> deps;
                     for (auto&& f : ipa.feature_list)
                     {
