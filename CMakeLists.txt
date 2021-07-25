@@ -108,6 +108,12 @@ if(APPLE)
     set(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
 endif()
 
+# =======================
+# === Paths detection ===
+# =======================
+
+include(GNUInstallDirs)
+
 # ===============
 # === Targets ===
 # ===============
@@ -238,3 +244,12 @@ if(CLANG_FORMAT)
         COMMAND "${CLANG_FORMAT}" -i -verbose ${TLS12_DOWNLOAD_SOURCES}
     )
 endif()
+
+# ====================
+# === Installation ===
+# ====================
+
+install(TARGETS vcpkg
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
