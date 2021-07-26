@@ -229,9 +229,11 @@ namespace vcpkg::Commands::CIVerifyVersions
             return {
                 Strings::format("Error: While reading versions for port %s from file: %s\n"
                                 "       File declares version `%s` with SHA: %s\n"
-                                "       But local port with the same verion has a different SHA: %s\n"
+                                "       But local port with the same version has a different SHA: %s\n"
                                 "       Please update the port's version fields and then run:\n\n"
-                                "           vcpkg x-add-version %s\n\n"
+                                "           vcpkg x-add-version %s\n"
+                                "           git add versions\n"
+                                "           git commit -m \"Update version database\"\n\n"
                                 "       to add a new version.",
                                 port_name,
                                 vcpkg::u8string(versions_file_path),
@@ -250,7 +252,9 @@ namespace vcpkg::Commands::CIVerifyVersions
                 Strings::format("Error: While reading baseline version for port %s.\n"
                                 "       Baseline version not found.\n"
                                 "       Run:\n\n"
-                                "           vcpkg x-add-version %s\n\n"
+                                "           vcpkg x-add-version %s\n"
+                                "           git add versions\n"
+                                "           git commit -m \"Update version database\"\n\n"
                                 "       to set version %s as the baseline version.",
                                 port_name,
                                 port_name,
@@ -268,7 +272,9 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "       Baseline file declares version: %s.\n"
                                 "       But the latest version in version files is: %s.\n"
                                 "       Run:\n\n"
-                                "           vcpkg x-add-version %s\n\n"
+                                "           vcpkg x-add-version %s\n"
+                                "           git add versions\n"
+                                "           git commit -m \"Update version database\"\n\n"
                                 "       to update the baseline version.",
                                 port_name,
                                 vcpkg::u8string(versions_file_path),
@@ -329,9 +335,11 @@ namespace vcpkg::Commands::CIVerifyVersions
                 errors.emplace(Strings::format("Error: While validating port %s.\n"
                                                "       Missing Git SHA.\n"
                                                "       Run:\n\n"
-                                               "           git add %s.\n"
-                                               "           git commit -m \"[%s] Add new port\"\n"
-                                               "           vcpkg x-add-version %s\n\n"
+                                               "           git add %s\n"
+                                               "           git commit -m \"wip\"\n"
+                                               "           vcpkg x-add-version %s\n"
+                                               "           git add versions\n"
+                                               "           git commit --amend -m \"[%s] Add new port\"\n\n"
                                                "       to commit the new port and create its version file.",
                                                port_name,
                                                vcpkg::u8string(port_path),
