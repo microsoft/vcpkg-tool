@@ -94,7 +94,7 @@ namespace vcpkg::Commands::Autocomplete
 
             // TODO: Support autocomplete for ports in --overlay-ports
             auto maybe_port =
-                Paragraphs::try_load_port(paths.get_filesystem(), paths.builtin_ports_directory() / port_name);
+                Paragraphs::try_load_port(paths.get_filesystem(), paths.builtin_registry_ports_dir() / port_name);
             if (maybe_port.error())
             {
                 Checks::exit_success(VCPKG_LINE_INFO);

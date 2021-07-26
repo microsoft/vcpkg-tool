@@ -401,10 +401,6 @@ namespace vcpkg
         packages =
             process_output_directory(filesystem, root, args.packages_root_dir.get(), "packages", VCPKG_LINE_INFO);
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);
-        builtin_ports =
-            process_output_directory(filesystem, root, args.builtin_ports_root_dir.get(), "ports", VCPKG_LINE_INFO);
-        builtin_registry_versions = process_output_directory(
-            filesystem, root, args.builtin_registry_versions_dir.get(), "versions", VCPKG_LINE_INFO);
         prefab = root / vcpkg::u8path("prefab");
 
         if (args.default_visual_studio_path)
@@ -447,6 +443,42 @@ namespace vcpkg
         }
         m_pimpl->triplets_dirs.emplace_back(triplets);
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
+
+        // detect custom registry
+        if (args.registry_root_dir)
+        {
+            current_registry_root = filesystem.almost_canonical(VCPKG_LINE_INFO, u8path(*args.registry_root_dir));
+        }
+        else
+        {
+            current_registry_root = filesystem.find_file_recursively_up(original_cwd, "ports");
+            if (!current_registry_root.empty())
+            {
+                const auto current_registry_versions = current_registry_root / u8path("versions");
+                if (!filesystem.exists(current_registry_versions))
+                {
+                    Debug::print("Found ports dir ",
+                                 u8string(current_registry_root / u8path("ports")),
+                                 " but versions dir ",
+                                 u8string(current_registry_versions),
+                                 " does not exists\n");
+                    current_registry_root.clear();
+                }
+            }
+            if (current_registry_root.empty())
+            {
+                current_registry_root = this->root;
+            }
+        }
+        Debug::print("Using current_registry_root: ", u8string(current_registry_root), '\n');
+        for (auto& dir_name : {".git", "ports", "versions"})
+        {
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               get_filesystem().exists(VCPKG_LINE_INFO, current_registry_root / u8path(dir_name)),
+                               "Error: There is no %s directory for current registry at %s",
+                               dir_name,
+                               u8string(current_registry_root));
+        }
     }
 
     path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages / vcpkg::u8path(spec.dir()); }
@@ -631,7 +663,15 @@ namespace vcpkg
 
     ExpectedS<std::string> VcpkgPaths::get_current_git_sha() const
     {
-        auto cmd = git_cmd_builder(this->root / vcpkg::u8path(".git"), this->root);
+        return get_current_git_sha(this->root / u8path(".git"));
+    }
+    std::string VcpkgPaths::get_current_git_sha_message() const
+    {
+        return get_current_git_sha_message(this->root / u8path(".git"));
+    }
+    ExpectedS<std::string> VcpkgPaths::get_current_git_sha(const path& dot_git_dir) const
+    {
+        auto cmd = git_cmd_builder(dot_git_dir, this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
         auto output = cmd_execute_and_capture_output(cmd);
         if (output.exit_code != 0)
@@ -643,9 +683,9 @@ namespace vcpkg
             return {Strings::trim(std::move(output.output)), expected_left_tag};
         }
     }
-    std::string VcpkgPaths::get_current_git_sha_message() const
+    std::string VcpkgPaths::get_current_git_sha_message(const path& dot_git_dir) const
     {
-        auto maybe_cur_sha = get_current_git_sha();
+        auto maybe_cur_sha = get_current_git_sha(dot_git_dir);
         if (auto p_sha = maybe_cur_sha.get())
         {
             return Strings::concat("The current commit is \"", *p_sha, '"');
@@ -673,12 +713,12 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
+    ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_port_treeish_map(
+        const path& ports_dir) const
     {
-        const auto local_repo = this->root / vcpkg::u8path(".git");
         const auto git_cmd = git_cmd_builder({}, {})
                                  .string_arg("-C")
-                                 .path_arg(this->builtin_ports_directory())
+                                 .path_arg(ports_dir)
                                  .string_arg("ls-tree")
                                  .string_arg("-d")
                                  .string_arg("HEAD")
@@ -712,17 +752,21 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedS<path> VcpkgPaths::git_checkout_baseline(StringView commit_sha) const
+    ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
+    {
+        return git_get_port_treeish_map(builtin_registry_ports_dir());
+    }
+
+    ExpectedS<path> VcpkgPaths::git_checkout_baseline(const path& registry_root, StringView commit_sha) const
     {
         Filesystem& fs = get_filesystem();
         const path destination_parent = this->baselines_output / vcpkg::u8path(commit_sha);
         path destination = destination_parent / vcpkg::u8path("baseline.json");
-
         if (!fs.exists(destination))
         {
-            const path destination_tmp = destination_parent / vcpkg::u8path("baseline.json.tmp");
+            const path destination_tmp = destination_parent / u8path("baseline.json.tmp");
             auto treeish = Strings::concat(commit_sha, ":versions/baseline.json");
-            auto maybe_contents = git_show(treeish, this->root / vcpkg::u8path(".git"));
+            auto maybe_contents = git_show(treeish, registry_root / u8path(".git"));
             if (auto contents = maybe_contents.get())
             {
                 std::error_code ec;

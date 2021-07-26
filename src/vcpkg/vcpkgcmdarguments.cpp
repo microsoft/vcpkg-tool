@@ -282,8 +282,7 @@ namespace vcpkg
                     {INSTALL_ROOT_DIR_ARG, &VcpkgCmdArguments::install_root_dir},
                     {PACKAGES_ROOT_DIR_ARG, &VcpkgCmdArguments::packages_root_dir},
                     {SCRIPTS_ROOT_DIR_ARG, &VcpkgCmdArguments::scripts_root_dir},
-                    {BUILTIN_PORTS_ROOT_DIR_ARG, &VcpkgCmdArguments::builtin_ports_root_dir},
-                    {BUILTIN_REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::builtin_registry_versions_dir},
+                    {REGISTRY_ROOT_DIR_ARG, &VcpkgCmdArguments::registry_root_dir},
                 };
 
             constexpr static std::pair<StringView, std::vector<std::string> VcpkgCmdArguments::*>
@@ -633,10 +632,7 @@ namespace vcpkg
         table.format(opt(INSTALL_ROOT_DIR_ARG, "=", "<path>"), "(Experimental) Specify the install root directory");
         table.format(opt(PACKAGES_ROOT_DIR_ARG, "=", "<path>"), "(Experimental) Specify the packages root directory");
         table.format(opt(SCRIPTS_ROOT_DIR_ARG, "=", "<path>"), "(Experimental) Specify the scripts root directory");
-        table.format(opt(BUILTIN_PORTS_ROOT_DIR_ARG, "=", "<path>"),
-                     "(Experimental) Specify the packages root directory");
-        table.format(opt(BUILTIN_REGISTRY_VERSIONS_DIR_ARG, "=", "<path>"),
-                     "(Experimental) Specify the versions root directory");
+        table.format(opt(REGISTRY_ROOT_DIR_ARG, "=", "<path>"), "(Experimental) Specify the root of a custom registry");
         table.format(opt(JSON_SWITCH, "", ""), "(Experimental) Request JSON output");
     }
 
@@ -951,8 +947,7 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::INSTALL_ROOT_DIR_ARG;
     constexpr StringLiteral VcpkgCmdArguments::PACKAGES_ROOT_DIR_ARG;
     constexpr StringLiteral VcpkgCmdArguments::SCRIPTS_ROOT_DIR_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::BUILTIN_PORTS_ROOT_DIR_ARG;
-    constexpr StringLiteral VcpkgCmdArguments::BUILTIN_REGISTRY_VERSIONS_DIR_ARG;
+    constexpr StringLiteral VcpkgCmdArguments::REGISTRY_ROOT_DIR_ARG;
 
     constexpr StringLiteral VcpkgCmdArguments::DEFAULT_VISUAL_STUDIO_PATH_ENV;
 

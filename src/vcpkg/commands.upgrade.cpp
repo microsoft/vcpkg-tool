@@ -177,7 +177,7 @@ namespace vcpkg::Commands::Upgrade
             action.build_options = vcpkg::Build::default_build_package_options;
         }
 
-        Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+        Dependencies::print_plan(action_plan, true, paths.builtin_registry_ports_dir());
 
         if (!no_dry_run)
         {
