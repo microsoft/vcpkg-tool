@@ -51,9 +51,6 @@ namespace vcpkg::Help
                  "your project from within your manifest file.");
         tbl.blank();
         tbl.blank();
-        tbl.text("** This feature is experimental and requires `--feature-flags=versions` **");
-        tbl.blank();
-        tbl.blank();
         tbl.header("Versions in vcpkg come in four primary flavors");
         tbl.format("version", "A dot-separated sequence of numbers (1.2.3.4)");
         tbl.format("version-date", "A date (2021-01-01.5)");

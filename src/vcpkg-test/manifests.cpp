@@ -102,12 +102,12 @@ TEST_CASE ("manifest versioning", "[manifests]")
     for (auto v : data)
     {
         auto m_pgh = test_parse_manifest(std::get<0>(v));
-
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
-        REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
-        REQUIRE(pgh.core_paragraph->version_scheme == std::get<1>(v));
-        REQUIRE(pgh.core_paragraph->version == std::get<2>(v));
+        CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
+        CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
+        CHECK(pgh.core_paragraph->version == std::get<2>(v));
+        CHECK(pgh.core_paragraph->port_version == 0);
     }
 
     test_parse_manifest(R"json({
@@ -211,9 +211,58 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
                         true);
 }
 
-TEST_CASE ("manifest overrides error hash", "[manifests]")
+TEST_CASE ("manifest overrides embedded port version", "[manifests]")
 {
     test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version-string": "abcd#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+    test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version-date": "2018-01-01#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+    test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version": "1.2#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+    test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version-semver": "1.2.0#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -223,8 +272,10 @@ TEST_CASE ("manifest overrides error hash", "[manifests]")
         }
     ]
 })json",
-                        true);
-    test_parse_manifest(R"json({
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -234,8 +285,10 @@ TEST_CASE ("manifest overrides error hash", "[manifests]")
         }
     ]
 })json",
-                        true);
-    test_parse_manifest(R"json({
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -245,18 +298,22 @@ TEST_CASE ("manifest overrides error hash", "[manifests]")
         }
     ]
 })json",
-                        true);
-    test_parse_manifest(R"json({
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
         {
             "name": "d",
-            "version-semver": "1.2#1"
+            "version-semver": "1.2.0#1"
         }
     ]
 })json",
-                        true);
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
 }
 
 TEST_CASE ("manifest constraints", "[manifests]")
