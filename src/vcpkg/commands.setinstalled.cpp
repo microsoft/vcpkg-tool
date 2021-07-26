@@ -49,9 +49,15 @@ namespace vcpkg::Commands::SetInstalled
 
         std::set<std::string> all_abis;
 
+        std::vector<PackageSpec> user_requested_specs;
         for (const auto& action : action_plan.install_actions)
         {
             all_abis.insert(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+            if (action.request_type == Dependencies::RequestType::USER_REQUESTED)
+            {
+                // save for reporting usage later
+                user_requested_specs.push_back(action.spec);
+            }
         }
 
         // currently (or once) installed specifications
@@ -118,6 +124,15 @@ namespace vcpkg::Commands::SetInstalled
                                               cmake_vars);
 
         print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
+
+        for (auto&& ur_spec : user_requested_specs)
+        {
+            auto it = status_db.find_installed(ur_spec);
+            if (it != status_db.end())
+            {
+                Install::print_usage_information(it->get()->package, paths);
+            }
+        }
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }

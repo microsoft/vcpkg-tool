@@ -486,6 +486,7 @@ TEST_CASE ("version install string port version 2", "[versionplan]")
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"2", 1});
+    CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("version install transitive string", "[versionplan]")
@@ -517,7 +518,9 @@ TEST_CASE ("version install transitive string", "[versionplan]")
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "b", {"2", 0});
+    CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
     check_name_and_version(install_plan.install_actions[1], "a", {"2", 1});
+    CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("version install simple relaxed", "[versionplan]")
@@ -1296,8 +1299,11 @@ TEST_CASE ("version install transitive feature versioned", "[versionplan]")
 
     REQUIRE(install_plan.size() == 3);
     check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
+    CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
     check_name_and_version(install_plan.install_actions[1], "b", {"2", 0}, {"y"});
+    CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::AUTO_SELECTED);
     check_name_and_version(install_plan.install_actions[2], "a", {"1", 0}, {"x"});
+    CHECK(install_plan.install_actions[2].request_type == Dependencies::RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("version install constraint-reduction", "[versionplan]")
@@ -1764,8 +1770,10 @@ TEST_CASE ("version install host tool", "[versionplan]")
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
         REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
+        CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
         check_name_and_version(install_plan.install_actions[1], "b", {"1", 0});
         REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::X86_WINDOWS);
+        CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
     }
     SECTION ("transitive 2")
     {
@@ -1777,8 +1785,10 @@ TEST_CASE ("version install host tool", "[versionplan]")
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
         REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
+        CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
         check_name_and_version(install_plan.install_actions[1], "c", {"1", 0});
         REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::ARM_UWP);
+        CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
     }
     SECTION ("self-reference")
     {
@@ -1787,8 +1797,10 @@ TEST_CASE ("version install host tool", "[versionplan]")
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "d", {"1", 0});
         REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
+        CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
         check_name_and_version(install_plan.install_actions[1], "d", {"1", 0});
         REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::X86_WINDOWS);
+        CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
     }
 }
 TEST_CASE ("version overlay ports", "[versionplan]")

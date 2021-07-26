@@ -102,6 +102,7 @@ namespace vcpkg::Install
     };
 
     CMakeUsageInfo get_cmake_usage(const BinaryParagraph& bpgh, const VcpkgPaths& paths);
+    void print_usage_information(const BinaryParagraph& bpgh, const VcpkgPaths& paths);
 
     extern const CommandStructure COMMAND_STRUCTURE;
 

@@ -593,7 +593,7 @@ namespace vcpkg::Install
         nullptr,
     };
 
-    static void print_cmake_information(const BinaryParagraph& bpgh, const VcpkgPaths& paths)
+    void print_usage_information(const BinaryParagraph& bpgh, const VcpkgPaths& paths)
     {
         auto usage = get_cmake_usage(bpgh, paths);
 
@@ -1088,7 +1088,7 @@ namespace vcpkg::Install
             if (result.action->request_type != RequestType::USER_REQUESTED) continue;
             auto bpgh = result.get_binary_paragraph();
             if (!bpgh) continue;
-            print_cmake_information(*bpgh, paths);
+            print_usage_information(*bpgh, paths);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
