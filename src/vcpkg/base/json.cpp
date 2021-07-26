@@ -735,6 +735,10 @@ namespace vcpkg::Json
                 return Value();
             }
 
+#define VCPKG_JSON_NO_COMMENTS_MSG                                                                                     \
+    "\n   vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "        \
+    "comments."
+
             Value parse_keyword() noexcept
             {
                 char32_t current = cur();
@@ -820,6 +824,10 @@ namespace vcpkg::Json
                             return Value::array(std::move(arr));
                         }
                     }
+                    else if (current == '/')
+                    {
+                        add_error("Unexpected character in middle of array" VCPKG_JSON_NO_COMMENTS_MSG);
+                    }
                     else
                     {
                         add_error("Unexpected character in middle of array");
@@ -859,6 +867,11 @@ namespace vcpkg::Json
                 else if (current == Unicode::end_of_file)
                 {
                     add_error("Unexpected EOF; expected colon");
+                    return res;
+                }
+                else if (current == '/')
+                {
+                    add_error("Unexpected character; expected colon" VCPKG_JSON_NO_COMMENTS_MSG);
                     return res;
                 }
                 else
@@ -917,6 +930,10 @@ namespace vcpkg::Json
                             return Value();
                         }
                     }
+                    else if (current == '/')
+                    {
+                        add_error("Unexpected character; expected comma or close brace" VCPKG_JSON_NO_COMMENTS_MSG);
+                    }
                     else
                     {
                         add_error("Unexpected character; expected comma or close brace");
@@ -945,6 +962,11 @@ namespace vcpkg::Json
                     case 'n':
                     case 't':
                     case 'f': return parse_keyword();
+                    case '/':
+                    {
+                        add_error("Unexpected character; expected value" VCPKG_JSON_NO_COMMENTS_MSG);
+                        return Value();
+                    }
                     default:
                         if (is_number_start(current))
                         {
