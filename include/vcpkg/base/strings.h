@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/cstringview.h>
+#include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/stringliteral.h>
@@ -52,6 +53,13 @@ namespace vcpkg::Strings::details
     inline void append_internal(std::string& into, const char* v) { into.append(v); }
     inline void append_internal(std::string& into, const std::string& s) { into.append(s); }
     inline void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
+    inline void append_internal(std::string& into, LineInfo ln)
+    {
+        into.append(ln.file_name);
+        into.push_back(':');
+        into += std::to_string(ln.line_number);
+        into.push_back(':');
+    }
 
     template<class T, class = decltype(std::declval<const T&>().to_string(std::declval<std::string&>()))>
     void append_internal(std::string& into, const T& t)
