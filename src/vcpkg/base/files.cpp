@@ -1182,7 +1182,7 @@ namespace vcpkg
                     return false;
                 }
 
-                stdfs::remove(target, ec);
+                return stdfs::remove(target, ec);
             }
 #endif // _WIN32
 
