@@ -312,10 +312,8 @@ namespace vcpkg::Commands::CIVerifyVersions
         auto baseline = get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
         auto& fs = paths.get_filesystem();
         std::set<std::string> errors;
-        for (const auto& dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+        for (const auto& port_path : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
         {
-            const auto& port_path = dir.path();
-
             auto&& port_name = vcpkg::u8string(port_path.stem());
             if (Util::Sets::contains(exclusion_set, port_name))
             {
@@ -343,8 +341,8 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             auto control_path = port_path / vcpkg::u8path("CONTROL");
             auto manifest_path = port_path / vcpkg::u8path("vcpkg.json");
-            auto manifest_exists = fs.exists(manifest_path);
-            auto control_exists = fs.exists(control_path);
+            auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
+            auto control_exists = fs.exists(control_path, IgnoreErrors{});
 
             if (manifest_exists && control_exists)
             {
@@ -369,7 +367,7 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             auto versions_file_path = paths.builtin_registry_versions / vcpkg::u8path({port_name[0], '-'}) /
                                       vcpkg::u8path(Strings::concat(port_name, ".json"));
-            if (!fs.exists(versions_file_path))
+            if (!fs.exists(versions_file_path, IgnoreErrors{}))
             {
                 vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
                 errors.emplace(Strings::format("Error: While validating port %s.\n"

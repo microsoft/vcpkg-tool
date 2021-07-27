@@ -160,7 +160,7 @@ namespace
                                        bool keep_going)
     {
         auto& fs = paths.get_filesystem();
-        if (!fs.exists(VCPKG_LINE_INFO, version_db_file_path))
+        if (!fs.exists(version_db_file_path, VCPKG_LINE_INFO))
         {
             std::vector<VersionGitTree> new_entry{{version, git_tree}};
             write_versions_file(fs, new_entry, version_db_file_path);
@@ -289,7 +289,7 @@ namespace vcpkg::Commands::AddVersion
 
         auto& fs = paths.get_filesystem();
         auto baseline_path = paths.builtin_registry_versions / vcpkg::u8path("baseline.json");
-        if (!fs.exists(VCPKG_LINE_INFO, baseline_path))
+        if (!fs.exists(baseline_path, VCPKG_LINE_INFO))
         {
             vcpkg::printf(Color::error, "Error: Couldn't find required file `%s`\n.", vcpkg::u8string(baseline_path));
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -316,14 +316,14 @@ namespace vcpkg::Commands::AddVersion
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            for (auto&& port_dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+            for (auto&& port_dir : fs.get_files_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
-                port_names.emplace_back(vcpkg::u8string(port_dir.path().stem()));
+                port_names.emplace_back(vcpkg::u8string(port_dir.stem()));
             }
         }
 
         auto baseline_map = [&]() -> std::map<std::string, vcpkg::VersionT, std::less<>> {
-            if (!fs.exists(VCPKG_LINE_INFO, baseline_path))
+            if (!fs.exists(baseline_path, VCPKG_LINE_INFO))
             {
                 std::map<std::string, vcpkg::VersionT, std::less<>> ret;
                 return ret;
@@ -354,7 +354,7 @@ namespace vcpkg::Commands::AddVersion
                 // check if manifest file is property formatted
                 const auto path_to_manifest =
                     paths.builtin_ports_directory() / vcpkg::u8path(port_name) / vcpkg::u8path("vcpkg.json");
-                if (fs.exists(path_to_manifest))
+                if (fs.exists(path_to_manifest, IgnoreErrors{}))
                 {
                     const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
                     const auto json = serialize_manifest(*scf);

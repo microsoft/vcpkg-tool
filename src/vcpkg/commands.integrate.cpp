@@ -184,7 +184,7 @@ namespace vcpkg::Commands::Integrate
         // TODO: This block of code should eventually be removed
         for (auto&& old_system_wide_targets_file : OLD_SYSTEM_TARGET_FILES)
         {
-            if (fs.exists(old_system_wide_targets_file))
+            if (fs.exists(old_system_wide_targets_file, IgnoreErrors{}))
             {
                 const std::string param =
                     Strings::format(R"(/c "DEL "%s" /Q > nul")", u8string(old_system_wide_targets_file));
@@ -200,12 +200,13 @@ namespace vcpkg::Commands::Integrate
             }
         }
         bool should_install_system = true;
-        const Expected<std::string> system_wide_file_contents = fs.read_contents(SYSTEM_WIDE_TARGETS_FILE);
+        std::error_code ec;
+        std::string system_wide_file_contents = fs.read_contents(SYSTEM_WIDE_TARGETS_FILE, ec);
         static const std::regex RE(R"###(<!-- version (\d+) -->)###");
-        if (const auto contents_data = system_wide_file_contents.get())
+        if (!ec)
         {
             std::match_results<std::string::const_iterator> match;
-            const auto found = std::regex_search(*contents_data, match, RE);
+            const auto found = std::regex_search(system_wide_file_contents, match, RE);
             if (found)
             {
                 const int ver = atoi(match[1].str().c_str());
@@ -233,7 +234,7 @@ namespace vcpkg::Commands::Integrate
             }
 
             Checks::check_exit(VCPKG_LINE_INFO,
-                               fs.exists(SYSTEM_WIDE_TARGETS_FILE),
+                               fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}),
                                "Error: failed to copy targets file to %s",
                                u8string(SYSTEM_WIDE_TARGETS_FILE));
         }
@@ -382,10 +383,16 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
 
         const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
 
-        const path nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
+        const path nuget_package =
+            buildsystems_dir / vcpkg::u8path(Strings::format("%s.%s.nupkg", nuget_id, nupkg_version));
+        const auto nuget_package_str = vcpkg::u8string(nuget_package);
         Checks::check_exit(
-            VCPKG_LINE_INFO, exit_code == 0 && fs.exists(nuget_package), "Error: NuGet package creation failed");
-        print2(Color::success, "Created nupkg: ", vcpkg::u8string(nuget_package), '\n');
+            VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed with exit code: %d", exit_code);
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           fs.exists(nuget_package, IgnoreErrors{}),
+                           "Error: NuGet package creation \"succeeded\", but no .nupkg was produced. Expected %s",
+                           nuget_package_str);
+        print2(Color::success, "Created nupkg: ", nuget_package_str, '\n');
 
         auto source_path = vcpkg::u8string(buildsystems_dir);
         Strings::inplace_replace_all(source_path, "`", "``");
@@ -447,12 +454,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         auto& fs = paths.get_filesystem();
         const path completion_script_path = paths.scripts / "vcpkg_completion.bash";
 
-        Expected<std::vector<std::string>> maybe_bashrc_content = fs.read_lines(bashrc_path);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, maybe_bashrc_content.has_value(), "Unable to read %s", vcpkg::u8string(bashrc_path));
-
-        std::vector<std::string> bashrc_content = maybe_bashrc_content.value_or_exit(VCPKG_LINE_INFO);
-
+        auto bashrc_content = fs.read_lines(bashrc_path, VCPKG_LINE_INFO);
         std::vector<std::string> matches;
         for (auto&& line : bashrc_content)
         {
@@ -495,7 +497,8 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         }
         fish_completions_path = fish_completions_path / "fish" / "completions" / "vcpkg.fish";
 
-        if (stdfs::exists(fish_completions_path))
+        auto& fs = paths.get_filesystem();
+        if (fs.exists(fish_completions_path, IgnoreErrors{}))
         {
             vcpkg::printf("vcpkg fish completion is already added at %s.\n", vcpkg::u8string(fish_completions_path));
             Checks::exit_success(VCPKG_LINE_INFO);
@@ -504,7 +507,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         const path completion_script_path = paths.scripts / "vcpkg_completion.fish";
 
         vcpkg::printf("Adding vcpkg completion entry at %s.\n", vcpkg::u8string(fish_completions_path));
-        stdfs::create_symlink(completion_script_path, fish_completions_path);
+        fs.create_symlink(completion_script_path, fish_completions_path, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 #endif

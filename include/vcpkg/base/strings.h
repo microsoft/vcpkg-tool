@@ -73,10 +73,10 @@ namespace vcpkg::Strings::details
         to_string(into, t);
     }
 
-    struct tolower_char
+    constexpr struct
     {
-        char operator()(char c) const { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
-    };
+        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
+    } tolower_char;
 }
 
 namespace vcpkg::Strings
@@ -144,13 +144,14 @@ namespace vcpkg::Strings
     template<class It>
     void ascii_to_lowercase(It first, It last)
     {
-        std::transform(first, last, first, details::tolower_char{});
+        std::transform(first, last, first, details::tolower_char);
     }
     std::string ascii_to_lowercase(std::string&& s);
 
     std::string ascii_to_uppercase(std::string&& s);
 
     bool case_insensitive_ascii_starts_with(StringView s, StringView pattern);
+    bool case_insensitive_ascii_ends_with(StringView s, StringView pattern);
     bool ends_with(StringView s, StringView pattern);
     bool starts_with(StringView s, StringView pattern);
 

@@ -99,7 +99,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
          Versions::Scheme::Semver,
          "1.2.3-rc3"},
     };
-    for (auto v : data)
+    for (auto&& v : data)
     {
         auto m_pgh = test_parse_manifest(std::get<0>(v));
         REQUIRE(m_pgh.has_value());
@@ -540,7 +540,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
          Versions::Scheme::Semver,
          "1.2.3-rc3"},
     };
-    for (auto v : data)
+    for (auto&& v : data)
     {
         auto m_pgh = test_parse_manifest(std::get<0>(v));
 
@@ -855,11 +855,11 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
 
     std::vector<SourceControlFile> scfs;
 
-    for (auto dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+    for (auto&& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
     {
         const auto control = dir / vcpkg::u8path("CONTROL");
         const auto manifest = dir / vcpkg::u8path("vcpkg.json");
-        if (fs.exists(control))
+        if (fs.exists(control, IgnoreErrors{}))
         {
             INFO(vcpkg::u8string(control));
             auto contents = fs.read_contents(control, VCPKG_LINE_INFO);
@@ -877,7 +877,7 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
 
             scfs.push_back(std::move(*scf.value_or_exit(VCPKG_LINE_INFO)));
         }
-        else if (fs.exists(manifest))
+        else if (fs.exists(manifest, IgnoreErrors{}))
         {
             std::error_code ec;
             auto contents = Json::parse_file(fs, manifest, ec);

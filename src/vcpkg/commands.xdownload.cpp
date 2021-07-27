@@ -44,7 +44,7 @@ namespace vcpkg::Commands::X_Download
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
         Downloads::DownloadManager download_manager{
             parse_download_configuration(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO)};
-        path file = fs.absolute(VCPKG_LINE_INFO, vcpkg::u8path(args.command_arguments[0]));
+        path file = fs.absolute(vcpkg::u8path(args.command_arguments[0]), VCPKG_LINE_INFO);
 
         std::string sha = Strings::ascii_to_lowercase(std::string(args.command_arguments[1]));
         if (!is_lower_sha512(sha))
@@ -56,7 +56,7 @@ namespace vcpkg::Commands::X_Download
         // Is this a store command?
         if (Util::Sets::contains(parsed.switches, OPTION_STORE))
         {
-            auto s = fs.status(VCPKG_LINE_INFO, file);
+            auto s = fs.status(file, VCPKG_LINE_INFO);
             if (s.type() != vcpkg::file_type::regular)
             {
                 Checks::exit_with_message(

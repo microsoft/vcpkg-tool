@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/expected.h>
+
 #include <vcpkg/versiont.h>
 
 namespace vcpkg::Versions

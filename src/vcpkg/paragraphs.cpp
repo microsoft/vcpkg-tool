@@ -232,13 +232,14 @@ namespace vcpkg::Paragraphs
 
     ExpectedS<Paragraph> get_single_paragraph(const Filesystem& fs, const path& control_path)
     {
-        const Expected<std::string> contents = fs.read_contents(control_path);
-        if (auto spgh = contents.get())
+        std::error_code ec;
+        std::string contents = fs.read_contents(control_path, ec);
+        if (ec)
         {
-            return parse_single_paragraph(*spgh, vcpkg::u8string(control_path));
+            return ec.message();
         }
 
-        return contents.error().message();
+        return parse_single_paragraph(std::move(contents), vcpkg::u8string(control_path));
     }
 
     ExpectedS<std::vector<Paragraph>> get_paragraphs_text(const std::string& text, const std::string& origin)
@@ -248,13 +249,14 @@ namespace vcpkg::Paragraphs
 
     ExpectedS<std::vector<Paragraph>> get_paragraphs(const Filesystem& fs, const path& control_path)
     {
-        const Expected<std::string> contents = fs.read_contents(control_path);
-        if (auto spgh = contents.get())
+        std::error_code ec;
+        std::string contents = fs.read_contents(control_path, ec);
+        if (ec)
         {
-            return parse_paragraphs(*spgh, vcpkg::u8string(control_path));
+            return ec.message();
         }
 
-        return contents.error().message();
+        return parse_paragraphs(std::move(contents), vcpkg::u8string(control_path));
     }
 
     ExpectedS<std::vector<Paragraph>> parse_paragraphs(const std::string& str, const std::string& origin)
@@ -264,8 +266,8 @@ namespace vcpkg::Paragraphs
 
     bool is_port_directory(const Filesystem& fs, const path& maybe_directory)
     {
-        return fs.exists(maybe_directory / vcpkg::u8path("CONTROL")) ||
-               fs.exists(maybe_directory / vcpkg::u8path("vcpkg.json"));
+        return fs.exists(maybe_directory / vcpkg::u8path("CONTROL"), IgnoreErrors{}) ||
+               fs.exists(maybe_directory / vcpkg::u8path("vcpkg.json"), IgnoreErrors{});
     }
 
     static ParseExpected<SourceControlFile> try_load_manifest_object(
@@ -339,10 +341,10 @@ namespace vcpkg::Paragraphs
     {
         const auto manifest_path = port_directory / vcpkg::u8path("vcpkg.json");
         const auto control_path = port_directory / vcpkg::u8path("CONTROL");
-        if (fs.exists(manifest_path))
+        if (fs.exists(manifest_path, IgnoreErrors{}))
         {
             vcpkg::Checks::check_exit(VCPKG_LINE_INFO,
-                                      !fs.exists(control_path),
+                                      !fs.exists(control_path, IgnoreErrors{}),
                                       "Found both manifest and CONTROL file in port %s; please rename one or the other",
                                       vcpkg::u8string(port_directory));
 
@@ -360,7 +362,7 @@ namespace vcpkg::Paragraphs
             return res;
         }
 
-        if (fs.exists(control_path))
+        if (fs.exists(control_path, IgnoreErrors{}))
         {
             ExpectedS<std::vector<Paragraph>> pghs = get_paragraphs(fs, control_path);
             if (auto vector_pghs = pghs.get())
@@ -375,7 +377,7 @@ namespace vcpkg::Paragraphs
 
         auto error_info = std::make_unique<ParseControlErrorInfo>();
         error_info->name = vcpkg::u8string(port_directory.filename());
-        if (fs.exists(port_directory))
+        if (fs.exists(port_directory, IgnoreErrors{}))
         {
             error_info->error = "Failed to find either a CONTROL file or vcpkg.json file.";
         }
@@ -506,7 +508,7 @@ namespace vcpkg::Paragraphs
     {
         LoadResults ret;
 
-        auto port_dirs = fs.get_files_non_recursive(directory);
+        auto port_dirs = fs.get_directories_non_recursive(directory, VCPKG_LINE_INFO);
         Util::sort(port_dirs);
 
         Util::erase_remove_if(port_dirs,

@@ -137,7 +137,7 @@ namespace vcpkg::Commands::Autocomplete
                 const auto prefix = match[2].str();
                 std::vector<std::string> results;
 
-                const bool is_option = Strings::case_insensitive_ascii_starts_with(prefix, "-");
+                const bool is_option = Strings::starts_with(prefix, "-");
                 if (is_option)
                 {
                     results = Util::fmap(command.structure.options.switches, [](const CommandSwitch& s) -> std::string {

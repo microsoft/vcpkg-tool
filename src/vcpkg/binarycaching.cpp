@@ -200,12 +200,7 @@ namespace
     static void compress_directory(const VcpkgPaths& paths, const path& source, const path& destination)
     {
         auto& fs = paths.get_filesystem();
-
-        std::error_code ec;
-
-        fs.remove(destination, ec);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, !fs.exists(destination), "Could not remove file: %s", vcpkg::u8string(destination));
+        fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
         auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
 
@@ -272,7 +267,7 @@ namespace
             for (const auto& archives_root_dir : m_read_dirs)
             {
                 auto archive_path = archives_root_dir / archive_subpath;
-                if (fs.exists(archive_path))
+                if (fs.exists(archive_path, IgnoreErrors{}))
                 {
                     print2("Using cached binary package: ", u8string(archive_path), "\n");
 
@@ -287,7 +282,7 @@ namespace
                     if (action.build_options.purge_decompress_failure == Build::PurgeDecompressFailure::YES)
                     {
                         print2("Purging bad archive\n");
-                        fs.remove(archive_path, ignore_errors);
+                        fs.remove(archive_path, IgnoreErrors{});
                     }
                 }
 
@@ -333,7 +328,7 @@ namespace
             for (const auto& archives_root_dir : m_write_dirs)
             {
                 const auto archive_path = archives_root_dir / archive_subpath;
-                fs.create_directories(archive_path.parent_path(), ignore_errors);
+                fs.create_directories(archive_path.parent_path(), IgnoreErrors{});
                 std::error_code ec;
                 if (m_write_dirs.size() > 1)
                 {
@@ -357,7 +352,7 @@ namespace
             // In the case of 1 write dir, the file will be moved instead of copied
             if (m_write_dirs.size() != 1)
             {
-                fs.remove(tmp_archive_path, ignore_errors);
+                fs.remove(tmp_archive_path, IgnoreErrors{});
             }
         }
 
@@ -379,7 +374,7 @@ namespace
                 bool any_available = false;
                 for (auto&& archives_root_dir : m_read_dirs)
                 {
-                    if (fs.exists(archives_root_dir / archive_subpath))
+                    if (fs.exists(archives_root_dir / archive_subpath, IgnoreErrors{}))
                     {
                         any_available = true;
                         break;
@@ -552,8 +547,8 @@ namespace
             , m_use_nuget_cache(false)
         {
             const std::string use_nuget_cache = get_environment_variable("VCPKG_USE_NUGET_CACHE").value_or("");
-            m_use_nuget_cache = Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") ||
-                                Strings::case_insensitive_ascii_equals(use_nuget_cache, "1");
+            m_use_nuget_cache =
+                Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
         int run_nuget_commandline(const Command& cmdline) const
@@ -746,11 +741,11 @@ namespace
                     // output directory
                     auto nupkg_path =
                         paths.package_dir(nuget_ref.spec) / vcpkg::u8path(nuget_ref.reference.id + ".nupkg");
-                    if (fs.exists(nupkg_path, ignore_errors))
+                    if (fs.exists(nupkg_path, IgnoreErrors{}))
                     {
                         fs.remove(nupkg_path, VCPKG_LINE_INFO);
                         Checks::check_exit(VCPKG_LINE_INFO,
-                                           !fs.exists(nupkg_path, ignore_errors),
+                                           !fs.exists(nupkg_path, IgnoreErrors{}),
                                            "Unable to remove nupkg after restoring: %s",
                                            u8string(nupkg_path));
                         cache_status[nuget_ref.result_index]->mark_restored();
@@ -867,7 +862,7 @@ namespace
                 }
             }
 
-            paths.get_filesystem().remove(nupkg_path, ignore_errors);
+            paths.get_filesystem().remove(nupkg_path, IgnoreErrors{});
         }
 
         void precheck(const VcpkgPaths&, View<Dependencies::InstallPlanAction>, View<CacheStatus*>) const override { }
@@ -1292,14 +1287,7 @@ namespace
                 Metrics::g_metrics.lock()->track_property("VCPKG_DEFAULT_BINARY_CACHE", "defined");
                 auto path = vcpkg::u8path(*p_str);
                 path.make_preferred();
-                const auto status = stdfs::status(path);
-                if (!stdfs::exists(status))
-                {
-                    return {"Path to VCPKG_DEFAULT_BINARY_CACHE does not exist: " + vcpkg::u8string(path),
-                            expected_right_tag};
-                }
-
-                if (!stdfs::is_directory(status))
+                if (!get_real_filesystem().is_directory(path))
                 {
                     return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not a directory: " +
                                 vcpkg::u8string(path),

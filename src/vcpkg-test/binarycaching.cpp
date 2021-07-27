@@ -231,7 +231,7 @@ TEST_CASE ("generate_nuspec", "[generate_nuspec]")
     VcpkgCmdArguments args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     args.imbue_from_environment();
     args.packages_root_dir = std::make_unique<std::string>("/");
-    auto pkgPath = fsWrapper.absolute(VCPKG_LINE_INFO, vcpkg::u8path("/zlib2_x64-windows")) / vcpkg::u8path("**");
+    auto pkgPath = fsWrapper.absolute(vcpkg::u8path("/zlib2_x64-windows"), VCPKG_LINE_INFO) / vcpkg::u8path("**");
     pkgPath.make_preferred();
     const auto pkgPathStr = vcpkg::u8string(pkgPath);
     VcpkgPaths paths(fsWrapper, args);

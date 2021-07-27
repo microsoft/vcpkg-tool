@@ -69,11 +69,10 @@ namespace vcpkg::Commands::Env
         if (add_tools)
         {
             auto tools_dir = paths.installed / triplet.to_string() / "tools";
-            auto tool_files = fs.get_files_non_recursive(tools_dir);
             path_vars.push_back(vcpkg::u8string(tools_dir));
-            for (auto&& tool_dir : tool_files)
+            for (auto&& tool_dir : fs.get_directories_non_recursive(tools_dir, VCPKG_LINE_INFO))
             {
-                if (fs.is_directory(tool_dir)) path_vars.push_back(vcpkg::u8string(tool_dir));
+                path_vars.push_back(vcpkg::u8string(tool_dir));
             }
         }
         if (add_python)

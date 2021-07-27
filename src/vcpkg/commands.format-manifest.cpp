@@ -242,17 +242,17 @@ namespace vcpkg::Commands::FormatManifest
 
         if (format_all)
         {
-            for (const auto& dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+            for (const auto& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
-                auto control_path = dir.path() / vcpkg::u8path("CONTROL");
-                auto manifest_path = dir.path() / vcpkg::u8path("vcpkg.json");
-                auto manifest_exists = fs.exists(manifest_path);
-                auto control_exists = fs.exists(control_path);
+                auto control_path = dir / vcpkg::u8path("CONTROL");
+                auto manifest_path = dir / vcpkg::u8path("vcpkg.json");
+                auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
+                auto control_exists = fs.exists(control_path, IgnoreErrors{});
 
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    !manifest_exists || !control_exists,
                                    "Both a manifest file and a CONTROL file exist in port directory: %s",
-                                   vcpkg::u8string(dir.path()));
+                                   vcpkg::u8string(dir));
 
                 if (manifest_exists)
                 {

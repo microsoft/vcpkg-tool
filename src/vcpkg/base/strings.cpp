@@ -10,6 +10,18 @@
 #include <string>
 #include <vector>
 
+namespace
+{
+    constexpr struct
+    {
+        bool operator()(char a, char b) const noexcept
+        {
+            using vcpkg::Strings::details::tolower_char;
+            return tolower_char(a) == tolower_char(b);
+        }
+    } icase_eq;
+}
+
 namespace vcpkg::Strings::details
 {
     // To disambiguate between two overloads
@@ -17,8 +29,6 @@ namespace vcpkg::Strings::details
 
     // Avoids C4244 warnings because of char<->int conversion that occur when using std::tolower()
     static char toupper_char(const char c) { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
-
-    static bool icase_eq(char a, char b) { return tolower_char{}(a) == tolower_char{}(b); }
 
 #if defined(_WIN32)
     static _locale_t& c_locale()
@@ -92,7 +102,7 @@ std::string Strings::escape_string(std::string&& s, char char_to_escape, char es
 
 static const char* case_insensitive_ascii_find(StringView s, StringView pattern)
 {
-    return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), &Strings::details::icase_eq);
+    return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
 bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
@@ -102,7 +112,7 @@ bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
 
 bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
 {
-    return std::equal(left.begin(), left.end(), right.begin(), right.end(), &details::icase_eq);
+    return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }
 
 std::string Strings::ascii_to_lowercase(std::string&& s)
@@ -120,7 +130,13 @@ std::string Strings::ascii_to_uppercase(std::string&& s)
 bool Strings::case_insensitive_ascii_starts_with(StringView s, StringView pattern)
 {
     if (s.size() < pattern.size()) return false;
-    return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end(), &details::icase_eq);
+    return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end(), icase_eq);
+}
+
+bool Strings::case_insensitive_ascii_ends_with(StringView s, StringView pattern)
+{
+    if (s.size() < pattern.size()) return false;
+    return std::equal(s.end() - pattern.size(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
 bool Strings::ends_with(StringView s, StringView pattern)
@@ -383,5 +399,4 @@ namespace vcpkg::Strings
         stream.on_end(CB{this});
         return std::move(this->lines);
     }
-
 }

@@ -675,7 +675,7 @@ namespace vcpkg::Build
 
         const auto& env = paths.get_action_env(abi_info);
         auto& fs = paths.get_filesystem();
-        if (!fs.exists(buildpath))
+        if (!fs.exists(buildpath, IgnoreErrors{}))
         {
             std::error_code err;
             fs.create_directory(buildpath, err);
@@ -691,7 +691,7 @@ namespace vcpkg::Build
 
         int rc;
         {
-            const auto out_file = fs.open_for_write(VCPKG_LINE_INFO, stdoutlog);
+            const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             rc = cmd_execute_and_stream_lines(
                 command,
                 [&](StringView s) {
@@ -883,20 +883,20 @@ namespace vcpkg::Build
         Triplet triplet = action.spec.triplet();
         const auto& triplet_file_path = vcpkg::u8string(paths.get_triplet_file_path(triplet));
 
-        if (Strings::case_insensitive_ascii_starts_with(triplet_file_path, vcpkg::u8string(paths.community_triplets)))
+        if (Strings::starts_with(triplet_file_path, vcpkg::u8string(paths.community_triplets)))
         {
             vcpkg::printf(vcpkg::Color::warning,
                           "-- Using community triplet %s. This triplet configuration is not guaranteed to succeed.\n",
                           triplet.canonical_name());
             vcpkg::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
-        else if (!Strings::case_insensitive_ascii_starts_with(triplet_file_path, vcpkg::u8string(paths.triplets)))
+        else if (!Strings::starts_with(triplet_file_path, vcpkg::u8string(paths.triplets)))
         {
             vcpkg::printf("-- [OVERLAY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
 
         auto u8portdir = vcpkg::u8string(scfl.source_location);
-        if (!Strings::case_insensitive_ascii_starts_with(u8portdir, vcpkg::u8string(paths.builtin_ports_directory())))
+        if (!Strings::starts_with(u8portdir, vcpkg::u8string(paths.builtin_ports_directory())))
         {
             vcpkg::printf("-- Installing port from location: %s\n", u8portdir);
         }
@@ -908,7 +908,7 @@ namespace vcpkg::Build
         const auto& env = paths.get_action_env(action.abi_info.value_or_exit(VCPKG_LINE_INFO));
 
         auto buildpath = paths.buildtrees / action.spec.name();
-        if (!fs.exists(buildpath))
+        if (!fs.exists(buildpath, IgnoreErrors{}))
         {
             std::error_code err;
             fs.create_directory(buildpath, err);
@@ -921,7 +921,7 @@ namespace vcpkg::Build
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
         int return_code;
         {
-            auto out_file = fs.open_for_write(VCPKG_LINE_INFO, stdoutlog);
+            auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(
                 command,
                 [&](StringView sv) {
@@ -1010,15 +1010,11 @@ namespace vcpkg::Build
         if (action.build_options.clean_buildtrees == CleanBuildtrees::YES)
         {
             auto& fs = paths.get_filesystem();
-            auto buildtree_files = fs.get_files_non_recursive(paths.build_dir(action.spec));
-            for (auto&& file : buildtree_files)
+            // Will keep the logs, which are regular files
+            auto buildtree_dirs = fs.get_directories_non_recursive(paths.build_dir(action.spec), IgnoreErrors{});
+            for (auto&& dir : buildtree_dirs)
             {
-                if (fs.is_directory(file)) // Will only keep the logs
-                {
-                    std::error_code ec;
-                    path failure_point;
-                    fs.remove_all(file, ec, failure_point);
-                }
+                fs.remove_all(dir, IgnoreErrors{});
             }
         }
 
@@ -1098,20 +1094,17 @@ namespace vcpkg::Build
 
         auto&& port_dir = action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).source_location;
         size_t port_file_count = 0;
-        for (auto& port_file : stdfs::recursive_directory_iterator(port_dir))
+        for (auto& port_file : fs.get_regular_files_recursive(port_dir, VCPKG_LINE_INFO))
         {
-            if (vcpkg::is_regular_file(fs.status(VCPKG_LINE_INFO, port_file)))
-            {
-                abi_tag_entries.emplace_back(
-                    vcpkg::u8string(port_file.path().filename()),
-                    vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha256));
+            abi_tag_entries.emplace_back(
+                vcpkg::u8string(port_file.filename()),
+                vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha256));
 
-                ++port_file_count;
-                if (port_file_count > max_port_file_count)
-                {
-                    abi_tag_entries.emplace_back("no_hash_max_portfile", "");
-                    break;
-                }
+            ++port_file_count;
+            if (port_file_count > max_port_file_count)
+            {
+                abi_tag_entries.emplace_back("no_hash_max_portfile", "");
+                break;
             }
         }
 
@@ -1548,14 +1541,12 @@ namespace vcpkg::Build
                         load_vcvars_env = true;
                         if (external_toolchain_file) load_vcvars_env = false;
                     }
-                    else if (Strings::case_insensitive_ascii_equals(variable_value, "1") ||
-                             Strings::case_insensitive_ascii_equals(variable_value, "on") ||
+                    else if (variable_value == "1" || Strings::case_insensitive_ascii_equals(variable_value, "on") ||
                              Strings::case_insensitive_ascii_equals(variable_value, "true"))
                     {
                         load_vcvars_env = true;
                     }
-                    else if (Strings::case_insensitive_ascii_equals(variable_value, "0") ||
-                             Strings::case_insensitive_ascii_equals(variable_value, "off") ||
+                    else if (variable_value == "0" || Strings::case_insensitive_ascii_equals(variable_value, "off") ||
                              Strings::case_insensitive_ascii_equals(variable_value, "false"))
                     {
                         load_vcvars_env = false;

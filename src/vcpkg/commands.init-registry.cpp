@@ -20,7 +20,7 @@ namespace vcpkg::Commands::InitRegistry
 
         const auto path_argument = vcpkg::u8path(args.command_arguments.front());
         const auto path = combine(fs.current_path(VCPKG_LINE_INFO), path_argument);
-        if (!fs.exists(path / vcpkg::u8path(".git")))
+        if (!fs.exists(path / vcpkg::u8path(".git"), IgnoreErrors{}))
         {
             vcpkg::printf(Color::error,
                           "Could not create registry at %s because this is not a git repository root.\n"
@@ -31,11 +31,11 @@ namespace vcpkg::Commands::InitRegistry
         }
         const auto ports = path / vcpkg::u8path("ports");
         const auto baseline = path / vcpkg::u8path("versions") / vcpkg::u8path("baseline.json");
-        if (!fs.exists(ports))
+        if (!fs.exists(ports, IgnoreErrors{}))
         {
             fs.create_directories(ports, VCPKG_LINE_INFO);
         }
-        if (!fs.exists(baseline))
+        if (!fs.exists(baseline, IgnoreErrors{}))
         {
             const auto content = R"({
   "default": {}

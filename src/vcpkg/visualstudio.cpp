@@ -85,7 +85,7 @@ namespace vcpkg::VisualStudio
 
         // Instances from vswhere
         const path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
-        if (fs.exists(vswhere_exe))
+        if (fs.exists(vswhere_exe, IgnoreErrors{}))
         {
             const auto code_and_output = cmd_execute_and_capture_output(Command(vswhere_exe)
                                                                             .string_arg("-all")
@@ -134,7 +134,7 @@ namespace vcpkg::VisualStudio
                 const auto cl_exe = path_root / "VC" / "bin" / "cl.exe";
                 const auto vcvarsall_bat = path_root / "VC" / "vcvarsall.bat";
 
-                if (!(fs.exists(cl_exe) && fs.exists(vcvarsall_bat))) return;
+                if (!(fs.exists(cl_exe, IgnoreErrors{}) && fs.exists(vcvarsall_bat, IgnoreErrors{}))) return;
             }
 
             instances.emplace_back(std::move(path_root), version.c_str(), VisualStudioInstance::ReleaseType::LEGACY);
@@ -207,32 +207,30 @@ namespace vcpkg::VisualStudio
                 const path vcvarsall_dir = vc_dir / "Auxiliary" / "Build";
                 const path vcvarsall_bat = vcvarsall_dir / "vcvarsall.bat";
                 paths_examined.push_back(vcvarsall_bat);
-                if (!fs.exists(vcvarsall_bat)) continue;
+                if (!fs.exists(vcvarsall_bat, IgnoreErrors{})) continue;
 
                 // Get all supported architectures
                 std::vector<ToolsetArchOption> supported_architectures;
-                if (fs.exists(vcvarsall_dir / "vcvars32.bat"))
+                if (fs.exists(vcvarsall_dir / "vcvars32.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"x86", CPU::X86, CPU::X86});
-                if (fs.exists(vcvarsall_dir / "vcvars64.bat"))
+                if (fs.exists(vcvarsall_dir / "vcvars64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64", CPU::X64, CPU::X64});
-                if (fs.exists(vcvarsall_dir / "vcvarsx86_amd64.bat"))
+                if (fs.exists(vcvarsall_dir / "vcvarsx86_amd64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"x86_amd64", CPU::X86, CPU::X64});
-                if (fs.exists(vcvarsall_dir / "vcvarsx86_arm.bat"))
+                if (fs.exists(vcvarsall_dir / "vcvarsx86_arm.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"x86_arm", CPU::X86, CPU::ARM});
-                if (fs.exists(vcvarsall_dir / "vcvarsx86_arm64.bat"))
+                if (fs.exists(vcvarsall_dir / "vcvarsx86_arm64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"x86_arm64", CPU::X86, CPU::ARM64});
-                if (fs.exists(vcvarsall_dir / "vcvarsamd64_x86.bat"))
+                if (fs.exists(vcvarsall_dir / "vcvarsamd64_x86.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64_x86", CPU::X64, CPU::X86});
-                if (fs.exists(vcvarsall_dir / "vcvarsamd64_arm.bat"))
+                if (fs.exists(vcvarsall_dir / "vcvarsamd64_arm.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64_arm", CPU::X64, CPU::ARM});
-                if (fs.exists(vcvarsall_dir / "vcvarsamd64_arm64.bat"))
+                if (fs.exists(vcvarsall_dir / "vcvarsamd64_arm64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64_arm64", CPU::X64, CPU::ARM64});
 
                 // Locate the "best" MSVC toolchain version
                 const path msvc_path = vc_dir / "Tools" / "MSVC";
-                std::vector<path> msvc_subdirectories = fs.get_files_non_recursive(msvc_path);
-                Util::erase_remove_if(msvc_subdirectories,
-                                      [&fs](const path& target) { return !fs.is_directory(target); });
+                std::vector<path> msvc_subdirectories = fs.get_directories_non_recursive(msvc_path, IgnoreErrors{});
 
                 // Sort them so that latest comes first
                 std::sort(msvc_subdirectories.begin(),
@@ -272,7 +270,7 @@ namespace vcpkg::VisualStudio
                     }
                     const path dumpbin_path = subdir / "bin" / "HostX86" / "x86" / "dumpbin.exe";
                     paths_examined.push_back(dumpbin_path);
-                    if (fs.exists(dumpbin_path))
+                    if (fs.exists(dumpbin_path, IgnoreErrors{}))
                     {
                         Toolset toolset{vs_instance.root_path,
                                         dumpbin_path,
@@ -283,7 +281,7 @@ namespace vcpkg::VisualStudio
 
                         const auto english_language_pack = dumpbin_path.parent_path() / "1033";
 
-                        if (!fs.exists(english_language_pack))
+                        if (!fs.exists(english_language_pack, IgnoreErrors{}))
                         {
                             excluded_toolsets.push_back(std::move(toolset));
                             continue;
@@ -313,27 +311,27 @@ namespace vcpkg::VisualStudio
                 const path vcvarsall_bat = vs_instance.root_path / "VC" / "vcvarsall.bat";
 
                 paths_examined.push_back(vcvarsall_bat);
-                if (fs.exists(vcvarsall_bat))
+                if (fs.exists(vcvarsall_bat, IgnoreErrors{}))
                 {
                     const path vs_dumpbin_exe = vs_instance.root_path / "VC" / "bin" / "dumpbin.exe";
                     paths_examined.push_back(vs_dumpbin_exe);
 
                     const path vs_bin_dir = vcvarsall_bat.parent_path() / "bin";
                     std::vector<ToolsetArchOption> supported_architectures;
-                    if (fs.exists(vs_bin_dir / "vcvars32.bat"))
+                    if (fs.exists(vs_bin_dir / "vcvars32.bat", IgnoreErrors{}))
                         supported_architectures.push_back({"x86", CPU::X86, CPU::X86});
-                    if (fs.exists(vs_bin_dir / "amd64\\vcvars64.bat"))
+                    if (fs.exists(vs_bin_dir / "amd64\\vcvars64.bat", IgnoreErrors{}))
                         supported_architectures.push_back({"x64", CPU::X64, CPU::X64});
-                    if (fs.exists(vs_bin_dir / "x86_amd64\\vcvarsx86_amd64.bat"))
+                    if (fs.exists(vs_bin_dir / "x86_amd64\\vcvarsx86_amd64.bat", IgnoreErrors{}))
                         supported_architectures.push_back({"x86_amd64", CPU::X86, CPU::X64});
-                    if (fs.exists(vs_bin_dir / "x86_arm\\vcvarsx86_arm.bat"))
+                    if (fs.exists(vs_bin_dir / "x86_arm\\vcvarsx86_arm.bat", IgnoreErrors{}))
                         supported_architectures.push_back({"x86_arm", CPU::X86, CPU::ARM});
-                    if (fs.exists(vs_bin_dir / "amd64_x86\\vcvarsamd64_x86.bat"))
+                    if (fs.exists(vs_bin_dir / "amd64_x86\\vcvarsamd64_x86.bat", IgnoreErrors{}))
                         supported_architectures.push_back({"amd64_x86", CPU::X64, CPU::X86});
-                    if (fs.exists(vs_bin_dir / "amd64_arm\\vcvarsamd64_arm.bat"))
+                    if (fs.exists(vs_bin_dir / "amd64_arm\\vcvarsamd64_arm.bat", IgnoreErrors{}))
                         supported_architectures.push_back({"amd64_arm", CPU::X64, CPU::ARM});
 
-                    if (fs.exists(vs_dumpbin_exe))
+                    if (fs.exists(vs_dumpbin_exe, IgnoreErrors{}))
                     {
                         const Toolset toolset = {vs_instance.root_path,
                                                  vs_dumpbin_exe,
@@ -344,7 +342,7 @@ namespace vcpkg::VisualStudio
 
                         const auto english_language_pack = vs_dumpbin_exe.parent_path() / "1033";
 
-                        if (!fs.exists(english_language_pack))
+                        if (!fs.exists(english_language_pack, IgnoreErrors{}))
                         {
                             excluded_toolsets.push_back(toolset);
                             break;
