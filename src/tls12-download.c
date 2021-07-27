@@ -379,7 +379,6 @@ int __stdcall entry()
         write_message(std_out, L" Deleted!");
     }
 
-
     CloseHandle(out_file);
     FlushFileBuffers(std_out);
     TerminateProcess(GetCurrentProcess(), exit_code);
