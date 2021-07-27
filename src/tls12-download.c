@@ -149,7 +149,7 @@ static void __declspec(noreturn) abort_api_failure(const HANDLE std_out, const w
     win32_abort();
 }
 
-static void set_delete_on_close_flag(const HANDLE target, bool setting)
+static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, BOOL setting)
 {
     FILE_DISPOSITION_INFO fdi = {0};
     fdi.DeleteFile = setting;
@@ -236,7 +236,7 @@ int __stdcall entry()
     }
 
     // Setting delete on close before we do anything means the file will get deleted for us if we crash
-    set_delete_on_close_flag(out_file, true);
+    set_delete_on_close_flag(std_out, out_file, TRUE);
 
     BOOL results = FALSE;
     const HINTERNET session = WinHttpOpen(L"tls12-download/1.0", access_type, proxy_setting, proxy_bypass_setting, 0);
@@ -381,7 +381,7 @@ int __stdcall entry()
     (void)WinVerifyTrust(INVALID_HANDLE_VALUE, &wt_policy_guid, &wtd);
     if (trust_validation_result == 0)
     {
-        set_delete_on_close_flag(out_file, false);
+        set_delete_on_close_flag(std_out, out_file, FALSE);
         write_message(std_out, L" done.\r\n");
     }
     else
