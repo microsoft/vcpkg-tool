@@ -149,6 +149,16 @@ static void __declspec(noreturn) abort_api_failure(const HANDLE std_out, const w
     win32_abort();
 }
 
+static void set_delete_on_close_flag(const HANDLE target, bool setting)
+{
+    FILE_DISPOSITION_INFO fdi = {0};
+    fdi.DeleteFile = setting;
+    if (SetFileInformationByHandle(target, FileDispositionInfo, &fdi, sizeof(fdi)) == 0)
+    {
+        abort_api_failure(std_out, L"SetFileInformationByHandle");
+    }
+}
+
 #ifndef NDEBUG
 int main()
 #else // ^^^ debug // !debug vvv
@@ -211,12 +221,22 @@ int __stdcall entry()
         abort_api_failure(std_out, L"GetEnvironmentVariableW");
     }
 
-    const HANDLE out_file = CreateFileW(
-        out_file_path, FILE_WRITE_DATA | FILE_READ_DATA | DELETE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+    const HANDLE out_file = CreateFileW(out_file_path,                             // lpFileName
+                                        FILE_WRITE_DATA | FILE_READ_DATA | DELETE, // dwDesiredAccess
+                                        0,                                         // dwShareMode
+                                        0,                                         // lpSecurityAttributes
+                                        CREATE_ALWAYS,                             // dwCreationDisposition
+                                        FILE_ATTRIBUTE_NORMAL,                     // dwFlagsAndAttributes
+                                        0                                          // hTemplateFile
+    );
+
     if (out_file == INVALID_HANDLE_VALUE)
     {
         abort_api_failure(std_out, L"CreateFileW");
     }
+
+    // Setting delete on close before we do anything means the file will get deleted for us if we crash
+    set_delete_on_close_flag(out_file, true);
 
     BOOL results = FALSE;
     const HINTERNET session = WinHttpOpen(L"tls12-download/1.0", access_type, proxy_setting, proxy_bypass_setting, 0);
@@ -339,14 +359,13 @@ int __stdcall entry()
 
     DWORD exit_code = 0;
 
-    WINTRUST_FILE_INFO wtfi;
+    WINTRUST_FILE_INFO wtfi = {0};
     wtfi.cbStruct = sizeof(wtfi);
     wtfi.pcwszFilePath = out_file_path;
     wtfi.hFile = out_file;
     wtfi.pgKnownSubject = 0;
 
-    WINTRUST_DATA wtd;
-    ZeroMemory(&wtd, sizeof(wtd));
+    WINTRUST_DATA wtd = {0};
     wtd.cbStruct = sizeof(wtd);
     wtd.dwUIChoice = WTD_UI_NONE;
     wtd.fdwRevocationChecks = WTD_REVOKE_WHOLECHAIN;
@@ -362,6 +381,7 @@ int __stdcall entry()
     (void)WinVerifyTrust(INVALID_HANDLE_VALUE, &wt_policy_guid, &wtd);
     if (trust_validation_result == 0)
     {
+        set_delete_on_close_flag(out_file, false);
         write_message(std_out, L" done.\r\n");
     }
     else
@@ -369,13 +389,6 @@ int __stdcall entry()
         exit_code = 1;
         write_message(std_out, L" failed! ");
         write_hex(std_out, (DWORD)trust_validation_result);
-        FILE_DISPOSITION_INFO fdi;
-        fdi.DeleteFile = TRUE;
-        if (SetFileInformationByHandle(out_file, FileDispositionInfo, &fdi, sizeof(fdi)) == 0)
-        {
-            abort_api_failure(std_out, L"SetFileInformationByHandle");
-        }
-
         write_message(std_out, L" Deleted!\r\n");
     }
 
