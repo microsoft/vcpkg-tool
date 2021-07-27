@@ -362,7 +362,7 @@ int __stdcall entry()
     (void)WinVerifyTrust(INVALID_HANDLE_VALUE, &wt_policy_guid, &wtd);
     if (trust_validation_result == 0)
     {
-        write_message(std_out, L" done.");
+        write_message(std_out, L" done.\r\n");
     }
     else
     {
@@ -376,7 +376,7 @@ int __stdcall entry()
             abort_api_failure(std_out, L"SetFileInformationByHandle");
         }
 
-        write_message(std_out, L" Deleted!");
+        write_message(std_out, L" Deleted!\r\n");
     }
 
     CloseHandle(out_file);
