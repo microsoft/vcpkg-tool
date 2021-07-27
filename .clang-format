@@ -48,6 +48,8 @@ IncludeCategories:
     Priority: 4
   - Regex: '^<vcpkg/.*\.h>$'
     Priority: 5
+  - Regex: '^(<Softpub\.h>)$'
+    Priority: 8
   - Regex: '^<[a-z0-9_]*\.h>$'
     Priority: 6
   - Regex: '^<[a-z0-9_]*>$' # C++ standard library

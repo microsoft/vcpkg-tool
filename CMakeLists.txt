@@ -212,7 +212,7 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES})
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
-    target_link_libraries(tls12-download winhttp)
+    target_link_libraries(tls12-download winhttp wintrust)
 endif()
 
 
