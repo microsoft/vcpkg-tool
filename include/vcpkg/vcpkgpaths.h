@@ -131,7 +131,7 @@ namespace vcpkg
 
         // Git manipulation in the vcpkg directory
         ExpectedS<std::string> get_current_git_sha() const;
-        std::string get_current_git_sha_message() const;
+        std::string get_current_git_sha_baseline_message() const;
         ExpectedS<path> git_checkout_baseline(StringView commit_sha) const;
         ExpectedS<path> git_checkout_port(StringView port_name, StringView git_tree, const path& dot_git_dir) const;
         ExpectedS<std::string> git_show(const std::string& treeish, const path& dot_git_dir) const;

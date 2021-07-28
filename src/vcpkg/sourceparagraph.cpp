@@ -1090,7 +1090,7 @@ namespace vcpkg
                     Metrics::g_metrics.lock()->track_property("error-versioning-no-baseline", "defined");
                     return Strings::concat(
                         vcpkg::u8string(origin),
-                        " was rejected because it uses \"version>=\" without setting a \"builtin-baseline\".\n",
+                        " was rejected because it uses \"version>=\" and does not have a \"builtin-baseline\".\n",
                         s_extended_help);
                 }
 
@@ -1099,7 +1099,7 @@ namespace vcpkg
                     Metrics::g_metrics.lock()->track_property("error-versioning-no-baseline", "defined");
                     return Strings::concat(
                         vcpkg::u8string(origin),
-                        " was rejected because it uses \"overrides\" without setting a \"builtin-baseline\".\n",
+                        " was rejected because it uses \"overrides\" and does not have a \"builtin-baseline\".\n",
                         s_extended_help);
                 }
             }
