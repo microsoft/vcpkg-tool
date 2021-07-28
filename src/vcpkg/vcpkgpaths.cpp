@@ -257,7 +257,11 @@ namespace vcpkg
             Cache<Triplet, Path> m_triplets_cache;
             Build::EnvCache m_env_cache;
 
-            std::unique_ptr<IExclusiveFileLock> file_lock_handle;
+            std::unique_ptr<IExclusiveFileLock> downloads_lock;
+            std::unique_ptr<IExclusiveFileLock> buildtrees_lock;
+            std::unique_ptr<IExclusiveFileLock> packages_lock;
+            std::unique_ptr<IExclusiveFileLock> installed_lock;
+            std::unique_ptr<IExclusiveFileLock> instance_lock;
 
             Optional<std::pair<Json::Object, Json::JsonStyle>> m_manifest_doc;
             Path m_manifest_path;
@@ -276,6 +280,34 @@ namespace vcpkg
     }
 
     static Path lockfile_path(const VcpkgPaths& p) { return p.vcpkg_dir / "vcpkg-lock.json"; }
+
+    static std::unique_ptr<IExclusiveFileLock> take_lock(const Path& p, Filesystem& fs, const VcpkgCmdArguments& args)
+    {
+        std::error_code ec;
+        std::unique_ptr<IExclusiveFileLock> ret;
+        if (args.wait_for_lock.value_or(false))
+        {
+            ret = fs.take_exclusive_file_lock(p, ec);
+        }
+        else
+        {
+            ret = fs.try_take_exclusive_file_lock(p, ec);
+        }
+
+        if (ec)
+        {
+            bool is_already_locked = ec == std::errc::device_or_resource_busy;
+            bool allow_errors = args.ignore_lock_failures.value_or(false);
+            if (is_already_locked || !allow_errors)
+            {
+                vcpkg::printf(Color::error, "Failed to take the filesystem lock on %s:\n", p);
+                vcpkg::printf(Color::error, "    %s\n", ec.message());
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
+        return ret;
+    }
 
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
         : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(filesystem, args.feature_flag_settings()))
@@ -329,28 +361,6 @@ namespace vcpkg
             installed = process_output_directory(
                 filesystem, manifest_root_dir, args.install_root_dir.get(), "vcpkg_installed", VCPKG_LINE_INFO);
 
-            const auto vcpkg_lock = root / ".vcpkg-root";
-            if (args.wait_for_lock.value_or(false))
-            {
-                m_pimpl->file_lock_handle = filesystem.take_exclusive_file_lock(vcpkg_lock, ec);
-            }
-            else
-            {
-                m_pimpl->file_lock_handle = filesystem.try_take_exclusive_file_lock(vcpkg_lock, ec);
-            }
-
-            if (ec)
-            {
-                bool is_already_locked = ec == std::errc::device_or_resource_busy;
-                bool allow_errors = args.ignore_lock_failures.value_or(false);
-                if (is_already_locked || !allow_errors)
-                {
-                    vcpkg::printf(Color::error, "Failed to take the filesystem lock on %s:\n", vcpkg_lock);
-                    vcpkg::printf(Color::error, "    %s\n", ec.message());
-                    Checks::exit_fail(VCPKG_LINE_INFO);
-                }
-            }
-
             m_pimpl->m_manifest_doc = load_manifest(filesystem, manifest_root_dir);
             m_pimpl->m_manifest_path = manifest_root_dir / "vcpkg.json";
         }
@@ -400,6 +410,21 @@ namespace vcpkg
         builtin_registry_versions = process_output_directory(
             filesystem, root, args.builtin_registry_versions_dir.get(), "versions", VCPKG_LINE_INFO);
         prefab = root / "prefab";
+
+        // Workaround instance locking is available in all modes if requested
+        if (args.lock_instance.value_or(false))
+        {
+            m_pimpl->instance_lock = take_lock(root / ".vcpkg-root", filesystem, args);
+        }
+
+        if (!manifest_root_dir.empty())
+        {
+            // Default locking behavior is only supported in manifest mode
+            m_pimpl->downloads_lock = take_lock(downloads / ".lock", filesystem, args);
+            m_pimpl->installed_lock = take_lock(installed / ".lock", filesystem, args);
+            m_pimpl->packages_lock = take_lock(packages / ".lock", filesystem, args);
+            m_pimpl->buildtrees_lock = take_lock(buildtrees / ".lock", filesystem, args);
+        }
 
         if (args.default_visual_studio_path)
         {

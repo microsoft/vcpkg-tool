@@ -306,6 +306,7 @@ namespace vcpkg
                 {BINARY_CACHING_SWITCH, &VcpkgCmdArguments::binary_caching},
                 {WAIT_FOR_LOCK_SWITCH, &VcpkgCmdArguments::wait_for_lock},
                 {IGNORE_LOCK_FAILURES_SWITCH, &VcpkgCmdArguments::ignore_lock_failures},
+                {LOCK_INSTANCE_SWITCH, &VcpkgCmdArguments::lock_instance},
                 {JSON_SWITCH, &VcpkgCmdArguments::json},
             };
 
@@ -679,8 +680,8 @@ namespace vcpkg
         from_env(ASSET_SOURCES_ENV, asset_sources_template);
 
         {
-            const auto vcpkg_disable_lock = get_environment_variable(IGNORE_LOCK_FAILURES_ENV);
-            if (vcpkg_disable_lock.has_value() && !ignore_lock_failures.has_value())
+            const auto ignore_lock_failures_env = get_environment_variable(IGNORE_LOCK_FAILURES_ENV);
+            if (ignore_lock_failures_env.has_value() && !ignore_lock_failures.has_value())
             {
                 ignore_lock_failures = true;
             }
@@ -743,9 +744,19 @@ namespace vcpkg
                 args.asset_sources_template = entry->string().to_string();
             }
 
-            if (obj.get(DISABLE_METRICS_ENV))
+            if (auto entry = obj.get(DISABLE_METRICS_ENV))
             {
-                args.disable_metrics = true;
+                args.disable_metrics = entry->boolean();
+            }
+
+            if (auto entry = obj.get(IGNORE_LOCK_FAILURES_ENV))
+            {
+                args.ignore_lock_failures = entry->boolean();
+            }
+
+            if (auto entry = obj.get("lock_instance"))
+            {
+                args.lock_instance = entry->boolean();
             }
 
             // Setting the recursive data to 'poison' prevents more than one level of recursion because
@@ -770,9 +781,19 @@ namespace vcpkg
                 obj.insert(ASSET_SOURCES_ENV, Json::Value::string(*args.asset_sources_template.get()));
             }
 
-            if (args.disable_metrics)
+            if (args.disable_metrics.value_or(false))
             {
                 obj.insert(DISABLE_METRICS_ENV, Json::Value::boolean(true));
+            }
+
+            if (auto entry = args.ignore_lock_failures.get())
+            {
+                obj.insert(IGNORE_LOCK_FAILURES_ENV, Json::Value::boolean(*entry));
+            }
+
+            if (auto entry = args.lock_instance.get())
+            {
+                obj.insert("lock_instance", Json::Value::boolean(*entry));
             }
 
             set_environment_variable(RECURSIVE_DATA_ENV, Json::stringify(obj, Json::JsonStyle::with_spaces(0)));
@@ -979,6 +1000,8 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::WAIT_FOR_LOCK_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::IGNORE_LOCK_FAILURES_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::IGNORE_LOCK_FAILURES_ENV;
+
+    constexpr StringLiteral VcpkgCmdArguments::LOCK_INSTANCE_SWITCH;
 
     constexpr StringLiteral VcpkgCmdArguments::JSON_SWITCH;
 
