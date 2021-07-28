@@ -1112,8 +1112,7 @@ namespace vcpkg
 
                 if (Strings::contains(path_res, "//"))
                 {
-                    r.add_generic_error("a registry path",
-                                        "A registry path must not have multiple slashes.");
+                    r.add_generic_error("a registry path", "A registry path must not have multiple slashes.");
                     return nullopt;
                 }
 

@@ -73,6 +73,20 @@ namespace vcpkg::Json
             int64_t index = -1;
             StringView field;
         };
+
+        struct PathGuard
+        {
+            PathGuard(std::vector<Path>& path) : m_path{path} { m_path.emplace_back(); }
+            PathGuard(std::vector<Path>& path, int64_t i) : m_path{path} { m_path.emplace_back(i); }
+            PathGuard(std::vector<Path>& path, StringView f) : m_path{path} { m_path.emplace_back(f); }
+            PathGuard(const PathGuard&) = delete;
+            PathGuard& operator=(const PathGuard&) = delete;
+            ~PathGuard() { m_path.pop_back(); }
+
+        private:
+            std::vector<Path>& m_path;
+        };
+
         std::vector<Path> m_path;
 
     public:
@@ -100,9 +114,8 @@ namespace vcpkg::Json
         template<class Type>
         void visit_in_key(const Value& value, StringView key, Type& place, IDeserializer<Type>& visitor)
         {
-            m_path.push_back(key);
+            PathGuard guard{m_path, key};
             auto opt = visitor.visit(*this, value);
-
             if (auto p_opt = opt.get())
             {
                 place = std::move(*p_opt);
@@ -111,16 +124,14 @@ namespace vcpkg::Json
             {
                 add_expected_type_error(visitor.type_name());
             }
-            m_path.pop_back();
         }
 
         // value should be the value at key of the currently visited object
         template<class Type>
         void visit_at_index(const Value& value, int64_t index, Type& place, IDeserializer<Type>& visitor)
         {
-            m_path.push_back(index);
+            PathGuard guard{m_path, index};
             auto opt = visitor.visit(*this, value);
-
             if (auto p_opt = opt.get())
             {
                 place = std::move(*p_opt);
@@ -129,7 +140,6 @@ namespace vcpkg::Json
             {
                 add_expected_type_error(visitor.type_name());
             }
-            m_path.pop_back();
         }
 
         // returns whether key \in obj
@@ -161,29 +171,27 @@ namespace vcpkg::Json
         template<class Type>
         Optional<std::vector<Type>> array_elements(const Array& arr, IDeserializer<Type>& visitor)
         {
-            std::vector<Type> result;
-            m_path.emplace_back();
+            Optional<std::vector<Type>> result{std::vector<Type>()};
+            PathGuard guard{m_path};
             for (size_t i = 0; i < arr.size(); ++i)
             {
                 m_path.back().index = static_cast<int64_t>(i);
                 auto opt = visitor.visit(*this, arr[i]);
-                if (auto p = opt.get())
+                if (auto parsed = opt.get())
                 {
-                    result.push_back(std::move(*p));
+                    if (auto result_vec = result.get())
+                    {
+                        result_vec->push_back(std::move(*parsed));
+                    }
                 }
                 else
                 {
                     this->add_expected_type_error(visitor.type_name());
-                    for (++i; i < arr.size(); ++i)
-                    {
-                        m_path.back().index = static_cast<int64_t>(i);
-                        auto opt2 = visitor.visit(*this, arr[i]);
-                        if (!opt2) this->add_expected_type_error(visitor.type_name());
-                    }
+                    result.clear();
                 }
             }
-            m_path.pop_back();
-            return std::move(result);
+
+            return result;
         }
     };
 

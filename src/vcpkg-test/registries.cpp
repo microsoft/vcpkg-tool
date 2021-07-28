@@ -237,8 +237,8 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     VersionDbEntryArrayDeserializer filesystem_version_db{VersionDbType::Filesystem, "a/b"};
 
     {
-    Json::Reader r;
-    auto test_json = parse_json(R"json(
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
 [
     {
         "version-string": "puppies",
@@ -257,20 +257,20 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-    auto results_opt = r.visit(test_json, filesystem_version_db);
-    auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
-    CHECK(results[0].version == VersionT{"puppies", 0});
-    CHECK(results[0].p == vcpkg::u8path("a/b/c/d"));
-    CHECK(results[1].version == VersionT{"doggies", 0});
-    CHECK(results[1].p == vcpkg::u8path("a/b/e/d"));
-    CHECK(results[2].version == VersionT{"1.2.3", 0});
-    CHECK(results[2].p == vcpkg::u8path("a/b/semvers/here"));
-    CHECK(r.errors().empty());
+        auto results_opt = r.visit(test_json, filesystem_version_db);
+        auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(results[0].version == VersionT{"puppies", 0});
+        CHECK(results[0].p == vcpkg::u8path("a/b/c/d"));
+        CHECK(results[1].version == VersionT{"doggies", 0});
+        CHECK(results[1].p == vcpkg::u8path("a/b/e/d"));
+        CHECK(results[2].version == VersionT{"1.2.3", 0});
+        CHECK(results[2].p == vcpkg::u8path("a/b/semvers/here"));
+        CHECK(r.errors().empty());
     }
 
     { // missing $/
-    Json::Reader r;
-    auto test_json = parse_json(R"json(
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
 [
     {
         "version-string": "puppies",
@@ -279,8 +279,8 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-    CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
-    CHECK(!r.errors().empty());
+        CHECK(!r.visit(test_json, filesystem_version_db).has_value());
+        CHECK(!r.errors().empty());
     }
 
     { // uses backslash
@@ -294,7 +294,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.visit(test_json, filesystem_version_db).has_value());
         CHECK(!r.errors().empty());
     }
 
@@ -309,7 +309,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.visit(test_json, filesystem_version_db).has_value());
         CHECK(!r.errors().empty());
     }
 
@@ -324,11 +324,11 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.visit(test_json, filesystem_version_db).has_value());
         CHECK(!r.errors().empty());
     }
 
-        { // dot path (mid)
+    { // dot path (mid)
         Json::Reader r;
         auto test_json = parse_json(R"json(
 [
@@ -339,11 +339,11 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.visit(test_json, filesystem_version_db).has_value());
         CHECK(!r.errors().empty());
     }
 
-        { // dot path (last)
+    { // dot path (last)
         Json::Reader r;
         auto test_json = parse_json(R"json(
 [
@@ -354,7 +354,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.visit(test_json, filesystem_version_db).has_value());
         CHECK(!r.errors().empty());
     }
 
@@ -369,7 +369,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.visit(test_json, filesystem_version_db).has_value());
         CHECK(!r.errors().empty());
     }
 
@@ -384,7 +384,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.visit(test_json, filesystem_version_db).has_value());
         CHECK(!r.errors().empty());
     }
 
@@ -399,7 +399,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.visit(test_json, filesystem_version_db).has_value());
         CHECK(!r.errors().empty());
     }
 }
