@@ -311,6 +311,11 @@ bool Strings::contains(StringView haystack, StringView needle)
     return Strings::search(haystack, needle) != haystack.end();
 }
 
+bool Strings::contains(StringView haystack, char needle)
+{
+    return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
+}
+
 size_t Strings::byte_edit_distance(StringView a, StringView b)
 {
     static constexpr size_t max_string_size = 100;
