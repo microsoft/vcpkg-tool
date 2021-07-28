@@ -114,7 +114,7 @@ endif()
 
 # === Target: vcpkglib ===
 
-add_library(vcpkglib
+add_library(vcpkglib OBJECT
     ${VCPKGLIB_BASE_SOURCES}
     ${VCPKGLIB_SOURCES}
     ${VCPKGLIB_BASE_INCLUDES}
