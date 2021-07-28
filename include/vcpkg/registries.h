@@ -136,4 +136,47 @@ namespace vcpkg
     ExpectedS<std::map<std::string, VersionT, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
+
+    struct VersionDbEntry
+    {
+        VersionT version;
+        Versions::Scheme scheme = Versions::Scheme::String;
+
+        // only one of these may be non-empty
+        std::string git_tree;
+        path p;
+    };
+
+    // VersionDbType::Git => VersionDbEntry.git_tree is filled
+    // VersionDbType::Filesystem => VersionDbEntry.path is filled
+    enum class VersionDbType
+    {
+        Git,
+        Filesystem,
+    };
+
+    struct VersionDbEntryDeserializer final : Json::IDeserializer<VersionDbEntry>
+    {
+        static constexpr StringLiteral GIT_TREE = "git-tree";
+        static constexpr StringLiteral PATH = "path";
+
+        StringView type_name() const override;
+        View<StringView> valid_fields() const override;
+        Optional<VersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) override;
+        VersionDbEntryDeserializer(VersionDbType type, const path& root) : type(type), registry_root(root) { }
+
+    private:
+        VersionDbType type;
+        path registry_root;
+    };
+
+    struct VersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<VersionDbEntry>>
+    {
+        virtual StringView type_name() const override;
+        virtual Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r, const Json::Array& arr) override;
+        VersionDbEntryArrayDeserializer(VersionDbType type, const path& root) : underlying{type, root} { }
+
+    private:
+        VersionDbEntryDeserializer underlying;
+    };
 }
