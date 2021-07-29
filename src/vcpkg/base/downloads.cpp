@@ -481,7 +481,7 @@ namespace vcpkg::Downloads
                                   const std::string& url,
                                   View<std::string> headers,
                                   const path& download_path,
-                                  const std::string& sha512,
+                                  Optional<const std::string&> sha512,
                                   const std::vector<std::string>& secrets,
                                   std::string& errors)
     {
@@ -544,24 +544,25 @@ namespace vcpkg::Downloads
             return false;
         }
 
-        auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_path_part_path, sha512);
-        if (auto err = maybe_error.get())
+        if (auto p = sha512.get())
         {
-            Strings::append(errors, *err);
-            return false;
+            auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_path_part_path, *p);
+            if (auto err = maybe_error.get())
+            {
+                Strings::append(errors, *err);
+                return false;
+            }
         }
-        else
-        {
-            fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
-            return true;
-        }
+
+        fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+        return true;
     }
 
     static Optional<const std::string&> try_download_files(vcpkg::Filesystem& fs,
                                                            View<std::string> urls,
                                                            View<std::string> headers,
                                                            const path& download_path,
-                                                           const std::string& sha512,
+                                                           Optional<const std::string&> sha512,
                                                            const std::vector<std::string>& secrets,
                                                            std::string& errors)
     {
@@ -585,6 +586,21 @@ namespace vcpkg::Downloads
                                         const std::string& sha512) const
     {
         this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512);
+    }
+
+    std::string DownloadManager::download_file_without_hash_check(Filesystem& fs,
+        View<std::string> urls,
+        View<std::string> headers,
+        const path& download_path) const
+    {
+        std::string errors;
+        auto maybe_url =
+            try_download_files(fs, urls, headers, download_path, nullopt, m_config.m_secrets, errors);
+        if (auto url = maybe_url.get())
+        {
+            return *url;
+        }
+        Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Failed to download from mirror set:\n%s", errors);
     }
 
     std::string DownloadManager::download_file(Filesystem& fs,

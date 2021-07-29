@@ -52,6 +52,22 @@ namespace vcpkg::Downloads
         explicit DownloadManager(const DownloadManagerConfig& config) : m_config(config) { }
         explicit DownloadManager(DownloadManagerConfig&& config) : m_config(std::move(config)) { }
 
+        void download_file_without_hash_check(Filesystem& fs,
+                           const std::string& url,
+                           const path& download_path) const
+        {
+            this->download_file_without_hash_check(fs, url, {}, download_path);
+        }
+        void download_file_without_hash_check(Filesystem& fs,
+                           const std::string& url,
+                           View<std::string> headers,
+                           const path& download_path) const;
+        // Returns url that was successfully downloaded from
+        std::string download_file_without_hash_check(Filesystem& fs,
+                                  View<std::string> urls,
+                                  View<std::string> headers,
+                                  const path& download_path) const;
+
         void download_file(Filesystem& fs,
                            const std::string& url,
                            const path& download_path,
