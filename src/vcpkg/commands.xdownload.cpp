@@ -13,7 +13,6 @@ namespace vcpkg::Commands::X_Download
 {
     static constexpr StringLiteral OPTION_STORE = "store";
     static constexpr StringLiteral OPTION_SKIP_SHA512 = "skip-sha512";
-    static constexpr StringLiteral OPTION_ALWAYS_REDOWNLOAD = "always-redownload";
     static constexpr StringLiteral OPTION_SHA512 = "sha512";
     static constexpr StringLiteral OPTION_URL = "url";
     static constexpr StringLiteral OPTION_HEADER = "header";
@@ -21,7 +20,6 @@ namespace vcpkg::Commands::X_Download
     static constexpr CommandSwitch FETCH_SWITCHES[] = {
         {OPTION_STORE, "Indicates the file should be stored instead of fetched"},
         {OPTION_SKIP_SHA512, "Do not check the SHA512 of the downloaded file"},
-        {OPTION_ALWAYS_REDOWNLOAD, "Always download, and overwrite any file that already exists"},
     };
     static constexpr CommandSetting FETCH_SETTINGS[] = {
         {OPTION_SHA512, "The hash of the file to be downloaded"},
