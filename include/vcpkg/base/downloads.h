@@ -73,9 +73,7 @@ namespace vcpkg::Downloads
                                   const path& download_path,
                                   const Optional<std::string>& sha512) const;
 
-        ExpectedS<int> put_file_to_mirror(const Filesystem& fs,
-                                          const path& file_to_put,
-                                          StringView sha512) const;
+        ExpectedS<int> put_file_to_mirror(const Filesystem& fs, const path& file_to_put, StringView sha512) const;
 
     private:
         DownloadManagerConfig m_config;

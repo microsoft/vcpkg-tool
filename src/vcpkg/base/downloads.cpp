@@ -232,7 +232,11 @@ namespace vcpkg::Downloads
         }
     }
 
-    static bool check_downloaded_file_hash(Filesystem& fs, const Optional<std::string>& hash, StringView sanitized_url, const path& download_part_path, std::string& errors)
+    static bool check_downloaded_file_hash(Filesystem& fs,
+                                           const Optional<std::string>& hash,
+                                           StringView sanitized_url,
+                                           const path& download_part_path,
+                                           std::string& errors)
     {
         if (auto p = hash.get())
         {
@@ -555,7 +559,6 @@ namespace vcpkg::Downloads
             return true;
         }
         return false;
-        
     }
 
     static Optional<const std::string&> try_download_files(vcpkg::Filesystem& fs,

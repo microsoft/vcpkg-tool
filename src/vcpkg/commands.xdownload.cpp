@@ -21,7 +21,7 @@ namespace vcpkg::Commands::X_Download
     static constexpr CommandSwitch FETCH_SWITCHES[] = {
         {OPTION_STORE, "Indicates the file should be stored instead of fetched"},
         {OPTION_SKIP_SHA512, "Do not check the SHA512 of the downloaded file"},
-        {OPTION_ALWAYS_REDOWNLOAD, "Always download, and overwrite any file that already exists"}
+        {OPTION_ALWAYS_REDOWNLOAD, "Always download, and overwrite any file that already exists"},
     };
     static constexpr CommandSetting FETCH_SETTINGS[] = {
         {OPTION_SHA512, "The hash of the file to be downloaded"},
@@ -43,12 +43,13 @@ namespace vcpkg::Commands::X_Download
 
     static bool is_hex(StringView sha)
     {
-        return std::all_of(
-            sha.begin(), sha.end(), [](char ch) { return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F'); });
+        return std::all_of(sha.begin(), sha.end(), [](char ch) {
+            return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+        });
     }
     static bool is_sha512(StringView sha) { return sha.size() == 128 && is_hex(sha); }
-    
-    Optional<std::string> get_sha512_check(const VcpkgCmdArguments& args, const ParsedArguments& parsed)
+
+    static Optional<std::string> get_sha512_check(const VcpkgCmdArguments& args, const ParsedArguments& parsed)
     {
         Optional<std::string> sha = nullopt;
         auto sha_it = parsed.settings.find(OPTION_SHA512);
@@ -56,7 +57,9 @@ namespace vcpkg::Commands::X_Download
         {
             if (sha_it != parsed.settings.end())
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: SHA512 passed as both an argument and as an option. Only pass one of these.");
+                Checks::exit_with_message(
+                    VCPKG_LINE_INFO,
+                    "Error: SHA512 passed as both an argument and as an option. Only pass one of these.");
             }
             sha = args.command_arguments[1];
         }
@@ -69,7 +72,8 @@ namespace vcpkg::Commands::X_Download
         {
             if (sha.has_value())
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "SHA512 passed, but --skip-sha512 was also passed; only do one or the other.");
+                Checks::exit_with_message(
+                    VCPKG_LINE_INFO, "SHA512 passed, but --skip-sha512 was also passed; only do one or the other.");
             }
         }
         else if (!sha.has_value())
@@ -81,8 +85,7 @@ namespace vcpkg::Commands::X_Download
         {
             if (!is_sha512(*p))
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Error: SHA512's must be 128 hex characters: '%s'", *p);
+                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: SHA512's must be 128 hex characters: '%s'", *p);
             }
             Strings::ascii_to_lowercase(p->begin(), p->end());
         }
@@ -115,7 +118,10 @@ namespace vcpkg::Commands::X_Download
                     VCPKG_LINE_INFO, "Error: path was not a regular file: %s", vcpkg::u8string(file));
             }
             auto actual_hash = Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha512);
-            if (*hash != actual_hash) Checks::exit_with_message(VCPKG_LINE_INFO, "Error: file to store does not match hash");
+            if (*hash != actual_hash)
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: file to store does not match hash");
+            }
             download_manager.put_file_to_mirror(fs, file, actual_hash).value_or_exit(VCPKG_LINE_INFO);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
