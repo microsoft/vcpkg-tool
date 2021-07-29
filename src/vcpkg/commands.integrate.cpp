@@ -490,7 +490,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         auto& fs = paths.get_filesystem();
         const path completion_script_path = paths.scripts / "vcpkg_completion.zsh";
 
-        Expected<std::vector<std::string>> maybe_zshrc_content = fs.read_lines(zshrc_path);
+        Expected<std::vector<std::string>> maybe_zshrc_content = fs.read_lines(zshrc_path, VCPKG_LINE_INFO);
         Checks::check_exit(VCPKG_LINE_INFO, maybe_zshrc_content.has_value(), "Unable to read %s", u8string(zshrc_path));
 
         std::vector<std::string> zshrc_content = maybe_zshrc_content.value_or_exit(VCPKG_LINE_INFO);
