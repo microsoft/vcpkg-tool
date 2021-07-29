@@ -232,29 +232,11 @@ namespace vcpkg::Downloads
         }
     }
 
-    static bool is_lower_hex(StringView sha)
+    static bool check_downloaded_file_hash(Filesystem& fs, const Optional<std::string>& hash, StringView sanitized_url, const path& download_part_path, std::string& errors)
     {
-        return std::all_of(
-            sha.begin(), sha.end(), [](char ch) { return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f'); });
-    }
-    static bool is_lower_sha512(StringView sha) { return sha.size() == 128 && is_lower_hex(sha); }
-
-
-    Sha512Check::Sha512Check(const std::string& s) : hash_(s)
-    {
-        Strings::ascii_to_lowercase(hash_.begin(), hash_.end());
-        if (!is_lower_sha512(hash_))
+        if (auto p = hash.get())
         {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO, "Error: SHA512's must be 128 hex characters: '%s'", s);
-        }
-    }
-
-    bool Sha512Check::check(Filesystem& fs, StringView sanitized_url, const path& download_part_path, std::string& errors) const
-    {
-        if (has_hash())
-        {
-            auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, hash());
+            auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
             if (auto err = maybe_error.get())
             {
                 Strings::append(errors, *err, '\n');
@@ -513,7 +495,7 @@ namespace vcpkg::Downloads
                                   const std::string& url,
                                   View<std::string> headers,
                                   const path& download_path,
-                                  const Sha512Check& sha512,
+                                  const Optional<std::string>& sha512,
                                   const std::vector<std::string>& secrets,
                                   std::string& errors)
     {
@@ -536,7 +518,7 @@ namespace vcpkg::Downloads
                 {
                     if (download_winhttp(fs, download_path_part_path, split_uri, url, secrets, errors))
                     {
-                        if (sha512.check(fs, url, download_path_part_path, errors))
+                        if (check_downloaded_file_hash(fs, sha512, url, download_path_part_path, errors))
                         {
                             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
                             return true;
@@ -567,7 +549,7 @@ namespace vcpkg::Downloads
             return false;
         }
 
-        if (sha512.check(fs, sanitized_url, download_path_part_path, errors))
+        if (check_downloaded_file_hash(fs, sha512, sanitized_url, download_path_part_path, errors))
         {
             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
             return true;
@@ -580,7 +562,7 @@ namespace vcpkg::Downloads
                                                            View<std::string> urls,
                                                            View<std::string> headers,
                                                            const path& download_path,
-                                                           const Sha512Check& sha512,
+                                                           const Optional<std::string>& sha512,
                                                            const std::vector<std::string>& secrets,
                                                            std::string& errors)
     {
@@ -601,7 +583,7 @@ namespace vcpkg::Downloads
                                         const std::string& url,
                                         View<std::string> headers,
                                         const path& download_path,
-                                        const Sha512Check& sha512) const
+                                        const Optional<std::string>& sha512) const
     {
         this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512);
     }
@@ -610,14 +592,14 @@ namespace vcpkg::Downloads
                                                View<std::string> urls,
                                                View<std::string> headers,
                                                const path& download_path,
-                                               const Sha512Check& sha512) const
+                                               const Optional<std::string>& sha512) const
     {
         std::string errors;
-        if (sha512.has_hash())
+        if (auto hash = sha512.get())
         {
             if (auto read_template = m_config.m_read_url_template.get())
             {
-                auto read_url = Strings::replace_all(std::string(*read_template), "<SHA>", sha512.hash());
+                auto read_url = Strings::replace_all(std::string(*read_template), "<SHA>", *hash);
                 if (Downloads::try_download_file(
                         fs, read_url, m_config.m_read_headers, download_path, sha512, m_config.m_secrets, errors))
                     return read_url;
@@ -628,9 +610,9 @@ namespace vcpkg::Downloads
         {
             if (urls.size() == 0)
             {
-                if (sha512.has_hash())
+                if (auto hash = sha512.get())
                 {
-                    Strings::append(errors, "Error: No urls specified to download SHA: ", sha512.hash(), '\n');
+                    Strings::append(errors, "Error: No urls specified to download SHA: ", *hash, '\n');
                 }
                 else
                 {
@@ -643,9 +625,9 @@ namespace vcpkg::Downloads
                     try_download_files(fs, urls, headers, download_path, sha512, m_config.m_secrets, errors);
                 if (auto url = maybe_url.get())
                 {
-                    if (sha512.has_hash())
+                    if (auto hash = sha512.get())
                     {
-                        auto maybe_push = put_file_to_mirror(fs, download_path, sha512.hash());
+                        auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push.has_value())
                         {
                             print2(Color::warning, "Warning: failed to store back to mirror:\n", maybe_push.error());

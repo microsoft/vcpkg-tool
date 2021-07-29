@@ -35,28 +35,6 @@ namespace vcpkg::Downloads
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers);
     std::string replace_secrets(std::string input, View<std::string> secrets);
 
-    struct SkipSha512T {};
-    constexpr SkipSha512T skip_sha512;
-
-    struct Sha512Check
-    {
-        Sha512Check(const std::string& s);
-        Sha512Check(SkipSha512T) : hash_() {}
-
-        bool check(Filesystem& fs, StringView sanitized_url, const path& download_path, std::string& errors) const;
-
-        bool has_hash() const
-        {
-            return !hash_.empty();
-        }
-        StringView hash() const
-        {
-            return hash_;
-        }
-    private:
-        std::string hash_;
-    };
-
     struct DownloadManagerConfig
     {
         Optional<std::string> m_read_url_template;
@@ -77,7 +55,7 @@ namespace vcpkg::Downloads
         void download_file(Filesystem& fs,
                            const std::string& url,
                            const path& download_path,
-                           const Sha512Check& sha512) const
+                           const Optional<std::string>& sha512) const
         {
             this->download_file(fs, url, {}, download_path, sha512);
         }
@@ -86,14 +64,14 @@ namespace vcpkg::Downloads
                            const std::string& url,
                            View<std::string> headers,
                            const path& download_path,
-                           const Sha512Check& sha512) const;
+                           const Optional<std::string>& sha512) const;
 
         // Returns url that was successfully downloaded from
         std::string download_file(Filesystem& fs,
                                   View<std::string> urls,
                                   View<std::string> headers,
                                   const path& download_path,
-                                  const Sha512Check& sha512) const;
+                                  const Optional<std::string>& sha512) const;
 
         ExpectedS<int> put_file_to_mirror(const Filesystem& fs,
                                           const path& file_to_put,
