@@ -289,12 +289,10 @@ namespace vcpkg::Json
     };
 
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(
-        const Filesystem&, const path&, std::error_code& ec) noexcept;
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView text,
-                                                                                      const path& filepath) noexcept;
+        const Filesystem&, const Path&, std::error_code& ec) noexcept;
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView text,
                                                                                       StringView origin = {}) noexcept;
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem&, const path&) noexcept;
+    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem&, const Path&) noexcept;
 
     std::string stringify(const Value&, JsonStyle style);
     std::string stringify(const Object&, JsonStyle style);

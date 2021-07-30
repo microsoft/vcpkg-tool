@@ -459,8 +459,8 @@ namespace vcpkg::Metrics
         wchar_t temp_folder[MAX_PATH];
         GetTempPathW(MAX_PATH, temp_folder);
 
-        const path temp_folder_path = path(temp_folder) / "vcpkg";
-        const path temp_folder_path_exe =
+        const Path temp_folder_path = Path(Strings::to_utf8(temp_folder)) / "vcpkg";
+        const Path temp_folder_path_exe =
             temp_folder_path / Strings::format("vcpkg-%s.exe", Commands::Version::base_version());
 #endif
 
@@ -468,14 +468,14 @@ namespace vcpkg::Metrics
 #if defined(_WIN32)
         fs.create_directories(temp_folder_path, ec);
         if (ec) return;
-        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, copy_options::skip_existing, ec);
+        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
         if (ec) return;
 #else
         if (!fs.exists("/tmp", IgnoreErrors{})) return;
-        const path temp_folder_path = "/tmp/vcpkg";
+        const Path temp_folder_path = "/tmp/vcpkg";
         fs.create_directory(temp_folder_path, IgnoreErrors{});
 #endif
-        const path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
+        const Path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
         fs.write_contents(vcpkg_metrics_txt_path, payload, ec);
         if (ec) return;
 
@@ -497,7 +497,7 @@ namespace vcpkg::Metrics
                         .string_arg("POST")
                         .string_arg("--tlsv1.2")
                         .string_arg("--data")
-                        .string_arg(Strings::concat("@", vcpkg::u8string(vcpkg_metrics_txt_path)))
+                        .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
                         .raw_arg(">/dev/null")
                         .raw_arg("2>&1");
         auto remove = Command("rm").path_arg(vcpkg_metrics_txt_path);

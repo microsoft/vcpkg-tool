@@ -15,19 +15,18 @@ namespace vcpkg::Paragraphs
 {
     using Paragraph = Parse::Paragraph;
 
-    ExpectedS<Paragraph> parse_single_paragraph(const std::string& str, const std::string& origin);
-    ExpectedS<Paragraph> get_single_paragraph(const Filesystem& fs, const path& control_path);
+    ExpectedS<Paragraph> parse_single_paragraph(StringView str, StringView origin);
+    ExpectedS<Paragraph> get_single_paragraph(const Filesystem& fs, const Path& control_path);
 
-    ExpectedS<std::vector<Paragraph>> get_paragraphs(const Filesystem& fs, const path& control_path);
-    ExpectedS<std::vector<Paragraph>> get_paragraphs_text(const std::string& text, const std::string& origin);
+    ExpectedS<std::vector<Paragraph>> get_paragraphs(const Filesystem& fs, const Path& control_path);
 
-    ExpectedS<std::vector<Paragraph>> parse_paragraphs(const std::string& str, const std::string& origin);
+    ExpectedS<std::vector<Paragraph>> parse_paragraphs(StringView str, StringView origin);
 
-    bool is_port_directory(const Filesystem& fs, const path& maybe_directory);
+    bool is_port_directory(const Filesystem& fs, const Path& maybe_directory);
 
-    Parse::ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const path& port_directory);
+    Parse::ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const Path& port_directory);
     Parse::ParseExpected<SourceControlFile> try_load_port_text(const std::string& text,
-                                                               const std::string& origin,
+                                                               StringView origin,
                                                                bool is_manifest);
 
     ExpectedS<BinaryControlFile> try_load_cached_package(const VcpkgPaths& paths, const PackageSpec& spec);
@@ -56,5 +55,5 @@ namespace vcpkg::Paragraphs
     LoadResults try_load_all_registry_ports(const VcpkgPaths& paths);
 
     std::vector<SourceControlFileLocation> load_all_registry_ports(const VcpkgPaths& paths);
-    std::vector<SourceControlFileLocation> load_overlay_ports(const Filesystem& fs, const path& dir);
+    std::vector<SourceControlFileLocation> load_overlay_ports(const Filesystem& fs, const Path& dir);
 }

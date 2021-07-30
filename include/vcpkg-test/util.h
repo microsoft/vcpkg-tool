@@ -121,5 +121,5 @@ namespace vcpkg::Test
         }
     }
 
-    const path& base_temporary_directory() noexcept;
+    const Path& base_temporary_directory() noexcept;
 }

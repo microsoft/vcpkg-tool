@@ -61,24 +61,23 @@ namespace vcpkg::Commands::Env
         const bool add_python = Util::Sets::contains(options.switches, OPTION_PYTHON);
 
         std::vector<std::string> path_vars;
-        if (add_bin) path_vars.push_back(vcpkg::u8string(paths.installed / triplet.to_string() / "bin"));
-        if (add_debug_bin)
-            path_vars.push_back(vcpkg::u8string(paths.installed / triplet.to_string() / "debug" / "bin"));
-        if (add_include)
-            extra_env.emplace("INCLUDE", vcpkg::u8string(paths.installed / triplet.to_string() / "include"));
+        if (add_bin) path_vars.push_back((paths.installed / triplet.to_string() / "bin").native());
+        if (add_debug_bin) path_vars.push_back((paths.installed / triplet.to_string() / "debug" / "bin").native());
+        if (add_include) extra_env.emplace("INCLUDE", (paths.installed / triplet.to_string() / "include").native());
         if (add_tools)
         {
             auto tools_dir = paths.installed / triplet.to_string() / "tools";
-            path_vars.push_back(vcpkg::u8string(tools_dir));
+            path_vars.push_back(tools_dir.native());
             for (auto&& tool_dir : fs.get_directories_non_recursive(tools_dir, VCPKG_LINE_INFO))
             {
-                path_vars.push_back(vcpkg::u8string(tool_dir));
+                path_vars.push_back(tool_dir.native());
             }
         }
         if (add_python)
-            extra_env.emplace(
-                "PYTHONPATH",
-                vcpkg::u8string(paths.installed / vcpkg::u8path(triplet.to_string()) / vcpkg::u8path("python")));
+        {
+            extra_env.emplace("PYTHONPATH", (paths.installed / triplet.to_string() / "python").native());
+        }
+
         if (path_vars.size() > 0) extra_env.emplace("PATH", Strings::join(";", path_vars));
         for (auto&& passthrough : pre_build_info.passthrough_env_vars)
         {

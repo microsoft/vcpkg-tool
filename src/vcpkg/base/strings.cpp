@@ -80,13 +80,31 @@ std::wstring Strings::to_utf16(StringView s)
 #endif
 
 #if defined(_WIN32)
-std::string Strings::to_utf8(const wchar_t* w)
+std::string Strings::to_utf8(const wchar_t* w) { return Strings::to_utf8(w, wcslen(w)); }
+
+std::string Strings::to_utf8(const wchar_t* w, size_t s)
 {
     std::string output;
-    const size_t size = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
-    if (size == 0) return output;
-    output.resize(size - 1);
-    WideCharToMultiByte(CP_UTF8, 0, w, -1, output.data(), static_cast<int>(size) - 1, nullptr, nullptr);
+    if (s != 0)
+    {
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, s <= INT_MAX);
+        const int size = WideCharToMultiByte(CP_UTF8, 0, w, static_cast<int>(s), nullptr, 0, nullptr, nullptr);
+        if (size <= 0)
+        {
+            unsigned long last_error = ::GetLastError();
+            Checks::exit_with_message(VCPKG_LINE_INFO,
+                                      "Failed to convert to UTF-8. %08lX %s",
+                                      last_error,
+                                      std::system_category().message(static_cast<int>(last_error)));
+        }
+
+        output.resize(size);
+        vcpkg::Checks::check_exit(
+            VCPKG_LINE_INFO,
+            size == WideCharToMultiByte(
+                        CP_UTF8, 0, w, static_cast<int>(s), output.data(), static_cast<int>(size), nullptr, nullptr));
+    }
+
     return output;
 }
 #endif
@@ -150,9 +168,14 @@ bool Strings::starts_with(StringView s, StringView pattern)
     return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end());
 }
 
-std::string Strings::replace_all(const std::string& s, StringView search, StringView rep)
+std::string Strings::replace_all(const char* s, StringView search, StringView rep)
 {
     return Strings::replace_all(std::string(s), search, rep);
+}
+
+std::string Strings::replace_all(StringView s, StringView search, StringView rep)
+{
+    return Strings::replace_all(s.to_string(), search, rep);
 }
 
 std::string Strings::replace_all(std::string&& s, StringView search, StringView rep)

@@ -20,7 +20,7 @@ namespace
 
     using Baseline = std::map<std::string, VersionT, std::less<>>;
 
-    static const path registry_versions_dir_name = vcpkg::u8path("versions");
+    static const Path registry_versions_dir_name = "versions";
 
     struct GitRegistry;
 
@@ -29,10 +29,10 @@ namespace
         GitRegistryEntry(const GitRegistry& reg, StringView name);
 
         View<VersionT> get_port_versions() const override;
-        ExpectedS<path> get_path_to_version(const VcpkgPaths&, const VersionT& version) const override;
+        ExpectedS<Path> get_path_to_version(const VcpkgPaths&, const VersionT& version) const override;
 
     private:
-        void fill_data_from_path(const Filesystem& fs, const path& port_versions_path) const;
+        void fill_data_from_path(const Filesystem& fs, const Path& port_versions_path) const;
 
         std::string port_name;
 
@@ -71,9 +71,9 @@ namespace
                 [this, &paths]() { return paths.get_installed_lockfile().get_or_fetch(paths, m_repo); });
         }
 
-        path get_versions_tree_path(const VcpkgPaths& paths) const
+        Path get_versions_tree_path(const VcpkgPaths& paths) const
         {
-            return m_versions_tree.get([this, &paths]() -> path {
+            return m_versions_tree.get([this, &paths]() -> Path {
                 auto e = get_lock_entry(paths);
                 e.ensure_up_to_date(paths);
                 auto maybe_tree =
@@ -102,7 +102,7 @@ namespace
 
         struct VersionsTreePathResult
         {
-            path p;
+            Path p;
             bool stale;
         };
 
@@ -136,8 +136,8 @@ namespace
         std::string m_repo;
         std::string m_baseline_identifier;
         DelayedInit<LockFile::Entry> m_lock_entry;
-        mutable Optional<path> m_stale_versions_tree;
-        DelayedInit<path> m_versions_tree;
+        mutable Optional<Path> m_stale_versions_tree;
+        DelayedInit<Path> m_versions_tree;
         DelayedInit<Baseline> m_baseline;
 
         // Shared by all child GitRegistryEntry's
@@ -146,13 +146,13 @@ namespace
 
     struct BuiltinPortTreeRegistryEntry final : RegistryEntry
     {
-        BuiltinPortTreeRegistryEntry(StringView name_, path root_, VersionT version_)
+        BuiltinPortTreeRegistryEntry(StringView name_, Path root_, VersionT version_)
             : name(name_.to_string()), root(root_), version(version_)
         {
         }
 
         View<VersionT> get_port_versions() const override { return {&version, 1}; }
-        ExpectedS<path> get_path_to_version(const VcpkgPaths&, const VersionT& v) const override
+        ExpectedS<Path> get_path_to_version(const VcpkgPaths&, const VersionT& v) const override
         {
             if (v == version)
             {
@@ -168,14 +168,14 @@ namespace
         }
 
         std::string name;
-        path root;
+        Path root;
         VersionT version;
     };
 
     struct BuiltinGitRegistryEntry final : RegistryEntry
     {
         View<VersionT> get_port_versions() const override { return port_versions; }
-        ExpectedS<path> get_path_to_version(const VcpkgPaths&, const VersionT& version) const override;
+        ExpectedS<Path> get_path_to_version(const VcpkgPaths&, const VersionT& version) const override;
 
         std::string port_name;
 
@@ -191,14 +191,14 @@ namespace
 
         View<VersionT> get_port_versions() const override { return port_versions; }
 
-        ExpectedS<path> get_path_to_version(const VcpkgPaths& paths, const VersionT& version) const override;
+        ExpectedS<Path> get_path_to_version(const VcpkgPaths& paths, const VersionT& version) const override;
 
         std::string port_name;
 
         // these two map port versions to paths
         // these shall have the same size, and paths[i] shall be the path for port_versions[i]
         std::vector<VersionT> port_versions;
-        std::vector<path> version_paths;
+        std::vector<Path> version_paths;
     };
 
     struct BuiltinRegistry final : RegistryImplementation
@@ -224,7 +224,7 @@ namespace
 
     struct FilesystemRegistry final : RegistryImplementation
     {
-        FilesystemRegistry(path&& path, std::string&& baseline)
+        FilesystemRegistry(Path&& path, std::string&& baseline)
             : m_path(std::move(path)), m_baseline_identifier(baseline)
         {
         }
@@ -238,51 +238,50 @@ namespace
         Optional<VersionT> get_baseline_version(const VcpkgPaths&, StringView) const override;
 
     private:
-        path m_path;
+        Path m_path;
         std::string m_baseline_identifier;
         DelayedInit<Baseline> m_baseline;
     };
 
-    path relative_path_to_versions(StringView port_name);
+    Path relative_path_to_versions(StringView port_name);
     ExpectedS<std::vector<VersionDbEntry>> load_versions_file(const Filesystem& fs,
                                                               VersionDbType vdb,
-                                                              const path& port_versions,
+                                                              const Path& port_versions,
                                                               StringView port_name,
-                                                              const path& registry_root = {});
+                                                              const Path& registry_root = {});
 
     // returns nullopt if the baseline is valid, but doesn't contain the specified baseline,
     // or (equivalently) if the baseline does not exist.
     ExpectedS<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin);
     ExpectedS<Optional<Baseline>> load_baseline_versions(const VcpkgPaths& paths,
-                                                         const path& baseline_path,
+                                                         const Path& baseline_path,
                                                          StringView identifier = {});
 
     void load_all_port_names_from_registry_versions(std::vector<std::string>& out,
                                                     const Filesystem& fs,
-                                                    const path& port_versions_path)
+                                                    const Path& port_versions_path)
     {
         for (auto&& super_directory : fs.get_directories_non_recursive(port_versions_path, VCPKG_LINE_INFO))
         {
             for (auto&& file : fs.get_regular_files_non_recursive(super_directory, VCPKG_LINE_INFO))
             {
-                auto filename = vcpkg::u8string(file.filename());
+                auto filename = file.filename();
                 if (!Strings::case_insensitive_ascii_ends_with(filename, ".json")) continue;
 
                 if (!Strings::ends_with(filename, ".json"))
                 {
-                    Checks::exit_with_message(VCPKG_LINE_INFO,
-                                              "Error: the JSON file %s must have a .json (all lowercase) extension.",
-                                              vcpkg::u8string(file));
+                    Checks::exit_with_message(
+                        VCPKG_LINE_INFO, "Error: the JSON file %s must have a .json (all lowercase) extension.", file);
                 }
 
                 auto port_name = filename.substr(0, filename.size() - 5);
                 if (!Json::PackageNameDeserializer::is_package_name(port_name))
                 {
                     Checks::exit_maybe_upgrade(
-                        VCPKG_LINE_INFO, "Error: found invalid port version file name: `%s`.", vcpkg::u8string(file));
+                        VCPKG_LINE_INFO, "Error: found invalid port version file name: `%s`.", file);
                 }
 
-                out.push_back(std::move(port_name));
+                out.push_back(port_name.to_string());
             }
         }
     }
@@ -316,7 +315,7 @@ namespace
         }
 
         // Fall back to current available version
-        auto port_directory = paths.builtin_ports_directory() / vcpkg::u8path(port_name);
+        auto port_directory = paths.builtin_ports_directory() / port_name;
         if (fs.exists(port_directory, IgnoreErrors{}))
         {
             auto found_scf = Paragraphs::try_load_port(fs, port_directory);
@@ -337,7 +336,7 @@ namespace
 
                 Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                            "Error: Failed to load port from %s: names did not match: '%s' != '%s'",
-                                           vcpkg::u8string(port_directory),
+                                           port_directory,
                                            port_name,
                                            scf->core_paragraph->name);
             }
@@ -376,7 +375,7 @@ namespace
         }
 
         // if a baseline is not specified, use the ports directory version
-        auto port_path = paths.builtin_ports_directory() / vcpkg::u8path(port_name);
+        auto port_path = paths.builtin_ports_directory() / port_name;
         auto maybe_scf = Paragraphs::try_load_port(paths.get_filesystem(), port_path);
         if (auto pscf = maybe_scf.get())
         {
@@ -384,7 +383,7 @@ namespace
             return scf->to_versiont();
         }
         print_error_message(maybe_scf.error());
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: failed to load port from %s", vcpkg::u8string(port_path));
+        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: failed to load port from %s", port_path);
     }
 
     void BuiltinRegistry::get_all_port_names(std::vector<std::string>& out, const VcpkgPaths& paths) const
@@ -400,21 +399,21 @@ namespace
         Checks::check_exit(VCPKG_LINE_INFO,
                            !ec,
                            "Error: failed while enumerating the builtin ports directory %s: %s",
-                           vcpkg::u8string(paths.builtin_ports_directory()),
+                           paths.builtin_ports_directory(),
                            ec.message());
         for (auto&& port_directory : port_directories)
         {
-            auto filename = vcpkg::u8string(port_directory.filename());
+            auto filename = port_directory.filename();
             if (filename == ".DS_Store") continue;
-            out.push_back(filename);
+            out.push_back(filename.to_string());
         }
     }
     // } BuiltinRegistry::RegistryImplementation
 
     // { FilesystemRegistry::RegistryImplementation
-    Baseline parse_filesystem_baseline(const VcpkgPaths& paths, const path& root, StringView baseline_identifier)
+    Baseline parse_filesystem_baseline(const VcpkgPaths& paths, const Path& root, StringView baseline_identifier)
     {
-        auto path_to_baseline = root / registry_versions_dir_name / vcpkg::u8path("baseline.json");
+        auto path_to_baseline = root / registry_versions_dir_name / "baseline.json";
         auto res_baseline = load_baseline_versions(paths, path_to_baseline, baseline_identifier);
         if (auto opt_baseline = res_baseline.get())
         {
@@ -432,7 +431,7 @@ namespace
                 VCPKG_LINE_INFO,
                 "Error: could not find explicitly specified baseline `\"%s\"` in baseline file `%s`.",
                 baseline_identifier,
-                vcpkg::u8string(path_to_baseline));
+                path_to_baseline);
         }
 
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, res_baseline.error());
@@ -515,7 +514,7 @@ namespace
                     e.value());
             }
 
-            auto path_to_baseline = registry_versions_dir_name / vcpkg::u8path("baseline.json");
+            auto path_to_baseline = registry_versions_dir_name / "baseline.json";
             auto maybe_contents = paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             if (!maybe_contents.has_value())
             {
@@ -546,7 +545,7 @@ namespace
             }
 
             auto contents = maybe_contents.get();
-            auto res_baseline = parse_baseline_versions(*contents, "default", vcpkg::u8string(path_to_baseline));
+            auto res_baseline = parse_baseline_versions(*contents, "default", path_to_baseline);
             if (auto opt_baseline = res_baseline.get())
             {
                 if (auto p = opt_baseline->get())
@@ -594,7 +593,7 @@ namespace
     // { RegistryEntry
 
     // { BuiltinRegistryEntry::RegistryEntry
-    ExpectedS<path> BuiltinGitRegistryEntry::get_path_to_version(const VcpkgPaths& paths, const VersionT& version) const
+    ExpectedS<Path> BuiltinGitRegistryEntry::get_path_to_version(const VcpkgPaths& paths, const VersionT& version) const
     {
         auto it = std::find(port_versions.begin(), port_versions.end(), version);
         if (it == port_versions.end())
@@ -613,12 +612,12 @@ namespace
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
-        return paths.git_checkout_port(port_name, git_tree, paths.root / vcpkg::u8path(".git"));
+        return paths.git_checkout_port(port_name, git_tree, paths.root / ".git");
     }
     // } BuiltinRegistryEntry::RegistryEntry
 
     // { FilesystemRegistryEntry::RegistryEntry
-    ExpectedS<path> FilesystemRegistryEntry::get_path_to_version(const VcpkgPaths&, const VersionT& version) const
+    ExpectedS<Path> FilesystemRegistryEntry::get_path_to_version(const VcpkgPaths&, const VersionT& version) const
     {
         auto it = std::find(port_versions.begin(), port_versions.end(), version);
         if (it == port_versions.end())
@@ -639,7 +638,7 @@ namespace
         }
         return port_versions;
     }
-    ExpectedS<path> GitRegistryEntry::get_path_to_version(const VcpkgPaths& paths, const VersionT& version) const
+    ExpectedS<Path> GitRegistryEntry::get_path_to_version(const VcpkgPaths& paths, const VersionT& version) const
     {
         auto it = std::find(port_versions.begin(), port_versions.end(), version);
         if (it == port_versions.end() && stale)
@@ -666,7 +665,7 @@ namespace
         return paths.git_checkout_object_from_remote_registry(git_tree);
     }
 
-    void GitRegistryEntry::fill_data_from_path(const Filesystem& fs, const path& port_versions_path) const
+    void GitRegistryEntry::fill_data_from_path(const Filesystem& fs, const Path& port_versions_path) const
     {
         auto maybe_version_entries = load_versions_file(fs, VersionDbType::Git, port_versions_path, port_name);
         Checks::check_maybe_upgrade(
@@ -732,9 +731,9 @@ namespace
         virtual Optional<std::unique_ptr<RegistryImplementation>> visit_object(Json::Reader&,
                                                                                const Json::Object&) override;
 
-        RegistryImplDeserializer(const path& configuration_directory) : config_directory(configuration_directory) { }
+        RegistryImplDeserializer(const Path& configuration_directory) : config_directory(configuration_directory) { }
 
-        path config_directory;
+        Path config_directory;
     };
     constexpr StringLiteral RegistryImplDeserializer::KIND;
     constexpr StringLiteral RegistryImplDeserializer::BASELINE;
@@ -753,7 +752,7 @@ namespace
 
         virtual Optional<Registry> visit_object(Json::Reader&, const Json::Object&) override;
 
-        explicit RegistryDeserializer(const path& configuration_directory) : impl_des(configuration_directory) { }
+        explicit RegistryDeserializer(const Path& configuration_directory) : impl_des(configuration_directory) { }
 
         RegistryImplDeserializer impl_des;
     };
@@ -829,10 +828,10 @@ namespace
             r.optional_object_field(obj, BASELINE, baseline, baseline_deserializer);
             r.check_for_unexpected_fields(obj, valid_filesystem_fields(), "a filesystem registry");
 
-            path p;
+            Path p;
             r.required_object_field("a filesystem registry", obj, PATH, p, Json::PathDeserializer::instance);
 
-            res = std::make_unique<FilesystemRegistry>(combine(config_directory, p), std::move(baseline));
+            res = std::make_unique<FilesystemRegistry>(config_directory / p, std::move(baseline));
         }
         else if (kind == KIND_GIT)
         {
@@ -892,17 +891,17 @@ namespace
         return Registry{std::move(packages), std::move(impl).value_or_exit(VCPKG_LINE_INFO)};
     }
 
-    path relative_path_to_versions(StringView port_name)
+    Path relative_path_to_versions(StringView port_name)
     {
-        auto port_filename = vcpkg::u8path(port_name.to_string() + ".json");
-        return vcpkg::u8path({port_name.byte_at_index(0), '-'}) / port_filename;
+        char prefix[] = {port_name.byte_at_index(0), '-', '\0'};
+        return Path(prefix) / port_name.to_string() + ".json";
     }
 
     ExpectedS<std::vector<VersionDbEntry>> load_versions_file(const Filesystem& fs,
                                                               VersionDbType type,
-                                                              const path& registry_versions,
+                                                              const Path& registry_versions,
                                                               StringView port_name,
-                                                              const path& registry_root)
+                                                              const Path& registry_root)
     {
         Checks::check_exit(VCPKG_LINE_INFO,
                            !(type == VersionDbType::Filesystem && registry_root.empty()),
@@ -912,16 +911,15 @@ namespace
 
         if (!fs.exists(versions_file_path, IgnoreErrors{}))
         {
-            return Strings::format("Couldn't find the versions database file: %s", vcpkg::u8string(versions_file_path));
+            return Strings::format("Couldn't find the versions database file: %s", versions_file_path);
         }
 
         std::error_code ec;
         auto contents = fs.read_contents(versions_file_path, ec);
         if (ec)
         {
-            return Strings::format("Error: Failed to load the versions database file %s: %s",
-                                   vcpkg::u8string(versions_file_path),
-                                   ec.message());
+            return Strings::format(
+                "Error: Failed to load the versions database file %s: %s", versions_file_path, ec.message());
         }
 
         auto maybe_versions_json = Json::parse(std::move(contents));
@@ -997,7 +995,7 @@ namespace
     }
 
     ExpectedS<Optional<Baseline>> load_baseline_versions(const VcpkgPaths& paths,
-                                                         const path& baseline_path,
+                                                         const Path& baseline_path,
                                                          StringView baseline)
     {
         std::error_code ec;
@@ -1010,11 +1008,10 @@ namespace
                 return {nullopt, expected_left_tag};
             }
 
-            return Strings::format(
-                "Error: failed to read baseline file \"%s\": %s", vcpkg::u8string(baseline_path), ec.message());
+            return Strings::format("Error: failed to read baseline file \"%s\": %s", baseline_path, ec.message());
         }
 
-        return parse_baseline_versions(std::move(contents), baseline, vcpkg::u8string(baseline_path));
+        return parse_baseline_versions(std::move(contents), baseline, baseline_path);
     }
 }
 
@@ -1117,7 +1114,7 @@ namespace vcpkg
                     }
                 }
 
-                ret.p = registry_root / vcpkg::u8path(StringView{path_res}.substr(2));
+                ret.p = registry_root / StringView{path_res}.substr(2);
                 break;
             }
         }
@@ -1158,12 +1155,12 @@ namespace vcpkg
     }
 
     std::unique_ptr<Json::IDeserializer<std::unique_ptr<RegistryImplementation>>>
-    get_registry_implementation_deserializer(const path& configuration_directory)
+    get_registry_implementation_deserializer(const Path& configuration_directory)
     {
         return std::make_unique<RegistryImplDeserializer>(configuration_directory);
     }
     std::unique_ptr<Json::IDeserializer<std::vector<Registry>>> get_registry_array_deserializer(
-        const path& configuration_directory)
+        const Path& configuration_directory)
     {
         return std::make_unique<Json::ArrayDeserializer<RegistryDeserializer>>(
             "an array of registries", RegistryDeserializer(configuration_directory));
@@ -1279,7 +1276,7 @@ namespace vcpkg
 
     ExpectedS<Baseline> get_builtin_baseline(const VcpkgPaths& paths)
     {
-        return load_baseline_versions(paths, paths.builtin_registry_versions / vcpkg::u8path("baseline.json"))
+        return load_baseline_versions(paths, paths.builtin_registry_versions / "baseline.json")
             .then([&](Optional<Baseline>&& b) -> ExpectedS<Baseline> {
                 if (auto p = b.get())
                 {

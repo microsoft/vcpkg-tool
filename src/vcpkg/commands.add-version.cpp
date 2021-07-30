@@ -87,10 +87,10 @@ namespace
 
     static void write_baseline_file(Filesystem& fs,
                                     const std::map<std::string, VersionT, std::less<>>& baseline_map,
-                                    const path& output_path)
+                                    const Path& output_path)
     {
         auto new_path = output_path;
-        new_path += vcpkg::u8path(".tmp");
+        new_path += ".tmp";
         std::error_code ec;
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
         fs.write_contents(new_path,
@@ -101,10 +101,10 @@ namespace
 
     static void write_versions_file(Filesystem& fs,
                                     const std::vector<VersionGitTree>& versions,
-                                    const path& output_path)
+                                    const Path& output_path)
     {
         auto new_path = output_path;
-        new_path += vcpkg::u8path(".tmp");
+        new_path += ".tmp";
         std::error_code ec;
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
         fs.write_contents(
@@ -115,7 +115,7 @@ namespace
     static void update_baseline_version(const VcpkgPaths& paths,
                                         const std::string& port_name,
                                         const VersionT& version,
-                                        const path& baseline_path,
+                                        const Path& baseline_path,
                                         std::map<std::string, vcpkg::VersionT, std::less<>>& baseline_map,
                                         bool print_success)
     {
@@ -129,8 +129,7 @@ namespace
             {
                 if (print_success)
                 {
-                    vcpkg::printf(
-                        Color::success, "Version `%s` is already in `%s`\n", version, vcpkg::u8string(baseline_path));
+                    vcpkg::printf(Color::success, "Version `%s` is already in `%s`\n", version, baseline_path);
                 }
                 return;
             }
@@ -144,8 +143,7 @@ namespace
         write_baseline_file(fs, baseline_map, baseline_path);
         if (print_success)
         {
-            vcpkg::printf(
-                Color::success, "Added version `%s` to `%s`.\n", version.to_string(), vcpkg::u8string(baseline_path));
+            vcpkg::printf(Color::success, "Added version `%s` to `%s`.\n", version.to_string(), baseline_path);
         }
         return;
     }
@@ -154,7 +152,7 @@ namespace
                                        const std::string& port_name,
                                        const SchemedVersion& version,
                                        const std::string& git_tree,
-                                       const path& version_db_file_path,
+                                       const Path& version_db_file_path,
                                        bool overwrite_version,
                                        bool print_success,
                                        bool keep_going)
@@ -166,10 +164,8 @@ namespace
             write_versions_file(fs, new_entry, version_db_file_path);
             if (print_success)
             {
-                vcpkg::printf(Color::success,
-                              "Added version `%s` to `%s` (new file).\n",
-                              version.versiont,
-                              vcpkg::u8string(version_db_file_path));
+                vcpkg::printf(
+                    Color::success, "Added version `%s` to `%s` (new file).\n", version.versiont, version_db_file_path);
             }
             return;
         }
@@ -190,7 +186,7 @@ namespace
                         vcpkg::printf(Color::success,
                                       "Version `%s` is already in `%s`\n",
                                       version.versiont,
-                                      vcpkg::u8string(version_db_file_path));
+                                      version_db_file_path);
                     }
                     return;
                 }
@@ -200,7 +196,7 @@ namespace
                               "-- Did you remember to commit your changes?\n"
                               "***No files were updated.***\n",
                               found_same_sha->first.versiont,
-                              vcpkg::u8string(version_db_file_path),
+                              version_db_file_path,
                               git_tree);
                 if (keep_going) return;
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -241,17 +237,14 @@ namespace
             write_versions_file(fs, *versions, version_db_file_path);
             if (print_success)
             {
-                vcpkg::printf(Color::success,
-                              "Added version `%s` to `%s`.\n",
-                              version.versiont,
-                              vcpkg::u8string(version_db_file_path));
+                vcpkg::printf(Color::success, "Added version `%s` to `%s`.\n", version.versiont, version_db_file_path);
             }
             return;
         }
 
         vcpkg::printf(Color::error,
                       "Error: Unable to parse versions file %s.\n%s\n",
-                      vcpkg::u8string(version_db_file_path),
+                      version_db_file_path,
                       maybe_versions.error());
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
@@ -288,10 +281,10 @@ namespace vcpkg::Commands::AddVersion
         const bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
 
         auto& fs = paths.get_filesystem();
-        auto baseline_path = paths.builtin_registry_versions / vcpkg::u8path("baseline.json");
+        auto baseline_path = paths.builtin_registry_versions / "baseline.json";
         if (!fs.exists(baseline_path, VCPKG_LINE_INFO))
         {
-            vcpkg::printf(Color::error, "Error: Couldn't find required file `%s`\n.", vcpkg::u8string(baseline_path));
+            vcpkg::printf(Color::error, "Error: Couldn't find required file `%s`\n.", baseline_path);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -318,7 +311,7 @@ namespace vcpkg::Commands::AddVersion
 
             for (auto&& port_dir : fs.get_files_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
-                port_names.emplace_back(vcpkg::u8string(port_dir.stem()));
+                port_names.emplace_back(port_dir.stem().to_string());
             }
         }
 
@@ -339,7 +332,7 @@ namespace vcpkg::Commands::AddVersion
         for (auto&& port_name : port_names)
         {
             // Get version information of the local port
-            auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / vcpkg::u8path(port_name));
+            auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
             if (!maybe_scf.has_value())
             {
                 if (add_all) continue;
@@ -352,8 +345,7 @@ namespace vcpkg::Commands::AddVersion
             if (!skip_formatting_check)
             {
                 // check if manifest file is property formatted
-                const auto path_to_manifest =
-                    paths.builtin_ports_directory() / vcpkg::u8path(port_name) / vcpkg::u8path("vcpkg.json");
+                const auto path_to_manifest = paths.builtin_ports_directory() / port_name / "vcpkg.json";
                 if (fs.exists(path_to_manifest, IgnoreErrors{}))
                 {
                     const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
@@ -386,8 +378,8 @@ namespace vcpkg::Commands::AddVersion
             }
             const auto& git_tree = git_tree_it->second;
 
-            auto port_versions_path = paths.builtin_registry_versions / vcpkg::u8path({port_name[0], '-'}) /
-                                      vcpkg::u8path(Strings::concat(port_name, ".json"));
+            char prefix[] = {port_name[0], '-', '\0'};
+            auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             update_version_db_file(
                 paths, port_name, schemed_version, git_tree, port_versions_path, overwrite_version, verbose, add_all);
             update_baseline_version(paths, port_name, schemed_version.versiont, baseline_path, baseline_map, verbose);

@@ -18,7 +18,7 @@ using vcpkg::Test::base_temporary_directory;
     {                                                                                                                  \
         if (ec)                                                                                                        \
         {                                                                                                              \
-            FAIL(file << ": " << ec.message());                                                                        \
+            FAIL((file).native() << ": " << (ec).message());                                                           \
         }                                                                                                              \
     } while (0)
 
@@ -38,7 +38,7 @@ namespace
 
     void create_directory_tree(urbg_t& urbg,
                                vcpkg::Filesystem& fs,
-                               const vcpkg::path& base,
+                               const vcpkg::Path& base,
                                std::uint32_t remaining_depth = 5)
     {
         using uid_t = std::uniform_int_distribution<std::uint32_t>;
@@ -72,7 +72,7 @@ namespace
         {
             // regular symlink
             auto base_target = base;
-            base_target.replace_filename(vcpkg::u8path(vcpkg::u8string(base.filename()) + "-target"));
+            base_target.replace_filename(vcpkg::Strings::concat(base.filename(), "-target"));
             fs.write_contents(base_target, "", ec);
             CHECK_EC_ON_FILE(base_target, ec);
             fs.create_symlink(base_target, base, ec);
@@ -88,7 +88,7 @@ namespace
                 else
 #endif // ^^^ _WIN32
                 {
-                    FAIL(base << ": " << ec.message());
+                    FAIL(base.native() << ": " << ec.message());
                 }
             }
         }
@@ -109,7 +109,7 @@ namespace
                 else
 #endif // ^^^ _WIN32
                 {
-                    FAIL(base << ": " << ec.message());
+                    FAIL(base.native() << ": " << ec.message());
                 }
             }
         }
@@ -146,21 +146,47 @@ namespace
     }
 }
 
-TEST_CASE ("vcpkg::combine works correctly", "[filesystem][files]")
+static void check_preferred(vcpkg::Path p, vcpkg::StringView expected)
 {
-    using namespace vcpkg;
-    CHECK(combine(u8path("/a/b"), u8path("c/d")) == u8path("/a/b/c/d"));
-    CHECK(combine(u8path("a/b"), u8path("c/d")) == u8path("a/b/c/d"));
-    CHECK(combine(u8path("/a/b"), u8path("/c/d")) == u8path("/c/d"));
+    auto as_preferred = p.preferred();
+    CHECK(as_preferred.native() == expected);
+    p.make_preferred();
+    CHECK(p.native() == expected);
+}
+
+TEST_CASE ("vcpkg Path::preferred and Path::make_preferred", "[filesystem][files]")
+{
+    check_preferred("", "");
+    check_preferred("hello", "hello");
+    check_preferred("/hello", VCPKG_PREFERED_SEPARATOR "hello");
+    check_preferred("hello/", "hello" VCPKG_PREFERED_SEPARATOR);
+    check_preferred("hello/////////there", "hello" VCPKG_PREFERED_SEPARATOR "there");
+    check_preferred("hello/////////there///" VCPKG_PREFERED_SEPARATOR "world",
+                    "hello" VCPKG_PREFERED_SEPARATOR "there" VCPKG_PREFERED_SEPARATOR "world");
+    check_preferred("/a/b", VCPKG_PREFERED_SEPARATOR "a" VCPKG_PREFERED_SEPARATOR "b");
+    check_preferred("a/b", "a" VCPKG_PREFERED_SEPARATOR "b");
 
 #if defined(_WIN32)
-    CHECK(combine(u8path("C:/a/b"), u8path("c/d")) == u8path("C:/a/b/c/d"));
-    CHECK(combine(u8path("C:a/b"), u8path("c/d")) == u8path("C:a/b/c/d"));
-    CHECK(combine(u8path("C:a/b"), u8path("/c/d")) == u8path("C:/c/d"));
-    CHECK(combine(u8path("C:/a/b"), u8path("/c/d")) == u8path("C:/c/d"));
-    CHECK(combine(u8path("C:/a/b"), u8path("D:/c/d")) == u8path("D:/c/d"));
-    CHECK(combine(u8path("C:/a/b"), u8path("D:c/d")) == u8path("D:c/d"));
-    CHECK(combine(u8path("C:/a/b"), u8path("C:c/d")) == u8path("C:/a/b/c/d"));
+    check_preferred(R"(//server/share\a/b)", R"(\\server\share\a\b)");
+    check_preferred(R"(//server/share\a/b)", R"(\\server\share\a\b)");
+#endif
+}
+
+TEST_CASE ("vcpkg Path::operator/", "[filesystem][files]")
+{
+    using namespace vcpkg;
+    CHECK(Path("/a/b") / "c/d" == "/a/b" VCPKG_PREFERED_SEPARATOR "c/d");
+    CHECK(Path("a/b") / "c/d" == "a/b" VCPKG_PREFERED_SEPARATOR "c/d");
+    CHECK(Path("/a/b") / "/c/d" == "/c/d");
+
+#if defined(_WIN32)
+    CHECK(Path("C:/a/b") / "c/d" == "C:/a/b\\c/d");
+    CHECK(Path("C:a/b") / "c/d" == "C:a/b\\c/d");
+    CHECK(Path("C:a/b") / "/c/d" == "C:/c/d");
+    CHECK(Path("C:/a/b") / "/c/d" == "C:/c/d");
+    CHECK(Path("C:/a/b") / "D:/c/d" == "D:/c/d");
+    CHECK(Path("C:/a/b") / "D:c/d" == "D:c/d");
+    CHECK(Path("C:/a/b") / "C:c/d" == "C:/a/b\\c/d");
 #endif
 }
 
@@ -170,13 +196,13 @@ TEST_CASE ("remove all", "[files]")
 
     auto& fs = setup();
 
-    vcpkg::path temp_dir = base_temporary_directory() / get_random_filename(urbg);
-    INFO("temp dir is: " << temp_dir);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    INFO("temp dir is: " << temp_dir.native());
 
     create_directory_tree(urbg, fs, temp_dir);
 
     std::error_code ec;
-    vcpkg::path fp;
+    vcpkg::Path fp;
     fs.remove_all(temp_dir, ec, fp);
     CHECK_EC_ON_FILE(fp, ec);
 
@@ -186,91 +212,91 @@ TEST_CASE ("remove all", "[files]")
 
 TEST_CASE ("lexically_normal", "[files]")
 {
-    const auto lexically_normal = [](const char* s) { return vcpkg::lexically_normal(vcpkg::u8path(s)); };
-    const auto native = [](const char* s) { return std::move(vcpkg::u8path(s).make_preferred()); };
-    CHECK(vcpkg::lexically_normal(vcpkg::path()).native() == vcpkg::path().native());
+    const auto lexically_normal = [](const char* s) { return vcpkg::Path(s).lexically_normal(); };
+    const auto preferred = [](const char* s) { return vcpkg::Path(s).preferred(); };
+    CHECK(vcpkg::Path().lexically_normal().native() == vcpkg::Path().native());
 
     // these test cases are taken from the MS STL tests
-    CHECK(lexically_normal("cat/./dog/..").native() == native("cat/").native());
-    CHECK(lexically_normal("cat/.///dog/../").native() == native("cat/").native());
+    CHECK(lexically_normal("cat/./dog/..").native() == preferred("cat/").native());
+    CHECK(lexically_normal("cat/.///dog/../").native() == preferred("cat/").native());
 
-    CHECK(lexically_normal("cat/./dog/..").native() == native("cat/").native());
-    CHECK(lexically_normal("cat/.///dog/../").native() == native("cat/").native());
+    CHECK(lexically_normal("cat/./dog/..").native() == preferred("cat/").native());
+    CHECK(lexically_normal("cat/.///dog/../").native() == preferred("cat/").native());
 
-    CHECK(lexically_normal(".").native() == native(".").native());
-    CHECK(lexically_normal("./").native() == native(".").native());
-    CHECK(lexically_normal("./.").native() == native(".").native());
-    CHECK(lexically_normal("././").native() == native(".").native());
+    CHECK(lexically_normal(".").native() == preferred(".").native());
+    CHECK(lexically_normal("./").native() == preferred(".").native());
+    CHECK(lexically_normal("./.").native() == preferred(".").native());
+    CHECK(lexically_normal("././").native() == preferred(".").native());
 
-    CHECK(lexically_normal("../../..").native() == native("../../..").native());
-    CHECK(lexically_normal("../../../").native() == native("../../..").native());
+    CHECK(lexically_normal("../../..").native() == preferred("../../..").native());
+    CHECK(lexically_normal("../../../").native() == preferred("../../..").native());
 
-    CHECK(lexically_normal("../../../a/b/c").native() == native("../../../a/b/c").native());
+    CHECK(lexically_normal("../../../a/b/c").native() == preferred("../../../a/b/c").native());
 
-    CHECK(lexically_normal("/../../..").native() == native("/").native());
-    CHECK(lexically_normal("/../../../").native() == native("/").native());
+    CHECK(lexically_normal("/../../..").native() == preferred("/").native());
+    CHECK(lexically_normal("/../../../").native() == preferred("/").native());
 
-    CHECK(lexically_normal("/../../../a/b/c").native() == native("/a/b/c").native());
+    CHECK(lexically_normal("/../../../a/b/c").native() == preferred("/a/b/c").native());
 
-    CHECK(lexically_normal("a/..").native() == native(".").native());
-    CHECK(lexically_normal("a/../").native() == native(".").native());
+    CHECK(lexically_normal("a/..").native() == preferred(".").native());
+    CHECK(lexically_normal("a/../").native() == preferred(".").native());
 
 #if defined(_WIN32)
-    CHECK(lexically_normal(R"(X:)").native() == LR"(X:)");
+    CHECK(lexically_normal(R"(X:)").native() == R"(X:)");
 
-    CHECK(lexically_normal(R"(X:DriveRelative)").native() == LR"(X:DriveRelative)");
+    CHECK(lexically_normal(R"(X:DriveRelative)").native() == R"(X:DriveRelative)");
 
-    CHECK(lexically_normal(R"(X:\)").native() == LR"(X:\)");
-    CHECK(lexically_normal(R"(X:/)").native() == LR"(X:\)");
-    CHECK(lexically_normal(R"(X:\\\)").native() == LR"(X:\)");
-    CHECK(lexically_normal(R"(X:///)").native() == LR"(X:\)");
+    CHECK(lexically_normal(R"(X:\)").native() == R"(X:\)");
+    CHECK(lexically_normal(R"(X:/)").native() == R"(X:\)");
+    CHECK(lexically_normal(R"(X:\\\)").native() == R"(X:\)");
+    CHECK(lexically_normal(R"(X:///)").native() == R"(X:\)");
 
-    CHECK(lexically_normal(R"(X:\DosAbsolute)").native() == LR"(X:\DosAbsolute)");
-    CHECK(lexically_normal(R"(X:/DosAbsolute)").native() == LR"(X:\DosAbsolute)");
-    CHECK(lexically_normal(R"(X:\\\DosAbsolute)").native() == LR"(X:\DosAbsolute)");
-    CHECK(lexically_normal(R"(X:///DosAbsolute)").native() == LR"(X:\DosAbsolute)");
+    CHECK(lexically_normal(R"(X:\DosAbsolute)").native() == R"(X:\DosAbsolute)");
+    CHECK(lexically_normal(R"(X:/DosAbsolute)").native() == R"(X:\DosAbsolute)");
+    CHECK(lexically_normal(R"(X:\\\DosAbsolute)").native() == R"(X:\DosAbsolute)");
+    CHECK(lexically_normal(R"(X:///DosAbsolute)").native() == R"(X:\DosAbsolute)");
 
-    CHECK(lexically_normal(R"(\RootRelative)").native() == LR"(\RootRelative)");
-    CHECK(lexically_normal(R"(/RootRelative)").native() == LR"(\RootRelative)");
-    CHECK(lexically_normal(R"(\\\RootRelative)").native() == LR"(\RootRelative)");
-    CHECK(lexically_normal(R"(///RootRelative)").native() == LR"(\RootRelative)");
+    CHECK(lexically_normal(R"(\RootRelative)").native() == R"(\RootRelative)");
+    CHECK(lexically_normal(R"(/RootRelative)").native() == R"(\RootRelative)");
+    CHECK(lexically_normal(R"(\\\RootRelative)").native() == R"(\RootRelative)");
+    CHECK(lexically_normal(R"(///RootRelative)").native() == R"(\RootRelative)");
 
-    CHECK(lexically_normal(R"(\\server\share)").native() == LR"(\\server\share)");
-    CHECK(lexically_normal(R"(//server/share)").native() == LR"(\\server\share)");
-    CHECK(lexically_normal(R"(\\server\\\share)").native() == LR"(\\server\share)");
-    CHECK(lexically_normal(R"(//server///share)").native() == LR"(\\server\share)");
+    CHECK(lexically_normal(R"(\\server\share)").native() == R"(\\server\share)");
+    CHECK(lexically_normal(R"(//server/share)").native() == R"(\\server\share)");
+    CHECK(lexically_normal(R"(\\server\\\share)").native() == R"(\\server\share)");
+    CHECK(lexically_normal(R"(//server///share)").native() == R"(\\server\share)");
 
-    CHECK(lexically_normal(R"(\\?\device)").native() == LR"(\\?\device)");
-    CHECK(lexically_normal(R"(//?/device)").native() == LR"(\\?\device)");
+    CHECK(lexically_normal(R"(\\?\device)").native() == R"(\\?\device)");
+    CHECK(lexically_normal(R"(//?/device)").native() == R"(\\?\device)");
 
-    CHECK(lexically_normal(R"(\??\device)").native() == LR"(\??\device)");
-    CHECK(lexically_normal(R"(/??/device)").native() == LR"(\??\device)");
+    CHECK(lexically_normal(R"(\??\device)").native() == R"(\??\device)");
+    CHECK(lexically_normal(R"(/??/device)").native() == R"(\??\device)");
 
-    CHECK(lexically_normal(R"(\\.\device)").native() == LR"(\\.\device)");
-    CHECK(lexically_normal(R"(//./device)").native() == LR"(\\.\device)");
+    CHECK(lexically_normal(R"(\\.\device)").native() == R"(\\.\device)");
+    CHECK(lexically_normal(R"(//./device)").native() == R"(\\.\device)");
 
-    CHECK(lexically_normal(R"(\\?\UNC\server\share)").native() == LR"(\\?\UNC\server\share)");
-    CHECK(lexically_normal(R"(//?/UNC/server/share)").native() == LR"(\\?\UNC\server\share)");
+    CHECK(lexically_normal(R"(\\?\UNC\server\share)").native() == R"(\\?\UNC\server\share)");
+    CHECK(lexically_normal(R"(//?/UNC/server/share)").native() == R"(\\?\UNC\server\share)");
 
-    CHECK(lexically_normal(R"(C:\a/b\\c\/d/\e//f)").native() == LR"(C:\a\b\c\d\e\f)");
+    CHECK(lexically_normal(R"(C:\a/b\\c\/d/\e//f)").native() == R"(C:\a\b\c\d\e\f)");
 
-    CHECK(lexically_normal(R"(C:\meow\)").native() == LR"(C:\meow\)");
-    CHECK(lexically_normal(R"(C:\meow/)").native() == LR"(C:\meow\)");
-    CHECK(lexically_normal(R"(C:\meow\\)").native() == LR"(C:\meow\)");
-    CHECK(lexically_normal(R"(C:\meow\/)").native() == LR"(C:\meow\)");
-    CHECK(lexically_normal(R"(C:\meow/\)").native() == LR"(C:\meow\)");
-    CHECK(lexically_normal(R"(C:\meow//)").native() == LR"(C:\meow\)");
+    CHECK(lexically_normal(R"(C:\meow\)").native() == R"(C:\meow\)");
+    CHECK(lexically_normal(R"(C:\meow/)").native() == R"(C:\meow\)");
+    CHECK(lexically_normal(R"(C:\meow\\)").native() == R"(C:\meow\)");
+    CHECK(lexically_normal(R"(C:\meow\/)").native() == R"(C:\meow\)");
+    CHECK(lexically_normal(R"(C:\meow/\)").native() == R"(C:\meow\)");
+    CHECK(lexically_normal(R"(C:\meow//)").native() == R"(C:\meow\)");
 
-    CHECK(lexically_normal(R"(C:\a\.\b\.\.\c\.\.\.)").native() == LR"(C:\a\b\c\)");
-    CHECK(lexically_normal(R"(C:\a\.\b\.\.\c\.\.\.\)").native() == LR"(C:\a\b\c\)");
+    CHECK(lexically_normal(R"(C:\a\.\b\.\.\c\.\.\.)").native() == R"(C:\a\b\c\)");
+    CHECK(lexically_normal(R"(C:\a\.\b\.\.\c\.\.\.\)").native() == R"(C:\a\b\c\)");
 
-    CHECK(lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h)").native() == LR"(C:\a\b\g\h)");
+    CHECK(lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h)").native() == R"(C:\a\b\g\h)");
 
-    CHECK(lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h\..)").native() == LR"(C:\a\b\g\)");
-    CHECK(lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h\..\)").native() == LR"(C:\a\b\g\)");
+    CHECK(lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h\..)").native() == R"(C:\a\b\g\)");
+    CHECK(lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h\..\)").native() == R"(C:\a\b\g\)");
     CHECK(lexically_normal(
               R"(/\server/\share/\a/\b/\c/\./\./\d/\../\../\../\../\../\../\../\other/x/y/z/.././..\meow.txt)")
-              .native() == LR"(\\server\other\x\meow.txt)");
+              .native() == R"(\\server\other\x\meow.txt)");
 #endif
 }
 
@@ -313,52 +339,52 @@ TEST_CASE ("win32_fix_path_case", "[files]")
 
     // This test assumes that the Windows directory is C:\Windows
 
-    CHECK(win32_fix_path_case(L"") == L"");
+    CHECK(win32_fix_path_case("") == "");
 
-    CHECK(win32_fix_path_case(L"C:") == L"C:");
-    CHECK(win32_fix_path_case(L"c:") == L"C:");
-    CHECK(win32_fix_path_case(L"C:/") == L"C:\\");
-    CHECK(win32_fix_path_case(L"C:\\") == L"C:\\");
-    CHECK(win32_fix_path_case(L"c:\\") == L"C:\\");
-    CHECK(win32_fix_path_case(L"C:\\WiNdOws") == L"C:\\Windows");
-    CHECK(win32_fix_path_case(L"c:\\WiNdOws\\") == L"C:\\Windows\\");
-    CHECK(win32_fix_path_case(L"C://///////WiNdOws") == L"C:\\Windows");
-    CHECK(win32_fix_path_case(L"c:\\/\\/WiNdOws\\/") == L"C:\\Windows\\");
+    CHECK(win32_fix_path_case("C:") == "C:");
+    CHECK(win32_fix_path_case("c:") == "C:");
+    CHECK(win32_fix_path_case("C:/") == "C:\\");
+    CHECK(win32_fix_path_case("C:\\") == "C:\\");
+    CHECK(win32_fix_path_case("c:\\") == "C:\\");
+    CHECK(win32_fix_path_case("C:\\WiNdOws") == "C:\\Windows");
+    CHECK(win32_fix_path_case("c:\\WiNdOws\\") == "C:\\Windows\\");
+    CHECK(win32_fix_path_case("C://///////WiNdOws") == "C:\\Windows");
+    CHECK(win32_fix_path_case("c:\\/\\/WiNdOws\\/") == "C:\\Windows\\");
 
     auto& fs = vcpkg::get_real_filesystem();
     auto original_cwd = fs.current_path(VCPKG_LINE_INFO);
-    fs.current_path(L"C:\\", VCPKG_LINE_INFO);
-    CHECK(win32_fix_path_case(L"\\") == L"\\");
-    CHECK(win32_fix_path_case(L"\\/\\WiNdOws") == L"\\Windows");
-    CHECK(win32_fix_path_case(L"\\WiNdOws") == L"\\Windows");
-    CHECK(win32_fix_path_case(L"\\WiNdOws") == L"\\Windows");
-    CHECK(win32_fix_path_case(L"c:WiNdOws") == L"C:Windows");
-    CHECK(win32_fix_path_case(L"c:WiNdOws/system32") == L"C:Windows\\System32");
+    fs.current_path("C:\\", VCPKG_LINE_INFO);
+    CHECK(win32_fix_path_case("\\") == "\\");
+    CHECK(win32_fix_path_case("\\/\\WiNdOws") == "\\Windows");
+    CHECK(win32_fix_path_case("\\WiNdOws") == "\\Windows");
+    CHECK(win32_fix_path_case("\\WiNdOws") == "\\Windows");
+    CHECK(win32_fix_path_case("c:WiNdOws") == "C:Windows");
+    CHECK(win32_fix_path_case("c:WiNdOws/system32") == "C:Windows\\System32");
     fs.current_path(original_cwd, VCPKG_LINE_INFO);
 
     fs.create_directories("SuB/Dir/Ectory", VCPKG_LINE_INFO);
-    CHECK(win32_fix_path_case(L"sub") == L"SuB");
-    CHECK(win32_fix_path_case(L"SUB") == L"SuB");
-    CHECK(win32_fix_path_case(L"sub/") == L"SuB\\");
-    CHECK(win32_fix_path_case(L"sub/dir") == L"SuB\\Dir");
-    CHECK(win32_fix_path_case(L"sub/dir/") == L"SuB\\Dir\\");
-    CHECK(win32_fix_path_case(L"sub/dir/ectory") == L"SuB\\Dir\\Ectory");
-    CHECK(win32_fix_path_case(L"sub/dir/ectory/") == L"SuB\\Dir\\Ectory\\");
+    CHECK(win32_fix_path_case("sub") == "SuB");
+    CHECK(win32_fix_path_case("SUB") == "SuB");
+    CHECK(win32_fix_path_case("sub/") == "SuB\\");
+    CHECK(win32_fix_path_case("sub/dir") == "SuB\\Dir");
+    CHECK(win32_fix_path_case("sub/dir/") == "SuB\\Dir\\");
+    CHECK(win32_fix_path_case("sub/dir/ectory") == "SuB\\Dir\\Ectory");
+    CHECK(win32_fix_path_case("sub/dir/ectory/") == "SuB\\Dir\\Ectory\\");
     fs.remove_all("SuB", VCPKG_LINE_INFO);
 
-    CHECK(win32_fix_path_case(L"//nonexistent_server\\nonexistent_share\\") ==
-          L"\\\\nonexistent_server\\nonexistent_share\\");
-    CHECK(win32_fix_path_case(L"\\\\nonexistent_server\\nonexistent_share\\") ==
-          L"\\\\nonexistent_server\\nonexistent_share\\");
-    CHECK(win32_fix_path_case(L"\\\\nonexistent_server\\nonexistent_share") ==
-          L"\\\\nonexistent_server\\nonexistent_share");
+    CHECK(win32_fix_path_case("//nonexistent_server\\nonexistent_share\\") ==
+          "\\\\nonexistent_server\\nonexistent_share\\");
+    CHECK(win32_fix_path_case("\\\\nonexistent_server\\nonexistent_share\\") ==
+          "\\\\nonexistent_server\\nonexistent_share\\");
+    CHECK(win32_fix_path_case("\\\\nonexistent_server\\nonexistent_share") ==
+          "\\\\nonexistent_server\\nonexistent_share");
 
-    CHECK(win32_fix_path_case(L"///three_slashes_not_a_server\\subdir\\") == L"\\three_slashes_not_a_server\\subdir\\");
+    CHECK(win32_fix_path_case("///three_slashes_not_a_server\\subdir\\") == "\\three_slashes_not_a_server\\subdir\\");
 
-    CHECK(win32_fix_path_case(L"\\??\\c:\\WiNdOws") == L"\\??\\c:\\WiNdOws");
-    CHECK(win32_fix_path_case(L"\\\\?\\c:\\WiNdOws") == L"\\\\?\\c:\\WiNdOws");
-    CHECK(win32_fix_path_case(L"\\\\.\\c:\\WiNdOws") == L"\\\\.\\c:\\WiNdOws");
-    CHECK(win32_fix_path_case(L"c:\\/\\/Nonexistent\\/path/here") == L"C:\\Nonexistent\\path\\here");
+    CHECK(win32_fix_path_case("\\??\\c:\\WiNdOws") == "\\??\\c:\\WiNdOws");
+    CHECK(win32_fix_path_case("\\\\?\\c:\\WiNdOws") == "\\\\?\\c:\\WiNdOws");
+    CHECK(win32_fix_path_case("\\\\.\\c:\\WiNdOws") == "\\\\.\\c:\\WiNdOws");
+    CHECK(win32_fix_path_case("c:\\/\\/Nonexistent\\/path/here") == "C:\\Nonexistent\\path\\here");
 }
 #endif // _WIN32
 

@@ -19,5 +19,5 @@ namespace vcpkg
         void try_write_data(Filesystem& fs) const;
     };
 
-    path get_user_dir();
+    Path get_user_dir();
 }

@@ -131,13 +131,13 @@ namespace vcpkg
     void exit_interactive_subprocess() { g_ctrl_c_state.exit_interactive(); }
 #endif
 
-    path get_exe_path_of_current_process()
+    Path get_exe_path_of_current_process()
     {
 #if defined(_WIN32)
         wchar_t buf[_MAX_PATH];
         const int bytes = GetModuleFileNameW(nullptr, buf, _MAX_PATH);
         if (bytes == 0) std::abort();
-        return path(buf, buf + bytes);
+        return Strings::to_utf8(buf, bytes);
 #elif defined(__APPLE__)
         static constexpr const uint32_t buff_size = 1024 * 32;
         uint32_t size = buff_size;
@@ -146,7 +146,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
         std::unique_ptr<char> canonicalPath(realpath(buf, NULL));
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
-        return path(std::string(canonicalPath.get()));
+        return canonicalPath.get();
 #elif defined(__FreeBSD__)
         int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
         char exePath[2048];
@@ -154,18 +154,18 @@ namespace vcpkg
         auto rcode = sysctl(mib, 4, exePath, &len, NULL, 0);
         Checks::check_exit(VCPKG_LINE_INFO, rcode == 0, "Could not determine current executable path.");
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
-        return path(exePath, exePath + len - 1);
+        return Path(exePath, exePath + len - 1);
 #elif defined(__OpenBSD__)
         const char* progname = getprogname();
         char resolved_path[PATH_MAX];
         auto ret = realpath(progname, resolved_path);
         Checks::check_exit(VCPKG_LINE_INFO, ret != nullptr, "Could not determine current executable path.");
-        return vcpkg::u8path(resolved_path);
+        return resolved_path;
 #else /* LINUX */
         std::array<char, 1024 * 4> buf;
         auto written = readlink("/proc/self/exe", buf.data(), buf.size());
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
-        return path(buf.data(), buf.data() + written);
+        return Path(buf.data(), buf.data() + written);
 #endif
     }
 
@@ -177,14 +177,14 @@ namespace vcpkg
         : CMakeVariable(varname, varvalue.c_str())
     {
     }
-    CMakeVariable::CMakeVariable(const StringView varname, const path& varvalue)
-        : CMakeVariable(varname, vcpkg::generic_u8string(varvalue))
+    CMakeVariable::CMakeVariable(const StringView varname, const Path& varvalue)
+        : CMakeVariable(varname, varvalue.generic_u8string())
     {
     }
     CMakeVariable::CMakeVariable(std::string var) : s(std::move(var)) { }
 
-    Command make_basic_cmake_cmd(const path& cmake_tool_path,
-                                 const path& cmake_script,
+    Command make_basic_cmake_cmd(const Path& cmake_tool_path,
+                                 const Path& cmake_script,
                                  const std::vector<CMakeVariable>& pass_variables)
     {
         Command cmd{cmake_tool_path};
@@ -454,7 +454,8 @@ namespace vcpkg
         {
             // this only fails if we can't get the current working directory of vcpkg, and we assume that we have that,
             // so it's fine anyways
-            working_directory = get_real_filesystem().absolute(wd.working_directory, VCPKG_LINE_INFO).native();
+            working_directory =
+                Strings::to_utf16(get_real_filesystem().absolute(wd.working_directory, VCPKG_LINE_INFO));
         }
 
         VCPKG_MSVC_WARNING(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
@@ -570,7 +571,7 @@ namespace vcpkg
 
         auto process_info =
             windows_create_windowless_process(cmd_line.command_line(),
-                                              InWorkingDirectory{path()},
+                                              InWorkingDirectory{Path()},
                                               {},
                                               CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
         if (!process_info.get())

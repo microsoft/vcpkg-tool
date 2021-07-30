@@ -6,5 +6,5 @@
 
 namespace vcpkg::Archives
 {
-    void extract_archive(const VcpkgPaths& paths, const path& archive, const path& to_path);
+    void extract_archive(const VcpkgPaths& paths, const Path& archive, const Path& to_path);
 }

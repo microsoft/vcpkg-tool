@@ -15,7 +15,7 @@
 namespace vcpkg::Commands::Integrate
 {
 #if defined(_WIN32)
-    static std::string create_appdata_shortcut(const std::string& target_path) noexcept
+    static std::string create_appdata_shortcut(StringView target_path) noexcept
     {
         return Strings::format(R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -44,10 +44,8 @@ namespace vcpkg::Commands::Integrate
 #endif
 
 #if defined(_WIN32)
-    static std::string create_nuget_targets_file_contents(const path& msbuild_vcpkg_targets_file) noexcept
+    static std::string create_nuget_targets_file_contents(const Path& msbuild_vcpkg_targets_file) noexcept
     {
-        const std::string as_string = u8string(msbuild_vcpkg_targets_file);
-
         return Strings::format(R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="%s" Condition="Exists('%s')" />
@@ -56,8 +54,8 @@ namespace vcpkg::Commands::Integrate
   </Target>
 </Project>
 )###",
-                               as_string,
-                               as_string);
+                               msbuild_vcpkg_targets_file,
+                               msbuild_vcpkg_targets_file);
     }
 #endif
 
@@ -75,9 +73,9 @@ namespace vcpkg::Commands::Integrate
 #endif
 
 #if defined(_WIN32)
-    static std::string get_nuget_id(const path& vcpkg_root_dir)
+    static std::string get_nuget_id(const Path& vcpkg_root_dir)
     {
-        std::string dir_id = vcpkg::generic_u8string(vcpkg_root_dir);
+        std::string dir_id = vcpkg_root_dir.generic_u8string();
         std::replace(dir_id.begin(), dir_id.end(), '/', '.');
         dir_id.erase(1, 1); // Erasing the ":"
 
@@ -90,7 +88,7 @@ namespace vcpkg::Commands::Integrate
 #endif
 
 #if defined(_WIN32)
-    static std::string create_nuspec_file_contents(const path& vcpkg_root_dir,
+    static std::string create_nuspec_file_contents(const Path& vcpkg_root_dir,
                                                    const std::string& nuget_id,
                                                    const std::string& nupkg_version)
     {
@@ -112,7 +110,7 @@ namespace vcpkg::Commands::Integrate
 )";
 
         std::string content = Strings::replace_all(CONTENT_TEMPLATE, "@NUGET_ID@", nuget_id);
-        Strings::inplace_replace_all(content, "@VCPKG_DIR@", u8string(vcpkg_root_dir));
+        Strings::inplace_replace_all(content, "@VCPKG_DIR@", vcpkg_root_dir);
         Strings::inplace_replace_all(content, "@VERSION@", nupkg_version);
         return content;
     }
@@ -155,29 +153,29 @@ namespace vcpkg::Commands::Integrate
 #endif
 
 #if defined(_WIN32)
-    static path get_appdata_targets_path()
+    static Path get_appdata_targets_path()
     {
-        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / vcpkg::u8path("vcpkg/vcpkg.user.targets");
+        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg/vcpkg.user.targets";
     }
 #endif
 #if defined(_WIN32)
-    static path get_appdata_props_path()
+    static Path get_appdata_props_path()
     {
-        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / vcpkg::u8path("vcpkg/vcpkg.user.props");
+        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg/vcpkg.user.props";
     }
 #endif
 
-    static path get_path_txt_path() { return get_user_dir() / "vcpkg.path.txt"; }
+    static Path get_path_txt_path() { return get_user_dir() / "vcpkg.path.txt"; }
 
 #if defined(_WIN32)
-    static void integrate_install_msbuild14(Filesystem& fs, const path& tmp_dir)
+    static void integrate_install_msbuild14(Filesystem& fs, const Path& tmp_dir)
     {
-        static const std::array<path, 2> OLD_SYSTEM_TARGET_FILES = {
+        static const std::array<Path, 2> OLD_SYSTEM_TARGET_FILES = {
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
                 "MSBuild/14.0/Microsoft.Common.Targets/ImportBefore/vcpkg.nuget.targets",
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
                 "MSBuild/14.0/Microsoft.Common.Targets/ImportBefore/vcpkg.system.targets"};
-        static const path SYSTEM_WIDE_TARGETS_FILE =
+        static const Path SYSTEM_WIDE_TARGETS_FILE =
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
             "MSBuild/Microsoft.Cpp/v4.0/V140/ImportBefore/Default/vcpkg.system.props";
 
@@ -186,8 +184,7 @@ namespace vcpkg::Commands::Integrate
         {
             if (fs.exists(old_system_wide_targets_file, IgnoreErrors{}))
             {
-                const std::string param =
-                    Strings::format(R"(/c "DEL "%s" /Q > nul")", u8string(old_system_wide_targets_file));
+                const std::string param = Strings::format(R"(/c "DEL "%s" /Q > nul")", old_system_wide_targets_file);
                 const ElevationPromptChoice user_choice = elevated_cmd_execute(param);
                 switch (user_choice)
                 {
@@ -216,13 +213,13 @@ namespace vcpkg::Commands::Integrate
 
         if (should_install_system)
         {
-            const path sys_src_path = tmp_dir / "vcpkg.system.targets";
+            const auto sys_src_path = tmp_dir / "vcpkg.system.targets";
             fs.write_contents(sys_src_path, create_system_targets_shortcut(), VCPKG_LINE_INFO);
 
             const std::string param = Strings::format(R"(/c "mkdir "%s" & copy "%s" "%s" /Y > nul")",
-                                                      u8string(SYSTEM_WIDE_TARGETS_FILE.parent_path()),
-                                                      u8string(sys_src_path),
-                                                      u8string(SYSTEM_WIDE_TARGETS_FILE));
+                                                      SYSTEM_WIDE_TARGETS_FILE.parent_path(),
+                                                      sys_src_path,
+                                                      SYSTEM_WIDE_TARGETS_FILE);
             const ElevationPromptChoice user_choice = elevated_cmd_execute(param);
             switch (user_choice)
             {
@@ -236,7 +233,7 @@ namespace vcpkg::Commands::Integrate
             Checks::check_exit(VCPKG_LINE_INFO,
                                fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}),
                                "Error: failed to copy targets file to %s",
-                               u8string(SYSTEM_WIDE_TARGETS_FILE));
+                               SYSTEM_WIDE_TARGETS_FILE);
         }
     }
 #endif
@@ -248,47 +245,36 @@ namespace vcpkg::Commands::Integrate
 #if defined(_WIN32)
         {
             std::error_code ec;
-            const path tmp_dir = paths.buildsystems / "tmp";
+            const auto tmp_dir = paths.buildsystems / "tmp";
             fs.create_directory(paths.buildsystems, ec);
             fs.create_directory(tmp_dir, ec);
 
             integrate_install_msbuild14(fs, tmp_dir);
 
-            const path appdata_src_path = tmp_dir / "vcpkg.user.targets";
-            fs.write_contents(appdata_src_path,
-                              create_appdata_shortcut(vcpkg::u8string(paths.buildsystems_msbuild_targets)),
-                              VCPKG_LINE_INFO);
+            const auto appdata_src_path = tmp_dir / "vcpkg.user.targets";
+            fs.write_contents(
+                appdata_src_path, create_appdata_shortcut(paths.buildsystems_msbuild_targets), VCPKG_LINE_INFO);
             auto appdata_dst_path = get_appdata_targets_path();
 
-            const auto rc = fs.copy_file(appdata_src_path, appdata_dst_path, copy_options::overwrite_existing, ec);
+            const auto rc = fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, ec);
 
             if (!rc || ec)
             {
-                print2(Color::error,
-                       "Error: Failed to copy file: ",
-                       vcpkg::u8string(appdata_src_path),
-                       " -> ",
-                       vcpkg::u8string(appdata_dst_path),
-                       "\n");
+                print2(Color::error, "Error: Failed to copy file: ", appdata_src_path, " -> ", appdata_dst_path, "\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            const path appdata_src_path2 = tmp_dir / "vcpkg.user.props";
-            fs.write_contents(appdata_src_path2,
-                              create_appdata_shortcut(vcpkg::u8string(paths.buildsystems_msbuild_props)),
-                              VCPKG_LINE_INFO);
+            const Path appdata_src_path2 = tmp_dir / "vcpkg.user.props";
+            fs.write_contents(
+                appdata_src_path2, create_appdata_shortcut(paths.buildsystems_msbuild_props), VCPKG_LINE_INFO);
             auto appdata_dst_path2 = get_appdata_props_path();
 
-            const auto rc2 = fs.copy_file(appdata_src_path2, appdata_dst_path2, copy_options::overwrite_existing, ec);
+            const auto rc2 = fs.copy_file(appdata_src_path2, appdata_dst_path2, CopyOptions::overwrite_existing, ec);
 
             if (!rc2 || ec)
             {
-                print2(Color::error,
-                       "Error: Failed to copy file: ",
-                       vcpkg::u8string(appdata_src_path2),
-                       " -> ",
-                       vcpkg::u8string(appdata_dst_path2),
-                       "\n");
+                print2(
+                    Color::error, "Error: Failed to copy file: ", appdata_src_path2, " -> ", appdata_dst_path2, "\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -296,10 +282,10 @@ namespace vcpkg::Commands::Integrate
 
         const auto pathtxt = get_path_txt_path();
         std::error_code ec;
-        fs.write_contents(pathtxt, vcpkg::generic_u8string(paths.root), VCPKG_LINE_INFO);
+        fs.write_contents(pathtxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
 
         print2(Color::success, "Applied user-wide integration for this vcpkg root.\n");
-        const path cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
+        const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 #if defined(_WIN32)
         vcpkg::printf(
             R"(
@@ -309,13 +295,13 @@ Installing new libraries will make them instantly available.
 
 CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
 )",
-            vcpkg::generic_u8string(cmake_toolchain));
+            cmake_toolchain.generic_u8string());
 #else
         vcpkg::printf(
             R"(
 CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
 )",
-            vcpkg::generic_u8string(cmake_toolchain));
+            cmake_toolchain.generic_u8string());
 #endif
 
         Checks::exit_success(VCPKG_LINE_INFO);
@@ -354,17 +340,17 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
     {
         auto& fs = paths.get_filesystem();
 
-        const path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
 
-        const path& buildsystems_dir = paths.buildsystems;
-        const path tmp_dir = buildsystems_dir / "tmp";
+        const Path& buildsystems_dir = paths.buildsystems;
+        const auto tmp_dir = buildsystems_dir / "tmp";
         std::error_code ec;
         fs.create_directory(buildsystems_dir, ec);
         fs.create_directory(tmp_dir, ec);
 
-        const path targets_file_path = tmp_dir / "vcpkg.nuget.targets";
-        const path props_file_path = tmp_dir / "vcpkg.nuget.props";
-        const path nuspec_file_path = tmp_dir / "vcpkg.nuget.nuspec";
+        const auto targets_file_path = tmp_dir / "vcpkg.nuget.targets";
+        const auto props_file_path = tmp_dir / "vcpkg.nuget.props";
+        const auto nuspec_file_path = tmp_dir / "vcpkg.nuget.nuspec";
         const std::string nuget_id = get_nuget_id(paths.root);
         const std::string nupkg_version = "1.0.0";
 
@@ -383,19 +369,16 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
 
         const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
 
-        const path nuget_package =
-            buildsystems_dir / vcpkg::u8path(Strings::format("%s.%s.nupkg", nuget_id, nupkg_version));
-        const auto nuget_package_str = vcpkg::u8string(nuget_package);
+        const auto nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
         Checks::check_exit(
             VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed with exit code: %d", exit_code);
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(nuget_package, IgnoreErrors{}),
                            "Error: NuGet package creation \"succeeded\", but no .nupkg was produced. Expected %s",
-                           nuget_package_str);
-        print2(Color::success, "Created nupkg: ", nuget_package_str, '\n');
+                           nuget_package);
+        print2(Color::success, "Created nupkg: ", nuget_package, '\n');
 
-        auto source_path = vcpkg::u8string(buildsystems_dir);
-        Strings::inplace_replace_all(source_path, "`", "``");
+        auto source_path = Strings::replace_all(buildsystems_dir, "`", "``");
 
         vcpkg::printf(R"(
 With a project open, go to Tools->NuGet Package Manager->Package Manager Console and paste:
@@ -413,7 +396,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
     static void integrate_powershell(const VcpkgPaths& paths)
     {
         static constexpr StringLiteral TITLE = "PowerShell Tab-Completion";
-        const path script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
+        const auto script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
 
         const auto& ps = paths.get_tool_exe("powershell-core");
         auto cmd = Command(ps)
@@ -421,7 +404,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                        .string_arg("-ExecutionPolicy")
                        .string_arg("Bypass")
                        .string_arg("-Command")
-                       .string_arg(Strings::format("& {& '%s' }", vcpkg::u8string(script_path)));
+                       .string_arg(Strings::format("& {& '%s' }", script_path));
         const int rc = cmd_execute(cmd);
         if (rc)
         {
@@ -430,7 +413,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                           "Could not run:\n"
                           "    '%s'\n",
                           TITLE,
-                          vcpkg::generic_u8string(script_path));
+                          script_path.generic_u8string());
 
             {
                 auto locked_metrics = Metrics::g_metrics.lock();
@@ -446,13 +429,13 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
     {
         const auto home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
 #if defined(__APPLE__)
-        const path bashrc_path = path{home_path} / ".bash_profile";
+        const auto bashrc_path = Path{home_path} / ".bash_profile";
 #else
-        const path bashrc_path = path{home_path} / ".bashrc";
+        const auto bashrc_path = Path{home_path} / ".bashrc";
 #endif
 
         auto& fs = paths.get_filesystem();
-        const path completion_script_path = paths.scripts / "vcpkg_completion.bash";
+        const auto completion_script_path = paths.scripts / "vcpkg_completion.bash";
 
         auto bashrc_content = fs.read_lines(bashrc_path, VCPKG_LINE_INFO);
         std::vector<std::string> matches;
@@ -471,13 +454,13 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                           "The following entries were found:\n"
                           "    %s\n"
                           "Please make sure you have started a new bash shell for the changes to take effect.\n",
-                          vcpkg::u8string(bashrc_path),
+                          bashrc_path,
                           Strings::join("\n    ", matches));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        vcpkg::printf("Adding vcpkg completion entry to %s\n", vcpkg::u8string(bashrc_path));
-        bashrc_content.push_back(Strings::format("source %s", vcpkg::u8string(completion_script_path)));
+        vcpkg::printf("Adding vcpkg completion entry to %s\n", bashrc_path);
+        bashrc_content.push_back(Strings::format("source %s", completion_script_path));
         fs.write_contents(bashrc_path, Strings::join("\n", bashrc_content) + '\n', VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
@@ -485,13 +468,13 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
     static void integrate_zsh(const VcpkgPaths& paths)
     {
         const auto home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
-        const path zshrc_path = path{home_path} / ".zshrc";
+        const auto zshrc_path = Path{home_path} / ".zshrc";
 
         auto& fs = paths.get_filesystem();
-        const path completion_script_path = paths.scripts / "vcpkg_completion.zsh";
+        const auto completion_script_path = paths.scripts / "vcpkg_completion.zsh";
 
         Expected<std::vector<std::string>> maybe_zshrc_content = fs.read_lines(zshrc_path, VCPKG_LINE_INFO);
-        Checks::check_exit(VCPKG_LINE_INFO, maybe_zshrc_content.has_value(), "Unable to read %s", u8string(zshrc_path));
+        Checks::check_exit(VCPKG_LINE_INFO, maybe_zshrc_content.has_value(), "Unable to read %s", zshrc_path);
 
         std::vector<std::string> zshrc_content = maybe_zshrc_content.value_or_exit(VCPKG_LINE_INFO);
 
@@ -523,12 +506,12 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                    "The following entries were found:\n"
                    "    %s\n"
                    "Please make sure you have started a new zsh shell for the changes to take effect.\n",
-                   u8string(zshrc_path),
+                   zshrc_path,
                    Strings::join("\n    ", matches));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        printf("Adding vcpkg completion entry to %s\n", u8string(zshrc_path));
+        printf("Adding vcpkg completion entry to %s\n", zshrc_path);
         if (!has_autoload_bashcompinit)
         {
             zshrc_content.push_back("autoload bashcompinit");
@@ -537,36 +520,36 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         {
             zshrc_content.push_back("bashcompinit");
         }
-        zshrc_content.push_back(Strings::format("source %s", u8string(completion_script_path)));
+        zshrc_content.push_back(Strings::concat("source ", completion_script_path));
         fs.write_contents(zshrc_path, Strings::join("\n", zshrc_content) + '\n', VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
     static void integrate_fish(const VcpkgPaths& paths)
     {
-        path fish_completions_path;
+        Path fish_completions_path;
         const auto config_path = get_environment_variable("XDG_CONFIG_HOME");
         if (config_path.has_value())
         {
-            fish_completions_path = path{config_path.value_or_exit(VCPKG_LINE_INFO)};
+            fish_completions_path = config_path.value_or_exit(VCPKG_LINE_INFO);
         }
         else
         {
-            const auto home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
-            fish_completions_path = path{home_path} / ".config";
+            const Path home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
+            fish_completions_path = home_path / ".config";
         }
-        fish_completions_path = fish_completions_path / "fish" / "completions" / "vcpkg.fish";
+
+        fish_completions_path = fish_completions_path / "fish/completions/vcpkg.fish";
 
         auto& fs = paths.get_filesystem();
         if (fs.exists(fish_completions_path, IgnoreErrors{}))
         {
-            vcpkg::printf("vcpkg fish completion is already added at %s.\n", vcpkg::u8string(fish_completions_path));
+            vcpkg::printf("vcpkg fish completion is already added at %s.\n", fish_completions_path);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        const path completion_script_path = paths.scripts / "vcpkg_completion.fish";
-
-        vcpkg::printf("Adding vcpkg completion entry at %s.\n", vcpkg::u8string(fish_completions_path));
+        const auto completion_script_path = paths.scripts / "vcpkg_completion.fish";
+        vcpkg::printf("Adding vcpkg completion entry at %s.\n", fish_completions_path);
         fs.create_symlink(completion_script_path, fish_completions_path, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }

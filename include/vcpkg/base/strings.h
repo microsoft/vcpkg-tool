@@ -132,7 +132,8 @@ namespace vcpkg::Strings
     std::wstring to_utf16(StringView s);
 
     std::string to_utf8(const wchar_t* w);
-    inline std::string to_utf8(const std::wstring& ws) { return to_utf8(ws.c_str()); }
+    std::string to_utf8(const wchar_t* w, size_t s);
+    inline std::string to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
 #endif
 
     std::string escape_string(std::string&& s, char char_to_escape, char escape_char);
@@ -197,7 +198,8 @@ namespace vcpkg::Strings
         return join(delimiter, v, [](const Element& x) -> const Element& { return x; });
     }
 
-    [[nodiscard]] std::string replace_all(const std::string& s, StringView search, StringView rep);
+    [[nodiscard]] std::string replace_all(const char* s, StringView search, StringView rep);
+    [[nodiscard]] std::string replace_all(StringView s, StringView search, StringView rep);
     [[nodiscard]] std::string replace_all(std::string&& s, StringView search, StringView rep);
 
     void inplace_replace_all(std::string& s, StringView search, StringView rep);
