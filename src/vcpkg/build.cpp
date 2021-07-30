@@ -1264,7 +1264,7 @@ namespace vcpkg::Build
         auto& abi_file = *abi_info.abi_tag_file.get();
 
         const auto abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
-        const auto abi_file_in_package = paths.package_dir(spec) / "share" / spec.name() / "vcpkg_abi_info.txt";
+        const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
         auto restore = binary_cache.try_restore(paths, action);
         if (restore == RestoreResult::restored)
         {
