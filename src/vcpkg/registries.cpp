@@ -20,7 +20,7 @@ namespace
 
     using Baseline = std::map<std::string, VersionT, std::less<>>;
 
-    static const Path registry_versions_dir_name = "versions";
+    static constexpr const StringLiteral registry_versions_dir_name = "versions";
 
     struct GitRegistry;
 
