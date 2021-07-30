@@ -859,7 +859,8 @@ namespace
             return nullopt;
         }
 
-        return res;
+        // the following redundant std::move is a workaround for a bug in gcc-7:
+        return std::move(res);
     }
 
     View<StringView> RegistryDeserializer::valid_fields() const
