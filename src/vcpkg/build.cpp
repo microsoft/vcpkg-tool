@@ -881,7 +881,7 @@ namespace vcpkg::Build
                           triplet.canonical_name());
             vcpkg::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
-        else if (!Strings::starts_with(triplet_file_path.native(), paths.triplets.native()))
+        else if (!Strings::starts_with(triplet_file_path, paths.triplets))
         {
             vcpkg::printf("-- [OVERLAY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
