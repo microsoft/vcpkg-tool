@@ -874,7 +874,7 @@ namespace vcpkg::Build
         Triplet triplet = action.spec.triplet();
         const auto& triplet_file_path = paths.get_triplet_file_path(triplet);
 
-        if (Strings::starts_with(triplet_file_path.native(), paths.community_triplets.native()))
+        if (Strings::starts_with(triplet_file_path, paths.community_triplets))
         {
             vcpkg::printf(vcpkg::Color::warning,
                           "-- Using community triplet %s. This triplet configuration is not guaranteed to succeed.\n",
