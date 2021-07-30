@@ -631,7 +631,7 @@ namespace vcpkg
                 type_name(), obj, DESCRIPTION, feature->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DEPENDENCIES, feature->dependencies, DependencyArrayDeserializer::instance);
 
-            return feature;
+            return std::move(feature); // gcc-7 bug workaround redundant move
         }
         static FeatureDeserializer instance;
     };
@@ -710,7 +710,7 @@ namespace vcpkg
                 }
             }
 
-            return res;
+            return std::move(res); // gcc-7 bug workaround redundant move
         }
 
         static FeaturesFieldDeserializer instance;
@@ -972,7 +972,7 @@ namespace vcpkg
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
             }
 
-            return control_file;
+            return std::move(control_file); // gcc-7 bug workaround redundant move
         }
 
         static ManifestDeserializer instance;
