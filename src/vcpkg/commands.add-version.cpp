@@ -89,8 +89,7 @@ namespace
                                     const std::map<std::string, VersionT, std::less<>>& baseline_map,
                                     const Path& output_path)
     {
-        auto new_path = output_path;
-        new_path += ".tmp";
+        auto new_path = output_path + ".tmp";
         std::error_code ec;
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
         fs.write_contents(new_path,
@@ -103,8 +102,7 @@ namespace
                                     const std::vector<VersionGitTree>& versions,
                                     const Path& output_path)
     {
-        auto new_path = output_path;
-        new_path += ".tmp";
+        auto new_path = output_path + ".tmp";
         std::error_code ec;
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
         fs.write_contents(
