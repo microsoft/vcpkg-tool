@@ -98,6 +98,11 @@ namespace vcpkg::Downloads
             WinHttpSession ret;
             ret.m_hSession.reset(h);
 
+            // Increase default timeouts to help connections behind proxies
+            // WinHttpSetTimeouts(HINTERNET hInternet, int nResolveTimeout, int nConnectTimeout, int nSendTimeout, int
+            // nReceiveTimeout);
+            WinHttpSetTimeouts(h, 0, 120000, 120000, 120000);
+
             // If the environment variable HTTPS_PROXY is set
             // use that variable as proxy. This situation might exist when user is in a company network
             // with restricted network/proxy settings
