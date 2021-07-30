@@ -2205,7 +2205,7 @@ namespace vcpkg
 #ifdef _WIN32
     Path win32_fix_path_case(const Path& source)
     {
-        const auto native = source.native();
+        const StringView native = source;
         if (native.empty())
         {
             return Path{};
