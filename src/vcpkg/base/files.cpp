@@ -1724,7 +1724,7 @@ namespace vcpkg
             if (ec)
             {
                 auto dst = new_path;
-                dst.replace_filename(dst.filename().to_string() + temp_suffix.to_string());
+                dst += temp_suffix;
 
                 int i_fd = open(old_path.c_str(), O_RDONLY);
                 if (i_fd == -1) return;
