@@ -57,7 +57,7 @@ namespace
                                         "?");
                 }
             }
-            return std::move(ret);
+            return ret;
         }
         StringLiteral m_type;
         bool m_allow_hash_portversion;
