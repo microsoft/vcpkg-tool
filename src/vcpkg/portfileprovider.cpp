@@ -175,7 +175,8 @@ namespace vcpkg::PortFileProvider
                         {
                             if (scf->get()->core_paragraph->name == version_spec.port_name)
                             {
-                                return std::make_unique<SourceControlFileLocation>(std::move(*scf), std::move(*path));
+                                return std::unique_ptr<SourceControlFileLocation>(
+                                    new SourceControlFileLocation{std::move(*scf), std::move(*path)});
                             }
                             else
                             {

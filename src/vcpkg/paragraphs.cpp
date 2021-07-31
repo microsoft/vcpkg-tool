@@ -456,7 +456,7 @@ namespace vcpkg::Paragraphs
                 auto maybe_spgh = try_load_port(fs, port_path);
                 if (const auto spgh = maybe_spgh.get())
                 {
-                    ret.paragraphs.emplace_back(std::move(*spgh), std::move(port_path));
+                    ret.paragraphs.push_back({std::move(*spgh), std::move(port_path)});
                 }
                 else
                 {
@@ -516,7 +516,7 @@ namespace vcpkg::Paragraphs
             auto maybe_spgh = try_load_port(fs, path);
             if (const auto spgh = maybe_spgh.get())
             {
-                ret.paragraphs.emplace_back(std::move(*spgh), std::move(path));
+                ret.paragraphs.push_back({std::move(*spgh), std::move(path)});
             }
             else
             {

@@ -129,16 +129,6 @@ namespace vcpkg
     /// </summary>
     struct SourceControlFileLocation
     {
-        SourceControlFileLocation(std::unique_ptr<SourceControlFile>&& scf, Path&& source)
-            : source_control_file(std::move(scf)), source_location(std::move(source))
-        {
-        }
-
-        SourceControlFileLocation(std::unique_ptr<SourceControlFile>&& scf, const Path& source)
-            : source_control_file(std::move(scf)), source_location(source)
-        {
-        }
-
         SourceControlFileLocation clone() const
         {
             return {std::make_unique<SourceControlFile>(source_control_file->clone()), source_location};
