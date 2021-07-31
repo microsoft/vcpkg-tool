@@ -373,7 +373,7 @@ namespace vcpkg::Dependencies
         if (scfl)
         {
             if (!builtin_ports_dir.empty() &&
-                !Strings::case_insensitive_ascii_starts_with(scfl->source_location, builtin_ports_dir.native()))
+                !Strings::case_insensitive_ascii_starts_with(scfl->source_location, builtin_ports_dir))
             {
                 Strings::append(ret, " -- ", scfl->source_location);
             }
