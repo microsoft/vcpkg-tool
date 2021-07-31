@@ -125,7 +125,7 @@ namespace vcpkg::Commands::Edit
                 {
                     if (Strings::case_insensitive_ascii_starts_with(package.filename(), pattern))
                     {
-                        package_paths.append(Strings::format(" \"%s\"", package.native()));
+                        package_paths.append(Strings::format(" \"%s\"", package));
                     }
                 }
 
