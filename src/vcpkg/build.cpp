@@ -1299,8 +1299,8 @@ namespace vcpkg::Build
         {
             Checks::exit_with_message(VCPKG_LINE_INFO,
                                       Strings::format("Could not copy %s -> %s: %s (%d)",
-                                                      abi_file.c_str(),
-                                                      abi_file_in_package.c_str(),
+                                                      abi_file,
+                                                      abi_file_in_package,
                                                       ec.message().c_str(),
                                                       ec.value()));
         }
