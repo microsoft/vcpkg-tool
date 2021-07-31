@@ -886,10 +886,9 @@ namespace vcpkg::Build
             vcpkg::printf("-- [OVERLAY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
 
-        auto u8portdir = scfl.source_location.native();
-        if (!Strings::starts_with(u8portdir, paths.builtin_ports_directory().native()))
+        if (!Strings::starts_with(scfl.source_location, paths.builtin_ports_directory()))
         {
-            vcpkg::printf("-- Installing port from location: %s\n", u8portdir);
+            vcpkg::printf("-- Installing port from location: %s\n", scfl.source_location);
         }
 
         const auto timer = Chrono::ElapsedTimer::create_started();
