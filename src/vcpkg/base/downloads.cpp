@@ -462,11 +462,13 @@ namespace vcpkg::Downloads
                                   std::string& errors)
     {
         auto download_path_part_path = download_path;
+        download_path_part_path += ".";
 #if defined(_WIN32)
-        download_path_part_path += Strings::concat(".", _getpid(), ".part");
+        download_path_part_path += std::to_string(_getpid());
 #else
-        download_path_part_path += Strings::concat(".", getpid(), ".part");
+        download_path_part_path += std::to_string(getpid());
 #endif
+        download_path_part_path += ".part";
 
 #if defined(_WIN32)
         if (headers.size() == 0)
