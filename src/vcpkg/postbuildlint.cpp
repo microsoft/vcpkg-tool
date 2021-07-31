@@ -167,7 +167,7 @@ namespace vcpkg::PostBuildLint
         static constexpr Span<const StringLiteral> restricted_lists[] = {
             restricted_sys_filenames, restricted_crt_filenames, restricted_general_filenames};
         const auto include_dir = package_dir / "include";
-        auto files = fs.get_files_non_recursive(include_dir, IgnoreErrors{});
+        const auto files = fs.get_files_non_recursive(include_dir, IgnoreErrors{});
         std::set<StringView> filenames_s;
         for (auto&& file : files)
         {
