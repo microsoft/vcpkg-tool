@@ -630,9 +630,9 @@ namespace vcpkg::Install
                 if (Strings::contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
                 {
                     // CMake file is inside the share folder
-                    auto path = paths.installed / suffix;
-                    auto contents = fs.read_contents(path, ec);
-                    auto find_package_name = Path(path.parent_path()).filename().to_string();
+                    const auto path = paths.installed / suffix;
+                    const auto contents = fs.read_contents(path, ec);
+                    const auto find_package_name = Path(path.parent_path()).filename().to_string();
                     if (!ec)
                     {
                         std::sregex_iterator next(contents.begin(), contents.end(), cmake_library_regex);
@@ -669,7 +669,7 @@ namespace vcpkg::Install
 
                 if (is_header_only && header_path.empty())
                 {
-                    auto it = suffix.find("/include/");
+                    const auto it = suffix.find("/include/");
                     if (it != std::string::npos && !Strings::ends_with(suffix, "/"))
                     {
                         header_path = suffix.substr(it + 9);
