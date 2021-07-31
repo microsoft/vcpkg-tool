@@ -92,8 +92,8 @@ namespace
 
     void open_for_write(Filesystem& fs, const ToWrite& data)
     {
-        auto& original_path_string = data.original_path.native();
-        auto& file_to_write_string = data.file_to_write.native();
+        const auto& original_path_string = data.original_path.native();
+        const auto& file_to_write_string = data.file_to_write.native();
         if (data.file_to_write == data.original_path)
         {
             Debug::print("Formatting ", file_to_write_string, "\n");
