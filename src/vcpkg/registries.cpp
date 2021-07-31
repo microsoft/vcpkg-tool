@@ -20,7 +20,7 @@ namespace
 
     using Baseline = std::map<std::string, VersionT, std::less<>>;
 
-    static constexpr const StringLiteral registry_versions_dir_name = "versions";
+    static constexpr StringView registry_versions_dir_name = StringLiteral{"versions"};
 
     struct GitRegistry;
 
@@ -514,7 +514,7 @@ namespace
                     e.value());
             }
 
-            auto path_to_baseline = registry_versions_dir_name / "baseline.json";
+            auto path_to_baseline = Path(registry_versions_dir_name) / "baseline.json";
             auto maybe_contents = paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             if (!maybe_contents.has_value())
             {

@@ -240,7 +240,7 @@ namespace vcpkg::Downloads
     static bool check_downloaded_file_hash(Filesystem& fs,
                                            const Optional<std::string>& hash,
                                            StringView sanitized_url,
-                                           const path& download_part_path,
+                                           const Path& download_part_path,
                                            std::string& errors)
     {
         if (auto p = hash.get())
