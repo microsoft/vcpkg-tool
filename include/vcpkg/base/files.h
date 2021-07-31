@@ -69,8 +69,10 @@ namespace vcpkg
 
         bool empty() const noexcept { return m_str.empty(); }
 
-        Path operator/(StringView sv) const;
-        Path operator+(StringView sv) const;
+        Path operator/(StringView sv) const&;
+        Path operator/(StringView sv) &&;
+        Path operator+(StringView sv) const&;
+        Path operator+(StringView sv) &&;
 
         Path& operator/=(StringView sv);
         Path& operator+=(StringView sv);

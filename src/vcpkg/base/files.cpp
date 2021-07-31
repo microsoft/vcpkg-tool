@@ -613,18 +613,30 @@ namespace vcpkg
 #endif
     }
 
-    Path Path::operator/(StringView sv) const
+    Path Path::operator/(StringView sv) const&
     {
         Path result = *this;
         result /= sv;
         return result;
     }
 
-    Path Path::operator+(StringView sv) const
+    Path Path::operator/(StringView sv) &&
+    {
+        *this /= sv;
+        return std::move(*this);
+    }
+
+    Path Path::operator+(StringView sv) const&
     {
         Path result = *this;
         result.m_str.append(sv.data(), sv.size());
         return result;
+    }
+
+    Path Path::operator+(StringView sv) &&
+    {
+        m_str.append(sv.data(), sv.size());
+        return std::move(*this);
     }
 
     Path& Path::operator/=(StringView sv)
