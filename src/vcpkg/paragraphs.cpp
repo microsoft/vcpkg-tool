@@ -283,13 +283,14 @@ namespace vcpkg::Paragraphs
                 return SourceControlFile::parse_manifest_object(origin, val->first.object());
             }
 
-            error_info->name = origin.to_string();
             error_info->error = "Manifest files must have a top-level object";
-            return error_info;
+        }
+        else
+        {
+            error_info->error = res.error()->format();
         }
 
         error_info->name = origin.to_string();
-        error_info->error = res.error()->format();
         return error_info;
     }
 
