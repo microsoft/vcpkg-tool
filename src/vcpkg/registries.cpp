@@ -707,7 +707,7 @@ namespace
                 result.emplace(pr.first.to_string(), std::move(version));
             }
 
-            return std::move(result);
+            return result;
         }
 
         static BaselineDeserializer instance;
@@ -859,7 +859,7 @@ namespace
             return nullopt;
         }
 
-        return std::move(res);
+        return std::move(res); // gcc-7 bug workaround redundant move
     }
 
     View<StringView> RegistryDeserializer::valid_fields() const

@@ -282,7 +282,7 @@ namespace vcpkg
         }
 
         // "The result of normalization is a path in normal form, which is said to be normalized."
-        return std::move(normalized);
+        return normalized;
     }
 
     ReadFilePointer::ReadFilePointer(const path& file_path, std::error_code& ec) noexcept
