@@ -11,7 +11,8 @@
 
 #include <vcpkg-test/util.h>
 
-using vcpkg::Test::base_temporary_directory;
+using namespace vcpkg;
+using Test::base_temporary_directory;
 
 #define CHECK_EC_ON_FILE(file, ec)                                                                                     \
     do                                                                                                                 \
@@ -26,7 +27,7 @@ namespace
 {
     using urbg_t = std::mt19937_64;
 
-    std::string get_random_filename(urbg_t& urbg) { return vcpkg::Strings::b32_encode(urbg()); }
+    std::string get_random_filename(urbg_t& urbg) { return Strings::b32_encode(urbg()); }
 
 #if defined(_WIN32)
     bool is_valid_symlink_failure(const std::error_code& ec) noexcept
@@ -37,8 +38,8 @@ namespace
 #endif // ^^^ _WIN32
 
     void create_directory_tree(urbg_t& urbg,
-                               vcpkg::Filesystem& fs,
-                               const vcpkg::Path& base,
+                               Filesystem& fs,
+                               const Path& base,
                                std::uint32_t remaining_depth = 5)
     {
         using uid_t = std::uniform_int_distribution<std::uint32_t>;
@@ -71,8 +72,7 @@ namespace
         if (file_type == regular_symlink_tag)
         {
             // regular symlink
-            auto base_target = base;
-            base_target.replace_filename(vcpkg::Strings::concat(base.filename(), "-target"));
+            auto base_target = base + "-target";
             fs.write_contents(base_target, "", ec);
             CHECK_EC_ON_FILE(base_target, ec);
             fs.create_symlink(base_target, base, ec);
@@ -130,13 +130,13 @@ namespace
             }
         }
 
-        REQUIRE(vcpkg::exists(fs.symlink_status(base, ec)));
+        REQUIRE(exists(fs.symlink_status(base, ec)));
         CHECK_EC_ON_FILE(base, ec);
     }
 
-    vcpkg::Filesystem& setup()
+    Filesystem& setup()
     {
-        auto& fs = vcpkg::get_real_filesystem();
+        auto& fs = get_real_filesystem();
 
         std::error_code ec;
         fs.create_directory(base_temporary_directory(), ec);
@@ -146,12 +146,124 @@ namespace
     }
 }
 
-static void check_preferred(vcpkg::Path p, vcpkg::StringView expected)
+static void check_preferred(Path p, StringView expected)
 {
     auto as_preferred = p.preferred();
     CHECK(as_preferred.native() == expected);
     p.make_preferred();
     CHECK(p.native() == expected);
+}
+
+TEST_CASE ("vcpkg Path regular operations", "[filesystem][files]")
+{
+    CHECK(Path().native().empty());
+    Path p("hello");
+    CHECK(p == "hello");
+    CHECK(p.native() == "hello");
+    Path copy_constructed(p);
+    CHECK(copy_constructed == "hello");
+    CHECK(copy_constructed.native() == "hello");
+    Path move_constructed(std::move(p));
+    CHECK(move_constructed == "hello");
+    CHECK(move_constructed.native() == "hello");
+
+    p = "world";
+    Path copy_assigned;
+    copy_assigned = p;
+    CHECK(copy_assigned == "world");
+    CHECK(copy_assigned.native() == "world");
+
+    Path move_assigned;
+    move_assigned = std::move(p);
+    CHECK(move_assigned == "world");
+    CHECK(move_assigned.native() == "world");
+}
+
+TEST_CASE ("vcpkg Path conversions", "[filesystem][files]")
+{
+    StringLiteral sl("some literal");
+    StringView sv = sl;
+    std::string str("some string");
+    std::string moved_from("moved from");
+    const char* ntbs = "some utf-8";
+    CHECK(Path(sv).native() == "some literal");
+    CHECK(Path(str).native() == "some string");
+    CHECK(Path(std::move(moved_from)).native() == "moved from");
+    CHECK(Path(ntbs).native() == "some utf-8");
+    CHECK(Path(str.begin(), str.end()).native() == "some string");
+    CHECK(Path(str.data(), str.size()).native() == "some string");
+
+    Path p("convert from");
+    StringView conv_sv = p;
+    CHECK(conv_sv == "convert from");
+    CHECK(strcmp(p.c_str(), "convert from") == 0);
+}
+
+TEST_CASE ("vcpkg Path generic", "[filesystem][files]")
+{
+    Path p("some/path/with/forward/slashes");
+    CHECK(p.generic_u8string() == StringView("some/path/with/forward/slashes"));
+
+    Path p_dup("some/path/with//////duplicate//////////forward/slashes");
+    CHECK(p_dup.generic_u8string() == StringView("some/path/with//////duplicate//////////forward/slashes"));
+
+    Path bp("some\\path\\/\\/with\\backslashes");
+#if defined(_WIN32)
+    CHECK(bp.generic_u8string() == StringView("some/path////with/backslashes"));
+#else // ^^^ _WIN32 / !_WIN32 vvv
+    CHECK(bp.generic_u8string() == StringView("some\\path\\/\\/with\\backslashes"));
+#endif // _WIN32
+}
+
+static void test_op_slash(StringView base, StringView append, StringView expected) {
+    Path an_lvalue(base);
+    CHECK((an_lvalue / append).native() == expected); // Path operator/(StringView sv) const&;
+    CHECK((Path(base) / append).native() == expected); // Path operator/(StringView sv) &&;
+    an_lvalue /= append; // Path& operator/=(StringView sv);
+    CHECK(an_lvalue.native() == expected);
+}
+
+TEST_CASE ("vcpkg Path::operator/", "[filesystem][files]")
+{
+    test_op_slash("/a/b", "c/d", "/a/b" VCPKG_PREFERED_SEPARATOR "c/d");
+    test_op_slash("a/b", "c/d", "a/b" VCPKG_PREFERED_SEPARATOR "c/d");
+    test_op_slash("/a/b", "/c/d", "/c/d");
+
+#if defined(_WIN32)
+    test_op_slash("C:/a/b", "c/d", "C:/a/b\\c/d");
+    test_op_slash("C:a/b", "c/d", "C:a/b\\c/d");
+    test_op_slash("C:a/b", "/c/d", "C:/c/d");
+    test_op_slash("C:/a/b", "/c/d", "C:/c/d");
+    test_op_slash("C:/a/b", "D:/c/d", "D:/c/d");
+    test_op_slash("C:/a/b", "D:c/d", "D:c/d");
+    test_op_slash("C:/a/b", "C:c/d", "C:/a/b\\c/d");
+#endif
+}
+
+static void test_op_plus(StringView base, StringView append) {
+    auto expected = base.to_string() + append.to_string();
+    Path an_lvalue(base);
+    CHECK((an_lvalue + append).native() == expected); // Path operator+(StringView sv) const&;
+    CHECK((Path(base) + append).native() == expected); // Path operator+(StringView sv) &&;
+    an_lvalue += append; // Path& operator+=(StringView sv);
+    CHECK(an_lvalue.native() == expected);
+}
+
+TEST_CASE ("vcpkg Path::operator+", "[filesystem][files]")
+{
+    test_op_plus("/a/b", "c/d");
+    test_op_plus("a/b", "c/d");
+    test_op_plus("/a/b", "/c/d");
+
+#if defined(_WIN32)
+    test_op_plus("C:/a/b", "c/d");
+    test_op_plus("C:a/b", "c/d");
+    test_op_plus("C:a/b", "/c/d");
+    test_op_plus("C:/a/b", "/c/d");
+    test_op_plus("C:/a/b", "D:/c/d");
+    test_op_plus("C:/a/b", "D:c/d");
+    test_op_plus("C:/a/b", "C:c/d");
+#endif
 }
 
 TEST_CASE ("vcpkg Path::preferred and Path::make_preferred", "[filesystem][files]")
@@ -172,24 +284,6 @@ TEST_CASE ("vcpkg Path::preferred and Path::make_preferred", "[filesystem][files
 #endif
 }
 
-TEST_CASE ("vcpkg Path::operator/", "[filesystem][files]")
-{
-    using namespace vcpkg;
-    CHECK(Path("/a/b") / "c/d" == "/a/b" VCPKG_PREFERED_SEPARATOR "c/d");
-    CHECK(Path("a/b") / "c/d" == "a/b" VCPKG_PREFERED_SEPARATOR "c/d");
-    CHECK(Path("/a/b") / "/c/d" == "/c/d");
-
-#if defined(_WIN32)
-    CHECK(Path("C:/a/b") / "c/d" == "C:/a/b\\c/d");
-    CHECK(Path("C:a/b") / "c/d" == "C:a/b\\c/d");
-    CHECK(Path("C:a/b") / "/c/d" == "C:/c/d");
-    CHECK(Path("C:/a/b") / "/c/d" == "C:/c/d");
-    CHECK(Path("C:/a/b") / "D:/c/d" == "D:/c/d");
-    CHECK(Path("C:/a/b") / "D:c/d" == "D:c/d");
-    CHECK(Path("C:/a/b") / "C:c/d" == "C:/a/b\\c/d");
-#endif
-}
-
 TEST_CASE ("remove all", "[files]")
 {
     urbg_t urbg;
@@ -202,7 +296,7 @@ TEST_CASE ("remove all", "[files]")
     create_directory_tree(urbg, fs, temp_dir);
 
     std::error_code ec;
-    vcpkg::Path fp;
+    Path fp;
     fs.remove_all(temp_dir, ec, fp);
     CHECK_EC_ON_FILE(fp, ec);
 
@@ -212,9 +306,9 @@ TEST_CASE ("remove all", "[files]")
 
 TEST_CASE ("lexically_normal", "[files]")
 {
-    const auto lexically_normal = [](const char* s) { return vcpkg::Path(s).lexically_normal(); };
-    const auto preferred = [](const char* s) { return vcpkg::Path(s).preferred(); };
-    CHECK(vcpkg::Path().lexically_normal().native() == vcpkg::Path().native());
+    const auto lexically_normal = [](const char* s) { return Path(s).lexically_normal(); };
+    const auto preferred = [](const char* s) { return Path(s).preferred(); };
+    CHECK(Path().lexically_normal().native() == Path().native());
 
     // these test cases are taken from the MS STL tests
     CHECK(lexically_normal("cat/./dog/..").native() == preferred("cat/").native());
@@ -302,7 +396,7 @@ TEST_CASE ("lexically_normal", "[files]")
 
 TEST_CASE ("LinesCollector", "[files]")
 {
-    using vcpkg::Strings::LinesCollector;
+    using Strings::LinesCollector;
     LinesCollector lc;
     CHECK(lc.extract() == std::vector<std::string>{""});
     lc.on_data({"a\nb\r\nc\rd\r\r\n\ne\n\rx", 16});
@@ -335,8 +429,6 @@ TEST_CASE ("LinesCollector", "[files]")
 #if defined(_WIN32)
 TEST_CASE ("win32_fix_path_case", "[files]")
 {
-    using vcpkg::win32_fix_path_case;
-
     // This test assumes that the Windows directory is C:\Windows
 
     CHECK(win32_fix_path_case("") == "");
@@ -351,7 +443,7 @@ TEST_CASE ("win32_fix_path_case", "[files]")
     CHECK(win32_fix_path_case("C://///////WiNdOws") == "C:\\Windows");
     CHECK(win32_fix_path_case("c:\\/\\/WiNdOws\\/") == "C:\\Windows\\");
 
-    auto& fs = vcpkg::get_real_filesystem();
+    auto& fs = get_real_filesystem();
     auto original_cwd = fs.current_path(VCPKG_LINE_INFO);
     fs.current_path("C:\\", VCPKG_LINE_INFO);
     CHECK(win32_fix_path_case("\\") == "\\");
@@ -397,7 +489,7 @@ TEST_CASE ("remove all -- benchmarks", "[files][!benchmark]")
     struct
     {
         urbg_t& urbg;
-        vcpkg::Filesystem& fs;
+        Filesystem& fs;
 
         void operator()(Catch::Benchmark::Chronometer& meter, std::uint32_t max_depth) const
         {

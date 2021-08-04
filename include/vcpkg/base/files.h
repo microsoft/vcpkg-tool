@@ -60,7 +60,6 @@ namespace vcpkg
         Path(const char* first, size_t size) : m_str(first, size) { }
 
         const std::string& native() const noexcept { return m_str; }
-        std::string& native() noexcept { return m_str; }
         operator StringView() const noexcept { return m_str; }
 
         const char* c_str() const noexcept { return m_str.c_str(); }
