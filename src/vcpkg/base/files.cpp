@@ -242,15 +242,6 @@ namespace
         return std::find_if_not(find_root_name_end(first, last), last, is_slash);
     }
 
-    StringView parse_relative_path(const StringView str) noexcept
-    {
-        // attempt to parse str as a path and return the relative-path if it exists; otherwise, an empty view
-        const auto first = str.data();
-        const auto last = first + str.size();
-        const auto relative_path = find_relative_path(first, last);
-        return StringView(relative_path, static_cast<size_t>(last - relative_path));
-    }
-
     StringView parse_parent_path(const StringView str) noexcept
     {
         // attempt to parse str as a path and return the parent_path if it exists; otherwise, an empty view
