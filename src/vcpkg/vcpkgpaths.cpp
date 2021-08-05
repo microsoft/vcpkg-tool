@@ -957,7 +957,7 @@ namespace vcpkg
         auto git_tree_final = m_pimpl->registries_git_trees / object;
         if (fs.exists(git_tree_final, IgnoreErrors{}))
         {
-            return std::move(git_tree_final);
+            return git_tree_final;
         }
 
         auto pid = get_process_id();

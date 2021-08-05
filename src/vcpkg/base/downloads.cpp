@@ -58,7 +58,7 @@ namespace vcpkg::Downloads
             if (!bResults) return Strings::concat("WinHttpQueryHeaders() failed: ", GetLastError());
             if (dwStatusCode < 200 || dwStatusCode >= 300) return Strings::concat("failed: status code ", dwStatusCode);
 
-            return std::move(ret);
+            return ret;
         }
 
         template<class F>

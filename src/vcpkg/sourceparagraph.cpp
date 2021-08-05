@@ -395,8 +395,9 @@ namespace vcpkg
 
         if (auto maybe_error = canonicalize(*control_file))
         {
-            return std::move(maybe_error);
+            return maybe_error;
         }
+
         return control_file;
     }
 
@@ -630,7 +631,7 @@ namespace vcpkg
                 type_name(), obj, DESCRIPTION, feature->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DEPENDENCIES, feature->dependencies, DependencyArrayDeserializer::instance);
 
-            return std::move(feature);
+            return std::move(feature); // gcc-7 bug workaround redundant move
         }
         static FeatureDeserializer instance;
     };
@@ -709,7 +710,7 @@ namespace vcpkg
                 }
             }
 
-            return std::move(res);
+            return std::move(res); // gcc-7 bug workaround redundant move
         }
 
         static FeaturesFieldDeserializer instance;
@@ -970,7 +971,8 @@ namespace vcpkg
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
             }
-            return std::move(control_file);
+
+            return std::move(control_file); // gcc-7 bug workaround redundant move
         }
 
         static ManifestDeserializer instance;
@@ -1013,7 +1015,7 @@ namespace vcpkg
             auto err = std::make_unique<ParseControlErrorInfo>();
             err->name = origin.to_string();
             err->other_errors = std::move(reader.errors());
-            return std::move(err);
+            return err;
         }
         else if (auto p = res.get())
         {

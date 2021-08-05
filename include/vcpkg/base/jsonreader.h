@@ -172,6 +172,8 @@ namespace vcpkg::Json
         Optional<std::vector<Type>> array_elements(const Array& arr, IDeserializer<Type>& visitor)
         {
             Optional<std::vector<Type>> result{std::vector<Type>()};
+            auto& result_vec = *result.get();
+            bool success = true;
             PathGuard guard{m_path};
             for (size_t i = 0; i < arr.size(); ++i)
             {
@@ -179,15 +181,16 @@ namespace vcpkg::Json
                 auto opt = visitor.visit(*this, arr[i]);
                 if (auto parsed = opt.get())
                 {
-                    if (auto result_vec = result.get())
+                    if (success)
                     {
-                        result_vec->push_back(std::move(*parsed));
+                        result_vec.push_back(std::move(*parsed));
                     }
                 }
                 else
                 {
                     this->add_expected_type_error(visitor.type_name());
-                    result.clear();
+                    result_vec.clear();
+                    success = false;
                 }
             }
 

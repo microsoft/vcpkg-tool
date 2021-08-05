@@ -555,12 +555,10 @@ namespace vcpkg
         if (auto proc_info = maybe_proc_info.get())
         {
             ret.proc_info = std::move(*proc_info);
-            return std::move(ret);
+            return ret;
         }
-        else
-        {
-            return maybe_proc_info.error();
-        }
+
+        return maybe_proc_info.error();
     }
 #endif
 
