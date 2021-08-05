@@ -49,7 +49,7 @@ namespace vcpkg::CMakeVars
 
             void load_generic_triplet_vars(Triplet triplet) const override;
 
-            void load_dep_info_vars(View<PackageSpec> specs) const override;
+            void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const override;
 
             void load_tag_vars(View<FullPackageSpec> specs,
                                const PortFileProvider::PortFileProvider& port_provider,
@@ -309,7 +309,7 @@ endfunction()
                                              std::make_move_iterator(vars.front().end()));
     }
 
-    void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> specs) const
+    void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const
     {
         if (specs.size() == 0) return;
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(specs.size());
@@ -324,11 +324,13 @@ endfunction()
         auto var_list_itr = vars.begin();
         for (const PackageSpec& spec : specs)
         {
-            dep_resolution_vars.emplace(std::piecewise_construct,
-                                        std::forward_as_tuple(spec),
-                                        std::forward_as_tuple(std::make_move_iterator(var_list_itr->begin()),
-                                                              std::make_move_iterator(var_list_itr->end())));
+            PlatformExpression::Context ctxt{std::make_move_iterator(var_list_itr->begin()),
+                                             std::make_move_iterator(var_list_itr->end())};
             ++var_list_itr;
+
+            ctxt.emplace("Z_VCPKG_IS_NATIVE", host_triplet == spec.triplet() ? "1" : "0");
+
+            dep_resolution_vars.emplace(spec, std::move(ctxt));
         }
     }
 

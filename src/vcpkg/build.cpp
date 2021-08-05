@@ -98,7 +98,7 @@ namespace vcpkg::Build
     {
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
-        var_provider.load_dep_info_vars({{full_spec.package_spec}});
+        var_provider.load_dep_info_vars({{full_spec.package_spec}}, host_triplet);
 
         StatusParagraphs status_db = database_load_check(paths);
 

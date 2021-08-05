@@ -27,7 +27,7 @@ namespace vcpkg::CMakeVars
 
         virtual void load_generic_triplet_vars(Triplet triplet) const = 0;
 
-        virtual void load_dep_info_vars(Span<const PackageSpec> specs) const = 0;
+        virtual void load_dep_info_vars(Span<const PackageSpec> specs, Triplet host_triplet) const = 0;
 
         virtual void load_tag_vars(Span<const FullPackageSpec> specs,
                                    const PortFileProvider::PortFileProvider& port_provider,
