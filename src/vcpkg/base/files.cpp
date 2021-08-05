@@ -753,36 +753,6 @@ namespace vcpkg
     // It is not clear if this is intended to collapse multiple slashes, see
     // https://github.com/microsoft/STL/issues/2082
     // This implementation does collapse slashes because we primarily use it for shiny display purposes.
-    Path Path::preferred() const
-    {
-        const char* first = m_str.data();
-        const char* last = first + m_str.size();
-        const char* after_root_name = find_root_name_end(first, last);
-        const char* after_root_directory = std::find_if_not(after_root_name, last, is_slash);
-        std::string result(first, after_root_name - first);
-#if defined(_WIN32)
-        std::replace(result.begin(), result.end(), '/', '\\');
-#endif // _WIN32
-        if (after_root_name != after_root_directory)
-        {
-            result.push_back(preferred_separator);
-        }
-
-        first = after_root_directory;
-        for (;;)
-        {
-            const char* next_slash = std::find_if(first, last, is_slash);
-            result.append(first, next_slash - first);
-            if (next_slash == last)
-            {
-                return result;
-            }
-
-            result.push_back(preferred_separator);
-            first = std::find_if_not(next_slash + 1, last, is_slash);
-        }
-    }
-
     void Path::make_preferred()
     {
         char* first = m_str.data();
@@ -964,14 +934,24 @@ namespace vcpkg
         return normalized;
     }
 
+    bool Path::make_parent_path()
+    {
+        const auto parent = parent_path();
+        if (parent.size() == m_str.size())
+        {
+            return false;
+        }
+
+        m_str.resize(parent.size());
+        return true;
+    }
+
     StringView Path::parent_path() const { return parse_parent_path(m_str); }
     StringView Path::filename() const { return parse_filename(m_str); }
     StringView Path::extension() const { return parse_extension(m_str); }
     StringView Path::stem() const { return parse_stem(m_str); }
 
     bool Path::is_absolute() const { return is_absolute_path(m_str); }
-
-    bool Path::has_relative_path() const { return !parse_relative_path(m_str).empty(); }
 
     ReadFilePointer::ReadFilePointer(const Path& file_path, std::error_code& ec) noexcept
     {
@@ -1545,21 +1525,11 @@ namespace vcpkg
             int counter = 10000;
             for (;;)
             {
-                // This is a workaround for VS2015's experimental filesystem implementation
-                if (!current_dir.has_relative_path())
+                if (!current_dir.make_parent_path())
                 {
                     current_dir.clear();
                     return current_dir;
                 }
-
-                Path parent = current_dir.parent_path();
-                if (parent == current_dir)
-                {
-                    current_dir.clear();
-                    return current_dir;
-                }
-
-                current_dir = std::move(parent);
 
                 const auto candidate = current_dir / filename;
                 if (exists(candidate, ec))

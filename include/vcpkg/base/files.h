@@ -59,7 +59,8 @@ namespace vcpkg
         }
         Path(const char* first, size_t size) : m_str(first, size) { }
 
-        const std::string& native() const noexcept { return m_str; }
+        const std::string& native() const& noexcept { return m_str; }
+        std::string&& native() && noexcept { return std::move(m_str); }
         operator StringView() const noexcept { return m_str; }
 
         const char* c_str() const noexcept { return m_str.c_str(); }
@@ -78,10 +79,12 @@ namespace vcpkg
 
         void replace_filename(StringView sv);
         void remove_filename();
-        Path preferred() const;
         void make_preferred();
         void clear() { m_str.clear(); }
         Path lexically_normal() const;
+
+        // Sets *this to parent_path, returns whether anything was removed
+        bool make_parent_path();
 
         StringView parent_path() const;
         StringView filename() const;
@@ -90,7 +93,6 @@ namespace vcpkg
 
         bool is_absolute() const;
         bool is_relative() const { return !is_absolute(); }
-        bool has_relative_path() const;
 
         friend const char* to_printf_arg(const Path& p) noexcept { return p.m_str.c_str(); }
 
