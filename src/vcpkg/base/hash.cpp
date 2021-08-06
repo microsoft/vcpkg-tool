@@ -564,7 +564,7 @@ namespace vcpkg::Hash
         return get_bytes_hash(sv.data(), sv.data() + sv.size(), algo);
     }
 
-    std::string get_file_hash(const Filesystem& fs, const path& path, Algorithm algo, std::error_code& ec) noexcept
+    std::string get_file_hash(const Filesystem& fs, const Path& path, Algorithm algo, std::error_code& ec) noexcept
     {
         auto file = fs.open_for_read(path, ec);
         if (ec)

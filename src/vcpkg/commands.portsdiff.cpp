@@ -82,12 +82,12 @@ namespace vcpkg::Commands::PortsDiff
     {
         std::error_code ec;
         auto& fs = paths.get_filesystem();
-        const path dot_git_dir = paths.root / ".git";
-        const std::string ports_dir_name_as_string = vcpkg::u8string(paths.builtin_ports_directory().filename());
-        const path temp_checkout_path = paths.root / Strings::format("%s-%s", ports_dir_name_as_string, git_commit_id);
+        const auto dot_git_dir = paths.root / ".git";
+        const auto ports_dir_name = paths.builtin_ports_directory().filename();
+        const auto temp_checkout_path = paths.root / Strings::format("%s-%s", ports_dir_name, git_commit_id);
         fs.create_directory(temp_checkout_path, ec);
         const auto checkout_this_dir =
-            Strings::format(R"(.\%s)", ports_dir_name_as_string); // Must be relative to the root of the repository
+            Strings::format(R"(.\%s)", ports_dir_name); // Must be relative to the root of the repository
 
         auto cmd = paths.git_cmd_builder(dot_git_dir, temp_checkout_path)
                        .string_arg("checkout")
@@ -100,7 +100,7 @@ namespace vcpkg::Commands::PortsDiff
         cmd_execute_and_capture_output(cmd, get_clean_environment());
         cmd_execute_and_capture_output(paths.git_cmd_builder(dot_git_dir, temp_checkout_path).string_arg("reset"),
                                        get_clean_environment());
-        const auto ports_at_commit = Paragraphs::load_overlay_ports(fs, temp_checkout_path / ports_dir_name_as_string);
+        const auto ports_at_commit = Paragraphs::load_overlay_ports(fs, temp_checkout_path / ports_dir_name);
         std::map<std::string, VersionT> names_and_versions;
         for (auto&& port : ports_at_commit)
         {

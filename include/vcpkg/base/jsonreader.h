@@ -64,11 +64,11 @@ namespace vcpkg::Json
         friend struct IDeserializer;
 
         std::vector<std::string> m_errors;
-        struct Path
+        struct JsonPathElement
         {
-            constexpr Path() = default;
-            constexpr Path(int64_t i) : index(i) { }
-            constexpr Path(StringView f) : field(f) { }
+            constexpr JsonPathElement() = default;
+            constexpr JsonPathElement(int64_t i) : index(i) { }
+            constexpr JsonPathElement(StringView f) : field(f) { }
 
             int64_t index = -1;
             StringView field;
@@ -76,18 +76,18 @@ namespace vcpkg::Json
 
         struct PathGuard
         {
-            PathGuard(std::vector<Path>& path) : m_path{path} { m_path.emplace_back(); }
-            PathGuard(std::vector<Path>& path, int64_t i) : m_path{path} { m_path.emplace_back(i); }
-            PathGuard(std::vector<Path>& path, StringView f) : m_path{path} { m_path.emplace_back(f); }
+            PathGuard(std::vector<JsonPathElement>& path) : m_path{path} { m_path.emplace_back(); }
+            PathGuard(std::vector<JsonPathElement>& path, int64_t i) : m_path{path} { m_path.emplace_back(i); }
+            PathGuard(std::vector<JsonPathElement>& path, StringView f) : m_path{path} { m_path.emplace_back(f); }
             PathGuard(const PathGuard&) = delete;
             PathGuard& operator=(const PathGuard&) = delete;
             ~PathGuard() { m_path.pop_back(); }
 
         private:
-            std::vector<Path>& m_path;
+            std::vector<JsonPathElement>& m_path;
         };
 
-        std::vector<Path> m_path;
+        std::vector<JsonPathElement> m_path;
 
     public:
         // checks that an object doesn't contain any fields which both:
@@ -279,10 +279,10 @@ namespace vcpkg::Json
         StringLiteral type_name_;
     };
 
-    struct PathDeserializer final : IDeserializer<path>
+    struct PathDeserializer final : IDeserializer<Path>
     {
         virtual StringView type_name() const override { return "a path"; }
-        virtual Optional<path> visit_string(Reader&, StringView sv) override { return vcpkg::u8path(sv); }
+        virtual Optional<Path> visit_string(Reader&, StringView sv) override { return sv; }
 
         static PathDeserializer instance;
     };

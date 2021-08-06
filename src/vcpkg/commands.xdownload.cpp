@@ -96,7 +96,7 @@ namespace vcpkg::Commands::X_Download
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
         Downloads::DownloadManager download_manager{
             parse_download_configuration(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO)};
-        path file = fs.absolute(vcpkg::u8path(args.command_arguments[0]), VCPKG_LINE_INFO);
+        auto file = fs.absolute(args.command_arguments[0], VCPKG_LINE_INFO);
 
         auto sha = get_sha512_check(args, parsed);
 
@@ -110,10 +110,9 @@ namespace vcpkg::Commands::X_Download
             }
 
             auto s = fs.status(file, VCPKG_LINE_INFO);
-            if (s.type() != vcpkg::file_type::regular)
+            if (s != FileType::regular)
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Error: path was not a regular file: %s", vcpkg::u8string(file));
+                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: path was not a regular file: %s", file);
             }
             auto actual_hash = Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha512);
             if (*hash != actual_hash)

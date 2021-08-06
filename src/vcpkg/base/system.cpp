@@ -166,9 +166,9 @@ namespace vcpkg
 #endif // defined(_WIN32)
     }
 
-    const ExpectedS<path>& get_home_dir() noexcept
+    const ExpectedS<Path>& get_home_dir() noexcept
     {
-        static ExpectedS<path> s_home = []() -> ExpectedS<path> {
+        static ExpectedS<Path> s_home = []() -> ExpectedS<Path> {
 #ifdef _WIN32
 #define HOMEVAR "%USERPROFILE%"
             auto maybe_home = get_environment_variable("USERPROFILE");
@@ -181,7 +181,7 @@ namespace vcpkg
                 return {"unable to read " HOMEVAR, ExpectedRightTag{}};
 #endif
 
-            auto p = vcpkg::u8path(*maybe_home.get());
+            Path p = *maybe_home.get();
             if (!p.is_absolute()) return {HOMEVAR " was not an absolute path", ExpectedRightTag{}};
 
             return {std::move(p), ExpectedLeftTag{}};
@@ -191,9 +191,9 @@ namespace vcpkg
     }
 
 #ifdef _WIN32
-    const ExpectedS<path>& get_appdata_local() noexcept
+    const ExpectedS<Path>& get_appdata_local() noexcept
     {
-        static ExpectedS<path> s_home = []() -> ExpectedS<path> {
+        static ExpectedS<Path> s_home = []() -> ExpectedS<Path> {
             auto maybe_home = get_environment_variable("LOCALAPPDATA");
             if (!maybe_home.has_value() || maybe_home.get()->empty())
             {
@@ -205,13 +205,13 @@ namespace vcpkg
                     return {"unable to read %LOCALAPPDATA% or %APPDATA%", ExpectedRightTag{}};
                 }
 
-                auto p = vcpkg::u8path(*maybe_home.get()).parent_path();
+                auto p = Path(Path(*maybe_home.get()).parent_path());
                 p /= "Local";
                 if (!p.is_absolute()) return {"%APPDATA% was not an absolute path", ExpectedRightTag{}};
                 return {std::move(p), ExpectedLeftTag{}};
             }
 
-            auto p = vcpkg::u8path(*maybe_home.get());
+            auto p = Path(*maybe_home.get());
             if (!p.is_absolute()) return {"%LOCALAPPDATA% was not an absolute path", ExpectedRightTag{}};
 
             return {std::move(p), ExpectedLeftTag{}};
@@ -219,18 +219,18 @@ namespace vcpkg
         return s_home;
     }
 #else
-    static const ExpectedS<path>& get_xdg_cache_home() noexcept
+    static const ExpectedS<Path>& get_xdg_cache_home() noexcept
     {
-        static ExpectedS<path> s_home = [] {
+        static ExpectedS<Path> s_home = [] {
             auto maybe_home = get_environment_variable("XDG_CACHE_HOME");
             if (auto p = maybe_home.get())
             {
-                return ExpectedS<path>(vcpkg::u8path(*p));
+                return ExpectedS<Path>(Path(*p));
             }
             else
             {
-                return get_home_dir().map([](path home) {
-                    home /= vcpkg::u8path(".cache");
+                return get_home_dir().map([](Path home) {
+                    home /= ".cache";
                     return home;
                 });
             }
@@ -239,7 +239,7 @@ namespace vcpkg
     }
 #endif
 
-    const ExpectedS<path>& get_platform_cache_home() noexcept
+    const ExpectedS<Path>& get_platform_cache_home() noexcept
     {
 #ifdef _WIN32
         return get_appdata_local();
@@ -284,9 +284,9 @@ namespace vcpkg
     Optional<std::string> get_registry_string(void*, StringView, StringView) { return nullopt; }
 #endif // defined(_WIN32)
 
-    static const Optional<path>& get_program_files()
+    static const Optional<Path>& get_program_files()
     {
-        static const auto PROGRAMFILES = []() -> Optional<path> {
+        static const auto PROGRAMFILES = []() -> Optional<Path> {
             auto value = get_environment_variable("PROGRAMFILES");
             if (auto v = value.get())
             {
@@ -299,9 +299,9 @@ namespace vcpkg
         return PROGRAMFILES;
     }
 
-    const Optional<path>& get_program_files_32_bit()
+    const Optional<Path>& get_program_files_32_bit()
     {
-        static const auto PROGRAMFILES_x86 = []() -> Optional<path> {
+        static const auto PROGRAMFILES_x86 = []() -> Optional<Path> {
             auto value = get_environment_variable("ProgramFiles(x86)");
             if (auto v = value.get())
             {
@@ -312,9 +312,9 @@ namespace vcpkg
         return PROGRAMFILES_x86;
     }
 
-    const Optional<path>& get_program_files_platform_bitness()
+    const Optional<Path>& get_program_files_platform_bitness()
     {
-        static const auto ProgramW6432 = []() -> Optional<path> {
+        static const auto ProgramW6432 = []() -> Optional<Path> {
             auto value = get_environment_variable("ProgramW6432");
             if (auto v = value.get())
             {

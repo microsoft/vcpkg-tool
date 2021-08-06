@@ -348,7 +348,7 @@ namespace vcpkg::Dependencies
                                         const Build::BuildPackageOptions& options,
                                         const SourceControlFileLocation* scfl,
                                         const InstalledPackageView* ipv,
-                                        const path& builtin_ports_dir)
+                                        const Path& builtin_ports_dir)
     {
         std::string ret;
         switch (request_type)
@@ -372,11 +372,10 @@ namespace vcpkg::Dependencies
         }
         if (scfl)
         {
-            const auto s_install_port_path = vcpkg::u8string(scfl->source_location);
             if (!builtin_ports_dir.empty() &&
-                !Strings::case_insensitive_ascii_starts_with(s_install_port_path, vcpkg::u8string(builtin_ports_dir)))
+                !Strings::case_insensitive_ascii_starts_with(scfl->source_location, builtin_ports_dir))
             {
-                Strings::append(ret, " -- ", s_install_port_path);
+                Strings::append(ret, " -- ", scfl->source_location);
             }
         }
         return ret;
@@ -1092,7 +1091,7 @@ namespace vcpkg::Dependencies
 
     PackageGraph::~PackageGraph() = default;
 
-    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const path& builtin_ports_dir)
+    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir)
     {
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
             action_plan.install_actions.empty())

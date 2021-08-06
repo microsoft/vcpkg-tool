@@ -28,11 +28,11 @@ namespace
 {
     using namespace vcpkg::Build;
 
-    const path readme_dot_log = vcpkg::u8path("readme.log");
+    const Path readme_dot_log = "readme.log";
 
     struct CiBuildLogsRecorder final : IBuildLogsRecorder
     {
-        CiBuildLogsRecorder(const path& base_path_) : base_path(base_path_) { }
+        CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
 
         virtual void record_build_result(const VcpkgPaths& paths,
                                          const PackageSpec& spec,
@@ -47,7 +47,7 @@ namespace
             const auto source_path = paths.build_dir(spec);
             auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
             Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
-            const auto target_path = base_path / vcpkg::u8path(spec.name());
+            const auto target_path = base_path / spec.name();
             (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
             if (children.empty())
             {
@@ -60,16 +60,16 @@ namespace
             }
             else
             {
-                for (const path& p : children)
+                for (const Path& p : children)
                 {
                     filesystem.copy_file(
-                        p, target_path / p.filename(), copy_options::overwrite_existing, VCPKG_LINE_INFO);
+                        p, target_path / p.filename(), CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
                 }
             }
         }
 
     private:
-        path base_path;
+        Path base_path;
     };
 }
 
@@ -475,8 +475,8 @@ namespace vcpkg::Commands::CI
             auto it_failure_logs = settings.find(OPTION_FAILURE_LOGS);
             if (it_failure_logs != settings.end())
             {
-                auto raw_path = vcpkg::u8path(it_failure_logs->second);
                 vcpkg::printf("Creating failure logs output directory %s\n", it_failure_logs->second);
+                Path raw_path = it_failure_logs->second;
                 filesystem.create_directories(raw_path, VCPKG_LINE_INFO);
                 build_logs_recorder_storage = filesystem.almost_canonical(raw_path, VCPKG_LINE_INFO);
             }
@@ -604,7 +604,7 @@ namespace vcpkg::Commands::CI
         auto it_xunit = settings.find(OPTION_XUNIT);
         if (it_xunit != settings.end())
         {
-            filesystem.write_contents(vcpkg::u8path(it_xunit->second), xunitTestResults.build_xml(), VCPKG_LINE_INFO);
+            filesystem.write_contents(it_xunit->second, xunitTestResults.build_xml(), VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

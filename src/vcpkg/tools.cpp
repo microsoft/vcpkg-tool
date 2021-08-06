@@ -17,11 +17,11 @@ namespace vcpkg
     struct ToolData
     {
         std::array<int, 3> version;
-        path exe_path;
+        Path exe_path;
         std::string url;
-        path download_path;
+        Path download_path;
         bool is_archive;
-        path tool_dir_path;
+        Path tool_dir_path;
         std::string sha512;
     };
 
@@ -64,20 +64,17 @@ namespace vcpkg
 
 #if defined(_WIN32) || defined(__APPLE__) || defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
         static const std::string XML_VERSION = "2";
-        static const path XML_PATH = paths.scripts / "vcpkgTools.xml";
+        static const auto XML_PATH = paths.scripts / "vcpkgTools.xml";
         static const std::regex XML_VERSION_REGEX{R"###(<tools[\s]+version="([^"]+)">)###"};
         static const std::string XML = paths.get_filesystem().read_contents(XML_PATH, VCPKG_LINE_INFO);
         std::smatch match_xml_version;
         const bool has_xml_version = std::regex_search(XML.cbegin(), XML.cend(), match_xml_version, XML_VERSION_REGEX);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           has_xml_version,
-                           R"(Could not find <tools version="%s"> in %s)",
-                           XML_VERSION,
-                           vcpkg::u8string(XML_PATH));
+        Checks::check_exit(
+            VCPKG_LINE_INFO, has_xml_version, R"(Could not find <tools version="%s"> in %s)", XML_VERSION, XML_PATH);
         Checks::check_exit(VCPKG_LINE_INFO,
                            XML_VERSION == match_xml_version[1],
                            "Expected %s version: [%s], but was [%s]. Please re-run bootstrap-vcpkg.",
-                           vcpkg::u8string(XML_PATH),
+                           XML_PATH,
                            XML_VERSION,
                            match_xml_version[1]);
 
@@ -99,7 +96,7 @@ namespace vcpkg
             return Strings::format("Could not automatically acquire %s because there is no entry in %s for os=%s. You "
                                    "may be able to install %s via your system package manager%s.",
                                    tool,
-                                   vcpkg::u8string(XML_PATH),
+                                   XML_PATH,
                                    OS_STRING,
                                    tool,
                                    add_info);
@@ -123,17 +120,16 @@ namespace vcpkg
                            version_as_string);
 
         const std::string tool_dir_name = Strings::format("%s-%s-%s", tool, version_as_string, OS_STRING);
-        const path tool_dir_path = paths.tools / tool_dir_name;
-        const path exe_path = tool_dir_path / exe_relative_path;
-        path download_path;
+        const auto tool_dir_path = paths.tools / tool_dir_name;
+        const auto exe_path = tool_dir_path / exe_relative_path;
+        Path download_path;
         if (auto a = archive_name.get())
         {
-            download_path = paths.downloads / vcpkg::u8path(a->to_string());
+            download_path = paths.downloads / a->to_string();
         }
         else
         {
-            download_path =
-                paths.downloads / vcpkg::u8path(Strings::concat(sha512.substr(0, 8), '-', exe_relative_path));
+            download_path = paths.downloads / Strings::concat(sha512.substr(0, 8), '-', exe_relative_path);
         }
 
         return ToolData{*version.get(), exe_path, url, download_path, archive_name.has_value(), tool_dir_path, sha512};
@@ -142,7 +138,7 @@ namespace vcpkg
 
     struct PathAndVersion
     {
-        path p;
+        Path p;
         std::string version;
     };
 
@@ -152,13 +148,13 @@ namespace vcpkg
         virtual const std::string& exe_stem() const = 0;
         virtual std::array<int, 3> default_min_version() const = 0;
 
-        virtual void add_special_paths(std::vector<path>& out_candidate_paths) const { (void)out_candidate_paths; }
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const path& exe_path) const = 0;
+        virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const { (void)out_candidate_paths; }
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const Path& exe_path) const = 0;
     };
 
     static Optional<PathAndVersion> find_first_with_sufficient_version(const VcpkgPaths& paths,
                                                                        const ToolProvider& tool_provider,
-                                                                       const std::vector<path>& candidates,
+                                                                       const std::vector<Path>& candidates,
                                                                        const std::array<int, 3>& expected_version)
     {
         const auto& fs = paths.get_filesystem();
@@ -184,7 +180,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    static path fetch_tool(const VcpkgPaths& paths, const std::string& tool_name, const ToolData& tool_data)
+    static Path fetch_tool(const VcpkgPaths& paths, const std::string& tool_name, const ToolData& tool_data)
     {
         const std::array<int, 3>& version = tool_data.version;
         const std::string version_as_string = Strings::format("%d.%d.%d", version[0], version[1], version[2]);
@@ -204,7 +200,7 @@ namespace vcpkg
         if (!fs.exists(tool_data.download_path, IgnoreErrors{}))
         {
             print2("Downloading ", tool_name, "...\n");
-            print2("  ", tool_data.url, " -> ", vcpkg::u8string(tool_data.download_path), "\n");
+            print2("  ", tool_data.url, " -> ", tool_data.download_path, "\n");
             paths.get_download_manager().download_file(fs, tool_data.url, tool_data.download_path, tool_data.sha512);
         }
         else
@@ -227,7 +223,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(tool_data.exe_path, IgnoreErrors{}),
                            "Expected %s to exist after fetching",
-                           vcpkg::u8string(tool_data.exe_path));
+                           tool_data.exe_path);
 
         return tool_data.exe_path;
     }
@@ -247,7 +243,7 @@ namespace vcpkg
 
         std::array<int, 3> min_version = tool.default_min_version();
 
-        std::vector<path> candidate_paths;
+        std::vector<Path> candidate_paths;
         auto maybe_tool_data = parse_tool_data_from_xml(paths, tool.tool_data_name());
         if (auto tool_data = maybe_tool_data.get())
         {
@@ -285,7 +281,7 @@ namespace vcpkg
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {3, 17, 1}; }
 
-        virtual void add_special_paths(std::vector<path>& out_candidate_paths) const override
+        virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const override
         {
 #if defined(_WIN32)
             const auto& program_files = get_program_files_platform_bitness();
@@ -298,14 +294,13 @@ namespace vcpkg
             (void)out_candidate_paths;
 #endif
         }
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
         {
             auto cmd = Command(exe_path).string_arg("--version");
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
-                return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
                         expected_right_tag};
             }
 
@@ -327,14 +322,13 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {3, 5, 1}; }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
         {
             auto cmd = Command(exe_path).string_arg("--version");
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
-                return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
                         expected_right_tag};
             }
 
@@ -353,7 +347,7 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {4, 6, 2}; }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const path& exe_path) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const Path& exe_path) const override
         {
             Command cmd;
 #ifndef _WIN32
@@ -369,14 +363,13 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
                 return {Strings::concat(
                             std::move(rc.output),
                             "\n\nFailed to get version of ",
-                            vcpkg::u8string(exe_path),
+                            exe_path,
                             "\nThis may be caused by an incomplete mono installation. Full mono is "
                             "available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may "
                             "need a newer version of mono, available at https://www.mono-project.com/download/stable/"),
                         expected_right_tag};
 #else
-                return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
                         expected_right_tag};
 #endif
             }
@@ -401,7 +394,7 @@ Type 'NuGet help <command>' for help on a specific command.
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {2, 7, 4}; }
 
-        virtual void add_special_paths(std::vector<path>& out_candidate_paths) const override
+        virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const override
         {
 #if defined(_WIN32)
             const auto& program_files = get_program_files_platform_bitness();
@@ -415,14 +408,13 @@ Type 'NuGet help <command>' for help on a specific command.
 #endif
         }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
         {
             auto cmd = Command(exe_path).string_arg("--version");
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
-                return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
                         expected_right_tag};
             }
 
@@ -444,13 +436,12 @@ git version 2.17.1.windows.2
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {0, 0, 0}; }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
         {
             auto rc = cmd_execute_and_capture_output(Command(exe_path).string_arg("--version"));
             if (rc.exit_code != 0)
             {
-                return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
                         expected_right_tag};
             }
 
@@ -472,14 +463,13 @@ Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {4, 56, 0}; }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
         {
             auto cmd = Command(exe_path).string_arg("version");
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
-                return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
                         expected_right_tag};
             }
 
@@ -503,7 +493,7 @@ gsutil version: 4.58
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {0, 0, 0}; }
 
-        virtual void add_special_paths(std::vector<path>& out_candidate_paths) const override
+        virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const override
         {
             (void)out_candidate_paths;
             // TODO: Uncomment later
@@ -515,14 +505,13 @@ gsutil version: 4.58
             // "Qt" / "QtIFW-3.1.0" / "bin" / "installerbase.exe");
         }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
         {
             auto cmd = Command(exe_path).string_arg("--framework-version");
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
-                return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
                         expected_right_tag};
             }
 
@@ -542,13 +531,12 @@ gsutil version: 4.58
         virtual const std::string& exe_stem() const override { return m_exe; }
         virtual std::array<int, 3> default_min_version() const override { return {7, 0, 3}; }
 
-        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const path& exe_path) const override
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
         {
             auto rc = cmd_execute_and_capture_output(Command(exe_path).string_arg("--version"));
             if (rc.exit_code != 0)
             {
-                return {Strings::concat(
-                            std::move(rc.output), "\n\nFailed to get version of ", vcpkg::u8string(exe_path), "\n"),
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
                         expected_right_tag};
             }
 
@@ -567,16 +555,25 @@ gsutil version: 4.58
 
     struct ToolCacheImpl final : ToolCache
     {
-        vcpkg::Cache<std::string, path> path_only_cache;
+        vcpkg::Cache<std::string, Path> path_only_cache;
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
 
-        virtual const path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const override
+        virtual const Path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const override
         {
             return path_only_cache.get_lazy(tool, [&]() {
                 if (tool == Tools::IFW_BINARYCREATOR)
-                    return get_tool_path(paths, Tools::IFW_INSTALLER_BASE).parent_path() / "binarycreator.exe";
+                {
+                    auto installer_base = get_tool_path(paths, Tools::IFW_INSTALLER_BASE);
+                    installer_base.replace_filename("binarycreator.exe");
+                    return installer_base;
+                }
+
                 if (tool == Tools::IFW_REPOGEN)
-                    return get_tool_path(paths, Tools::IFW_INSTALLER_BASE).parent_path() / "repogen.exe";
+                {
+                    auto installer_base = get_tool_path(paths, Tools::IFW_INSTALLER_BASE);
+                    installer_base.replace_filename("repogen.exe");
+                    return installer_base;
+                }
 
                 return get_tool_pathversion(paths, tool).p;
             });

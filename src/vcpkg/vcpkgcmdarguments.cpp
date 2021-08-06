@@ -137,7 +137,7 @@ namespace vcpkg
             {
                 arg.erase(arg.begin());
                 std::error_code ec;
-                auto lines = fs.read_lines(vcpkg::u8path(arg), ec);
+                auto lines = fs.read_lines(arg, ec);
                 if (ec)
                 {
                     print2(Color::error, "Error: Could not open response file ", arg, '\n');

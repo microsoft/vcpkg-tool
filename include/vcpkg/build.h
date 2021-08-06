@@ -225,14 +225,14 @@ namespace vcpkg::Build
         std::string cmake_system_name;
         std::string cmake_system_version;
         Optional<std::string> platform_toolset;
-        Optional<path> visual_studio_path;
+        Optional<Path> visual_studio_path;
         Optional<std::string> external_toolchain_file;
         Optional<ConfigurationType> build_type;
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
 
-        path toolchain_file() const;
+        Path toolchain_file() const;
         bool using_vcvars() const;
 
     private:
@@ -319,7 +319,7 @@ namespace vcpkg::Build
         BuildPolicies policies;
     };
 
-    BuildInfo read_build_info(const Filesystem& fs, const path& filepath);
+    BuildInfo read_build_info(const Filesystem& fs, const Path& filepath);
 
     struct AbiEntry
     {
@@ -327,7 +327,7 @@ namespace vcpkg::Build
         std::string value;
 
         AbiEntry() = default;
-        AbiEntry(const std::string& key, const std::string& value) : key(key), value(value) { }
+        AbiEntry(StringView key, StringView value) : key(key.to_string()), value(value.to_string()) { }
 
         bool operator<(const AbiEntry& other) const
         {
@@ -348,7 +348,7 @@ namespace vcpkg::Build
         Optional<const Toolset&> toolset;
         Optional<const std::string&> triplet_abi;
         std::string package_abi;
-        Optional<path> abi_tag_file;
+        Optional<Path> abi_tag_file;
         Optional<const CompilerInfo&> compiler_info;
     };
 
@@ -372,8 +372,8 @@ namespace vcpkg::Build
             Cache<std::string, std::string> compiler_hashes;
             Cache<std::string, CompilerInfo> compiler_info;
         };
-        Cache<path, TripletMapEntry> m_triplet_cache;
-        Cache<path, std::string> m_toolchain_cache;
+        Cache<Path, TripletMapEntry> m_triplet_cache;
+        Cache<Path, std::string> m_toolchain_cache;
 
 #if defined(_WIN32)
         struct EnvMapEntry
