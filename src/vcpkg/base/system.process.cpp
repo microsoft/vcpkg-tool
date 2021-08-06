@@ -322,6 +322,9 @@ namespace vcpkg
             L"VULKAN_SDK",
             // Enable targeted Android NDK
             L"ANDROID_NDK_HOME",
+            // Environmental variables generated automatically by Intel oneAPI after installation
+            L"ONEAPI_ROOT",
+            L"IFORT_COMPILER19",
         };
 
         const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");
