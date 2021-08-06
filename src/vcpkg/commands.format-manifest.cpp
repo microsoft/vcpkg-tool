@@ -169,11 +169,75 @@ Please open an issue at https://github.com/microsoft/vcpkg, with the following o
             }
         }
     }
+
+    /* https://docs.github.com/en/rest/reference/pulls#list-pull-requests + .title + substr to get just with brackets */
+    std::vector<std::string> ports_with_open_prs(const char *repo="microsoft/vcpkg")
+    {
+        std::vector<std::string> ports;
+
+        /* TODO: Equivalent to:
+         * curl -sH "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/"+repo+"/pulls" | jq '.[] | .title
+            "[catch2] Support static build"
+            "[Azure SDK Core] Update to 1.2.0 Aug Release"
+            "[liblzma] Fix for wasm32-emscripten"
+            "[libpqxx] Upgrade up to 7.6.0"
+            "[soundtouch] enable static build"
+            "[catch2] Update to version 2.13.7"
+            "[pybind11] Update to 2.7.1"
+            "Libconfig build on macos"
+            "[simdjson] Update to 0.9.7"
+            "[vcpkg-cmake] Fix vcpkg_copy_pdbs false alarm"
+            "[portmidi] add osx support"
+            "[tensorflow-cc] on x64 Windows with dynamic linkage misses C++ symbols in DLL"
+            "WIP [tensorflow] update CI baseline"
+            "[vcpkg baseline][vcpkg_configure_make] Pass make tool to `vcpkg_build_make`"
+            "[libipc] Add new port named libipc"
+            "[ffmpeg/opencv4] Update opencv4 feature dependency and remove ffmpeg feature 'postproc' from default feature"
+            "[abseil] Upgrade to 20210324.2"
+            "[libvpx] Add pkgconfig"
+            "[ace] Upgrade to 7.0.3"
+            "[spix] Add new port"
+            "[scripts-audit] vcpkg_fixup_pkgconfig"
+            "[tinyfiledialogs] Fix for good"
+            "[sbp] new port"
+            "[directxtk, directxtk12, directxtex] ports updated for August 2021 release"
+            "[libjpeg-turbo] Update wrapper to correctly find debug/release variant"
+            "[sbsms] add new port with version 2.3.0"
+            "[gamenetworkingsockets] fix static build"
+            "[ffmpeg] add CMake targets to FindFFMPEG.cmake module"
+            "[angle] Fix mingw build"
+            "[proj4] Add usage, fixup target PROJ::proj"
+         * */
+        return ports;
+    }
+
+
+    /* https://docs.github.com/en/rest/reference/repos#get-all-repository-topics + .names */
+    std::vector<const char*> get_topics_for_port(const char *port_name) {
+        std::vector<const char*> topics;
+        /*
+         * TODO: Equivalent to:
+         * curl -sH 'Accept: application/vnd.github.mercy-preview+json' https://api.github.com/repos/cpp-redis/cpp_redis/topics | jq .names
+            [
+              "cpp",
+              "cpp11",
+              "cpp17",
+              "cpp-library",
+              "redis",
+              "redis-client",
+              "unix",
+              "windows"
+            ]
+         *
+         * */
+        return topics;
+    }
 }
 
 namespace vcpkg::Commands::FormatManifest
 {
     static constexpr StringLiteral OPTION_ALL = "all";
+    static constexpr StringLiteral OPTION_ALL_MINUS_OPEN_PR = "all-minus-open-pr";
     static constexpr StringLiteral OPTION_CONVERT_CONTROL = "convert-control";
 
     const CommandSwitch FORMAT_SWITCHES[] = {
@@ -197,20 +261,24 @@ namespace vcpkg::Commands::FormatManifest
         bool has_error = false;
 
         const bool format_all = Util::Sets::contains(parsed_args.switches, OPTION_ALL);
+        const bool format_all_minus_open_pr = Util::Sets::contains(parsed_args.switches, OPTION_ALL_MINUS_OPEN_PR);
         const bool convert_control = Util::Sets::contains(parsed_args.switches, OPTION_CONVERT_CONTROL);
+        const bool not_multi_formatting = !format_all || !format_all_minus_open_pr;
 
-        if (!format_all && convert_control)
+        if (not_multi_formatting && convert_control)
         {
-            print2(Color::warning, R"(format-manifest was passed '--convert-control' without '--all'.
+            print2(Color::warning,
+                   R"(format-manifest was passed '--convert-control' without '--all' or 'all-minus-open-pr'.
     This doesn't do anything:
     we will automatically convert all control files passed explicitly.)");
         }
 
-        if (!format_all && args.command_arguments.empty())
+        if (not_multi_formatting && args.command_arguments.empty())
         {
             Checks::exit_with_message(
                 VCPKG_LINE_INFO,
-                "No files to format; please pass either --all, or the explicit files to format or convert.");
+                "No files to format; please pass either '--all' or 'all-minus-open-pr';"
+                " or the explicit files to format or convert.");
         }
 
         std::vector<ToWrite> to_write;
@@ -240,8 +308,14 @@ namespace vcpkg::Commands::FormatManifest
             }
         }
 
-        if (format_all)
+        if (!not_multi_formatting)
         {
+            extern std::vector<const char*> blacklist;
+            if(format_all_minus_open_pr)
+            {
+                /* TODO: Finish */
+                blacklist = ports_with_open_prs();
+            }
             for (const auto& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
                 auto control_path = dir / vcpkg::u8path("CONTROL");
