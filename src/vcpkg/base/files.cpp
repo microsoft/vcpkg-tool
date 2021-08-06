@@ -382,14 +382,10 @@ namespace
 #endif // ^^^ !_WIN32
     }
 
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-const-variable"
-#endif // __clang__
+VCPKG_CLANG_DIAGNOSTIC(push)
+VCPKG_CLANG_DIAGNOSTIC(ignored "-Wunused-const-variable")
     constexpr char preferred_separator = VCPKG_PREFERED_SEPARATOR[0];
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif // __clang__
+VCPKG_CLANG_DIAGNOSTIC(pop)
 
     void translate_not_found_to_success(std::error_code& ec)
     {

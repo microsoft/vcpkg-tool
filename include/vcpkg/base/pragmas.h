@@ -26,10 +26,18 @@
 #endif
 
 // the static_assert(true, "")s are to avoid the extra ';' warning
-#ifdef _MSC_VER
-#define VCPKG_MSVC_WARNING(...) __pragma(warning(__VA_ARGS__))
-#define GCC_DIAGNOSTIC(...)
-#else
+#if defined(__clang__)
+// check clang first because it may define _MSC_VER
 #define VCPKG_MSVC_WARNING(...)
-#define GCC_DIAGNOSTIC(...) _Pragma("diagnostic " #__VA_ARGS__)
+#define VCPKG_GCC_DIAGNOSTIC(...)
+#define VCPKG_CLANG_DIAGNOSTIC(...) _Pragma("diagnostic " #__VA_ARGS__)
+#elif defined(_MSC_VER)
+#define VCPKG_MSVC_WARNING(...) __pragma(warning(__VA_ARGS__))
+#define VCPKG_GCC_DIAGNOSTIC(...)
+#define VCPKG_CLANG_DIAGNOSTIC(...)
+#else
+// gcc
+#define VCPKG_MSVC_WARNING(...)
+#define VCPKG_GCC_DIAGNOSTIC(...) _Pragma("diagnostic " #__VA_ARGS__)
+#define VCPKG_CLANG_DIAGNOSTIC(...)
 #endif
