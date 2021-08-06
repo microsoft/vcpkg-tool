@@ -40,7 +40,7 @@ jobs:
         git -C "$VCPKG_ROOT" checkout $VCPKG_REPO_COMMIT_SHA
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
-        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_CXX_COMPILER=g++-6 -B build.amd64.debug
+        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=OFF -DVCPKG_WARNINGS_AS_ERRORS=OFF -DVCPKG_BUILD_FUZZING=ON -DCMAKE_CXX_COMPILER=g++-6 -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true
