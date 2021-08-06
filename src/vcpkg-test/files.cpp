@@ -227,7 +227,15 @@ TEST_CASE ("vcpkg Path::operator/", "[filesystem][files]")
     test_op_slash("C:/a/b", "D:/c/d", "D:/c/d");
     test_op_slash("C:/a/b", "D:c/d", "D:c/d");
     test_op_slash("C:/a/b", "C:c/d", "C:/a/b\\c/d");
-#endif
+#else // ^^^ _WIN32 / !_WIN32 vvv
+    test_op_slash("C:/a/b", "c/d", "C:/a/b/c/d");
+    test_op_slash("C:a/b", "c/d", "C:a/b//c/d");
+    test_op_slash("C:a/b", "/c/d", "C:a/b/c/d");
+    test_op_slash("C:/a/b", "/c/d", "C:/a/b/c/d");
+    test_op_slash("C:/a/b", "D:/c/d", "C:/a/b/D:/c/d");
+    test_op_slash("C:/a/b", "D:c/d", "C:/a/b/D:c/d");
+    test_op_slash("C:/a/b", "C:c/d", "C:/a/b/C:c/d");
+#endif // ^^^ !_WIN32
 }
 
 static void test_op_plus(StringView base, StringView append)
@@ -245,8 +253,6 @@ TEST_CASE ("vcpkg Path::operator+", "[filesystem][files]")
     test_op_plus("/a/b", "c/d");
     test_op_plus("a/b", "c/d");
     test_op_plus("/a/b", "/c/d");
-
-#if defined(_WIN32)
     test_op_plus("C:/a/b", "c/d");
     test_op_plus("C:a/b", "c/d");
     test_op_plus("C:a/b", "/c/d");
@@ -254,7 +260,6 @@ TEST_CASE ("vcpkg Path::operator+", "[filesystem][files]")
     test_op_plus("C:/a/b", "D:/c/d");
     test_op_plus("C:/a/b", "D:c/d");
     test_op_plus("C:/a/b", "C:c/d");
-#endif
 }
 
 static void test_preferred(Path p, StringView expected)
@@ -276,9 +281,12 @@ TEST_CASE ("vcpkg Path::preferred and Path::make_preferred", "[filesystem][files
     test_preferred("a/b", "a" VCPKG_PREFERED_SEPARATOR "b");
 
 #if defined(_WIN32)
+    test_preferred(R"(\\server/share\a/b)", R"(\\server\share\a\b)");
     test_preferred(R"(//server/share\a/b)", R"(\\server\share\a\b)");
-    test_preferred(R"(//server/share\a/b)", R"(\\server\share\a\b)");
-#endif
+#else // ^^^ _WIN32 / !_WIN32 vvv
+    test_preferred(R"(//server/share\a/b)", R"(/server/share\a/b)");
+    test_preferred(R"(//server/share\a/b)", R"(/server/share\a/b)");
+#endif // ^^^ !_WIN32
 }
 
 static void test_lexically_normal(Path p, Path expected_generic)
@@ -411,7 +419,24 @@ TEST_CASE ("Path::make_parent_path and Path::parent_path", "[filesystem][files]"
     test_parent_path(R"(\\server\a)", R"(\\server\)");
     test_parent_path(R"(\\server\a\)", R"(\\server\a)");
     test_parent_path(R"(\\server\a\b)", R"(\\server\a)");
-#endif // _WIN32
+#else // ^^^ _WIN32 / !_WIN32 vvv
+    test_parent_path("C:/", "C:");
+    test_parent_path("C:/a", "C:");
+    test_parent_path("C:/a/", "C:/a");
+    test_parent_path("C:/a/b", "C:/a");
+    test_parent_path("C:", "");
+    test_parent_path("C:a", "");
+    test_parent_path("C:a/", "C:a");
+    test_parent_path("C:a/b", "C:a");
+    test_parent_path(R"(C:\)", "");
+    test_parent_path(R"(C:\a)", "");
+    test_parent_path(R"(C:\a\)", "");
+    test_parent_path(R"(C:\a\b)", "");
+    test_parent_path(R"(\\server\)", "");
+    test_parent_path(R"(\\server\a)", "");
+    test_parent_path(R"(\\server\a\)", "");
+    test_parent_path(R"(\\server\a\b)", "");
+#endif // ^^^ !_WIN32
 }
 
 static void test_path_decomposition(
@@ -457,10 +482,15 @@ TEST_CASE ("Path decomposition", "[filesystem][files]")
     test_path_decomposition("C:a.ext", false, "a", ".ext");
     test_path_decomposition("C:/a", true, "a", "");
     test_path_decomposition("C:/a.ext", true, "a", ".ext");
+#else // ^^^ _WIN32 // !_WIN32 vvv
+    test_path_decomposition("C:a", false, "C:a", "");
+    test_path_decomposition("C:a.ext", false, "C:a", ".ext");
+    test_path_decomposition("C:/a", true, "a", "");
+    test_path_decomposition("C:/a.ext", true, "a", ".ext");
+#endif // ^^^ !_WIN32
 
     test_path_decomposition("//server/a", true, "a", "");
     test_path_decomposition("//server/a.ext", true, "a", ".ext");
-#endif // _WIN32
 }
 
 TEST_CASE ("remove all", "[files]")
