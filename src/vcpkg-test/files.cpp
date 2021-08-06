@@ -229,9 +229,9 @@ TEST_CASE ("vcpkg Path::operator/", "[filesystem][files]")
     test_op_slash("C:/a/b", "C:c/d", "C:/a/b\\c/d");
 #else // ^^^ _WIN32 / !_WIN32 vvv
     test_op_slash("C:/a/b", "c/d", "C:/a/b/c/d");
-    test_op_slash("C:a/b", "c/d", "C:a/b//c/d");
-    test_op_slash("C:a/b", "/c/d", "C:a/b/c/d");
-    test_op_slash("C:/a/b", "/c/d", "C:/a/b/c/d");
+    test_op_slash("C:a/b", "c/d", "C:a/b/c/d");
+    test_op_slash("C:a/b", "/c/d", "/c/d");
+    test_op_slash("C:/a/b", "/c/d", "/c/d");
     test_op_slash("C:/a/b", "D:/c/d", "C:/a/b/D:/c/d");
     test_op_slash("C:/a/b", "D:c/d", "C:/a/b/D:c/d");
     test_op_slash("C:/a/b", "C:c/d", "C:/a/b/C:c/d");
@@ -474,21 +474,27 @@ TEST_CASE ("Path decomposition", "[filesystem][files]")
         true
 #endif // ^^^ !_WIN32
         ;
+
+    bool drive_is_absolute =
+#if defined(_WIN32)
+        true
+#else // ^^^ _WIN32 // !_WIN32 vvv
+        false
+#endif // ^^^ !_WIN32
+        ;
     test_path_decomposition("/a/b", single_slash_is_absolute, "b", "");
     test_path_decomposition("/a/b.ext", single_slash_is_absolute, "b", ".ext");
 
 #if defined(_WIN32)
     test_path_decomposition("C:a", false, "a", "");
     test_path_decomposition("C:a.ext", false, "a", ".ext");
-    test_path_decomposition("C:/a", true, "a", "");
-    test_path_decomposition("C:/a.ext", true, "a", ".ext");
 #else // ^^^ _WIN32 // !_WIN32 vvv
     test_path_decomposition("C:a", false, "C:a", "");
     test_path_decomposition("C:a.ext", false, "C:a", ".ext");
-    test_path_decomposition("C:/a", true, "a", "");
-    test_path_decomposition("C:/a.ext", true, "a", ".ext");
 #endif // ^^^ !_WIN32
 
+    test_path_decomposition("C:/a", drive_is_absolute, "a", "");
+    test_path_decomposition("C:/a.ext", drive_is_absolute, "a", ".ext");
     test_path_decomposition("//server/a", true, "a", "");
     test_path_decomposition("//server/a.ext", true, "a", ".ext");
 }
