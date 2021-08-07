@@ -1,10 +1,10 @@
 variables:
   VCPKG_REPO_COMMIT_SHA: '261c458af6e3eed5d099144aff95d2b5035f656b'
 jobs:
-- job: linux
-  displayName: 'Linux'
+- job: linux_gcc_9
+  displayName: 'Ubuntu 20.04 with GCC 9'
   pool:
-    vmImage: 'ubuntu-latest'
+    vmImage: 'ubuntu-20.04'
   variables:
     - name: 'VCPKG_ROOT'
       value: $(Build.SourcesDirectory)/vcpkg-root
@@ -46,13 +46,6 @@ jobs:
       failOnStderr: true
     - bash: build.amd64.debug/vcpkg-test
       displayName: 'Run vcpkg tests'
-    - task: PowerShell@2
-      displayName: 'Run vcpkg end-to-end tests'
-      inputs:
-        filePath: 'azure-pipelines/end-to-end-tests.ps1'
-        arguments: '-Triplet x64-linux -WorkingRoot work -VcpkgRoot $(VCPKG_ROOT)'
-        workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
-        pwsh: true
 - job: linux_gcc_7
   displayName: 'Ubuntu 18.04 with GCC 7'
   pool:
