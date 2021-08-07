@@ -992,6 +992,7 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::DEFAULT_FEATURES;
     constexpr StringLiteral ManifestDeserializer::SUPPORTS;
     constexpr StringLiteral ManifestDeserializer::OVERRIDES;
+    constexpr StringLiteral ManifestDeserializer::BUILTIN_BASELINE;
 
     SourceControlFile SourceControlFile::clone() const
     {
