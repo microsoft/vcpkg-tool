@@ -1020,6 +1020,8 @@ namespace
 
 namespace vcpkg
 {
+    constexpr StringLiteral VersionDbEntryDeserializer::GIT_TREE;
+    constexpr StringLiteral VersionDbEntryDeserializer::PATH;
     StringView VersionDbEntryDeserializer::type_name() const { return "a version database entry"; }
     View<StringView> VersionDbEntryDeserializer::valid_fields() const
     {
