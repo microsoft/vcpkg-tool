@@ -6,7 +6,7 @@
 #include <chrono>
 #include <string>
 
-namespace vcpkg::Chrono
+namespace vcpkg
 {
     struct ElapsedTime
     {

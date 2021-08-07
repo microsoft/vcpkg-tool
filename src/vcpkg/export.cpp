@@ -117,7 +117,7 @@ namespace vcpkg::Export
 
     static std::string create_export_id()
     {
-        const tm date_time = Chrono::get_current_date_time_local();
+        const tm date_time = get_current_date_time_local();
 
         // Format is: YYYYmmdd-HHMMSS
         // 15 characters + 1 null terminating character will be written for a total of 16 chars

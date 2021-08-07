@@ -425,7 +425,7 @@ namespace vcpkg::Install
     struct TrackedPackageInstallGuard
     {
         SpecSummary* current_summary = nullptr;
-        Chrono::ElapsedTimer build_timer = Chrono::ElapsedTimer::create_started();
+        ElapsedTimer build_timer = ElapsedTimer::create_started();
 
         TrackedPackageInstallGuard(const size_t action_index,
                                    const size_t action_count,
@@ -461,7 +461,7 @@ namespace vcpkg::Install
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
 
-        const auto timer = Chrono::ElapsedTimer::create_started();
+        const auto timer = ElapsedTimer::create_started();
         for (auto&& action : action_plan.remove_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
@@ -814,7 +814,7 @@ namespace vcpkg::Install
             auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
             if (it_pkgsconfig != options.settings.end())
             {
-                Metrics::g_metrics.lock()->track_property("x-write-nuget-packages-config", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             const auto& manifest_path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO);
@@ -884,20 +884,20 @@ namespace vcpkg::Install
                     return dep.constraint.type != Versions::Constraint::Type::None;
                 }))
             {
-                Metrics::g_metrics.lock()->track_property("manifest_version_constraint", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_version_constraint", "defined");
             }
 
             if (!manifest_scf.core_paragraph->overrides.empty())
             {
-                Metrics::g_metrics.lock()->track_property("manifest_overrides", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_overrides", "defined");
             }
 
             if (auto p_baseline = manifest_scf.core_paragraph->builtin_baseline.get())
             {
-                Metrics::g_metrics.lock()->track_property("manifest_baseline", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_baseline", "defined");
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    Metrics::g_metrics.lock()->track_property("versioning-error-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline (%s) was not a valid commit sha: "
                                                "expected 40 lowercase hexadecimal characters.\n%s\n",
@@ -1025,7 +1025,7 @@ namespace vcpkg::Install
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            Metrics::g_metrics.lock()->track_property("x-write-nuget-packages-config", "defined");
+            LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
             Build::compute_all_abis(paths, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
@@ -1113,7 +1113,7 @@ namespace vcpkg::Install
         return nullptr;
     }
 
-    static std::string xunit_result(const PackageSpec& spec, Chrono::ElapsedTime time, BuildResult code)
+    static std::string xunit_result(const PackageSpec& spec, ElapsedTime time, BuildResult code)
     {
         std::string message_block;
         const char* result_string = "";
@@ -1187,6 +1187,6 @@ namespace vcpkg::Install
                                             Hash::get_string_hash(version_as_string, Hash::Algorithm::Sha256));
         }
 
-        Metrics::g_metrics.lock()->track_property("installplan_1", specs_string);
+        LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", specs_string);
     }
 }

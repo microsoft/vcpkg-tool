@@ -114,11 +114,11 @@ namespace vcpkg::Commands::CI
     struct XunitTestResults
     {
     public:
-        XunitTestResults() { m_assembly_run_datetime = Chrono::CTime::get_current_date_time(); }
+        XunitTestResults() { m_assembly_run_datetime = CTime::get_current_date_time(); }
 
         void add_test_results(const std::string& spec,
                               const Build::BuildResult& build_result,
-                              const Chrono::ElapsedTime& elapsed_time,
+                              const ElapsedTime& elapsed_time,
                               const std::string& abi_tag,
                               const std::vector<std::string>& features)
         {
@@ -128,7 +128,7 @@ namespace vcpkg::Commands::CI
         // Starting a new test collection
         void push_collection(const std::string& name) { m_collections.push_back({name}); }
 
-        void collection_time(const vcpkg::Chrono::ElapsedTime& time) { m_collections.back().time = time; }
+        void collection_time(const vcpkg::ElapsedTime& time) { m_collections.back().time = time; }
 
         const std::string& build_xml()
         {
@@ -149,14 +149,14 @@ namespace vcpkg::Commands::CI
             return m_xml;
         }
 
-        void assembly_time(const vcpkg::Chrono::ElapsedTime& assembly_time) { m_assembly_time = assembly_time; }
+        void assembly_time(const vcpkg::ElapsedTime& assembly_time) { m_assembly_time = assembly_time; }
 
     private:
         struct XunitTest
         {
             std::string name;
             vcpkg::Build::BuildResult result;
-            vcpkg::Chrono::ElapsedTime time;
+            vcpkg::ElapsedTime time;
             std::string abi_tag;
             std::vector<std::string> features;
         };
@@ -164,7 +164,7 @@ namespace vcpkg::Commands::CI
         struct XunitCollection
         {
             std::string name;
-            vcpkg::Chrono::ElapsedTime time;
+            vcpkg::ElapsedTime time;
             std::vector<XunitTest> tests;
         };
 
@@ -262,8 +262,8 @@ namespace vcpkg::Commands::CI
                                      message_block);
         }
 
-        Optional<vcpkg::Chrono::CTime> m_assembly_run_datetime;
-        vcpkg::Chrono::ElapsedTime m_assembly_time;
+        Optional<vcpkg::CTime> m_assembly_run_datetime;
+        vcpkg::ElapsedTime m_assembly_time;
         std::vector<XunitCollection> m_collections;
 
         std::string m_xml;
@@ -343,7 +343,7 @@ namespace vcpkg::Commands::CI
 
         var_provider.load_tag_vars(install_specs, provider, host_triplet);
 
-        auto timer = Chrono::ElapsedTimer::create_started();
+        auto timer = ElapsedTimer::create_started();
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
@@ -498,7 +498,7 @@ namespace vcpkg::Commands::CI
         std::vector<std::string> all_ports =
             Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         std::vector<TripletAndSummary> results;
-        auto timer = Chrono::ElapsedTimer::create_started();
+        auto timer = ElapsedTimer::create_started();
 
         Input::check_triplet(target_triplet, paths);
 
@@ -551,7 +551,7 @@ namespace vcpkg::Commands::CI
         }
         else
         {
-            auto collection_timer = Chrono::ElapsedTimer::create_started();
+            auto collection_timer = ElapsedTimer::create_started();
             auto summary = Install::perform(args,
                                             action_plan,
                                             Install::KeepGoing::YES,
@@ -580,7 +580,7 @@ namespace vcpkg::Commands::CI
                 auto& port_features = split_specs->features.at(port.first);
                 xunitTestResults.add_test_results(port.first.to_string(),
                                                   port.second,
-                                                  Chrono::ElapsedTime{},
+                                                  ElapsedTime{},
                                                   split_specs->abi_map.at(port.first),
                                                   port_features);
             }

@@ -14,13 +14,13 @@
 #pragma comment(lib, "winhttp")
 #endif
 
-namespace vcpkg::Metrics
+namespace vcpkg
 {
-    Util::LockGuarded<Metrics> g_metrics;
+    LockGuarded<Metrics> g_metrics;
 
-    static std::string get_current_date_time()
+    static std::string get_current_date_time_string()
     {
-        auto maybe_time = Chrono::CTime::get_current_date_time();
+        auto maybe_time = CTime::get_current_date_time();
         if (auto ptime = maybe_time.get())
         {
             return ptime->to_string();
@@ -147,7 +147,7 @@ namespace vcpkg::Metrics
     {
         std::string user_id = generate_random_UUID();
         std::string user_timestamp;
-        std::string timestamp = get_current_date_time();
+        std::string timestamp = get_current_date_time_string();
 
         Json::Object properties;
         Json::Object measurements;
@@ -252,7 +252,7 @@ namespace vcpkg::Metrics
     std::string get_MAC_user()
     {
 #if defined(_WIN32)
-        if (!g_metrics.lock()->metrics_enabled())
+        if (!LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
         {
             return "{}";
         }
@@ -290,7 +290,7 @@ namespace vcpkg::Metrics
     void Metrics::init_user_information(std::string& user_id, std::string& first_use_time)
     {
         user_id = generate_random_UUID();
-        first_use_time = get_current_date_time();
+        first_use_time = get_current_date_time_string();
     }
 
     void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }

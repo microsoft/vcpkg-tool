@@ -28,7 +28,7 @@ namespace vcpkg::Install
 
         PackageSpec spec;
         Build::ExtendedBuildResult build_result;
-        vcpkg::Chrono::ElapsedTime timing;
+        vcpkg::ElapsedTime timing;
 
         const Dependencies::InstallPlanAction* action;
     };

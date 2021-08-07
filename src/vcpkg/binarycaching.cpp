@@ -1277,7 +1277,7 @@ namespace
             auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
             if (auto p_str = maybe_cachepath.get())
             {
-                Metrics::g_metrics.lock()->track_property("VCPKG_DEFAULT_BINARY_CACHE", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("VCPKG_DEFAULT_BINARY_CACHE", "defined");
                 Path path = *p_str;
                 path.make_preferred();
                 if (!get_real_filesystem().is_directory(path))
@@ -1705,7 +1705,7 @@ ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(
 {
     if (!arg || arg.get()->empty()) return Downloads::DownloadManagerConfig{};
 
-    Metrics::g_metrics.lock()->track_property("asset-source", "defined");
+    LockGuardPtr<Metrics>(g_metrics)->track_property("asset-source", "defined");
 
     AssetSourcesState s;
     AssetSourcesParser parser(*arg.get(), Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV), &s);
@@ -1776,7 +1776,7 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     const std::string& env_string, View<std::string> args)
 {
     {
-        auto metrics = Metrics::g_metrics.lock();
+        LockGuardPtr<Metrics> metrics(g_metrics);
         if (!env_string.empty())
         {
             metrics->track_property("VCPKG_BINARY_SOURCES", "defined");
@@ -1816,7 +1816,7 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     if (s.m_cleared)
     {
-        Metrics::g_metrics.lock()->track_property("binarycaching-clear", "defined");
+        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-clear", "defined");
     }
 
     std::vector<std::unique_ptr<IBinaryProvider>> providers;
@@ -1836,14 +1836,14 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     if (!s.url_templates_to_get.empty())
     {
-        Metrics::g_metrics.lock()->track_property("binarycaching-url-get", "defined");
+        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-url-get", "defined");
         providers.push_back(std::make_unique<HttpGetBinaryProvider>(std::move(s.url_templates_to_get)));
     }
 
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||
         !s.configs_to_write.empty())
     {
-        Metrics::g_metrics.lock()->track_property("binarycaching-nuget", "defined");
+        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-nuget", "defined");
         providers.push_back(std::make_unique<NugetBinaryProvider>(std::move(s.sources_to_read),
                                                                   std::move(s.sources_to_write),
                                                                   std::move(s.configs_to_read),
@@ -1888,7 +1888,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
     auto vcpkg_nuget_repository = get_environment_variable("VCPKG_NUGET_REPOSITORY");
     if (auto p = vcpkg_nuget_repository.get())
     {
-        Metrics::g_metrics.lock()->track_property("VCPKG_NUGET_REPOSITORY", "defined");
+        LockGuardPtr<Metrics>(g_metrics)->track_property("VCPKG_NUGET_REPOSITORY", "defined");
         return {std::move(*p)};
     }
 
@@ -1904,7 +1904,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
         return {};
     }
 
-    Metrics::g_metrics.lock()->track_property("GITHUB_REPOSITORY", "defined");
+    LockGuardPtr<Metrics>(g_metrics)->track_property("GITHUB_REPOSITORY", "defined");
     return {Strings::concat(gh_server, '/', gh_repo, ".git"),
             get_environment_variable("GITHUB_REF").value_or(""),
             get_environment_variable("GITHUB_SHA").value_or("")};

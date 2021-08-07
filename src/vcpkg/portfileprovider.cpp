@@ -199,7 +199,7 @@ namespace vcpkg::PortFileProvider
                     }
                     else
                     {
-                        Metrics::g_metrics.lock()->track_property("versioning-error-version", "defined");
+                        LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-version", "defined");
                         return maybe_path.error();
                     }
                 }
