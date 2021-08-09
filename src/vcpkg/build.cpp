@@ -143,7 +143,7 @@ namespace vcpkg::Build
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
         action->build_options.clean_packages = CleanPackages::NO;
 
-        const auto build_timer = Chrono::ElapsedTimer::create_started();
+        const auto build_timer = ElapsedTimer::create_started();
         const auto result = Build::build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
         print2("Elapsed time for package ", spec, ": ", build_timer, '\n');
 
@@ -891,7 +891,7 @@ namespace vcpkg::Build
             vcpkg::printf("-- Installing port from location: %s\n", scfl.source_location);
         }
 
-        const auto timer = Chrono::ElapsedTimer::create_started();
+        const auto timer = ElapsedTimer::create_started();
 
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
 
@@ -933,21 +933,20 @@ namespace vcpkg::Build
         const auto spec_string = action.spec.to_string();
 
         {
-            auto locked_metrics = Metrics::g_metrics.lock();
-
-            locked_metrics->track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
-                                                Strings::join(",",
-                                                              action.feature_list,
-                                                              [](const std::string& feature) {
-                                                                  return Hash::get_string_hash(feature,
-                                                                                               Hash::Algorithm::Sha256);
-                                                              }) +
-                                                "]",
-                                            buildtimeus);
+            LockGuardPtr<Metrics> metrics(g_metrics);
+            metrics->track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
+                                         Strings::join(",",
+                                                       action.feature_list,
+                                                       [](const std::string& feature) {
+                                                           return Hash::get_string_hash(feature,
+                                                                                        Hash::Algorithm::Sha256);
+                                                       }) +
+                                         "]",
+                                     buildtimeus);
             if (return_code != 0)
             {
-                locked_metrics->track_property("error", "build failed");
-                locked_metrics->track_property("build_error", spec_string);
+                metrics->track_property("error", "build failed");
+                metrics->track_property("build_error", spec_string);
                 return BuildResult::BUILD_FAILED;
             }
         }

@@ -21,7 +21,7 @@ namespace vcpkg::Debug
     {
         if (g_debugging)
         {
-            auto timer = Chrono::ElapsedTimer::create_started();
+            auto timer = ElapsedTimer::create_started();
             auto&& result = f();
             print2("[DEBUG] ", line, " took ", timer, '\n');
             return static_cast<R&&>(result);
@@ -35,7 +35,7 @@ namespace vcpkg::Debug
     {
         if (g_debugging)
         {
-            auto timer = Chrono::ElapsedTimer::create_started();
+            auto timer = ElapsedTimer::create_started();
             f();
             print2("[DEBUG] ", line, " took ", timer, '\n');
         }

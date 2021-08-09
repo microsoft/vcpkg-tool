@@ -416,7 +416,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                           script_path.generic_u8string());
 
             {
-                auto locked_metrics = Metrics::g_metrics.lock();
+                auto locked_metrics = LockGuardPtr<Metrics>(g_metrics);
                 locked_metrics->track_property("error", "powershell script failed");
                 locked_metrics->track_property("title", TITLE);
             }

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace vcpkg::Util
+namespace vcpkg
 {
     template<class T>
     struct LockGuardPtr;

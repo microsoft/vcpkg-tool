@@ -570,7 +570,7 @@ namespace vcpkg
 #if defined(_WIN32)
     void cmd_execute_background(const Command& cmd_line)
     {
-        auto timer = Chrono::ElapsedTimer::create_started();
+        auto timer = ElapsedTimer::create_started();
 
         auto process_info =
             windows_create_windowless_process(cmd_line.command_line(),
@@ -632,7 +632,7 @@ namespace vcpkg
 
     int cmd_execute(const Command& cmd_line, InWorkingDirectory wd, const Environment& env)
     {
-        auto timer = Chrono::ElapsedTimer::create_started();
+        auto timer = ElapsedTimer::create_started();
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
         g_ctrl_c_state.transition_to_spawn_process();
@@ -690,7 +690,7 @@ namespace vcpkg
                                     std::function<void(StringView)> data_cb,
                                     const Environment& env)
     {
-        auto timer = Chrono::ElapsedTimer::create_started();
+        auto timer = ElapsedTimer::create_started();
 
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;

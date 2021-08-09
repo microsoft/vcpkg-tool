@@ -1,7 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
 
-namespace vcpkg::Chrono
+namespace vcpkg
 {
     static std::time_t get_current_time_as_time_since_epoch()
     {
@@ -175,6 +175,6 @@ namespace vcpkg::Chrono
     tm get_current_date_time_local()
     {
         const std::time_t now_time = get_current_time_as_time_since_epoch();
-        return Chrono::to_local_time(now_time);
+        return to_local_time(now_time);
     }
 }

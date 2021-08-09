@@ -31,7 +31,7 @@ namespace vcpkg::Commands::Autocomplete
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        Metrics::g_metrics.lock()->set_send_metrics(false);
+        LockGuardPtr<Metrics>(g_metrics)->set_send_metrics(false);
         const std::string to_autocomplete = Strings::join(" ", args.command_arguments);
         const std::vector<std::string> tokens = Strings::split(to_autocomplete, ' ');
 

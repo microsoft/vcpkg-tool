@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace vcpkg::Metrics
+namespace vcpkg
 {
     struct Metrics
     {
@@ -31,7 +31,7 @@ namespace vcpkg::Metrics
         void flush(Filesystem& fs);
     };
 
-    extern Util::LockGuarded<Metrics> g_metrics;
+    extern LockGuarded<Metrics> g_metrics;
 
     std::string get_MAC_user();
 }

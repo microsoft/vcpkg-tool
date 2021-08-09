@@ -2,12 +2,12 @@
 
 #include <vcpkg/base/chrono.h>
 
-namespace Chrono = vcpkg::Chrono;
+using namespace vcpkg;
 
 TEST_CASE ("parse time", "[chrono]")
 {
     auto timestring = "1990-02-03T04:05:06.0Z";
-    auto maybe_time = Chrono::CTime::parse(timestring);
+    auto maybe_time = CTime::parse(timestring);
 
     REQUIRE(maybe_time.has_value());
     REQUIRE(maybe_time.get()->to_string() == timestring);
@@ -15,15 +15,15 @@ TEST_CASE ("parse time", "[chrono]")
 
 TEST_CASE ("parse blank time", "[chrono]")
 {
-    auto maybe_time = Chrono::CTime::parse("");
+    auto maybe_time = CTime::parse("");
 
     REQUIRE_FALSE(maybe_time.has_value());
 }
 
 TEST_CASE ("difference of times", "[chrono]")
 {
-    auto maybe_time1 = Chrono::CTime::parse("1990-02-03T04:05:06.0Z");
-    auto maybe_time2 = Chrono::CTime::parse("1990-02-10T04:05:06.0Z");
+    auto maybe_time1 = CTime::parse("1990-02-03T04:05:06.0Z");
+    auto maybe_time2 = CTime::parse("1990-02-10T04:05:06.0Z");
 
     REQUIRE(maybe_time1.has_value());
     REQUIRE(maybe_time2.has_value());

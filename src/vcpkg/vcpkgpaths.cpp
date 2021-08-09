@@ -189,7 +189,7 @@ namespace vcpkg
                     auto maybe_cachepath = get_environment_variable("X_VCPKG_REGISTRIES_CACHE");
                     if (auto p_str = maybe_cachepath.get())
                     {
-                        Metrics::g_metrics.lock()->track_property("X_VCPKG_REGISTRIES_CACHE", "defined");
+                        LockGuardPtr<Metrics>(g_metrics)->track_property("X_VCPKG_REGISTRIES_CACHE", "defined");
                         Path path = *p_str;
                         path.make_preferred();
                         const auto status = get_real_filesystem().status(path, VCPKG_LINE_INFO);
@@ -361,8 +361,7 @@ namespace vcpkg
         {
             auto default_registry = config_file.config.registry_set.default_registry();
             auto other_registries = config_file.config.registry_set.registries();
-            auto metrics = Metrics::g_metrics.lock();
-
+            LockGuardPtr<Metrics> metrics(g_metrics);
             if (default_registry)
             {
                 metrics->track_property("registries-default-registry-kind", default_registry->kind());
@@ -1140,9 +1139,10 @@ namespace vcpkg
             bool enabled;
         } flags[] = {{VcpkgCmdArguments::MANIFEST_MODE_FEATURE, manifest_mode_enabled()}};
 
+        LockGuardPtr<Metrics> metrics(g_metrics);
         for (const auto& flag : flags)
         {
-            Metrics::g_metrics.lock()->track_feature(flag.flag.to_string(), flag.enabled);
+            metrics->track_feature(flag.flag.to_string(), flag.enabled);
         }
     }
 

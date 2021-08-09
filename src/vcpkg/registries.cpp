@@ -80,7 +80,8 @@ namespace
                     paths.git_find_object_id_for_remote_registry_path(e.value(), registry_versions_dir_name);
                 if (!maybe_tree)
                 {
-                    Metrics::g_metrics.lock()->track_property("registries-error-no-versions-at-commit", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-no-versions-at-commit",
+                                                                     "defined");
                     Checks::exit_with_message(
                         VCPKG_LINE_INFO,
                         "Error: could not find the git tree for `versions` in repo `%s` at commit `%s`: %s",
@@ -521,7 +522,8 @@ namespace
                 print2("Fetching baseline information from ", m_repo, "...\n");
                 if (auto err = paths.git_fetch(m_repo, m_baseline_identifier))
                 {
-                    Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
+                                                                     "defined");
                     Checks::exit_with_message(
                         VCPKG_LINE_INFO,
                         "Error: Couldn't find baseline `\"%s\"` for repo %s:\n%s\nError: Failed to fetch %s:\n%s",
@@ -536,7 +538,7 @@ namespace
 
             if (!maybe_contents.has_value())
             {
-                Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline", "defined");
                 Checks::exit_with_message(VCPKG_LINE_INFO,
                                           "Error: Couldn't find baseline in commit `\"%s\"` from repo %s:\n%s\n",
                                           m_baseline_identifier,
@@ -554,7 +556,8 @@ namespace
                 }
                 else
                 {
-                    Metrics::g_metrics.lock()->track_property("registries-error-could-not-find-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
+                                                                     "defined");
                     Checks::exit_maybe_upgrade(
                         VCPKG_LINE_INFO,
                         "The baseline.json from commit `\"%s\"` in the repo %s did not contain a \"default\" field.",
@@ -1017,6 +1020,8 @@ namespace
 
 namespace vcpkg
 {
+    constexpr StringLiteral VersionDbEntryDeserializer::GIT_TREE;
+    constexpr StringLiteral VersionDbEntryDeserializer::PATH;
     StringView VersionDbEntryDeserializer::type_name() const { return "a version database entry"; }
     View<StringView> VersionDbEntryDeserializer::valid_fields() const
     {
