@@ -67,24 +67,46 @@ namespace vcpkg::Archives
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".msi"))
         {
-            // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
-            // until it finishes (wrap in cmd /c).
-            const auto code_and_output = cmd_execute_and_capture_output(
-                Command{"cmd"}
-                    .string_arg("/c")
-                    .string_arg("msiexec")
-                    // "/a" is administrative mode, which unpacks without modifying the system
-                    .string_arg("/a")
-                    .path_arg(archive)
-                    .string_arg("/qn")
-                    // msiexec requires quotes to be after "TARGETDIR=":
-                    //      TARGETDIR="C:\full\path\to\dest"
-                    .raw_arg(Strings::concat("TARGETDIR=", Command{to_path_partial}.extract())));
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               code_and_output.exit_code == 0,
-                               "msiexec failed while extracting '%s' with message:\n%s",
-                               archive,
-                               code_and_output.output);
+            // MSI installation sometimes requires a global lock and fails if another installation is concurrent. Loop
+            // to enable retries.
+            for (int i = 0;; ++i)
+            {
+                // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
+                // until it finishes (wrap in cmd /c).
+                const auto code_and_output = cmd_execute_and_capture_output(
+                    Command{"cmd"}
+                        .string_arg("/c")
+                        .string_arg("msiexec")
+                        // "/a" is administrative mode, which unpacks without modifying the system
+                        .string_arg("/a")
+                        .path_arg(archive)
+                        .string_arg("/qn")
+                        // msiexec requires quotes to be after "TARGETDIR=":
+                        //      TARGETDIR="C:\full\path\to\dest"
+                        .raw_arg(Strings::concat("TARGETDIR=", Command{to_path_partial}.extract())));
+
+                if (code_and_output.exit_code == 0)
+                {
+                    // Success
+                    break;
+                }
+
+                // Retry up to 20 times
+                if (i < 19)
+                {
+                    if (code_and_output.exit_code == 1618)
+                    {
+                        // ERROR_INSTALL_ALREADY_RUNNING
+                        print2("Another installation is in progress on the machine, sleeping 6s before retrying.\n");
+                        std::this_thread::sleep_for(std::chrono::seconds(6));
+                        continue;
+                    }
+                }
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          "msiexec failed while extracting '%s' with message:\n%s",
+                                          archive,
+                                          code_and_output.output);
+            }
         }
         else
         {
