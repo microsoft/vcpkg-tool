@@ -912,11 +912,14 @@ namespace vcpkg::Install
             auto baseprovider = PortFileProvider::make_baseline_provider(paths);
 
             std::vector<std::string> extended_overlay_ports;
-            extended_overlay_ports.reserve(args.overlay_ports.size() + 1);
+            extended_overlay_ports.reserve(args.overlay_ports.size() + 2);
             extended_overlay_ports.push_back(manifest_path.parent_path().to_string());
             Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
+            if (paths.get_configuration().registry_set.is_default_builtin_registry())
+            {
+                extended_overlay_ports.push_back(paths.builtin_ports_directory().native());
+            }
             auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
-
             PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
             auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
                                                                             *baseprovider,
