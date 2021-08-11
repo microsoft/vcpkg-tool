@@ -257,7 +257,7 @@ namespace vcpkg
             Cache<Triplet, Path> m_triplets_cache;
             Build::EnvCache m_env_cache;
 
-            ExclusiveFileLock file_lock_handle;
+            std::unique_ptr<IExclusiveFileLock> file_lock_handle;
 
             Optional<std::pair<Json::Object, Json::JsonStyle>> m_manifest_doc;
             Path m_manifest_path;
