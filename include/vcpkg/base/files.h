@@ -217,7 +217,7 @@ namespace vcpkg
 
         ExclusiveFileLock() = default;
         ExclusiveFileLock(const ExclusiveFileLock&) = delete;
-        ExclusiveFileLock(ExclusiveFileLock&& other) : m_unlock(other.m_unlock) { other.m_unlock = {}; }
+        ExclusiveFileLock(ExclusiveFileLock&& other) : m_unlock(std::move(other.m_unlock)) { other.m_unlock = {}; }
         ExclusiveFileLock& operator=(const ExclusiveFileLock&) = delete;
         ExclusiveFileLock& operator=(ExclusiveFileLock&& other)
         {
