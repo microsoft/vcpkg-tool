@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <functional>
 #include <system_error>
 
 #if defined(_WIN32)
@@ -102,30 +103,6 @@ namespace vcpkg
     private:
         std::string m_str;
     };
-
-#if defined(_WIN32)
-    struct SystemHandle
-    {
-        using type = intptr_t; // HANDLE
-        type system_handle = -1;
-
-        bool is_valid() const { return system_handle != -1; }
-    };
-#else
-    struct SystemHandle
-    {
-        using type = int; // file descriptor
-        type system_handle = -1;
-
-        bool is_valid() const { return system_handle != -1; }
-    };
-#endif
-
-    inline bool operator==(SystemHandle lhs, SystemHandle rhs) noexcept
-    {
-        return lhs.system_handle == rhs.system_handle;
-    }
-    inline bool operator!=(SystemHandle lhs, SystemHandle rhs) noexcept { return !(lhs == rhs); }
 
     enum class FileType
     {
@@ -229,6 +206,41 @@ namespace vcpkg
         }
 
         int put(int c) const noexcept { return ::fputc(c, m_fs); }
+    };
+
+    struct ExclusiveFileLock
+    {
+        template<class F>
+        explicit ExclusiveFileLock(F&& unlock_fn) : m_unlock(std::forward<F>(unlock_fn))
+        {
+        }
+
+        ExclusiveFileLock() = default;
+        ExclusiveFileLock(const ExclusiveFileLock&) = delete;
+        ExclusiveFileLock(ExclusiveFileLock&& other) : m_unlock(std::move(other.m_unlock)) { other.m_unlock = {}; }
+        ExclusiveFileLock& operator=(const ExclusiveFileLock&) = delete;
+        ExclusiveFileLock& operator=(ExclusiveFileLock&& other)
+        {
+            if (this != &other)
+            {
+                m_unlock = std::move(other.m_unlock);
+                other.m_unlock = {};
+            }
+            return *this;
+        }
+
+        explicit operator bool() const { return static_cast<bool>(m_unlock); }
+
+        ~ExclusiveFileLock()
+        {
+            if (m_unlock)
+            {
+                m_unlock();
+            }
+        }
+
+    private:
+        std::function<void()> m_unlock;
     };
 
     struct Filesystem
@@ -362,13 +374,12 @@ namespace vcpkg
         // however, if `/a/b` doesn't exist, then the functions will fail.
 
         // waits forever for the file lock
-        virtual SystemHandle take_exclusive_file_lock(const Path& lockfile, std::error_code&) = 0;
-        SystemHandle take_exclusive_file_lock(const Path& lockfile, LineInfo li);
+        virtual ExclusiveFileLock take_exclusive_file_lock(const Path& lockfile, std::error_code&) = 0;
+        ExclusiveFileLock take_exclusive_file_lock(const Path& lockfile, LineInfo li);
 
         // waits, at most, 1.5 seconds, for the file lock
-        virtual SystemHandle try_take_exclusive_file_lock(const Path& lockfile, std::error_code&) = 0;
-
-        virtual void unlock_file_lock(SystemHandle handle, std::error_code&) = 0;
+        virtual ExclusiveFileLock try_take_exclusive_file_lock(const Path& lockfile, std::error_code&) = 0;
+        ExclusiveFileLock try_take_exclusive_file_lock(const Path& lockfile, LineInfo li);
 
         virtual std::vector<Path> find_from_PATH(const std::string& name) const = 0;
 
@@ -396,45 +407,6 @@ namespace vcpkg
 #if defined(_WIN32)
     Path win32_fix_path_case(const Path& source);
 #endif // _WIN32
-
-    struct ExclusiveFileLock
-    {
-        enum class Wait
-        {
-            Yes,
-            No,
-        };
-
-        ExclusiveFileLock() = default;
-        ExclusiveFileLock(ExclusiveFileLock&&) = delete;
-        ExclusiveFileLock& operator=(ExclusiveFileLock&&) = delete;
-
-        ExclusiveFileLock(Wait wait, Filesystem& fs, const Path& lockfile, std::error_code& ec) : m_fs(&fs)
-        {
-            switch (wait)
-            {
-                case Wait::Yes: m_handle = m_fs->take_exclusive_file_lock(lockfile, ec); break;
-                case Wait::No: m_handle = m_fs->try_take_exclusive_file_lock(lockfile, ec); break;
-            }
-        }
-        ~ExclusiveFileLock() { clear(); }
-
-        explicit operator bool() const { return m_handle.is_valid(); }
-        bool has_lock() const { return m_handle.is_valid(); }
-
-        void clear()
-        {
-            if (m_fs && m_handle.is_valid())
-            {
-                std::error_code ignore;
-                m_fs->unlock_file_lock(std::exchange(m_handle, SystemHandle{}), ignore);
-            }
-        }
-
-    private:
-        Filesystem* m_fs;
-        SystemHandle m_handle;
-    };
 
     struct NotExtensionCaseSensitive
     {

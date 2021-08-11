@@ -257,7 +257,7 @@ namespace vcpkg
             Cache<Triplet, Path> m_triplets_cache;
             Build::EnvCache m_env_cache;
 
-            vcpkg::SystemHandle file_lock_handle;
+            ExclusiveFileLock file_lock_handle;
 
             Optional<std::pair<Json::Object, Json::JsonStyle>> m_manifest_doc;
             Path m_manifest_path;
@@ -851,9 +851,7 @@ namespace vcpkg
 
         auto lock_file = work_tree / ".vcpkg-lock";
 
-        std::error_code ec;
-        ExclusiveFileLock guard(ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
-
+        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
         Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
                                     .string_arg("fetch")
                                     .string_arg("--update-shallow")
@@ -889,8 +887,7 @@ namespace vcpkg
 
         auto lock_file = work_tree / ".vcpkg-lock";
 
-        std::error_code ec;
-        ExclusiveFileLock guard(ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
+        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
 
         auto dot_git_dir = m_pimpl->registries_dot_git_dir;
 
@@ -1146,16 +1143,5 @@ namespace vcpkg
         }
     }
 
-    VcpkgPaths::~VcpkgPaths()
-    {
-        std::error_code ec;
-        if (m_pimpl->file_lock_handle.is_valid())
-        {
-            m_pimpl->fs_ptr->unlock_file_lock(m_pimpl->file_lock_handle, ec);
-            if (ec)
-            {
-                Debug::print("Failed to unlock filesystem lock: ", ec.message(), '\n');
-            }
-        }
-    }
+    VcpkgPaths::~VcpkgPaths() = default;
 }

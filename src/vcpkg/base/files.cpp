@@ -1398,10 +1398,22 @@ namespace vcpkg
         }
     }
 
-    SystemHandle Filesystem::take_exclusive_file_lock(const Path& lockfile, LineInfo li)
+    ExclusiveFileLock Filesystem::take_exclusive_file_lock(const Path& lockfile, LineInfo li)
     {
         std::error_code ec;
         auto sh = this->take_exclusive_file_lock(lockfile, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {lockfile});
+        }
+
+        return sh;
+    }
+
+    ExclusiveFileLock Filesystem::try_take_exclusive_file_lock(const Path& lockfile, LineInfo li)
+    {
+        std::error_code ec;
+        auto sh = this->try_take_exclusive_file_lock(lockfile, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {lockfile});
@@ -1971,143 +1983,158 @@ namespace vcpkg
 
         struct TakeExclusiveFileLockHelper
         {
-            vcpkg::SystemHandle& res;
-            stdfs::path native;
-            TakeExclusiveFileLockHelper(vcpkg::SystemHandle& res, stdfs::path&& native)
-                : res(res), native(std::move(native))
-            {
-            }
-
 #if defined(_WIN32)
-            void assign_busy_error(std::error_code& ec) { ec.assign(ERROR_BUSY, std::system_category()); }
-
-            bool operator()(std::error_code& ec)
+            HANDLE res;
+            stdfs::path native;
+            TakeExclusiveFileLockHelper(stdfs::path&& native, std::error_code& ec) : native(std::move(native))
             {
                 ec.clear();
-                auto handle = CreateFileW(native.c_str(),
-                                          GENERIC_READ,
-                                          0 /* no sharing */,
-                                          nullptr /* no security attributes */,
-                                          OPEN_ALWAYS,
-                                          FILE_ATTRIBUTE_NORMAL,
-                                          nullptr /* no template file */);
-                if (handle == INVALID_HANDLE_VALUE)
+            }
+
+            bool lock_attempt(std::error_code& ec)
+            {
+                res = CreateFileW(native.c_str(),
+                                  GENERIC_READ,
+                                  0 /* no sharing */,
+                                  nullptr /* no security attributes */,
+                                  OPEN_ALWAYS,
+                                  FILE_ATTRIBUTE_NORMAL,
+                                  nullptr /* no template file */);
+                if (res != INVALID_HANDLE_VALUE)
                 {
-                    const auto err = GetLastError();
-                    if (err != ERROR_SHARING_VIOLATION)
-                    {
-                        ec.assign(err, std::system_category());
-                    }
+                    ec.clear();
+                    return true;
+                }
+
+                const auto err = GetLastError();
+                if (err == ERROR_SHARING_VIOLATION)
+                {
+                    ec.clear();
                     return false;
                 }
 
-                res.system_handle = reinterpret_cast<intptr_t>(handle);
-                return true;
+                ec.assign(err, std::system_category());
+                return false;
             }
 #else // ^^^ _WIN32 / !_WIN32 vvv
-            int fd = -1;
-
-            void assign_busy_error(std::error_code& ec) { ec.assign(EBUSY, std::generic_category()); }
-
-            bool operator()(std::error_code& ec)
+            int res;
+            TakeExclusiveFileLockHelper(stdfs::path&& native, std::error_code& ec)
             {
-                ec.clear();
-                if (fd == -1)
+                res = ::open(native.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+                if (res < 0)
                 {
-                    fd = ::open(native.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-                    if (fd < 0)
-                    {
-                        ec.assign(errno, std::generic_category());
-                        return false;
-                    }
+                    ec.assign(errno, std::generic_category());
+                }
+                else
+                {
+                    ec.clear();
+                }
+            }
+
+            bool lock_attempt(std::error_code& ec)
+            {
+                if (::flock(res, LOCK_EX | LOCK_NB) == 0)
+                {
+                    ec.clear();
+                    return true;
                 }
 
-                if (::flock(fd, LOCK_EX | LOCK_NB) != 0)
+                if (errno == EWOULDBLOCK)
                 {
-                    if (errno != EWOULDBLOCK)
-                    {
-                        ec.assign(errno, std::generic_category());
-                    }
+                    ec.clear();
                     return false;
                 }
 
-                res.system_handle = fd;
-                fd = -1;
-                return true;
+                ec.assign(errno, std::generic_category());
+                return false;
             };
 
             ~TakeExclusiveFileLockHelper()
             {
-                if (fd != -1)
+                if (res > 0)
                 {
-                    ::close(fd);
+                    ::close(res);
                 }
             }
 #endif
         };
 
-        virtual vcpkg::SystemHandle take_exclusive_file_lock(const Path& lockfile, std::error_code& ec) override
-        {
-            vcpkg::SystemHandle res;
-            TakeExclusiveFileLockHelper helper(res, to_stdfs_path(lockfile));
-
-            if (helper(ec) || ec)
-            {
-                return res;
-            }
-
-            vcpkg::printf("Waiting to take filesystem lock on %s...\n", lockfile);
-            const auto wait = std::chrono::milliseconds(1000);
-            for (;;)
-            {
-                std::this_thread::sleep_for(wait);
-                if (helper(ec) || ec)
-                {
-                    return res;
-                }
-            }
-        }
-
-        virtual vcpkg::SystemHandle try_take_exclusive_file_lock(const Path& lockfile, std::error_code& ec) override
-        {
-            vcpkg::SystemHandle res;
-            TakeExclusiveFileLockHelper helper(res, to_stdfs_path(lockfile));
-
-            if (helper(ec) || ec)
-            {
-                return res;
-            }
-
-            Debug::print("Waiting to take filesystem lock on ", lockfile, "...\n");
-            auto wait = std::chrono::milliseconds(100);
-            // waits, at most, a second and a half.
-            while (wait < std::chrono::milliseconds(1000))
-            {
-                std::this_thread::sleep_for(wait);
-                if (helper(ec) || ec)
-                {
-                    return res;
-                }
-                wait *= 2;
-            }
-
-            helper.assign_busy_error(ec);
-            return res;
-        }
-
-        virtual void unlock_file_lock(vcpkg::SystemHandle handle, std::error_code& ec) override
-        {
 #if defined(_WIN32)
-            if (CloseHandle(reinterpret_cast<HANDLE>(handle.system_handle)) == 0)
+        struct ExclusiveFileLockUnlocker
+        {
+            HANDLE handle;
+
+            ExclusiveFileLockUnlocker() = delete;
+            explicit ExclusiveFileLockUnlocker(TakeExclusiveFileLockHelper& helper)
+                : handle{std::exchange(helper.res, INVALID_HANDLE_VALUE)}
             {
-                ec.assign(GetLastError(), std::system_category());
             }
-#else
-            if (flock(handle.system_handle, LOCK_UN) != 0 || close(handle.system_handle) != 0)
+            ExclusiveFileLockUnlocker(const ExclusiveFileLockUnlocker&) = default;
+            ExclusiveFileLockUnlocker& operator=(const ExclusiveFileLockUnlocker&) = default;
+
+#pragma warning(suppress : 6001)
+            void operator()() const { Checks::check_exit(VCPKG_LINE_INFO, CloseHandle(handle) != 0); }
+        };
+#else // ^^^ _WIN32 // !_WIN32 vvv
+        struct ExclusiveFileLockUnlocker
+        {
+            int fd;
+
+            ExclusiveFileLockUnlocker() = delete;
+            explicit ExclusiveFileLockUnlocker(TakeExclusiveFileLockHelper& helper) : fd{std::exchange(helper.res, -1)}
             {
-                ec.assign(errno, std::generic_category());
             }
-#endif
+            ExclusiveFileLockUnlocker(const ExclusiveFileLockUnlocker&) = default;
+            ExclusiveFileLockUnlocker& operator=(const ExclusiveFileLockUnlocker&) = default;
+
+            void operator()() const
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, flock(fd, LOCK_UN) == 0);
+                Checks::check_exit(VCPKG_LINE_INFO, close(fd) == 0);
+            }
+        };
+#endif // ^^^ !_WIN32
+
+        virtual ExclusiveFileLock take_exclusive_file_lock(const Path& lockfile, std::error_code& ec) override
+        {
+            TakeExclusiveFileLockHelper helper(to_stdfs_path(lockfile), ec);
+            if (!ec && !helper.lock_attempt(ec) && !ec)
+            {
+                vcpkg::printf("Waiting to take filesystem lock on %s...\n", lockfile);
+                do
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                } while (!helper.lock_attempt(ec) && !ec);
+            }
+
+            return ExclusiveFileLock(ExclusiveFileLockUnlocker(helper));
+        }
+
+        virtual ExclusiveFileLock try_take_exclusive_file_lock(const Path& lockfile, std::error_code& ec) override
+        {
+            TakeExclusiveFileLockHelper helper(to_stdfs_path(lockfile), ec);
+            if (!ec && !helper.lock_attempt(ec) && !ec)
+            {
+                Debug::print("Waiting to take filesystem lock on ", lockfile, "...\n");
+                // waits, at most, a second and a half.
+                for (auto wait = std::chrono::milliseconds(100);;)
+                {
+                    std::this_thread::sleep_for(wait);
+                    if (helper.lock_attempt(ec) || ec)
+                    {
+                        break;
+                    }
+
+                    wait *= 2;
+                    if (wait >= std::chrono::milliseconds(1000))
+                    {
+                        ec.assign(EBUSY, std::generic_category());
+                        break;
+                    }
+                }
+            }
+
+            return ExclusiveFileLock(ExclusiveFileLockUnlocker(helper));
         }
 
         virtual std::vector<Path> find_from_PATH(const std::string& name) const override
