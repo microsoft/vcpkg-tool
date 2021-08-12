@@ -1398,7 +1398,7 @@ namespace vcpkg
         }
     }
 
-    ExclusiveFileLock Filesystem::take_exclusive_file_lock(const Path& lockfile, LineInfo li)
+    std::unique_ptr<IExclusiveFileLock> Filesystem::take_exclusive_file_lock(const Path& lockfile, LineInfo li)
     {
         std::error_code ec;
         auto sh = this->take_exclusive_file_lock(lockfile, ec);
@@ -1410,7 +1410,7 @@ namespace vcpkg
         return sh;
     }
 
-    ExclusiveFileLock Filesystem::try_take_exclusive_file_lock(const Path& lockfile, LineInfo li)
+    std::unique_ptr<IExclusiveFileLock> Filesystem::try_take_exclusive_file_lock(const Path& lockfile, LineInfo li)
     {
         std::error_code ec;
         auto sh = this->try_take_exclusive_file_lock(lockfile, ec);
@@ -1981,26 +1981,24 @@ namespace vcpkg
             stdfs::current_path(to_stdfs_path(new_current_path), ec);
         }
 
-        struct TakeExclusiveFileLockHelper
+        struct ExclusiveFileLock : IExclusiveFileLock
         {
 #if defined(_WIN32)
-            HANDLE res;
+            HANDLE handle = INVALID_HANDLE_VALUE;
             stdfs::path native;
-            TakeExclusiveFileLockHelper(stdfs::path&& native, std::error_code& ec) : native(std::move(native))
-            {
-                ec.clear();
-            }
+            ExclusiveFileLock(stdfs::path&& native, std::error_code& ec) : native(std::move(native)) { ec.clear(); }
 
             bool lock_attempt(std::error_code& ec)
             {
-                res = CreateFileW(native.c_str(),
-                                  GENERIC_READ,
-                                  0 /* no sharing */,
-                                  nullptr /* no security attributes */,
-                                  OPEN_ALWAYS,
-                                  FILE_ATTRIBUTE_NORMAL,
-                                  nullptr /* no template file */);
-                if (res != INVALID_HANDLE_VALUE)
+                Checks::check_exit(VCPKG_LINE_INFO, handle == INVALID_HANDLE_VALUE);
+                handle = CreateFileW(native.c_str(),
+                                     GENERIC_READ,
+                                     0 /* no sharing */,
+                                     nullptr /* no security attributes */,
+                                     OPEN_ALWAYS,
+                                     FILE_ATTRIBUTE_NORMAL,
+                                     nullptr /* no template file */);
+                if (handle != INVALID_HANDLE_VALUE)
                 {
                     ec.clear();
                     return true;
@@ -2016,12 +2014,22 @@ namespace vcpkg
                 ec.assign(err, std::system_category());
                 return false;
             }
-#else // ^^^ _WIN32 / !_WIN32 vvv
-            int res;
-            TakeExclusiveFileLockHelper(stdfs::path&& native, std::error_code& ec)
+
+            ~ExclusiveFileLock() override
             {
-                res = ::open(native.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-                if (res < 0)
+                if (handle != INVALID_HANDLE_VALUE)
+                {
+                    const auto chresult = CloseHandle(handle);
+                    Checks::check_exit(VCPKG_LINE_INFO, chresult != 0);
+                }
+            }
+#else // ^^^ _WIN32 / !_WIN32 vvv
+            int fd;
+            bool locked = false;
+            ExclusiveFileLock(stdfs::path&& native, std::error_code& ec)
+                : fd(::open(native.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))
+            {
+                if (fd < 0)
                 {
                     ec.assign(errno, std::generic_category());
                 }
@@ -2033,9 +2041,10 @@ namespace vcpkg
 
             bool lock_attempt(std::error_code& ec)
             {
-                if (::flock(res, LOCK_EX | LOCK_NB) == 0)
+                if (::flock(fd, LOCK_EX | LOCK_NB) == 0)
                 {
                     ec.clear();
+                    locked = true;
                     return true;
                 }
 
@@ -2049,78 +2058,49 @@ namespace vcpkg
                 return false;
             };
 
-            ~TakeExclusiveFileLockHelper()
+            ~ExclusiveFileLock() override
             {
-                if (res > 0)
+                if (fd > 0)
                 {
-                    ::close(res);
+                    if (locked)
+                    {
+                        Checks::check_exit(VCPKG_LINE_INFO, flock(fd, LOCK_UN) == 0);
+                    }
+
+                    Checks::check_exit(VCPKG_LINE_INFO, close(fd) == 0);
                 }
             }
 #endif
         };
 
-#if defined(_WIN32)
-        struct ExclusiveFileLockUnlocker
+        virtual std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
+                                                                             std::error_code& ec) override
         {
-            HANDLE handle;
-
-            ExclusiveFileLockUnlocker() = delete;
-            explicit ExclusiveFileLockUnlocker(TakeExclusiveFileLockHelper& helper)
-                : handle{std::exchange(helper.res, INVALID_HANDLE_VALUE)}
-            {
-            }
-            ExclusiveFileLockUnlocker(const ExclusiveFileLockUnlocker&) = default;
-            ExclusiveFileLockUnlocker& operator=(const ExclusiveFileLockUnlocker&) = default;
-
-#pragma warning(suppress : 6001)
-            void operator()() const { Checks::check_exit(VCPKG_LINE_INFO, CloseHandle(handle) != 0); }
-        };
-#else // ^^^ _WIN32 // !_WIN32 vvv
-        struct ExclusiveFileLockUnlocker
-        {
-            int fd;
-
-            ExclusiveFileLockUnlocker() = delete;
-            explicit ExclusiveFileLockUnlocker(TakeExclusiveFileLockHelper& helper) : fd{std::exchange(helper.res, -1)}
-            {
-            }
-            ExclusiveFileLockUnlocker(const ExclusiveFileLockUnlocker&) = default;
-            ExclusiveFileLockUnlocker& operator=(const ExclusiveFileLockUnlocker&) = default;
-
-            void operator()() const
-            {
-                Checks::check_exit(VCPKG_LINE_INFO, flock(fd, LOCK_UN) == 0);
-                Checks::check_exit(VCPKG_LINE_INFO, close(fd) == 0);
-            }
-        };
-#endif // ^^^ !_WIN32
-
-        virtual ExclusiveFileLock take_exclusive_file_lock(const Path& lockfile, std::error_code& ec) override
-        {
-            TakeExclusiveFileLockHelper helper(to_stdfs_path(lockfile), ec);
-            if (!ec && !helper.lock_attempt(ec) && !ec)
+            auto result = std::make_unique<ExclusiveFileLock>(to_stdfs_path(lockfile), ec);
+            if (!ec && !result->lock_attempt(ec) && !ec)
             {
                 vcpkg::printf("Waiting to take filesystem lock on %s...\n", lockfile);
                 do
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-                } while (!helper.lock_attempt(ec) && !ec);
+                } while (!result->lock_attempt(ec) && !ec);
             }
 
-            return ExclusiveFileLock(ExclusiveFileLockUnlocker(helper));
+            return std::move(result);
         }
 
-        virtual ExclusiveFileLock try_take_exclusive_file_lock(const Path& lockfile, std::error_code& ec) override
+        virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
+                                                                                 std::error_code& ec) override
         {
-            TakeExclusiveFileLockHelper helper(to_stdfs_path(lockfile), ec);
-            if (!ec && !helper.lock_attempt(ec) && !ec)
+            auto result = std::make_unique<ExclusiveFileLock>(to_stdfs_path(lockfile), ec);
+            if (!ec && !result->lock_attempt(ec) && !ec)
             {
                 Debug::print("Waiting to take filesystem lock on ", lockfile, "...\n");
                 // waits, at most, a second and a half.
                 for (auto wait = std::chrono::milliseconds(100);;)
                 {
                     std::this_thread::sleep_for(wait);
-                    if (helper.lock_attempt(ec) || ec)
+                    if (result->lock_attempt(ec) || ec)
                     {
                         break;
                     }
@@ -2134,7 +2114,7 @@ namespace vcpkg
                 }
             }
 
-            return ExclusiveFileLock(ExclusiveFileLockUnlocker(helper));
+            return std::move(result);
         }
 
         virtual std::vector<Path> find_from_PATH(const std::string& name) const override

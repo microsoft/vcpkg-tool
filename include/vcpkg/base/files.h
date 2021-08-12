@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <functional>
+#include <memory>
 #include <system_error>
 
 #if defined(_WIN32)
@@ -208,39 +208,9 @@ namespace vcpkg
         int put(int c) const noexcept { return ::fputc(c, m_fs); }
     };
 
-    struct ExclusiveFileLock
+    struct IExclusiveFileLock
     {
-        template<class F>
-        explicit ExclusiveFileLock(F&& unlock_fn) : m_unlock(std::forward<F>(unlock_fn))
-        {
-        }
-
-        ExclusiveFileLock() = default;
-        ExclusiveFileLock(const ExclusiveFileLock&) = delete;
-        ExclusiveFileLock(ExclusiveFileLock&& other) : m_unlock(std::move(other.m_unlock)) { other.m_unlock = {}; }
-        ExclusiveFileLock& operator=(const ExclusiveFileLock&) = delete;
-        ExclusiveFileLock& operator=(ExclusiveFileLock&& other)
-        {
-            if (this != &other)
-            {
-                m_unlock = std::move(other.m_unlock);
-                other.m_unlock = {};
-            }
-            return *this;
-        }
-
-        explicit operator bool() const { return static_cast<bool>(m_unlock); }
-
-        ~ExclusiveFileLock()
-        {
-            if (m_unlock)
-            {
-                m_unlock();
-            }
-        }
-
-    private:
-        std::function<void()> m_unlock;
+        virtual ~IExclusiveFileLock() = default;
     };
 
     struct Filesystem
@@ -374,12 +344,14 @@ namespace vcpkg
         // however, if `/a/b` doesn't exist, then the functions will fail.
 
         // waits forever for the file lock
-        virtual ExclusiveFileLock take_exclusive_file_lock(const Path& lockfile, std::error_code&) = 0;
-        ExclusiveFileLock take_exclusive_file_lock(const Path& lockfile, LineInfo li);
+        virtual std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
+                                                                             std::error_code&) = 0;
+        std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile, LineInfo li);
 
         // waits, at most, 1.5 seconds, for the file lock
-        virtual ExclusiveFileLock try_take_exclusive_file_lock(const Path& lockfile, std::error_code&) = 0;
-        ExclusiveFileLock try_take_exclusive_file_lock(const Path& lockfile, LineInfo li);
+        virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
+                                                                                 std::error_code&) = 0;
+        std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile, LineInfo li);
 
         virtual std::vector<Path> find_from_PATH(const std::string& name) const = 0;
 
