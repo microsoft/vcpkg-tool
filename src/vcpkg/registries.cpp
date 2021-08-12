@@ -67,8 +67,9 @@ namespace
 
         LockFile::Entry get_lock_entry(const VcpkgPaths& paths) const
         {
-            return m_lock_entry.get(
-                [this, &paths]() { return paths.get_installed_lockfile().get_or_fetch(paths, m_repo); });
+            return m_lock_entry.get([this, &paths]() {
+                return paths.get_installed_lockfile().get_or_fetch(paths, m_repo, m_baseline_identifier);
+            });
         }
 
         Path get_versions_tree_path(const VcpkgPaths& paths) const
@@ -1135,13 +1136,13 @@ namespace vcpkg
         return r.array_elements(arr, underlying);
     }
 
-    LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView key)
+    LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView key, StringView ref)
     {
         auto it = lockdata.find(key);
         if (it == lockdata.end())
         {
             print2("Fetching registry information from ", key, "...\n");
-            auto x = paths.git_fetch_from_remote_registry(key, "HEAD");
+            auto x = paths.git_fetch_from_remote_registry(key, ref);
             it = lockdata.emplace(key.to_string(), EntryData{x.value_or_exit(VCPKG_LINE_INFO), false}).first;
             modified = true;
         }
