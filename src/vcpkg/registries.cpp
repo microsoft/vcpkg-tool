@@ -744,6 +744,7 @@ namespace
     constexpr StringLiteral RegistryImplDeserializer::BASELINE;
     constexpr StringLiteral RegistryImplDeserializer::PATH;
     constexpr StringLiteral RegistryImplDeserializer::REPO;
+    constexpr StringLiteral RegistryImplDeserializer::REFERENCE;
     constexpr StringLiteral RegistryImplDeserializer::KIND_BUILTIN;
     constexpr StringLiteral RegistryImplDeserializer::KIND_FILESYSTEM;
     constexpr StringLiteral RegistryImplDeserializer::KIND_GIT;
