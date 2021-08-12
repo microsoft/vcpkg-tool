@@ -521,7 +521,7 @@ namespace
             if (!maybe_contents.has_value())
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
-                if (auto err = paths.git_fetch(m_repo, m_reference, m_baseline_identifier))
+                if (auto err = paths.git_fetch(m_repo, m_baseline_identifier))
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
                                                                      "defined");

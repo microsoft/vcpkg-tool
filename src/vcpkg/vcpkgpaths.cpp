@@ -880,7 +880,7 @@ namespace vcpkg
         return {Strings::trim(fetch_head_output.output).to_string(), expected_left_tag};
     }
 
-    Optional<std::string> VcpkgPaths::git_fetch(StringView repo, StringView reference, StringView treeish) const
+    Optional<std::string> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
     {
         auto& fs = get_filesystem();
 
