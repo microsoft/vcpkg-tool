@@ -39,7 +39,7 @@ namespace vcpkg
             void ensure_up_to_date(const VcpkgPaths& paths) const;
         };
 
-        Entry get_or_fetch(const VcpkgPaths& paths, StringView reference, StringView key);
+        Entry get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference);
 
         std::map<std::string, EntryData, std::less<>> lockdata;
         bool modified = false;

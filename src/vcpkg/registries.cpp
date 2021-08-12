@@ -68,7 +68,7 @@ namespace
         LockFile::Entry get_lock_entry(const VcpkgPaths& paths) const
         {
             return m_lock_entry.get(
-                [this, &paths]() { return paths.get_installed_lockfile().get_or_fetch(paths, m_reference, m_repo); });
+                [this, &paths]() { return paths.get_installed_lockfile().get_or_fetch(paths, m_repo, m_reference); });
         }
 
         Path get_versions_tree_path(const VcpkgPaths& paths) const
@@ -1146,11 +1146,12 @@ namespace vcpkg
         return r.array_elements(arr, underlying);
     }
 
-    LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView reference, StringView key)
+    LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference)
     {
-        auto lockdata_key = key.to_string();
+        auto lockdata_key = repo.to_string();
         if (reference != "HEAD")
         {
+            // old-style, only repo. implicitly HEAD
             Strings::append(lockdata_key, "@", reference);
         }
 
@@ -1158,7 +1159,7 @@ namespace vcpkg
         if (it == lockdata.end())
         {
             print2("Fetching registry information from ", lockdata_key, "...\n");
-            auto x = paths.git_fetch_from_remote_registry(key, reference);
+            auto x = paths.git_fetch_from_remote_registry(repo, reference);
             it = lockdata.emplace(std::move(lockdata_key), EntryData{x.value_or_exit(VCPKG_LINE_INFO), false}).first;
             modified = true;
         }
@@ -1172,11 +1173,11 @@ namespace vcpkg
             print2("Fetching registry information from ", lockdata_key, "...\n");
 
             auto at = std::find(lockdata_key.begin(), lockdata_key.end(), '@');
-            StringView key(lockdata_key.begin(), at);
+            StringView repo(lockdata_key.begin(), at);
             StringView reference =
-                at == lockdata_key.end() ? "HEAD" : key.substr(std::distance(at + 1, lockdata_key.end()));
+                at == lockdata_key.end() ? "HEAD" : lockdata_key.substr(std::distance(at + 1, lockdata_key.end()));
 
-            data->second.value = paths.git_fetch_from_remote_registry(key, reference).value_or_exit(VCPKG_LINE_INFO);
+            data->second.value = paths.git_fetch_from_remote_registry(repo, reference).value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
             lockfile->modified = true;
         }
