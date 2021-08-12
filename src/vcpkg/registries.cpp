@@ -49,8 +49,8 @@ namespace
 
     struct GitRegistry final : RegistryImplementation
     {
-        GitRegistry(std::string&& repo, std::string&& baseline)
-            : m_repo(std::move(repo)), m_baseline_identifier(std::move(baseline))
+        GitRegistry(std::string&& repo, std::string&& reference, std::string&& baseline)
+            : m_repo(std::move(repo)), m_reference(std::move(reference)), m_baseline_identifier(std::move(baseline))
         {
         }
 
@@ -67,9 +67,8 @@ namespace
 
         LockFile::Entry get_lock_entry(const VcpkgPaths& paths) const
         {
-            return m_lock_entry.get([this, &paths]() {
-                return paths.get_installed_lockfile().get_or_fetch(paths, m_repo, m_baseline_identifier);
-            });
+            return m_lock_entry.get(
+                [this, &paths]() { return paths.get_installed_lockfile().get_or_fetch(paths, m_reference, m_repo); });
         }
 
         Path get_versions_tree_path(const VcpkgPaths& paths) const
@@ -136,6 +135,7 @@ namespace
         }
 
         std::string m_repo;
+        std::string m_reference;
         std::string m_baseline_identifier;
         DelayedInit<LockFile::Entry> m_lock_entry;
         mutable Optional<Path> m_stale_versions_tree;
@@ -521,7 +521,7 @@ namespace
             if (!maybe_contents.has_value())
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
-                if (auto err = paths.git_fetch(m_repo, m_baseline_identifier))
+                if (auto err = paths.git_fetch(m_repo, m_reference, m_baseline_identifier))
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
                                                                      "defined");
@@ -723,6 +723,7 @@ namespace
         constexpr static StringLiteral BASELINE = "baseline";
         constexpr static StringLiteral PATH = "path";
         constexpr static StringLiteral REPO = "repository";
+        constexpr static StringLiteral REFERENCE = "reference";
 
         constexpr static StringLiteral KIND_BUILTIN = "builtin";
         constexpr static StringLiteral KIND_FILESYSTEM = "filesystem";
@@ -764,7 +765,7 @@ namespace
 
     View<StringView> RegistryImplDeserializer::valid_fields() const
     {
-        static const StringView t[] = {KIND, BASELINE, PATH, REPO};
+        static const StringView t[] = {KIND, BASELINE, PATH, REPO, REFERENCE};
         return t;
     }
     View<StringView> valid_builtin_fields()
@@ -792,6 +793,7 @@ namespace
             RegistryImplDeserializer::KIND,
             RegistryImplDeserializer::BASELINE,
             RegistryImplDeserializer::REPO,
+            RegistryImplDeserializer::REFERENCE,
             RegistryDeserializer::PACKAGES,
         };
         return t;
@@ -845,10 +847,17 @@ namespace
             Json::StringDeserializer repo_des{"a git repository URL"};
             r.required_object_field("a git registry", obj, REPO, repo, repo_des);
 
+            std::string ref;
+            Json::StringDeserializer ref_des{"a git reference (for example, a branch)"};
+            if (!r.optional_object_field(obj, REFERENCE, ref, ref_des))
+            {
+                ref = "HEAD";
+            }
+
             std::string baseline;
             r.required_object_field("a git registry", obj, BASELINE, baseline, baseline_deserializer);
 
-            res = std::make_unique<GitRegistry>(std::move(repo), std::move(baseline));
+            res = std::make_unique<GitRegistry>(std::move(repo), std::move(ref), std::move(baseline));
         }
         else
         {
@@ -1136,14 +1145,20 @@ namespace vcpkg
         return r.array_elements(arr, underlying);
     }
 
-    LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView key, StringView ref)
+    LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView reference, StringView key)
     {
-        auto it = lockdata.find(key);
+        auto lockdata_key = key.to_string();
+        if (reference != "HEAD")
+        {
+            Strings::append(lockdata_key, "@", reference);
+        }
+
+        auto it = lockdata.find(lockdata_key);
         if (it == lockdata.end())
         {
-            print2("Fetching registry information from ", key, "...\n");
-            auto x = paths.git_fetch_from_remote_registry(key, ref);
-            it = lockdata.emplace(key.to_string(), EntryData{x.value_or_exit(VCPKG_LINE_INFO), false}).first;
+            print2("Fetching registry information from ", lockdata_key, "...\n");
+            auto x = paths.git_fetch_from_remote_registry(key, reference);
+            it = lockdata.emplace(std::move(lockdata_key), EntryData{x.value_or_exit(VCPKG_LINE_INFO), false}).first;
             modified = true;
         }
         return {this, it};
@@ -1152,9 +1167,15 @@ namespace vcpkg
     {
         if (data->second.stale)
         {
-            print2("Fetching registry information from ", data->first, "...\n");
-            data->second.value =
-                paths.git_fetch_from_remote_registry(data->first, "HEAD").value_or_exit(VCPKG_LINE_INFO);
+            StringView lockdata_key(data->first);
+            print2("Fetching registry information from ", lockdata_key, "...\n");
+
+            auto at = std::find(lockdata_key.begin(), lockdata_key.end(), '@');
+            StringView key(lockdata_key.begin(), at);
+            StringView reference =
+                at == lockdata_key.end() ? "HEAD" : key.substr(std::distance(at + 1, lockdata_key.end()));
+
+            data->second.value = paths.git_fetch_from_remote_registry(key, reference).value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
             lockfile->modified = true;
         }

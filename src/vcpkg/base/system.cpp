@@ -356,5 +356,5 @@ namespace vcpkg
 
 namespace vcpkg::Debug
 {
-    std::atomic<bool> g_debugging(false);
+    std::atomic<bool> g_debugging(true);
 }
