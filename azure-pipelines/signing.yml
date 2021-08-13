@@ -56,25 +56,25 @@ jobs:
       displayName: 'Publish vcpkg.exe'
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\vcpkg.exe'
-        ArtifactName: 'Windows'
+        ArtifactName: 'Drop'
         publishLocation: 'Container'
     - task: PublishBuildArtifacts@1
       displayName: 'Publish vcpkg.pdb'
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\vcpkg.pdb'
-        ArtifactName: 'Windows'
+        ArtifactName: 'Drop'
         publishLocation: 'Container'
     - task: PublishBuildArtifacts@1
       displayName: 'Publish tls12-download.exe'
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\tls12-download.exe'
-        ArtifactName: 'Windows'
+        ArtifactName: 'Drop'
         publishLocation: 'Container'
     - task: PublishBuildArtifacts@1
       displayName: 'Publish tls12-download.pdb'
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\tls12-download.pdb'
-        ArtifactName: 'Windows'
+        ArtifactName: 'Drop'
         publishLocation: 'Container'
     - task: MicroBuildCleanup@1
       condition: succeededOrFailed()
@@ -91,11 +91,11 @@ jobs:
         script: |
           cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -B "$(Build.StagingDirectory)"
           make -j 8 -C "$(Build.StagingDirectory)"
-          zip "$(Build.StagingDirectory)/vcpkg.zip" "$(Build.StagingDirectory)/vcpkg"
+          zip -j "$(Build.StagingDirectory)/vcpkg-macos.zip" "$(Build.StagingDirectory)/vcpkg"
     - task: PublishBuildArtifacts@1
       displayName: "Publish Unsigned MacOS Binary"
       inputs:
-        PathtoPublish: '$(Build.StagingDirectory)/vcpkg.zip'
+        PathtoPublish: '$(Build.StagingDirectory)/vcpkg-macos.zip'
         ArtifactName: 'staging'
         publishLocation: 'Container'
   - job: macos_sign
@@ -112,10 +112,17 @@ jobs:
       - task: ms-vseng.MicroBuildTasks.7973a23b-33e3-4b00-a7d9-c06d90f8297f.MicroBuildSignMacFiles@1
         displayName: 'Sign Mac Files'
         inputs:
-          SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg.zip'
+          SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
           SigningCert: 8003
+      - task: CmdLine@2
+        displayName: "Repackage signed vcpkg_macos binary"
+        inputs:
+          failOnStderr: true
+          script: |
+            tar.exe -C "$(Build.ArtifactStagingDirectory)" -xf "$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip"
+            move "$(Build.ArtifactStagingDirectory)\vcpkg" "$(Build.ArtifactStagingDirectory)\vcpkg-macos"
       - task: PublishBuildArtifacts@1
         displayName: 'Publish Signed Binary'
         inputs:
-          PathtoPublish: '$(Build.ArtifactStagingDirectory)\staging\vcpkg.zip'
-          ArtifactName: 'MacOS'
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)\vcpkg-macos'
+          ArtifactName: 'Drop'
