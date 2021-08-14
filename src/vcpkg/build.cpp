@@ -359,8 +359,8 @@ namespace vcpkg::Build
 #if defined(_WIN32)
     const Environment& EnvCache::get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info)
     {
-        auto build_env_cmd = make_build_env_cmd(
-            *abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO), paths.get_all_toolsets());
+        auto build_env_cmd =
+            make_build_env_cmd(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO), paths);
 
         const auto& base_env = envs.get_lazy(abi_info.pre_build_info->passthrough_env_vars, [&]() -> EnvMapEntry {
             std::unordered_map<std::string, std::string> env;
@@ -559,7 +559,7 @@ namespace vcpkg::Build
 
     vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
                                       const Toolset& toolset,
-                                      View<Toolset> all_toolsets)
+                                      const VcpkgPaths& paths)
     {
         if (!pre_build_info.using_vcvars()) return {};
 
@@ -569,7 +569,7 @@ namespace vcpkg::Build
             tonull = "";
         }
 
-        const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, all_toolsets);
+        const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, paths.get_all_toolsets());
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
         return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(
