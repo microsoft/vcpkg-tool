@@ -1,5 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/parallel_fmap.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -386,6 +387,15 @@ namespace vcpkg
     {
         static const Environment clean_env = get_modified_clean_environment({});
         return clean_env;
+    }
+
+    std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
+                                                                           const Environment& env,
+                                                                           InWorkingDirectory wd)
+    {
+        return Util::parallel_fmap(cmd_lines, [&env, wd](const Command& cmd) -> ExitCodeAndOutput {
+            return cmd_execute_and_capture_output(cmd, wd, env);
+        });
     }
 
     int cmd_execute_clean(const Command& cmd_line, InWorkingDirectory wd)

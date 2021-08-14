@@ -131,11 +131,11 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, sz2 + 1 == sz);
         ret.pop_back();
         return Strings::to_utf8(ret.c_str());
-#else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
+#else
         auto v = getenv(varname.c_str());
         if (!v) return nullopt;
         return std::string(v);
-#endif // defined(_WIN32)
+#endif
     }
 
     void set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept
@@ -154,7 +154,7 @@ namespace vcpkg
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, exit_code != 0);
-#else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
+#else
         if (auto v = value.get())
         {
             Checks::check_exit(VCPKG_LINE_INFO, setenv(varname.c_str(), v->c_str(), 1) == 0);
@@ -163,7 +163,7 @@ namespace vcpkg
         {
             Checks::check_exit(VCPKG_LINE_INFO, unsetenv(varname.c_str()) == 0);
         }
-#endif // defined(_WIN32)
+#endif
     }
 
     const ExpectedS<Path>& get_home_dir() noexcept
@@ -280,9 +280,9 @@ namespace vcpkg
         ret.pop_back(); // remove extra trailing null byte
         return Strings::to_utf8(ret);
     }
-#else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
+#else
     Optional<std::string> get_registry_string(void*, StringView, StringView) { return nullopt; }
-#endif // defined(_WIN32)
+#endif
 
     static const Optional<Path>& get_program_files()
     {
@@ -325,7 +325,22 @@ namespace vcpkg
         return ProgramW6432;
     }
 
-    int get_num_logical_cores() { return std::thread::hardware_concurrency(); }
+    int get_concurrency()
+    {
+        static int concurrency = [] {
+            auto user_defined_concurrency = get_environment_variable("VCPKG_MAX_CONCURRENCY");
+            if (user_defined_concurrency)
+            {
+                return std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
+            }
+            else
+            {
+                return static_cast<int>(std::thread::hardware_concurrency()) + 1;
+            }
+        }();
+
+        return concurrency;
+    }
 
     Optional<CPUArchitecture> guess_visual_studio_prompt_target_architecture()
     {
