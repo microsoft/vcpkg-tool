@@ -173,7 +173,7 @@ namespace vcpkg
             return this->seek(static_cast<long long>(offset), origin);
         }
         int eof() const noexcept { return ::feof(m_fs); }
-        int error() const noexcept { return ::ferror(m_fs); }
+        std::error_code error() const noexcept { return std::error_code(::ferror(m_fs), std::generic_category()); }
 
         ~FilePointer()
         {

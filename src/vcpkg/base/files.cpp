@@ -1467,9 +1467,8 @@ namespace vcpkg
                 {
                     output.append(buffer, this_read);
                 }
-                else if (file.error())
+                else if ((ec = file.error()))
                 {
-                    ec = std::io_errc::stream;
                     return std::string();
                 }
             } while (!file.eof());
@@ -1495,9 +1494,8 @@ namespace vcpkg
                 {
                     output.on_data({buffer, this_read});
                 }
-                else if (file.error())
+                else if ((ec = file.error()))
                 {
-                    ec = std::io_errc::stream;
                     return std::vector<std::string>();
                 }
             } while (!file.eof());

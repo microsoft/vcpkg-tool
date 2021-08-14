@@ -582,9 +582,8 @@ namespace vcpkg::Hash
                 {
                     hasher.add_bytes(buffer, buffer + this_read);
                 }
-                else if (file.error())
+                else if ((ec = file.error()))
                 {
-                    ec = std::io_errc::stream;
                     return std::string();
                 }
             } while (!file.eof());
