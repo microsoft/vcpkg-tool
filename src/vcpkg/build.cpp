@@ -1,7 +1,6 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
-#include <vcpkg/base/enums.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringliteral.h>
@@ -608,23 +607,6 @@ namespace vcpkg::Build
         }
         const auto binary_control_file = paths.packages / bcf.core_paragraph.dir() / "CONTROL";
         paths.get_filesystem().write_contents(binary_control_file, start, VCPKG_LINE_INFO);
-    }
-
-    static int get_concurrency()
-    {
-        static int concurrency = [] {
-            auto user_defined_concurrency = get_environment_variable("VCPKG_MAX_CONCURRENCY");
-            if (user_defined_concurrency)
-            {
-                return std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
-            }
-            else
-            {
-                return get_num_logical_cores() + 1;
-            }
-        }();
-
-        return concurrency;
     }
 
     static void get_generic_cmake_build_args(const VcpkgPaths& paths,
@@ -1263,22 +1245,6 @@ namespace vcpkg::Build
 
         const auto abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
         const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
-        auto restore = binary_cache.try_restore(paths, action);
-        if (restore == RestoreResult::restored)
-        {
-            auto maybe_bcf = Paragraphs::try_load_cached_package(paths, spec);
-            auto bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
-            return {BuildResult::SUCCEEDED, std::move(bcf)};
-        }
-        else
-        {
-            // missing package, proceed to build.
-        }
-
-        if (action.build_options.build_missing == BuildMissing::NO)
-        {
-            return BuildResult::CACHE_MISSING;
-        }
 
         ExtendedBuildResult result = do_build_package_and_clean_buildtrees(args, paths, action);
         build_logs_recorder.record_build_result(paths, spec, result.code);
@@ -1314,7 +1280,7 @@ namespace vcpkg::Build
 
     const std::string& to_string(const BuildResult build_result)
     {
-        static const std::string NULLVALUE_STRING = Util::nullvalue_to_string("vcpkg::Commands::Build::BuildResult");
+        static const std::string NULLVALUE_STRING = "vcpkg::Commands::Build::BuildResult_NULLVALUE";
         static const std::string SUCCEEDED_STRING = "SUCCEEDED";
         static const std::string BUILD_FAILED_STRING = "BUILD_FAILED";
         static const std::string FILE_CONFLICTS_STRING = "FILE_CONFLICTS";

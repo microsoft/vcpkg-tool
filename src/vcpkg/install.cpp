@@ -331,38 +331,49 @@ namespace vcpkg::Install
 
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
         {
-            if (use_head_version)
-                vcpkg::printf("Building package %s from HEAD...\n", display_name_with_features);
+            std::unique_ptr<BinaryControlFile> bcf;
+            auto restore = binary_cache.try_restore(paths, action);
+            if (restore == RestoreResult::restored)
+            {
+                auto maybe_bcf = Paragraphs::try_load_cached_package(paths, action.spec);
+                bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
+            }
+            else if (action.build_options.build_missing == Build::BuildMissing::NO)
+            {
+                return BuildResult::CACHE_MISSING;
+            }
             else
-                vcpkg::printf("Building package %s...\n", display_name_with_features);
-
-            auto result = Build::build_package(args, paths, action, binary_cache, build_logs_recorder, status_db);
-
-            if (BuildResult::DOWNLOADED == result.code)
             {
-                print2(Color::success, "Downloaded sources for package ", display_name_with_features, "\n");
-                return result;
+                if (use_head_version)
+                    vcpkg::printf("Building package %s from HEAD...\n", display_name_with_features);
+                else
+                    vcpkg::printf("Building package %s...\n", display_name_with_features);
+
+                auto result = Build::build_package(args, paths, action, binary_cache, build_logs_recorder, status_db);
+
+                if (BuildResult::DOWNLOADED == result.code)
+                {
+                    print2(Color::success, "Downloaded sources for package ", display_name_with_features, "\n");
+                    return result;
+                }
+
+                if (result.code != Build::BuildResult::SUCCEEDED)
+                {
+                    print2(Color::error, Build::create_error_message(result.code, action.spec), "\n");
+                    return result;
+                }
+
+                bcf = std::move(result.binary_control_file);
             }
+            // Build or restore succeeded and `bcf` is populated with the control file.
+            Checks::check_exit(VCPKG_LINE_INFO, bcf != nullptr);
 
-            if (result.code != Build::BuildResult::SUCCEEDED)
-            {
-                print2(Color::error, Build::create_error_message(result.code, action.spec), "\n");
-                return result;
-            }
-
-            vcpkg::printf("Building package %s... done\n", display_name_with_features);
-
-            auto bcf = std::make_unique<BinaryControlFile>(
-                Paragraphs::try_load_cached_package(paths, action.spec).value_or_exit(VCPKG_LINE_INFO));
             vcpkg::printf("Installing package %s...\n", display_name_with_features);
             const auto install_result = install_package(paths, *bcf, &status_db);
             BuildResult code;
             switch (install_result)
             {
-                case InstallResult::SUCCESS:
-                    vcpkg::printf(Color::success, "Installing package %s... done\n", display_name_with_features);
-                    code = BuildResult::SUCCEEDED;
-                    break;
+                case InstallResult::SUCCESS: code = BuildResult::SUCCEEDED; break;
                 case InstallResult::FILE_CONFLICTS: code = BuildResult::FILE_CONFLICTS; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
