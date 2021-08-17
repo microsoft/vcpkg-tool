@@ -406,7 +406,7 @@ namespace vcpkg::Downloads
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
             }
         });
-        if (res != 0 || code < 200 || code >= 300)
+        if (res != 0 || (code >= 100 && code < 200) || code >= 300)
         {
             return Strings::concat(
                 "Error: curl failed to put file to ", url, " with exit code '", res, "' and http code '", code, "'\n");
