@@ -1,7 +1,7 @@
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
 
-#include <thread>
+#include <future>
 
 namespace vcpkg::Util
 {
@@ -29,16 +29,19 @@ namespace vcpkg::Util
             }
         };
 
-        std::vector<std::thread> threads;
+        std::vector<std::future<void>> workers;
         for (size_t x = 0; x < num_threads - 1; ++x)
         {
-            threads.emplace_back(work);
-            if (work_item >= xs.size()) break;
+            workers.emplace_back(std::async(std::launch::async | std::launch::deferred, work));
+            if (work_item >= xs.size())
+            {
+                break;
+            }
         }
         work();
-        for (auto&& th : threads)
+        for (auto&& w : workers)
         {
-            th.join();
+            w.get();
         }
         return res;
     }

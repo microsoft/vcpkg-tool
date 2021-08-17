@@ -390,8 +390,8 @@ namespace vcpkg
     }
 
     std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
-                                                                           const Environment& env,
-                                                                           InWorkingDirectory wd)
+                                                                           InWorkingDirectory wd,
+                                                                           const Environment& env)
     {
         return Util::parallel_fmap(cmd_lines, [&env, wd](const Command& cmd) -> ExitCodeAndOutput {
             return cmd_execute_and_capture_output(cmd, wd, env);
