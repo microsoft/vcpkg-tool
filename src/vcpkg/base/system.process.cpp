@@ -1,6 +1,5 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
-#include <vcpkg/base/parallel_fmap.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -8,6 +7,7 @@
 #include <vcpkg/base/util.h>
 
 #include <ctime>
+#include <future>
 
 #if defined(__APPLE__)
 #include <mach-o/dyld.h>
@@ -393,9 +393,42 @@ namespace vcpkg
                                                                            InWorkingDirectory wd,
                                                                            const Environment& env)
     {
-        return Util::parallel_fmap(cmd_lines, [&env, wd](const Command& cmd) -> ExitCodeAndOutput {
-            return cmd_execute_and_capture_output(cmd, wd, env);
-        });
+        if (cmd_lines.size() == 0)
+        {
+            return {};
+        }
+        if (cmd_lines.size() == 1)
+        {
+            return {cmd_execute_and_capture_output(cmd_lines[0], wd, env)};
+        }
+        std::vector<ExitCodeAndOutput> res(cmd_lines.size());
+        std::atomic<size_t> work_item{0};
+
+        const auto num_threads =
+            static_cast<size_t>(std::max(1, std::min(get_concurrency(), static_cast<int>(cmd_lines.size()))));
+
+        auto work = [&cmd_lines, &res, &work_item, &wd, &env]() {
+            for (size_t item = work_item.fetch_add(1); item < cmd_lines.size(); item = work_item.fetch_add(1))
+            {
+                res[item] = cmd_execute_and_capture_output(cmd_lines[item], wd, env);
+            }
+        };
+
+        std::vector<std::future<void>> workers;
+        for (size_t x = 0; x < num_threads - 1; ++x)
+        {
+            workers.emplace_back(std::async(std::launch::async | std::launch::deferred, work));
+            if (work_item >= cmd_lines.size())
+            {
+                break;
+            }
+        }
+        work();
+        for (auto&& w : workers)
+        {
+            w.get();
+        }
+        return res;
     }
 
     int cmd_execute_clean(const Command& cmd_line, InWorkingDirectory wd)
