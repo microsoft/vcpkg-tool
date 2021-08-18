@@ -23,10 +23,10 @@ namespace
 
         virtual Optional<Configuration> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
-        ConfigurationDeserializer(const path& configuration_directory);
+        ConfigurationDeserializer(const Path& configuration_directory);
 
     private:
-        path configuration_directory;
+        Path configuration_directory;
     };
 
     constexpr StringLiteral ConfigurationDeserializer::DEFAULT_REGISTRY;
@@ -56,14 +56,14 @@ namespace
         return Configuration{std::move(registries)};
     }
 
-    ConfigurationDeserializer::ConfigurationDeserializer(const path& configuration_directory)
+    ConfigurationDeserializer::ConfigurationDeserializer(const Path& configuration_directory)
         : configuration_directory(configuration_directory)
     {
     }
 
 }
 
-std::unique_ptr<Json::IDeserializer<Configuration>> vcpkg::make_configuration_deserializer(const path& config_directory)
+std::unique_ptr<Json::IDeserializer<Configuration>> vcpkg::make_configuration_deserializer(const Path& config_directory)
 {
     return std::make_unique<ConfigurationDeserializer>(config_directory);
 }
@@ -74,8 +74,8 @@ namespace vcpkg
     {
         if (!flags.registries && registry_set.has_modifications())
         {
-            Metrics::g_metrics.lock()->track_property("registries-error-registry-modification-without-feature-flag",
-                                                      "defined");
+            LockGuardPtr<Metrics>(g_metrics)->track_property(
+                "registries-error-registry-modification-without-feature-flag", "defined");
             vcpkg::printf(Color::warning,
                           "Warning: configuration specified the \"registries\" or \"default-registries\" field, but "
                           "the %s feature flag was not enabled.\n",

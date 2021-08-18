@@ -88,7 +88,7 @@ if(NOT DEFINED VCPKG_VERSION OR VCPKG_VERSION STREQUAL "")
     set(VCPKG_VERSION "unknownhash")
 endif()
 
-set(VCPKG_BASE_VERSION "2021-05-05")
+set(VCPKG_BASE_VERSION "2021-08-12")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -108,13 +108,19 @@ if(APPLE)
     set(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
 endif()
 
+# =======================
+# === Paths detection ===
+# =======================
+
+include(GNUInstallDirs)
+
 # ===============
 # === Targets ===
 # ===============
 
 # === Target: vcpkglib ===
 
-add_library(vcpkglib
+add_library(vcpkglib OBJECT
     ${VCPKGLIB_BASE_SOURCES}
     ${VCPKGLIB_SOURCES}
     ${VCPKGLIB_BASE_INCLUDES}
@@ -212,7 +218,7 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES})
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
-    target_link_libraries(tls12-download winhttp)
+    target_link_libraries(tls12-download winhttp wintrust)
 endif()
 
 
@@ -238,3 +244,12 @@ if(CLANG_FORMAT)
         COMMAND "${CLANG_FORMAT}" -i -verbose ${TLS12_DOWNLOAD_SOURCES}
     )
 endif()
+
+# ====================
+# === Installation ===
+# ====================
+
+install(TARGETS vcpkg
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

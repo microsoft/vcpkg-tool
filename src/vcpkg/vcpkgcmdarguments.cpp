@@ -27,7 +27,8 @@ namespace vcpkg
                 if (place.has_value())
                 {
                     vcpkg::printf(Color::error, "Error: both %s and -%s were specified as feature flags\n", flag, flag);
-                    Metrics::g_metrics.lock()->track_property("error", "error feature flag +-" + flag.to_string());
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("error",
+                                                                     "error feature flag +-" + flag.to_string());
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
@@ -66,7 +67,7 @@ namespace vcpkg
         if (nullptr != option_field)
         {
             vcpkg::printf(Color::error, "Error: --%s specified multiple times\n", option_name);
-            Metrics::g_metrics.lock()->track_property("error", "error option specified multiple times");
+            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option specified multiple times");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -79,7 +80,7 @@ namespace vcpkg
         if (option_field && option_field != new_setting)
         {
             print2(Color::error, "Error: conflicting values specified for --", option_name, '\n');
-            Metrics::g_metrics.lock()->track_property("error", "error conflicting switches");
+            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error conflicting switches");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -93,7 +94,7 @@ namespace vcpkg
         if (new_value.size() == 0)
         {
             print2(Color::error, "Error: expected value after ", option_name, '\n');
-            Metrics::g_metrics.lock()->track_property("error", "error option name");
+            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -108,7 +109,7 @@ namespace vcpkg
         if (new_value.size() == 0)
         {
             print2(Color::error, "Error: expected value after ", option_name, '\n');
-            Metrics::g_metrics.lock()->track_property("error", "error option name");
+            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -136,13 +137,15 @@ namespace vcpkg
             if (arg.size() > 0 && arg[0] == '@')
             {
                 arg.erase(arg.begin());
-                auto lines = fs.read_lines(vcpkg::u8path(arg));
-                if (!lines.has_value())
+                std::error_code ec;
+                auto lines = fs.read_lines(arg, ec);
+                if (ec)
                 {
                     print2(Color::error, "Error: Could not open response file ", arg, '\n');
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
-                std::copy(lines.get()->begin(), lines.get()->end(), std::back_inserter(v));
+
+                v.insert(v.end(), std::make_move_iterator(lines.begin()), std::make_move_iterator(lines.end()));
             }
             else
             {
@@ -180,7 +183,7 @@ namespace vcpkg
                 }
 
                 print2(Color::error, "Error: expected value after ", option, '\n');
-                Metrics::g_metrics.lock()->track_property("error", "error option name");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
                 print_usage();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -249,7 +252,7 @@ namespace vcpkg
 
             if (basic_arg.size() >= 2 && basic_arg[0] == '-' && basic_arg[1] != '-')
             {
-                Metrics::g_metrics.lock()->track_property("error", "error short options are not supported");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error short options are not supported");
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: short options are not supported: %s", basic_arg);
             }
 
@@ -796,7 +799,7 @@ namespace vcpkg
                               el.flag,
                               el.option);
                 vcpkg::printf(Color::warning, "Warning: Defaulting to %s being on.\n", el.flag);
-                Metrics::g_metrics.lock()->track_property(
+                LockGuardPtr<Metrics>(g_metrics)->track_property(
                     "warning", Strings::format("warning %s alongside %s", el.flag, el.option));
             }
         }
@@ -844,7 +847,7 @@ namespace vcpkg
 
         for (const auto& flag : flags)
         {
-            Metrics::g_metrics.lock()->track_feature(flag.flag.to_string(), flag.enabled);
+            LockGuardPtr<Metrics>(g_metrics)->track_feature(flag.flag.to_string(), flag.enabled);
         }
     }
 

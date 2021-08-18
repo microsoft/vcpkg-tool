@@ -4,14 +4,12 @@
 
 #include <mutex>
 
-namespace vcpkg::Util
+namespace vcpkg
 {
     template<class T>
     struct LockGuarded
     {
         friend struct LockGuardPtr<T>;
-
-        LockGuardPtr<T> lock() { return *this; }
 
     private:
         std::mutex m_mutex;

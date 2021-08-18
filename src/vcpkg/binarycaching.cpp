@@ -15,6 +15,8 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
 
+#include <iterator>
+
 using namespace vcpkg;
 
 namespace
@@ -161,45 +163,14 @@ namespace
         return nuget_prefix;
     }
 
-    struct NullBinaryProvider : IBinaryProvider
-    {
-        void prefetch(const VcpkgPaths&, std::vector<const Dependencies::InstallPlanAction*>&) { }
-
-        void push_success(const VcpkgPaths&, const Dependencies::InstallPlanAction&) { }
-
-        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&)
-        {
-            return RestoreResult::missing;
-        }
-
-        void precheck(const VcpkgPaths&, std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult>&) { }
-    };
-}
-
-std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult> vcpkg::binary_provider_precheck(
-    const VcpkgPaths& paths, const Dependencies::ActionPlan& plan, IBinaryProvider& provider)
-{
-    std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult> checked;
-    checked.reserve(plan.install_actions.size());
-    for (auto&& action : plan.install_actions)
-    {
-        checked.emplace(&action, RestoreResult::missing);
-    }
-
-    provider.precheck(paths, checked);
-    return checked;
-}
-
-namespace
-{
-    static void clean_prepare_dir(Filesystem& fs, const path& dir)
+    static void clean_prepare_dir(Filesystem& fs, const Path& dir)
     {
         fs.remove_all(dir, VCPKG_LINE_INFO);
         bool created_last = fs.create_directories(dir, VCPKG_LINE_INFO);
-        Checks::check_exit(VCPKG_LINE_INFO, created_last, "unable to clear path: %s", vcpkg::u8string(dir));
+        Checks::check_exit(VCPKG_LINE_INFO, created_last, "unable to clear path: %s", dir);
     }
 
-    static ExitCodeAndOutput decompress_archive(const VcpkgPaths& paths, const path& dst, const path& archive_path)
+    static Command decompress_archive_cmd(const VcpkgPaths& paths, const Path& dst, const Path& archive_path)
     {
         Command cmd;
 #if defined(_WIN32)
@@ -207,39 +178,25 @@ namespace
         cmd.path_arg(seven_zip_exe)
             .string_arg("x")
             .path_arg(archive_path)
-            .string_arg("-o" + vcpkg::u8string(dst))
+            .string_arg("-o" + dst.native())
             .string_arg("-y");
 #else
         (void)paths;
-        cmd.string_arg("unzip").string_arg("-qq").path_arg(archive_path).string_arg("-d" + vcpkg::u8string(dst));
+        cmd.string_arg("unzip").string_arg("-qq").path_arg(archive_path).string_arg("-d" + dst.native());
 #endif
-        return cmd_execute_and_capture_output(cmd, get_clean_environment());
-    }
-
-    static ExitCodeAndOutput clean_decompress_archive(const VcpkgPaths& paths,
-                                                      const PackageSpec& spec,
-                                                      const path& archive_path)
-    {
-        auto pkg_path = paths.package_dir(spec);
-        clean_prepare_dir(paths.get_filesystem(), pkg_path);
-        return decompress_archive(paths, pkg_path, archive_path);
+        return cmd;
     }
 
     // Compress the source directory into the destination file.
-    static void compress_directory(const VcpkgPaths& paths, const path& source, const path& destination)
+    static void compress_directory(const VcpkgPaths& paths, const Path& source, const Path& destination)
     {
         auto& fs = paths.get_filesystem();
-
-        std::error_code ec;
-
-        fs.remove(destination, ec);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, !fs.exists(destination), "Could not remove file: %s", vcpkg::u8string(destination));
+        fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
         auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
 
         cmd_execute_and_capture_output(
-            Command{seven_zip_exe}.string_arg("a").path_arg(destination).path_arg(source / vcpkg::u8path("*")),
+            Command{seven_zip_exe}.string_arg("a").path_arg(destination).path_arg(source / "*"),
             get_clean_environment());
 #else
         cmd_execute_clean(Command{"zip"}
@@ -252,10 +209,15 @@ namespace
 #endif
     }
 
+    static Path make_temp_archive_path(const Path& buildtrees, const PackageSpec& spec)
+    {
+        return buildtrees / spec.name() / (spec.triplet().to_string() + ".zip");
+    }
+
     struct ArchivesBinaryProvider : IBinaryProvider
     {
-        ArchivesBinaryProvider(std::vector<path>&& read_dirs,
-                               std::vector<path>&& write_dirs,
+        ArchivesBinaryProvider(std::vector<Path>&& read_dirs,
+                               std::vector<Path>&& write_dirs,
                                std::vector<std::string>&& put_url_templates,
                                std::vector<std::string>&& secrets)
             : m_read_dirs(std::move(read_dirs))
@@ -265,61 +227,133 @@ namespace
         {
         }
 
-        void prefetch(const VcpkgPaths& paths, std::vector<const Dependencies::InstallPlanAction*>& actions) override
+        static Path make_archive_subpath(const std::string& abi) { return Path(abi.substr(0, 2)) / (abi + ".zip"); }
+
+        void prefetch(const VcpkgPaths& paths,
+                      View<Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus*> cache_status) const override
+        {
+            std::vector<size_t> to_try_restore_idxs;
+            std::vector<const Dependencies::InstallPlanAction*> to_try_restore;
+
+            for (const auto& archives_root_dir : m_read_dirs)
+            {
+                const auto timer = ElapsedTimer::create_started();
+                to_try_restore_idxs.clear();
+                to_try_restore.clear();
+                for (size_t idx = 0; idx < actions.size(); ++idx)
+                {
+                    auto&& action = actions[idx];
+                    if (action.has_package_abi() && cache_status[idx]->should_attempt_restore(this))
+                    {
+                        to_try_restore_idxs.push_back(idx);
+                        to_try_restore.push_back(&action);
+                    }
+                }
+                auto results = try_restore_n(paths, to_try_restore, archives_root_dir);
+                int num_restored = 0;
+                for (size_t n = 0; n < to_try_restore.size(); ++n)
+                {
+                    if (results[n] == RestoreResult::restored)
+                    {
+                        cache_status[to_try_restore_idxs[n]]->mark_restored();
+                        ++num_restored;
+                    }
+                }
+
+                print2("Restored ",
+                       num_restored,
+                       " packages from ",
+                       archives_root_dir.native(),
+                       " in ",
+                       timer.elapsed(),
+                       ". Use --debug to see more details.\n");
+            }
+        }
+
+        std::vector<RestoreResult> try_restore_n(const VcpkgPaths& paths,
+                                                 View<const Dependencies::InstallPlanAction*> actions,
+                                                 const Path& archives_root_dir) const
         {
             auto& fs = paths.get_filesystem();
-            Util::erase_remove_if(actions, [this, &fs, &paths](const Dependencies::InstallPlanAction* action) {
-                auto& spec = action->spec;
-                const auto& abi_tag = action->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
-                const auto archive_name = vcpkg::u8path(abi_tag + ".zip");
-                for (const auto& archives_root_dir : m_read_dirs)
+            std::vector<RestoreResult> results(actions.size(), RestoreResult::unavailable);
+            std::vector<size_t> action_idxs;
+            std::vector<Command> jobs;
+            std::vector<Path> archive_paths;
+            for (size_t i = 0; i < actions.size(); ++i)
+            {
+                const auto& action = *actions[i];
+                const auto& spec = action.spec;
+                const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                const auto archive_subpath = make_archive_subpath(abi_tag);
+                auto archive_path = archives_root_dir / archive_subpath;
+                if (fs.exists(archive_path, IgnoreErrors{}))
                 {
-                    auto archive_path = archives_root_dir;
-                    archive_path /= vcpkg::u8path(abi_tag.substr(0, 2));
-                    archive_path /= archive_name;
-                    if (fs.exists(archive_path))
-                    {
-                        print2("Using cached binary package: ", vcpkg::u8string(archive_path), "\n");
-
-                        int archive_result = clean_decompress_archive(paths, spec, archive_path).exit_code;
-
-                        if (archive_result == 0)
-                        {
-                            m_restored.insert(spec);
-                            return true;
-                        }
-                        else
-                        {
-                            print2("Failed to decompress archive package\n");
-                            if (action->build_options.purge_decompress_failure == Build::PurgeDecompressFailure::YES)
-                            {
-                                print2("Purging bad archive\n");
-                                fs.remove(archive_path, ignore_errors);
-                            }
-                        }
-                    }
-
-                    vcpkg::printf("Could not locate cached archive: %s\n", vcpkg::u8string(archive_path));
+                    auto pkg_path = paths.package_dir(spec);
+                    clean_prepare_dir(paths.get_filesystem(), pkg_path);
+                    jobs.push_back(decompress_archive_cmd(paths, pkg_path, archive_path));
+                    action_idxs.push_back(i);
+                    archive_paths.push_back(std::move(archive_path));
                 }
-                return false;
-            });
+            }
+
+            auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+
+            for (size_t j = 0; j < jobs.size(); ++j)
+            {
+                const auto i = action_idxs[j];
+                const auto& archive_result = job_results[j];
+                if (archive_result.exit_code == 0)
+                {
+                    results[i] = RestoreResult::restored;
+                    Debug::print("Restored ", archive_paths[j].native(), '\n');
+                }
+                else
+                {
+                    if (actions[i]->build_options.purge_decompress_failure == Build::PurgeDecompressFailure::YES)
+                    {
+                        Debug::print(
+                            "Failed to decompress archive package; purging: ", archive_paths[j].native(), '\n');
+                        fs.remove(archive_paths[j], IgnoreErrors{});
+                    }
+                    else
+                    {
+                        Debug::print("Failed to decompress archive package: ", archive_paths[j].native(), '\n');
+                    }
+                }
+            }
+            return results;
         }
-        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction& action) override
+
+        RestoreResult try_restore(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
         {
-            if (Util::Sets::contains(m_restored, action.spec))
-                return RestoreResult::success;
-            else
-                return RestoreResult::missing;
+            // Note: this method is almost never called -- it will only be called if another provider promised to
+            // restore a package but then failed at runtime
+            auto p_action = &action;
+            for (const auto& archives_root_dir : m_read_dirs)
+            {
+                if (try_restore_n(paths, {&p_action, 1}, archives_root_dir)[0] == RestoreResult::restored)
+                {
+                    print2("Restored from ", archives_root_dir.native(), "\n");
+                    return RestoreResult::restored;
+                }
+            }
+            return RestoreResult::unavailable;
         }
-        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) override
+
+        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
         {
-            if (m_write_dirs.empty() && m_put_url_templates.empty()) return;
-            const auto& abi_tag = action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
+            if (m_write_dirs.empty() && m_put_url_templates.empty())
+            {
+                return;
+            }
+
+            const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             auto& fs = paths.get_filesystem();
-            const auto tmp_archive_path = paths.buildtrees / spec.name() / (spec.triplet().to_string() + ".zip");
+            const auto archive_subpath = make_archive_subpath(abi_tag);
+            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees, spec);
             compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
-
             size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
@@ -340,17 +374,14 @@ namespace
                 print2("Uploaded binaries to ", http_remotes_pushed, " HTTP remotes.\n");
             }
 
-            const auto archive_name = vcpkg::u8path(abi_tag + ".zip");
             for (const auto& archives_root_dir : m_write_dirs)
             {
-                auto archive_path = archives_root_dir;
-                archive_path /= vcpkg::u8path(abi_tag.substr(0, 2));
-                archive_path /= archive_name;
-                fs.create_directories(archive_path.parent_path(), ignore_errors);
+                const auto archive_path = archives_root_dir / archive_subpath;
+                fs.create_directories(archive_path.parent_path(), IgnoreErrors{});
                 std::error_code ec;
                 if (m_write_dirs.size() > 1)
                 {
-                    fs.copy_file(tmp_archive_path, archive_path, stdfs::copy_options::overwrite_existing, ec);
+                    fs.copy_file(tmp_archive_path, archive_path, CopyOptions::overwrite_existing, ec);
                 }
                 else
                 {
@@ -359,87 +390,99 @@ namespace
 
                 if (ec)
                 {
-                    vcpkg::printf(Color::warning,
-                                  "Failed to store binary cache %s: %s\n",
-                                  vcpkg::u8string(archive_path),
-                                  ec.message());
+                    vcpkg::printf(Color::warning, "Failed to store binary cache %s: %s\n", archive_path, ec.message());
                 }
                 else
                 {
-                    vcpkg::printf("Stored binary cache: %s\n", vcpkg::u8string(archive_path));
+                    vcpkg::printf("Stored binary cache: %s\n", archive_path);
                 }
             }
             // In the case of 1 write dir, the file will be moved instead of copied
             if (m_write_dirs.size() != 1)
             {
-                fs.remove(tmp_archive_path, ignore_errors);
+                fs.remove(tmp_archive_path, IgnoreErrors{});
             }
         }
+
         void precheck(const VcpkgPaths& paths,
-                      std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult>& results_map) override
+                      View<Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
-
-            for (auto&& result_pair : results_map)
+            for (size_t idx = 0; idx < actions.size(); ++idx)
             {
-                if (result_pair.second != RestoreResult::missing)
+                const auto& action = actions[idx];
+                const auto abi_tag = action.package_abi().get();
+                if (!abi_tag || !cache_status[idx]->should_attempt_precheck(this))
                 {
                     continue;
                 }
 
-                const auto& abi_tag = result_pair.first->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
-                std::error_code ec;
+                const auto archive_subpath = make_archive_subpath(*abi_tag);
+                bool any_available = false;
                 for (auto&& archives_root_dir : m_read_dirs)
                 {
-                    const std::string archive_name = abi_tag + ".zip";
-                    const path archive_subpath = vcpkg::u8path(abi_tag.substr(0, 2)) / archive_name;
-                    const path archive_path = archives_root_dir / archive_subpath;
-
-                    if (fs.exists(archive_path))
+                    if (fs.exists(archives_root_dir / archive_subpath, IgnoreErrors{}))
                     {
-                        result_pair.second = RestoreResult::success;
+                        any_available = true;
                         break;
                     }
+                }
+
+                if (any_available)
+                {
+                    cache_status[idx]->mark_available(this);
+                }
+                else
+                {
+                    cache_status[idx]->mark_unavailable(this);
                 }
             }
         }
 
     private:
-        std::vector<path> m_read_dirs;
-        std::vector<path> m_write_dirs;
+        std::vector<Path> m_read_dirs;
+        std::vector<Path> m_write_dirs;
         std::vector<std::string> m_put_url_templates;
         std::vector<std::string> m_secrets;
-
-        std::set<PackageSpec> m_restored;
     };
-    struct HttpGetBinaryProvider : NullBinaryProvider
+    struct HttpGetBinaryProvider : IBinaryProvider
     {
         HttpGetBinaryProvider(std::vector<std::string>&& url_templates) : m_url_templates(std::move(url_templates)) { }
-        void prefetch(const VcpkgPaths& paths, std::vector<const Dependencies::InstallPlanAction*>& actions) override
+
+        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
         {
+            return RestoreResult::unavailable;
+        }
+
+        void push_success(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override { }
+
+        void prefetch(const VcpkgPaths& paths,
+                      View<Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus*> cache_status) const override
+        {
+            const auto timer = ElapsedTimer::create_started();
             auto& fs = paths.get_filesystem();
-
-            const size_t current_restored = m_restored.size();
-
+            size_t this_restore_count = 0;
+            std::vector<std::pair<std::string, Path>> url_paths;
+            std::vector<size_t> url_indices;
             for (auto&& url_template : m_url_templates)
             {
-                std::vector<std::pair<std::string, path>> url_paths;
-                std::vector<PackageSpec> specs;
-
-                for (auto&& action : actions)
+                url_paths.clear();
+                url_indices.clear();
+                for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
-                    auto abi = action->package_abi();
-                    if (!abi)
+                    auto&& action = actions[idx];
+                    auto abi = action.package_abi();
+                    if (!abi || !cache_status[idx]->should_attempt_restore(this))
                     {
                         continue;
                     }
 
-                    specs.push_back(action->spec);
-                    auto pkgdir = paths.package_dir(action->spec);
-                    clean_prepare_dir(fs, pkgdir);
-                    pkgdir /= vcpkg::u8path(Strings::concat(*abi.get(), ".zip"));
-                    url_paths.emplace_back(Strings::replace_all(std::string(url_template), "<SHA>", *abi.get()),
-                                           pkgdir);
+                    clean_prepare_dir(fs, paths.package_dir(action.spec));
+                    url_paths.emplace_back(Strings::replace_all(url_template, "<SHA>", *abi.get()),
+                                           make_temp_archive_path(paths.buildtrees, action.spec));
+                    url_indices.push_back(idx);
                 }
 
                 if (url_paths.empty()) break;
@@ -447,102 +490,110 @@ namespace
                 print2("Attempting to fetch ", url_paths.size(), " packages from HTTP servers.\n");
 
                 auto codes = Downloads::download_files(fs, url_paths);
+                std::vector<size_t> action_idxs;
+                std::vector<Command> jobs;
                 for (size_t i = 0; i < codes.size(); ++i)
                 {
                     if (codes[i] == 200)
                     {
-                        int archive_result =
-                            decompress_archive(paths, paths.package_dir(specs[i]), url_paths[i].second).exit_code;
-                        if (archive_result == 0)
-                        {
-                            // decompression success
-                            fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
-                            m_restored.insert(specs[i]);
-                        }
-                        else
-                        {
-                            Debug::print("Failed to decompress ", vcpkg::u8string(url_paths[i].second), '\n');
-                        }
+                        action_idxs.push_back(i);
+                        jobs.push_back(decompress_archive_cmd(
+                            paths, paths.package_dir(actions[url_indices[i]].spec), url_paths[i].second));
                     }
                 }
-
-                Util::erase_remove_if(actions, [this](const Dependencies::InstallPlanAction* action) {
-                    return Util::Sets::contains(m_restored, action->spec);
-                });
+                auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+                for (size_t j = 0; j < jobs.size(); ++j)
+                {
+                    const auto i = action_idxs[j];
+                    if (job_results[j].exit_code == 0)
+                    {
+                        ++this_restore_count;
+                        fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
+                        cache_status[url_indices[i]]->mark_restored();
+                    }
+                    else
+                    {
+                        Debug::print("Failed to decompress ", url_paths[i].second, '\n');
+                    }
+                }
             }
+
             print2("Restored ",
-                   m_restored.size() - current_restored,
-                   " packages from HTTP servers. Use --debug for more information.\n");
+                   this_restore_count,
+                   " packages from HTTP servers in ",
+                   timer.elapsed(),
+                   ". Use --debug for more information.\n");
         }
-        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction& action) override
-        {
-            if (Util::Sets::contains(m_restored, action.spec))
-            {
-                return RestoreResult::success;
-            }
 
-            return RestoreResult::missing;
-        }
         void precheck(const VcpkgPaths&,
-                      std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult>& results_map) override
+                      View<Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus*> cache_status) const override
         {
+            std::vector<CacheAvailability> actions_present{actions.size()};
             std::vector<std::string> urls;
-            std::vector<const Dependencies::InstallPlanAction*> url_actions;
+            std::vector<size_t> url_indices;
             for (auto&& url_template : m_url_templates)
             {
                 urls.clear();
-                url_actions.clear();
-                for (auto&& result_pair : results_map)
+                url_indices.clear();
+                for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
-                    if (result_pair.second != RestoreResult::missing) continue;
-                    auto abi = result_pair.first->package_abi();
-                    if (!abi) continue;
-                    urls.push_back(Strings::replace_all(std::string(url_template), "<SHA>", *abi.get()));
-                    url_actions.push_back(result_pair.first);
+                    auto abi = actions[idx].package_abi().get();
+                    if (!abi || !cache_status[idx]->should_attempt_precheck(this))
+                    {
+                        continue;
+                    }
+
+                    urls.push_back(Strings::replace_all(std::string(url_template), "<SHA>", *abi));
+                    url_indices.push_back(idx);
                 }
 
                 if (urls.empty())
                 {
-                    break;
+                    return;
                 }
 
                 auto codes = Downloads::url_heads(urls, {});
-                Checks::check_exit(VCPKG_LINE_INFO, codes.size() == url_actions.size());
+                Checks::check_exit(VCPKG_LINE_INFO, codes.size() == urls.size());
                 for (size_t i = 0; i < codes.size(); ++i)
                 {
                     if (codes[i] == 200)
                     {
-                        results_map[url_actions[i]] = RestoreResult::success;
+                        cache_status[url_indices[i]]->mark_available(this);
+                        actions_present[url_indices[i]] = CacheAvailability::available;
                     }
+                }
+            }
+
+            for (size_t idx = 0; idx < actions.size(); ++idx)
+            {
+                if (actions_present[idx] == CacheAvailability::unavailable)
+                {
+                    cache_status[idx]->mark_unavailable(this);
                 }
             }
         }
 
         std::vector<std::string> m_url_templates;
-        std::set<PackageSpec> m_restored;
     };
 
-    static std::string trim_leading_zeroes(std::string v)
+    static std::string trim_leading_zeroes(const std::string& v)
     {
-        auto n = v.find_first_not_of('0');
-        if (n == std::string::npos)
+        auto first_non_zero = std::find_if(v.begin(), v.end(), [](char c) { return c != '0'; });
+        if (first_non_zero == v.end())
         {
-            v = "0";
-        }
-        else if (n > 0)
-        {
-            v.erase(0, n);
+            return std::string(1, '0');
         }
 
-        return v;
+        return std::string(&*first_non_zero, v.end() - first_non_zero);
     }
 
-    struct NugetBinaryProvider : NullBinaryProvider
+    struct NugetBinaryProvider : IBinaryProvider
     {
         NugetBinaryProvider(std::vector<std::string>&& read_sources,
                             std::vector<std::string>&& write_sources,
-                            std::vector<path>&& read_configs,
-                            std::vector<path>&& write_configs,
+                            std::vector<Path>&& read_configs,
+                            std::vector<Path>&& write_configs,
                             std::string&& timeout,
                             bool interactive)
             : m_read_sources(std::move(read_sources))
@@ -554,11 +605,11 @@ namespace
             , m_use_nuget_cache(false)
         {
             const std::string use_nuget_cache = get_environment_variable("VCPKG_USE_NUGET_CACHE").value_or("");
-            m_use_nuget_cache = Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") ||
-                                Strings::case_insensitive_ascii_equals(use_nuget_cache, "1");
+            m_use_nuget_cache =
+                Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
-        int run_nuget_commandline(const Command& cmdline)
+        int run_nuget_commandline(const Command& cmdline) const
         {
             if (m_interactive)
             {
@@ -602,57 +653,69 @@ namespace
             return res.exit_code;
         }
 
-        void prefetch(const VcpkgPaths& paths, std::vector<const Dependencies::InstallPlanAction*>& actions) override
+        struct NuGetPrefetchAttempt
+        {
+            PackageSpec spec;
+            NugetReference reference;
+            size_t result_index;
+        };
+
+        static void generate_packages_config(Filesystem& fs,
+                                             const Path& packages_config,
+                                             const std::vector<NuGetPrefetchAttempt>& attempts)
+        {
+            XmlSerializer xml;
+            xml.emit_declaration().line_break();
+            xml.open_tag("packages").line_break();
+
+            for (auto&& attempt : attempts)
+            {
+                xml.start_complex_open_tag("package")
+                    .text_attr("id", attempt.reference.id)
+                    .text_attr("version", attempt.reference.version)
+                    .finish_self_closing_complex_tag()
+                    .line_break();
+            }
+
+            xml.close_tag("packages").line_break();
+            fs.write_contents(packages_config, xml.buf, VCPKG_LINE_INFO);
+        }
+
+        void prefetch(const VcpkgPaths& paths,
+                      View<Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus*> cache_status) const override
         {
             if (m_read_sources.empty() && m_read_configs.empty())
             {
                 return;
             }
+            const auto timer = ElapsedTimer::create_started();
 
             auto& fs = paths.get_filesystem();
 
-            std::vector<std::pair<PackageSpec, NugetReference>> nuget_refs;
-
-            for (auto&& action : actions)
+            std::vector<NuGetPrefetchAttempt> attempts;
+            for (size_t idx = 0; idx < actions.size(); ++idx)
             {
-                if (!action->has_package_abi())
+                auto&& action = actions[idx];
+                auto abi = action.package_abi().get();
+                if (!abi || !cache_status[idx]->should_attempt_restore(this))
                 {
                     continue;
                 }
 
-                auto& spec = action->spec;
+                auto& spec = action.spec;
                 fs.remove_all(paths.package_dir(spec), VCPKG_LINE_INFO);
-
-                nuget_refs.emplace_back(spec, make_nugetref(*action, get_nuget_prefix()));
+                attempts.push_back({spec, make_nugetref(action, get_nuget_prefix()), idx});
             }
 
-            if (nuget_refs.empty())
+            if (attempts.empty())
             {
                 return;
             }
 
-            print2("Attempting to fetch ", nuget_refs.size(), " packages from nuget.\n");
+            print2("Attempting to fetch ", attempts.size(), " packages from nuget.\n");
 
-            auto packages_config = paths.buildtrees / vcpkg::u8path("packages.config");
-
-            auto generate_packages_config = [&] {
-                XmlSerializer xml;
-                xml.emit_declaration().line_break();
-                xml.open_tag("packages").line_break();
-
-                for (auto&& nuget_ref : nuget_refs)
-                {
-                    xml.start_complex_open_tag("package")
-                        .text_attr("id", nuget_ref.second.id)
-                        .text_attr("version", nuget_ref.second.version)
-                        .finish_self_closing_complex_tag()
-                        .line_break();
-                }
-
-                xml.close_tag("packages").line_break();
-                paths.get_filesystem().write_contents(packages_config, xml.buf, VCPKG_LINE_INFO);
-            };
-
+            auto packages_config = paths.buildtrees / "packages.config";
             const auto& nuget_exe = paths.get_tool_exe("nuget");
             std::vector<Command> cmdlines;
 
@@ -688,6 +751,7 @@ namespace
 
                 cmdlines.push_back(std::move(cmdline));
             }
+
             for (auto&& cfg : m_read_configs)
             {
                 // Then check using each config
@@ -721,31 +785,28 @@ namespace
                 cmdlines.push_back(std::move(cmdline));
             }
 
-            const size_t current_restored = m_restored.size();
-
+            const size_t total_restore_attempts = attempts.size();
             for (const auto& cmdline : cmdlines)
             {
-                if (nuget_refs.empty())
+                if (attempts.empty())
                 {
                     break;
                 }
 
-                [&] {
-                    generate_packages_config();
-                    run_nuget_commandline(cmdline);
-                }();
-
-                Util::erase_remove_if(nuget_refs, [&](const std::pair<PackageSpec, NugetReference>& nuget_ref) -> bool {
-                    auto nupkg_path =
-                        paths.package_dir(nuget_ref.first) / vcpkg::u8path(nuget_ref.second.id + ".nupkg");
-                    if (fs.exists(nupkg_path, ignore_errors))
+                generate_packages_config(fs, packages_config, attempts);
+                run_nuget_commandline(cmdline);
+                Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
+                    // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the
+                    // output directory
+                    auto nupkg_path = paths.package_dir(nuget_ref.spec) / nuget_ref.reference.id + ".nupkg";
+                    if (fs.exists(nupkg_path, IgnoreErrors{}))
                     {
                         fs.remove(nupkg_path, VCPKG_LINE_INFO);
                         Checks::check_exit(VCPKG_LINE_INFO,
-                                           !fs.exists(nupkg_path, ignore_errors),
+                                           !fs.exists(nupkg_path, IgnoreErrors{}),
                                            "Unable to remove nupkg after restoring: %s",
-                                           vcpkg::u8string(nupkg_path));
-                        m_restored.emplace(nuget_ref.first);
+                                           nupkg_path);
+                        cache_status[nuget_ref.result_index]->mark_restored();
                         return true;
                     }
 
@@ -753,24 +814,19 @@ namespace
                 });
             }
 
-            Util::erase_remove_if(actions, [this](const Dependencies::InstallPlanAction* action) {
-                return Util::Sets::contains(m_restored, action->spec);
-            });
-
             print2("Restored ",
-                   m_restored.size() - current_restored,
-                   " packages from NuGet. Use --debug for more information.\n");
+                   total_restore_attempts - attempts.size(),
+                   " packages from NuGet in ",
+                   timer.elapsed(),
+                   ". Use --debug for more information.\n");
         }
-        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction& action) override
-        {
-            if (Util::Sets::contains(m_restored, action.spec))
-            {
-                return RestoreResult::success;
-            }
 
-            return RestoreResult::missing;
+        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
+        {
+            return RestoreResult::unavailable;
         }
-        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) override
+
+        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
         {
             if (m_write_sources.empty() && m_write_configs.empty())
             {
@@ -796,92 +852,86 @@ namespace
                 .path_arg(paths.buildtrees)
                 .string_arg("-NoDefaultExcludes")
                 .string_arg("-ForceEnglishOutput");
-            if (!m_interactive) cmdline.string_arg("-NonInteractive");
 
-            auto pack_rc = run_nuget_commandline(cmdline);
+            if (!m_interactive)
+            {
+                cmdline.string_arg("-NonInteractive");
+            }
 
-            if (pack_rc != 0)
+            if (run_nuget_commandline(cmdline) != 0)
             {
                 print2(Color::error, "Packing NuGet failed. Use --debug for more information.\n");
+                return;
             }
-            else
+
+            auto nupkg_path = paths.buildtrees / nuget_ref.nupkg_filename();
+            for (auto&& write_src : m_write_sources)
             {
-                auto nupkg_path = paths.buildtrees / nuget_ref.nupkg_filename();
-                for (auto&& write_src : m_write_sources)
-                {
-                    Command cmd;
+                Command cmd;
 #ifndef _WIN32
-                    cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+                cmd.path_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-                    cmd.path_arg(nuget_exe)
-                        .string_arg("push")
-                        .path_arg(nupkg_path)
-                        .string_arg("-ForceEnglishOutput")
-                        .string_arg("-Timeout")
-                        .string_arg(m_timeout)
-                        .string_arg("-Source")
-                        .string_arg(write_src);
+                cmd.path_arg(nuget_exe)
+                    .string_arg("push")
+                    .path_arg(nupkg_path)
+                    .string_arg("-ForceEnglishOutput")
+                    .string_arg("-Timeout")
+                    .string_arg(m_timeout)
+                    .string_arg("-Source")
+                    .string_arg(write_src);
 
-                    if (!m_interactive)
-                    {
-                        cmd.string_arg("-NonInteractive");
-                    }
-
-                    print2("Uploading binaries for ", spec, " to NuGet source ", write_src, ".\n");
-
-                    auto rc = run_nuget_commandline(cmd);
-                    if (rc != 0)
-                    {
-                        print2(Color::error,
-                               "Pushing NuGet to ",
-                               write_src,
-                               " failed. Use --debug for more information.\n");
-                    }
-                }
-                for (auto&& write_cfg : m_write_configs)
+                if (!m_interactive)
                 {
-                    Command cmd;
-#ifndef _WIN32
-                    cmd.path_arg(paths.get_tool_exe(Tools::MONO));
-#endif
-                    cmd.path_arg(nuget_exe)
-                        .string_arg("push")
-                        .path_arg(nupkg_path)
-                        .string_arg("-ForceEnglishOutput")
-                        .string_arg("-Timeout")
-                        .string_arg(m_timeout)
-                        .string_arg("-ConfigFile")
-                        .path_arg(write_cfg);
-                    if (!m_interactive)
-                    {
-                        cmd.string_arg("-NonInteractive");
-                    }
-
-                    print2("Uploading binaries for ", spec, " using NuGet config ", vcpkg::u8string(write_cfg), ".\n");
-
-                    auto rc = run_nuget_commandline(cmd);
-
-                    if (rc != 0)
-                    {
-                        print2(Color::error,
-                               "Pushing NuGet with ",
-                               vcpkg::u8string(write_cfg),
-                               " failed. Use --debug for more information.\n");
-                    }
+                    cmd.string_arg("-NonInteractive");
                 }
 
-                paths.get_filesystem().remove(nupkg_path, ignore_errors);
+                print2("Uploading binaries for ", spec, " to NuGet source ", write_src, ".\n");
+                if (run_nuget_commandline(cmd) != 0)
+                {
+                    print2(
+                        Color::error, "Pushing NuGet to ", write_src, " failed. Use --debug for more information.\n");
+                }
             }
+            for (auto&& write_cfg : m_write_configs)
+            {
+                Command cmd;
+#ifndef _WIN32
+                cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+#endif
+                cmd.path_arg(nuget_exe)
+                    .string_arg("push")
+                    .path_arg(nupkg_path)
+                    .string_arg("-ForceEnglishOutput")
+                    .string_arg("-Timeout")
+                    .string_arg(m_timeout)
+                    .string_arg("-ConfigFile")
+                    .path_arg(write_cfg);
+                if (!m_interactive)
+                {
+                    cmd.string_arg("-NonInteractive");
+                }
+
+                print2("Uploading binaries for ", spec, " using NuGet config ", write_cfg, ".\n");
+
+                if (run_nuget_commandline(cmd) != 0)
+                {
+                    print2(
+                        Color::error, "Pushing NuGet with ", write_cfg, " failed. Use --debug for more information.\n");
+                }
+            }
+
+            paths.get_filesystem().remove(nupkg_path, IgnoreErrors{});
         }
+
+        void precheck(const VcpkgPaths&, View<Dependencies::InstallPlanAction>, View<CacheStatus*>) const override { }
 
     private:
         std::vector<std::string> m_read_sources;
         std::vector<std::string> m_write_sources;
 
-        std::vector<path> m_read_configs;
-        std::vector<path> m_write_configs;
+        std::vector<Path> m_read_configs;
+        std::vector<Path> m_write_configs;
 
-        std::set<PackageSpec> m_restored;
         std::string m_timeout;
         bool m_interactive;
         bool m_use_nuget_cache;
@@ -895,126 +945,169 @@ namespace
         return res == 0;
     }
 
-    bool gsutil_upload_file(const std::string& gcs_object, const path& archive)
+    bool gsutil_upload_file(const std::string& gcs_object, const Path& archive)
     {
         Command cmd;
         cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").path_arg(archive).string_arg(gcs_object);
         const auto out = cmd_execute_and_capture_output(cmd);
-        if (out.exit_code == 0) return true;
+        if (out.exit_code == 0)
+        {
+            return true;
+        }
+
         print2(Color::warning, "gsutil failed to upload with exit code: ", out.exit_code, '\n', out.output);
         return false;
     }
 
-    bool gsutil_download_file(const std::string& gcs_object, const path& archive)
+    bool gsutil_download_file(const std::string& gcs_object, const Path& archive)
     {
         Command cmd;
         cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").string_arg(gcs_object).path_arg(archive);
         const auto out = cmd_execute_and_capture_output(cmd);
-        if (out.exit_code == 0) return true;
+        if (out.exit_code == 0)
+        {
+            return true;
+        }
+
         print2(Color::warning, "gsutil failed to download with exit code: ", out.exit_code, '\n', out.output);
         return false;
     }
 
-    struct GcsBinaryProvider : NullBinaryProvider
+    struct GcsBinaryProvider : IBinaryProvider
     {
         GcsBinaryProvider(std::vector<std::string>&& read_prefixes, std::vector<std::string>&& write_prefixes)
             : m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
         {
         }
 
-        void prefetch(const VcpkgPaths& paths, std::vector<const Dependencies::InstallPlanAction*>& actions) override
+        static std::string make_gcs_path(const std::string& prefix, const std::string& abi)
+        {
+            return Strings::concat(prefix, abi, ".zip");
+        }
+
+        void prefetch(const VcpkgPaths& paths,
+                      View<Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
 
-            const auto current_restored = m_restored.size();
+            const auto timer = ElapsedTimer::create_started();
 
+            size_t restored_count = 0;
             for (const auto& prefix : m_read_prefixes)
             {
-                std::vector<std::pair<std::string, path>> url_paths;
-                std::vector<PackageSpec> specs;
+                std::vector<std::pair<std::string, Path>> url_paths;
+                std::vector<size_t> url_indices;
 
-                for (auto&& action : actions)
+                for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
-                    auto abi = action->package_abi();
-                    if (!abi) continue;
+                    auto&& action = actions[idx];
+                    auto abi = action.package_abi().get();
+                    if (!abi || !cache_status[idx]->should_attempt_restore(this))
+                    {
+                        continue;
+                    }
 
-                    specs.push_back(action->spec);
-                    auto pkgdir = paths.package_dir(action->spec);
-                    clean_prepare_dir(fs, pkgdir);
-                    pkgdir /= vcpkg::u8path(Strings::concat(*abi.get(), ".zip"));
-                    url_paths.emplace_back(Strings::concat(prefix, *abi.get(), ".zip"), pkgdir);
+                    clean_prepare_dir(fs, paths.package_dir(action.spec));
+                    url_paths.emplace_back(make_gcs_path(prefix, *abi),
+                                           make_temp_archive_path(paths.buildtrees, action.spec));
+                    url_indices.push_back(idx);
                 }
 
                 if (url_paths.empty()) break;
 
                 print2("Attempting to fetch ", url_paths.size(), " packages from GCS.\n");
-                std::size_t index = 0;
-                for (const auto& p : url_paths)
+                std::vector<Command> jobs;
+                std::vector<size_t> idxs;
+                for (size_t idx = 0; idx < url_paths.size(); ++idx)
                 {
-                    const auto i = index++;
-                    if (!gsutil_download_file(p.first, p.second)) continue;
-                    if (decompress_archive(paths, paths.package_dir(specs[i]), p.second).exit_code != 0)
-                    {
-                        Debug::print("Failed to decompress ", vcpkg::u8string(p.second), '\n');
-                        continue;
-                    }
-                    // decompression success
-                    fs.remove(p.second, VCPKG_LINE_INFO);
-                    m_restored.insert(specs[i]);
+                    auto&& action = actions[url_indices[idx]];
+                    auto&& url_path = url_paths[idx];
+                    if (!gsutil_download_file(url_path.first, url_path.second)) continue;
+                    jobs.push_back(decompress_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
+                    idxs.push_back(idx);
                 }
 
-                Util::erase_remove_if(actions, [this](const Dependencies::InstallPlanAction* action) {
-                    return Util::Sets::contains(m_restored, action->spec);
-                });
+                const auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+
+                for (size_t j = 0; j < jobs.size(); ++j)
+                {
+                    const auto idx = idxs[j];
+                    if (job_results[j].exit_code != 0)
+                    {
+                        Debug::print("Failed to decompress ", url_paths[idx].second, '\n');
+                        continue;
+                    }
+
+                    // decompression success
+                    ++restored_count;
+                    fs.remove(url_paths[idx].second, VCPKG_LINE_INFO);
+                    cache_status[url_indices[idx]]->mark_restored();
+                }
             }
+
             print2("Restored ",
-                   m_restored.size() - current_restored,
-                   " packages from GCS servers. Use --debug for more information.\n");
+                   restored_count,
+                   " packages from GCS servers in ",
+                   timer.elapsed(),
+                   ". Use --debug for more information.\n");
         }
-        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction& action) override
+
+        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
         {
-            return Util::Sets::contains(m_restored, action.spec) ? RestoreResult::success : RestoreResult::missing;
+            return RestoreResult::unavailable;
         }
-        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) override
+
+        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
         {
             if (m_write_prefixes.empty()) return;
-            const auto& abi_tag = action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
+            const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
-            const auto tmp_archive_path = paths.buildtrees / spec.name() / (spec.triplet().to_string() + ".zip");
+            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees, spec);
             compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
 
-            std::size_t upload_count = 0;
+            size_t upload_count = 0;
             for (const auto& prefix : m_write_prefixes)
             {
-                auto gcs_object = Strings::concat(prefix, abi_tag, ".zip");
-                if (gsutil_upload_file(gcs_object, tmp_archive_path)) ++upload_count;
+                if (gsutil_upload_file(make_gcs_path(prefix, abi), tmp_archive_path))
+                {
+                    ++upload_count;
+                }
             }
 
             print2("Uploaded binaries to ", upload_count, " GCS remotes.\n");
         }
+
         void precheck(const VcpkgPaths&,
-                      std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult>& results_map) override
+                      View<Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus*> cache_status) const override
         {
+            std::vector<CacheAvailability> actions_availability{actions.size()};
             for (const auto& prefix : m_read_prefixes)
             {
-                std::vector<std::string> objects;
-                std::vector<const Dependencies::InstallPlanAction*> url_actions;
-                for (auto&& kv : results_map)
+                for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
-                    if (kv.second != RestoreResult::missing) continue;
-                    auto abi = kv.first->package_abi();
-                    if (!abi) continue;
-                    objects.push_back(Strings::concat(prefix, *abi.get(), ".zip"));
-                    url_actions.push_back(kv.first);
-                }
+                    auto&& action = actions[idx];
+                    const auto abi = action.package_abi().get();
+                    if (!abi || !cache_status[idx]->should_attempt_precheck(this))
+                    {
+                        continue;
+                    }
 
-                std::vector<bool> stats(objects.size());
-                std::transform(objects.begin(), objects.end(), stats.begin(), gsutil_stat);
-                Checks::check_exit(VCPKG_LINE_INFO, stats.size() == url_actions.size());
-                for (std::size_t i = 0; i < stats.size(); ++i)
+                    if (gsutil_stat(make_gcs_path(prefix, *abi)))
+                    {
+                        actions_availability[idx] = CacheAvailability::available;
+                        cache_status[idx]->mark_available(this);
+                    }
+                }
+            }
+
+            for (size_t idx = 0; idx < actions.size(); ++idx)
+            {
+                const auto this_cache_status = cache_status[idx];
+                if (this_cache_status && actions_availability[idx] == CacheAvailability::unavailable)
                 {
-                    if (!stats[i]) continue;
-                    results_map[url_actions[i]] = RestoreResult::success;
+                    this_cache_status->mark_unavailable(this);
                 }
             }
         }
@@ -1022,104 +1115,270 @@ namespace
     private:
         std::vector<std::string> m_read_prefixes;
         std::vector<std::string> m_write_prefixes;
-
-        std::set<PackageSpec> m_restored;
     };
 }
 
 namespace vcpkg
 {
-    struct MergeBinaryProviders : NullBinaryProvider
+    BinaryCache::BinaryCache(const VcpkgCmdArguments& args) { install_providers_for(args); }
+
+    void BinaryCache::install_providers(std::vector<std::unique_ptr<IBinaryProvider>>&& providers)
     {
-        explicit MergeBinaryProviders(std::vector<std::unique_ptr<IBinaryProvider>>&& providers)
-            : m_providers(std::move(providers))
+        Checks::check_exit(
+            VCPKG_LINE_INFO, m_status.empty(), "Attempted to install additional providers in active binary cache");
+        if (m_providers.empty())
         {
+            m_providers = std::move(providers);
+        }
+        else
+        {
+            m_providers.insert(m_providers.end(),
+                               std::make_move_iterator(providers.begin()),
+                               std::make_move_iterator(providers.end()));
+        }
+    }
+
+    void BinaryCache::install_providers_for(const VcpkgCmdArguments& args)
+    {
+        if (args.binary_caching_enabled())
+        {
+            install_providers(create_binary_providers_from_configs(args.binary_sources).value_or_exit(VCPKG_LINE_INFO));
+        }
+    }
+
+    RestoreResult BinaryCache::try_restore(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action)
+    {
+        const auto abi = action.package_abi().get();
+        if (!abi)
+        {
+            return RestoreResult::unavailable;
         }
 
-        void prefetch(const VcpkgPaths& paths, std::vector<const Dependencies::InstallPlanAction*>& actions) override
+        auto& cache_status = m_status[*abi];
+        if (cache_status.is_restored())
         {
-            for (auto&& provider : m_providers)
+            return RestoreResult::restored;
+        }
+
+        const auto available = cache_status.get_available_provider();
+        if (available)
+        {
+            switch (available->try_restore(paths, action))
             {
-                provider->prefetch(paths, actions);
+                case RestoreResult::unavailable:
+                    // Even though that provider thought it had it, it didn't; perhaps
+                    // due to intermittent network problems etc.
+                    // Try other providers below
+                    break;
+                case RestoreResult::restored: cache_status.mark_restored(); return RestoreResult::restored;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
-        RestoreResult try_restore(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) override
+
+        for (auto&& provider : m_providers)
         {
-            for (auto&& provider : m_providers)
+            if (provider.get() == available)
             {
-                auto result = provider->try_restore(paths, action);
-                switch (result)
-                {
-                    case RestoreResult::build_failed:
-                    case RestoreResult::success: return result;
-                    case RestoreResult::missing: continue;
-                    default: Checks::unreachable(VCPKG_LINE_INFO);
-                }
+                continue; // this one already tried :)
             }
-            return RestoreResult::missing;
+
+            if (cache_status.is_unavailable(m_providers.size()))
+            {
+                break;
+            }
+
+            switch (provider->try_restore(paths, action))
+            {
+                case RestoreResult::restored: cache_status.mark_restored(); return RestoreResult::restored;
+                case RestoreResult::unavailable: cache_status.mark_unavailable(provider.get()); break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
         }
-        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) override
+
+        return RestoreResult::unavailable;
+    }
+
+    void BinaryCache::push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action)
+    {
+        const auto abi = action.package_abi().get();
+        if (abi)
         {
             for (auto&& provider : m_providers)
             {
                 provider->push_success(paths, action);
             }
+
+            m_status[*abi].mark_restored();
         }
-        void precheck(const VcpkgPaths& paths,
-                      std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult>& results_map) override
+    }
+
+    static std::vector<CacheStatus*> build_cache_status_vector(View<Dependencies::InstallPlanAction> actions,
+                                                               std::unordered_map<std::string, CacheStatus>& status)
+    {
+        std::vector<CacheStatus*> results{actions.size()};
+        for (size_t idx = 0; idx < actions.size(); ++idx)
         {
-            for (auto&& provider : m_providers)
+            const auto abi = actions[idx].package_abi().get();
+            if (abi)
             {
-                provider->precheck(paths, results_map);
+                results[idx] = &status[*abi];
             }
         }
 
-    private:
-        std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
-    };
-}
+        return results;
+    }
 
-IBinaryProvider& vcpkg::null_binary_provider()
-{
-    static NullBinaryProvider p;
-    return p;
+    void BinaryCache::prefetch(const VcpkgPaths& paths, View<Dependencies::InstallPlanAction> actions)
+    {
+        auto cache_status = build_cache_status_vector(actions, m_status);
+        for (auto&& provider : m_providers)
+        {
+            provider->prefetch(paths, actions, cache_status);
+            for (auto status : cache_status)
+            {
+                if (status)
+                {
+                    status->mark_unavailable(provider.get());
+                }
+            }
+        }
+    }
+
+    std::vector<CacheAvailability> BinaryCache::precheck(const VcpkgPaths& paths,
+                                                         View<Dependencies::InstallPlanAction> actions)
+    {
+        auto cache_status = build_cache_status_vector(actions, m_status);
+        for (auto&& provider : m_providers)
+        {
+            provider->precheck(paths, actions, cache_status);
+        }
+
+        std::vector<CacheAvailability> results{actions.size()};
+        for (size_t idx = 0; idx < results.size(); ++idx)
+        {
+            results[idx] = cache_status[idx]->get_available_provider() ? CacheAvailability::available
+                                                                       : CacheAvailability::unavailable;
+        }
+
+        return results;
+    }
+
+    bool CacheStatus::should_attempt_precheck(const IBinaryProvider* sender) const noexcept
+    {
+        switch (m_status)
+        {
+            case CacheStatusState::unknown: return !Util::Vectors::contains(m_known_unavailable_providers, sender);
+            case CacheStatusState::available: return false;
+            case CacheStatusState::restored: return false;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    bool CacheStatus::should_attempt_restore(const IBinaryProvider* sender) const noexcept
+    {
+        switch (m_status)
+        {
+            case CacheStatusState::unknown: return !Util::Vectors::contains(m_known_unavailable_providers, sender);
+            case CacheStatusState::available: return m_available_provider == sender;
+            case CacheStatusState::restored: return false;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    bool CacheStatus::is_unavailable(size_t total_providers) const noexcept
+    {
+        switch (m_status)
+        {
+            case CacheStatusState::unknown: return m_known_unavailable_providers.size() <= total_providers;
+            case CacheStatusState::available:
+            case CacheStatusState::restored: return false;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    bool CacheStatus::is_restored() const noexcept { return m_status == CacheStatusState::restored; }
+
+    void CacheStatus::mark_unavailable(const IBinaryProvider* sender)
+    {
+        switch (m_status)
+        {
+            case CacheStatusState::unknown:
+                if (!Util::Vectors::contains(m_known_unavailable_providers, sender))
+                {
+                    m_known_unavailable_providers.push_back(sender);
+                }
+                break;
+            case CacheStatusState::available:
+            case CacheStatusState::restored: break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+    void CacheStatus::mark_available(const IBinaryProvider* sender) noexcept
+    {
+        switch (m_status)
+        {
+            case CacheStatusState::unknown:
+                m_known_unavailable_providers.~vector();
+                m_status = CacheStatusState::available;
+                m_available_provider = sender;
+                break;
+            case CacheStatusState::available:
+            case CacheStatusState::restored: break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    void CacheStatus::mark_restored() noexcept
+    {
+        switch (m_status)
+        {
+            case CacheStatusState::unknown: m_known_unavailable_providers.~vector(); [[fallthrough]];
+            case CacheStatusState::available: m_status = CacheStatusState::restored; break;
+            case CacheStatusState::restored: break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    const IBinaryProvider* CacheStatus::get_available_provider() const noexcept
+    {
+        switch (m_status)
+        {
+            case CacheStatusState::available: return m_available_provider;
+            case CacheStatusState::unknown:
+            case CacheStatusState::restored: return nullptr;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
 }
 
 namespace
 {
-    const ExpectedS<path>& default_cache_path()
+    const ExpectedS<Path>& default_cache_path()
     {
-        static auto cachepath = get_platform_cache_home().then([](path p) -> ExpectedS<path> {
+        static auto cachepath = get_platform_cache_home().then([](Path p) -> ExpectedS<Path> {
             auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
             if (auto p_str = maybe_cachepath.get())
             {
-                Metrics::g_metrics.lock()->track_property("VCPKG_DEFAULT_BINARY_CACHE", "defined");
-                auto path = vcpkg::u8path(*p_str);
+                LockGuardPtr<Metrics>(g_metrics)->track_property("VCPKG_DEFAULT_BINARY_CACHE", "defined");
+                Path path = *p_str;
                 path.make_preferred();
-                const auto status = stdfs::status(path);
-                if (!stdfs::exists(status))
-                {
-                    return {"Path to VCPKG_DEFAULT_BINARY_CACHE does not exist: " + vcpkg::u8string(path),
-                            expected_right_tag};
-                }
-
-                if (!stdfs::is_directory(status))
+                if (!get_real_filesystem().is_directory(path))
                 {
                     return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not a directory: " +
-                                vcpkg::u8string(path),
+                                path.native(),
                             expected_right_tag};
                 }
 
                 if (!path.is_absolute())
                 {
                     return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not absolute: " +
-                                vcpkg::u8string(path),
+                                path.native(),
                             expected_right_tag};
                 }
 
                 return {std::move(path), expected_left_tag};
             }
-            p /= vcpkg::u8path("vcpkg/archives");
+            p /= "vcpkg/archives";
             p.make_preferred();
             if (p.is_absolute())
             {
@@ -1127,7 +1386,7 @@ namespace
             }
             else
             {
-                return {"default path was not absolute: " + vcpkg::u8string(p), expected_right_tag};
+                return {"default path was not absolute: " + p.native(), expected_right_tag};
             }
         });
         return cachepath;
@@ -1139,8 +1398,8 @@ namespace
         bool interactive = false;
         std::string nugettimeout = "100";
 
-        std::vector<path> archives_to_read;
-        std::vector<path> archives_to_write;
+        std::vector<Path> archives_to_read;
+        std::vector<Path> archives_to_write;
 
         std::vector<std::string> url_templates_to_get;
         std::vector<std::string> azblob_templates_to_put;
@@ -1151,8 +1410,8 @@ namespace
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
 
-        std::vector<path> configs_to_read;
-        std::vector<path> configs_to_write;
+        std::vector<Path> configs_to_read;
+        std::vector<Path> configs_to_write;
 
         std::vector<std::string> secrets;
 
@@ -1215,7 +1474,7 @@ namespace
                                      segments[0].first);
                 }
 
-                auto p = vcpkg::u8path(segments[1].second);
+                Path p = segments[1].second;
                 if (!p.is_absolute())
                 {
                     return add_error("expected arguments: path arguments for binary config strings must be absolute",
@@ -1248,7 +1507,7 @@ namespace
                         segments[0].first);
                 }
 
-                auto p = vcpkg::u8path(segments[1].second);
+                Path p = segments[1].second;
                 if (!p.is_absolute())
                 {
                     return add_error("expected arguments: path arguments for binary config strings must be absolute",
@@ -1324,7 +1583,7 @@ namespace
                 }
 
                 handle_readwrite(
-                    state->archives_to_read, state->archives_to_write, path(*maybe_home.get()), segments, 1);
+                    state->archives_to_read, state->archives_to_write, Path(*maybe_home.get()), segments, 1);
             }
             else if (segments[0].second == "x-azblob")
             {
@@ -1528,7 +1787,7 @@ ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(
 {
     if (!arg || arg.get()->empty()) return Downloads::DownloadManagerConfig{};
 
-    Metrics::g_metrics.lock()->track_property("asset-source", "defined");
+    LockGuardPtr<Metrics>(g_metrics)->track_property("asset-source", "defined");
 
     AssetSourcesState s;
     AssetSourcesParser parser(*arg.get(), Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV), &s);
@@ -1575,7 +1834,8 @@ ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(
                                             s.block_origin};
 }
 
-ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_configs(View<std::string> args)
+ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_providers_from_configs(
+    View<std::string> args)
 {
     std::string env_string = get_environment_variable("VCPKG_BINARY_SOURCES").value_or("");
     if (Debug::g_debugging)
@@ -1583,7 +1843,7 @@ ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_c
         const auto& cachepath = default_cache_path();
         if (cachepath.has_value())
         {
-            Debug::print("Default binary cache path is: ", vcpkg::u8string(*cachepath.get()), '\n');
+            Debug::print("Default binary cache path is: ", cachepath.value_or_exit(VCPKG_LINE_INFO), '\n');
         }
         else
         {
@@ -1591,14 +1851,14 @@ ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_c
         }
     }
 
-    return create_binary_provider_from_configs_pure(env_string, args);
+    return create_binary_providers_from_configs_pure(env_string, args);
 }
 
-ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_configs_pure(
+ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_providers_from_configs_pure(
     const std::string& env_string, View<std::string> args)
 {
     {
-        auto metrics = Metrics::g_metrics.lock();
+        LockGuardPtr<Metrics> metrics(g_metrics);
         if (!env_string.empty())
         {
             metrics->track_property("VCPKG_BINARY_SOURCES", "defined");
@@ -1638,7 +1898,7 @@ ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_c
 
     if (s.m_cleared)
     {
-        Metrics::g_metrics.lock()->track_property("binarycaching-clear", "defined");
+        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-clear", "defined");
     }
 
     std::vector<std::unique_ptr<IBinaryProvider>> providers;
@@ -1658,14 +1918,14 @@ ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_c
 
     if (!s.url_templates_to_get.empty())
     {
-        Metrics::g_metrics.lock()->track_property("binarycaching-url-get", "defined");
+        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-url-get", "defined");
         providers.push_back(std::make_unique<HttpGetBinaryProvider>(std::move(s.url_templates_to_get)));
     }
 
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||
         !s.configs_to_write.empty())
     {
-        Metrics::g_metrics.lock()->track_property("binarycaching-nuget", "defined");
+        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-nuget", "defined");
         providers.push_back(std::make_unique<NugetBinaryProvider>(std::move(s.sources_to_read),
                                                                   std::move(s.sources_to_write),
                                                                   std::move(s.configs_to_read),
@@ -1674,7 +1934,7 @@ ExpectedS<std::unique_ptr<IBinaryProvider>> vcpkg::create_binary_provider_from_c
                                                                   s.interactive));
     }
 
-    return {std::make_unique<MergeBinaryProviders>(std::move(providers))};
+    return providers;
 }
 
 std::string vcpkg::reformat_version(const std::string& version, const std::string& abi_tag)
@@ -1710,7 +1970,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
     auto vcpkg_nuget_repository = get_environment_variable("VCPKG_NUGET_REPOSITORY");
     if (auto p = vcpkg_nuget_repository.get())
     {
-        Metrics::g_metrics.lock()->track_property("VCPKG_NUGET_REPOSITORY", "defined");
+        LockGuardPtr<Metrics>(g_metrics)->track_property("VCPKG_NUGET_REPOSITORY", "defined");
         return {std::move(*p)};
     }
 
@@ -1726,7 +1986,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
         return {};
     }
 
-    Metrics::g_metrics.lock()->track_property("GITHUB_REPOSITORY", "defined");
+    LockGuardPtr<Metrics>(g_metrics)->track_property("GITHUB_REPOSITORY", "defined");
     return {Strings::concat(gh_server, '/', gh_repo, ".git"),
             get_environment_variable("GITHUB_REF").value_or(""),
             get_environment_variable("GITHUB_SHA").value_or("")};
@@ -1798,7 +2058,7 @@ std::string vcpkg::generate_nuspec(const VcpkgPaths& paths,
     xml.close_tag("metadata").line_break();
     xml.open_tag("files");
     xml.start_complex_open_tag("file")
-        .text_attr("src", vcpkg::u8string(paths.package_dir(spec) / vcpkg::u8path("**")))
+        .text_attr("src", paths.package_dir(spec) / "**")
         .text_attr("target", "")
         .finish_self_closing_complex_tag();
     xml.close_tag("files").line_break();
@@ -1825,9 +2085,11 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
     tbl.format("clear", "Removes all previous sources");
     tbl.format(
         "x-azurl,<url>[,<sas>[,<rw>]]",
-        "Adds an Azure Blob Storage source, optionally using Shared Access Signature validation. URL should include "
+        "Adds an Azure Blob Storage source, optionally using Shared Access Signature validation. URL should "
+        "include "
         "the container path and be terminated with a trailing `/`. SAS, if defined, should be prefixed with a `?`. "
-        "Non-Azure servers will also work if they respond to GET and PUT requests of the form: `<url><sha512><sas>`.");
+        "Non-Azure servers will also work if they respond to GET and PUT requests of the form: "
+        "`<url><sha512><sas>`.");
     tbl.format("x-block-origin",
                "Disables use of the original URLs in case the mirror does not have the file available.");
     tbl.blank();
@@ -1899,7 +2161,7 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
     {
         print2(
             "\nBased on your system settings, the default path to store binaries is\n    ",
-            vcpkg::u8string(*p),
+            *p,
             "\nThis consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.\n");
     }
 

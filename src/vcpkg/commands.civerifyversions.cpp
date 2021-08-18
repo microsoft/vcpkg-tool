@@ -53,9 +53,9 @@ namespace vcpkg::Commands::CIVerifyVersions
 
     static ExpectedS<std::string> verify_version_in_db(const VcpkgPaths& paths,
                                                        const std::map<std::string, VersionT, std::less<>> baseline,
-                                                       const std::string& port_name,
-                                                       const path& port_path,
-                                                       const path& versions_file_path,
+                                                       StringView port_name,
+                                                       const Path& port_path,
+                                                       const Path& versions_file_path,
                                                        const std::string& local_git_tree,
                                                        bool verify_git_trees)
     {
@@ -66,7 +66,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 Strings::format("Error: While attempting to parse versions for port %s from file: %s\n"
                                 "       Found the following error(s):\n%s",
                                 port_name,
-                                vcpkg::u8string(versions_file_path),
+                                versions_file_path,
                                 maybe_versions.error()),
                 expected_right_tag,
             };
@@ -79,7 +79,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 Strings::format("Error: While reading versions for port %s from file: %s\n"
                                 "       File contains no versions.",
                                 port_name,
-                                vcpkg::u8string(versions_file_path)),
+                                versions_file_path),
                 expected_right_tag,
             };
         }
@@ -92,7 +92,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 for (const std::string& control_file : {"CONTROL", "vcpkg.json"})
                 {
                     auto treeish = Strings::concat(version_entry.second, ':', control_file);
-                    auto maybe_file = paths.git_show(Strings::concat(treeish), paths.root / vcpkg::u8path(".git"));
+                    auto maybe_file = paths.git_show(Strings::concat(treeish), paths.root / ".git");
                     if (!maybe_file.has_value()) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
@@ -105,7 +105,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                             "       While trying to load port from: %s\n"
                                             "       Found the following error(s):\n%s",
                                             port_name,
-                                            vcpkg::u8string(versions_file_path),
+                                            versions_file_path,
                                             version_entry.first.versiont,
                                             treeish,
                                             maybe_scf.error()->error),
@@ -124,7 +124,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "       The version declared in file does not match checked-out version: %s\n"
                                 "       Checked out Git SHA: %s",
                                 port_name,
-                                vcpkg::u8string(versions_file_path),
+                                versions_file_path,
                                 version_entry.first.versiont,
                                 git_tree_version.versiont,
                                 version_entry.second),
@@ -144,7 +144,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                             "       The checked-out object does not contain a CONTROL file or vcpkg.json file.\n"
                             "       Checked out Git SHA: %s",
                             port_name,
-                            vcpkg::u8string(versions_file_path),
+                            versions_file_path,
                             version_entry.first.versiont,
                             version_entry.second),
                         expected_right_tag,
@@ -182,7 +182,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                     "       Local port version `%s` exists in version file but it's not the first "
                                     "entry in the \"versions\" array.",
                                     port_name,
-                                    vcpkg::u8string(versions_file_path),
+                                    versions_file_path,
                                     local_port_version.versiont),
                     expected_right_tag,
                 };
@@ -196,7 +196,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                     "           vcpkg x-add-version %s\n\n"
                                     "       to add the new port version.",
                                     port_name,
-                                    vcpkg::u8string(versions_file_path),
+                                    versions_file_path,
                                     local_port_version.versiont,
                                     port_name),
                     expected_right_tag,
@@ -215,7 +215,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "           vcpkg x-add-version %s --overwrite-version\n\n"
                                 "       to overwrite the declared version's scheme.",
                                 port_name,
-                                vcpkg::u8string(versions_file_path),
+                                versions_file_path,
                                 top_entry.first.versiont,
                                 get_scheme_name(top_entry.first.scheme),
                                 get_scheme_name(local_port_version.scheme),
@@ -229,12 +229,14 @@ namespace vcpkg::Commands::CIVerifyVersions
             return {
                 Strings::format("Error: While reading versions for port %s from file: %s\n"
                                 "       File declares version `%s` with SHA: %s\n"
-                                "       But local port with the same verion has a different SHA: %s\n"
+                                "       But local port with the same version has a different SHA: %s\n"
                                 "       Please update the port's version fields and then run:\n\n"
-                                "           vcpkg x-add-version %s\n\n"
+                                "           vcpkg x-add-version %s\n"
+                                "           git add versions\n"
+                                "           git commit -m \"Update version database\"\n\n"
                                 "       to add a new version.",
                                 port_name,
-                                vcpkg::u8string(versions_file_path),
+                                versions_file_path,
                                 top_entry.first.versiont,
                                 top_entry.second,
                                 local_git_tree,
@@ -250,7 +252,9 @@ namespace vcpkg::Commands::CIVerifyVersions
                 Strings::format("Error: While reading baseline version for port %s.\n"
                                 "       Baseline version not found.\n"
                                 "       Run:\n\n"
-                                "           vcpkg x-add-version %s\n\n"
+                                "           vcpkg x-add-version %s\n"
+                                "           git add versions\n"
+                                "           git commit -m \"Update version database\"\n\n"
                                 "       to set version %s as the baseline version.",
                                 port_name,
                                 port_name,
@@ -268,10 +272,12 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "       Baseline file declares version: %s.\n"
                                 "       But the latest version in version files is: %s.\n"
                                 "       Run:\n\n"
-                                "           vcpkg x-add-version %s\n\n"
+                                "           vcpkg x-add-version %s\n"
+                                "           git add versions\n"
+                                "           git commit -m \"Update version database\"\n\n"
                                 "       to update the baseline version.",
                                 port_name,
-                                vcpkg::u8string(versions_file_path),
+                                versions_file_path,
                                 baseline_version,
                                 top_entry.first.versiont,
                                 port_name),
@@ -312,12 +318,10 @@ namespace vcpkg::Commands::CIVerifyVersions
         auto baseline = get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
         auto& fs = paths.get_filesystem();
         std::set<std::string> errors;
-        for (const auto& dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+        for (const auto& port_path : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
         {
-            const auto& port_path = dir.path();
-
-            auto&& port_name = vcpkg::u8string(port_path.stem());
-            if (Util::Sets::contains(exclusion_set, port_name))
+            auto port_name = port_path.stem();
+            if (Util::Sets::contains(exclusion_set, port_name.to_string()))
             {
                 if (verbose) vcpkg::printf("SKIP: %s\n", port_name);
                 continue;
@@ -329,22 +333,24 @@ namespace vcpkg::Commands::CIVerifyVersions
                 errors.emplace(Strings::format("Error: While validating port %s.\n"
                                                "       Missing Git SHA.\n"
                                                "       Run:\n\n"
-                                               "           git add %s.\n"
-                                               "           git commit -m \"[%s] Add new port\"\n"
-                                               "           vcpkg x-add-version %s\n\n"
+                                               "           git add %s\n"
+                                               "           git commit -m \"wip\"\n"
+                                               "           vcpkg x-add-version %s\n"
+                                               "           git add versions\n"
+                                               "           git commit --amend -m \"[%s] Add new port\"\n\n"
                                                "       to commit the new port and create its version file.",
                                                port_name,
-                                               vcpkg::u8string(port_path),
+                                               port_path,
                                                port_name,
                                                port_name));
                 continue;
             }
             auto git_tree = git_tree_it->second;
 
-            auto control_path = port_path / vcpkg::u8path("CONTROL");
-            auto manifest_path = port_path / vcpkg::u8path("vcpkg.json");
-            auto manifest_exists = fs.exists(manifest_path);
-            auto control_exists = fs.exists(control_path);
+            auto control_path = port_path / "CONTROL";
+            auto manifest_path = port_path / "vcpkg.json";
+            auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
+            auto control_exists = fs.exists(control_path, IgnoreErrors{});
 
             if (manifest_exists && control_exists)
             {
@@ -353,7 +359,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                     Strings::format("Error: While validating port %s.\n"
                                     "       Both a manifest file and a CONTROL file exist in port directory: %s",
                                     port_name,
-                                    vcpkg::u8string(port_path)));
+                                    port_path));
                 continue;
             }
 
@@ -363,13 +369,13 @@ namespace vcpkg::Commands::CIVerifyVersions
                 errors.emplace(Strings::format("Error: While validating port %s.\n"
                                                "       No manifest file or CONTROL file exist in port directory: %s",
                                                port_name,
-                                               vcpkg::u8string(port_path)));
+                                               port_path));
                 continue;
             }
 
-            auto versions_file_path = paths.builtin_registry_versions / vcpkg::u8path({port_name[0], '-'}) /
-                                      vcpkg::u8path(Strings::concat(port_name, ".json"));
-            if (!fs.exists(versions_file_path))
+            const char prefix[] = {port_name.byte_at_index(0), '-', '\0'};
+            auto versions_file_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
+            if (!fs.exists(versions_file_path, IgnoreErrors{}))
             {
                 vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
                 errors.emplace(Strings::format("Error: While validating port %s.\n"
@@ -378,7 +384,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                                "           vcpkg x-add-version %s\n\n"
                                                "       to create the versions file.",
                                                port_name,
-                                               vcpkg::u8string(versions_file_path),
+                                               versions_file_path,
                                                port_name));
                 continue;
             }

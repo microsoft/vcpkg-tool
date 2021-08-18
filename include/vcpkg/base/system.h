@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
@@ -10,12 +11,12 @@ namespace vcpkg
     Optional<std::string> get_environment_variable(ZStringView varname) noexcept;
     void set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept;
 
-    const ExpectedS<path>& get_home_dir() noexcept;
+    const ExpectedS<Path>& get_home_dir() noexcept;
 
-    const ExpectedS<path>& get_platform_cache_home() noexcept;
+    const ExpectedS<Path>& get_platform_cache_home() noexcept;
 
 #ifdef _WIN32
-    const ExpectedS<path>& get_appdata_local() noexcept;
+    const ExpectedS<Path>& get_appdata_local() noexcept;
 #endif
 
     Optional<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);
@@ -40,11 +41,11 @@ namespace vcpkg
 
     std::vector<CPUArchitecture> get_supported_host_architectures();
 
-    const Optional<path>& get_program_files_32_bit();
+    const Optional<Path>& get_program_files_32_bit();
 
-    const Optional<path>& get_program_files_platform_bitness();
+    const Optional<Path>& get_program_files_platform_bitness();
 
-    int get_num_logical_cores();
+    int get_concurrency();
 
     Optional<CPUArchitecture> guess_visual_studio_prompt_target_architecture();
 }

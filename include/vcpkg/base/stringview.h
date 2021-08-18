@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/stringview.h>
 
 #include <stddef.h>
+#include <string.h>
 
 #include <iterator>
 #include <limits>
@@ -21,6 +22,7 @@ namespace vcpkg
         {
         }
 
+        StringView(const char* ptr) noexcept : m_ptr(ptr), m_size(strlen(ptr)) { }
         constexpr StringView(const char* ptr, size_t size) noexcept : m_ptr(ptr), m_size(size) { }
         constexpr StringView(const char* b, const char* e) noexcept : m_ptr(b), m_size(static_cast<size_t>(e - b)) { }
 

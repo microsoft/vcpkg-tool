@@ -35,7 +35,7 @@ static Json::Object parse_json_object(StringView sv)
 static Parse::ParseExpected<SourceControlFile> test_parse_manifest(StringView sv, bool expect_fail = false)
 {
     auto object = parse_json_object(sv);
-    auto res = SourceControlFile::parse_manifest_file(vcpkg::u8path("<test manifest>"), object);
+    auto res = SourceControlFile::parse_manifest_file("<test manifest>", object);
     if (!res.has_value() && !expect_fail)
     {
         print_error_message(res.error());
@@ -99,15 +99,15 @@ TEST_CASE ("manifest versioning", "[manifests]")
          Versions::Scheme::Semver,
          "1.2.3-rc3"},
     };
-    for (auto v : data)
+    for (auto&& v : data)
     {
         auto m_pgh = test_parse_manifest(std::get<0>(v));
-
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
-        REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
-        REQUIRE(pgh.core_paragraph->version_scheme == std::get<1>(v));
-        REQUIRE(pgh.core_paragraph->version == std::get<2>(v));
+        CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
+        CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
+        CHECK(pgh.core_paragraph->version == std::get<2>(v));
+        CHECK(pgh.core_paragraph->port_version == 0);
     }
 
     test_parse_manifest(R"json({
@@ -211,9 +211,58 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
                         true);
 }
 
-TEST_CASE ("manifest overrides error hash", "[manifests]")
+TEST_CASE ("manifest overrides embedded port version", "[manifests]")
 {
     test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version-string": "abcd#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+    test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version-date": "2018-01-01#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+    test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version": "1.2#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+    test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version-semver": "1.2.0#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -223,8 +272,10 @@ TEST_CASE ("manifest overrides error hash", "[manifests]")
         }
     ]
 })json",
-                        true);
-    test_parse_manifest(R"json({
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -234,8 +285,10 @@ TEST_CASE ("manifest overrides error hash", "[manifests]")
         }
     ]
 })json",
-                        true);
-    test_parse_manifest(R"json({
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -245,18 +298,22 @@ TEST_CASE ("manifest overrides error hash", "[manifests]")
         }
     ]
 })json",
-                        true);
-    test_parse_manifest(R"json({
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
         {
             "name": "d",
-            "version-semver": "1.2#1"
+            "version-semver": "1.2.0#1"
         }
     ]
 })json",
-                        true);
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
 }
 
 TEST_CASE ("manifest constraints", "[manifests]")
@@ -483,7 +540,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
          Versions::Scheme::Semver,
          "1.2.3-rc3"},
     };
-    for (auto v : data)
+    for (auto&& v : data)
     {
         auto m_pgh = test_parse_manifest(std::get<0>(v));
 
@@ -798,19 +855,18 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
 
     std::vector<SourceControlFile> scfs;
 
-    for (auto dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+    for (auto&& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
     {
-        const auto control = dir / vcpkg::u8path("CONTROL");
-        const auto manifest = dir / vcpkg::u8path("vcpkg.json");
-        if (fs.exists(control))
+        const auto control = dir / "CONTROL";
+        const auto manifest = dir / "vcpkg.json";
+        if (fs.exists(control, IgnoreErrors{}))
         {
-            INFO(vcpkg::u8string(control));
+            INFO(control.native());
             auto contents = fs.read_contents(control, VCPKG_LINE_INFO);
-            auto pghs = Paragraphs::parse_paragraphs(contents, vcpkg::u8string(control));
+            auto pghs = Paragraphs::parse_paragraphs(contents, control);
             REQUIRE(pghs);
 
-            auto scf = SourceControlFile::parse_control_file(vcpkg::u8string(control),
-                                                             std::move(pghs).value_or_exit(VCPKG_LINE_INFO));
+            auto scf = SourceControlFile::parse_control_file(control, std::move(pghs).value_or_exit(VCPKG_LINE_INFO));
             if (!scf)
             {
                 INFO(scf.error()->name);
@@ -820,7 +876,7 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
 
             scfs.push_back(std::move(*scf.value_or_exit(VCPKG_LINE_INFO)));
         }
-        else if (fs.exists(manifest))
+        else if (fs.exists(manifest, IgnoreErrors{}))
         {
             std::error_code ec;
             auto contents = Json::parse_file(fs, manifest, ec);

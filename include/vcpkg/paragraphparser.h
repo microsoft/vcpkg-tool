@@ -48,7 +48,7 @@ namespace vcpkg::Parse
 
         void add_type_error(const std::string& fieldname, const char* type) { expected_types[fieldname] = type; }
 
-        std::unique_ptr<ParseControlErrorInfo> error_info(const std::string& name) const;
+        std::unique_ptr<ParseControlErrorInfo> error_info(StringView name) const;
 
     private:
         Paragraph&& fields;

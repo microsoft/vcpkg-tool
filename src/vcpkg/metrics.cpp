@@ -14,13 +14,13 @@
 #pragma comment(lib, "winhttp")
 #endif
 
-namespace vcpkg::Metrics
+namespace vcpkg
 {
-    Util::LockGuarded<Metrics> g_metrics;
+    LockGuarded<Metrics> g_metrics;
 
-    static std::string get_current_date_time()
+    static std::string get_current_date_time_string()
     {
-        auto maybe_time = Chrono::CTime::get_current_date_time();
+        auto maybe_time = CTime::get_current_date_time();
         if (auto ptime = maybe_time.get())
         {
             return ptime->to_string();
@@ -147,7 +147,7 @@ namespace vcpkg::Metrics
     {
         std::string user_id = generate_random_UUID();
         std::string user_timestamp;
-        std::string timestamp = get_current_date_time();
+        std::string timestamp = get_current_date_time_string();
 
         Json::Object properties;
         Json::Object measurements;
@@ -252,7 +252,7 @@ namespace vcpkg::Metrics
     std::string get_MAC_user()
     {
 #if defined(_WIN32)
-        if (!g_metrics.lock()->metrics_enabled())
+        if (!LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
         {
             return "{}";
         }
@@ -290,7 +290,7 @@ namespace vcpkg::Metrics
     void Metrics::init_user_information(std::string& user_id, std::string& first_use_time)
     {
         user_id = generate_random_UUID();
-        first_use_time = get_current_date_time();
+        first_use_time = get_current_date_time_string();
     }
 
     void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }
@@ -425,14 +425,14 @@ namespace vcpkg::Metrics
 #ifndef NDEBUG
             __debugbreak();
             auto err = GetLastError();
-            std::cerr << "[DEBUG] failed to connect to server: " << err << "\n";
+            fprintf(stderr, "[DEBUG] failed to connect to server: %08lu\n", err);
 #endif // NDEBUG
         }
 
         if (request) WinHttpCloseHandle(request);
         if (connect) WinHttpCloseHandle(connect);
         if (session) WinHttpCloseHandle(session);
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
         (void)payload;
 #endif // ^^^ !_WIN32
     }
@@ -445,15 +445,22 @@ namespace vcpkg::Metrics
         }
 
         const std::string payload = g_metricmessage.format_event_data_template();
-        if (g_should_print_metrics) std::cerr << payload << "\n";
-        if (!g_should_send_metrics) return;
+        if (g_should_print_metrics)
+        {
+            fprintf(stderr, "%s\n", payload.c_str());
+        }
+
+        if (!g_should_send_metrics)
+        {
+            return;
+        }
 
 #if defined(_WIN32)
         wchar_t temp_folder[MAX_PATH];
         GetTempPathW(MAX_PATH, temp_folder);
 
-        const path temp_folder_path = path(temp_folder) / "vcpkg";
-        const path temp_folder_path_exe =
+        const Path temp_folder_path = Path(Strings::to_utf8(temp_folder)) / "vcpkg";
+        const Path temp_folder_path_exe =
             temp_folder_path / Strings::format("vcpkg-%s.exe", Commands::Version::base_version());
 #endif
 
@@ -461,14 +468,14 @@ namespace vcpkg::Metrics
 #if defined(_WIN32)
         fs.create_directories(temp_folder_path, ec);
         if (ec) return;
-        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, stdfs::copy_options::skip_existing, ec);
+        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
         if (ec) return;
 #else
-        if (!fs.exists("/tmp")) return;
-        const path temp_folder_path = "/tmp/vcpkg";
-        fs.create_directory(temp_folder_path, ignore_errors);
+        if (!fs.exists("/tmp", IgnoreErrors{})) return;
+        const Path temp_folder_path = "/tmp/vcpkg";
+        fs.create_directory(temp_folder_path, IgnoreErrors{});
 #endif
-        const path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
+        const Path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
         fs.write_contents(vcpkg_metrics_txt_path, payload, ec);
         if (ec) return;
 
@@ -490,7 +497,7 @@ namespace vcpkg::Metrics
                         .string_arg("POST")
                         .string_arg("--tlsv1.2")
                         .string_arg("--data")
-                        .string_arg(Strings::concat("@", vcpkg::u8string(vcpkg_metrics_txt_path)))
+                        .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
                         .raw_arg(">/dev/null")
                         .raw_arg("2>&1");
         auto remove = Command("rm").path_arg(vcpkg_metrics_txt_path);

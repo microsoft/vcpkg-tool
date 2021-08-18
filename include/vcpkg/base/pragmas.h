@@ -25,11 +25,21 @@
 #define ASSUME(expr)
 #endif
 
+#define Z_VCPKG_PRAGMA(PRAGMA) _Pragma(#PRAGMA)
+
 // the static_assert(true, "")s are to avoid the extra ';' warning
-#ifdef _MSC_VER
-#define VCPKG_MSVC_WARNING(...) __pragma(warning(__VA_ARGS__))
-#define GCC_DIAGNOSTIC(...)
-#else
+#if defined(__clang__)
+// check clang first because it may define _MSC_VER
 #define VCPKG_MSVC_WARNING(...)
-#define GCC_DIAGNOSTIC(...) _Pragma("diagnostic " #__VA_ARGS__)
+#define VCPKG_GCC_DIAGNOSTIC(...)
+#define VCPKG_CLANG_DIAGNOSTIC(DIAGNOSTIC) Z_VCPKG_PRAGMA(clang diagnostic DIAGNOSTIC)
+#elif defined(_MSC_VER)
+#define VCPKG_MSVC_WARNING(...) Z_VCPKG_PRAGMA(warning(__VA_ARGS__))
+#define VCPKG_GCC_DIAGNOSTIC(...)
+#define VCPKG_CLANG_DIAGNOSTIC(...)
+#else
+// gcc
+#define VCPKG_MSVC_WARNING(...)
+#define VCPKG_GCC_DIAGNOSTIC(DIAGNOSTIC) Z_VCPKG_PRAGMA(gcc diagnostic DIAGNOSTIC)
+#define VCPKG_CLANG_DIAGNOSTIC(DIAGNOSTIC)
 #endif

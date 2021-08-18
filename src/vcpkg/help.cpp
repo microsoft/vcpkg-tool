@@ -51,9 +51,6 @@ namespace vcpkg::Help
                  "your project from within your manifest file.");
         tbl.blank();
         tbl.blank();
-        tbl.text("** This feature is experimental and requires `--feature-flags=versions` **");
-        tbl.blank();
-        tbl.blank();
         tbl.header("Versions in vcpkg come in four primary flavors");
         tbl.format("version", "A dot-separated sequence of numbers (1.2.3.4)");
         tbl.format("version-date", "A date (2021-01-01.5)");
@@ -71,9 +68,9 @@ namespace vcpkg::Help
         tbl.header("Manifests can place three kinds of constraints upon the versions used");
         tbl.format("builtin-baseline",
                    "The baseline references a commit within the vcpkg repository that establishes a minimum version on "
-                   "every dependency in the graph. If no other constraints are specified (directly or transitively), "
-                   "then the version from the baseline of the top level manifest will be used. Baselines of transitive "
-                   "dependencies are ignored.");
+                   "every dependency in the graph. For example, if no other constraints are specified (directly or "
+                   "transitively), then the version will resolve to the baseline of the top level manifest. Baselines "
+                   "of transitive dependencies are ignored.");
         tbl.blank();
         tbl.format("version>=",
                    "Within the \"dependencies\" field, each dependency can have a minimum constraint listed. These "
@@ -149,29 +146,27 @@ namespace vcpkg::Help
 
     void help_topic_valid_triplet(const VcpkgPaths& paths)
     {
-        std::map<std::string, std::vector<const VcpkgPaths::TripletFile*>> triplets_per_location;
-        vcpkg::Util::group_by(paths.get_available_triplets(),
-                              &triplets_per_location,
-                              [](const VcpkgPaths::TripletFile& triplet_file) -> std::string {
-                                  return vcpkg::u8string(triplet_file.location);
-                              });
+        std::map<StringView, std::vector<const VcpkgPaths::TripletFile*>> triplets_per_location;
+        vcpkg::Util::group_by(
+            paths.get_available_triplets(),
+            &triplets_per_location,
+            [](const VcpkgPaths::TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
         print2("Available architecture triplets\n");
-
         print2("VCPKG built-in triplets:\n");
-        for (auto* triplet : triplets_per_location[vcpkg::u8string(paths.triplets)])
+        for (auto* triplet : triplets_per_location[paths.triplets])
         {
             print2("  ", triplet->name, '\n');
         }
-        triplets_per_location.erase(vcpkg::u8string(paths.triplets));
 
+        triplets_per_location.erase(paths.triplets);
         print2("\nVCPKG community triplets:\n");
-        for (auto* triplet : triplets_per_location[vcpkg::u8string(paths.community_triplets)])
+        for (auto* triplet : triplets_per_location[paths.community_triplets])
         {
             print2("  ", triplet->name, '\n');
         }
-        triplets_per_location.erase(vcpkg::u8string(paths.community_triplets));
 
+        triplets_per_location.erase(paths.community_triplets);
         for (auto&& kv_pair : triplets_per_location)
         {
             print2("\nOverlay triplets from ", kv_pair.first, ":\n");

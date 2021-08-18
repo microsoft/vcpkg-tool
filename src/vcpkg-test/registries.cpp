@@ -196,3 +196,210 @@ TEST_CASE ("registry_parsing", "[registries]")
     INFO(Strings::join("\n", r.errors()));
     CHECK(r.errors().empty());
 }
+
+TEST_CASE ("git_version_db_parsing", "[registries]")
+{
+    VersionDbEntryArrayDeserializer filesystem_version_db{VersionDbType::Git, "a/b"};
+    Json::Reader r;
+    auto test_json = parse_json(R"json(
+[
+    {
+        "git-tree": "9b07f8a38bbc4d13f8411921e6734753e15f8d50",
+        "version-date": "2021-06-26",
+        "port-version": 0
+    },
+    {
+        "git-tree": "12b84a31469a78dd4b42dcf58a27d4600f6b2d48",
+        "version-date": "2021-01-14",
+        "port-version": 0
+    },
+    {
+        "git-tree": "bd4565e8ab55bc5e098a1750fa5ff0bc4406ca9b",
+        "version-string": "2020-04-12",
+        "port-version": 0
+    }
+]
+)json");
+
+    auto results_opt = r.visit(test_json, filesystem_version_db);
+    auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
+    CHECK(results[0].version == VersionT{"2021-06-26", 0});
+    CHECK(results[0].git_tree == "9b07f8a38bbc4d13f8411921e6734753e15f8d50");
+    CHECK(results[1].version == VersionT{"2021-01-14", 0});
+    CHECK(results[1].git_tree == "12b84a31469a78dd4b42dcf58a27d4600f6b2d48");
+    CHECK(results[2].version == VersionT{"2020-04-12", 0});
+    CHECK(results[2].git_tree == "bd4565e8ab55bc5e098a1750fa5ff0bc4406ca9b");
+    CHECK(r.errors().empty());
+}
+
+TEST_CASE ("filesystem_version_db_parsing", "[registries]")
+{
+    VersionDbEntryArrayDeserializer filesystem_version_db{VersionDbType::Filesystem, "a/b"};
+
+    {
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+[
+    {
+        "version-string": "puppies",
+        "port-version": 0,
+        "path": "$/c/d"
+    },
+    {
+        "version-string": "doggies",
+        "port-version": 0,
+        "path": "$/e/d"
+    },
+    {
+        "version-semver": "1.2.3",
+        "port-version": 0,
+        "path": "$/semvers/here"
+    }
+]
+    )json");
+        auto results_opt = r.visit(test_json, filesystem_version_db);
+        auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(results[0].version == VersionT{"puppies", 0});
+        CHECK(results[0].p == "a/b" VCPKG_PREFERED_SEPARATOR "c/d");
+        CHECK(results[1].version == VersionT{"doggies", 0});
+        CHECK(results[1].p == "a/b" VCPKG_PREFERED_SEPARATOR "e/d");
+        CHECK(results[2].version == VersionT{"1.2.3", 0});
+        CHECK(results[2].p == "a/b" VCPKG_PREFERED_SEPARATOR "semvers/here");
+        CHECK(r.errors().empty());
+    }
+
+    { // missing $/
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+[
+    {
+        "version-string": "puppies",
+        "port-version": 0,
+        "path": "c/d"
+    }
+]
+    )json");
+        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.errors().empty());
+    }
+
+    { // uses backslash
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+[
+    {
+        "version-string": "puppies",
+        "port-version": 0,
+        "path": "$\\c\\d"
+    }
+]
+    )json");
+        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.errors().empty());
+    }
+
+    { // doubled slash
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+[
+    {
+        "version-string": "puppies",
+        "port-version": 0,
+        "path": "$/c//d"
+    }
+]
+    )json");
+        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.errors().empty());
+    }
+
+    { // dot path (first)
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+[
+    {
+        "version-string": "puppies",
+        "port-version": 0,
+        "path": "$/./d/a/a"
+    }
+]
+    )json");
+        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.errors().empty());
+    }
+
+    { // dot path (mid)
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+[
+    {
+        "version-string": "puppies",
+        "port-version": 0,
+        "path": "$/c/d/./a"
+    }
+]
+    )json");
+        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.errors().empty());
+    }
+
+    { // dot path (last)
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+[
+    {
+        "version-string": "puppies",
+        "port-version": 0,
+        "path": "$/c/d/."
+    }
+]
+    )json");
+        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.errors().empty());
+    }
+
+    { // dot dot path (first)
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+[
+    {
+        "version-string": "puppies",
+        "port-version": 0,
+        "path": "$/../d/a/a"
+    }
+]
+    )json");
+        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.errors().empty());
+    }
+
+    { // dot dot path (mid)
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+[
+    {
+        "version-string": "puppies",
+        "port-version": 0,
+        "path": "$/c/d/../a"
+    }
+]
+    )json");
+        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.errors().empty());
+    }
+
+    { // dot dot path (last)
+        Json::Reader r;
+        auto test_json = parse_json(R"json(
+[
+    {
+        "version-string": "puppies",
+        "port-version": 0,
+        "path": "$/c/d/.."
+    }
+]
+    )json");
+        CHECK(r.visit(test_json, filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(!r.errors().empty());
+    }
+}

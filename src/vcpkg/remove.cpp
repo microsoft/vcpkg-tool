@@ -42,23 +42,19 @@ namespace vcpkg::Remove
             write_update(paths, spgh);
         }
 
-        auto maybe_lines = fs.read_lines(paths.listfile_path(ipv.core->package));
-
-        if (const auto lines = maybe_lines.get())
+        std::error_code ec;
+        auto lines = fs.read_lines(paths.listfile_path(ipv.core->package), ec);
+        if (!ec)
         {
-            std::vector<path> dirs_touched;
-            for (auto&& suffix : *lines)
+            std::vector<Path> dirs_touched;
+            for (auto&& suffix : lines)
             {
-                if (!suffix.empty() && suffix.back() == '\r') suffix.pop_back();
-
-                std::error_code ec;
-
                 auto target = paths.installed / suffix;
 
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
                 {
-                    print2(Color::error, "failed: status(", vcpkg::u8string(target), "): ", ec.message(), "\n");
+                    print2(Color::error, "failed: symlink_status(", target, "): ", ec.message(), "\n");
                     continue;
                 }
 
@@ -71,27 +67,16 @@ namespace vcpkg::Remove
                     fs.remove(target, ec);
                     if (ec)
                     {
-                        // TODO: this is racy; should we ignore this error?
-#if defined(_WIN32)
-                        stdfs::permissions(target, stdfs::perms::owner_all | stdfs::perms::group_all, ec);
-                        fs.remove(target, ec);
-                        if (ec)
-                        {
-                            vcpkg::printf(
-                                Color::error, "failed: remove(%s): %s\n", vcpkg::u8string(target), ec.message());
-                        }
-#else
-                        vcpkg::printf(Color::error, "failed: remove(%s): %s\n", vcpkg::u8string(target), ec.message());
-#endif
+                        vcpkg::printf(Color::error, "failed: remove(%s): %s\n", target, ec.message());
                     }
                 }
-                else if (!vcpkg::exists(status))
+                else if (vcpkg::exists(status))
                 {
-                    vcpkg::printf(Color::warning, "Warning: %s: file not found\n", vcpkg::u8string(target));
+                    vcpkg::printf(Color::warning, "Warning: %s: cannot handle file type\n", target);
                 }
                 else
                 {
-                    vcpkg::printf(Color::warning, "Warning: %s: cannot handle file type\n", vcpkg::u8string(target));
+                    vcpkg::printf(Color::warning, "Warning: %s: file not found\n", target);
                 }
             }
 
@@ -99,9 +84,8 @@ namespace vcpkg::Remove
             const auto e = dirs_touched.rend();
             for (; b != e; ++b)
             {
-                if (fs.is_empty(*b))
+                if (fs.is_empty(*b, IgnoreErrors{}))
                 {
-                    std::error_code ec;
                     fs.remove(*b, ec);
                     if (ec)
                     {
@@ -168,7 +152,6 @@ namespace vcpkg::Remove
             case RemovePlanType::REMOVE:
                 vcpkg::printf("Removing package %s...\n", display_name);
                 remove_package(paths, action.spec, status_db);
-                vcpkg::printf(Color::success, "Removing package %s... done\n", display_name);
                 break;
             case RemovePlanType::UNKNOWN:
             default: Checks::unreachable(VCPKG_LINE_INFO);

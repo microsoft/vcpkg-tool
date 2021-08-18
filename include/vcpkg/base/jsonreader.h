@@ -64,16 +64,30 @@ namespace vcpkg::Json
         friend struct IDeserializer;
 
         std::vector<std::string> m_errors;
-        struct Path
+        struct JsonPathElement
         {
-            constexpr Path() = default;
-            constexpr Path(int64_t i) : index(i) { }
-            constexpr Path(StringView f) : field(f) { }
+            constexpr JsonPathElement() = default;
+            constexpr JsonPathElement(int64_t i) : index(i) { }
+            constexpr JsonPathElement(StringView f) : field(f) { }
 
             int64_t index = -1;
             StringView field;
         };
-        std::vector<Path> m_path;
+
+        struct PathGuard
+        {
+            PathGuard(std::vector<JsonPathElement>& path) : m_path{path} { m_path.emplace_back(); }
+            PathGuard(std::vector<JsonPathElement>& path, int64_t i) : m_path{path} { m_path.emplace_back(i); }
+            PathGuard(std::vector<JsonPathElement>& path, StringView f) : m_path{path} { m_path.emplace_back(f); }
+            PathGuard(const PathGuard&) = delete;
+            PathGuard& operator=(const PathGuard&) = delete;
+            ~PathGuard() { m_path.pop_back(); }
+
+        private:
+            std::vector<JsonPathElement>& m_path;
+        };
+
+        std::vector<JsonPathElement> m_path;
 
     public:
         // checks that an object doesn't contain any fields which both:
@@ -100,9 +114,8 @@ namespace vcpkg::Json
         template<class Type>
         void visit_in_key(const Value& value, StringView key, Type& place, IDeserializer<Type>& visitor)
         {
-            m_path.push_back(key);
+            PathGuard guard{m_path, key};
             auto opt = visitor.visit(*this, value);
-
             if (auto p_opt = opt.get())
             {
                 place = std::move(*p_opt);
@@ -111,16 +124,14 @@ namespace vcpkg::Json
             {
                 add_expected_type_error(visitor.type_name());
             }
-            m_path.pop_back();
         }
 
         // value should be the value at key of the currently visited object
         template<class Type>
         void visit_at_index(const Value& value, int64_t index, Type& place, IDeserializer<Type>& visitor)
         {
-            m_path.push_back(index);
+            PathGuard guard{m_path, index};
             auto opt = visitor.visit(*this, value);
-
             if (auto p_opt = opt.get())
             {
                 place = std::move(*p_opt);
@@ -129,7 +140,6 @@ namespace vcpkg::Json
             {
                 add_expected_type_error(visitor.type_name());
             }
-            m_path.pop_back();
         }
 
         // returns whether key \in obj
@@ -161,29 +171,30 @@ namespace vcpkg::Json
         template<class Type>
         Optional<std::vector<Type>> array_elements(const Array& arr, IDeserializer<Type>& visitor)
         {
-            std::vector<Type> result;
-            m_path.emplace_back();
+            Optional<std::vector<Type>> result{std::vector<Type>()};
+            auto& result_vec = *result.get();
+            bool success = true;
+            PathGuard guard{m_path};
             for (size_t i = 0; i < arr.size(); ++i)
             {
                 m_path.back().index = static_cast<int64_t>(i);
                 auto opt = visitor.visit(*this, arr[i]);
-                if (auto p = opt.get())
+                if (auto parsed = opt.get())
                 {
-                    result.push_back(std::move(*p));
+                    if (success)
+                    {
+                        result_vec.push_back(std::move(*parsed));
+                    }
                 }
                 else
                 {
                     this->add_expected_type_error(visitor.type_name());
-                    for (++i; i < arr.size(); ++i)
-                    {
-                        m_path.back().index = static_cast<int64_t>(i);
-                        auto opt2 = visitor.visit(*this, arr[i]);
-                        if (!opt2) this->add_expected_type_error(visitor.type_name());
-                    }
+                    result_vec.clear();
+                    success = false;
                 }
             }
-            m_path.pop_back();
-            return std::move(result);
+
+            return result;
         }
     };
 
@@ -268,10 +279,10 @@ namespace vcpkg::Json
         StringLiteral type_name_;
     };
 
-    struct PathDeserializer final : IDeserializer<path>
+    struct PathDeserializer final : IDeserializer<Path>
     {
         virtual StringView type_name() const override { return "a path"; }
-        virtual Optional<path> visit_string(Reader&, StringView sv) override { return vcpkg::u8path(sv); }
+        virtual Optional<Path> visit_string(Reader&, StringView sv) override { return sv; }
 
         static PathDeserializer instance;
     };

@@ -74,7 +74,7 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
             core->port_version = version.port_version();
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
-            it2 = it->second.emplace(version, SourceControlFileLocation{std::move(scf), vcpkg::u8path(name)}).first;
+            it2 = it->second.emplace(version, SourceControlFileLocation{std::move(scf), name}).first;
         }
         return it2->second;
     }
@@ -196,7 +196,7 @@ struct MockOverlayProvider : PortFileProvider::IOverlayProvider
             core->port_version = version.port_version();
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
-            it = mappings.emplace(name, SourceControlFileLocation{std::move(scf), vcpkg::u8path(name)}).first;
+            it = mappings.emplace(name, SourceControlFileLocation{std::move(scf), name}).first;
         }
         return it->second;
     }
@@ -486,6 +486,7 @@ TEST_CASE ("version install string port version 2", "[versionplan]")
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"2", 1});
+    CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("version install transitive string", "[versionplan]")
@@ -517,7 +518,9 @@ TEST_CASE ("version install transitive string", "[versionplan]")
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "b", {"2", 0});
+    CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
     check_name_and_version(install_plan.install_actions[1], "a", {"2", 1});
+    CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("version install simple relaxed", "[versionplan]")
@@ -1296,8 +1299,11 @@ TEST_CASE ("version install transitive feature versioned", "[versionplan]")
 
     REQUIRE(install_plan.size() == 3);
     check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
+    CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
     check_name_and_version(install_plan.install_actions[1], "b", {"2", 0}, {"y"});
+    CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::AUTO_SELECTED);
     check_name_and_version(install_plan.install_actions[2], "a", {"1", 0}, {"x"});
+    CHECK(install_plan.install_actions[2].request_type == Dependencies::RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("version install constraint-reduction", "[versionplan]")
@@ -1717,6 +1723,79 @@ static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
     return create_versioned_install_plan(vp, bp, var_provider, deps, {}, toplevel_spec());
 }
 
+TEST_CASE ("version install nonexisting features", "[versionplan]")
+{
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
+    a_scf->feature_paragraphs.push_back(make_fpgh("x"));
+
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {"y"}}});
+
+    REQUIRE_FALSE(install_plan.has_value());
+}
+
+TEST_CASE ("version install transitive missing features", "[versionplan]")
+{
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+    bp.v["b"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
+    a_scf->core_paragraph->dependencies.push_back({"b", {"y"}});
+    vp.emplace("b", {"1", 0});
+
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}});
+
+    REQUIRE_FALSE(install_plan.has_value());
+}
+
+TEST_CASE ("version remove features during upgrade", "[versionplan]")
+{
+    // This case tests the removal of a feature from a package (and corresponding removal of the requirement by other
+    // dependents).
+
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+    bp.v["b"] = {"1", 0};
+    bp.v["c"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    // a@0 -> b[x], c>=1
+    auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
+    a_scf->core_paragraph->dependencies.push_back({"b", {"x"}});
+    a_scf->core_paragraph->dependencies.push_back({"c", {}, {}, {Constraint::Type::Minimum, "1", 1}});
+    // a@1 -> b
+    auto& a1_scf = vp.emplace("a", {"1", 1}).source_control_file;
+    a1_scf->core_paragraph->dependencies.push_back({"b"});
+    // b@0 : [x]
+    auto& b_scf = vp.emplace("b", {"1", 0}).source_control_file;
+    b_scf->feature_paragraphs.push_back(make_fpgh("x"));
+    // b@1 -> c
+    auto& b1_scf = vp.emplace("b", {"1", 1}).source_control_file;
+    b1_scf->core_paragraph->dependencies.push_back({"c"});
+    vp.emplace("c", {"1", 0});
+    vp.emplace("c", {"1", 1});
+
+    auto install_plan =
+        unwrap(create_versioned_install_plan(vp,
+                                             bp,
+                                             {
+                                                 Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1"}},
+                                                 Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1", 1}},
+                                                 Dependency{"b", {}, {}, {Constraint::Type::Minimum, "1", 1}},
+                                                 Dependency{"c"},
+                                             }));
+
+    REQUIRE(install_plan.size() == 3);
+    check_name_and_version(install_plan.install_actions[0], "c", {"1", 1});
+    check_name_and_version(install_plan.install_actions[1], "b", {"1", 1});
+    check_name_and_version(install_plan.install_actions[2], "a", {"1", 1});
+}
+
 TEST_CASE ("version install host tool", "[versionplan]")
 {
     MockBaselineProvider bp;
@@ -1764,8 +1843,10 @@ TEST_CASE ("version install host tool", "[versionplan]")
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
         REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
+        CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
         check_name_and_version(install_plan.install_actions[1], "b", {"1", 0});
         REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::X86_WINDOWS);
+        CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
     }
     SECTION ("transitive 2")
     {
@@ -1777,8 +1858,10 @@ TEST_CASE ("version install host tool", "[versionplan]")
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
         REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
+        CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
         check_name_and_version(install_plan.install_actions[1], "c", {"1", 0});
         REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::ARM_UWP);
+        CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
     }
     SECTION ("self-reference")
     {
@@ -1787,8 +1870,10 @@ TEST_CASE ("version install host tool", "[versionplan]")
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "d", {"1", 0});
         REQUIRE(install_plan.install_actions[0].spec.triplet() == Test::ARM_UWP);
+        CHECK(install_plan.install_actions[0].request_type == Dependencies::RequestType::AUTO_SELECTED);
         check_name_and_version(install_plan.install_actions[1], "d", {"1", 0});
         REQUIRE(install_plan.install_actions[1].spec.triplet() == Test::X86_WINDOWS);
+        CHECK(install_plan.install_actions[1].request_type == Dependencies::RequestType::USER_REQUESTED);
     }
 }
 TEST_CASE ("version overlay ports", "[versionplan]")

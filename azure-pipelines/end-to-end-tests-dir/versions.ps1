@@ -2,6 +2,14 @@
 
 $versionFilesPath = "$PSScriptRoot/../e2e_ports/version-files"
 
+# Ensure transitive packages can be used even if they add version constraints
+$CurrentTest = "transitive constraints without baseline"
+Run-Vcpkg install @commonArgs --dry-run `
+    "--x-builtin-ports-root=$versionFilesPath/transitive-constraints/ports" `
+    "--x-manifest-root=$versionFilesPath/transitive-constraints" --debug
+Throw-IfFailed
+Refresh-TestRoot
+
 # Test verify versions
 mkdir $VersionFilesRoot | Out-Null
 Copy-Item -Recurse "$versionFilesPath/versions_incomplete" $VersionFilesRoot

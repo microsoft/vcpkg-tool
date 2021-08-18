@@ -28,12 +28,11 @@ namespace
 {
     using namespace vcpkg::Build;
 
-    const path dot_log = vcpkg::u8path(".log");
-    const path readme_dot_log = vcpkg::u8path("readme.log");
+    const Path readme_dot_log = "readme.log";
 
     struct CiBuildLogsRecorder final : IBuildLogsRecorder
     {
-        CiBuildLogsRecorder(const path& base_path_) : base_path(base_path_) { }
+        CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
 
         virtual void record_build_result(const VcpkgPaths& paths,
                                          const PackageSpec& spec,
@@ -46,9 +45,9 @@ namespace
 
             auto& filesystem = paths.get_filesystem();
             const auto source_path = paths.build_dir(spec);
-            auto children = filesystem.get_files_non_recursive(source_path);
-            Util::erase_remove_if(children, [](const path& p) { return p.extension() != dot_log; });
-            const auto target_path = base_path / vcpkg::u8path(spec.name());
+            auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
+            Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
+            const auto target_path = base_path / spec.name();
             (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
             if (children.empty())
             {
@@ -61,16 +60,16 @@ namespace
             }
             else
             {
-                for (const path& p : children)
+                for (const Path& p : children)
                 {
                     filesystem.copy_file(
-                        p, target_path / p.filename(), stdfs::copy_options::overwrite_existing, VCPKG_LINE_INFO);
+                        p, target_path / p.filename(), CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
                 }
             }
         }
 
     private:
-        path base_path;
+        Path base_path;
     };
 }
 
@@ -115,11 +114,11 @@ namespace vcpkg::Commands::CI
     struct XunitTestResults
     {
     public:
-        XunitTestResults() { m_assembly_run_datetime = Chrono::CTime::get_current_date_time(); }
+        XunitTestResults() { m_assembly_run_datetime = CTime::get_current_date_time(); }
 
         void add_test_results(const std::string& spec,
                               const Build::BuildResult& build_result,
-                              const Chrono::ElapsedTime& elapsed_time,
+                              const ElapsedTime& elapsed_time,
                               const std::string& abi_tag,
                               const std::vector<std::string>& features)
         {
@@ -129,7 +128,7 @@ namespace vcpkg::Commands::CI
         // Starting a new test collection
         void push_collection(const std::string& name) { m_collections.push_back({name}); }
 
-        void collection_time(const vcpkg::Chrono::ElapsedTime& time) { m_collections.back().time = time; }
+        void collection_time(const vcpkg::ElapsedTime& time) { m_collections.back().time = time; }
 
         const std::string& build_xml()
         {
@@ -150,14 +149,14 @@ namespace vcpkg::Commands::CI
             return m_xml;
         }
 
-        void assembly_time(const vcpkg::Chrono::ElapsedTime& assembly_time) { m_assembly_time = assembly_time; }
+        void assembly_time(const vcpkg::ElapsedTime& assembly_time) { m_assembly_time = assembly_time; }
 
     private:
         struct XunitTest
         {
             std::string name;
             vcpkg::Build::BuildResult result;
-            vcpkg::Chrono::ElapsedTime time;
+            vcpkg::ElapsedTime time;
             std::string abi_tag;
             std::vector<std::string> features;
         };
@@ -165,7 +164,7 @@ namespace vcpkg::Commands::CI
         struct XunitCollection
         {
             std::string name;
-            vcpkg::Chrono::ElapsedTime time;
+            vcpkg::ElapsedTime time;
             std::vector<XunitTest> tests;
         };
 
@@ -263,8 +262,8 @@ namespace vcpkg::Commands::CI
                                      message_block);
         }
 
-        Optional<vcpkg::Chrono::CTime> m_assembly_run_datetime;
-        vcpkg::Chrono::ElapsedTime m_assembly_time;
+        Optional<vcpkg::CTime> m_assembly_run_datetime;
+        vcpkg::ElapsedTime m_assembly_time;
         std::vector<XunitCollection> m_collections;
 
         std::string m_xml;
@@ -297,7 +296,7 @@ namespace vcpkg::Commands::CI
         const PortFileProvider::PortFileProvider& provider,
         const CMakeVars::CMakeVarProvider& var_provider,
         const std::vector<FullPackageSpec>& specs,
-        IBinaryProvider& binaryprovider,
+        BinaryCache& binary_cache,
         const Dependencies::CreateInstallPlanOptions& serialize_options,
         Triplet target_triplet,
         Triplet host_triplet)
@@ -344,26 +343,27 @@ namespace vcpkg::Commands::CI
 
         var_provider.load_tag_vars(install_specs, provider, host_triplet);
 
-        auto timer = Chrono::ElapsedTimer::create_started();
+        auto timer = ElapsedTimer::create_started();
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
         Build::compute_all_abis(paths, action_plan, var_provider, {});
 
-        auto precheck_results = binary_provider_precheck(paths, action_plan, binaryprovider);
+        const auto precheck_results = binary_cache.precheck(paths, action_plan.install_actions);
         {
             vcpkg::BufferedPrint stdout_print;
 
-            for (auto&& action : action_plan.install_actions)
+            for (size_t action_idx = 0; action_idx < action_plan.install_actions.size(); ++action_idx)
             {
+                auto&& action = action_plan.install_actions[action_idx];
                 action.build_options = vcpkg::Build::backcompat_prohibiting_package_options;
 
                 auto p = &action;
                 ret->abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
                 ret->features.emplace(action.spec, action.feature_list);
 
-                auto precheck_result = precheck_results.at(&action);
+                auto precheck_result = precheck_results[action_idx];
                 bool b_will_build = false;
 
                 std::string state;
@@ -391,16 +391,10 @@ namespace vcpkg::Commands::CI
                     ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
                     will_fail.emplace(p->spec);
                 }
-                else if (precheck_result == RestoreResult::success)
+                else if (precheck_result == CacheAvailability::available)
                 {
                     state = "pass";
                     ret->known.emplace(p->spec, BuildResult::SUCCEEDED);
-                }
-                else if (precheck_result == RestoreResult::build_failed)
-                {
-                    state = "fail";
-                    ret->known.emplace(p->spec, BuildResult::BUILD_FAILED);
-                    will_fail.emplace(p->spec);
                 }
                 else
                 {
@@ -460,15 +454,6 @@ namespace vcpkg::Commands::CI
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet, Triplet host_triplet)
     {
-        std::unique_ptr<IBinaryProvider> binaryproviderStorage;
-        if (args.binary_caching_enabled())
-        {
-            binaryproviderStorage =
-                create_binary_provider_from_configs(args.binary_sources).value_or_exit(VCPKG_LINE_INFO);
-        }
-
-        IBinaryProvider& binaryprovider = binaryproviderStorage ? *binaryproviderStorage : null_binary_provider();
-
         if (args.command_arguments.size() != 1)
         {
             Checks::unreachable(VCPKG_LINE_INFO);
@@ -477,6 +462,7 @@ namespace vcpkg::Commands::CI
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
 
+        BinaryCache binary_cache{args};
         Triplet target_triplet = Triplet::from_canonical_name(std::string(args.command_arguments[0]));
         auto exclusions_set = parse_exclusions(options, OPTION_EXCLUDE);
         auto host_exclusions_set = parse_exclusions(options, OPTION_HOST_EXCLUDE);
@@ -489,10 +475,10 @@ namespace vcpkg::Commands::CI
             auto it_failure_logs = settings.find(OPTION_FAILURE_LOGS);
             if (it_failure_logs != settings.end())
             {
-                auto raw_path = vcpkg::u8path(it_failure_logs->second);
                 vcpkg::printf("Creating failure logs output directory %s\n", it_failure_logs->second);
+                Path raw_path = it_failure_logs->second;
                 filesystem.create_directories(raw_path, VCPKG_LINE_INFO);
-                build_logs_recorder_storage = filesystem.almost_canonical(VCPKG_LINE_INFO, raw_path);
+                build_logs_recorder_storage = filesystem.almost_canonical(raw_path, VCPKG_LINE_INFO);
             }
         }
 
@@ -512,7 +498,7 @@ namespace vcpkg::Commands::CI
         std::vector<std::string> all_ports =
             Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         std::vector<TripletAndSummary> results;
-        auto timer = Chrono::ElapsedTimer::create_started();
+        auto timer = ElapsedTimer::create_started();
 
         Input::check_triplet(target_triplet, paths);
 
@@ -552,7 +538,7 @@ namespace vcpkg::Commands::CI
                                                      provider,
                                                      var_provider,
                                                      all_default_full_specs,
-                                                     binaryprovider,
+                                                     binary_cache,
                                                      serialize_options,
                                                      target_triplet,
                                                      host_triplet);
@@ -565,13 +551,13 @@ namespace vcpkg::Commands::CI
         }
         else
         {
-            auto collection_timer = Chrono::ElapsedTimer::create_started();
+            auto collection_timer = ElapsedTimer::create_started();
             auto summary = Install::perform(args,
                                             action_plan,
                                             Install::KeepGoing::YES,
                                             paths,
                                             status_db,
-                                            binaryprovider,
+                                            binary_cache,
                                             build_logs_recorder,
                                             var_provider);
             auto collection_time_elapsed = collection_timer.elapsed();
@@ -594,7 +580,7 @@ namespace vcpkg::Commands::CI
                 auto& port_features = split_specs->features.at(port.first);
                 xunitTestResults.add_test_results(port.first.to_string(),
                                                   port.second,
-                                                  Chrono::ElapsedTime{},
+                                                  ElapsedTime{},
                                                   split_specs->abi_map.at(port.first),
                                                   port_features);
             }
@@ -618,7 +604,7 @@ namespace vcpkg::Commands::CI
         auto it_xunit = settings.find(OPTION_XUNIT);
         if (it_xunit != settings.end())
         {
-            filesystem.write_contents(vcpkg::u8path(it_xunit->second), xunitTestResults.build_xml(), VCPKG_LINE_INFO);
+            filesystem.write_contents(it_xunit->second, xunitTestResults.build_xml(), VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

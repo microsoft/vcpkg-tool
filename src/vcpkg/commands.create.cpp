@@ -11,10 +11,10 @@
 
 namespace
 {
-    std::string remove_trailing_slashes(std::string argument)
+    std::string remove_trailing_url_slashes(std::string argument)
     {
-        using vcpkg::is_slash;
-        argument.erase(std::find_if_not(argument.rbegin(), argument.rend(), is_slash).base(), argument.end());
+        argument.erase(std::find_if_not(argument.rbegin(), argument.rend(), [](char c) { return c == '/'; }).base(),
+                       argument.end());
         return argument;
     }
 }
@@ -33,12 +33,12 @@ namespace vcpkg::Commands::Create
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         const std::string port_name = args.command_arguments.at(0);
-        const std::string url = remove_trailing_slashes(args.command_arguments.at(1));
+        const std::string url = remove_trailing_url_slashes(args.command_arguments.at(1));
 
         std::vector<CMakeVariable> cmake_args{
             {"CMD", "CREATE"},
             {"PORT", port_name},
-            {"PORT_PATH", vcpkg::generic_u8string(paths.builtin_ports_directory() / vcpkg::u8path(port_name))},
+            {"PORT_PATH", (paths.builtin_ports_directory() / port_name).generic_u8string()},
             {"URL", url},
             {"VCPKG_BASE_VERSION", Commands::Version::base_version()},
         };

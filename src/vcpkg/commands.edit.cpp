@@ -14,9 +14,9 @@
 #if defined(_WIN32)
 namespace
 {
-    std::vector<vcpkg::path> find_from_registry()
+    std::vector<vcpkg::Path> find_from_registry()
     {
-        std::vector<vcpkg::path> output;
+        std::vector<vcpkg::Path> output;
 
         struct RegKey
         {
@@ -41,9 +41,9 @@ namespace
                 vcpkg::get_registry_string(keypath.root, keypath.subkey, "InstallLocation");
             if (const auto c = code_installpath.get())
             {
-                const auto install_path = vcpkg::u8path(*c);
-                output.push_back(install_path / vcpkg::u8path("Code - Insiders.exe"));
-                output.push_back(install_path / vcpkg::u8path("Code.exe"));
+                const vcpkg::Path install_path = *c;
+                output.push_back(install_path / "Code - Insiders.exe");
+                output.push_back(install_path / "Code.exe");
             }
         }
         return output;
@@ -111,7 +111,7 @@ namespace vcpkg::Commands::Edit
         if (Util::Sets::contains(options.switches, OPTION_ALL))
         {
             const auto& fs = paths.get_filesystem();
-            auto packages = fs.get_files_non_recursive(paths.packages);
+            auto packages = fs.get_files_non_recursive(paths.packages, VCPKG_LINE_INFO);
 
             // TODO: Support edit for --overlay-ports
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
@@ -123,31 +123,28 @@ namespace vcpkg::Commands::Edit
                 std::string package_paths;
                 for (auto&& package : packages)
                 {
-                    if (Strings::case_insensitive_ascii_starts_with(vcpkg::u8string(package.filename()), pattern))
+                    if (Strings::case_insensitive_ascii_starts_with(package.filename(), pattern))
                     {
-                        package_paths.append(Strings::format(" \"%s\"", vcpkg::u8string(package)));
+                        package_paths.append(Strings::format(" \"%s\"", package));
                     }
                 }
 
-                return Strings::format(R"###("%s" "%s" "%s"%s)###",
-                                       vcpkg::u8string(portpath),
-                                       vcpkg::u8string(portfile),
-                                       vcpkg::u8string(buildtrees_current_dir),
-                                       package_paths);
+                return Strings::format(
+                    R"###("%s" "%s" "%s"%s)###", portpath, portfile, buildtrees_current_dir, package_paths);
             });
         }
 
         if (Util::Sets::contains(options.switches, OPTION_BUILDTREES))
         {
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
-                return Strings::format(R"###("%s")###", vcpkg::u8string(paths.build_dir(port_name)));
+                return Strings::format(R"###("%s")###", paths.build_dir(port_name));
             });
         }
 
         return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
             const auto portpath = paths.builtin_ports_directory() / port_name;
             const auto portfile = portpath / "portfile.cmake";
-            return Strings::format(R"###("%s" "%s")###", vcpkg::u8string(portpath), vcpkg::u8string(portfile));
+            return Strings::format(R"###("%s" "%s")###", portpath, portfile);
         });
     }
 
@@ -160,12 +157,12 @@ namespace vcpkg::Commands::Edit
         const std::vector<std::string>& ports = args.command_arguments;
         for (auto&& port_name : ports)
         {
-            const path portpath = paths.builtin_ports_directory() / port_name;
+            const auto portpath = paths.builtin_ports_directory() / port_name;
             Checks::check_maybe_upgrade(
                 VCPKG_LINE_INFO, fs.is_directory(portpath), R"(Could not find port named "%s")", port_name);
         }
 
-        std::vector<path> candidate_paths;
+        std::vector<Path> candidate_paths;
         auto maybe_editor_path = get_environment_variable("EDITOR");
         if (const std::string* editor_path = maybe_editor_path.get())
         {
@@ -173,18 +170,18 @@ namespace vcpkg::Commands::Edit
         }
 
 #ifdef _WIN32
-        static const path VS_CODE_INSIDERS = path{"Microsoft VS Code Insiders"} / "Code - Insiders.exe";
-        static const path VS_CODE = path{"Microsoft VS Code"} / "Code.exe";
+        static const auto VS_CODE_INSIDERS = Path{"Microsoft VS Code Insiders"} / "Code - Insiders.exe";
+        static const auto VS_CODE = Path{"Microsoft VS Code"} / "Code.exe";
 
         const auto& program_files = get_program_files_platform_bitness();
-        if (const path* pf = program_files.get())
+        if (const Path* pf = program_files.get())
         {
             candidate_paths.push_back(*pf / VS_CODE_INSIDERS);
             candidate_paths.push_back(*pf / VS_CODE);
         }
 
         const auto& program_files_32_bit = get_program_files_32_bit();
-        if (const path* pf = program_files_32_bit.get())
+        if (const Path* pf = program_files_32_bit.get())
         {
             candidate_paths.push_back(*pf / VS_CODE_INSIDERS);
             candidate_paths.push_back(*pf / VS_CODE);
@@ -193,12 +190,13 @@ namespace vcpkg::Commands::Edit
         const auto& app_data = get_environment_variable("APPDATA");
         if (const auto* ad = app_data.get())
         {
-            const path default_base = path{*ad}.parent_path() / "Local" / "Programs";
+            Path default_base = *ad;
+            default_base.replace_filename("Local\\Programs");
             candidate_paths.push_back(default_base / VS_CODE_INSIDERS);
             candidate_paths.push_back(default_base / VS_CODE);
         }
 
-        const std::vector<path> from_registry = find_from_registry();
+        const std::vector<Path> from_registry = find_from_registry();
         candidate_paths.insert(candidate_paths.end(), from_registry.cbegin(), from_registry.cend());
 
         const auto txt_default = get_registry_string(HKEY_CLASSES_ROOT, R"(.txt\ShellNew)", "ItemName");
@@ -209,15 +207,14 @@ namespace vcpkg::Commands::Edit
             const auto last = full_path.end();
             first = std::find_if_not(first, last, [](const char c) { return c == '@'; });
             const auto comma = std::find(first, last, ',');
-            candidate_paths.push_back(vcpkg::u8path(first, comma));
+            candidate_paths.emplace_back(first, comma);
         }
 #elif defined(__APPLE__)
-        candidate_paths.push_back(
-            path{"/Applications/Visual Studio Code - Insiders.app/Contents/Resources/app/bin/code"});
-        candidate_paths.push_back(path{"/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"});
+        candidate_paths.emplace_back("/Applications/Visual Studio Code - Insiders.app/Contents/Resources/app/bin/code");
+        candidate_paths.emplace_back("/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code");
 #elif defined(__linux__)
-        candidate_paths.push_back(path{"/usr/share/code/bin/code"});
-        candidate_paths.push_back(path{"/usr/bin/code"});
+        candidate_paths.emplace_back("/usr/share/code/bin/code");
+        candidate_paths.emplace_back("/usr/bin/code");
 
         if (cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime")) == 0)
         {
@@ -233,13 +230,13 @@ namespace vcpkg::Commands::Edit
                     execute_result.output.erase(
                         std::remove(std::begin(execute_result.output), std::end(execute_result.output), '\n'),
                         std::end(execute_result.output));
-                    candidate_paths.push_back(path{execute_result.output});
+                    candidate_paths.emplace_back(execute_result.output);
                 }
             }
         }
 #endif
 
-        const auto it = Util::find_if(candidate_paths, [&](const path& p) { return fs.exists(p); });
+        const auto it = Util::find_if(candidate_paths, [&](const Path& p) { return fs.exists(p, IgnoreErrors{}); });
         if (it == candidate_paths.cend())
         {
             print2(
@@ -251,14 +248,12 @@ namespace vcpkg::Commands::Edit
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        const path env_editor = *it;
+        const Path env_editor = *it;
         const std::vector<std::string> arguments = create_editor_arguments(paths, options, ports);
         const auto args_as_string = Strings::join(" ", arguments);
         auto cmd_line = Command(env_editor).raw_arg(args_as_string).string_arg("-n");
-
-        auto editor_exe = vcpkg::u8string(env_editor.filename());
-
-#ifdef _WIN32
+#if defined(_WIN32)
+        auto editor_exe = env_editor.filename();
         if (editor_exe == "Code.exe" || editor_exe == "Code - Insiders.exe")
         {
             // note that we are invoking cmd silently but Code.exe is relaunched from there
@@ -266,7 +261,8 @@ namespace vcpkg::Commands::Edit
                 Command("cmd").string_arg("/c").raw_arg(Strings::concat('"', cmd_line.command_line(), R"( <NUL")")));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
-#endif
+#endif // ^^^ _WIN32
+
         Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line));
     }
 

@@ -121,26 +121,5 @@ namespace vcpkg::Test
         }
     }
 
-    struct AllowSymlinks
-    {
-        enum Tag : bool
-        {
-            No = false,
-            Yes = true,
-        } tag;
-
-        constexpr AllowSymlinks(Tag tag) noexcept : tag(tag) { }
-
-        constexpr explicit AllowSymlinks(bool b) noexcept : tag(b ? Yes : No) { }
-
-        constexpr operator bool() const noexcept { return tag == Yes; }
-    };
-
-    AllowSymlinks can_create_symlinks() noexcept;
-
-    const path& base_temporary_directory() noexcept;
-
-    void create_symlink(const path& file, const path& target, std::error_code& ec);
-
-    void create_directory_symlink(const path& file, const path& target, std::error_code& ec);
+    const Path& base_temporary_directory() noexcept;
 }

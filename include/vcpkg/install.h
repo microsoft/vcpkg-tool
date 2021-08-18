@@ -28,7 +28,7 @@ namespace vcpkg::Install
 
         PackageSpec spec;
         Build::ExtendedBuildResult build_result;
-        vcpkg::Chrono::ElapsedTime timing;
+        vcpkg::ElapsedTime timing;
 
         const Dependencies::InstallPlanAction* action;
     };
@@ -44,19 +44,19 @@ namespace vcpkg::Install
 
     struct InstallDir
     {
-        static InstallDir from_destination_root(const path& destination_root,
+        static InstallDir from_destination_root(const Path& destination_root,
                                                 const std::string& destination_subdirectory,
-                                                const path& listfile);
+                                                const Path& listfile);
 
     private:
-        path m_destination;
+        Path m_destination;
         std::string m_destination_subdirectory;
-        path m_listfile;
+        Path m_listfile;
 
     public:
-        const path& destination() const;
+        const Path& destination() const;
         const std::string& destination_subdirectory() const;
-        const path& listfile() const;
+        const Path& listfile() const;
     };
 
     Build::ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
@@ -76,8 +76,8 @@ namespace vcpkg::Install
     void install_package_and_write_listfile(const VcpkgPaths& paths, const PackageSpec& spec, const InstallDir& dirs);
 
     void install_files_and_write_listfile(Filesystem& fs,
-                                          const path& source_dir,
-                                          const std::vector<path>& files,
+                                          const Path& source_dir,
+                                          const std::vector<Path>& files,
                                           const InstallDir& destination_dir);
 
     InstallResult install_package(const VcpkgPaths& paths,
@@ -89,7 +89,7 @@ namespace vcpkg::Install
                            const KeepGoing keep_going,
                            const VcpkgPaths& paths,
                            StatusParagraphs& status_db,
-                           IBinaryProvider& binaryprovider,
+                           BinaryCache& binary_cache,
                            const Build::IBuildLogsRecorder& build_logs_recorder,
                            const CMakeVars::CMakeVarProvider& var_provider);
 
@@ -102,6 +102,7 @@ namespace vcpkg::Install
     };
 
     CMakeUsageInfo get_cmake_usage(const BinaryParagraph& bpgh, const VcpkgPaths& paths);
+    void print_usage_information(const BinaryParagraph& bpgh, const VcpkgPaths& paths);
 
     extern const CommandStructure COMMAND_STRUCTURE;
 

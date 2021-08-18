@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/cstringview.h>
+#include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/stringliteral.h>
@@ -52,6 +53,13 @@ namespace vcpkg::Strings::details
     inline void append_internal(std::string& into, const char* v) { into.append(v); }
     inline void append_internal(std::string& into, const std::string& s) { into.append(s); }
     inline void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
+    inline void append_internal(std::string& into, LineInfo ln)
+    {
+        into.append(ln.file_name);
+        into.push_back(':');
+        into += std::to_string(ln.line_number);
+        into.push_back(':');
+    }
 
     template<class T, class = decltype(std::declval<const T&>().to_string(std::declval<std::string&>()))>
     void append_internal(std::string& into, const T& t)
@@ -65,10 +73,10 @@ namespace vcpkg::Strings::details
         to_string(into, t);
     }
 
-    struct tolower_char
+    constexpr struct
     {
-        char operator()(char c) const { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
-    };
+        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
+    } tolower_char;
 }
 
 namespace vcpkg::Strings
@@ -124,7 +132,8 @@ namespace vcpkg::Strings
     std::wstring to_utf16(StringView s);
 
     std::string to_utf8(const wchar_t* w);
-    inline std::string to_utf8(const std::wstring& ws) { return to_utf8(ws.c_str()); }
+    std::string to_utf8(const wchar_t* w, size_t s);
+    inline std::string to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
 #endif
 
     std::string escape_string(std::string&& s, char char_to_escape, char escape_char);
@@ -136,13 +145,14 @@ namespace vcpkg::Strings
     template<class It>
     void ascii_to_lowercase(It first, It last)
     {
-        std::transform(first, last, first, details::tolower_char{});
+        std::transform(first, last, first, details::tolower_char);
     }
     std::string ascii_to_lowercase(std::string&& s);
 
     std::string ascii_to_uppercase(std::string&& s);
 
     bool case_insensitive_ascii_starts_with(StringView s, StringView pattern);
+    bool case_insensitive_ascii_ends_with(StringView s, StringView pattern);
     bool ends_with(StringView s, StringView pattern);
     bool starts_with(StringView s, StringView pattern);
 
@@ -188,7 +198,9 @@ namespace vcpkg::Strings
         return join(delimiter, v, [](const Element& x) -> const Element& { return x; });
     }
 
-    std::string replace_all(std::string&& s, StringView search, StringView rep);
+    [[nodiscard]] std::string replace_all(const char* s, StringView search, StringView rep);
+    [[nodiscard]] std::string replace_all(StringView s, StringView search, StringView rep);
+    [[nodiscard]] std::string replace_all(std::string&& s, StringView search, StringView rep);
 
     void inplace_replace_all(std::string& s, StringView search, StringView rep);
 
@@ -296,6 +308,7 @@ namespace vcpkg::Strings
     const char* search(StringView haystack, StringView needle);
 
     bool contains(StringView haystack, StringView needle);
+    bool contains(StringView haystack, char needle);
 
     // base 32 encoding, following IETC RFC 4648
     std::string b32_encode(std::uint64_t x) noexcept;
@@ -303,4 +316,69 @@ namespace vcpkg::Strings
     // Implements https://en.wikipedia.org/wiki/Levenshtein_distance with a "give-up" clause for large strings
     // Guarantees 0 for equal strings and nonzero for inequal strings.
     size_t byte_edit_distance(StringView a, StringView b);
+
+    struct LinesStream
+    {
+        template<class Fn>
+        void on_data(const StringView sv, Fn cb)
+        {
+            const auto last = sv.end();
+            auto start = sv.begin();
+            for (;;)
+            {
+                const auto newline = std::find_if(start, last, is_newline);
+                if (newline == last)
+                {
+                    previous_partial_line.append(start, newline);
+                    return;
+                }
+                else if (!previous_partial_line.empty())
+                {
+                    // include the prefix of this line from the last callback
+                    previous_partial_line.append(start, newline);
+                    cb(StringView{previous_partial_line});
+                    previous_partial_line.clear();
+                }
+                else if (!last_was_cr || *newline != '\n' || newline != start)
+                {
+                    // implement \r\n, \r, \n newlines by logically generating all newlines,
+                    // and skipping emission of an empty \n newline iff immediately following \r
+                    cb(StringView{start, newline});
+                }
+
+                last_was_cr = *newline == '\r';
+                start = newline + 1;
+            }
+        }
+
+        template<class Fn>
+        void on_end(Fn cb)
+        {
+            cb(StringView{previous_partial_line});
+            previous_partial_line.clear();
+            last_was_cr = false;
+        }
+
+    private:
+        struct IsNewline
+        {
+            constexpr bool operator()(const char c) const noexcept { return c == '\n' || c == '\r'; }
+        };
+        static constexpr IsNewline is_newline{};
+
+        bool last_was_cr = false;
+        std::string previous_partial_line;
+    };
+
+    struct LinesCollector
+    {
+        void on_data(StringView sv);
+        std::vector<std::string> extract();
+
+    private:
+        struct CB;
+
+        LinesStream stream;
+        std::vector<std::string> lines;
+    };
 }

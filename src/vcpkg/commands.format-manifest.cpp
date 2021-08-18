@@ -17,14 +17,14 @@ namespace
     struct ToWrite
     {
         SourceControlFile scf;
-        path file_to_write;
-        path original_path;
+        Path file_to_write;
+        Path original_path;
         std::string original_source;
     };
 
-    Optional<ToWrite> read_manifest(Filesystem& fs, path&& manifest_path)
+    Optional<ToWrite> read_manifest(Filesystem& fs, Path&& manifest_path)
     {
-        auto path_string = vcpkg::u8string(manifest_path);
+        auto path_string = manifest_path.native();
         Debug::print("Reading ", path_string, "\n");
         auto contents = fs.read_contents(manifest_path, VCPKG_LINE_INFO);
         auto parsed_json_opt = Json::parse(contents, manifest_path);
@@ -59,29 +59,25 @@ namespace
         };
     }
 
-    Optional<ToWrite> read_control_file(Filesystem& fs, path&& control_path)
+    Optional<ToWrite> read_control_file(Filesystem& fs, Path&& control_path)
     {
         std::error_code ec;
-        auto control_path_string = vcpkg::u8string(control_path);
-        Debug::print("Reading ", control_path_string, "\n");
+        Debug::print("Reading ", control_path, "\n");
 
-        auto manifest_path = control_path.parent_path();
-        manifest_path /= vcpkg::u8path("vcpkg.json");
-
+        auto manifest_path = Path(control_path.parent_path()) / "vcpkg.json";
         auto contents = fs.read_contents(control_path, VCPKG_LINE_INFO);
-        auto paragraphs = Paragraphs::parse_paragraphs(contents, control_path_string);
+        auto paragraphs = Paragraphs::parse_paragraphs(contents, control_path);
 
         if (!paragraphs)
         {
-            vcpkg::printf(
-                Color::error, "Failed to read paragraphs from %s: %s\n", control_path_string, paragraphs.error());
+            vcpkg::printf(Color::error, "Failed to read paragraphs from %s: %s\n", control_path, paragraphs.error());
             return {};
         }
-        auto scf_res = SourceControlFile::parse_control_file(vcpkg::u8string(control_path),
-                                                             std::move(paragraphs).value_or_exit(VCPKG_LINE_INFO));
+        auto scf_res =
+            SourceControlFile::parse_control_file(control_path, std::move(paragraphs).value_or_exit(VCPKG_LINE_INFO));
         if (!scf_res)
         {
-            vcpkg::printf(Color::error, "Failed to parse control file: %s\n", control_path_string);
+            vcpkg::printf(Color::error, "Failed to parse control file: %s\n", control_path);
             print_error_message(scf_res.error());
             return {};
         }
@@ -94,10 +90,10 @@ namespace
         };
     }
 
-    void write_file(Filesystem& fs, const ToWrite& data)
+    void open_for_write(Filesystem& fs, const ToWrite& data)
     {
-        auto original_path_string = vcpkg::u8string(data.original_path);
-        auto file_to_write_string = vcpkg::u8string(data.file_to_write);
+        const auto& original_path_string = data.original_path.native();
+        const auto& file_to_write_string = data.file_to_write.native();
         if (data.file_to_write == data.original_path)
         {
             Debug::print("Formatting ", file_to_write_string, "\n");
@@ -108,7 +104,7 @@ namespace
         }
         auto res = serialize_manifest(data.scf);
 
-        auto check = SourceControlFile::parse_manifest_file(path{}, res);
+        auto check = SourceControlFile::parse_manifest_file(Path{}, res);
         if (!check)
         {
             vcpkg::printf(Color::error,
@@ -222,15 +218,14 @@ namespace vcpkg::Commands::FormatManifest
                 has_error = true;
         };
 
-        for (const auto& arg : args.command_arguments)
+        for (Path path : args.command_arguments)
         {
-            auto path = vcpkg::u8path(arg);
             if (path.is_relative())
             {
                 path = paths.original_cwd / path;
             }
 
-            if (path.filename() == vcpkg::u8path("CONTROL"))
+            if (path.filename() == "CONTROL")
             {
                 add_file(read_control_file(fs, std::move(path)));
             }
@@ -242,17 +237,17 @@ namespace vcpkg::Commands::FormatManifest
 
         if (format_all)
         {
-            for (const auto& dir : stdfs::directory_iterator(paths.builtin_ports_directory()))
+            for (const auto& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
-                auto control_path = dir.path() / vcpkg::u8path("CONTROL");
-                auto manifest_path = dir.path() / vcpkg::u8path("vcpkg.json");
-                auto manifest_exists = fs.exists(manifest_path);
-                auto control_exists = fs.exists(control_path);
+                auto control_path = dir / "CONTROL";
+                auto manifest_path = dir / "vcpkg.json";
+                auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
+                auto control_exists = fs.exists(control_path, IgnoreErrors{});
 
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    !manifest_exists || !control_exists,
                                    "Both a manifest file and a CONTROL file exist in port directory: %s",
-                                   vcpkg::u8string(dir.path()));
+                                   dir);
 
                 if (manifest_exists)
                 {
@@ -267,7 +262,7 @@ namespace vcpkg::Commands::FormatManifest
 
         for (auto const& el : to_write)
         {
-            write_file(fs, el);
+            open_for_write(fs, el);
         }
 
         if (has_error)

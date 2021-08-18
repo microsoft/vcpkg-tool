@@ -247,7 +247,7 @@ namespace vcpkg
         } canonicalize{};
     }
 
-    static ParseExpected<SourceParagraph> parse_source_paragraph(const std::string& origin, Paragraph&& fields)
+    static ParseExpected<SourceParagraph> parse_source_paragraph(StringView origin, Paragraph&& fields)
     {
         ParagraphParser parser(std::move(fields));
 
@@ -289,7 +289,7 @@ namespace vcpkg
         else
         {
             auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = origin;
+            error_info->name = origin.to_string();
             error_info->error = maybe_dependencies.error();
             return error_info;
         }
@@ -305,7 +305,7 @@ namespace vcpkg
         else
         {
             auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = origin;
+            error_info->name = origin.to_string();
             error_info->error = maybe_default_features.error();
             return error_info;
         }
@@ -333,7 +333,7 @@ namespace vcpkg
             return spgh;
     }
 
-    static ParseExpected<FeatureParagraph> parse_feature_paragraph(const std::string& origin, Paragraph&& fields)
+    static ParseExpected<FeatureParagraph> parse_feature_paragraph(StringView origin, Paragraph&& fields)
     {
         ParagraphParser parser(std::move(fields));
 
@@ -352,7 +352,7 @@ namespace vcpkg
         else
         {
             auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = origin;
+            error_info->name = origin.to_string();
             error_info->error = maybe_dependencies.error();
             return error_info;
         }
@@ -365,12 +365,12 @@ namespace vcpkg
     }
 
     ParseExpected<SourceControlFile> SourceControlFile::parse_control_file(
-        const std::string& origin, std::vector<Parse::Paragraph>&& control_paragraphs)
+        StringView origin, std::vector<Parse::Paragraph>&& control_paragraphs)
     {
         if (control_paragraphs.size() == 0)
         {
             auto ret = std::make_unique<Parse::ParseControlErrorInfo>();
-            ret->name = origin;
+            ret->name = origin.to_string();
             return ret;
         }
 
@@ -395,8 +395,9 @@ namespace vcpkg
 
         if (auto maybe_error = canonicalize(*control_file))
         {
-            return std::move(maybe_error);
+            return maybe_error;
         }
+
         return control_file;
     }
 
@@ -538,6 +539,7 @@ namespace vcpkg
     DependencyArrayDeserializer DependencyArrayDeserializer::instance;
 
     constexpr StringLiteral DependencyDeserializer::NAME;
+    constexpr StringLiteral DependencyDeserializer::HOST;
     constexpr StringLiteral DependencyDeserializer::FEATURES;
     constexpr StringLiteral DependencyDeserializer::DEFAULT_FEATURES;
     constexpr StringLiteral DependencyDeserializer::PLATFORM;
@@ -566,7 +568,7 @@ namespace vcpkg
         {
             r.required_object_field(type_name, obj, NAME, name, Json::IdentifierDeserializer::instance);
 
-            auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj);
+            auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj, true);
             version = schemed_version.versiont.text();
             version_scheme = schemed_version.scheme;
             port_version = schemed_version.versiont.port_version();
@@ -630,7 +632,7 @@ namespace vcpkg
                 type_name(), obj, DESCRIPTION, feature->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DEPENDENCIES, feature->dependencies, DependencyArrayDeserializer::instance);
 
-            return std::move(feature);
+            return std::move(feature); // gcc-7 bug workaround redundant move
         }
         static FeatureDeserializer instance;
     };
@@ -709,22 +711,22 @@ namespace vcpkg
                 }
             }
 
-            return std::move(res);
+            return std::move(res); // gcc-7 bug workaround redundant move
         }
 
         static FeaturesFieldDeserializer instance;
     };
     FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
 
-    static constexpr StringView EXPRESSION_WORDS[] = {
+    static constexpr StringLiteral EXPRESSION_WORDS[] = {
         "WITH",
         "AND",
         "OR",
     };
-    static constexpr StringView VALID_LICENSES[] =
+    static constexpr StringLiteral VALID_LICENSES[] =
 #include "spdx-licenses.inc"
         ;
-    static constexpr StringView VALID_EXCEPTIONS[] =
+    static constexpr StringLiteral VALID_EXCEPTIONS[] =
 #include "spdx-licenses.inc"
         ;
 
@@ -753,7 +755,7 @@ namespace vcpkg
                     return true;
                 }
 
-                Span<const StringView> valid_ids;
+                Span<const StringLiteral> valid_ids;
                 bool case_sensitive = false;
                 switch (mode)
                 {
@@ -932,9 +934,11 @@ namespace vcpkg
 
             static Json::StringDeserializer url_deserializer{"a url"};
 
-            constexpr static StringView inner_type_name = "vcpkg.json";
-            DependencyOverrideDeserializer::visit_impl(
-                inner_type_name, r, obj, spgh->name, spgh->version, spgh->version_scheme, spgh->port_version);
+            r.required_object_field(type_name(), obj, NAME, spgh->name, Json::IdentifierDeserializer::instance);
+            auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
+            spgh->version = schemed_version.versiont.text();
+            spgh->version_scheme = schemed_version.scheme;
+            spgh->port_version = schemed_version.versiont.port_version();
 
             r.optional_object_field(obj, MAINTAINERS, spgh->maintainers, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DESCRIPTION, spgh->description, Json::ParagraphDeserializer::instance);
@@ -968,7 +972,8 @@ namespace vcpkg
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
             }
-            return std::move(control_file);
+
+            return std::move(control_file); // gcc-7 bug workaround redundant move
         }
 
         static ManifestDeserializer instance;
@@ -987,6 +992,7 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::DEFAULT_FEATURES;
     constexpr StringLiteral ManifestDeserializer::SUPPORTS;
     constexpr StringLiteral ManifestDeserializer::OVERRIDES;
+    constexpr StringLiteral ManifestDeserializer::BUILTIN_BASELINE;
 
     SourceControlFile SourceControlFile::clone() const
     {
@@ -999,7 +1005,7 @@ namespace vcpkg
         return ret;
     }
 
-    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_object(const std::string& origin,
+    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_object(StringView origin,
                                                                                      const Json::Object& manifest)
     {
         Json::Reader reader;
@@ -1009,9 +1015,9 @@ namespace vcpkg
         if (!reader.errors().empty())
         {
             auto err = std::make_unique<ParseControlErrorInfo>();
-            err->name = origin;
+            err->name = origin.to_string();
             err->other_errors = std::move(reader.errors());
-            return std::move(err);
+            return err;
         }
         else if (auto p = res.get())
         {
@@ -1023,7 +1029,7 @@ namespace vcpkg
         }
     }
 
-    Optional<std::string> SourceControlFile::check_against_feature_flags(const path& origin,
+    Optional<std::string> SourceControlFile::check_against_feature_flags(const Path& origin,
                                                                          const FeatureFlagSettings& flags,
                                                                          bool is_default_builtin_registry) const
     {
@@ -1035,9 +1041,9 @@ namespace vcpkg
                 {
                     if (dep.constraint.type != Versions::Constraint::Type::None)
                     {
-                        Metrics::g_metrics.lock()->track_property("error-versioning-disabled", "defined");
+                        LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
                         return Strings::concat(
-                            vcpkg::u8string(origin),
+                            origin,
                             " was rejected because it uses constraints and the `",
                             VcpkgCmdArguments::VERSIONS_FEATURE,
                             "` feature flag is disabled.\nThis can be fixed by removing uses of \"version>=\".\n",
@@ -1056,8 +1062,8 @@ namespace vcpkg
 
             if (core_paragraph->overrides.size() != 0)
             {
-                Metrics::g_metrics.lock()->track_property("error-versioning-disabled", "defined");
-                return Strings::concat(vcpkg::u8string(origin),
+                LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
+                return Strings::concat(origin,
                                        " was rejected because it uses overrides and the `",
                                        VcpkgCmdArguments::VERSIONS_FEATURE,
                                        "` feature flag is disabled.\nThis can be fixed by removing \"overrides\".\n",
@@ -1066,9 +1072,9 @@ namespace vcpkg
 
             if (core_paragraph->builtin_baseline.has_value())
             {
-                Metrics::g_metrics.lock()->track_property("error-versioning-disabled", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
                 return Strings::concat(
-                    vcpkg::u8string(origin),
+                    origin,
                     " was rejected because it uses builtin-baseline and the `",
                     VcpkgCmdArguments::VERSIONS_FEATURE,
                     "` feature flag is disabled.\nThis can be fixed by removing \"builtin-baseline\".\n",
@@ -1085,19 +1091,19 @@ namespace vcpkg
                                     return dependency.constraint.type != Versions::Constraint::Type::None;
                                 }))
                 {
-                    Metrics::g_metrics.lock()->track_property("error-versioning-no-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-no-baseline", "defined");
                     return Strings::concat(
-                        vcpkg::u8string(origin),
-                        " was rejected because it uses \"version>=\" without setting a \"builtin-baseline\".\n",
+                        origin,
+                        " was rejected because it uses \"version>=\" and does not have a \"builtin-baseline\".\n",
                         s_extended_help);
                 }
 
                 if (!core_paragraph->overrides.empty())
                 {
-                    Metrics::g_metrics.lock()->track_property("error-versioning-no-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-no-baseline", "defined");
                     return Strings::concat(
-                        vcpkg::u8string(origin),
-                        " was rejected because it uses \"overrides\" without setting a \"builtin-baseline\".\n",
+                        origin,
+                        " was rejected because it uses \"overrides\" and does not have a \"builtin-baseline\".\n",
                         s_extended_help);
                 }
             }
@@ -1105,10 +1111,10 @@ namespace vcpkg
         return nullopt;
     }
 
-    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_file(const path& manifest_path,
+    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_file(const Path& manifest_path,
                                                                                    const Json::Object& manifest)
     {
-        return parse_manifest_object(vcpkg::u8string(manifest_path), manifest);
+        return parse_manifest_object(manifest_path, manifest);
     }
 
     void print_error_message(Span<const std::unique_ptr<Parse::ParseControlErrorInfo>> error_info_list)

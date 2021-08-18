@@ -735,6 +735,10 @@ namespace vcpkg::Json
                 return Value();
             }
 
+#define VCPKG_JSON_NO_COMMENTS_MSG                                                                                     \
+    "\n   vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "        \
+    "comments."
+
             Value parse_keyword() noexcept
             {
                 char32_t current = cur();
@@ -820,6 +824,10 @@ namespace vcpkg::Json
                             return Value::array(std::move(arr));
                         }
                     }
+                    else if (current == '/')
+                    {
+                        add_error("Unexpected character in middle of array" VCPKG_JSON_NO_COMMENTS_MSG);
+                    }
                     else
                     {
                         add_error("Unexpected character in middle of array");
@@ -859,6 +867,11 @@ namespace vcpkg::Json
                 else if (current == Unicode::end_of_file)
                 {
                     add_error("Unexpected EOF; expected colon");
+                    return res;
+                }
+                else if (current == '/')
+                {
+                    add_error("Unexpected character; expected colon" VCPKG_JSON_NO_COMMENTS_MSG);
                     return res;
                 }
                 else
@@ -917,6 +930,10 @@ namespace vcpkg::Json
                             return Value();
                         }
                     }
+                    else if (current == '/')
+                    {
+                        add_error("Unexpected character; expected comma or close brace" VCPKG_JSON_NO_COMMENTS_MSG);
+                    }
                     else
                     {
                         add_error("Unexpected character; expected comma or close brace");
@@ -945,6 +962,11 @@ namespace vcpkg::Json
                     case 'n':
                     case 't':
                     case 'f': return parse_keyword();
+                    case '/':
+                    {
+                        add_error("Unexpected character; expected value" VCPKG_JSON_NO_COMMENTS_MSG);
+                        return Value();
+                    }
                     default:
                         if (is_number_start(current))
                         {
@@ -1024,44 +1046,36 @@ namespace vcpkg::Json
     }
 
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Filesystem& fs,
-                                                                                           const path& json_file,
+                                                                                           const Path& json_file,
                                                                                            std::error_code& ec) noexcept
     {
-        auto res = fs.read_contents(json_file);
-        if (auto buf = res.get())
+        auto res = fs.read_contents(json_file, ec);
+        if (ec)
         {
-            return parse(*buf, json_file);
-        }
-        else
-        {
-            ec = res.error();
             return std::unique_ptr<Parse::IParseError>();
         }
+
+        return parse(std::move(res), json_file);
     }
 
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const path& json_file) noexcept
+    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file) noexcept
     {
         std::error_code ec;
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            print2(Color::error, "Failed to read ", vcpkg::u8string(json_file), ": ", ec.message(), "\n");
+            print2(Color::error, "Failed to read ", json_file, ": ", ec.message(), "\n");
             Checks::exit_fail(li);
         }
         else if (!ret)
         {
-            print2(Color::error, "Failed to parse ", vcpkg::u8string(json_file), ":\n");
+            print2(Color::error, "Failed to parse ", json_file, ":\n");
             print2(ret.error()->format());
             Checks::exit_fail(li);
         }
         return ret.value_or_exit(li);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
-                                                                                      const path& filepath) noexcept
-    {
-        return Parser::parse(json, vcpkg::u8string(filepath));
-    }
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
                                                                                       StringView origin) noexcept
     {

@@ -1,3 +1,5 @@
+#include <vcpkg/base/system_headers.h>
+
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/files.h>
@@ -9,81 +11,53 @@
 
 #include <vcpkg-test/util.h>
 
-using vcpkg::Test::AllowSymlinks;
-using vcpkg::Test::base_temporary_directory;
-using vcpkg::Test::can_create_symlinks;
+using namespace vcpkg;
+using Test::base_temporary_directory;
 
 #define CHECK_EC_ON_FILE(file, ec)                                                                                     \
     do                                                                                                                 \
     {                                                                                                                  \
         if (ec)                                                                                                        \
         {                                                                                                              \
-            FAIL(file << ": " << ec.message());                                                                        \
+            FAIL((file).native() << ": " << (ec).message());                                                           \
         }                                                                                                              \
     } while (0)
 
 namespace
 {
-    using uid_t = std::uniform_int_distribution<std::uint64_t>;
     using urbg_t = std::mt19937_64;
 
-    urbg_t get_urbg(std::uint64_t index)
+    std::string get_random_filename(urbg_t& urbg) { return Strings::b32_encode(urbg()); }
+
+#if defined(_WIN32)
+    bool is_valid_symlink_failure(const std::error_code& ec) noexcept
     {
-        // smallest prime > 2**63 - 1
-        return urbg_t{index + 9223372036854775837ULL};
+        // on Windows, creating symlinks requires admin rights, so we ignore such failures
+        return ec == std::error_code(ERROR_PRIVILEGE_NOT_HELD, std::system_category());
     }
+#endif // ^^^ _WIN32
 
-    std::string get_random_filename(urbg_t& urbg) { return vcpkg::Strings::b32_encode(uid_t{}(urbg)); }
-
-    struct MaxDepth
+    void create_directory_tree(urbg_t& urbg, Filesystem& fs, const Path& base, std::uint32_t remaining_depth = 5)
     {
-        std::uint64_t i;
-        explicit MaxDepth(std::uint64_t i) : i(i) { }
-        operator uint64_t() const { return i; }
-    };
-
-    struct Width
-    {
-        std::uint64_t i;
-        explicit Width(std::uint64_t i) : i(i) { }
-        operator uint64_t() const { return i; }
-    };
-
-    struct CurrentDepth
-    {
-        std::uint64_t i;
-        explicit CurrentDepth(std::uint64_t i) : i(i) { }
-        operator uint64_t() const { return i; }
-        CurrentDepth incremented() const { return CurrentDepth{i + 1}; }
-    };
-
-    void create_directory_tree(urbg_t& urbg,
-                               vcpkg::Filesystem& fs,
-                               const vcpkg::path& base,
-                               MaxDepth max_depth,
-                               AllowSymlinks allow_symlinks = AllowSymlinks::Yes,
-                               Width width = Width{5},
-                               CurrentDepth current_depth = CurrentDepth{0})
-    {
+        using uid_t = std::uniform_int_distribution<std::uint32_t>;
         // we want ~70% of our "files" to be directories, and then a third
         // each of the remaining ~30% to be regular files, directory symlinks,
         // and regular symlinks
-        constexpr std::uint64_t directory_min_tag = 0;
-        constexpr std::uint64_t directory_max_tag = 6;
-        constexpr std::uint64_t regular_file_tag = 7;
-        constexpr std::uint64_t regular_symlink_tag = 8;
-        constexpr std::uint64_t directory_symlink_tag = 9;
+        constexpr std::uint32_t directory_min_tag = 0;
+        constexpr std::uint32_t regular_file_tag = 7;
+        constexpr std::uint32_t regular_symlink_tag = 8;
+        constexpr std::uint32_t directory_symlink_tag = 9;
 
-        allow_symlinks = AllowSymlinks{allow_symlinks && can_create_symlinks()};
-
-        // if we're at the max depth, we only want to build non-directories
-        std::uint64_t file_type;
-        if (current_depth >= max_depth)
+        std::uint32_t file_type;
+        if (remaining_depth <= 1)
         {
+            // if we're at the max depth, we only want to create non-directories
             file_type = uid_t{regular_file_tag, directory_symlink_tag}(urbg);
         }
-        else if (current_depth < 2)
+        else if (remaining_depth >= 3)
         {
+            // if we are far away from the max depth, always create directories
+            // to make reaching the max depth likely
             file_type = directory_min_tag;
         }
         else
@@ -91,61 +65,75 @@ namespace
             file_type = uid_t{directory_min_tag, regular_symlink_tag}(urbg);
         }
 
-        if (!allow_symlinks && file_type > regular_file_tag)
-        {
-            file_type = regular_file_tag;
-        }
-
         std::error_code ec;
-        if (file_type <= directory_max_tag)
+        if (file_type == regular_symlink_tag)
         {
-            fs.create_directory(base, ec);
+            // regular symlink
+            auto base_target = base + "-target";
+            fs.write_contents(base_target, "", ec);
+            CHECK_EC_ON_FILE(base_target, ec);
+            fs.create_symlink(base_target, base, ec);
+
             if (ec)
             {
-                CHECK_EC_ON_FILE(base, ec);
+#if defined(_WIN32)
+                if (is_valid_symlink_failure(ec))
+                {
+                    fs.write_contents(base, "", ec);
+                    CHECK_EC_ON_FILE(base, ec);
+                }
+                else
+#endif // ^^^ _WIN32
+                {
+                    FAIL(base.native() << ": " << ec.message());
+                }
             }
-
-            for (std::uint64_t i = 0; i < width; ++i)
+        }
+        else if (file_type == directory_symlink_tag)
+        {
+            // directory symlink
+            auto parent = base;
+            parent.remove_filename();
+            fs.create_directory_symlink(parent, base, ec);
+            if (ec)
             {
-                create_directory_tree(urbg,
-                                      fs,
-                                      base / get_random_filename(urbg),
-                                      max_depth,
-                                      allow_symlinks,
-                                      width,
-                                      current_depth.incremented());
+#if defined(_WIN32)
+                if (is_valid_symlink_failure(ec))
+                {
+                    fs.create_directory(base, ec);
+                    CHECK_EC_ON_FILE(base, ec);
+                }
+                else
+#endif // ^^^ _WIN32
+                {
+                    FAIL(base.native() << ": " << ec.message());
+                }
             }
         }
         else if (file_type == regular_file_tag)
         {
             // regular file
             fs.write_contents(base, "", ec);
+            CHECK_EC_ON_FILE(base, ec);
         }
-        else if (file_type == regular_symlink_tag)
+        else
         {
-            // regular symlink
-            auto base_link = base;
-            base_link.replace_filename(vcpkg::u8string(base.filename()) + "-orig");
-            fs.write_contents(base_link, "", ec);
-            CHECK_EC_ON_FILE(base_link, ec);
-            vcpkg::Test::create_symlink(base_link, base, ec);
-        }
-        else // file_type == directory_symlink_tag
-        {
-            // directory symlink
-            auto parent = base;
-            parent.remove_filename();
-            vcpkg::Test::create_directory_symlink(parent, base, ec);
+            // regular directory
+            fs.create_directory(base, ec);
+            CHECK_EC_ON_FILE(base, ec);
+            for (int i = 0; i < 5; ++i)
+            {
+                create_directory_tree(urbg, fs, base / get_random_filename(urbg), remaining_depth - 1);
+            }
         }
 
-        CHECK_EC_ON_FILE(base, ec);
-        REQUIRE(vcpkg::exists(fs.symlink_status(base, ec)));
+        REQUIRE(exists(fs.symlink_status(base, ec)));
         CHECK_EC_ON_FILE(base, ec);
     }
 
-    vcpkg::Filesystem& setup()
+    Filesystem& setup()
     {
-        auto& fs = vcpkg::get_real_filesystem();
+        auto& fs = get_real_filesystem();
 
         std::error_code ec;
         fs.create_directory(base_temporary_directory(), ec);
@@ -155,37 +143,375 @@ namespace
     }
 }
 
-TEST_CASE ("vcpkg::combine works correctly", "[filesystem][files]")
+TEST_CASE ("vcpkg Path regular operations", "[filesystem][files]")
 {
-    using namespace vcpkg;
-    CHECK(combine(u8path("/a/b"), u8path("c/d")) == u8path("/a/b/c/d"));
-    CHECK(combine(u8path("a/b"), u8path("c/d")) == u8path("a/b/c/d"));
-    CHECK(combine(u8path("/a/b"), u8path("/c/d")) == u8path("/c/d"));
+    CHECK(Path().native().empty());
+    Path p("hello");
+    CHECK(p == "hello");
+    CHECK(p.native() == "hello");
+    Path copy_constructed(p);
+    CHECK(copy_constructed == "hello");
+    CHECK(copy_constructed.native() == "hello");
+    Path move_constructed(std::move(p));
+    CHECK(move_constructed == "hello");
+    CHECK(move_constructed.native() == "hello");
+
+    p = "world";
+    Path copy_assigned;
+    copy_assigned = p;
+    CHECK(copy_assigned == "world");
+    CHECK(copy_assigned.native() == "world");
+
+    Path move_assigned;
+    move_assigned = std::move(p);
+    CHECK(move_assigned == "world");
+    CHECK(move_assigned.native() == "world");
+}
+
+TEST_CASE ("vcpkg Path conversions", "[filesystem][files]")
+{
+    StringLiteral sl("some literal");
+    StringView sv = sl;
+    std::string str("some string");
+    std::string moved_from("moved from");
+    const char* ntbs = "some utf-8";
+    CHECK(Path(sv).native() == "some literal");
+    CHECK(Path(str).native() == "some string");
+    CHECK(Path(std::move(moved_from)).native() == "moved from");
+    CHECK(Path(ntbs).native() == "some utf-8");
+    CHECK(Path(str.begin(), str.end()).native() == "some string");
+    CHECK(Path(str.data(), str.size()).native() == "some string");
+
+    Path p("convert from");
+    StringView conv_sv = p;
+    CHECK(conv_sv == "convert from");
+    CHECK(strcmp(p.c_str(), "convert from") == 0);
+}
+
+TEST_CASE ("vcpkg Path generic", "[filesystem][files]")
+{
+    Path p("some/path/with/forward/slashes");
+    CHECK(p.generic_u8string() == StringView("some/path/with/forward/slashes"));
+
+    Path p_dup("some/path/with//////duplicate//////////forward/slashes");
+    CHECK(p_dup.generic_u8string() == StringView("some/path/with//////duplicate//////////forward/slashes"));
+
+    Path bp("some\\path\\/\\/with\\backslashes");
+#if defined(_WIN32)
+    CHECK(bp.generic_u8string() == StringView("some/path////with/backslashes"));
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+    CHECK(bp.generic_u8string() == StringView("some\\path\\/\\/with\\backslashes"));
+#endif // _WIN32
+}
+
+static void test_op_slash(StringView base, StringView append, StringView expected)
+{
+    Path an_lvalue(base);
+    CHECK((an_lvalue / append).native() == expected);  // Path operator/(StringView sv) const&;
+    CHECK((Path(base) / append).native() == expected); // Path operator/(StringView sv) &&;
+    an_lvalue /= append;                               // Path& operator/=(StringView sv);
+    CHECK(an_lvalue.native() == expected);
+}
+
+TEST_CASE ("vcpkg Path::operator/", "[filesystem][files]")
+{
+    test_op_slash("/a/b", "c/d", "/a/b" VCPKG_PREFERED_SEPARATOR "c/d");
+    test_op_slash("a/b", "c/d", "a/b" VCPKG_PREFERED_SEPARATOR "c/d");
+    test_op_slash("/a/b", "/c/d", "/c/d");
 
 #if defined(_WIN32)
-    CHECK(combine(u8path("C:/a/b"), u8path("c/d")) == u8path("C:/a/b/c/d"));
-    CHECK(combine(u8path("C:a/b"), u8path("c/d")) == u8path("C:a/b/c/d"));
-    CHECK(combine(u8path("C:a/b"), u8path("/c/d")) == u8path("C:/c/d"));
-    CHECK(combine(u8path("C:/a/b"), u8path("/c/d")) == u8path("C:/c/d"));
-    CHECK(combine(u8path("C:/a/b"), u8path("D:/c/d")) == u8path("D:/c/d"));
-    CHECK(combine(u8path("C:/a/b"), u8path("D:c/d")) == u8path("D:c/d"));
-    CHECK(combine(u8path("C:/a/b"), u8path("C:c/d")) == u8path("C:/a/b/c/d"));
+    test_op_slash("C:/a/b", "c/d", "C:/a/b\\c/d");
+    test_op_slash("C:a/b", "c/d", "C:a/b\\c/d");
+    test_op_slash("C:a/b", "/c/d", "C:/c/d");
+    test_op_slash("C:/a/b", "/c/d", "C:/c/d");
+    test_op_slash("C:/a/b", "D:/c/d", "D:/c/d");
+    test_op_slash("C:/a/b", "D:c/d", "D:c/d");
+    test_op_slash("C:/a/b", "C:c/d", "C:/a/b\\c/d");
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+    test_op_slash("C:/a/b", "c/d", "C:/a/b/c/d");
+    test_op_slash("C:a/b", "c/d", "C:a/b/c/d");
+    test_op_slash("C:a/b", "/c/d", "/c/d");
+    test_op_slash("C:/a/b", "/c/d", "/c/d");
+    test_op_slash("C:/a/b", "D:/c/d", "C:/a/b/D:/c/d");
+    test_op_slash("C:/a/b", "D:c/d", "C:/a/b/D:c/d");
+    test_op_slash("C:/a/b", "C:c/d", "C:/a/b/C:c/d");
+#endif // ^^^ !_WIN32
+}
+
+static void test_op_plus(StringView base, StringView append)
+{
+    auto expected = base.to_string() + append.to_string();
+    Path an_lvalue(base);
+    CHECK((an_lvalue + append).native() == expected);  // Path operator+(StringView sv) const&;
+    CHECK((Path(base) + append).native() == expected); // Path operator+(StringView sv) &&;
+    an_lvalue += append;                               // Path& operator+=(StringView sv);
+    CHECK(an_lvalue.native() == expected);
+}
+
+TEST_CASE ("vcpkg Path::operator+", "[filesystem][files]")
+{
+    test_op_plus("/a/b", "c/d");
+    test_op_plus("a/b", "c/d");
+    test_op_plus("/a/b", "/c/d");
+    test_op_plus("C:/a/b", "c/d");
+    test_op_plus("C:a/b", "c/d");
+    test_op_plus("C:a/b", "/c/d");
+    test_op_plus("C:/a/b", "/c/d");
+    test_op_plus("C:/a/b", "D:/c/d");
+    test_op_plus("C:/a/b", "D:c/d");
+    test_op_plus("C:/a/b", "C:c/d");
+}
+
+static void test_preferred(Path p, StringView expected)
+{
+    p.make_preferred();
+    CHECK(p.native() == expected);
+}
+
+TEST_CASE ("vcpkg Path::preferred and Path::make_preferred", "[filesystem][files]")
+{
+    test_preferred("", "");
+    test_preferred("hello", "hello");
+    test_preferred("/hello", VCPKG_PREFERED_SEPARATOR "hello");
+    test_preferred("hello/", "hello" VCPKG_PREFERED_SEPARATOR);
+    test_preferred("hello/////////there", "hello" VCPKG_PREFERED_SEPARATOR "there");
+    test_preferred("hello/////////there///" VCPKG_PREFERED_SEPARATOR "world",
+                   "hello" VCPKG_PREFERED_SEPARATOR "there" VCPKG_PREFERED_SEPARATOR "world");
+    test_preferred("/a/b", VCPKG_PREFERED_SEPARATOR "a" VCPKG_PREFERED_SEPARATOR "b");
+    test_preferred("a/b", "a" VCPKG_PREFERED_SEPARATOR "b");
+
+#if defined(_WIN32)
+    test_preferred(R"(\\server/share\a/b)", R"(\\server\share\a\b)");
+    test_preferred(R"(//server/share\a/b)", R"(\\server\share\a\b)");
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+    test_preferred(R"(//server/share\a/b)", R"(/server/share\a/b)");
+    test_preferred(R"(//server/share\a/b)", R"(/server/share\a/b)");
+#endif // ^^^ !_WIN32
+}
+
+static void test_lexically_normal(Path p, Path expected_generic)
+{
+    auto as_lexically_normal = p.lexically_normal();
+    expected_generic.make_preferred(); // now expected
+    CHECK(as_lexically_normal.native() == expected_generic.native());
+}
+
+TEST_CASE ("Path::lexically_normal", "[filesystem][files]")
+{
+    test_lexically_normal({}, {});
+
+    // these test cases are taken from the MS STL tests
+    test_lexically_normal("cat/./dog/..", "cat/");
+    test_lexically_normal("cat/.///dog/../", "cat/");
+
+    test_lexically_normal("cat/./dog/..", "cat/");
+    test_lexically_normal("cat/.///dog/../", "cat/");
+
+    test_lexically_normal(".", ".");
+    test_lexically_normal("./", ".");
+    test_lexically_normal("./.", ".");
+    test_lexically_normal("././", ".");
+
+    test_lexically_normal("../../..", "../../..");
+    test_lexically_normal("../../../", "../../..");
+
+    test_lexically_normal("../../../a/b/c", "../../../a/b/c");
+
+    test_lexically_normal("/../../..", "/");
+    test_lexically_normal("/../../../", "/");
+
+    test_lexically_normal("/../../../a/b/c", "/a/b/c");
+
+    test_lexically_normal("a/..", ".");
+    test_lexically_normal("a/../", ".");
+
+#if defined(_WIN32)
+    test_lexically_normal(R"(X:)", R"(X:)");
+
+    test_lexically_normal(R"(X:DriveRelative)", R"(X:DriveRelative)");
+
+    test_lexically_normal(R"(X:\)", R"(X:\)");
+    test_lexically_normal(R"(X:/)", R"(X:\)");
+    test_lexically_normal(R"(X:\\\)", R"(X:\)");
+    test_lexically_normal(R"(X:///)", R"(X:\)");
+
+    test_lexically_normal(R"(X:\DosAbsolute)", R"(X:\DosAbsolute)");
+    test_lexically_normal(R"(X:/DosAbsolute)", R"(X:\DosAbsolute)");
+    test_lexically_normal(R"(X:\\\DosAbsolute)", R"(X:\DosAbsolute)");
+    test_lexically_normal(R"(X:///DosAbsolute)", R"(X:\DosAbsolute)");
+
+    test_lexically_normal(R"(\RootRelative)", R"(\RootRelative)");
+    test_lexically_normal(R"(/RootRelative)", R"(\RootRelative)");
+    test_lexically_normal(R"(\\\RootRelative)", R"(\RootRelative)");
+    test_lexically_normal(R"(///RootRelative)", R"(\RootRelative)");
+
+    test_lexically_normal(R"(\\server\share)", R"(\\server\share)");
+    test_lexically_normal(R"(//server/share)", R"(\\server\share)");
+    test_lexically_normal(R"(\\server\\\share)", R"(\\server\share)");
+    test_lexically_normal(R"(//server///share)", R"(\\server\share)");
+
+    test_lexically_normal(R"(\\?\device)", R"(\\?\device)");
+    test_lexically_normal(R"(//?/device)", R"(\\?\device)");
+
+    test_lexically_normal(R"(\??\device)", R"(\??\device)");
+    test_lexically_normal(R"(/??/device)", R"(\??\device)");
+
+    test_lexically_normal(R"(\\.\device)", R"(\\.\device)");
+    test_lexically_normal(R"(//./device)", R"(\\.\device)");
+
+    test_lexically_normal(R"(\\?\UNC\server\share)", R"(\\?\UNC\server\share)");
+    test_lexically_normal(R"(//?/UNC/server/share)", R"(\\?\UNC\server\share)");
+
+    test_lexically_normal(R"(C:\a/b\\c\/d/\e//f)", R"(C:\a\b\c\d\e\f)");
+
+    test_lexically_normal(R"(C:\meow\)", R"(C:\meow\)");
+    test_lexically_normal(R"(C:\meow/)", R"(C:\meow\)");
+    test_lexically_normal(R"(C:\meow\\)", R"(C:\meow\)");
+    test_lexically_normal(R"(C:\meow\/)", R"(C:\meow\)");
+    test_lexically_normal(R"(C:\meow/\)", R"(C:\meow\)");
+    test_lexically_normal(R"(C:\meow//)", R"(C:\meow\)");
+
+    test_lexically_normal(R"(C:\a\.\b\.\.\c\.\.\.)", R"(C:\a\b\c\)");
+    test_lexically_normal(R"(C:\a\.\b\.\.\c\.\.\.\)", R"(C:\a\b\c\)");
+
+    test_lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h)", R"(C:\a\b\g\h)");
+
+    test_lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h\..)", R"(C:\a\b\g\)");
+    test_lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h\..\)", R"(C:\a\b\g\)");
+    test_lexically_normal(
+        R"(/\server/\share/\a/\b/\c/\./\./\d/\../\../\../\../\../\../\../\other/x/y/z/.././..\meow.txt)",
+        R"(\\server\other\x\meow.txt)");
 #endif
+}
+
+static void test_parent_path(Path input, StringView expected)
+{
+    const auto actual = input.parent_path();
+    CHECK(actual == expected);
+    bool parent_removes = actual != input.native();
+    CHECK(input.make_parent_path() == parent_removes);
+    CHECK(input.native() == expected);
+}
+
+TEST_CASE ("Path::make_parent_path and Path::parent_path", "[filesystem][files]")
+{
+    test_parent_path({}, {});
+    test_parent_path("/a/", "/a");
+    test_parent_path("/a/b", "/a");
+    test_parent_path("/a////////b", "/a");
+    test_parent_path("/a", "/");
+    test_parent_path("/", "/");
+
+#if defined(_WIN32)
+    test_parent_path("C:/", "C:/");
+    test_parent_path("C:/a", "C:/");
+    test_parent_path("C:/a/", "C:/a");
+    test_parent_path("C:/a/b", "C:/a");
+    test_parent_path("C:", "C:");
+    test_parent_path("C:a", "C:");
+    test_parent_path("C:a/", "C:a");
+    test_parent_path("C:a/b", "C:a");
+    test_parent_path(R"(C:\)", R"(C:\)");
+    test_parent_path(R"(C:\a)", R"(C:\)");
+    test_parent_path(R"(C:\a\)", R"(C:\a)");
+    test_parent_path(R"(C:\a\b)", R"(C:\a)");
+    test_parent_path(R"(\\server\)", R"(\\server\)");
+    test_parent_path(R"(\\server\a)", R"(\\server\)");
+    test_parent_path(R"(\\server\a\)", R"(\\server\a)");
+    test_parent_path(R"(\\server\a\b)", R"(\\server\a)");
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+    test_parent_path("C:/", "C:");
+    test_parent_path("C:/a", "C:");
+    test_parent_path("C:/a/", "C:/a");
+    test_parent_path("C:/a/b", "C:/a");
+    test_parent_path("C:", "");
+    test_parent_path("C:a", "");
+    test_parent_path("C:a/", "C:a");
+    test_parent_path("C:a/b", "C:a");
+    test_parent_path(R"(C:\)", "");
+    test_parent_path(R"(C:\a)", "");
+    test_parent_path(R"(C:\a\)", "");
+    test_parent_path(R"(C:\a\b)", "");
+    test_parent_path(R"(\\server\)", "");
+    test_parent_path(R"(\\server\a)", "");
+    test_parent_path(R"(\\server\a\)", "");
+    test_parent_path(R"(\\server\a\b)", "");
+#endif // ^^^ !_WIN32
+}
+
+static void test_path_decomposition(
+    Path input, bool is_absolute, StringView expected_stem, StringView expected_extension, StringView ads = {})
+{
+    auto expected_filename = expected_stem.to_string();
+    expected_filename.append(expected_extension.data(), expected_extension.size());
+    expected_filename.append(ads.data(), ads.size());
+    CHECK(input.is_absolute() == is_absolute);
+    CHECK(input.is_relative() != is_absolute);
+    CHECK(input.filename() == expected_filename);
+    CHECK(input.stem() == expected_stem);
+    CHECK(input.extension() == expected_extension);
+}
+
+TEST_CASE ("Path decomposition", "[filesystem][files]")
+{
+    test_path_decomposition("", false, "", "");
+    test_path_decomposition("a/b", false, "b", "");
+    test_path_decomposition("a/b", false, "b", "");
+    test_path_decomposition("a/b.ext", false, "b", ".ext");
+    test_path_decomposition("a/b.ext.ext", false, "b.ext", ".ext");
+    test_path_decomposition("a/.config", false, ".config", "");
+    test_path_decomposition("a/..config", false, ".", ".config");
+#if defined(_WIN32)
+    test_path_decomposition(
+        "a/hello.world.config:alternate-data-stream", false, "hello.world", ".config", ":alternate-data-stream");
+    test_path_decomposition("a/.config:alternate-data-stream", false, ".config", "", ":alternate-data-stream");
+#endif // _WIN32
+
+    bool single_slash_is_absolute =
+#if defined(_WIN32)
+        false
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+        true
+#endif // ^^^ !_WIN32
+        ;
+
+    bool drive_is_absolute =
+#if defined(_WIN32)
+        true
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+        false
+#endif // ^^^ !_WIN32
+        ;
+    test_path_decomposition("/a/b", single_slash_is_absolute, "b", "");
+    test_path_decomposition("/a/b.ext", single_slash_is_absolute, "b", ".ext");
+
+#if defined(_WIN32)
+    test_path_decomposition("C:a", false, "a", "");
+    test_path_decomposition("C:a.ext", false, "a", ".ext");
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+    test_path_decomposition("C:a", false, "C:a", "");
+    test_path_decomposition("C:a.ext", false, "C:a", ".ext");
+#endif // ^^^ !_WIN32
+
+    test_path_decomposition("C:/a", drive_is_absolute, "a", "");
+    test_path_decomposition("C:/a.ext", drive_is_absolute, "a", ".ext");
+    test_path_decomposition("//server/a", true, "a", "");
+    test_path_decomposition("//server/a.ext", true, "a", ".ext");
 }
 
 TEST_CASE ("remove all", "[files]")
 {
-    auto urbg = get_urbg(0);
+    urbg_t urbg;
 
     auto& fs = setup();
 
-    vcpkg::path temp_dir = base_temporary_directory() / get_random_filename(urbg);
-    INFO("temp dir is: " << temp_dir);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    INFO("temp dir is: " << temp_dir.native());
 
-    create_directory_tree(urbg, fs, temp_dir, MaxDepth{5});
+    create_directory_tree(urbg, fs, temp_dir);
 
     std::error_code ec;
-    vcpkg::path fp;
+    Path fp;
     fs.remove_all(temp_dir, ec, fp);
     CHECK_EC_ON_FILE(fp, ec);
 
@@ -193,171 +519,111 @@ TEST_CASE ("remove all", "[files]")
     CHECK_EC_ON_FILE(temp_dir, ec);
 }
 
-TEST_CASE ("lexically_normal", "[files]")
+TEST_CASE ("LinesCollector", "[files]")
 {
-    const auto lexically_normal = [](const char* s) { return vcpkg::lexically_normal(vcpkg::u8path(s)); };
-    const auto native = [](const char* s) { return std::move(vcpkg::u8path(s).make_preferred()); };
-    CHECK(vcpkg::lexically_normal(vcpkg::path()).native() == vcpkg::path().native());
-
-    // these test cases are taken from the MS STL tests
-    CHECK(lexically_normal("cat/./dog/..").native() == native("cat/").native());
-    CHECK(lexically_normal("cat/.///dog/../").native() == native("cat/").native());
-
-    CHECK(lexically_normal("cat/./dog/..").native() == native("cat/").native());
-    CHECK(lexically_normal("cat/.///dog/../").native() == native("cat/").native());
-
-    CHECK(lexically_normal(".").native() == native(".").native());
-    CHECK(lexically_normal("./").native() == native(".").native());
-    CHECK(lexically_normal("./.").native() == native(".").native());
-    CHECK(lexically_normal("././").native() == native(".").native());
-
-    CHECK(lexically_normal("../../..").native() == native("../../..").native());
-    CHECK(lexically_normal("../../../").native() == native("../../..").native());
-
-    CHECK(lexically_normal("../../../a/b/c").native() == native("../../../a/b/c").native());
-
-    CHECK(lexically_normal("/../../..").native() == native("/").native());
-    CHECK(lexically_normal("/../../../").native() == native("/").native());
-
-    CHECK(lexically_normal("/../../../a/b/c").native() == native("/a/b/c").native());
-
-    CHECK(lexically_normal("a/..").native() == native(".").native());
-    CHECK(lexically_normal("a/../").native() == native(".").native());
-
-#if defined(_WIN32)
-    CHECK(lexically_normal(R"(X:)").native() == LR"(X:)");
-
-    CHECK(lexically_normal(R"(X:DriveRelative)").native() == LR"(X:DriveRelative)");
-
-    CHECK(lexically_normal(R"(X:\)").native() == LR"(X:\)");
-    CHECK(lexically_normal(R"(X:/)").native() == LR"(X:\)");
-    CHECK(lexically_normal(R"(X:\\\)").native() == LR"(X:\)");
-    CHECK(lexically_normal(R"(X:///)").native() == LR"(X:\)");
-
-    CHECK(lexically_normal(R"(X:\DosAbsolute)").native() == LR"(X:\DosAbsolute)");
-    CHECK(lexically_normal(R"(X:/DosAbsolute)").native() == LR"(X:\DosAbsolute)");
-    CHECK(lexically_normal(R"(X:\\\DosAbsolute)").native() == LR"(X:\DosAbsolute)");
-    CHECK(lexically_normal(R"(X:///DosAbsolute)").native() == LR"(X:\DosAbsolute)");
-
-    CHECK(lexically_normal(R"(\RootRelative)").native() == LR"(\RootRelative)");
-    CHECK(lexically_normal(R"(/RootRelative)").native() == LR"(\RootRelative)");
-    CHECK(lexically_normal(R"(\\\RootRelative)").native() == LR"(\RootRelative)");
-    CHECK(lexically_normal(R"(///RootRelative)").native() == LR"(\RootRelative)");
-
-    CHECK(lexically_normal(R"(\\server\share)").native() == LR"(\\server\share)");
-    CHECK(lexically_normal(R"(//server/share)").native() == LR"(\\server\share)");
-    CHECK(lexically_normal(R"(\\server\\\share)").native() == LR"(\\server\share)");
-    CHECK(lexically_normal(R"(//server///share)").native() == LR"(\\server\share)");
-
-    CHECK(lexically_normal(R"(\\?\device)").native() == LR"(\\?\device)");
-    CHECK(lexically_normal(R"(//?/device)").native() == LR"(\\?\device)");
-
-    CHECK(lexically_normal(R"(\??\device)").native() == LR"(\??\device)");
-    CHECK(lexically_normal(R"(/??/device)").native() == LR"(\??\device)");
-
-    CHECK(lexically_normal(R"(\\.\device)").native() == LR"(\\.\device)");
-    CHECK(lexically_normal(R"(//./device)").native() == LR"(\\.\device)");
-
-    CHECK(lexically_normal(R"(\\?\UNC\server\share)").native() == LR"(\\?\UNC\server\share)");
-    CHECK(lexically_normal(R"(//?/UNC/server/share)").native() == LR"(\\?\UNC\server\share)");
-
-    CHECK(lexically_normal(R"(C:\a/b\\c\/d/\e//f)").native() == LR"(C:\a\b\c\d\e\f)");
-
-    CHECK(lexically_normal(R"(C:\meow\)").native() == LR"(C:\meow\)");
-    CHECK(lexically_normal(R"(C:\meow/)").native() == LR"(C:\meow\)");
-    CHECK(lexically_normal(R"(C:\meow\\)").native() == LR"(C:\meow\)");
-    CHECK(lexically_normal(R"(C:\meow\/)").native() == LR"(C:\meow\)");
-    CHECK(lexically_normal(R"(C:\meow/\)").native() == LR"(C:\meow\)");
-    CHECK(lexically_normal(R"(C:\meow//)").native() == LR"(C:\meow\)");
-
-    CHECK(lexically_normal(R"(C:\a\.\b\.\.\c\.\.\.)").native() == LR"(C:\a\b\c\)");
-    CHECK(lexically_normal(R"(C:\a\.\b\.\.\c\.\.\.\)").native() == LR"(C:\a\b\c\)");
-
-    CHECK(lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h)").native() == LR"(C:\a\b\g\h)");
-
-    CHECK(lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h\..)").native() == LR"(C:\a\b\g\)");
-    CHECK(lexically_normal(R"(C:\a\b\c\d\e\..\f\..\..\..\g\h\..\)").native() == LR"(C:\a\b\g\)");
-    CHECK(lexically_normal(
-              R"(/\server/\share/\a/\b/\c/\./\./\d/\../\../\../\../\../\../\../\other/x/y/z/.././..\meow.txt)")
-              .native() == LR"(\\server\other\x\meow.txt)");
-#endif
+    using Strings::LinesCollector;
+    LinesCollector lc;
+    CHECK(lc.extract() == std::vector<std::string>{""});
+    lc.on_data({"a\nb\r\nc\rd\r\r\n\ne\n\rx", 16});
+    CHECK(lc.extract() == std::vector<std::string>{"a", "b", "c", "d", "", "", "e", "", "x"});
+    CHECK(lc.extract() == std::vector<std::string>{""});
+    lc.on_data({"hello ", 6});
+    lc.on_data({"there ", 6});
+    lc.on_data({"world", 5});
+    CHECK(lc.extract() == std::vector<std::string>{"hello there world"});
+    lc.on_data({"\r\nhello \r\n", 10});
+    lc.on_data({"\r\nworld", 7});
+    CHECK(lc.extract() == std::vector<std::string>{"", "hello ", "", "world"});
+    lc.on_data({"\r\n\r\n\r\n", 6});
+    CHECK(lc.extract() == std::vector<std::string>{"", "", "", ""});
+    lc.on_data({"a", 1});
+    lc.on_data({"b\nc", 3});
+    lc.on_data({"d", 1});
+    CHECK(lc.extract() == std::vector<std::string>{"ab", "cd"});
+    lc.on_data({"a\r", 2});
+    lc.on_data({"\nb", 2});
+    CHECK(lc.extract() == std::vector<std::string>{"a", "b"});
+    lc.on_data({"a\r", 2});
+    CHECK(lc.extract() == std::vector<std::string>{"a", ""});
+    lc.on_data({"\n", 1});
+    CHECK(lc.extract() == std::vector<std::string>{"", ""});
+    lc.on_data({"\rabc\n", 5});
+    CHECK(lc.extract() == std::vector<std::string>{"", "abc", ""});
 }
 
 #if defined(_WIN32)
 TEST_CASE ("win32_fix_path_case", "[files]")
 {
-    using vcpkg::win32_fix_path_case;
-
     // This test assumes that the Windows directory is C:\Windows
 
-    CHECK(win32_fix_path_case(L"") == L"");
+    CHECK(win32_fix_path_case("") == "");
 
-    CHECK(win32_fix_path_case(L"C:") == L"C:");
-    CHECK(win32_fix_path_case(L"c:") == L"C:");
-    CHECK(win32_fix_path_case(L"C:/") == L"C:\\");
-    CHECK(win32_fix_path_case(L"C:\\") == L"C:\\");
-    CHECK(win32_fix_path_case(L"c:\\") == L"C:\\");
-    CHECK(win32_fix_path_case(L"C:\\WiNdOws") == L"C:\\Windows");
-    CHECK(win32_fix_path_case(L"c:\\WiNdOws\\") == L"C:\\Windows\\");
-    CHECK(win32_fix_path_case(L"C://///////WiNdOws") == L"C:\\Windows");
-    CHECK(win32_fix_path_case(L"c:\\/\\/WiNdOws\\/") == L"C:\\Windows\\");
+    CHECK(win32_fix_path_case("C:") == "C:");
+    CHECK(win32_fix_path_case("c:") == "C:");
+    CHECK(win32_fix_path_case("C:/") == "C:\\");
+    CHECK(win32_fix_path_case("C:\\") == "C:\\");
+    CHECK(win32_fix_path_case("c:\\") == "C:\\");
+    CHECK(win32_fix_path_case("C:\\WiNdOws") == "C:\\Windows");
+    CHECK(win32_fix_path_case("c:\\WiNdOws\\") == "C:\\Windows\\");
+    CHECK(win32_fix_path_case("C://///////WiNdOws") == "C:\\Windows");
+    CHECK(win32_fix_path_case("c:\\/\\/WiNdOws\\/") == "C:\\Windows\\");
 
-    auto& fs = vcpkg::get_real_filesystem();
+    auto& fs = get_real_filesystem();
     auto original_cwd = fs.current_path(VCPKG_LINE_INFO);
-    fs.current_path(L"C:\\", VCPKG_LINE_INFO);
-    CHECK(win32_fix_path_case(L"\\") == L"\\");
-    CHECK(win32_fix_path_case(L"\\/\\WiNdOws") == L"\\Windows");
-    CHECK(win32_fix_path_case(L"\\WiNdOws") == L"\\Windows");
-    CHECK(win32_fix_path_case(L"\\WiNdOws") == L"\\Windows");
-    CHECK(win32_fix_path_case(L"c:WiNdOws") == L"C:Windows");
-    CHECK(win32_fix_path_case(L"c:WiNdOws/system32") == L"C:Windows\\System32");
+    fs.current_path("C:\\", VCPKG_LINE_INFO);
+    CHECK(win32_fix_path_case("\\") == "\\");
+    CHECK(win32_fix_path_case("\\/\\WiNdOws") == "\\Windows");
+    CHECK(win32_fix_path_case("\\WiNdOws") == "\\Windows");
+    CHECK(win32_fix_path_case("\\WiNdOws") == "\\Windows");
+    CHECK(win32_fix_path_case("c:WiNdOws") == "C:Windows");
+    CHECK(win32_fix_path_case("c:WiNdOws/system32") == "C:Windows\\System32");
     fs.current_path(original_cwd, VCPKG_LINE_INFO);
 
     fs.create_directories("SuB/Dir/Ectory", VCPKG_LINE_INFO);
-    CHECK(win32_fix_path_case(L"sub") == L"SuB");
-    CHECK(win32_fix_path_case(L"SUB") == L"SuB");
-    CHECK(win32_fix_path_case(L"sub/") == L"SuB\\");
-    CHECK(win32_fix_path_case(L"sub/dir") == L"SuB\\Dir");
-    CHECK(win32_fix_path_case(L"sub/dir/") == L"SuB\\Dir\\");
-    CHECK(win32_fix_path_case(L"sub/dir/ectory") == L"SuB\\Dir\\Ectory");
-    CHECK(win32_fix_path_case(L"sub/dir/ectory/") == L"SuB\\Dir\\Ectory\\");
+    CHECK(win32_fix_path_case("sub") == "SuB");
+    CHECK(win32_fix_path_case("SUB") == "SuB");
+    CHECK(win32_fix_path_case("sub/") == "SuB\\");
+    CHECK(win32_fix_path_case("sub/dir") == "SuB\\Dir");
+    CHECK(win32_fix_path_case("sub/dir/") == "SuB\\Dir\\");
+    CHECK(win32_fix_path_case("sub/dir/ectory") == "SuB\\Dir\\Ectory");
+    CHECK(win32_fix_path_case("sub/dir/ectory/") == "SuB\\Dir\\Ectory\\");
     fs.remove_all("SuB", VCPKG_LINE_INFO);
 
-    CHECK(win32_fix_path_case(L"//nonexistent_server\\nonexistent_share\\") ==
-          L"\\\\nonexistent_server\\nonexistent_share\\");
-    CHECK(win32_fix_path_case(L"\\\\nonexistent_server\\nonexistent_share\\") ==
-          L"\\\\nonexistent_server\\nonexistent_share\\");
-    CHECK(win32_fix_path_case(L"\\\\nonexistent_server\\nonexistent_share") ==
-          L"\\\\nonexistent_server\\nonexistent_share");
+    CHECK(win32_fix_path_case("//nonexistent_server\\nonexistent_share\\") ==
+          "\\\\nonexistent_server\\nonexistent_share\\");
+    CHECK(win32_fix_path_case("\\\\nonexistent_server\\nonexistent_share\\") ==
+          "\\\\nonexistent_server\\nonexistent_share\\");
+    CHECK(win32_fix_path_case("\\\\nonexistent_server\\nonexistent_share") ==
+          "\\\\nonexistent_server\\nonexistent_share");
 
-    CHECK(win32_fix_path_case(L"///three_slashes_not_a_server\\subdir\\") == L"\\three_slashes_not_a_server\\subdir\\");
+    CHECK(win32_fix_path_case("///three_slashes_not_a_server\\subdir\\") == "\\three_slashes_not_a_server\\subdir\\");
 
-    CHECK(win32_fix_path_case(L"\\??\\c:\\WiNdOws") == L"\\??\\c:\\WiNdOws");
-    CHECK(win32_fix_path_case(L"\\\\?\\c:\\WiNdOws") == L"\\\\?\\c:\\WiNdOws");
-    CHECK(win32_fix_path_case(L"\\\\.\\c:\\WiNdOws") == L"\\\\.\\c:\\WiNdOws");
-    CHECK(win32_fix_path_case(L"c:\\/\\/Nonexistent\\/path/here") == L"C:\\Nonexistent\\path\\here");
+    CHECK(win32_fix_path_case("\\??\\c:\\WiNdOws") == "\\??\\c:\\WiNdOws");
+    CHECK(win32_fix_path_case("\\\\?\\c:\\WiNdOws") == "\\\\?\\c:\\WiNdOws");
+    CHECK(win32_fix_path_case("\\\\.\\c:\\WiNdOws") == "\\\\.\\c:\\WiNdOws");
+    CHECK(win32_fix_path_case("c:\\/\\/Nonexistent\\/path/here") == "C:\\Nonexistent\\path\\here");
 }
 #endif // _WIN32
 
 #if defined(CATCH_CONFIG_ENABLE_BENCHMARKING)
 TEST_CASE ("remove all -- benchmarks", "[files][!benchmark]")
 {
-    auto urbg = get_urbg(1);
+    urbg_t urbg;
     auto& fs = setup();
 
     struct
     {
         urbg_t& urbg;
-        vcpkg::Filesystem& fs;
+        Filesystem& fs;
 
-        void operator()(Catch::Benchmark::Chronometer& meter, MaxDepth max_depth, AllowSymlinks allow_symlinks) const
+        void operator()(Catch::Benchmark::Chronometer& meter, std::uint32_t max_depth) const
         {
             std::vector<path> temp_dirs;
             temp_dirs.resize(meter.runs());
 
             std::generate(begin(temp_dirs), end(temp_dirs), [&] {
                 path temp_dir = base_temporary_directory() / get_random_filename(urbg);
-                create_directory_tree(urbg, fs, temp_dir, max_depth, allow_symlinks);
+                create_directory_tree(urbg, fs, temp_dir, max_depth);
                 return temp_dir;
             });
 
@@ -379,27 +645,8 @@ TEST_CASE ("remove all -- benchmarks", "[files][!benchmark]")
         }
     } do_benchmark = {urbg, fs};
 
-    BENCHMARK_ADVANCED("small directory, no symlinks")(Catch::Benchmark::Chronometer meter)
-    {
-        do_benchmark(meter, MaxDepth{2}, AllowSymlinks::No);
-    };
+    BENCHMARK_ADVANCED("small directory")(Catch::Benchmark::Chronometer meter) { do_benchmark(meter, 2); };
 
-    BENCHMARK_ADVANCED("large directory, no symlinks")(Catch::Benchmark::Chronometer meter)
-    {
-        do_benchmark(meter, MaxDepth{5}, AllowSymlinks::No);
-    };
-
-    if (can_create_symlinks())
-    {
-        BENCHMARK_ADVANCED("small directory, symlinks")(Catch::Benchmark::Chronometer meter)
-        {
-            do_benchmark(meter, MaxDepth{2}, AllowSymlinks::Yes);
-        };
-
-        BENCHMARK_ADVANCED("large directory, symlinks")(Catch::Benchmark::Chronometer meter)
-        {
-            do_benchmark(meter, MaxDepth{5}, AllowSymlinks::Yes);
-        };
-    }
+    BENCHMARK_ADVANCED("large directory")(Catch::Benchmark::Chronometer meter) { do_benchmark(meter, 5); };
 }
 #endif

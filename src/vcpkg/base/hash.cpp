@@ -21,10 +21,6 @@ namespace vcpkg::Hash
 
     Optional<Algorithm> algorithm_from_string(StringView sv) noexcept
     {
-        if (Strings::case_insensitive_ascii_equals(sv, "SHA1"))
-        {
-            return {Algorithm::Sha1};
-        }
         if (Strings::case_insensitive_ascii_equals(sv, "SHA256"))
         {
             return {Algorithm::Sha256};
@@ -41,7 +37,6 @@ namespace vcpkg::Hash
     {
         switch (algo)
         {
-            case Algorithm::Sha1: return "SHA1";
             case Algorithm::Sha256: return "SHA256";
             case Algorithm::Sha512: return "SHA512";
             default: vcpkg::Checks::exit_fail(VCPKG_LINE_INFO);
@@ -111,7 +106,6 @@ namespace vcpkg::Hash
 
         struct BCryptHasher : Hasher
         {
-            static const BCRYPT_ALG_HANDLE sha1_alg_handle;
             static const BCRYPT_ALG_HANDLE sha256_alg_handle;
             static const BCRYPT_ALG_HANDLE sha512_alg_handle;
 
@@ -119,7 +113,6 @@ namespace vcpkg::Hash
             {
                 switch (algo)
                 {
-                    case Algorithm::Sha1: alg_handle = sha1_alg_handle; break;
                     case Algorithm::Sha256: alg_handle = sha256_alg_handle; break;
                     case Algorithm::Sha512: alg_handle = sha512_alg_handle; break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -188,7 +181,6 @@ namespace vcpkg::Hash
             BCRYPT_ALG_HANDLE alg_handle = nullptr;
         };
 
-        const BCRYPT_ALG_HANDLE BCryptHasher::sha1_alg_handle = get_alg_handle(BCRYPT_SHA1_ALGORITHM);
         const BCRYPT_ALG_HANDLE BCryptHasher::sha256_alg_handle = get_alg_handle(BCRYPT_SHA256_ALGORITHM);
         const BCRYPT_ALG_HANDLE BCryptHasher::sha512_alg_handle = get_alg_handle(BCRYPT_SHA512_ALGORITHM);
 #else
@@ -200,10 +192,6 @@ namespace vcpkg::Hash
         }
 
         static std::uint32_t shr32(std::uint32_t value, int by) noexcept { return value >> by; }
-        static std::uint32_t rol32(std::uint32_t value, int by) noexcept
-        {
-            return (value << by) | (value >> (32 - by));
-        }
         static std::uint32_t ror32(std::uint32_t value, int by) noexcept
         {
             return (value >> by) | (value << (32 - by));
@@ -338,88 +326,6 @@ namespace vcpkg::Hash
                 }
             }
         }
-
-        struct Sha1Algorithm
-        {
-            using underlying_type = std::uint32_t;
-            using message_length_type = std::uint64_t;
-            constexpr static std::size_t chunk_size = 64; // = 512 / 8
-            constexpr static std::size_t number_of_rounds = 80;
-
-            Sha1Algorithm() noexcept { clear(); }
-
-            void process_full_chunk(const std::array<uchar, chunk_size>& chunk) noexcept
-            {
-                std::uint32_t words[80];
-
-                sha_fill_initial_words(&chunk[0], words);
-                for (std::size_t i = 16; i < number_of_rounds; ++i)
-                {
-                    const auto sum = words[i - 3] ^ words[i - 8] ^ words[i - 14] ^ words[i - 16];
-                    words[i] = rol32(sum, 1);
-                }
-
-                std::uint32_t a = m_digest[0];
-                std::uint32_t b = m_digest[1];
-                std::uint32_t c = m_digest[2];
-                std::uint32_t d = m_digest[3];
-                std::uint32_t e = m_digest[4];
-
-                for (std::size_t i = 0; i < number_of_rounds; ++i)
-                {
-                    std::uint32_t f;
-                    std::uint32_t k;
-
-                    if (i < 20)
-                    {
-                        f = (b & c) | (~b & d);
-                        k = 0x5A827999;
-                    }
-                    else if (i < 40)
-                    {
-                        f = b ^ c ^ d;
-                        k = 0x6ED9EBA1;
-                    }
-                    else if (i < 60)
-                    {
-                        f = (b & c) | (b & d) | (c & d);
-                        k = 0x8F1BBCDC;
-                    }
-                    else
-                    {
-                        f = b ^ c ^ d;
-                        k = 0xCA62C1D6;
-                    }
-
-                    auto tmp = rol32(a, 5) + f + e + k + words[i];
-                    e = d;
-                    d = c;
-                    c = rol32(b, 30);
-                    b = a;
-                    a = tmp;
-                }
-
-                m_digest[0] += a;
-                m_digest[1] += b;
-                m_digest[2] += c;
-                m_digest[3] += d;
-                m_digest[4] += e;
-            }
-
-            void clear() noexcept
-            {
-                m_digest[0] = 0x67452301;
-                m_digest[1] = 0xEFCDAB89;
-                m_digest[2] = 0x98BADCFE;
-                m_digest[3] = 0x10325476;
-                m_digest[4] = 0xC3D2E1F0;
-            }
-
-            const std::uint32_t* begin() const noexcept { return &m_digest[0]; }
-            const std::uint32_t* end() const noexcept { return &m_digest[5]; }
-
-            std::uint32_t m_digest[5];
-        };
 
         struct Sha256Algorithm
         {
@@ -614,7 +520,6 @@ namespace vcpkg::Hash
 #else
         switch (algo)
         {
-            case Algorithm::Sha1: return std::make_unique<ShaHasher<Sha1Algorithm>>();
             case Algorithm::Sha256: return std::make_unique<ShaHasher<Sha256Algorithm>>();
             case Algorithm::Sha512: return std::make_unique<ShaHasher<Sha512Algorithm>>();
             default: vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown hashing algorithm: %s", algo);
@@ -631,11 +536,6 @@ namespace vcpkg::Hash
 #else
         switch (algo)
         {
-            case Algorithm::Sha1:
-            {
-                auto hasher = ShaHasher<Sha1Algorithm>();
-                return f(hasher);
-            }
             case Algorithm::Sha256:
             {
                 auto hasher = ShaHasher<Sha256Algorithm>();
@@ -664,37 +564,30 @@ namespace vcpkg::Hash
         return get_bytes_hash(sv.data(), sv.data() + sv.size(), algo);
     }
 
-    // TODO: use Filesystem to open a file
-    std::string get_file_hash(const Filesystem&, const path& target, Algorithm algo, std::error_code& ec) noexcept
+    std::string get_file_hash(const Filesystem& fs, const Path& path, Algorithm algo, std::error_code& ec) noexcept
     {
-        auto file = std::fstream(target.c_str(), std::ios_base::in | std::ios_base::binary);
-        if (!file)
+        auto file = fs.open_for_read(path, ec);
+        if (ec)
         {
-            ec.assign(ENOENT, std::system_category());
-            return {};
+            return std::string();
         }
 
         return do_hash(algo, [&file, &ec](Hasher& hasher) {
             constexpr std::size_t buffer_size = 1024 * 32;
-            auto buffer = std::make_unique<char[]>(buffer_size);
-            for (;;)
+            char buffer[buffer_size];
+            do
             {
-                file.read(buffer.get(), buffer_size);
-                if (file.eof())
+                const auto this_read = file.read(buffer, 1, buffer_size);
+                if (this_read != 0)
                 {
-                    hasher.add_bytes(buffer.get(), buffer.get() + file.gcount());
-                    return hasher.get_hash();
+                    hasher.add_bytes(buffer, buffer + this_read);
                 }
-                else if (file)
+                else if ((ec = file.error()))
                 {
-                    hasher.add_bytes(buffer.get(), buffer.get() + buffer_size);
-                }
-                else
-                {
-                    ec = std::io_errc::stream;
                     return std::string();
                 }
-            }
+            } while (!file.eof());
+            return hasher.get_hash();
         });
     }
 }
