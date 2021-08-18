@@ -199,7 +199,7 @@ TEST_CASE ("vcpkg Path generic", "[filesystem][files]")
     Path bp("some\\path\\/\\/with\\backslashes");
 #if defined(_WIN32)
     CHECK(bp.generic_u8string() == StringView("some/path////with/backslashes"));
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
     CHECK(bp.generic_u8string() == StringView("some\\path\\/\\/with\\backslashes"));
 #endif // _WIN32
 }
@@ -227,7 +227,7 @@ TEST_CASE ("vcpkg Path::operator/", "[filesystem][files]")
     test_op_slash("C:/a/b", "D:/c/d", "D:/c/d");
     test_op_slash("C:/a/b", "D:c/d", "D:c/d");
     test_op_slash("C:/a/b", "C:c/d", "C:/a/b\\c/d");
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
     test_op_slash("C:/a/b", "c/d", "C:/a/b/c/d");
     test_op_slash("C:a/b", "c/d", "C:a/b/c/d");
     test_op_slash("C:a/b", "/c/d", "/c/d");
@@ -283,7 +283,7 @@ TEST_CASE ("vcpkg Path::preferred and Path::make_preferred", "[filesystem][files
 #if defined(_WIN32)
     test_preferred(R"(\\server/share\a/b)", R"(\\server\share\a\b)");
     test_preferred(R"(//server/share\a/b)", R"(\\server\share\a\b)");
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
     test_preferred(R"(//server/share\a/b)", R"(/server/share\a/b)");
     test_preferred(R"(//server/share\a/b)", R"(/server/share\a/b)");
 #endif // ^^^ !_WIN32
@@ -419,7 +419,7 @@ TEST_CASE ("Path::make_parent_path and Path::parent_path", "[filesystem][files]"
     test_parent_path(R"(\\server\a)", R"(\\server\)");
     test_parent_path(R"(\\server\a\)", R"(\\server\a)");
     test_parent_path(R"(\\server\a\b)", R"(\\server\a)");
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
     test_parent_path("C:/", "C:");
     test_parent_path("C:/a", "C:");
     test_parent_path("C:/a/", "C:/a");
@@ -470,7 +470,7 @@ TEST_CASE ("Path decomposition", "[filesystem][files]")
     bool single_slash_is_absolute =
 #if defined(_WIN32)
         false
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
         true
 #endif // ^^^ !_WIN32
         ;
@@ -478,7 +478,7 @@ TEST_CASE ("Path decomposition", "[filesystem][files]")
     bool drive_is_absolute =
 #if defined(_WIN32)
         true
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
         false
 #endif // ^^^ !_WIN32
         ;
@@ -488,7 +488,7 @@ TEST_CASE ("Path decomposition", "[filesystem][files]")
 #if defined(_WIN32)
     test_path_decomposition("C:a", false, "a", "");
     test_path_decomposition("C:a.ext", false, "a", ".ext");
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
     test_path_decomposition("C:a", false, "C:a", "");
     test_path_decomposition("C:a.ext", false, "C:a", ".ext");
 #endif // ^^^ !_WIN32
