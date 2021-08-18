@@ -126,7 +126,7 @@ namespace
     {
 #if defined(_WIN32)
         return stdfs::path(Strings::to_utf16(utfpath.native()));
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
         return stdfs::path(utfpath.native());
 #endif // ^^^ !_WIN32
     }
@@ -135,7 +135,7 @@ namespace
     {
 #if defined(_WIN32)
         return Strings::to_utf8(stdpath.native());
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
         return stdpath.native();
 #endif // ^^^ !_WIN32
     }
@@ -230,7 +230,7 @@ namespace
 
         // no match
         return first;
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
         (void)last;
         return first;
 #endif // _WIN32
@@ -338,7 +338,7 @@ namespace
 #if defined(_WIN32)
         const auto ads = std::find(filename, last, ':'); // strip alternate data streams in intra-filename decomposition
         const auto extension = find_extension(filename, ads);
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
         const auto extension = find_extension(filename, last);
 #endif // _WIN32
         return StringView(filename, static_cast<size_t>(extension - filename));
@@ -354,7 +354,7 @@ namespace
         const auto ads = std::find(filename, last, ':'); // strip alternate data streams in intra-filename decomposition
         const auto extension = find_extension(filename, ads);
         return StringView(extension, static_cast<size_t>(ads - extension));
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
         const auto extension = find_extension(filename, last);
         return StringView(extension, static_cast<size_t>(last - extension));
 #endif // _WIN32
@@ -377,7 +377,7 @@ namespace
         // if root-name is otherwise nonempty, then it must be one of the always-absolute prefixes like
         // \\?\ or \\server, so the path is absolute. Otherwise it is relative.
         return first != find_root_name_end(first, last);
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
         return !str.empty() && str.byte_at_index(0) == '/';
 #endif // ^^^ !_WIN32
     }
@@ -431,7 +431,7 @@ namespace
         {
             ec.assign(GetLastError(), std::system_category());
         }
-#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
         struct stat s;
         if (lstat(target.c_str(), &s))
         {
@@ -485,7 +485,7 @@ namespace
             {
                 ec.assign(GetLastError(), std::system_category());
             }
-#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
             if (rmdir(current_entry.path().c_str()))
             {
                 ec.assign(errno, std::system_category());
@@ -498,7 +498,7 @@ namespace
             stdfs::remove(current_entry.path(), ec);
             if (err.check_ec(ec, current_entry)) return;
         }
-#else // ^^^  VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
+#else  // ^^^  VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
         else
         {
             if (unlink(current_entry.path().c_str()))
@@ -698,8 +698,8 @@ namespace vcpkg
                     m_str.push_back(preferred_separator);
                 }
             }
-#else // ^^^ _WIN32 / !_WIN32 vvv
-      // (!has_root_directory && is_absolute) can't happen on POSIX, so this just becomes has_filename
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+       // (!has_root_directory && is_absolute) can't happen on POSIX, so this just becomes has_filename
             const auto my_relative_first = std::find_if_not(my_root_name_end, my_last, is_slash);
             if (my_relative_first != my_last && !is_slash(my_last[-1]))
             {
@@ -944,7 +944,7 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         ec.assign(::_wfopen_s(&m_fs, to_stdfs_path(file_path).c_str(), L"rb"), std::generic_category());
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
         m_fs = ::fopen(file_path.c_str(), "rb");
         if (m_fs)
         {
@@ -961,7 +961,7 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         ec.assign(::_wfopen_s(&m_fs, to_stdfs_path(file_path).c_str(), L"wb"), std::generic_category());
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
         m_fs = ::fopen(file_path.c_str(), "wb");
         if (m_fs)
         {
@@ -1590,7 +1590,7 @@ namespace vcpkg
                 {
 #if VCPKG_USE_STD_FILESYSTEM
                     if (b->is_directory(ec))
-#else // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
+#else  // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
                     if (stdfs::is_directory(b->path(), ec))
 #endif // VCPKG_USE_STD_FILESYSTEM
                     {
@@ -1636,7 +1636,7 @@ namespace vcpkg
                 {
 #if VCPKG_USE_STD_FILESYSTEM
                     if (b->is_regular_file(ec))
-#else // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
+#else  // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
                     if (stdfs::is_regular_file(b->path(), ec))
 #endif // VCPKG_USE_STD_FILESYSTEM
                     {
@@ -1722,7 +1722,7 @@ namespace vcpkg
                 auto written_bytes = sendfile(o_fd, i_fd, &bytes, info.st_size);
 #elif defined(__APPLE__)
                 auto written_bytes = fcopyfile(i_fd, o_fd, 0, COPYFILE_ALL);
-#else // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
+#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
                 ssize_t written_bytes = 0;
                 {
                     constexpr std::size_t buffer_length = 4096;
@@ -1941,7 +1941,7 @@ namespace vcpkg
         {
 #if VCPKG_USE_STD_FILESYSTEM
             return from_stdfs_path(stdfs::absolute(to_stdfs_path(target), ec));
-#else // ^^^ VCPKG_USE_STD_FILESYSTEM  /  !VCPKG_USE_STD_FILESYSTEM  vvv
+#else  // ^^^ VCPKG_USE_STD_FILESYSTEM  /  !VCPKG_USE_STD_FILESYSTEM  vvv
             if (target.is_absolute())
             {
                 return target;
@@ -2119,7 +2119,7 @@ namespace vcpkg
         {
 #if defined(_WIN32)
             static constexpr StringLiteral EXTS[] = {".cmd", ".exe", ".bat"};
-#else // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
             static constexpr StringLiteral EXTS[] = {""};
 #endif // ^^^!defined(_WIN32)
             const Path pname = name;
