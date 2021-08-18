@@ -225,6 +225,7 @@ int main(const int argc, const char* const* const argv)
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
     args.check_feature_flag_consistency();
 
+    bool metrics_enabled;
     {
         LockGuardPtr<Metrics> metrics(g_metrics);
         if (const auto p = args.disable_metrics.get())
@@ -241,10 +242,7 @@ int main(const int argc, const char* const* const argv)
             metrics->set_disabled(true);
         }
 
-        if (metrics->metrics_enabled())
-        {
-            load_config(fs);
-        }
+        metrics_enabled = metrics->metrics_enabled();
 
         if (const auto p = args.print_metrics.get())
         {
@@ -261,6 +259,11 @@ int main(const int argc, const char* const* const argv)
             print2(Color::warning, "Warning: passed --sendmetrics, but metrics are disabled.\n");
         }
     } // unlock g_metrics
+
+    if (metrics_enabled)
+    {
+        load_config(fs);
+    }
 
     args.debug_print_feature_flags();
     args.track_feature_flag_metrics();
