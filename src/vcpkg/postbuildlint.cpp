@@ -501,7 +501,6 @@ namespace vcpkg::PostBuildLint
     }
 #endif
 
-#if defined(_WIN32)
     static void print_invalid_architecture_files(const std::string& expected_architecture,
                                                  std::vector<FileAndArch> binaries_with_invalid_architecture)
     {
@@ -518,6 +517,8 @@ namespace vcpkg::PostBuildLint
                    "\n\n");
         }
     }
+
+#if defined(_WIN32)
 
     static LintStatus check_dll_architecture(const std::string& expected_architecture,
                                              const std::vector<Path>& files,
@@ -554,11 +555,9 @@ namespace vcpkg::PostBuildLint
                                              const std::vector<Path>& files,
                                              const Filesystem& fs)
     {
-#if defined(_WIN32)
         std::vector<FileAndArch> binaries_with_invalid_architecture;
-
-        for (const Path& file : files)
-        {
+#if defined(_WIN32)
+        const auto checkLib = [&](const Path& file) {
             Checks::check_exit(VCPKG_LINE_INFO,
                                Strings::case_insensitive_ascii_equals(file.extension(), ".lib"),
                                "The file extension was not .lib: %s",
@@ -567,7 +566,7 @@ namespace vcpkg::PostBuildLint
 
             // This is zero for folly's debug library
             // TODO: Why?
-            if (machine_types.empty()) return LintStatus::SUCCESS;
+            if (machine_types.empty()) return;
 
             Checks::check_exit(
                 VCPKG_LINE_INFO, machine_types.size() == 1, "Found more than 1 architecture in file %s", file);
@@ -577,16 +576,30 @@ namespace vcpkg::PostBuildLint
             {
                 binaries_with_invalid_architecture.push_back({file, actual_architecture});
             }
-        }
+        };
+#elif defined(__APPLE__)
+        const auto requested_arch = expected_architecture == "x64" ? "x86_64" : expected_architecture;
+        const auto checkLib = [&](const Path& file) {
+            auto cmd_line = Command("lipo").string_arg("-archs").path_arg(file);
+            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
+            Checks::check_exit(
+                VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
+            if (!Util::contains(Strings::split(ec_data.output, ' '), requested_arch))
+            {
+                binaries_with_invalid_architecture.push_back({file, ec_data.output});
+            }
+        };
+#else
+        const auto checkLib = [&](const Path&) {};
+#endif
+        for (const Path& file : files)
+            checkLib(file);
 
         if (!binaries_with_invalid_architecture.empty())
         {
             print_invalid_architecture_files(expected_architecture, binaries_with_invalid_architecture);
             return LintStatus::PROBLEM_DETECTED;
         }
-#endif
-        (void)expected_architecture;
-        (void)files;
         (void)fs;
         return LintStatus::SUCCESS;
     }
@@ -1012,10 +1025,20 @@ namespace vcpkg::PostBuildLint
         const auto debug_bin_dir = package_dir / "debug" / "bin";
         const auto release_bin_dir = package_dir / "bin";
 
+        const auto libFilter = [&pre_build_info]() {
+            if (pre_build_info.cmake_system_name.empty() || pre_build_info.cmake_system_name == "Windows" ||
+                pre_build_info.cmake_system_name == "WindowsStore")
+            {
+                if (pre_build_info.cmake_system_name == "MinGW") return NotExtensionsCaseInsensitive{{".lib", ".a"}};
+                return NotExtensionsCaseInsensitive{{".lib"}};
+            }
+            return NotExtensionsCaseInsensitive{{".so", ".a", ".dylib"}};
+        }();
+
         std::vector<Path> debug_libs = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(debug_libs, NotExtensionCaseInsensitive{".lib"});
+        Util::erase_remove_if(debug_libs, libFilter);
         std::vector<Path> release_libs = fs.get_regular_files_recursive(release_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(release_libs, NotExtensionCaseInsensitive{".lib"});
+        Util::erase_remove_if(release_libs, libFilter);
 
         if (!pre_build_info.build_type && !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
             error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs);

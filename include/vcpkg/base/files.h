@@ -390,6 +390,17 @@ namespace vcpkg
             return !Strings::case_insensitive_ascii_equals(target.extension(), ext);
         }
     };
+
+    struct NotExtensionsCaseInsensitive
+    {
+        std::initializer_list<StringView> exts;
+        bool operator()(const Path& target) const
+        {
+            return !std::any_of(exts.begin(), exts.end(), [extension = target.extension()](const auto& ext) {
+                return Strings::case_insensitive_ascii_equals(extension, ext);
+            });
+        }
+    };
 }
 
 VCPKG_FORMAT_AS(vcpkg::Path, vcpkg::StringView);
