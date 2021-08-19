@@ -492,20 +492,37 @@ namespace vcpkg::Build
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
 
+    static const std::string& get_toolchain_cache(Cache<Path, std::string>& cache,
+                                                  const Path& tcfile,
+                                                  const Filesystem& fs)
+    {
+        return cache.get_lazy(
+            tcfile, [&]() { return Hash::get_file_hash(VCPKG_LINE_INFO, fs, tcfile, Hash::Algorithm::Sha256); });
+    }
+
+    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p)
+    {
+        return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
+            return TripletMapEntry{Hash::get_file_hash(VCPKG_LINE_INFO, fs, p, Hash::Algorithm::Sha256)};
+        });
+    }
+
     const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
     {
-        const auto& fs = paths.get_filesystem();
         Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
+        if (!m_compiler_tracking || abi_info.pre_build_info->disable_compiler_tracking)
+        {
+            static CompilerInfo empty_ci;
+            return empty_ci;
+        }
+
+        const auto& fs = paths.get_filesystem();
+
         const auto triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
 
-        auto tcfile = abi_info.pre_build_info->toolchain_file();
-        auto&& toolchain_hash = m_toolchain_cache.get_lazy(
-            tcfile, [&]() { return Hash::get_file_hash(VCPKG_LINE_INFO, fs, tcfile, Hash::Algorithm::Sha256); });
+        auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
-        auto&& triplet_entry = m_triplet_cache.get_lazy(triplet_file_path, [&]() -> TripletMapEntry {
-            return TripletMapEntry{
-                Hash::get_file_hash(VCPKG_LINE_INFO, fs, triplet_file_path, Hash::Algorithm::Sha256)};
-        });
+        auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
 
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
             if (m_compiler_tracking)
@@ -525,35 +542,23 @@ namespace vcpkg::Build
         Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
         const auto triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
 
-        auto tcfile = abi_info.pre_build_info->toolchain_file();
-        auto&& toolchain_hash = m_toolchain_cache.get_lazy(
-            tcfile, [&]() { return Hash::get_file_hash(VCPKG_LINE_INFO, fs, tcfile, Hash::Algorithm::Sha256); });
+        auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
-        auto&& triplet_entry = m_triplet_cache.get_lazy(triplet_file_path, [&]() -> TripletMapEntry {
-            return TripletMapEntry{
-                Hash::get_file_hash(VCPKG_LINE_INFO, fs, triplet_file_path, Hash::Algorithm::Sha256)};
-        });
+        auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
 
-        return triplet_entry.compiler_hashes.get_lazy(toolchain_hash, [&]() -> std::string {
-            if (m_compiler_tracking)
-            {
-                auto& compiler_info = triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
-                    if (m_compiler_tracking)
-                    {
-                        return load_compiler_info(paths, abi_info);
-                    }
-                    else
-                    {
-                        return CompilerInfo{};
-                    }
-                });
+        if (m_compiler_tracking && !abi_info.pre_build_info->disable_compiler_tracking)
+        {
+            return triplet_entry.triplet_infos.get_lazy(toolchain_hash, [&]() -> std::string {
+                auto& compiler_info = get_compiler_info(paths, abi_info);
                 return Strings::concat(triplet_entry.hash, '-', toolchain_hash, '-', compiler_info.hash);
-            }
-            else
-            {
-                return triplet_entry.hash + "-" + toolchain_hash;
-            }
-        });
+            });
+        }
+        else
+        {
+            return triplet_entry.triplet_infos_without_compiler.get_lazy(toolchain_hash, [&]() -> std::string {
+                return Strings::concat(triplet_entry.hash, '-', toolchain_hash);
+            });
+        }
     }
 
     vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
@@ -1400,6 +1405,28 @@ namespace vcpkg::Build
         return inner_create_buildinfo(*pghs.get());
     }
 
+    static ExpectedS<bool> from_cmake_bool(StringView value, StringView name)
+    {
+        if (value == "1" || Strings::case_insensitive_ascii_equals(value, "on") ||
+            Strings::case_insensitive_ascii_equals(value, "true"))
+        {
+            return true;
+        }
+        else if (value == "0" || Strings::case_insensitive_ascii_equals(value, "off") ||
+                 Strings::case_insensitive_ascii_equals(value, "false"))
+        {
+            return false;
+        }
+        else
+        {
+            return Strings::concat("Error: Unknown boolean setting for ",
+                                   name,
+                                   ": \"",
+                                   value,
+                                   "\". Valid settings are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.");
+        }
+    }
+
     PreBuildInfo::PreBuildInfo(const VcpkgPaths& paths,
                                Triplet triplet,
                                const std::unordered_map<std::string, std::string>& cmakevars)
@@ -1418,6 +1445,7 @@ namespace vcpkg::Build
             ENV_PASSTHROUGH_UNTRACKED,
             PUBLIC_ABI_OVERRIDE,
             LOAD_VCVARS_ENV,
+            DISABLE_COMPILER_TRACKING,
         };
 
         static const std::vector<std::pair<std::string, VcpkgTripletVar>> VCPKG_OPTIONS = {
@@ -1431,7 +1459,9 @@ namespace vcpkg::Build
             {"VCPKG_ENV_PASSTHROUGH", VcpkgTripletVar::ENV_PASSTHROUGH},
             {"VCPKG_ENV_PASSTHROUGH_UNTRACKED", VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED},
             {"VCPKG_PUBLIC_ABI_OVERRIDE", VcpkgTripletVar::PUBLIC_ABI_OVERRIDE},
+            // Note: this value must come after VCPKG_CHAINLOAD_TOOLCHAIN_FILE because its default depends upon it.
             {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
+            {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
         };
 
         std::string empty;
@@ -1489,25 +1519,22 @@ namespace vcpkg::Build
                 case VcpkgTripletVar::LOAD_VCVARS_ENV:
                     if (variable_value.empty())
                     {
-                        load_vcvars_env = true;
-                        if (external_toolchain_file) load_vcvars_env = false;
-                    }
-                    else if (variable_value == "1" || Strings::case_insensitive_ascii_equals(variable_value, "on") ||
-                             Strings::case_insensitive_ascii_equals(variable_value, "true"))
-                    {
-                        load_vcvars_env = true;
-                    }
-                    else if (variable_value == "0" || Strings::case_insensitive_ascii_equals(variable_value, "off") ||
-                             Strings::case_insensitive_ascii_equals(variable_value, "false"))
-                    {
-                        load_vcvars_env = false;
+                        load_vcvars_env = !external_toolchain_file.has_value();
                     }
                     else
                     {
-                        Checks::exit_with_message(VCPKG_LINE_INFO,
-                                                  "Unknown boolean setting for VCPKG_LOAD_VCVARS_ENV: %s. Valid "
-                                                  "settings are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.",
-                                                  variable_value);
+                        load_vcvars_env = from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
+                    }
+                    break;
+                case VcpkgTripletVar::DISABLE_COMPILER_TRACKING:
+                    if (variable_value.empty())
+                    {
+                        disable_compiler_tracking = false;
+                    }
+                    else
+                    {
+                        disable_compiler_tracking =
+                            from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
                     }
                     break;
             }

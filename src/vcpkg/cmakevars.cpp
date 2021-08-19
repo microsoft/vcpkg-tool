@@ -62,8 +62,6 @@ namespace vcpkg::CMakeVars
                                   std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const;
 
             const VcpkgPaths& paths;
-            const Path get_tags_path = paths.scripts / "vcpkg_get_tags.cmake";
-            const Path get_dep_info_path = paths.scripts / "vcpkg_get_dep_info.cmake";
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> dep_resolution_vars;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> tag_vars;
             mutable std::unordered_map<Triplet, std::unordered_map<std::string, std::string>> generic_triplet_vars;
@@ -121,7 +119,42 @@ endmacro()
         }
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
-        Strings::append(extraction_file, "\ninclude(\"" + get_tags_path.generic_u8string() + "\")\n\n");
+        Strings::append(extraction_file, R"(
+
+function(vcpkg_get_tags PORT FEATURES VCPKG_TRIPLET_ID VCPKG_ABI_SETTINGS_FILE)
+    message("d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af")
+    vcpkg_triplet_file(${VCPKG_TRIPLET_ID})
+
+    # GUID used as a flag - "cut here line"
+    message("c35112b6-d1ba-415b-aa5d-81de856ef8eb
+VCPKG_TARGET_ARCHITECTURE=${VCPKG_TARGET_ARCHITECTURE}
+VCPKG_CMAKE_SYSTEM_NAME=${VCPKG_CMAKE_SYSTEM_NAME}
+VCPKG_CMAKE_SYSTEM_VERSION=${VCPKG_CMAKE_SYSTEM_VERSION}
+VCPKG_PLATFORM_TOOLSET=${VCPKG_PLATFORM_TOOLSET}
+VCPKG_VISUAL_STUDIO_PATH=${VCPKG_VISUAL_STUDIO_PATH}
+VCPKG_CHAINLOAD_TOOLCHAIN_FILE=${VCPKG_CHAINLOAD_TOOLCHAIN_FILE}
+VCPKG_BUILD_TYPE=${VCPKG_BUILD_TYPE}
+VCPKG_LIBRARY_LINKAGE=${VCPKG_LIBRARY_LINKAGE}
+VCPKG_CRT_LINKAGE=${VCPKG_CRT_LINKAGE}
+e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f")
+
+    # Just to enforce the user didn't set it in the triplet file
+    if (DEFINED VCPKG_PUBLIC_ABI_OVERRIDE)
+        set(VCPKG_PUBLIC_ABI_OVERRIDE)
+        message(WARNING "VCPKG_PUBLIC_ABI_OVERRIDE set in the triplet will be ignored.")
+    endif()
+    include("${VCPKG_ABI_SETTINGS_FILE}" OPTIONAL)
+
+    message("c35112b6-d1ba-415b-aa5d-81de856ef8eb
+VCPKG_PUBLIC_ABI_OVERRIDE=${VCPKG_PUBLIC_ABI_OVERRIDE}
+VCPKG_ENV_PASSTHROUGH=${VCPKG_ENV_PASSTHROUGH}
+VCPKG_ENV_PASSTHROUGH_UNTRACKED=${VCPKG_ENV_PASSTHROUGH_UNTRACKED}
+VCPKG_LOAD_VCVARS_ENV=${VCPKG_LOAD_VCVARS_ENV}
+VCPKG_DISABLE_COMPILER_TRACKING=${VCPKG_DISABLE_COMPILER_TRACKING}
+e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
+8c504940-be29-4cba-9f8f-6cd83e9d87b7")
+endfunction()
+)");
 
         for (const auto& spec_abi_setting : spec_abi_settings)
         {
@@ -158,7 +191,28 @@ endmacro()
 
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
-        Strings::append(extraction_file, "\ninclude(\"" + get_dep_info_path.generic_u8string() + "\")\n\n");
+        Strings::append(extraction_file, R"(
+
+function(vcpkg_get_dep_info PORT VCPKG_TRIPLET_ID)
+    message("d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af")
+    vcpkg_triplet_file(${VCPKG_TRIPLET_ID})
+
+    # GUID used as a flag - "cut here line"
+    message("c35112b6-d1ba-415b-aa5d-81de856ef8eb
+VCPKG_TARGET_ARCHITECTURE=${VCPKG_TARGET_ARCHITECTURE}
+VCPKG_CMAKE_SYSTEM_NAME=${VCPKG_CMAKE_SYSTEM_NAME}
+VCPKG_CMAKE_SYSTEM_VERSION=${VCPKG_CMAKE_SYSTEM_VERSION}
+VCPKG_LIBRARY_LINKAGE=${VCPKG_LIBRARY_LINKAGE}
+VCPKG_CRT_LINKAGE=${VCPKG_CRT_LINKAGE}
+VCPKG_DEP_INFO_OVERRIDE_VARS=${VCPKG_DEP_INFO_OVERRIDE_VARS}
+CMAKE_HOST_SYSTEM_NAME=${CMAKE_HOST_SYSTEM_NAME}
+CMAKE_HOST_SYSTEM_PROCESSOR=${CMAKE_HOST_SYSTEM_PROCESSOR}
+CMAKE_HOST_SYSTEM_VERSION=${CMAKE_HOST_SYSTEM_VERSION}
+CMAKE_HOST_SYSTEM=${CMAKE_HOST_SYSTEM}
+e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
+8c504940-be29-4cba-9f8f-6cd83e9d87b7")
+endfunction()
+)");
 
         for (const PackageSpec& spec : specs)
         {
