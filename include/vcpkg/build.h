@@ -370,11 +370,14 @@ namespace vcpkg::Build
         struct TripletMapEntry
         {
             std::string hash;
-            Cache<std::string, std::string> compiler_hashes;
+            Cache<std::string, std::string> triplet_infos;
+            Cache<std::string, std::string> triplet_infos_without_compiler;
             Cache<std::string, CompilerInfo> compiler_info;
         };
         Cache<Path, TripletMapEntry> m_triplet_cache;
         Cache<Path, std::string> m_toolchain_cache;
+
+        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p);
 
 #if defined(_WIN32)
         struct EnvMapEntry
