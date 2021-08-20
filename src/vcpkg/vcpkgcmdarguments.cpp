@@ -726,6 +726,8 @@ namespace vcpkg
         auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
+            args.is_recursive = true;
+
             auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
             const auto& obj = rec_doc.object();
 
@@ -747,16 +749,6 @@ namespace vcpkg
             if (auto entry = obj.get(DISABLE_METRICS_ENV))
             {
                 args.disable_metrics = entry->boolean();
-            }
-
-            if (auto entry = obj.get(IGNORE_LOCK_FAILURES_ENV))
-            {
-                args.ignore_lock_failures = entry->boolean();
-            }
-
-            if (auto entry = obj.get("lock_instance"))
-            {
-                args.lock_instance = entry->boolean();
             }
 
             // Setting the recursive data to 'poison' prevents more than one level of recursion because
@@ -784,16 +776,6 @@ namespace vcpkg
             if (args.disable_metrics.value_or(false))
             {
                 obj.insert(DISABLE_METRICS_ENV, Json::Value::boolean(true));
-            }
-
-            if (auto entry = args.ignore_lock_failures.get())
-            {
-                obj.insert(IGNORE_LOCK_FAILURES_ENV, Json::Value::boolean(*entry));
-            }
-
-            if (auto entry = args.lock_instance.get())
-            {
-                obj.insert("lock_instance", Json::Value::boolean(*entry));
             }
 
             set_environment_variable(RECURSIVE_DATA_ENV, Json::stringify(obj, Json::JsonStyle::with_spaces(0)));

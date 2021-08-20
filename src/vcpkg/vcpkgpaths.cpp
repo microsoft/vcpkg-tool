@@ -283,6 +283,15 @@ namespace vcpkg
 
     static std::unique_ptr<IExclusiveFileLock> take_lock(const Path& p, Filesystem& fs, const VcpkgCmdArguments& args)
     {
+        if (args.is_recursive)
+        {
+            Checks::exit_with_message(
+                VCPKG_LINE_INFO,
+                "Error: attempted to take a filesystem lock inside a recursive invocation.\nThis is an error because "
+                "there are no supported recursive uses that need locks.\nPlease report this as an issue to the vcpkg "
+                "GitHub: https://github.com/Microsoft/vcpkg/issues");
+        }
+
         std::error_code ec;
         std::unique_ptr<IExclusiveFileLock> ret;
         if (args.wait_for_lock.value_or(false))
