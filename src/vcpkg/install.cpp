@@ -525,6 +525,7 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_MANIFEST_FEATURE = "x-feature";
     static constexpr StringLiteral OPTION_PROHIBIT_BACKCOMPAT_FEATURES = "x-prohibit-backcompat-features";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
+    static constexpr StringLiteral OPTION_AUTO_UPDATE_SHA512_HASHES = "x-auto-update-sha512-hashes";
 
     static constexpr std::array<CommandSwitch, 15> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
@@ -544,6 +545,7 @@ namespace vcpkg::Install
         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES,
          "(experimental) Fail install if a package attempts to use a deprecated feature"},
         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
+        {OPTION_AUTO_UPDATE_SHA512_HASHES, "(experimental) Auto updates wrong sha512 file hashes in the portfiles"},
     }};
     static constexpr std::array<CommandSwitch, 15> MANIFEST_INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
@@ -561,6 +563,7 @@ namespace vcpkg::Install
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_MANIFEST_NO_DEFAULT_FEATURES, "Don't install the default features from the manifest."},
         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
+        {OPTION_AUTO_UPDATE_SHA512_HASHES, "(experimental) Auto updates wrong sha512 file hashes in the portfiles"},
     }};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
@@ -802,6 +805,7 @@ namespace vcpkg::Install
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? Dependencies::UnsupportedPortAction::Warn
                                                  : Dependencies::UnsupportedPortAction::Error;
+        const bool auto_update_512_hashes = Util::Sets::contains(options.switches, (OPTION_AUTO_UPDATE_SHA512_HASHES));
 
         BinaryCache binary_cache;
         if (!only_downloads)
@@ -826,6 +830,7 @@ namespace vcpkg::Install
             Build::PurgeDecompressFailure::NO,
             Util::Enum::to_enum<Build::Editable>(is_editable),
             prohibit_backcompat_features ? Build::BackcompatFeatures::PROHIBIT : Build::BackcompatFeatures::ALLOW,
+            Util::Enum::to_enum<Build::AutoUpdateMismatchedSHA512>(auto_update_512_hashes),
         };
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);

@@ -152,6 +152,12 @@ namespace vcpkg::Build
         YES
     };
 
+    enum class AutoUpdateMismatchedSHA512
+    {
+        NO = 0,
+        YES
+    };
+
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
@@ -165,6 +171,7 @@ namespace vcpkg::Build
         PurgeDecompressFailure purge_decompress_failure;
         Editable editable;
         BackcompatFeatures backcompat_features;
+        AutoUpdateMismatchedSHA512 auto_update_mismatched_sha512;
     };
 
     static constexpr BuildPackageOptions default_build_package_options{
