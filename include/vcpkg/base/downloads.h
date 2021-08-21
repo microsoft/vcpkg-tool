@@ -45,6 +45,11 @@ namespace vcpkg::Downloads
         bool m_block_origin = false;
     };
 
+    enum class Sha512MismatchAction : bool
+    {
+        Warn,
+        Error,
+    };
     // Handles downloading and uploading to a content addressable mirror
     struct DownloadManager
     {
@@ -55,23 +60,26 @@ namespace vcpkg::Downloads
         void download_file(Filesystem& fs,
                            const std::string& url,
                            const Path& download_path,
-                           const Optional<std::string>& sha512) const
+                           const Optional<std::string>& sha512,
+                           Sha512MismatchAction mismatch_action = Sha512MismatchAction::Error) const
         {
-            this->download_file(fs, url, {}, download_path, sha512);
+            this->download_file(fs, url, {}, download_path, sha512, mismatch_action);
         }
 
         void download_file(Filesystem& fs,
                            const std::string& url,
                            View<std::string> headers,
                            const Path& download_path,
-                           const Optional<std::string>& sha512) const;
+                           const Optional<std::string>& sha512,
+                           Sha512MismatchAction mismatch_action = Sha512MismatchAction::Error) const;
 
         // Returns url that was successfully downloaded from
         std::string download_file(Filesystem& fs,
                                   View<std::string> urls,
                                   View<std::string> headers,
                                   const Path& download_path,
-                                  const Optional<std::string>& sha512) const;
+                                  const Optional<std::string>& sha512,
+                                  Sha512MismatchAction mismatch_action = Sha512MismatchAction::Error) const;
 
         ExpectedS<int> put_file_to_mirror(const Filesystem& fs, const Path& file_to_put, StringView sha512) const;
 

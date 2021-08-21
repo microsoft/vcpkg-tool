@@ -239,6 +239,7 @@ namespace vcpkg::Downloads
 
     static bool check_downloaded_file_hash(Filesystem& fs,
                                            const Optional<std::string>& hash,
+                                           Sha512MismatchAction mismatch_action,
                                            StringView sanitized_url,
                                            const Path& download_part_path,
                                            std::string& errors)
@@ -248,6 +249,11 @@ namespace vcpkg::Downloads
             auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
             if (auto err = maybe_error.get())
             {
+                if (mismatch_action == Sha512MismatchAction::Warn)
+                {
+                    print2(Color::warning, *err, '\n');
+                    return true;
+                }
                 Strings::append(errors, *err, '\n');
                 return false;
             }
@@ -481,6 +487,7 @@ namespace vcpkg::Downloads
                                   View<std::string> headers,
                                   const Path& download_path,
                                   const Optional<std::string>& sha512,
+                                  Sha512MismatchAction mismatch_action,
                                   const std::vector<std::string>& secrets,
                                   std::string& errors)
     {
@@ -505,7 +512,8 @@ namespace vcpkg::Downloads
                 {
                     if (download_winhttp(fs, download_path_part_path, split_uri, url, secrets, errors))
                     {
-                        if (check_downloaded_file_hash(fs, sha512, url, download_path_part_path, errors))
+                        if (check_downloaded_file_hash(
+                                fs, sha512, only_warn_sha512_mismatch, url, download_path_part_path, errors))
                         {
                             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
                             return true;
@@ -536,7 +544,7 @@ namespace vcpkg::Downloads
             return false;
         }
 
-        if (check_downloaded_file_hash(fs, sha512, sanitized_url, download_path_part_path, errors))
+        if (check_downloaded_file_hash(fs, sha512, mismatch_action, sanitized_url, download_path_part_path, errors))
         {
             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
             return true;
@@ -549,12 +557,14 @@ namespace vcpkg::Downloads
                                                            View<std::string> headers,
                                                            const Path& download_path,
                                                            const Optional<std::string>& sha512,
+                                                           Sha512MismatchAction mismatch_action,
                                                            const std::vector<std::string>& secrets,
                                                            std::string& errors)
     {
         for (auto&& url : urls)
         {
-            if (try_download_file(fs, url, headers, download_path, sha512, secrets, errors)) return url;
+            if (try_download_file(fs, url, headers, download_path, sha512, mismatch_action, secrets, errors))
+                return url;
         }
         return nullopt;
     }
@@ -569,16 +579,18 @@ namespace vcpkg::Downloads
                                         const std::string& url,
                                         View<std::string> headers,
                                         const Path& download_path,
-                                        const Optional<std::string>& sha512) const
+                                        const Optional<std::string>& sha512,
+                                        Sha512MismatchAction mismatch_action) const
     {
-        this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512);
+        this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, mismatch_action);
     }
 
     std::string DownloadManager::download_file(Filesystem& fs,
                                                View<std::string> urls,
                                                View<std::string> headers,
                                                const Path& download_path,
-                                               const Optional<std::string>& sha512) const
+                                               const Optional<std::string>& sha512,
+                                               Sha512MismatchAction mismatch_action) const
     {
         std::string errors;
         if (auto hash = sha512.get())
@@ -586,8 +598,14 @@ namespace vcpkg::Downloads
             if (auto read_template = m_config.m_read_url_template.get())
             {
                 auto read_url = Strings::replace_all(*read_template, "<SHA>", *hash);
-                if (Downloads::try_download_file(
-                        fs, read_url, m_config.m_read_headers, download_path, sha512, m_config.m_secrets, errors))
+                if (Downloads::try_download_file(fs,
+                                                 read_url,
+                                                 m_config.m_read_headers,
+                                                 download_path,
+                                                 sha512,
+                                                 mismatch_action,
+                                                 m_config.m_secrets,
+                                                 errors))
                     return read_url;
             }
         }
@@ -607,8 +625,8 @@ namespace vcpkg::Downloads
             }
             else
             {
-                auto maybe_url =
-                    try_download_files(fs, urls, headers, download_path, sha512, m_config.m_secrets, errors);
+                auto maybe_url = try_download_files(
+                    fs, urls, headers, download_path, sha512, mismatch_action, m_config.m_secrets, errors);
                 if (auto url = maybe_url.get())
                 {
                     if (auto hash = sha512.get())

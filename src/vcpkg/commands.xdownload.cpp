@@ -14,12 +14,15 @@ namespace vcpkg::Commands::X_Download
     static constexpr StringLiteral OPTION_STORE = "store";
     static constexpr StringLiteral OPTION_SKIP_SHA512 = "skip-sha512";
     static constexpr StringLiteral OPTION_SHA512 = "sha512";
+    static constexpr StringLiteral OPTION_ONLY_WARN_FOR_SHA512_MISMATCH = "only-warn-sha512-mismatch";
     static constexpr StringLiteral OPTION_URL = "url";
     static constexpr StringLiteral OPTION_HEADER = "header";
 
     static constexpr CommandSwitch FETCH_SWITCHES[] = {
         {OPTION_STORE, "Indicates the file should be stored instead of fetched"},
         {OPTION_SKIP_SHA512, "Do not check the SHA512 of the downloaded file"},
+        {OPTION_ONLY_WARN_FOR_SHA512_MISMATCH,
+         "Only warn if the SHA512 of the downloaded file mismatched instead of fail"},
     };
     static constexpr CommandSetting FETCH_SETTINGS[] = {
         {OPTION_SHA512, "The hash of the file to be downloaded"},
@@ -99,6 +102,9 @@ namespace vcpkg::Commands::X_Download
         auto file = fs.absolute(args.command_arguments[0], VCPKG_LINE_INFO);
 
         auto sha = get_sha512_check(args, parsed);
+        using Action = Downloads::Sha512MismatchAction;
+        auto mismatch_action =
+            Util::Sets::contains(parsed.switches, OPTION_ONLY_WARN_FOR_SHA512_MISMATCH) ? Action::Warn : Action::Error;
 
         // Is this a store command?
         if (Util::Sets::contains(parsed.switches, OPTION_STORE))
@@ -139,7 +145,7 @@ namespace vcpkg::Commands::X_Download
                 urls = it_urls->second;
             }
 
-            download_manager.download_file(fs, urls, headers, file, sha);
+            download_manager.download_file(fs, urls, headers, file, sha, mismatch_action);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }
