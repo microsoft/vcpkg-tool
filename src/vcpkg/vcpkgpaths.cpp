@@ -429,6 +429,10 @@ namespace vcpkg
         if (!manifest_root_dir.empty())
         {
             // Default locking behavior is only supported in manifest mode
+            filesystem.create_directory(downloads, IgnoreErrors{});
+            filesystem.create_directory(installed, IgnoreErrors{});
+            filesystem.create_directory(packages, IgnoreErrors{});
+            filesystem.create_directory(buildtrees, IgnoreErrors{});
             m_pimpl->downloads_lock = take_lock(downloads / ".lock", filesystem, args);
             m_pimpl->installed_lock = take_lock(installed / ".lock", filesystem, args);
             m_pimpl->packages_lock = take_lock(packages / ".lock", filesystem, args);
