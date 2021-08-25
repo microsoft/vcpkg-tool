@@ -851,6 +851,41 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
+    static LintStatus check_no_absolute_paths_in(const Filesystem& fs,
+                                                 const Path& dir,
+                                                 Span<std::string> absolute_paths)
+    {
+        const auto is_script = [&fs](const Path& path) {
+            if (!path.extension().empty()) return false;
+            return Strings::starts_with(fs.read_contents(path, VCPKG_LINE_INFO), "#!");
+        };
+
+        static std::unordered_set<std::string> extensions = {
+            "h", "hpp", "hxx", "py", "sh", "cmake", "pc", "la", "yaml", "cfg", "conf"};
+        std::vector<Path> files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
+        Util::erase_remove_if(files, [&is_script](const Path& path) {
+            return extensions.find(path.extension().to_string()) == extensions.end() && !is_script(path);
+        });
+        Util::erase_remove_if(files, [&fs, &absolute_paths](const Path& path) {
+            return !Util::any_of(fs.read_lines(path, VCPKG_LINE_INFO), [&absolute_paths](const auto& line) {
+                return Util::any_of(absolute_paths, [&line](StringView path) { return Strings::contains(line, path); });
+            });
+        });
+
+        if (!files.empty())
+        {
+            print2(Color::warning,
+                   "The following files contain an absolute path ('",
+                   Strings::join("', '", absolute_paths),
+                   "'):\n    ",
+                   Strings::join("\n    ", files),
+                   "\n"
+                   "There must be no absolute path, only relative ones.\n\n");
+            return LintStatus::ERROR_DETECTED;
+        }
+        return LintStatus::SUCCESS;
+    }
+
     static void operator+=(size_t& left, const LintStatus& right) { left += static_cast<size_t>(right); }
 
     static size_t perform_all_checks_and_return_error_count(const PackageSpec& spec,
@@ -971,6 +1006,8 @@ namespace vcpkg::PostBuildLint
         error_count += check_no_empty_folders(fs, package_dir);
         error_count += check_no_files_in_dir(fs, package_dir);
         error_count += check_no_files_in_dir(fs, package_dir / "debug");
+        error_count += check_no_absolute_paths_in(
+            fs, package_dir, std::vector<std::string>{package_dir.native(), paths.installed.native()});
 
         return error_count;
     }
