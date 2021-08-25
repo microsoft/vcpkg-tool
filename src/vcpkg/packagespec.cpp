@@ -16,7 +16,7 @@ namespace vcpkg
     void FeatureSpec::to_string(std::string& out) const
     {
         if (feature().empty()) return spec().to_string(out);
-        Strings::append(out, name(), '[', feature(), "]:", triplet());
+        Strings::append(out, port(), '[', feature(), "]:", triplet());
     }
 
     std::vector<FeatureSpec> FullPackageSpec::to_feature_specs(const std::vector<std::string>& default_features,
