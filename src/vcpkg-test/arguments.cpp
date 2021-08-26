@@ -133,3 +133,28 @@ TEST_CASE ("vcpkg_root parse with equal separator", "[arguments]")
     REQUIRE(vcpkg_root_dir);
     REQUIRE(*vcpkg_root_dir == "C:\\vcpkg");
 }
+
+TEST_CASE ("Combine asset cache params", "[arguments]")
+{
+    std::vector<std::string> t = {vcpkg::Strings::concat("--", VcpkgCmdArguments::ASSET_SOURCES_ARG, "=x-azurl,value")};
+    auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    v.imbue_from_environment();
+    REQUIRE(!v.asset_sources_template().has_value());
+    v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
+    v.imbue_from_environment();
+    REQUIRE(v.asset_sources_template().has_value());
+    REQUIRE(v.asset_sources_template() == "x-azurl,value");
+#ifdef _WIN32
+    _putenv_s(VcpkgCmdArguments::ASSET_SOURCES_ENV.c_str(), "x-azurl,value1");
+#else
+    setenv(VcpkgCmdArguments::ASSET_SOURCES_ENV.c_str(), "x-azurl,value1", true);
+#endif
+    v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    v.imbue_from_environment();
+    REQUIRE(v.asset_sources_template().has_value());
+    REQUIRE(v.asset_sources_template() == "x-azurl,value1");
+    v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
+    v.imbue_from_environment();
+    REQUIRE(v.asset_sources_template().has_value());
+    REQUIRE(v.asset_sources_template() == "x-azurl,value1;x-azurl,value");
+}

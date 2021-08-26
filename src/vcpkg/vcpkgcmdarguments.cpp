@@ -287,6 +287,7 @@ namespace vcpkg
                     {SCRIPTS_ROOT_DIR_ARG, &VcpkgCmdArguments::scripts_root_dir},
                     {BUILTIN_PORTS_ROOT_DIR_ARG, &VcpkgCmdArguments::builtin_ports_root_dir},
                     {BUILTIN_REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::builtin_registry_versions_dir},
+                    {ASSET_SOURCES_ARG, &VcpkgCmdArguments::asset_sources_template_arg},
                 };
 
             constexpr static std::pair<StringView, std::vector<std::string> VcpkgCmdArguments::*>
@@ -627,6 +628,8 @@ namespace vcpkg
         table.format("", "(also: " + format_environment_variable("VCPKG_OVERLAY_TRIPLETS") + ')');
         table.format(opt(BINARY_SOURCES_ARG, "=", "<path>"),
                      "Add sources for binary caching. See 'vcpkg help binarycaching'");
+        table.format(opt(ASSET_SOURCES_ARG, "=", "<path>"),
+                     "Add sources for asset caching. See 'vcpkg help assetcaching'");
         table.format(opt(DOWNLOADS_ROOT_DIR_ARG, "=", "<path>"), "Specify the downloads root directory");
         table.format("", "(default: " + format_environment_variable("VCPKG_DOWNLOADS") + ')');
         table.format(opt(VCPKG_ROOT_DIR_ARG, "=", "<path>"), "Specify the vcpkg root directory");
@@ -676,7 +679,7 @@ namespace vcpkg
         from_env(VCPKG_ROOT_DIR_ENV, vcpkg_root_dir);
         from_env(DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
         from_env(DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
-        from_env(ASSET_SOURCES_ENV, asset_sources_template);
+        from_env(ASSET_SOURCES_ENV, asset_sources_template_env);
 
         {
             const auto vcpkg_disable_lock = get_environment_variable(IGNORE_LOCK_FAILURES_ENV);
@@ -740,7 +743,7 @@ namespace vcpkg
 
             if (auto entry = obj.get(ASSET_SOURCES_ENV))
             {
-                args.asset_sources_template = entry->string().to_string();
+                args.asset_sources_template_env = entry->string().to_string();
             }
 
             if (obj.get(DISABLE_METRICS_ENV))
@@ -765,9 +768,9 @@ namespace vcpkg
                 obj.insert(DOWNLOADS_ROOT_DIR_ENV, Json::Value::string(*args.downloads_root_dir.get()));
             }
 
-            if (args.asset_sources_template)
+            if (auto value = args.asset_sources_template())
             {
-                obj.insert(ASSET_SOURCES_ENV, Json::Value::string(*args.asset_sources_template.get()));
+                obj.insert(ASSET_SOURCES_ENV, Json::Value::string(value.value_or_exit(VCPKG_LINE_INFO)));
             }
 
             if (args.disable_metrics)
@@ -849,6 +852,18 @@ namespace vcpkg
         {
             LockGuardPtr<Metrics>(g_metrics)->track_feature(flag.flag.to_string(), flag.enabled);
         }
+    }
+
+    Optional<std::string> VcpkgCmdArguments::asset_sources_template() const
+    {
+        std::string asset_sources_template = asset_sources_template_env.value_or("");
+        if (asset_sources_template_arg)
+        {
+            if (!asset_sources_template.empty()) asset_sources_template += ";";
+            asset_sources_template += *asset_sources_template_arg;
+        }
+        if (asset_sources_template.empty()) return nullopt;
+        return Optional<std::string>(std::move(asset_sources_template));
     }
 
     std::string format_environment_variable(StringLiteral lit)
@@ -983,6 +998,7 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::JSON_SWITCH;
 
     constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ARG;
 
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ENV;
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ARG;

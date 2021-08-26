@@ -2080,6 +2080,10 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
         VcpkgCmdArguments::ASSET_SOURCES_ENV,
         " to a semicolon-delimited list of source strings. Characters can be escaped using backtick (`)."));
     tbl.blank();
+    tbl.text(Strings::concat("Additionally you can pass `--",
+                             VcpkgCmdArguments::ASSET_SOURCES_ARG,
+                             "=<source>` to vcpkg. Command line sources are interpreted after environment sources."));
+    tbl.blank();
     tbl.blank();
     tbl.header("Valid source strings");
     tbl.format("clear", "Removes all previous sources");

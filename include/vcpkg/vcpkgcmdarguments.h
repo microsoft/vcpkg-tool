@@ -182,7 +182,7 @@ namespace vcpkg
         Optional<bool> json = nullopt;
 
         constexpr static StringLiteral ASSET_SOURCES_ENV = "X_VCPKG_ASSET_SOURCES";
-        Optional<std::string> asset_sources_template;
+        constexpr static StringLiteral ASSET_SOURCES_ARG = "x-asset-sources";
 
         // feature flags
         constexpr static StringLiteral FEATURE_FLAGS_ENV = "VCPKG_FEATURE_FLAGS";
@@ -238,7 +238,12 @@ namespace vcpkg
         void debug_print_feature_flags() const;
         void track_feature_flag_metrics() const;
 
+        Optional<std::string> asset_sources_template() const;
+
     private:
+        Optional<std::string> asset_sources_template_env;        // for ASSET_SOURCES_ENV
+        std::unique_ptr<std::string> asset_sources_template_arg; // for ASSET_SOURCES_ARG
+
         std::unordered_set<std::string> command_switches;
         std::unordered_map<std::string, std::vector<std::string>> command_options;
     };
