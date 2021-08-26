@@ -594,13 +594,20 @@ namespace vcpkg::Install
         nullptr,
     };
 
-    void print_usage_information(const BinaryParagraph& bpgh, const VcpkgPaths& paths)
+    void print_usage_information(const BinaryParagraph& bpgh,
+                                 std::set<std::string>& printed_usage,
+                                 const VcpkgPaths& paths)
     {
         auto usage = get_cmake_usage(bpgh, paths);
-
-        if (!usage.message.empty())
+        const auto& message = usage.message;
+        if (!message.empty())
         {
-            print2(usage.message);
+            auto existing = printed_usage.find(message);
+            if (existing == printed_usage.end())
+            {
+                printed_usage.insert(existing, message);
+                print2(message);
+            }
         }
     }
 
@@ -1084,13 +1091,14 @@ namespace vcpkg::Install
             fs.write_contents(it_xunit->second, xunit_doc, VCPKG_LINE_INFO);
         }
 
+        std::set<std::string> printed_usage;
         for (auto&& result : summary.results)
         {
             if (!result.action) continue;
             if (result.action->request_type != RequestType::USER_REQUESTED) continue;
             auto bpgh = result.get_binary_paragraph();
             if (!bpgh) continue;
-            print_usage_information(*bpgh, paths);
+            print_usage_information(*bpgh, printed_usage, paths);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

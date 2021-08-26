@@ -8,6 +8,8 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <set>
+#include <string>
 #include <vector>
 
 namespace vcpkg::Install
@@ -102,7 +104,9 @@ namespace vcpkg::Install
     };
 
     CMakeUsageInfo get_cmake_usage(const BinaryParagraph& bpgh, const VcpkgPaths& paths);
-    void print_usage_information(const BinaryParagraph& bpgh, const VcpkgPaths& paths);
+    void print_usage_information(const BinaryParagraph& bpgh,
+                                 std::set<std::string>& printed_usage,
+                                 const VcpkgPaths& paths);
 
     extern const CommandStructure COMMAND_STRUCTURE;
 
