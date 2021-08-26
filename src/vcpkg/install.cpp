@@ -602,8 +602,8 @@ namespace vcpkg::Install
         const auto& message = usage.message;
         if (!message.empty())
         {
-            auto existing = printed_usage.find(message);
-            if (existing == printed_usage.end())
+            auto existing = printed_usage.lower_bound(message);
+            if (existing == printed_usage.end() || *existing != message)
             {
                 printed_usage.insert(existing, message);
                 print2(message);
