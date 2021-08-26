@@ -34,7 +34,10 @@ namespace vcpkg
         Command& string_arg(StringView s) &;
         Command& raw_arg(StringView s) &
         {
-            buf.push_back(' ');
+            if (!buf.empty())
+            {
+                buf.push_back(' ');
+            }
             buf.append(s.data(), s.size());
             return *this;
         }
@@ -109,10 +112,13 @@ namespace vcpkg
 
     ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
                                                      InWorkingDirectory wd,
-                                                     const Environment& env = {});
-    inline ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line, const Environment& env = {})
+                                                     const Environment& env = {},
+                                                     bool tee_in_debug = false);
+    inline ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
+                                                            const Environment& env = {},
+                                                            bool tee_in_debug = false)
     {
-        return cmd_execute_and_capture_output(cmd_line, InWorkingDirectory{Path()}, env);
+        return cmd_execute_and_capture_output(cmd_line, InWorkingDirectory{Path()}, env, tee_in_debug);
     }
 
     std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
+
 #include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
@@ -127,6 +129,10 @@ namespace vcpkg::Strings
         using vcpkg::Strings::details::to_printf_arg;
         return details::format_internal(fmtstr, to_printf_arg(to_printf_arg(args))...);
     }
+
+    // This function exists in order to provide an API-stable formatting function similar to `std::format()` that does
+    // not depend on the feature set of fmt or the C++ standard library and thus can be contractual for user interfaces.
+    ExpectedS<std::string> api_stable_format(StringView fmtstr, std::function<void(std::string&, StringView)> handler);
 
 #if defined(_WIN32)
     std::wstring to_utf16(StringView s);

@@ -1,5 +1,7 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/unicode.h>
 #include <vcpkg/base/util.h>
 
 #include <locale.h>
@@ -20,6 +22,62 @@ namespace
             return tolower_char(a) == tolower_char(b);
         }
     } icase_eq;
+}
+
+vcpkg::ExpectedS<std::string> vcpkg::Strings::api_stable_format(StringView sv,
+                                                                std::function<void(std::string&, StringView)> append_f)
+{
+    // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
+
+    static const char s_brackets[] = "{}";
+
+    std::string out;
+    auto prev = sv.begin();
+    const auto last = sv.end();
+    for (const char* p = std::find_first_of(prev, last, s_brackets, s_brackets + 2); p != last;
+         p = std::find_first_of(p, last, s_brackets, s_brackets + 2))
+    {
+        // p[0] == '{' or p[0] == '}'
+        out.append(prev, p);
+        const char ch = p[0];
+        ++p;
+        if (ch == '{')
+        {
+            if (p == last)
+            {
+                return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
+            }
+            else if (*p == '{')
+            {
+                out.push_back('{');
+                prev = ++p;
+            }
+            else
+            {
+                // Opened a group
+                const auto seq_start = p;
+                p = std::find_first_of(p, last, s_brackets, s_brackets + 2);
+                if (p == last || p[0] != '}')
+                {
+                    return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
+                }
+                // p[0] == '}'
+                append_f(out, {seq_start, p});
+                prev = ++p;
+            }
+        }
+        else if (ch == '}')
+        {
+            if (p == last || p[0] != '}')
+            {
+                return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
+            }
+            out.push_back('}');
+            prev = ++p;
+        }
+    }
+    out.append(prev, last);
+    return {std::move(out), expected_left_tag};
 }
 
 namespace vcpkg::Strings::details
