@@ -124,16 +124,10 @@ namespace vcpkg
     Json::Object serialize_debug_manifest(const SourceControlFile& scf);
 
     /// <summary>
-    /// Full metadata of a package: core and other features,
-    /// as well as the port directory the SourceControlFile was loaded from
+    /// Named pair of a SourceControlFile and the location of this file
     /// </summary>
-    struct SourceControlFileLocation
+    struct SourceControlFileAndLocation
     {
-        SourceControlFileLocation clone() const
-        {
-            return {std::make_unique<SourceControlFile>(source_control_file->clone()), source_location};
-        }
-
         VersionT to_versiont() const { return source_control_file->to_versiont(); }
 
         std::unique_ptr<SourceControlFile> source_control_file;

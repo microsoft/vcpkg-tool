@@ -1191,8 +1191,9 @@ namespace vcpkg::Install
 
         for (auto&& install_action : plan.install_actions)
         {
-            auto&& version_as_string =
-                install_action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).to_versiont().to_string();
+            auto&& version_as_string = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
+                                           .to_versiont()
+                                           .to_string();
             if (!specs_string.empty()) specs_string.push_back(',');
             specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
                                             ":",

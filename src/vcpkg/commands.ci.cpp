@@ -281,7 +281,7 @@ namespace vcpkg::Commands::CI
     static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
                                       const InstallPlanAction* install_plan)
     {
-        auto&& scfl = install_plan->source_control_file_location.value_or_exit(VCPKG_LINE_INFO);
+        auto&& scfl = install_plan->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         const auto& supports_expression = scfl.source_control_file->core_paragraph->supports_expression;
         PlatformExpression::Context context =
             var_provider.get_tag_vars(install_plan->spec).value_or_exit(VCPKG_LINE_INFO);

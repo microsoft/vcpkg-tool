@@ -81,7 +81,7 @@ namespace vcpkg::Test
     /// </summary>
     struct PackageSpecMap
     {
-        std::unordered_map<std::string, SourceControlFileLocation> map;
+        std::unordered_map<std::string, SourceControlFileAndLocation> map;
         Triplet triplet;
         PackageSpecMap(Triplet t = X86_WINDOWS) noexcept : triplet(t) { }
 
@@ -90,7 +90,7 @@ namespace vcpkg::Test
                             const std::vector<std::pair<const char*, const char*>>& features = {},
                             const std::vector<const char*>& default_features = {});
 
-        PackageSpec emplace(vcpkg::SourceControlFileLocation&& scfl);
+        PackageSpec emplace(vcpkg::SourceControlFileAndLocation&& scfl);
     };
 
     template<class T, class S>

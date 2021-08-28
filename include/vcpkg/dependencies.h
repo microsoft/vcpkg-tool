@@ -58,7 +58,7 @@ namespace vcpkg::Dependencies
         InstallPlanAction(InstalledPackageView&& spghs, const RequestType& request_type);
 
         InstallPlanAction(const PackageSpec& spec,
-                          const SourceControlFileLocation& scfl,
+                          const SourceControlFileAndLocation& scfl,
                           const RequestType& request_type,
                           Triplet host_triplet,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies);
@@ -71,7 +71,7 @@ namespace vcpkg::Dependencies
 
         PackageSpec spec;
 
-        Optional<const SourceControlFileLocation&> source_control_file_location;
+        Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
         Optional<InstalledPackageView> installed_package;
 
         InstallPlanType plan_type;
