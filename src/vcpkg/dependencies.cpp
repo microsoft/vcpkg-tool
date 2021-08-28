@@ -1379,8 +1379,6 @@ namespace vcpkg::Dependencies
                                       const std::string& feature,
                                       const std::string& origin);
 
-            void enable_default_features(std::pair<const PackageSpec, PackageNode>& ref, const std::string& origin);
-
             void add_feature_to(std::pair<const PackageSpec, PackageNode>& ref,
                                 VersionSchemeInfo& vsi,
                                 const std::string& feature);
@@ -1567,22 +1565,6 @@ namespace vcpkg::Dependencies
                 {
                     p.first->second.emplace_back(dep_spec, f);
                 }
-            }
-        }
-
-        void VersionedPackageGraph::enable_default_features(std::pair<const PackageSpec, PackageNode>& ref,
-                                                            const std::string& origin)
-        {
-            (void)origin;
-            if (!ref.second.default_features)
-            {
-                ref.second.default_features = true;
-                ref.second.foreach_vsi([this, &ref](VersionSchemeInfo& vsi) {
-                    for (auto&& f : vsi.scfl->source_control_file->core_paragraph->default_features)
-                    {
-                        this->add_feature_to(ref, vsi, f);
-                    }
-                });
             }
         }
 
@@ -1856,10 +1838,6 @@ namespace vcpkg::Dependencies
                 for (auto&& f : dep.features)
                 {
                     request_port_feature(node, f, toplevel.name());
-                }
-                if (Util::find(dep.features, "core") == dep.features.end())
-                {
-                    enable_default_features(node, toplevel.name());
                 }
             }
         }
