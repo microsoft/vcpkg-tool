@@ -3,6 +3,7 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
@@ -149,13 +150,17 @@ namespace vcpkg
 
     struct Dependency
     {
-        // Remove when support for MSVC v140 is dropped.
         Dependency(std::string n = {},
                    std::vector<std::string> f = {},
                    PlatformExpression::Expr expr = {},
                    DependencyConstraint dc = {},
                    bool h = false)
-            : name(std::move(n)), features(std::move(f)), platform(std::move(expr)), constraint(std::move(dc)), host(h)
+            : name(std::move(n))
+            , features(std::move(f))
+            , platform(std::move(expr))
+            , constraint(std::move(dc))
+            , host(h)
+            , default_features(Util::contains(features, "core") ? DefaultFeatures::No : DefaultFeatures::DontCare)
         {
         }
         std::string name;
@@ -163,7 +168,12 @@ namespace vcpkg
         PlatformExpression::Expr platform;
         DependencyConstraint constraint;
         bool host = false;
-
+        enum class DefaultFeatures
+        {
+            Yes,
+            No,
+            DontCare
+        } default_features = DefaultFeatures::DontCare;
         Json::Object extra_info;
 
         friend bool operator==(const Dependency& lhs, const Dependency& rhs);
