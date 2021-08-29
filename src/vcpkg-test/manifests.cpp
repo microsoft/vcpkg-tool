@@ -621,9 +621,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         "description": "d",
         "dependencies": ["bd"],
         "default-features": ["df"],
-        "features": [
-            {
-                "name": "iroh",
+        "features": {
+            "iroh" : {
                 "description": "zuko's uncle",
                 "dependencies": [
                     "firebending",
@@ -637,11 +636,10 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                     }
                 ]
             },
-            {
-                "name": "zuko",
+            "zuko": {
                 "description": ["son of the fire lord", "firebending 師父"]
             }
-        ]
+        }
     })json");
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
