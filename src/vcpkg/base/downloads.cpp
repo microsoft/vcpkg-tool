@@ -46,19 +46,22 @@ namespace vcpkg::Downloads
             bResults = WinHttpReceiveResponse(ret.m_hRequest.get(), NULL);
             if (!bResults) return Strings::concat("WinHttpReceiveResponse() failed: ", GetLastError());
 
+            return ret;
+        }
+
+        ExpectedS<int> query_status()
+        {
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);
 
-            bResults = WinHttpQueryHeaders(ret.m_hRequest.get(),
-                                           WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-                                           WINHTTP_HEADER_NAME_BY_INDEX,
-                                           &dwStatusCode,
-                                           &dwSize,
-                                           WINHTTP_NO_HEADER_INDEX);
+            auto bResults = WinHttpQueryHeaders(m_hRequest.get(),
+                                                WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                                WINHTTP_HEADER_NAME_BY_INDEX,
+                                                &dwStatusCode,
+                                                &dwSize,
+                                                WINHTTP_NO_HEADER_INDEX);
             if (!bResults) return Strings::concat("WinHttpQueryHeaders() failed: ", GetLastError());
-            if (dwStatusCode < 200 || dwStatusCode >= 300) return Strings::concat("failed: status code ", dwStatusCode);
-
-            return ret;
+            return dwStatusCode;
         }
 
         template<class F>
@@ -447,31 +450,58 @@ namespace vcpkg::Downloads
             const auto dir = download_path_part_path.parent_path();
             fs.create_directories(dir, VCPKG_LINE_INFO);
 
-            auto f = fs.open_for_write(download_path_part_path, VCPKG_LINE_INFO);
-
             const auto sanitized_url = replace_secrets(url, secrets);
             Debug::print("Downloading ", sanitized_url, "\n");
             static auto s = WinHttpSession::make().value_or_exit(VCPKG_LINE_INFO);
-            auto conn = WinHttpConnection::make(s.m_hSession.get(), hostname, port);
-            if (!conn)
+            for (size_t trials = 0; trials < 4; ++trials)
             {
-                Strings::append(errors, sanitized_url, ": ", conn.error(), '\n');
-                return false;
+                if (trials > 0)
+                {
+                    // 0.5s, 1s, 2s
+                    Debug::print("Download failed -- retrying after ", 250 << trials, " ms.\n");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(250 << trials));
+                }
+                auto conn = WinHttpConnection::make(s.m_hSession.get(), hostname, port);
+                if (!conn)
+                {
+                    Strings::append(errors, sanitized_url, ": ", conn.error(), '\n');
+                    continue;
+                }
+                auto req = WinHttpRequest::make(
+                    conn.get()->m_hConnect.get(), split_uri.path_query_fragment, split_uri.scheme == "https");
+                if (!req)
+                {
+                    Strings::append(errors, sanitized_url, ": ", req.error(), '\n');
+                    continue;
+                }
+
+                auto maybe_status = req.get()->query_status();
+                if (auto status = maybe_status.get())
+                {
+                    if (*status < 200 || *status >= 300)
+                    {
+                        Strings::append(errors, sanitized_url, ": failed: status code ", *status, '\n');
+                        return false;
+                    }
+                }
+                else
+                {
+                    Strings::append(errors, sanitized_url, ": ", maybe_status.error(), '\n');
+                    continue;
+                }
+
+                const auto f = fs.open_for_write(download_path_part_path, VCPKG_LINE_INFO);
+
+                auto forall_data =
+                    req.get()->forall_data([&f](Span<char> span) { f.write(span.data(), 1, span.size()); });
+                if (!forall_data)
+                {
+                    Strings::append(errors, sanitized_url, ": ", forall_data.error(), '\n');
+                    continue;
+                }
+                return true;
             }
-            auto req = WinHttpRequest::make(
-                conn.get()->m_hConnect.get(), split_uri.path_query_fragment, split_uri.scheme == "https");
-            if (!req)
-            {
-                Strings::append(errors, sanitized_url, ": ", req.error(), '\n');
-                return false;
-            }
-            auto forall_data = req.get()->forall_data([&f](Span<char> span) { f.write(span.data(), 1, span.size()); });
-            if (!forall_data)
-            {
-                Strings::append(errors, sanitized_url, ": ", forall_data.error(), '\n');
-                return false;
-            }
-            return true;
+            return false;
         }
     }
 #endif
