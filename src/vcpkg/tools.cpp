@@ -590,12 +590,12 @@ gsutil version: 4.58
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        auto paths = fs.find_from_PATH("cmake");
-                        if (paths.empty())
+                        auto tool_path = fs.find_from_PATH("cmake");
+                        if (tool_path.empty())
                         {
                             Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Couldn't find %s form your path", tool);
                         }
-                        return {paths[0], "0"};
+                        return {tool_path[0], "0"};
                     }
                     return get_path(paths, CMakeProvider());
                 }
@@ -603,12 +603,12 @@ gsutil version: 4.58
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        auto paths = fs.find_from_PATH("git");
-                        if (paths.empty())
+                        auto tool_path = fs.find_from_PATH("git");
+                        if (tool_path.empty())
                         {
                             Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Couldn't find %s form your path", tool);
                         }
-                        return {paths[0], "0"};
+                        return {tool_path[0], "0"};
                     }
                     return get_path(paths, GitProvider());
                 }
@@ -616,12 +616,12 @@ gsutil version: 4.58
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        auto paths = fs.find_from_PATH("ninja");
-                        if (paths.empty())
+                        auto tool_path = fs.find_from_PATH("ninja");
+                        if (tool_path.empty())
                         {
                             Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Couldn't find %s form your path", tool);
                         }
-                        return {paths[0], "0"};
+                        return {tool_path[0], "0"};
                     }
                     return get_path(paths, NinjaProvider());
                 }
@@ -629,12 +629,12 @@ gsutil version: 4.58
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        auto paths = fs.find_from_PATH("powershell");
-                        if (paths.empty())
+                        auto tool_path = fs.find_from_PATH("powershell");
+                        if (tool_path.empty())
                         {
                             Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Couldn't find %s form your path", tool);
                         }
-                        return {paths[0], "0"};
+                        return {tool_path[0], "0"};
                     }
                     return get_path(paths, PowerShellCoreProvider());
                 }
@@ -645,12 +645,12 @@ gsutil version: 4.58
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        auto paths = fs.find_from_PATH("gsutil");
-                        if (paths.empty())
+                        auto tool_path = fs.find_from_PATH("gsutil");
+                        if (tool_path.empty())
                         {
                             Checks::exit_with_message(VCPKG_LINE_INFO, "Couldn't find %s form your path", tool);
                         }
-                        return {paths[0], "0"};
+                        return {tool_path[0], "0"};
                     }
                     return get_path(paths, GsutilProvider());
                 }
