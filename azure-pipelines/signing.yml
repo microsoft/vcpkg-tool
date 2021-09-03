@@ -11,7 +11,7 @@ jobs:
     displayName: "Windows"
     dependsOn:
     pool:
-      name: 'VSEngSS-MicroBuild2019'
+      name: 'VSEngSS-MicroBuild2019-1ES'
       demands:
         - CMAKE
     steps:
