@@ -102,7 +102,7 @@ jobs:
     displayName: 'MacOS Sign'
     dependsOn: macos_build
     pool:
-      name: VSEngSS-MicroBuild2019
+      name: 'VSEngSS-MicroBuild2019-1ES'
     steps:
       - checkout: none
       - task: DownloadBuildArtifacts@0
