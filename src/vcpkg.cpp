@@ -195,11 +195,10 @@ int main(const int argc, const char* const* const argv)
         }
 #endif
 
-        auto elapsed_us = LockGuardPtr<ElapsedTimer>(GlobalState::timer)->microseconds();
         if (debugging)
-            vcpkg::printf("[DEBUG] Exiting after %d us (%d us)\n",
-                          static_cast<int>(elapsed_us),
-                          static_cast<int>(elapsed_us_inner));
+            vcpkg::printf("[DEBUG] Exiting after %s us (%d us)\n",
+                          LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(),
+                          static_cast<int64_t>(elapsed_us_inner));
     });
 
     LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version());
