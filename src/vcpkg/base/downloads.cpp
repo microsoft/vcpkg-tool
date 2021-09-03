@@ -457,15 +457,15 @@ namespace vcpkg::Downloads
             {
                 if (trials > 0)
                 {
-                    // 0.5s, 1s, 2s
-                    Debug::print("Download failed -- retrying after ", 250 << trials, " ms.\n");
-                    std::this_thread::sleep_for(std::chrono::milliseconds(250 << trials));
+                    // 1s, 2s, 4s
+                    Debug::print("Download failed -- retrying after ", 500 << trials, " ms.\n");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(500 << trials));
                 }
                 auto conn = WinHttpConnection::make(s.m_hSession.get(), hostname, port);
                 if (!conn)
                 {
                     Strings::append(errors, sanitized_url, ": ", conn.error(), '\n');
-                    continue;
+                    return false;
                 }
                 auto req = WinHttpRequest::make(
                     conn.get()->m_hConnect.get(), split_uri.path_query_fragment, split_uri.scheme == "https");
