@@ -820,9 +820,12 @@ namespace vcpkg::Dependencies
                     // TODO: There's always the chance that we don't find the feature we're looking for (probably a
                     // malformed CONTROL file somewhere). We should probably output a better error.
                     const std::vector<Dependency>* paragraph_depends = nullptr;
+                    bool has_supports = false;
                     if (spec.feature() == "core")
                     {
                         paragraph_depends = &clust.get_scfl_or_exit().source_control_file->core_paragraph->dependencies;
+                        has_supports = !clust.get_scfl_or_exit()
+                                            .source_control_file->core_paragraph->supports_expression.is_empty();
                     }
                     else if (spec.feature() == "default")
                     {
@@ -837,14 +840,49 @@ namespace vcpkg::Dependencies
                                                     spec.name(),
                                                     spec.feature());
                         paragraph_depends = &maybe_paragraph.value_or_exit(VCPKG_LINE_INFO).dependencies;
+                        has_supports = !maybe_paragraph.get()->supports_expression.is_empty();
                     }
 
                     // And it has at least one qualified dependency
-                    if (paragraph_depends &&
-                        Util::any_of(*paragraph_depends, [](auto&& dep) { return !dep.platform.is_empty(); }))
+                    if (has_supports || (paragraph_depends && Util::any_of(*paragraph_depends, [](auto&& dep) {
+                                             return !dep.platform.is_empty();
+                                         })))
                     {
                         // Add it to the next batch run
                         qualified_dependencies.emplace_back(spec);
+                    }
+                }
+                else
+                {
+                    const PlatformExpression::Expr* supports_expression = nullptr;
+                    if (spec.feature() == "core")
+                    {
+                        supports_expression =
+                            &clust.get_scfl_or_exit().source_control_file->core_paragraph->supports_expression;
+                    }
+                    else if (spec.feature() != "default")
+                    {
+                        auto maybe_paragraph =
+                            clust.get_scfl_or_exit().source_control_file->find_feature(spec.feature());
+                        Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
+                                                    maybe_paragraph.has_value(),
+                                                    "Package %s does not have a %s feature",
+                                                    spec.name(),
+                                                    spec.feature());
+
+                        supports_expression = &maybe_paragraph.get()->supports_expression;
+                    }
+                    if (supports_expression && !supports_expression->is_empty())
+                    {
+                        if (!supports_expression->evaluate(
+                                m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
+                        {
+                            Checks::exit_with_message(VCPKG_LINE_INFO,
+                                                      "Error: %s[%s] is only supported on '%s'",
+                                                      spec.name(),
+                                                      spec.feature(),
+                                                      to_string(*supports_expression));
+                        }
                     }
                 }
 
@@ -1895,12 +1933,57 @@ namespace vcpkg::Dependencies
                         "with detailed steps to reproduce the problem.");
                 }
 
+                const auto get_vars = [&]() {
+                    auto maybe_vars = m_var_provider.get_dep_info_vars(spec);
+                    if (!maybe_vars.has_value())
+                    {
+                        m_var_provider.load_dep_info_vars({&spec, 1});
+                        maybe_vars = m_var_provider.get_dep_info_vars(spec);
+                    }
+                    return maybe_vars.value_or_exit(VCPKG_LINE_INFO);
+                };
+
+                { // use if(init;condition) if we support c++17
+                    const auto& supports_expr = p_vnode->scfl->source_control_file->core_paragraph->supports_expression;
+                    if (!supports_expr.is_empty())
+                    {
+                        if (!supports_expr.evaluate(get_vars()))
+                        {
+                            return Strings::concat("Error: ",
+                                                   spec,
+                                                   "@",
+                                                   new_ver,
+                                                   " is only supported on '",
+                                                   to_string(supports_expr),
+                                                   "'\n");
+                        }
+                    }
+                }
+
                 for (auto&& f : features)
                 {
-                    if (f != "core" && !p_vnode->scfl->source_control_file->find_feature(f))
+                    if (f == "core") continue;
+                    auto feature = p_vnode->scfl->source_control_file->find_feature(f);
+                    if (!feature)
                     {
                         return Strings::concat(
                             "Error: ", spec, "@", new_ver, " does not have required feature ", f, "\n");
+                    }
+                    const auto& supports_expr = feature.get()->supports_expression;
+                    if (!supports_expr.is_empty())
+                    {
+                        if (!supports_expr.evaluate(get_vars()))
+                        {
+                            return Strings::concat("Error: ",
+                                                   spec,
+                                                   "@",
+                                                   new_ver,
+                                                   " The feature ",
+                                                   f,
+                                                   " is only supported on '",
+                                                   to_string(supports_expr),
+                                                   "'\n");
+                        }
                     }
                 }
 
