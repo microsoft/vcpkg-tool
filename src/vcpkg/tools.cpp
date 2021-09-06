@@ -579,80 +579,52 @@ gsutil version: 4.58
             });
         }
 
+        const PathAndVersion get_system_tool_path(const VcpkgPaths& paths, const std::string& tool) const
+        {
+            auto& fs = paths.get_filesystem();
+            if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
+            {
+                auto tool_path = fs.find_from_PATH(tool);
+                if (tool_path.empty())
+                {
+                    Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Couldn't find %s on the path", tool);
+                }
+                return {tool_path[0], "0"};
+            }
+            else
+            {
+                return get_path(paths, CMakeProvider());
+            }
+        }
+
         const PathAndVersion& get_tool_pathversion(const VcpkgPaths& paths, const std::string& tool) const
         {
             return path_version_cache.get_lazy(tool, [&]() -> PathAndVersion {
                 // First deal with specially handled tools.
                 // For these we may look in locations like Program Files, the PATH etc as well as the auto-downloaded
                 // location.
-                auto& fs = paths.get_filesystem();
                 if (tool == Tools::CMAKE)
                 {
-                    if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
-                    {
-                        auto tool_path = fs.find_from_PATH("cmake");
-                        if (tool_path.empty())
-                        {
-                            Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Couldn't find %s form your path", tool);
-                        }
-                        return {tool_path[0], "0"};
-                    }
-                    return get_path(paths, CMakeProvider());
+                    get_system_tool_path(paths, "cmake");
                 }
                 if (tool == Tools::GIT)
                 {
-                    if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
-                    {
-                        auto tool_path = fs.find_from_PATH("git");
-                        if (tool_path.empty())
-                        {
-                            Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Couldn't find %s form your path", tool);
-                        }
-                        return {tool_path[0], "0"};
-                    }
-                    return get_path(paths, GitProvider());
+                    get_system_tool_path(paths, "git");
                 }
                 if (tool == Tools::NINJA)
                 {
-                    if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
-                    {
-                        auto tool_path = fs.find_from_PATH("ninja");
-                        if (tool_path.empty())
-                        {
-                            Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Couldn't find %s form your path", tool);
-                        }
-                        return {tool_path[0], "0"};
-                    }
-                    return get_path(paths, NinjaProvider());
+                    get_system_tool_path(paths, "ninja");
                 }
                 if (tool == Tools::POWERSHELL_CORE)
                 {
-                    if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
-                    {
-                        auto tool_path = fs.find_from_PATH("powershell");
-                        if (tool_path.empty())
-                        {
-                            Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Couldn't find %s form your path", tool);
-                        }
-                        return {tool_path[0], "0"};
-                    }
-                    return get_path(paths, PowerShellCoreProvider());
+                    get_system_tool_path(paths, "powershell");
                 }
                 if (tool == Tools::NUGET) return get_path(paths, NuGetProvider());
                 if (tool == Tools::IFW_INSTALLER_BASE) return get_path(paths, IfwInstallerBaseProvider());
                 if (tool == Tools::MONO) return get_path(paths, MonoProvider());
                 if (tool == Tools::GSUTIL)
                 {
-                    if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
-                    {
-                        auto tool_path = fs.find_from_PATH("gsutil");
-                        if (tool_path.empty())
-                        {
-                            Checks::exit_with_message(VCPKG_LINE_INFO, "Couldn't find %s form your path", tool);
-                        }
-                        return {tool_path[0], "0"};
-                    }
-                    return get_path(paths, GsutilProvider());
+                    get_system_tool_path(paths, "gsutil");
                 }
 
                 // For other tools, we simply always auto-download them.
