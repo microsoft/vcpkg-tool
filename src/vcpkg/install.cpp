@@ -711,7 +711,7 @@ namespace vcpkg::Install
 
                     const auto name = cmakeify(bpgh.spec.name());
                     auto msg = Strings::concat(
-                        "The package ", bpgh.spec, " is header only and can be used from CMake via:\n\n");
+                        "The package ", bpgh.spec.name(), " is header only and can be used from CMake via:\n\n");
                     Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
                     Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
 
@@ -720,7 +720,7 @@ namespace vcpkg::Install
             }
             else
             {
-                auto msg = Strings::concat("The package ", bpgh.spec, " provides CMake targets:\n\n");
+                auto msg = Strings::concat("The package ", bpgh.spec.name(), " provides CMake targets:\n\n");
 
                 for (auto&& library_target_pair : library_targets)
                 {
