@@ -570,6 +570,8 @@ namespace vcpkg
                      "Open up a port for editing (uses " + format_environment_variable("EDITOR") + ", default 'code')");
         table.format("vcpkg create <pkg> <url> [archivename]", "Create a new package");
         table.format("vcpkg x-init-registry <path>", "Initializes a registry in the directory <path>");
+        table.format("vcpkg format-manifest --all",
+                     "Formats all vcpkg.json files. Run this before committing to vcpkg.");
         table.format("vcpkg owns <pat>", "Search for files in installed packages");
         table.format("vcpkg depend-info <pkg>...", "Display a list of dependencies for packages");
         table.format("vcpkg env", "Creates a clean shell environment for development or compiling");
