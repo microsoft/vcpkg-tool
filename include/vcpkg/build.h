@@ -152,9 +152,9 @@ namespace vcpkg::Build
         YES
     };
 
-    enum class AutoUpdateMismatchedSHA512
+    enum class AutoUpdateMismatchedSHA512 : bool
     {
-        NO = 0,
+        NO,
         YES
     };
 

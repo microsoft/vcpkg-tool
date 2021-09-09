@@ -866,82 +866,96 @@ namespace vcpkg::Build
             std::string complete_stack_trace;
             std::vector<StackTraceEntry> stack_trace;
         };
-        std::vector<Entry> entries;
         Entry current_entry;
+        std::string captured_output;
         enum class State
         {
             None,
             Start,
+            Hashes,
+            HaveHashes,
             CallStack
         } state = State::None;
+        const VcpkgPaths& paths;
 
     public:
-        void parse_input(StringView input)
+        Sha512Scanner(const VcpkgPaths& paths) : paths(paths) { }
+        void process_input(StringView input)
         {
             if (input == "\n")
             {
-                parse_line("");
+                process_line("");
             }
             else
             {
-                for (const auto line : Strings::split(input, '\n'))
+                for (const auto& line : Strings::split(input, '\n'))
                 {
-                    parse_line(line);
+                    process_line(line);
                 }
             }
         }
 
     private:
-        void parse_line(const std::string& line)
+        void process_line(const std::string& line)
         {
-            auto index = std::string::npos;
-            if (Strings::starts_with(line, "File does not have the expected hash"))
+            if (Strings::equals(line, Downloads::guid_marker_hash_mismatch_general_start))
             {
                 state = State::Start;
+                return; // don't capture output
+            }
+            if (Strings::equals(line, Downloads::guid_marker_hash_mismatch_general_end))
+            {
+                if (state != State::CallStack)
+                {
+                    print2(Color::error,
+                           "Vcpkg was not able to automatically replace the SHA512 hash. Raw output:",
+                           captured_output);
+                }
+                else
+                {
+                    replace_in_files();
+                }
+                current_entry = Entry();
+                captured_output.clear();
+                state = State::None;
+                return; // don't capture output
             }
             else if (state == State::None)
             {
-                return; // don't check every line for performance reasons
+                print2(line, '\n');
+                return; // don't capture output
             }
-            else if ((index = line.find("Expected hash : [ ")) != std::string::npos)
+            else if (state == State::Start && Strings::equals(line, Downloads::guid_marker_hash_mismatch_start))
             {
-                index += 18; // length of "Expected hash : [ "
-                if (line.length() < index + 128)
-                {
-                    state = State::None;
-                    return;
-                }
-                current_entry.old_hash = line.substr(index, 128);
+                state = State::Hashes;
             }
-            else if ((index = line.find("Actual hash : [ ")) != std::string::npos)
+            else if (state == State::Hashes)
             {
-                index += 16; // length of "Actual hash : [ "
-                if (line.length() < index + 128)
-                {
-                    state = State::None;
-                    return;
-                }
-                current_entry.new_hash = line.substr(index, 128);
+                if (Strings::equals(line, Downloads::guid_marker_hash_mismatch_end))
+                    state = State::HaveHashes;
+                else if (Strings::starts_with(line, "expected="))
+                    current_entry.old_hash = Strings::trim(line.substr(9 /* length of 'expected=' */));
+                else if (Strings::starts_with(line, "actual="))
+                    current_entry.new_hash = Strings::trim(line.substr(7 /* length of 'actual=' */));
             }
-            else if (line.find("Call Stack (most recent call first):") != std::string::npos)
+            else if (state == State::HaveHashes &&
+                     line.find("Call Stack (most recent call first):") != std::string::npos)
             {
                 state = State::CallStack;
             }
             else if (state == State::CallStack)
             {
-                if (line.empty())
+                if (!line.empty())
                 {
-                    state = State::None;
-                    entries.push_back(current_entry);
-                    current_entry = Entry();
-                    return;
+                    current_entry.complete_stack_trace += line;
+                    current_entry.complete_stack_trace += '\n';
+                    if (line.length() < 5) // a real entry can not only constis out of 5 chars
+                        return;
+                    parse_stack_trace_entry(line.substr(2));
                 }
-                current_entry.complete_stack_trace += line;
-                current_entry.complete_stack_trace += '\n';
-                if (line.length() < 5) // a real entry can not only constis out of 5 chars
-                    return;
-                parse_stack_trace_entry(line.substr(2));
             }
+            captured_output += line;
+            captured_output += '\n';
         }
 
         void parse_stack_trace_entry(std::string line)
@@ -982,55 +996,71 @@ namespace vcpkg::Build
         }
 
     public:
-        void replace_in_files(const VcpkgPaths& paths)
+        void replace_in_files()
         {
             auto& fs = paths.get_filesystem();
-            for (const auto& entry : entries)
-            {
-                for (const auto& stackTraceEntry : entry.stack_trace)
-                {
-                    const auto file_path = paths.root / stackTraceEntry.path;
-                    auto lines = fs.read_lines(file_path, VCPKG_LINE_INFO);
-                    for (int i = stackTraceEntry.line - 1;
-                         i < std::min(stackTraceEntry.line + 10, static_cast<int>(lines.size()));
-                         ++i)
-                    {
-                        auto& line = lines[i];
-                        const auto sha512_index = line.find("SHA512");
-                        if (sha512_index == std::string::npos) continue;
-                        const auto sha_start = line.find_first_not_of(" ", sha512_index + 6);
-                        if (sha_start == std::string::npos) continue;
-                        auto sha_end = line.find_first_not_of("0123456789abcdef", sha_start);
-                        if (sha_end == std::string::npos) sha_end = line.size();
-                        const auto sha = line.substr(sha_start, sha_end);
-                        if (sha == "0" || sha == entry.old_hash)
-                        {
-                            line.replace(sha_start, sha_end - sha_start, entry.new_hash);
-                            fs.write_lines(file_path, lines, VCPKG_LINE_INFO);
 
-                            print2(Color::success,
-                                   "## The wrong sha in ",
-                                   stackTraceEntry.path,
-                                   ":",
-                                   stackTraceEntry.line,
-                                   " was successfully updated.\n");
-                            goto end_loop;
-                        }
-                        else
+            for (const auto& stackTraceEntry : current_entry.stack_trace)
+            {
+                const auto file_path = paths.root / stackTraceEntry.path;
+                auto lines = fs.read_lines(file_path, VCPKG_LINE_INFO);
+                for (int i = stackTraceEntry.line - 1;
+                     i < std::min(stackTraceEntry.line + 10, static_cast<int>(lines.size()));
+                     ++i)
+                {
+                    auto& currentLine = lines[i];
+                    const auto sha512_index = currentLine.find("SHA512");
+                    if (sha512_index == std::string::npos) continue;
+                    const auto sha_start = currentLine.find_first_not_of(' ', sha512_index + 6);
+                    if (sha_start == std::string::npos) continue;
+                    if (currentLine[sha_start] == '"') // found something like `set(HASH "abc123")` `SHA512 ${HASH}`
+                    {                                  // search for the old hash in the whole file and replace it
+                        if (current_entry.old_hash == "0") break; // don't replace any 0
+                        for (auto& line : lines)
                         {
-                            break;
+                            const auto start = line.find(current_entry.old_hash);
+                            if (start != std::string::npos)
+                            {
+                                line.replace(start, current_entry.old_hash.size(), current_entry.new_hash);
+                                fs.write_lines(file_path, lines, VCPKG_LINE_INFO);
+
+                                print2(Color::success,
+                                       "## The wrong SHA512 in ",
+                                       stackTraceEntry.path,
+                                       " was successfully updated.\n");
+                                return;
+                            }
                         }
                     }
+                    auto sha_end = currentLine.find_first_not_of("0123456789abcdef", sha_start);
+                    if (sha_end == std::string::npos) sha_end = currentLine.size();
+                    const auto sha = currentLine.substr(sha_start, sha_end);
+                    if (sha == "0" || sha == current_entry.old_hash)
+                    {
+                        currentLine.replace(sha_start, sha_end - sha_start, current_entry.new_hash);
+                        fs.write_lines(file_path, lines, VCPKG_LINE_INFO);
+
+                        print2(Color::success,
+                               "## The wrong SHA512 in ",
+                               stackTraceEntry.path,
+                               ":",
+                               stackTraceEntry.line,
+                               " was successfully updated.\n");
+                        return;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-                print2(Color::error,
-                       "Vcpkg was not able to automatically replace the hash ",
-                       entry.old_hash,
-                       " by ",
-                       entry.new_hash,
-                       " for the stacktrace \n",
-                       entry.complete_stack_trace);
-            end_loop:;
             }
+            print2(Color::error,
+                   "vcpkg was not able to automatically replace the hash ",
+                   current_entry.old_hash,
+                   " by ",
+                   current_entry.new_hash,
+                   " for the stacktrace \n",
+                   current_entry.complete_stack_trace);
         }
     };
 
@@ -1080,22 +1110,21 @@ namespace vcpkg::Build
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
         int return_code;
         {
-            Sha512Scanner scanner;
+            Sha512Scanner scanner(paths);
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(
                 command,
                 [&](StringView sv) {
-                    print2(sv);
                     if (action.build_options.auto_update_mismatched_sha512 == Build::AutoUpdateMismatchedSHA512::YES)
-                        scanner.parse_input(sv);
+                        scanner.process_input(sv);
+                    else
+                        print2(sv);
                     Checks::check_exit(VCPKG_LINE_INFO,
                                        out_file.write(sv.data(), 1, sv.size()) == sv.size(),
                                        "Error occurred while writing '%s'",
                                        stdoutlog);
                 },
                 env);
-            if (action.build_options.auto_update_mismatched_sha512 == Build::AutoUpdateMismatchedSHA512::YES)
-                scanner.replace_in_files(paths);
         } // close out_file
 
         // With the exception of empty packages, builds in "Download Mode" always result in failure.

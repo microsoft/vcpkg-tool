@@ -15,6 +15,7 @@ namespace vcpkg::Commands::X_Download
     static constexpr StringLiteral OPTION_SKIP_SHA512 = "skip-sha512";
     static constexpr StringLiteral OPTION_SHA512 = "sha512";
     static constexpr StringLiteral OPTION_ONLY_WARN_FOR_SHA512_MISMATCH = "only-warn-sha512-mismatch";
+    static constexpr StringLiteral OPTION_SHA512_MISMATCH_GUID_WRAPPED = "sha512-mismatch-guid-wrapped";
     static constexpr StringLiteral OPTION_URL = "url";
     static constexpr StringLiteral OPTION_HEADER = "header";
 
@@ -23,6 +24,8 @@ namespace vcpkg::Commands::X_Download
         {OPTION_SKIP_SHA512, "Do not check the SHA512 of the downloaded file"},
         {OPTION_ONLY_WARN_FOR_SHA512_MISMATCH,
          "Only warn if the SHA512 of the downloaded file mismatched instead of fail"},
+        {OPTION_SHA512_MISMATCH_GUID_WRAPPED,
+         "Instead of displaying a user friendly message for a hash mismatch print a mashine readable one"},
     };
     static constexpr CommandSetting FETCH_SETTINGS[] = {
         {OPTION_SHA512, "The hash of the file to be downloaded"},
@@ -105,6 +108,10 @@ namespace vcpkg::Commands::X_Download
         using Action = Downloads::Sha512MismatchAction;
         auto mismatch_action =
             Util::Sets::contains(parsed.switches, OPTION_ONLY_WARN_FOR_SHA512_MISMATCH) ? Action::Warn : Action::Error;
+        using Format = Downloads::Sha512MismatchFormat;
+        auto mismatch_format = Util::Sets::contains(parsed.switches, OPTION_SHA512_MISMATCH_GUID_WRAPPED)
+                                   ? Format::GuidWrapped
+                                   : Format::UserFriendly;
 
         // Is this a store command?
         if (Util::Sets::contains(parsed.switches, OPTION_STORE))
@@ -145,7 +152,7 @@ namespace vcpkg::Commands::X_Download
                 urls = it_urls->second;
             }
 
-            download_manager.download_file(fs, urls, headers, file, sha, mismatch_action);
+            download_manager.download_file(fs, urls, headers, file, sha, mismatch_action, mismatch_format);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }

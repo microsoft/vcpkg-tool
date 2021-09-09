@@ -23,10 +23,17 @@ namespace vcpkg::Downloads
         ExpectedS<SplitURIView> split_uri_view(StringView uri);
     }
 
+    enum class Sha512MismatchFormat
+    {
+        UserFriendly,
+        GuidWrapped,
+    };
+
     void verify_downloaded_file_hash(const Filesystem& fs,
                                      const std::string& sanitized_url,
                                      const Path& downloaded_path,
-                                     const std::string& sha512);
+                                     const std::string& sha512,
+                                     Sha512MismatchFormat mismatch_format = Sha512MismatchFormat::UserFriendly);
 
     View<std::string> azure_blob_headers();
 
@@ -50,6 +57,13 @@ namespace vcpkg::Downloads
         Warn,
         Error,
     };
+
+    static constexpr StringLiteral guid_marker_hash_mismatch_start = "7279eda6-681f-46e0-aa5d-679ec14a2fb9";
+    static constexpr StringLiteral guid_marker_hash_mismatch_end = "6982135f-5ad4-406f-86e3-f2e19c8966ef";
+    // The following guids are used to detect the start and end of the output of the download command
+    static constexpr StringLiteral guid_marker_hash_mismatch_general_start = "b360a6a9-fb74-41de-a4c5-a7faf126d565";
+    static constexpr StringLiteral guid_marker_hash_mismatch_general_end = "9d36a06a-0efa-470a-9a1e-63a26be67a84";
+
     // Handles downloading and uploading to a content addressable mirror
     struct DownloadManager
     {
@@ -61,9 +75,10 @@ namespace vcpkg::Downloads
                            const std::string& url,
                            const Path& download_path,
                            const Optional<std::string>& sha512,
-                           Sha512MismatchAction mismatch_action = Sha512MismatchAction::Error) const
+                           Sha512MismatchAction mismatch_action = Sha512MismatchAction::Error,
+                           Sha512MismatchFormat mismatch_format = Sha512MismatchFormat::UserFriendly) const
         {
-            this->download_file(fs, url, {}, download_path, sha512, mismatch_action);
+            this->download_file(fs, url, {}, download_path, sha512, mismatch_action, mismatch_format);
         }
 
         void download_file(Filesystem& fs,
@@ -71,7 +86,8 @@ namespace vcpkg::Downloads
                            View<std::string> headers,
                            const Path& download_path,
                            const Optional<std::string>& sha512,
-                           Sha512MismatchAction mismatch_action = Sha512MismatchAction::Error) const;
+                           Sha512MismatchAction mismatch_action = Sha512MismatchAction::Error,
+                           Sha512MismatchFormat mismatch_format = Sha512MismatchFormat::UserFriendly) const;
 
         // Returns url that was successfully downloaded from
         std::string download_file(Filesystem& fs,
@@ -79,7 +95,8 @@ namespace vcpkg::Downloads
                                   View<std::string> headers,
                                   const Path& download_path,
                                   const Optional<std::string>& sha512,
-                                  Sha512MismatchAction mismatch_action = Sha512MismatchAction::Error) const;
+                                  Sha512MismatchAction mismatch_action = Sha512MismatchAction::Error,
+                                  Sha512MismatchFormat mismatch_format = Sha512MismatchFormat::UserFriendly) const;
 
         ExpectedS<int> put_file_to_mirror(const Filesystem& fs, const Path& file_to_put, StringView sha512) const;
 

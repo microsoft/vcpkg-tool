@@ -186,23 +186,36 @@ namespace vcpkg::Downloads
     static std::string format_hash_mismatch(StringView url,
                                             const Path& downloaded_path,
                                             StringView expected,
-                                            StringView actual)
+                                            StringView actual,
+                                            Sha512MismatchFormat mismatch_format)
     {
-        return Strings::format("File does not have the expected hash:\n"
-                               "             url : [ %s ]\n"
-                               "       File path : [ %s ]\n"
-                               "   Expected hash : [ %s ]\n"
-                               "     Actual hash : [ %s ]\n",
-                               url,
-                               downloaded_path,
+        if (mismatch_format == Sha512MismatchFormat::UserFriendly)
+        {
+            return Strings::format("File does not have the expected hash:\n"
+                                   "             url : [ %s ]\n"
+                                   "       File path : [ %s ]\n"
+                                   "   Expected hash : [ %s ]\n"
+                                   "     Actual hash : [ %s ]\n",
+                                   url,
+                                   downloaded_path,
+                                   expected,
+                                   actual);
+        }
+        return Strings::format("%s\n"
+                               "expected=%s\n"
+                               "actual=%s\n"
+                               "%s\n",
+                               guid_marker_hash_mismatch_start,
                                expected,
-                               actual);
+                               actual,
+                               guid_marker_hash_mismatch_end);
     }
 
     static Optional<std::string> try_verify_downloaded_file_hash(const Filesystem& fs,
                                                                  StringView sanitized_url,
                                                                  const Path& downloaded_path,
-                                                                 StringView sha512)
+                                                                 StringView sha512,
+                                                                 Sha512MismatchFormat mismatch_format)
     {
         std::string actual_hash =
             vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, downloaded_path, Hash::Algorithm::Sha512);
@@ -220,7 +233,7 @@ namespace vcpkg::Downloads
 
         if (sha512 != actual_hash)
         {
-            return format_hash_mismatch(sanitized_url, downloaded_path, sha512, actual_hash);
+            return format_hash_mismatch(sanitized_url, downloaded_path, sha512, actual_hash, mismatch_format);
         }
         return nullopt;
     }
@@ -228,9 +241,10 @@ namespace vcpkg::Downloads
     void verify_downloaded_file_hash(const Filesystem& fs,
                                      const std::string& url,
                                      const Path& downloaded_path,
-                                     const std::string& sha512)
+                                     const std::string& sha512,
+                                     Sha512MismatchFormat mismatch_format)
     {
-        auto maybe_error = try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512);
+        auto maybe_error = try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512, mismatch_format);
         if (auto err = maybe_error.get())
         {
             Checks::exit_with_message(VCPKG_LINE_INFO, *err);
@@ -240,13 +254,15 @@ namespace vcpkg::Downloads
     static bool check_downloaded_file_hash(Filesystem& fs,
                                            const Optional<std::string>& hash,
                                            Sha512MismatchAction mismatch_action,
+                                           Sha512MismatchFormat mismatch_format,
                                            StringView sanitized_url,
                                            const Path& download_part_path,
                                            std::string& errors)
     {
         if (auto p = hash.get())
         {
-            auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
+            auto maybe_error =
+                try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p, mismatch_format);
             if (auto err = maybe_error.get())
             {
                 if (mismatch_action == Sha512MismatchAction::Warn)
@@ -488,6 +504,7 @@ namespace vcpkg::Downloads
                                   const Path& download_path,
                                   const Optional<std::string>& sha512,
                                   Sha512MismatchAction mismatch_action,
+                                  Sha512MismatchFormat mismatch_format,
                                   const std::vector<std::string>& secrets,
                                   std::string& errors)
     {
@@ -513,7 +530,7 @@ namespace vcpkg::Downloads
                     if (download_winhttp(fs, download_path_part_path, split_uri, url, secrets, errors))
                     {
                         if (check_downloaded_file_hash(
-                                fs, sha512, only_warn_sha512_mismatch, url, download_path_part_path, errors))
+                                fs, sha512, mismatch_action, mismatch_format, url, download_path_part_path, errors))
                         {
                             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
                             return true;
@@ -544,7 +561,8 @@ namespace vcpkg::Downloads
             return false;
         }
 
-        if (check_downloaded_file_hash(fs, sha512, mismatch_action, sanitized_url, download_path_part_path, errors))
+        if (check_downloaded_file_hash(
+                fs, sha512, mismatch_action, mismatch_format, sanitized_url, download_path_part_path, errors))
         {
             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
             return true;
@@ -558,12 +576,14 @@ namespace vcpkg::Downloads
                                                            const Path& download_path,
                                                            const Optional<std::string>& sha512,
                                                            Sha512MismatchAction mismatch_action,
+                                                           Sha512MismatchFormat mismatch_format,
                                                            const std::vector<std::string>& secrets,
                                                            std::string& errors)
     {
         for (auto&& url : urls)
         {
-            if (try_download_file(fs, url, headers, download_path, sha512, mismatch_action, secrets, errors))
+            if (try_download_file(
+                    fs, url, headers, download_path, sha512, mismatch_action, mismatch_format, secrets, errors))
                 return url;
         }
         return nullopt;
@@ -580,9 +600,11 @@ namespace vcpkg::Downloads
                                         View<std::string> headers,
                                         const Path& download_path,
                                         const Optional<std::string>& sha512,
-                                        Sha512MismatchAction mismatch_action) const
+                                        Sha512MismatchAction mismatch_action,
+                                        Sha512MismatchFormat mismatch_format) const
     {
-        this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, mismatch_action);
+        this->download_file(
+            fs, View<std::string>(&url, 1), headers, download_path, sha512, mismatch_action, mismatch_format);
     }
 
     std::string DownloadManager::download_file(Filesystem& fs,
@@ -590,7 +612,8 @@ namespace vcpkg::Downloads
                                                View<std::string> headers,
                                                const Path& download_path,
                                                const Optional<std::string>& sha512,
-                                               Sha512MismatchAction mismatch_action) const
+                                               Sha512MismatchAction mismatch_action,
+                                               Sha512MismatchFormat mismatch_format) const
     {
         std::string errors;
         if (auto hash = sha512.get())
@@ -604,6 +627,7 @@ namespace vcpkg::Downloads
                                                  download_path,
                                                  sha512,
                                                  mismatch_action,
+                                                 mismatch_format,
                                                  m_config.m_secrets,
                                                  errors))
                     return read_url;
@@ -625,8 +649,15 @@ namespace vcpkg::Downloads
             }
             else
             {
-                auto maybe_url = try_download_files(
-                    fs, urls, headers, download_path, sha512, mismatch_action, m_config.m_secrets, errors);
+                auto maybe_url = try_download_files(fs,
+                                                    urls,
+                                                    headers,
+                                                    download_path,
+                                                    sha512,
+                                                    mismatch_action,
+                                                    mismatch_format,
+                                                    m_config.m_secrets,
+                                                    errors);
                 if (auto url = maybe_url.get())
                 {
                     if (auto hash = sha512.get())
