@@ -7,7 +7,6 @@
 #include <vcpkg/commands.cache.h>
 #include <vcpkg/commands.check-support.h>
 #include <vcpkg/commands.ci.h>
-#include <vcpkg/commands.ciclean.h>
 #include <vcpkg/commands.civerifyversions.h>
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.create.h>
@@ -79,7 +78,6 @@ namespace vcpkg::Commands
         static const Autocomplete::AutocompleteCommand autocomplete{};
         static const Hash::HashCommand hash{};
         static const Fetch::FetchCommand fetch{};
-        static const CIClean::CICleanCommand ciclean{};
         static const PortHistory::PortHistoryCommand porthistory{};
         static const X_VSInstances::VSInstancesCommand vsinstances{};
         static const FormatManifest::FormatManifestCommand format_manifest{};
@@ -101,7 +99,6 @@ namespace vcpkg::Commands
             {"autocomplete", &autocomplete},
             {"hash", &hash},
             {"fetch", &fetch},
-            {"x-ci-clean", &ciclean},
             {"x-package-info", &info},
             {"x-history", &porthistory},
             {"x-vsinstances", &vsinstances},

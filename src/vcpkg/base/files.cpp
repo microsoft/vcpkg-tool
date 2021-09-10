@@ -1333,26 +1333,6 @@ namespace vcpkg
         this->remove_all(base, ec, failure_point);
     }
 
-    void Filesystem::remove_all_inside(const Path& base, LineInfo li)
-    {
-        std::error_code ec;
-        Path failure_point;
-
-        this->remove_all_inside(base, ec, failure_point);
-
-        if (ec)
-        {
-            Checks::exit_with_message(
-                li, "Failure to remove_all_inside(\"%s\") due to file \"%s\": %s", base, failure_point, ec.message());
-        }
-    }
-
-    void Filesystem::remove_all_inside(const Path& base, std::error_code& ec)
-    {
-        Path failure_point;
-        this->remove_all_inside(base, ec, failure_point);
-    }
-
     Path Filesystem::absolute(const Path& target, LineInfo li) const
     {
         std::error_code ec;
@@ -1791,57 +1771,6 @@ namespace vcpkg
         virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) override
         {
             vcpkg_remove_all(to_stdfs_path(base), ec, failure_point);
-        }
-
-        virtual void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) override
-        {
-            stdfs::directory_iterator last{};
-            stdfs::directory_iterator first(to_stdfs_path(base), ec);
-            if (ec)
-            {
-                failure_point = base;
-                return;
-            }
-
-            for (;;)
-            {
-                if (first == last)
-                {
-                    return;
-                }
-
-                auto stats = first->status(ec);
-                if (ec)
-                {
-                    break;
-                }
-
-                auto& thisPath = first->path();
-                if (stats.type() == stdfs::file_type::directory)
-                {
-                    vcpkg_remove_all(*first, ec, failure_point);
-                    if (ec)
-                    {
-                        return; // keep inner failure_point
-                    }
-                }
-                else
-                {
-                    stdfs::remove(thisPath, ec);
-                    if (ec)
-                    {
-                        break;
-                    }
-                }
-
-                first.increment(ec);
-                if (ec)
-                {
-                    break;
-                }
-            }
-
-            failure_point = from_stdfs_path(first->path());
         }
 
         virtual bool is_directory(const Path& target) const override

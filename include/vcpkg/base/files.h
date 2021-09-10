@@ -271,10 +271,6 @@ namespace vcpkg
         void remove_all(const Path& base, std::error_code& ec);
         void remove_all(const Path& base, LineInfo li);
 
-        virtual void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) = 0;
-        void remove_all_inside(const Path& base, std::error_code& ec);
-        void remove_all_inside(const Path& base, LineInfo li);
-
         bool exists(const Path& target, std::error_code& ec) const;
         bool exists(const Path& target, LineInfo li) const;
 
