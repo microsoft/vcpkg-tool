@@ -175,7 +175,7 @@ int main(const int argc, const char* const* const argv)
 
     initialize_global_job_object();
 #else
-    static const char* utf8_locales[] = {
+    static const char* const utf8_locales[] = {
         "C.UTF-8",
         "POSIX.UTF-8",
         "en_US.UTF-8",
