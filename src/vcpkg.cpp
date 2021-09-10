@@ -174,6 +174,21 @@ int main(const int argc, const char* const* const argv)
     SetConsoleOutputCP(CP_UTF8);
 
     initialize_global_job_object();
+#else
+    static const char* const utf8_locales[] = {
+        "C.UTF-8",
+        "POSIX.UTF-8",
+        "en_US.UTF-8",
+    };
+
+    for (const char* utf8_locale : utf8_locales)
+    {
+        if (::setlocale(LC_ALL, utf8_locale))
+        {
+            ::setenv("LC_ALL", utf8_locale, true);
+            break;
+        }
+    }
 #endif
     set_environment_variable("VCPKG_COMMAND", get_exe_path_of_current_process().generic_u8string());
 

@@ -11,6 +11,7 @@
 #include <winhttp.h>
 #endif
 
+#include <locale.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stddef.h>
