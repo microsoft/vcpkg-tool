@@ -555,7 +555,7 @@ namespace
     void push_back_if_not_dsstore_path(std::vector<Path>& ret, const Iter& b)
     {
         auto discovered_path = from_stdfs_path(b->path());
-        if (Strings::case_insensitive_ascii_equals(discovered_path.filename(), ".DS_Store"))
+        if (!Strings::case_insensitive_ascii_equals(discovered_path.filename(), ".DS_Store"))
         {
             ret.push_back(std::move(discovered_path));
         }
