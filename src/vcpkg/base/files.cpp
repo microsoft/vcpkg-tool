@@ -1552,7 +1552,11 @@ namespace vcpkg
         {
             std::vector<Path> ret;
             Iter b(to_stdfs_path(dir), ec), e{};
-            if (!ec)
+            if (ec)
+            {
+                translate_not_found_to_success(ec);
+            }
+            else
             {
                 while (b != e)
                 {
@@ -1584,7 +1588,11 @@ namespace vcpkg
         {
             std::vector<Path> ret;
             Iter b(to_stdfs_path(dir), ec), e{};
-            if (!ec)
+            if (ec)
+            {
+                translate_not_found_to_success(ec);
+            }
+            else
             {
                 while (b != e)
                 {
@@ -1630,7 +1638,11 @@ namespace vcpkg
         {
             std::vector<Path> ret;
             Iter b(to_stdfs_path(dir), ec), e{};
-            if (!ec)
+            if (ec)
+            {
+                translate_not_found_to_success(ec);
+            }
+            else
             {
                 while (b != e)
                 {
