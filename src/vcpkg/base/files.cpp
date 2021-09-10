@@ -550,6 +550,16 @@ namespace
 
         vcpkg_remove_all(entry, ec, failure_point);
     }
+
+    template<class Iter>
+    void push_back_if_not_dsstore_path(std::vector<Path>& ret, const Iter& b)
+    {
+        auto discovered_path = from_stdfs_path(b->path());
+        if (Strings::case_insensitive_ascii_equals(discovered_path.filename(), ".DS_Store"))
+        {
+            ret.push_back(std::move(discovered_path));
+        }
+    }
 }
 
 #if defined(_WIN32)
@@ -1556,7 +1566,24 @@ namespace vcpkg
             {
                 while (b != e)
                 {
-                    ret.push_back(from_stdfs_path(b->path()));
+#if VCPKG_USE_STD_FILESYSTEM
+                    if (b->is_directory(ec))
+#else  // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
+                    if (stdfs::is_directory(b->path(), ec))
+#endif // VCPKG_USE_STD_FILESYSTEM
+                    {
+                        push_back_if_not_dsstore_path(ret, b);
+                    }
+                    else if (ec)
+                    {
+                        ret.clear();
+                        break;
+                    }
+                    else
+                    {
+                        ret.push_back(from_stdfs_path(b->path()));
+                    }
+
                     b.increment(ec);
                     if (ec)
                     {
@@ -1594,7 +1621,7 @@ namespace vcpkg
                     if (stdfs::is_directory(b->path(), ec))
 #endif // VCPKG_USE_STD_FILESYSTEM
                     {
-                        ret.push_back(from_stdfs_path(b->path()));
+                        push_back_if_not_dsstore_path(ret, b);
                     }
 
                     if (ec)
