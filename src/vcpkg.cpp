@@ -181,8 +181,10 @@ int main(const int argc, const char* const* const argv)
         "en_US.UTF-8",
     };
 
-    for (const char* utf8_locale : utf8_locales) {
-        if (::setlocale(LC_ALL, utf8_locale)) {
+    for (const char* utf8_locale : utf8_locales)
+    {
+        if (::setlocale(LC_ALL, utf8_locale))
+        {
             ::setenv("LC_ALL", utf8_locale, true);
             break;
         }
