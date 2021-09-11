@@ -798,7 +798,7 @@ namespace
                 Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
                     // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the
                     // output directory
-                    auto nupkg_path = paths.package_dir(nuget_ref.spec) / nuget_ref.reference.id + ".nupkg";
+                    auto nupkg_path = paths.packages / nuget_ref.reference.id / nuget_ref.reference.id + ".nupkg";
                     if (fs.exists(nupkg_path, IgnoreErrors{}))
                     {
                         fs.remove(nupkg_path, VCPKG_LINE_INFO);
@@ -806,6 +806,18 @@ namespace
                                            !fs.exists(nupkg_path, IgnoreErrors{}),
                                            "Unable to remove nupkg after restoring: %s",
                                            nupkg_path);
+                        if (!get_nuget_prefix().empty())
+                        {
+                            auto path_from = paths.packages / nuget_ref.reference.id;
+                            auto path_to = paths.packages / nuget_ref.spec.dir();
+                            std::error_code ec;
+                            fs.rename(path_from, path_to, ec);
+                            Checks::check_exit(VCPKG_LINE_INFO,
+                                               !ec,
+                                               "Unable to rename package %s after restoring: %s",
+                                               path_from,
+                                               ec.message());
+                        }
                         cache_status[nuget_ref.result_index]->mark_restored();
                         return true;
                     }
