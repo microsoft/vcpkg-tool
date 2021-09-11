@@ -3,6 +3,7 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
@@ -14,7 +15,6 @@
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/userconfig.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -47,7 +47,6 @@ static void invalid_command(const std::string& cmd)
 
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
-    LockGuardPtr<Metrics>(g_metrics)->track_property("command", args.command);
     if (args.command.empty())
     {
         print_usage();
@@ -106,25 +105,15 @@ static void load_config(vcpkg::Filesystem& fs)
     // config file not found, could not be read, or invalid
     if (config.user_id.empty() || config.user_time.empty())
     {
-        ::vcpkg::Metrics::init_user_information(config.user_id, config.user_time);
         write_config = true;
     }
 
 #if defined(_WIN32)
     if (config.user_mac.empty())
     {
-        config.user_mac = get_MAC_user();
         write_config = true;
     }
 #endif
-
-    {
-        LockGuardPtr<Metrics> locked_metrics(g_metrics);
-        locked_metrics->set_user_information(config.user_id, config.user_time);
-#if defined(_WIN32)
-        locked_metrics->track_property("user_mac", config.user_mac);
-#endif
-    }
 
     if (config.last_completed_survey.empty())
     {
@@ -132,8 +121,6 @@ static void load_config(vcpkg::Filesystem& fs)
         const CTime offset = now.add_hours(-SURVEY_INITIAL_OFFSET_IN_HOURS);
         config.last_completed_survey = offset.to_string();
     }
-
-    LockGuardPtr<std::string>(GlobalState::g_surveydate)->assign(config.last_completed_survey);
 
     if (write_config)
     {
@@ -163,7 +150,6 @@ int main(const int argc, const char* const* const argv)
     if (argc == 0) std::abort();
 
     auto& fs = get_real_filesystem();
-    *(LockGuardPtr<ElapsedTimer>(GlobalState::timer)) = ElapsedTimer::create_started();
 
 #if defined(_WIN32)
     GlobalState::g_init_console_cp = GetConsoleCP();
@@ -197,10 +183,7 @@ int main(const int argc, const char* const* const argv)
 
         bool debugging = Debug::g_debugging;
 
-        LockGuardPtr<Metrics> metrics(g_metrics);
-        metrics->track_metric("elapsed_us", elapsed_us_inner);
         Debug::g_debugging = false;
-        metrics->flush(get_real_filesystem());
 
 #if defined(_WIN32)
         if (GlobalState::g_init_console_initialized)
@@ -215,8 +198,6 @@ int main(const int argc, const char* const* const argv)
                           LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(),
                           static_cast<int64_t>(elapsed_us_inner));
     });
-
-    LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version());
 
     register_console_ctrl_handler();
 
@@ -241,38 +222,6 @@ int main(const int argc, const char* const* const argv)
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
     args.check_feature_flag_consistency();
 
-    {
-        LockGuardPtr<Metrics> metrics(g_metrics);
-        if (const auto p = args.disable_metrics.get())
-        {
-            metrics->set_disabled(*p);
-        }
-
-        auto disable_metrics_tag_file_path = get_exe_path_of_current_process();
-        disable_metrics_tag_file_path.replace_filename("vcpkg.disable-metrics");
-
-        std::error_code ec;
-        if (fs.exists(disable_metrics_tag_file_path, ec) || ec)
-        {
-            metrics->set_disabled(true);
-        }
-
-        if (const auto p = args.print_metrics.get())
-        {
-            metrics->set_print_metrics(*p);
-        }
-
-        if (const auto p = args.send_metrics.get())
-        {
-            metrics->set_send_metrics(*p);
-        }
-
-        if (args.send_metrics.value_or(false) && !metrics->metrics_enabled())
-        {
-            print2(Color::warning, "Warning: passed --sendmetrics, but metrics are disabled.\n");
-        }
-    } // unlock g_metrics
-
     args.debug_print_feature_flags();
     args.track_feature_flag_metrics();
 
@@ -296,8 +245,6 @@ int main(const int argc, const char* const* const argv)
     {
         exc_msg = "unknown error(...)";
     }
-
-    LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
     vcpkg::printf("vcpkg.exe has crashed.\n"

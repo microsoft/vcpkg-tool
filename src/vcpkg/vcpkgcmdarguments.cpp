@@ -5,7 +5,6 @@
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 namespace vcpkg
@@ -27,8 +26,6 @@ namespace vcpkg
                 if (place.has_value())
                 {
                     vcpkg::printf(Color::error, "Error: both %s and -%s were specified as feature flags\n", flag, flag);
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("error",
-                                                                     "error feature flag +-" + flag.to_string());
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
@@ -67,7 +64,6 @@ namespace vcpkg
         if (nullptr != option_field)
         {
             vcpkg::printf(Color::error, "Error: --%s specified multiple times\n", option_name);
-            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option specified multiple times");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -80,7 +76,6 @@ namespace vcpkg
         if (option_field && option_field != new_setting)
         {
             print2(Color::error, "Error: conflicting values specified for --", option_name, '\n');
-            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error conflicting switches");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -94,7 +89,6 @@ namespace vcpkg
         if (new_value.size() == 0)
         {
             print2(Color::error, "Error: expected value after ", option_name, '\n');
-            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -109,7 +103,6 @@ namespace vcpkg
         if (new_value.size() == 0)
         {
             print2(Color::error, "Error: expected value after ", option_name, '\n');
-            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -183,7 +176,6 @@ namespace vcpkg
                 }
 
                 print2(Color::error, "Error: expected value after ", option, '\n');
-                LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
                 print_usage();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -252,7 +244,6 @@ namespace vcpkg
 
             if (basic_arg.size() >= 2 && basic_arg[0] == '-' && basic_arg[1] != '-')
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error short options are not supported");
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: short options are not supported: %s", basic_arg);
             }
 
@@ -823,8 +814,6 @@ namespace vcpkg
                               el.flag,
                               el.option);
                 vcpkg::printf(Color::warning, "Warning: Defaulting to %s being on.\n", el.flag);
-                LockGuardPtr<Metrics>(g_metrics)->track_property(
-                    "warning", Strings::format("warning %s alongside %s", el.flag, el.option));
             }
         }
     }
@@ -868,11 +857,6 @@ namespace vcpkg
             {REGISTRIES_FEATURE, registries_enabled()},
             {VERSIONS_FEATURE, versions_enabled()},
         };
-
-        for (const auto& flag : flags)
-        {
-            LockGuardPtr<Metrics>(g_metrics)->track_feature(flag.flag.to_string(), flag.enabled);
-        }
     }
 
     Optional<std::string> VcpkgCmdArguments::asset_sources_template() const

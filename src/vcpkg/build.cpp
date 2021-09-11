@@ -20,7 +20,6 @@
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/postbuildlint.h>
@@ -920,20 +919,8 @@ namespace vcpkg::Build
         const auto spec_string = action.spec.to_string();
 
         {
-            LockGuardPtr<Metrics> metrics(g_metrics);
-            metrics->track_buildtime(Hash::get_string_hash(spec_string, Hash::Algorithm::Sha256) + ":[" +
-                                         Strings::join(",",
-                                                       action.feature_list,
-                                                       [](const std::string& feature) {
-                                                           return Hash::get_string_hash(feature,
-                                                                                        Hash::Algorithm::Sha256);
-                                                       }) +
-                                         "]",
-                                     buildtimeus);
             if (return_code != 0)
             {
-                metrics->track_property("error", "build failed");
-                metrics->track_property("build_error", spec_string);
                 return BuildResult::BUILD_FAILED;
             }
         }

@@ -24,11 +24,6 @@ option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
     "BUILD_TESTING" OFF)
 
-if(DEFINE_DISABLE_METRICS OR VCPKG_DISABLE_METRICS)
-    message(DEPRECATION "DEFINE_DISABLE_METRICS / VCPKG_DISABLE_METRICS are now handled by creating a "
-        "file vcpkg.disable_metrics next to the binary.")
-endif()
-
 set(LANGUAGES "CXX")
 if(VCPKG_BUILD_TLS12_DOWNLOADER)
     list(APPEND LANGUAGES "C")

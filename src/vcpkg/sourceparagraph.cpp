@@ -6,7 +6,6 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/sourceparagraph.h>
@@ -1041,7 +1040,6 @@ namespace vcpkg
                 {
                     if (dep.constraint.type != Versions::Constraint::Type::None)
                     {
-                        LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
                         return Strings::concat(
                             origin,
                             " was rejected because it uses constraints and the `",
@@ -1062,7 +1060,6 @@ namespace vcpkg
 
             if (core_paragraph->overrides.size() != 0)
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
                 return Strings::concat(origin,
                                        " was rejected because it uses overrides and the `",
                                        VcpkgCmdArguments::VERSIONS_FEATURE,
@@ -1072,7 +1069,6 @@ namespace vcpkg
 
             if (core_paragraph->builtin_baseline.has_value())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
                 return Strings::concat(
                     origin,
                     " was rejected because it uses builtin-baseline and the `",
@@ -1091,7 +1087,6 @@ namespace vcpkg
                                     return dependency.constraint.type != Versions::Constraint::Type::None;
                                 }))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-no-baseline", "defined");
                     return Strings::concat(
                         origin,
                         " was rejected because it uses \"version>=\" and does not have a \"builtin-baseline\".\n",
@@ -1100,7 +1095,6 @@ namespace vcpkg
 
                 if (!core_paragraph->overrides.empty())
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-no-baseline", "defined");
                     return Strings::concat(
                         origin,
                         " was rejected because it uses \"overrides\" and does not have a \"builtin-baseline\".\n",

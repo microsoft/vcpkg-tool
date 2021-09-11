@@ -6,7 +6,6 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.integrate.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/userconfig.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -414,12 +413,6 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                           "    '%s'\n",
                           TITLE,
                           script_path.generic_u8string());
-
-            {
-                auto locked_metrics = LockGuardPtr<Metrics>(g_metrics);
-                locked_metrics->track_property("error", "powershell script failed");
-                locked_metrics->track_property("title", TITLE);
-            }
         }
 
         Checks::exit_with_code(VCPKG_LINE_INFO, rc);

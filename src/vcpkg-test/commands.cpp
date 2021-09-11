@@ -2,7 +2,6 @@
 
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.h>
-#include <vcpkg/commands.upload-metrics.h>
 #include <vcpkg/commands.version.h>
 
 #include <stddef.h>

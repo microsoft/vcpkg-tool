@@ -3,7 +3,6 @@
 #include <vcpkg/commands.h>
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -31,7 +30,6 @@ namespace vcpkg
         if (!paths.is_valid_triplet(t))
         {
             print2(Color::error, "Error: invalid triplet: ", t, '\n');
-            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "invalid triplet: " + t.to_string());
             Help::help_topic_valid_triplet(paths);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }

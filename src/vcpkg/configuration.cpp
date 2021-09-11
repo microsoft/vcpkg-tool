@@ -2,7 +2,6 @@
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/configuration.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 namespace
@@ -74,8 +73,6 @@ namespace vcpkg
     {
         if (!flags.registries && registry_set.has_modifications())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_property(
-                "registries-error-registry-modification-without-feature-flag", "defined");
             vcpkg::printf(Color::warning,
                           "Warning: configuration specified the \"registries\" or \"default-registries\" field, but "
                           "the %s feature flag was not enabled.\n",

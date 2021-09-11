@@ -2,7 +2,6 @@
 #include <vcpkg/base/system.debug.h>
 
 #include <vcpkg/configuration.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -199,7 +198,6 @@ namespace vcpkg::PortFileProvider
                     }
                     else
                     {
-                        LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-version", "defined");
                         return maybe_path.error();
                     }
                 }

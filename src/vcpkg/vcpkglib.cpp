@@ -2,7 +2,6 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -110,12 +109,6 @@ namespace vcpkg
         if (lines->at(0).back() == '/')
         {
             return; // File already in the new format
-        }
-
-        if (!was_tracked)
-        {
-            was_tracked = true;
-            LockGuardPtr<Metrics>(g_metrics)->track_property("listfile", "update to new format");
         }
 
         // The files are sorted such that directories are placed just before the files they contain

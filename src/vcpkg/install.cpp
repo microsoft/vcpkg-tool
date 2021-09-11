@@ -14,7 +14,6 @@
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/install.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/remove.h>
 #include <vcpkg/tools.h>
@@ -831,7 +830,6 @@ namespace vcpkg::Install
             auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
             if (it_pkgsconfig != options.settings.end())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             const auto& manifest_path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO);
@@ -897,24 +895,10 @@ namespace vcpkg::Install
                 }
             }
 
-            if (std::any_of(dependencies.begin(), dependencies.end(), [](const Dependency& dep) {
-                    return dep.constraint.type != Versions::Constraint::Type::None;
-                }))
-            {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_version_constraint", "defined");
-            }
-
-            if (!manifest_scf.core_paragraph->overrides.empty())
-            {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_overrides", "defined");
-            }
-
             if (auto p_baseline = manifest_scf.core_paragraph->builtin_baseline.get())
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_baseline", "defined");
                 if (!is_git_commit_sha(*p_baseline))
                 {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                "Error: the top-level builtin-baseline (%s) was not a valid commit sha: "
                                                "expected 40 lowercase hexadecimal characters.\n%s\n",
@@ -1045,7 +1029,6 @@ namespace vcpkg::Install
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
             Build::compute_all_abis(paths, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
@@ -1207,7 +1190,5 @@ namespace vcpkg::Install
                                             ":",
                                             Hash::get_string_hash(version_as_string, Hash::Algorithm::Sha256));
         }
-
-        LockGuardPtr<Metrics>(g_metrics)->track_property("installplan_1", specs_string);
     }
 }

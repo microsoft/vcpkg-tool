@@ -9,6 +9,11 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
+#if defined(_WIN32)
+#pragma comment(lib, "winhttp")
+#endif
+
+
 namespace vcpkg::Downloads
 {
 #if defined(_WIN32)

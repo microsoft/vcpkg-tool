@@ -28,7 +28,6 @@
 #include <vcpkg/commands.search.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/commands.upgrade.h>
-#include <vcpkg/commands.upload-metrics.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
@@ -46,19 +45,12 @@ namespace vcpkg::Commands
         static const Contact::ContactCommand contact{};
         static const InitRegistry::InitRegistryCommand init_registry{};
         static const X_Download::XDownloadCommand xdownload{};
-#if defined(_WIN32)
-        static const UploadMetrics::UploadMetricsCommand upload_metrics{};
-#endif // defined(_WIN32)
 
         static std::vector<PackageNameAndFunction<const BasicCommand*>> t = {
             {"version", &version},
             {"contact", &contact},
             {"x-init-registry", &init_registry},
             {"x-download", &xdownload},
-
-#if defined(_WIN32)
-            {"x-upload-metrics", &upload_metrics},
-#endif // defined(_WIN32)
         };
         return t;
     }
