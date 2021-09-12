@@ -112,11 +112,8 @@ namespace vcpkg
             return; // File already in the new format
         }
 
-        if (!was_tracked)
-        {
-            was_tracked = true;
+        if (was_tracked)
             LockGuardPtr<Metrics>(g_metrics)->track_property("listfile", "update to new format");
-        }
 
         // The files are sorted such that directories are placed just before the files they contain
         // (They are not necessarily sorted alphabetically, e.g. libflac)
