@@ -220,8 +220,15 @@ static ExpectedS<Dependencies::ActionPlan> create_versioned_install_plan(
     const std::vector<DependencyOverride>& overrides,
     const PackageSpec& toplevel)
 {
-    return Dependencies::create_versioned_install_plan(
-        provider, bprovider, s_empty_mock_overlay, var_provider, deps, overrides, toplevel, Test::ARM_UWP);
+    return Dependencies::create_versioned_install_plan(provider,
+                                                       bprovider,
+                                                       s_empty_mock_overlay,
+                                                       var_provider,
+                                                       deps,
+                                                       overrides,
+                                                       toplevel,
+                                                       Test::ARM_UWP,
+                                                       Dependencies::SupportExpressionAction::Error);
 }
 
 namespace vcpkg::Dependencies
@@ -235,8 +242,15 @@ namespace vcpkg::Dependencies
         const std::vector<DependencyOverride>& overrides,
         const PackageSpec& toplevel)
     {
-        return vcpkg::Dependencies::create_versioned_install_plan(
-            provider, bprovider, oprovider, var_provider, deps, overrides, toplevel, Test::ARM_UWP);
+        return vcpkg::Dependencies::create_versioned_install_plan(provider,
+                                                                  bprovider,
+                                                                  oprovider,
+                                                                  var_provider,
+                                                                  deps,
+                                                                  overrides,
+                                                                  toplevel,
+                                                                  Test::ARM_UWP,
+                                                                  Dependencies::SupportExpressionAction::Error);
     }
 }
 

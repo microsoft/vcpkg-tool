@@ -248,8 +248,8 @@ namespace vcpkg::Dependencies
                          Triplet host_triplet);
             ~PackageGraph();
 
-            void install(Span<const FeatureSpec> specs);
-            void upgrade(Span<const PackageSpec> specs);
+            void install(Span<const FeatureSpec> specs, SupportExpressionAction support_expression_action);
+            void upgrade(Span<const PackageSpec> specs, SupportExpressionAction support_expression_action);
             void mark_user_requested(const PackageSpec& spec);
 
             ActionPlan serialize(Graphs::Randomizer* randomizer) const;
@@ -258,6 +258,7 @@ namespace vcpkg::Dependencies
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
+            std::vector<std::string> m_warnings;
         };
 
     }
@@ -760,7 +761,7 @@ namespace vcpkg::Dependencies
         {
             pgraph.mark_user_requested(spec.spec());
         }
-        pgraph.install(feature_specs);
+        pgraph.install(feature_specs, options.support_expression_action);
 
         auto res = pgraph.serialize(options.randomizer);
 
@@ -793,7 +794,7 @@ namespace vcpkg::Dependencies
     }
 
     /// The list of specs to install should already have default features expanded
-    void PackageGraph::install(Span<const FeatureSpec> specs)
+    void PackageGraph::install(Span<const FeatureSpec> specs, SupportExpressionAction support_expression_action)
     {
         // We batch resolving qualified dependencies, because it's an invocation of CMake which
         // takes ~150ms per call.
@@ -877,11 +878,18 @@ namespace vcpkg::Dependencies
                         if (!supports_expression->evaluate(
                                 m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
                         {
-                            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                                      "Error: %s[%s] is only supported on '%s'",
-                                                      spec.name(),
-                                                      spec.feature(),
-                                                      to_string(*supports_expression));
+                            const auto msg = Strings::format("%s[%s] is only supported on '%s'",
+                                                             spec.name(),
+                                                             spec.feature(),
+                                                             to_string(*supports_expression));
+                            if (support_expression_action == SupportExpressionAction::Error)
+                            {
+                                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: " + msg);
+                            }
+                            else
+                            {
+                                m_warnings.push_back("Warning: " + msg);
+                            }
                         }
                     }
                 }
@@ -944,7 +952,7 @@ namespace vcpkg::Dependencies
         }
     }
 
-    void PackageGraph::upgrade(Span<const PackageSpec> specs)
+    void PackageGraph::upgrade(Span<const PackageSpec> specs, SupportExpressionAction support_expression_action)
     {
         std::vector<FeatureSpec> reinstall_reqs;
 
@@ -953,7 +961,7 @@ namespace vcpkg::Dependencies
 
         Util::sort_unique_erase(reinstall_reqs);
 
-        install(reinstall_reqs);
+        install(reinstall_reqs, support_expression_action);
     }
 
     ActionPlan create_upgrade_plan(const PortFileProvider::PortFileProvider& port_provider,
@@ -964,7 +972,7 @@ namespace vcpkg::Dependencies
     {
         PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet);
 
-        pgraph.upgrade(specs);
+        pgraph.upgrade(specs, options.support_expression_action);
 
         return pgraph.serialize(options.randomizer);
     }
@@ -1081,7 +1089,7 @@ namespace vcpkg::Dependencies
                 plan.already_installed.emplace_back(InstalledPackageView(installed.ipv), p_cluster->request_type);
             }
         }
-
+        plan.warnings = m_warnings;
         return plan;
     }
 
@@ -1272,7 +1280,8 @@ namespace vcpkg::Dependencies
 
             void add_roots(View<Dependency> dep, const PackageSpec& toplevel);
 
-            ExpectedS<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel);
+            ExpectedS<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel,
+                                                        SupportExpressionAction support_expression_action);
 
         private:
             const IVersionedPortfileProvider& m_ver_provider;
@@ -1888,7 +1897,8 @@ namespace vcpkg::Dependencies
         // This function is called after all versioning constraints have been resolved. It is responsible for
         // serializing out the final execution graph and performing all final validations (such as all required
         // features being selected and present)
-        ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan(const PackageSpec& toplevel)
+        ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan(
+            const PackageSpec& toplevel, SupportExpressionAction support_expression_action)
         {
             if (m_errors.size() > 0)
             {
@@ -1906,10 +1916,11 @@ namespace vcpkg::Dependencies
             };
             std::vector<Frame> stack;
 
-            auto push = [&emitted, this, &stack](const PackageSpec& spec,
-                                                 const Versions::Version& new_ver,
-                                                 const PackageSpec& origin,
-                                                 View<std::string> features) -> Optional<std::string> {
+            auto push = [&emitted, this, &stack, support_expression_action, &ret](
+                            const PackageSpec& spec,
+                            const Versions::Version& new_ver,
+                            const PackageSpec& origin,
+                            View<std::string> features) -> Optional<std::string> {
                 auto&& node = m_graph[spec];
                 auto overlay = m_o_provider.get_control_file(spec.name());
                 auto over_it = m_overrides.find(spec.name());
@@ -1949,13 +1960,13 @@ namespace vcpkg::Dependencies
                     {
                         if (!supports_expr.evaluate(get_vars()))
                         {
-                            return Strings::concat("Error: ",
-                                                   spec,
-                                                   "@",
-                                                   new_ver,
-                                                   " is only supported on '",
-                                                   to_string(supports_expr),
-                                                   "'\n");
+                            const auto msg = Strings::concat(
+                                spec, "@", new_ver, " is only supported on '", to_string(supports_expr), "'\n");
+                            if (support_expression_action == SupportExpressionAction::Error)
+                            {
+                                return "Error: " + msg;
+                            }
+                            ret.warnings.emplace_back("Warning: " + msg);
                         }
                     }
                 }
@@ -1974,15 +1985,19 @@ namespace vcpkg::Dependencies
                     {
                         if (!supports_expr.evaluate(get_vars()))
                         {
-                            return Strings::concat("Error: ",
-                                                   spec,
-                                                   "@",
-                                                   new_ver,
-                                                   " The feature ",
-                                                   f,
-                                                   " is only supported on '",
-                                                   to_string(supports_expr),
-                                                   "'\n");
+                            const auto msg = Strings::concat(spec,
+                                                             "@",
+                                                             new_ver,
+                                                             " The feature ",
+                                                             f,
+                                                             " is only supported on '",
+                                                             to_string(supports_expr),
+                                                             "'\n");
+                            if (support_expression_action == SupportExpressionAction::Error)
+                            {
+                                return "Error: " + msg;
+                            }
+                            ret.warnings.emplace_back("Warning: " + msg);
                         }
                     }
                 }
@@ -2107,12 +2122,13 @@ namespace vcpkg::Dependencies
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
-                                                        Triplet host_triplet)
+                                                        Triplet host_triplet,
+                                                        SupportExpressionAction support_expression_action)
     {
         VersionedPackageGraph vpg(provider, bprovider, oprovider, var_provider, host_triplet);
         for (auto&& o : overrides)
             vpg.add_override(o.name, {o.version, o.port_version});
         vpg.add_roots(deps, toplevel);
-        return vpg.finalize_extract_plan(toplevel);
+        return vpg.finalize_extract_plan(toplevel, support_expression_action);
     }
 }

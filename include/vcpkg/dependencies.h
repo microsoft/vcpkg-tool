@@ -25,6 +25,12 @@ namespace vcpkg
 
 namespace vcpkg::Dependencies
 {
+    enum class SupportExpressionAction : bool
+    {
+        Warn,
+        Error,
+    };
+
     enum class RequestType
     {
         UNKNOWN,
@@ -118,6 +124,7 @@ namespace vcpkg::Dependencies
         std::vector<RemovePlanAction> remove_actions;
         std::vector<InstallPlanAction> already_installed;
         std::vector<InstallPlanAction> install_actions;
+        std::vector<std::string> warnings;
     };
 
     enum class ExportPlanType
@@ -159,10 +166,14 @@ namespace vcpkg::Dependencies
     struct CreateInstallPlanOptions
     {
         CreateInstallPlanOptions(Graphs::Randomizer* r, Triplet t) : randomizer(r), host_triplet(t) { }
-        CreateInstallPlanOptions(Triplet t) : host_triplet(t) { }
+        CreateInstallPlanOptions(Triplet t, SupportExpressionAction action = SupportExpressionAction::Error)
+            : host_triplet(t), support_expression_action(action)
+        {
+        }
 
         Graphs::Randomizer* randomizer = nullptr;
         Triplet host_triplet;
+        SupportExpressionAction support_expression_action;
     };
 
     std::vector<RemovePlanAction> create_remove_plan(const std::vector<PackageSpec>& specs,
@@ -201,7 +212,8 @@ namespace vcpkg::Dependencies
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
-                                                        Triplet host_triplet);
+                                                        Triplet host_triplet,
+                                                        SupportExpressionAction support_expression_action);
 
     void print_plan(const ActionPlan& action_plan, const bool is_recursive = true, const Path& builtin_ports_dir = {});
 }
