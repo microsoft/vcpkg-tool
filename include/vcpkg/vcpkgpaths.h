@@ -13,6 +13,7 @@
 #include <vcpkg/base/lazy.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 namespace vcpkg
@@ -136,6 +137,11 @@ namespace vcpkg
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedS<std::string> git_show(const std::string& treeish, const Path& dot_git_dir) const;
         ExpectedS<std::string> git_describe_head() const;
+
+        ExitCodeAndOutput git_commit(const Path& dot_git_dir,
+                                     std::vector<Path>&& files,
+                                     const std::string& message,
+                                     bool amend) const;
 
         const Downloads::DownloadManager& get_download_manager() const;
 

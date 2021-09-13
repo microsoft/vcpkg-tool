@@ -13,6 +13,8 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versions.h>
 
+#include <optional>
+
 using namespace vcpkg;
 
 namespace
@@ -254,20 +256,29 @@ namespace vcpkg::Commands::AddVersion
     static constexpr StringLiteral OPTION_ALL = "all";
     static constexpr StringLiteral OPTION_OVERWRITE_VERSION = "overwrite-version";
     static constexpr StringLiteral OPTION_SKIP_FORMATTING_CHECK = "skip-formatting-check";
+    static constexpr StringLiteral OPTION_COMMIT = "commit";
+    static constexpr StringLiteral OPTION_COMMIT_AMEND = "amend";
+    static constexpr StringLiteral OPTION_COMMIT_MESSAGE = "commit-message";
     static constexpr StringLiteral OPTION_VERBOSE = "verbose";
 
     const CommandSwitch COMMAND_SWITCHES[] = {
         {OPTION_ALL, "Process versions for all ports."},
         {OPTION_OVERWRITE_VERSION, "Overwrite `git-tree` of an existing version."},
         {OPTION_SKIP_FORMATTING_CHECK, "Skips the formatting check of vcpkg.json files."},
+        {OPTION_COMMIT, "Commits the results."},
+        {OPTION_COMMIT_AMEND, "Amend the result to the last commit instead of creating a new one."},
         {OPTION_VERBOSE, "Print success messages instead of just errors."},
+    };
+
+    const CommandSetting COMMAND_SETTINGS[] = {
+        {OPTION_COMMIT_MESSAGE, "The commit message when creating a new commit."},
     };
 
     const CommandStructure COMMAND_STRUCTURE{
         create_example_string(R"###(x-add-version <port name>)###"),
         0,
         1,
-        {{COMMAND_SWITCHES}, {}, {}},
+        {{COMMAND_SWITCHES}, {COMMAND_SETTINGS}, {}},
         nullptr,
     };
 
@@ -278,6 +289,29 @@ namespace vcpkg::Commands::AddVersion
         const bool overwrite_version = Util::Sets::contains(parsed_args.switches, OPTION_OVERWRITE_VERSION);
         const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_FORMATTING_CHECK);
         const bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
+        const bool commit = Util::Sets::contains(parsed_args.switches, OPTION_COMMIT);
+        const bool amend = Util::Sets::contains(parsed_args.switches, OPTION_COMMIT_AMEND);
+
+        std::optional<std::string> commit_message;
+        const auto iter_commit_message = parsed_args.settings.find(OPTION_COMMIT_MESSAGE);
+        if (iter_commit_message != parsed_args.settings.end())
+        {
+            commit_message.emplace(iter_commit_message->second);
+            if (commit_message.value().empty())
+            {
+                print2(Color::error, "Error: The specified commit message must be not empty.\n.");
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
+        if ((amend || commit_message) && !commit)
+        {
+            printf(Color::warning,
+                   "Warning: `--%s` or `--%s` was specified, assuming `--%s`\n",
+                   OPTION_COMMIT_AMEND,
+                   OPTION_COMMIT_MESSAGE,
+                   OPTION_COMMIT);
+        }
 
         auto& fs = paths.get_filesystem();
         auto baseline_path = paths.builtin_registry_versions / "baseline.json";
@@ -327,6 +361,7 @@ namespace vcpkg::Commands::AddVersion
         // Get tree-ish from local repository state.
         auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
         auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
+        std::vector<Path> updated_files;
 
         for (auto&& port_name : port_names)
         {
@@ -379,9 +414,24 @@ namespace vcpkg::Commands::AddVersion
 
             char prefix[] = {port_name[0], '-', '\0'};
             auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
+            updated_files.push_back(port_versions_path);
             update_version_db_file(
                 paths, port_name, schemed_version, git_tree, port_versions_path, overwrite_version, verbose, add_all);
             update_baseline_version(paths, port_name, schemed_version.versiont, baseline_path, baseline_map, verbose);
+        }
+
+        if (commit && !updated_files.empty())
+        {
+            updated_files.push_back(baseline_path);
+            const auto result = paths.git_commit(paths.root / ".git",
+                                                 std::move(updated_files),
+                                                 commit_message.value_or(amend ? "" : "Add version files"),
+                                                 amend);
+            if (result.exit_code != 0)
+            {
+                printf(Color::error, "Error: Failed to commit the changes. The git output is: %s\n", result.output);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }

@@ -1684,6 +1684,17 @@ namespace vcpkg
 
         return result;
     }
+    Path Filesystem::relative(LineInfo li, const Path& file, const Path& base) const
+    {
+        std::error_code ec;
+        const auto result = this->relative(file, base, ec);
+        if (ec)
+        {
+            Checks::exit_with_message(li, "Error getting relative path of %s to base %s: %s", file, base, ec.message());
+        }
+
+        return result;
+    }
 
     Path Filesystem::almost_canonical(const Path& target, LineInfo li) const
     {
@@ -2892,6 +2903,11 @@ namespace vcpkg
                 return std::move(current_path) / target;
             }
 #endif // ^^^ !_WIN32
+        }
+
+        virtual Path relative(const Path& file, const Path& base, std::error_code& ec) const override
+        {
+            return from_stdfs_path(stdfs::relative(to_stdfs_path(file), to_stdfs_path(base), ec));
         }
 
         virtual Path almost_canonical(const Path& target, std::error_code& ec) const override
