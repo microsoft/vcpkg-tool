@@ -228,7 +228,7 @@ static ExpectedS<Dependencies::ActionPlan> create_versioned_install_plan(
                                                        overrides,
                                                        toplevel,
                                                        Test::ARM_UWP,
-                                                       Dependencies::SupportExpressionAction::Error);
+                                                       Dependencies::UnsupportedPortAction::Error);
 }
 
 namespace vcpkg::Dependencies
@@ -250,7 +250,7 @@ namespace vcpkg::Dependencies
                                                                   overrides,
                                                                   toplevel,
                                                                   Test::ARM_UWP,
-                                                                  Dependencies::SupportExpressionAction::Error);
+                                                                  Dependencies::UnsupportedPortAction::Error);
     }
 }
 

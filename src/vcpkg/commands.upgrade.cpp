@@ -22,13 +22,12 @@ namespace vcpkg::Commands::Upgrade
 
     static constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
     static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
-    static constexpr StringLiteral OPTION_ONLY_WARN_UNSUPPORTED = "only-warn-unsupported";
+    static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
     static constexpr std::array<CommandSwitch, 3> INSTALL_SWITCHES = {{
         {OPTION_NO_DRY_RUN, "Actually upgrade"},
         {OPTION_KEEP_GOING, "Continue installing packages on failure"},
-        {OPTION_ONLY_WARN_UNSUPPORTED,
-         "Only issue a warning if a port or feature is unsupported regarding to support expressions"},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -55,9 +54,9 @@ namespace vcpkg::Commands::Upgrade
 
         const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
         const KeepGoing keep_going = to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING));
-        const auto support_expression_action = Util::Sets::contains(options.switches, OPTION_ONLY_WARN_UNSUPPORTED)
-                                                   ? Dependencies::SupportExpressionAction::Warn
-                                                   : Dependencies::SupportExpressionAction::Error;
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+                                                 ? Dependencies::UnsupportedPortAction::Warn
+                                                 : Dependencies::UnsupportedPortAction::Error;
 
         BinaryCache binary_cache{args};
         StatusParagraphs status_db = database_load_check(paths);
@@ -94,7 +93,7 @@ namespace vcpkg::Commands::Upgrade
                 var_provider,
                 Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
                 status_db,
-                {host_triplet, support_expression_action});
+                {host_triplet, unsupported_port_action});
         }
         else
         {
@@ -172,7 +171,7 @@ namespace vcpkg::Commands::Upgrade
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
             action_plan = Dependencies::create_upgrade_plan(
-                provider, var_provider, to_upgrade, status_db, {host_triplet, support_expression_action});
+                provider, var_provider, to_upgrade, status_db, {host_triplet, unsupported_port_action});
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());

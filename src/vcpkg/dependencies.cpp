@@ -248,8 +248,8 @@ namespace vcpkg::Dependencies
                          Triplet host_triplet);
             ~PackageGraph();
 
-            void install(Span<const FeatureSpec> specs, SupportExpressionAction support_expression_action);
-            void upgrade(Span<const PackageSpec> specs, SupportExpressionAction support_expression_action);
+            void install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action);
+            void upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action);
             void mark_user_requested(const PackageSpec& spec);
 
             ActionPlan serialize(Graphs::Randomizer* randomizer) const;
@@ -761,7 +761,7 @@ namespace vcpkg::Dependencies
         {
             pgraph.mark_user_requested(spec.spec());
         }
-        pgraph.install(feature_specs, options.support_expression_action);
+        pgraph.install(feature_specs, options.unsupported_port_action);
 
         auto res = pgraph.serialize(options.randomizer);
 
@@ -794,7 +794,7 @@ namespace vcpkg::Dependencies
     }
 
     /// The list of specs to install should already have default features expanded
-    void PackageGraph::install(Span<const FeatureSpec> specs, SupportExpressionAction support_expression_action)
+    void PackageGraph::install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action)
     {
         // We batch resolving qualified dependencies, because it's an invocation of CMake which
         // takes ~150ms per call.
@@ -882,7 +882,7 @@ namespace vcpkg::Dependencies
                                                              spec.name(),
                                                              spec.feature(),
                                                              to_string(*supports_expression));
-                            if (support_expression_action == SupportExpressionAction::Error)
+                            if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
                                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: " + msg);
                             }
@@ -952,7 +952,7 @@ namespace vcpkg::Dependencies
         }
     }
 
-    void PackageGraph::upgrade(Span<const PackageSpec> specs, SupportExpressionAction support_expression_action)
+    void PackageGraph::upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action)
     {
         std::vector<FeatureSpec> reinstall_reqs;
 
@@ -961,7 +961,7 @@ namespace vcpkg::Dependencies
 
         Util::sort_unique_erase(reinstall_reqs);
 
-        install(reinstall_reqs, support_expression_action);
+        install(reinstall_reqs, unsupported_port_action);
     }
 
     ActionPlan create_upgrade_plan(const PortFileProvider::PortFileProvider& port_provider,
@@ -972,7 +972,7 @@ namespace vcpkg::Dependencies
     {
         PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet);
 
-        pgraph.upgrade(specs, options.support_expression_action);
+        pgraph.upgrade(specs, options.unsupported_port_action);
 
         return pgraph.serialize(options.randomizer);
     }
@@ -1281,7 +1281,7 @@ namespace vcpkg::Dependencies
             void add_roots(View<Dependency> dep, const PackageSpec& toplevel);
 
             ExpectedS<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel,
-                                                        SupportExpressionAction support_expression_action);
+                                                        UnsupportedPortAction unsupported_port_action);
 
         private:
             const IVersionedPortfileProvider& m_ver_provider;
@@ -1898,7 +1898,7 @@ namespace vcpkg::Dependencies
         // serializing out the final execution graph and performing all final validations (such as all required
         // features being selected and present)
         ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan(
-            const PackageSpec& toplevel, SupportExpressionAction support_expression_action)
+            const PackageSpec& toplevel, UnsupportedPortAction unsupported_port_action)
         {
             if (m_errors.size() > 0)
             {
@@ -1916,7 +1916,7 @@ namespace vcpkg::Dependencies
             };
             std::vector<Frame> stack;
 
-            auto push = [&emitted, this, &stack, support_expression_action, &ret](
+            auto push = [&emitted, this, &stack, unsupported_port_action, &ret](
                             const PackageSpec& spec,
                             const Versions::Version& new_ver,
                             const PackageSpec& origin,
@@ -1962,7 +1962,7 @@ namespace vcpkg::Dependencies
                         {
                             const auto msg = Strings::concat(
                                 spec, "@", new_ver, " is only supported on '", to_string(supports_expr), "'\n");
-                            if (support_expression_action == SupportExpressionAction::Error)
+                            if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
                                 return "Error: " + msg;
                             }
@@ -1993,7 +1993,7 @@ namespace vcpkg::Dependencies
                                                              " is only supported on '",
                                                              to_string(supports_expr),
                                                              "'\n");
-                            if (support_expression_action == SupportExpressionAction::Error)
+                            if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
                                 return "Error: " + msg;
                             }
@@ -2123,12 +2123,12 @@ namespace vcpkg::Dependencies
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
                                                         Triplet host_triplet,
-                                                        SupportExpressionAction support_expression_action)
+                                                        UnsupportedPortAction unsupported_port_action)
     {
         VersionedPackageGraph vpg(provider, bprovider, oprovider, var_provider, host_triplet);
         for (auto&& o : overrides)
             vpg.add_override(o.name, {o.version, o.port_version});
         vpg.add_roots(deps, toplevel);
-        return vpg.finalize_extract_plan(toplevel, support_expression_action);
+        return vpg.finalize_extract_plan(toplevel, unsupported_port_action);
     }
 }

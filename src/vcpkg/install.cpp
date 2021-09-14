@@ -524,7 +524,7 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_MANIFEST_NO_DEFAULT_FEATURES = "x-no-default-features";
     static constexpr StringLiteral OPTION_MANIFEST_FEATURE = "x-feature";
     static constexpr StringLiteral OPTION_PROHIBIT_BACKCOMPAT_FEATURES = "x-prohibit-backcompat-features";
-    static constexpr StringLiteral OPTION_ONLY_WARN_UNSUPPORTED = "only-warn-unsupported";
+    static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
     static constexpr std::array<CommandSwitch, 15> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
@@ -543,8 +543,7 @@ namespace vcpkg::Install
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES,
          "(experimental) Fail install if a package attempts to use a deprecated feature"},
-        {OPTION_ONLY_WARN_UNSUPPORTED,
-         "Only issue a warning if a port or feature is unsupported regarding to support expressions"},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
     static constexpr std::array<CommandSwitch, 15> MANIFEST_INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
@@ -561,8 +560,7 @@ namespace vcpkg::Install
         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_MANIFEST_NO_DEFAULT_FEATURES, "Don't install the default features from the manifest."},
-        {OPTION_ONLY_WARN_UNSUPPORTED,
-         "Only issue a warning if a port or feature is unsupported regarding to support expressions"},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
@@ -801,9 +799,9 @@ namespace vcpkg::Install
             to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads);
         const bool prohibit_backcompat_features =
             Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES));
-        const auto support_expression_action = Util::Sets::contains(options.switches, OPTION_ONLY_WARN_UNSUPPORTED)
-                                                   ? Dependencies::SupportExpressionAction::Warn
-                                                   : Dependencies::SupportExpressionAction::Error;
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+                                                 ? Dependencies::UnsupportedPortAction::Warn
+                                                 : Dependencies::UnsupportedPortAction::Error;
 
         BinaryCache binary_cache;
         if (!only_downloads)
@@ -954,7 +952,7 @@ namespace vcpkg::Install
                                                                             manifest_scf.core_paragraph->overrides,
                                                                             toplevel,
                                                                             host_triplet,
-                                                                            support_expression_action)
+                                                                            unsupported_port_action)
                                     .value_or_exit(VCPKG_LINE_INFO);
             for (const auto& warning : install_plan.warnings)
             {
@@ -1002,7 +1000,7 @@ namespace vcpkg::Install
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
         auto action_plan = Dependencies::create_feature_install_plan(
-            provider, var_provider, specs, status_db, {host_triplet, support_expression_action});
+            provider, var_provider, specs, status_db, {host_triplet, unsupported_port_action});
 
         for (const auto& warning : action_plan.warnings)
         {
