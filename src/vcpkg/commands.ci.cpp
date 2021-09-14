@@ -92,13 +92,15 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
+    static constexpr StringLiteral OPTION_OUTPUT_USAGE = "output-usage";
 
-    static constexpr std::array<CommandSetting, 5> CI_SETTINGS = {
+    static constexpr std::array<CommandSetting, 6> CI_SETTINGS = {
         {{OPTION_EXCLUDE, "Comma separated list of ports to skip"},
          {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
          {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
          {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
-         {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"}}};
+         {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
+         {OPTION_OUTPUT_USAGE, "File to output all CMake usage and header information"}}};
 
     static constexpr std::array<CommandSwitch, 2> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
@@ -396,6 +398,63 @@ namespace vcpkg::Commands::CI
         return ret;
     }
 
+    static Json::Array extract_header_list(const BinaryParagraph& bpgh, const VcpkgPaths& paths)
+    {
+        auto& fs = paths.get_filesystem();
+        std::error_code ec;
+        auto file_list = fs.read_lines(paths.listfile_path(bpgh), ec);
+        if (!ec)
+        {
+            Json::Array headers_list;
+            auto include_prefix = bpgh.spec.triplet().canonical_name() + "/include/";
+
+            for (auto&& file : file_list)
+            {
+                std::string header_file_ext = ".h";
+                size_t ext_len = header_file_ext.length();
+                size_t file_len = file.length();
+                if (file_len > ext_len && file.compare(file_len - ext_len, ext_len, header_file_ext) == 0)
+                {
+                    auto prefix = file.find(include_prefix);
+                    Checks::check_exit(VCPKG_LINE_INFO, prefix != std::string::npos);
+
+                    auto header = file.substr(include_prefix.length());
+                    headers_list.push_back(Json::Value::string(header));
+                }
+            }
+            return std::move(headers_list);
+        }
+        Checks::exit_with_message(VCPKG_LINE_INFO,
+                                  Strings::format("Could not parse listfile for %s on %s",
+                                                  bpgh.spec.name(),
+                                                  bpgh.spec.triplet().canonical_name()));
+    }
+
+    static Json::Array extract_usage_info_to_json(const Install::InstallSummary& summary,
+                                                  const VcpkgPaths& paths,
+                                                  const std::vector<StringLiteral>& action_states)
+    {
+        // summary.results and action_states represent the same list of install actions
+        Checks::check_exit(VCPKG_LINE_INFO, summary.results.size() == action_states.size());
+
+        Json::Array arr;
+        for (size_t idx = 0; idx < summary.results.size(); idx++)
+        {
+            auto bpgh = summary.results.at(idx).get_binary_paragraph();
+            if (!bpgh) continue;
+
+            Json::Object obj;
+            Install::CMakeUsageInfo info = Install::get_cmake_usage(*bpgh, paths);
+            obj.insert("name", Json::Value::string(bpgh->spec.name()));
+            obj.insert("triplet", Json::Value::string(bpgh->spec.triplet().canonical_name()));
+            obj.insert("cmake-usage", Json::Value::string(info.message));
+            obj.insert("state", Json::Value::string(action_states[idx]));
+            obj.insert("header-lists", std::move(extract_header_list(*bpgh, paths)));
+            arr.push_back(std::move(obj));
+        }
+        return std::move(arr);
+    }
+
     // This algorithm reduces an action plan to only unknown actions and their dependencies
     static void reduce_action_plan(Dependencies::ActionPlan& action_plan,
                                    const std::map<PackageSpec, Build::BuildResult>& known)
@@ -554,6 +613,31 @@ namespace vcpkg::Commands::CI
             }
         }
 
+        StatusParagraphs status_db = database_load_check(paths);
+
+        auto it_output_usage = settings.find(OPTION_OUTPUT_USAGE);
+        if (it_output_usage != settings.end())
+        {
+            const Path output_header_json = paths.original_cwd / it_output_usage->second;
+
+            auto summary = Install::perform(args,
+                                            action_plan,
+                                            Install::KeepGoing::YES,
+                                            paths,
+                                            status_db,
+                                            binary_cache,
+                                            build_logs_recorder,
+                                            var_provider);
+
+            Checks::check_exit(VCPKG_LINE_INFO, summary.results.size() == action_plan.install_actions.size());
+            vcpkg::Json::Array usage_info =
+                extract_usage_info_to_json(summary, paths, split_specs->action_state_string);
+
+            vcpkg::printf("Writing library usage information to %s\n", output_header_json);
+            filesystem.write_contents(
+                output_header_json, Json::stringify(usage_info, Json::JsonStyle{}), VCPKG_LINE_INFO);
+        }
+
         reduce_action_plan(action_plan, split_specs->known);
 
         vcpkg::printf("Time to determine pass/fail: %s\n", timer.elapsed());
@@ -564,8 +648,6 @@ namespace vcpkg::Commands::CI
         }
         else
         {
-            StatusParagraphs status_db = database_load_check(paths);
-
             auto collection_timer = ElapsedTimer::create_started();
             auto summary = Install::perform(args,
                                             action_plan,
