@@ -2075,10 +2075,12 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
              "source changes or disappears.");
     tbl.blank();
     tbl.blank();
-    tbl.text(Strings::concat(
-        "Asset caching can be configured by setting the environment variable ",
-        VcpkgCmdArguments::ASSET_SOURCES_ENV,
-        " to a semicolon-delimited list of source strings. Characters can be escaped using backtick (`)."));
+    tbl.text(Strings::concat("Asset caching can be configured either by setting the environment variable ",
+                             VcpkgCmdArguments::ASSET_SOURCES_ENV,
+                             " to a semicolon-delimited list of source strings or by passing a sequence of `--",
+                             VcpkgCmdArguments::ASSET_SOURCES_ARG,
+                             "=<source>` command line options. Command line sources are interpreted after environment "
+                             "sources. Commas, semicolons, and backticks can be escaped using backtick (`)."));
     tbl.blank();
     tbl.blank();
     tbl.header("Valid source strings");

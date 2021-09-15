@@ -1,4 +1,10 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.15) # 3.15 for MSVC_RUNTIME_LIBRARY, removing default warning flags
+
+cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0092 NEW)
+if(NOT CMAKE_MSVC_RUNTIME_LIBRARY)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 # ===============
 # === Options ===
@@ -25,9 +31,7 @@ endif()
 
 set(LANGUAGES "CXX")
 if(VCPKG_BUILD_TLS12_DOWNLOADER)
-    # 3.16 for MSVC_RUNTIME_LIBRARY
     list(APPEND LANGUAGES "C")
-    cmake_minimum_required(VERSION 3.16)
 endif()
 
 project(vcpkg
@@ -88,13 +92,12 @@ if(NOT DEFINED VCPKG_VERSION OR VCPKG_VERSION STREQUAL "")
     set(VCPKG_VERSION "unknownhash")
 endif()
 
-set(VCPKG_BASE_VERSION "2021-08-12")
+set(VCPKG_BASE_VERSION "2021-09-10")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
 if(MSVC)
-    string(REGEX REPLACE "[-/]W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi /guard:cf")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DEBUG /debugtype:cv,fixup /guard:cf")

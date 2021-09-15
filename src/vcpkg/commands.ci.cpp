@@ -93,14 +93,17 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     static constexpr StringLiteral OPTION_OUTPUT_USAGE = "output-usage";
+    static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
-    static constexpr std::array<CommandSetting, 6> CI_SETTINGS = {
+    static constexpr std::array<CommandSetting, 7> CI_SETTINGS = {
         {{OPTION_EXCLUDE, "Comma separated list of ports to skip"},
          {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
          {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
          {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
          {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
-         {OPTION_OUTPUT_USAGE, "File to output all CMake usage and header information"}}};
+         {OPTION_OUTPUT_USAGE, "File to output all CMake usage and header information"},
+         {OPTION_SKIPPED_CASCADE_COUNT,
+          "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
 
     static constexpr std::array<CommandSwitch, 2> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
@@ -280,6 +283,7 @@ namespace vcpkg::Commands::CI
         std::map<PackageSpec, std::string> abi_map;
         // action_state_string.size() will equal install_actions.size()
         std::vector<StringLiteral> action_state_string;
+        int cascade_count = 0;
     };
 
     static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
@@ -382,6 +386,7 @@ namespace vcpkg::Commands::CI
                                   [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
             {
                 ret->action_state_string.push_back("cascade");
+                ret->cascade_count++;
                 ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
                 will_fail.emplace(p->spec);
             }
@@ -484,11 +489,12 @@ namespace vcpkg::Commands::CI
         });
     }
 
-    static std::set<std::string> parse_exclusions(const ParsedArguments& options, StringLiteral opt)
+    static std::set<std::string> parse_exclusions(const std::unordered_map<std::string, std::string>& settings,
+                                                  StringLiteral opt)
     {
         std::set<std::string> exclusions_set;
-        auto it_exclusions = options.settings.find(opt);
-        if (it_exclusions != options.settings.end())
+        auto it_exclusions = settings.find(opt);
+        if (it_exclusions != settings.end())
         {
             auto exclusions = Strings::split(it_exclusions->second, ',');
             exclusions_set.insert(std::make_move_iterator(exclusions.begin()),
@@ -496,6 +502,23 @@ namespace vcpkg::Commands::CI
         }
 
         return exclusions_set;
+    }
+
+    static Optional<int> parse_skipped_cascade_count(const std::unordered_map<std::string, std::string>& settings)
+    {
+        auto opt = settings.find(OPTION_SKIPPED_CASCADE_COUNT);
+        if (opt == settings.end())
+        {
+            return nullopt;
+        }
+
+        auto result = Strings::strto<int>(opt->second);
+        Checks::check_exit(VCPKG_LINE_INFO, result.has_value(), "%s must be an integer", OPTION_SKIPPED_CASCADE_COUNT);
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           result.value_or_exit(VCPKG_LINE_INFO) >= 0,
+                           "%s must be non-negative",
+                           OPTION_SKIPPED_CASCADE_COUNT);
+        return result;
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet, Triplet host_triplet)
@@ -508,12 +531,16 @@ namespace vcpkg::Commands::CI
 
         BinaryCache binary_cache{args};
         Triplet target_triplet = Triplet::from_canonical_name(std::string(args.command_arguments[0]));
+
         ExclusionPredicate is_excluded{
-            parse_exclusions(options, OPTION_EXCLUDE),
-            parse_exclusions(options, OPTION_HOST_EXCLUDE),
+            parse_exclusions(settings, OPTION_EXCLUDE),
+            parse_exclusions(settings, OPTION_HOST_EXCLUDE),
             target_triplet,
             host_triplet,
         };
+
+        auto skipped_cascade_count = parse_skipped_cascade_count(settings);
+
 
         const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
@@ -641,6 +668,15 @@ namespace vcpkg::Commands::CI
         reduce_action_plan(action_plan, split_specs->known);
 
         vcpkg::printf("Time to determine pass/fail: %s\n", timer.elapsed());
+
+        if (auto skipped_cascade_count_ptr = skipped_cascade_count.get())
+        {
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               *skipped_cascade_count_ptr == split_specs->cascade_count,
+                               "Expected %d cascaded failures, but there were %d cascaded failures.",
+                               *skipped_cascade_count_ptr,
+                               split_specs->cascade_count);
+        }
 
         if (is_dry_run)
         {
