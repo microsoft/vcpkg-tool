@@ -427,7 +427,7 @@ namespace vcpkg::Commands::CI
                     headers_list.push_back(Json::Value::string(header));
                 }
             }
-            return std::move(headers_list);
+            return headers_list;
         }
         Checks::exit_with_message(VCPKG_LINE_INFO,
                                   Strings::format("Could not parse listfile for %s on %s",
@@ -457,7 +457,7 @@ namespace vcpkg::Commands::CI
             obj.insert("header-lists", std::move(extract_header_list(*bpgh, paths)));
             arr.push_back(std::move(obj));
         }
-        return std::move(arr);
+        return arr;
     }
 
     // This algorithm reduces an action plan to only unknown actions and their dependencies
@@ -540,7 +540,6 @@ namespace vcpkg::Commands::CI
         };
 
         auto skipped_cascade_count = parse_skipped_cascade_count(settings);
-
 
         const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
