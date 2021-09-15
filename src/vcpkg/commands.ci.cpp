@@ -454,7 +454,7 @@ namespace vcpkg::Commands::CI
             obj.insert("triplet", Json::Value::string(bpgh->spec.triplet().canonical_name()));
             obj.insert("cmake-usage", Json::Value::string(info.message));
             obj.insert("state", Json::Value::string(action_states[idx]));
-            obj.insert("header-lists", std::move(extract_header_list(*bpgh, paths)));
+            obj.insert("header-lists", extract_header_list(*bpgh, paths));
             arr.push_back(std::move(obj));
         }
         return arr;
