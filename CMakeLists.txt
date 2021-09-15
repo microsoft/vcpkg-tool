@@ -26,6 +26,8 @@ option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by de
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
 set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
 
+option(VCPKG_DEPENDENCY_EXTERNAL_FMT "Use an external version of the fmt library" OFF)
+
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
     "BUILD_TESTING" OFF)
 
@@ -121,6 +123,23 @@ endif()
 
 include(GNUInstallDirs)
 
+# ====================
+# === Dependencies ===
+# ====================
+
+include(FetchContent)
+FetchContent_Declare(
+    fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt
+    GIT_TAG d141cdbeb0fb422a3fb7173b285fd38e0d1772dc # 8.0.1
+)
+
+if(VCPKG_DEPENDENCY_EXTERNAL_FMT)
+    find_package(fmt REQUIRED)
+else()
+    FetchContent_MakeAvailable(fmt)
+endif()
+
 # ===============
 # === Targets ===
 # ===============
@@ -143,7 +162,11 @@ target_compile_definitions(vcpkglib PUBLIC
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-target_link_libraries(vcpkglib PRIVATE Threads::Threads)
+target_link_libraries(vcpkglib
+    PRIVATE
+        Threads::Threads
+        fmt::fmt
+)
 
 if(MSVC)
     get_target_property(_srcs vcpkglib SOURCES)
@@ -174,7 +197,7 @@ endif()
 # === Target: vcpkg ===
 
 add_executable(vcpkg ${VCPKG_SOURCES})
-target_link_libraries(vcpkg PRIVATE vcpkglib)
+target_link_libraries(vcpkg PRIVATE vcpkglib fmt::fmt)
 vcpkg_target_add_warning_options(vcpkg)
 if(VCPKG_ADD_SOURCELINK)
     if(VCPKG_VERSION STREQUAL "unknownhash")
@@ -198,7 +221,7 @@ if (BUILD_TESTING)
         ${VCPKG_TEST_SOURCES}
         ${VCPKG_TEST_INCLUDES}
     )
-    target_link_libraries(vcpkg-test PRIVATE vcpkglib)
+    target_link_libraries(vcpkg-test PRIVATE vcpkglib fmt::fmt)
     vcpkg_target_add_warning_options(vcpkg-test)
 
     add_test(NAME default COMMAND vcpkg-test --order rand --rng-seed time)
