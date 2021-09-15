@@ -594,13 +594,19 @@ namespace vcpkg::Install
         nullptr,
     };
 
-    void print_usage_information(const BinaryParagraph& bpgh, const VcpkgPaths& paths)
+    void print_usage_information(const BinaryParagraph& bpgh,
+                                 std::set<std::string>& printed_usages,
+                                 const VcpkgPaths& paths)
     {
-        auto usage = get_cmake_usage(bpgh, paths);
-
-        if (!usage.message.empty())
+        auto message = get_cmake_usage(bpgh, paths).message;
+        if (!message.empty())
         {
-            print2(usage.message);
+            auto existing = printed_usages.lower_bound(message);
+            if (existing == printed_usages.end() || *existing != message)
+            {
+                print2(message);
+                printed_usages.insert(existing, std::move(message));
+            }
         }
     }
 
@@ -705,7 +711,7 @@ namespace vcpkg::Install
 
                     const auto name = cmakeify(bpgh.spec.name());
                     auto msg = Strings::concat(
-                        "The package ", bpgh.spec, " is header only and can be used from CMake via:\n\n");
+                        "The package ", bpgh.spec.name(), " is header only and can be used from CMake via:\n\n");
                     Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
                     Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
 
@@ -714,7 +720,7 @@ namespace vcpkg::Install
             }
             else
             {
-                auto msg = Strings::concat("The package ", bpgh.spec, " provides CMake targets:\n\n");
+                auto msg = Strings::concat("The package ", bpgh.spec.name(), " provides CMake targets:\n\n");
 
                 for (auto&& library_target_pair : library_targets)
                 {
@@ -1084,13 +1090,14 @@ namespace vcpkg::Install
             fs.write_contents(it_xunit->second, xunit_doc, VCPKG_LINE_INFO);
         }
 
+        std::set<std::string> printed_usages;
         for (auto&& result : summary.results)
         {
             if (!result.action) continue;
             if (result.action->request_type != RequestType::USER_REQUESTED) continue;
             auto bpgh = result.get_binary_paragraph();
             if (!bpgh) continue;
-            print_usage_information(*bpgh, paths);
+            print_usage_information(*bpgh, printed_usages, paths);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

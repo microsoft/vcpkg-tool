@@ -287,6 +287,7 @@ namespace vcpkg
                     {SCRIPTS_ROOT_DIR_ARG, &VcpkgCmdArguments::scripts_root_dir},
                     {BUILTIN_PORTS_ROOT_DIR_ARG, &VcpkgCmdArguments::builtin_ports_root_dir},
                     {BUILTIN_REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::builtin_registry_versions_dir},
+                    {ASSET_SOURCES_ARG, &VcpkgCmdArguments::asset_sources_template_arg},
                 };
 
             constexpr static std::pair<StringView, std::vector<std::string> VcpkgCmdArguments::*>
@@ -569,6 +570,8 @@ namespace vcpkg
                      "Open up a port for editing (uses " + format_environment_variable("EDITOR") + ", default 'code')");
         table.format("vcpkg create <pkg> <url> [archivename]", "Create a new package");
         table.format("vcpkg x-init-registry <path>", "Initializes a registry in the directory <path>");
+        table.format("vcpkg format-manifest --all",
+                     "Formats all vcpkg.json files. Run this before committing to vcpkg.");
         table.format("vcpkg owns <pat>", "Search for files in installed packages");
         table.format("vcpkg depend-info <pkg>...", "Display a list of dependencies for packages");
         table.format("vcpkg env", "Creates a clean shell environment for development or compiling");
@@ -627,6 +630,8 @@ namespace vcpkg
         table.format("", "(also: " + format_environment_variable("VCPKG_OVERLAY_TRIPLETS") + ')');
         table.format(opt(BINARY_SOURCES_ARG, "=", "<path>"),
                      "Add sources for binary caching. See 'vcpkg help binarycaching'");
+        table.format(opt(ASSET_SOURCES_ARG, "=", "<path>"),
+                     "Add sources for asset caching. See 'vcpkg help assetcaching'");
         table.format(opt(DOWNLOADS_ROOT_DIR_ARG, "=", "<path>"), "Specify the downloads root directory");
         table.format("", "(default: " + format_environment_variable("VCPKG_DOWNLOADS") + ')');
         table.format(opt(VCPKG_ROOT_DIR_ARG, "=", "<path>"), "Specify the vcpkg root directory");
@@ -643,43 +648,62 @@ namespace vcpkg
         table.format(opt(JSON_SWITCH, "", ""), "(Experimental) Request JSON output");
     }
 
-    static void from_env(ZStringView var, std::unique_ptr<std::string>& dst)
+    static void from_env(const std::function<Optional<std::string>(ZStringView)>& f,
+                         ZStringView var,
+                         std::unique_ptr<std::string>& dst)
     {
         if (dst) return;
 
-        auto maybe_val = get_environment_variable(var);
+        auto maybe_val = f(var);
         if (auto val = maybe_val.get())
         {
             dst = std::make_unique<std::string>(std::move(*val));
         }
     }
-    static void from_env(ZStringView var, Optional<std::string>& dst)
+    static void from_env(const std::function<Optional<std::string>(ZStringView)>& f,
+                         ZStringView var,
+                         Optional<std::string>& dst)
     {
         if (dst) return;
 
-        dst = get_environment_variable(var);
+        dst = f(var);
     }
 
-    void VcpkgCmdArguments::imbue_from_environment()
+    void VcpkgCmdArguments::imbue_from_environment() { imbue_from_environment_impl(&vcpkg::get_environment_variable); }
+    void VcpkgCmdArguments::imbue_from_fake_environment(const std::map<std::string, std::string, std::less<>>& env)
+    {
+        imbue_from_environment_impl([&env](ZStringView var) -> Optional<std::string> {
+            auto it = env.find(var);
+            if (it == env.end())
+            {
+                return nullopt;
+            }
+            else
+            {
+                return it->second;
+            }
+        });
+    }
+    void VcpkgCmdArguments::imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env)
     {
         if (!disable_metrics)
         {
-            const auto vcpkg_disable_metrics_env = get_environment_variable(DISABLE_METRICS_ENV);
+            const auto vcpkg_disable_metrics_env = get_env(DISABLE_METRICS_ENV);
             if (vcpkg_disable_metrics_env.has_value())
             {
                 disable_metrics = true;
             }
         }
 
-        from_env(TRIPLET_ENV, triplet);
-        from_env(HOST_TRIPLET_ENV, host_triplet);
-        from_env(VCPKG_ROOT_DIR_ENV, vcpkg_root_dir);
-        from_env(DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
-        from_env(DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
-        from_env(ASSET_SOURCES_ENV, asset_sources_template);
+        from_env(get_env, TRIPLET_ENV, triplet);
+        from_env(get_env, HOST_TRIPLET_ENV, host_triplet);
+        from_env(get_env, VCPKG_ROOT_DIR_ENV, vcpkg_root_dir);
+        from_env(get_env, DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
+        from_env(get_env, DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
+        from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
 
         {
-            const auto vcpkg_disable_lock = get_environment_variable(IGNORE_LOCK_FAILURES_ENV);
+            const auto vcpkg_disable_lock = get_env(IGNORE_LOCK_FAILURES_ENV);
             if (vcpkg_disable_lock.has_value() && !ignore_lock_failures.has_value())
             {
                 ignore_lock_failures = true;
@@ -687,7 +711,7 @@ namespace vcpkg
         }
 
         {
-            const auto vcpkg_overlay_ports_env = get_environment_variable(OVERLAY_PORTS_ENV);
+            const auto vcpkg_overlay_ports_env = get_env(OVERLAY_PORTS_ENV);
             if (const auto unpacked = vcpkg_overlay_ports_env.get())
             {
                 auto overlays = Strings::split_paths(*unpacked);
@@ -695,7 +719,7 @@ namespace vcpkg
             }
         }
         {
-            const auto vcpkg_overlay_triplets_env = get_environment_variable(OVERLAY_TRIPLETS_ENV);
+            const auto vcpkg_overlay_triplets_env = get_env(OVERLAY_TRIPLETS_ENV);
             if (const auto unpacked = vcpkg_overlay_triplets_env.get())
             {
                 auto triplets = Strings::split_paths(*unpacked);
@@ -703,7 +727,7 @@ namespace vcpkg
             }
         }
         {
-            const auto vcpkg_feature_flags_env = get_environment_variable(FEATURE_FLAGS_ENV);
+            const auto vcpkg_feature_flags_env = get_env(FEATURE_FLAGS_ENV);
             if (const auto v = vcpkg_feature_flags_env.get())
             {
                 auto flags = Strings::split(*v, ',');
@@ -740,7 +764,7 @@ namespace vcpkg
 
             if (auto entry = obj.get(ASSET_SOURCES_ENV))
             {
-                args.asset_sources_template = entry->string().to_string();
+                args.asset_sources_template_env = entry->string().to_string();
             }
 
             if (obj.get(DISABLE_METRICS_ENV))
@@ -765,9 +789,9 @@ namespace vcpkg
                 obj.insert(DOWNLOADS_ROOT_DIR_ENV, Json::Value::string(*args.downloads_root_dir.get()));
             }
 
-            if (args.asset_sources_template)
+            if (auto value = args.asset_sources_template())
             {
-                obj.insert(ASSET_SOURCES_ENV, Json::Value::string(*args.asset_sources_template.get()));
+                obj.insert(ASSET_SOURCES_ENV, Json::Value::string(value.value_or_exit(VCPKG_LINE_INFO)));
             }
 
             if (args.disable_metrics)
@@ -849,6 +873,18 @@ namespace vcpkg
         {
             LockGuardPtr<Metrics>(g_metrics)->track_feature(flag.flag.to_string(), flag.enabled);
         }
+    }
+
+    Optional<std::string> VcpkgCmdArguments::asset_sources_template() const
+    {
+        std::string asset_sources_template = asset_sources_template_env.value_or("");
+        if (asset_sources_template_arg)
+        {
+            if (!asset_sources_template.empty()) asset_sources_template += ";";
+            asset_sources_template += *asset_sources_template_arg;
+        }
+        if (asset_sources_template.empty()) return nullopt;
+        return Optional<std::string>(std::move(asset_sources_template));
     }
 
     std::string format_environment_variable(StringLiteral lit)
@@ -983,6 +1019,7 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::JSON_SWITCH;
 
     constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ARG;
 
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ENV;
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ARG;

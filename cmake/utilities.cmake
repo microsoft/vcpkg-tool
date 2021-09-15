@@ -192,18 +192,13 @@ function(vcpkg_target_add_warning_options TARGET)
         if(VCPKG_DEVELOPMENT_WARNINGS)
             target_compile_options(${TARGET} PRIVATE -W4)
             if(VCPKG_COMPILER STREQUAL "clang")
-                # -Wno-range-loop-analysis is due to an LLVM bug which will be fixed in a
-                # future version of clang https://reviews.llvm.org/D73007
                 target_compile_options(${TARGET} PRIVATE
                     -Wmissing-prototypes
                     -Wno-missing-field-initializers
-                    -Wno-range-loop-analysis
                     )
             else()
                 target_compile_options(${TARGET} PRIVATE -analyze -analyze:stacksize 39000)
             endif()
-        else()
-            target_compile_options(${TARGET} PRIVATE -W3)
         endif()
 
         if(VCPKG_WARNINGS_AS_ERRORS)
