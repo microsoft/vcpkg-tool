@@ -1210,6 +1210,23 @@ namespace vcpkg
         else
             return nullopt;
     }
+
+    bool SourceControlFile::has_qualified_dependencies() const
+    {
+        for (auto&& dep : core_paragraph->dependencies)
+        {
+            if (!dep.platform.is_empty()) return true;
+        }
+        for (auto&& fpgh : feature_paragraphs)
+        {
+            for (auto&& dep : fpgh->dependencies)
+            {
+                if (!dep.platform.is_empty()) return true;
+            }
+        }
+        return false;
+    }
+
     Optional<const std::vector<Dependency>&> SourceControlFile::find_dependencies_for_feature(
         const std::string& featurename) const
     {

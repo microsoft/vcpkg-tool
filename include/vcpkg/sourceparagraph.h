@@ -105,6 +105,7 @@ namespace vcpkg
 
         Optional<const FeatureParagraph&> find_feature(const std::string& featurename) const;
         Optional<const std::vector<Dependency>&> find_dependencies_for_feature(const std::string& featurename) const;
+        bool has_qualified_dependencies() const;
 
         Optional<std::string> check_against_feature_flags(const Path& origin,
                                                           const FeatureFlagSettings& flags,
