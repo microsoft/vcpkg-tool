@@ -1,5 +1,6 @@
 #include <string>
 #include <fmt/format.h>
+#include <vcpkg/base/system.write.h>
 
 namespace vcpkg::msg
 {
@@ -57,19 +58,7 @@ namespace vcpkg::msg
     template <class Message, class... Ts>
     void print_error(Message, Ts... args)
     {
-        auto message = MessageImpl<Message>{}.format(args...);
-        const char* pointer = message.data();
-        const char* const end = message.data() + message.size();
-        while (pointer != end)
-        {
-            if (int err = ferror(stderr))
-            {
-                abort();
-            }
-            ::size_t written = ::fwrite(pointer, 1, static_cast<::size_t>(end - pointer), stderr);
-            pointer += written;
-        }
-        ::fflush(stderr);
+        write_text_to_std_handle(MessageImpl<Message>{}.format(args...), StdHandle::Err);
     }
 
 #define DEFINE_MESSAGE(NAME, DEFAULT_STR, ...) \
