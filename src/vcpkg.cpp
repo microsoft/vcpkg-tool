@@ -301,10 +301,12 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    msg::print(Color::Error, msg::VcpkgHasCrashed,
+    /*
+    msg::println(msg::VcpkgHasCrashed,
         msg::email = Commands::Contact::email(),
         msg::vcpkg_version = Commands::Version::version(),
         msg::error = exc_msg);
+        */
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)

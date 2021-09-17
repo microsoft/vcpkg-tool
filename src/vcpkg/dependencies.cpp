@@ -5,6 +5,7 @@
 
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/messages.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
@@ -1145,7 +1146,7 @@ namespace vcpkg::Dependencies
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
             action_plan.install_actions.empty())
         {
-            print2("All requested packages are currently installed.\n");
+            // msg::println(msg::AllRequestedPackagesInstalled);
             return;
         }
 
