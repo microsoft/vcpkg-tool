@@ -9,6 +9,8 @@
 #include <limits>
 #include <string>
 
+#include <fmt/core.h>
+
 namespace vcpkg
 {
     struct StringView
@@ -55,3 +57,12 @@ namespace vcpkg
     bool operator<=(StringView lhs, StringView rhs) noexcept;
     bool operator>=(StringView lhs, StringView rhs) noexcept;
 }
+
+template <>
+struct ::fmt::formatter<vcpkg::StringView>: fmt::formatter<fmt::string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(vcpkg::StringView sv, FormatContext& ctx) {
+        return ::fmt::formatter<fmt::string_view>::format(fmt::string_view(sv.data(), sv.size()), ctx);
+    }
+};

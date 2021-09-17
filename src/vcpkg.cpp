@@ -14,6 +14,7 @@
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
+#include <vcpkg/messages.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/userconfig.h>
@@ -165,6 +166,8 @@ int main(const int argc, const char* const* const argv)
     auto& fs = get_real_filesystem();
     *(LockGuardPtr<ElapsedTimer>(GlobalState::timer)) = ElapsedTimer::create_started();
 
+    msg::print_error(msg::VcpkgTestMessage, msg::name = "la monde");
+
 #if defined(_WIN32)
     GlobalState::g_init_console_cp = GetConsoleCP();
     GlobalState::g_init_console_output_cp = GetConsoleOutputCP();
@@ -300,18 +303,10 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    vcpkg::printf("vcpkg.exe has crashed.\n"
-                  "Please send an email to:\n"
-                  "    %s\n"
-                  "containing a brief summary of what you were trying to do and the following data blob:\n"
-                  "\n"
-                  "Version=%s\n"
-                  "EXCEPTION='%s'\n"
-                  "CMD=\n",
-                  Commands::Contact::email(),
-                  Commands::Version::version(),
-                  exc_msg);
-    fflush(stdout);
+    msg::print_error(msg::VcpkgHasCrashed,
+        msg::email = Commands::Contact::email(),
+        msg::vcpkg_version = Commands::Version::version(),
+        msg::error = exc_msg);
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
