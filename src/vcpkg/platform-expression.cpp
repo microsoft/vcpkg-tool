@@ -19,6 +19,7 @@ namespace vcpkg::PlatformExpression
         x86,
         x64,
         arm,
+        arm32,
         arm64,
         wasm32,
 
@@ -43,6 +44,7 @@ namespace vcpkg::PlatformExpression
             {"x86", Identifier::x86},
             {"x64", Identifier::x64},
             {"arm", Identifier::arm},
+            {"arm32", Identifier::arm32},
             {"arm64", Identifier::arm64},
             {"wasm32", Identifier::wasm32},
             {"windows", Identifier::windows},
@@ -386,6 +388,7 @@ namespace vcpkg::PlatformExpression
                             // This is because it previously was only checking for a substring.
                             return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm") ||
                                    true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
+                        case Identifier::arm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm");
                         case Identifier::arm64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
                         case Identifier::windows:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "") ||
