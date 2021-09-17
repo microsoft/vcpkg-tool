@@ -202,7 +202,7 @@ namespace vcpkg::Commands::PortHistory
         {
             if (maybe_output_file.has_value())
             {
-                vcpkg::printf(Color::warning, "Warning: Option `--$s` requires `--x-json` switch.", OPTION_OUTPUT_FILE);
+                vcpkg::printf(Color::Warning, "Warning: Option `--$s` requires `--x-json` switch.", OPTION_OUTPUT_FILE);
             }
 
             print2("             version          date    vcpkg commit\n");

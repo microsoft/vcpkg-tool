@@ -1064,12 +1064,12 @@ namespace vcpkg::Json
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            print2(Color::error, "Failed to read ", json_file, ": ", ec.message(), "\n");
+            print2(Color::Error, "Failed to read ", json_file, ": ", ec.message(), "\n");
             Checks::exit_fail(li);
         }
         else if (!ret)
         {
-            print2(Color::error, "Failed to parse ", json_file, ":\n");
+            print2(Color::Error, "Failed to parse ", json_file, ":\n");
             print2(ret.error()->format());
             Checks::exit_fail(li);
         }

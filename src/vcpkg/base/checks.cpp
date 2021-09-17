@@ -41,7 +41,7 @@ namespace vcpkg
     [[noreturn]] void Checks::unreachable(const LineInfo& line_info)
     {
         vcpkg::printf(
-            Color::error, "Error: Unreachable code was reached\n%s(%d)\n", line_info.file_name, line_info.line_number);
+            Color::Error, "Error: Unreachable code was reached\n%s(%d)\n", line_info.file_name, line_info.line_number);
 #ifndef NDEBUG
         std::abort();
 #else
@@ -61,7 +61,7 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_with_message(const LineInfo& line_info, StringView error_message)
     {
-        print2(Color::error, error_message, '\n');
+        print2(Color::Error, error_message, '\n');
         exit_fail(line_info);
     }
 
@@ -69,7 +69,7 @@ namespace vcpkg
     {
         if (!expression)
         {
-            print2(Color::error,
+            print2(Color::Error,
                    "Error: vcpkg has crashed; no additional details are available.\nThe source line is ",
                    Strings::format("%s(%d)\n", line_info.file_name, line_info.line_number),
                    '\n');
@@ -87,7 +87,7 @@ namespace vcpkg
 
     static void display_upgrade_message()
     {
-        print2(Color::error, "Note: Updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.\n");
+        print2(Color::Error, "Note: Updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.\n");
     }
 
     [[noreturn]] void Checks::exit_maybe_upgrade(const LineInfo& line_info)
@@ -98,7 +98,7 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_maybe_upgrade(const LineInfo& line_info, StringView error_message)
     {
-        print2(Color::error, error_message, '\n');
+        print2(Color::Error, error_message, '\n');
         display_upgrade_message();
         exit_fail(line_info);
     }

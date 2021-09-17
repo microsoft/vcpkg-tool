@@ -66,8 +66,8 @@ namespace
                 ExpandEnvironmentStringsW(widened.c_str(), &result[0], static_cast<unsigned long>(result.size() + 1));
             if (required_size == 0)
             {
-                vcpkg::print2(vcpkg::Color::error, "Error: could not expand the environment string:\n");
-                vcpkg::print2(vcpkg::Color::error, input);
+                vcpkg::print2(vcpkg::Color::Error, "Error: could not expand the environment string:\n");
+                vcpkg::print2(vcpkg::Color::Error, input);
                 vcpkg::Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -240,7 +240,7 @@ namespace vcpkg::Commands::Edit
         if (it == candidate_paths.cend())
         {
             print2(
-                Color::error,
+                Color::Error,
                 "Error: Visual Studio Code was not found and the environment variable EDITOR is not set or invalid.\n");
             print2("The following paths were examined:\n");
             print_paths(candidate_paths);

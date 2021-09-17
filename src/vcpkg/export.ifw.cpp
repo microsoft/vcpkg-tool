@@ -344,7 +344,7 @@ namespace vcpkg::Export::IFW
             const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW repository generating failed");
 
-            vcpkg::printf(Color::success, "Generating repository %s... done.\n", repository_dir);
+            vcpkg::printf(Color::Success, "Generating repository %s... done.\n", repository_dir);
         }
 
         void do_installer(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
@@ -383,7 +383,7 @@ namespace vcpkg::Export::IFW
             const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW installer generating failed");
 
-            vcpkg::printf(Color::success, "Generating installer %s... done.\n", installer_file);
+            vcpkg::printf(Color::Success, "Generating installer %s... done.\n", installer_file);
         }
     }
 

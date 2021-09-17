@@ -86,7 +86,7 @@ namespace vcpkg
         auto parsed_config_opt = reader.visit(obj, *deserializer);
         if (!reader.errors().empty())
         {
-            print2(Color::error, "Errors occurred while parsing ", filepath, "\n");
+            print2(Color::Error, "Errors occurred while parsing ", filepath, "\n");
             for (auto&& msg : reader.errors())
                 print2("    ", msg, '\n');
 
@@ -126,7 +126,7 @@ namespace vcpkg
 
         if (!manifest_value.first.is_object())
         {
-            print2(Color::error,
+            print2(Color::Error,
                    "Failed to parse manifest at ",
                    manifest_path,
                    ": Manifest files must have a top-level object\n");
@@ -168,7 +168,7 @@ namespace vcpkg
         auto parsed_config = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_config);
         if (!parsed_config.first.is_object())
         {
-            print2(Color::error,
+            print2(Color::Error,
                    "Failed to parse ",
                    path_to_config,
                    ": configuration files must have a top-level object\n");
@@ -345,8 +345,8 @@ namespace vcpkg
                 bool allow_errors = args.ignore_lock_failures.value_or(false);
                 if (is_already_locked || !allow_errors)
                 {
-                    vcpkg::printf(Color::error, "Failed to take the filesystem lock on %s:\n", vcpkg_lock);
-                    vcpkg::printf(Color::error, "    %s\n", ec.message());
+                    vcpkg::printf(Color::Error, "Failed to take the filesystem lock on %s:\n", vcpkg_lock);
+                    vcpkg::printf(Color::Error, "    %s\n", ec.message());
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
             }

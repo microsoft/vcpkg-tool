@@ -417,7 +417,7 @@ namespace vcpkg::Export
         if (!ret.raw && !ret.nuget && !ret.ifw && !ret.zip && !ret.seven_zip && !ret.dry_run && !ret.chocolatey &&
             !ret.prefab)
         {
-            print2(Color::error,
+            print2(Color::Error,
                    "Must provide at least one export type: --raw --nuget --ifw --zip --7zip --chocolatey --prefab\n");
             print2(COMMAND_STRUCTURE.example_text);
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -556,7 +556,7 @@ namespace vcpkg::Export
 
         if (opts.raw)
         {
-            vcpkg::printf(Color::success,
+            vcpkg::printf(Color::Success,
                           R"(Files exported at: "%s")"
                           "\n",
                           raw_exported_dir_path);
@@ -572,7 +572,7 @@ namespace vcpkg::Export
             const auto nuget_description = opts.maybe_nuget_description.value_or("Vcpkg NuGet export");
             const auto output_path = do_nuget_export(
                 paths, nuget_id, nuget_version, nuget_description, raw_exported_dir_path, opts.output_dir);
-            print2(Color::success, "NuGet package exported at: ", output_path, "\n");
+            print2(Color::Success, "NuGet package exported at: ", output_path, "\n");
 
             vcpkg::printf(R"(
 With a project open, go to Tools->NuGet Package Manager->Package Manager Console and paste:
@@ -588,7 +588,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
             print2("Creating zip archive...\n");
             const auto output_path =
                 do_archive_export(paths, raw_exported_dir_path, opts.output_dir, ArchiveFormatC::ZIP);
-            print2(Color::success, "Zip archive exported at: ", output_path, "\n");
+            print2(Color::Success, "Zip archive exported at: ", output_path, "\n");
             print_next_step_info("[...]");
         }
 
@@ -597,7 +597,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
             print2("Creating 7zip archive...\n");
             const auto output_path =
                 do_archive_export(paths, raw_exported_dir_path, opts.output_dir, ArchiveFormatC::SEVEN_ZIP);
-            print2(Color::success, "7zip archive exported at: ", output_path, "\n");
+            print2(Color::Success, "7zip archive exported at: ", output_path, "\n");
             print_next_step_info("[...]");
         }
 
@@ -639,13 +639,13 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
 
         if (has_non_user_requested_packages)
         {
-            print2(Color::warning, "Additional packages (*) need to be exported to complete this operation.\n");
+            print2(Color::Warning, "Additional packages (*) need to be exported to complete this operation.\n");
         }
 
         const auto it = group_by_plan_type.find(ExportPlanType::NOT_BUILT);
         if (it != group_by_plan_type.cend() && !it->second.empty())
         {
-            print2(Color::error, "There are packages that have not been built.\n");
+            print2(Color::Error, "There are packages that have not been built.\n");
 
             // No need to show all of them, just the user-requested ones. Dependency resolution will handle the rest.
             std::vector<const ExportPlanAction*> unbuilt = it->second;

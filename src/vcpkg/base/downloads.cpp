@@ -335,7 +335,7 @@ namespace vcpkg::Downloads
             if (start_size + url_pairs.size() > out->size())
             {
                 // curl stopped before finishing all downloads; retry after some time
-                print2(Color::warning, "Warning: an unexpected error occurred during bulk download.\n");
+                print2(Color::Warning, "Warning: an unexpected error occurred during bulk download.\n");
                 std::this_thread::sleep_for(std::chrono::milliseconds(i));
                 url_pairs =
                     View<std::pair<std::string, Path>>{url_pairs.begin() + out->size() - start_size, url_pairs.end()};
@@ -616,7 +616,7 @@ namespace vcpkg::Downloads
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push.has_value())
                         {
-                            print2(Color::warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
+                            print2(Color::Warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
                         }
                     }
                     return *url;

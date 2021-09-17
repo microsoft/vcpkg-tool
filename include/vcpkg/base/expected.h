@@ -227,7 +227,7 @@ namespace vcpkg
         {
             if (m_s.has_error())
             {
-                print2(Color::error, m_s.to_string(), "\n");
+                print2(Color::Error, m_s.to_string(), "\n");
                 Checks::exit_fail(line_info);
             }
         }

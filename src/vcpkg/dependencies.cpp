@@ -1250,7 +1250,7 @@ namespace vcpkg::Dependencies
         bool have_removals = !remove_specs.empty() || !rebuilt_plans.empty();
         if (have_removals && !is_recursive)
         {
-            print2(Color::warning,
+            print2(Color::Warning,
                    "If you are sure you want to rebuild the above packages, run the command with the "
                    "--recurse option\n");
             Checks::exit_fail(VCPKG_LINE_INFO);

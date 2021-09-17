@@ -82,7 +82,7 @@ namespace vcpkg::Install
             const auto status = fs.symlink_status(file, ec);
             if (ec)
             {
-                print2(Color::error, "failed: ", file, ": ", ec.message(), "\n");
+                print2(Color::Error, "failed: ", file, ": ", ec.message(), "\n");
                 continue;
             }
 
@@ -105,7 +105,7 @@ namespace vcpkg::Install
                     fs.create_directory(target, ec);
                     if (ec)
                     {
-                        vcpkg::printf(Color::error, "failed: %s: %s\n", target, ec.message());
+                        vcpkg::printf(Color::Error, "failed: %s: %s\n", target, ec.message());
                     }
 
                     // Trailing backslash for directories
@@ -117,13 +117,13 @@ namespace vcpkg::Install
                 {
                     if (fs.exists(target, IgnoreErrors{}))
                     {
-                        print2(Color::warning, "File ", target, " was already present and will be overwritten\n");
+                        print2(Color::Warning, "File ", target, " was already present and will be overwritten\n");
                     }
 
                     fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
                     if (ec)
                     {
-                        vcpkg::printf(Color::error, "failed: %s: %s\n", target, ec.message());
+                        vcpkg::printf(Color::Error, "failed: %s: %s\n", target, ec.message());
                     }
 
                     output.push_back(std::move(this_output));
@@ -134,19 +134,19 @@ namespace vcpkg::Install
                 {
                     if (fs.exists(target, IgnoreErrors{}))
                     {
-                        print2(Color::warning, "File ", target, " was already present and will be overwritten\n");
+                        print2(Color::Warning, "File ", target, " was already present and will be overwritten\n");
                     }
 
                     fs.copy_symlink(file, target, ec);
                     if (ec)
                     {
-                        vcpkg::printf(Color::error, "failed: %s: %s\n", target, ec.message());
+                        vcpkg::printf(Color::Error, "failed: %s: %s\n", target, ec.message());
                     }
 
                     output.push_back(std::move(this_output));
                     break;
                 }
-                default: vcpkg::printf(Color::error, "failed: %s: cannot handle file type\n", file); break;
+                default: vcpkg::printf(Color::Error, "failed: %s: cannot handle file type\n", file); break;
             }
         }
 
@@ -240,7 +240,7 @@ namespace vcpkg::Install
         if (!intersection.empty())
         {
             const auto triplet_install_path = paths.installed / triplet.canonical_name();
-            vcpkg::printf(Color::error,
+            vcpkg::printf(Color::Error,
                           "The following files are already installed in %s and are in conflict with %s\n\n",
                           triplet_install_path.generic_u8string(),
                           bcf.core_paragraph.spec);
@@ -323,9 +323,9 @@ namespace vcpkg::Install
         {
             if (use_head_version && is_user_requested)
                 vcpkg::printf(
-                    Color::warning, "Package %s is already installed -- not building from HEAD\n", display_name);
+                    Color::Warning, "Package %s is already installed -- not building from HEAD\n", display_name);
             else
-                vcpkg::printf(Color::success, "Package %s is already installed\n", display_name);
+                vcpkg::printf(Color::Success, "Package %s is already installed\n", display_name);
             return BuildResult::SUCCEEDED;
         }
 
@@ -353,13 +353,13 @@ namespace vcpkg::Install
 
                 if (BuildResult::DOWNLOADED == result.code)
                 {
-                    print2(Color::success, "Downloaded sources for package ", display_name_with_features, "\n");
+                    print2(Color::Success, "Downloaded sources for package ", display_name_with_features, "\n");
                     return result;
                 }
 
                 if (result.code != Build::BuildResult::SUCCEEDED)
                 {
-                    print2(Color::error, Build::create_error_message(result.code, action.spec), "\n");
+                    print2(Color::Error, Build::create_error_message(result.code, action.spec), "\n");
                     return result;
                 }
 
@@ -399,7 +399,7 @@ namespace vcpkg::Install
 
         if (plan_type == InstallPlanType::EXCLUDED)
         {
-            vcpkg::printf(Color::warning, "Package %s is excluded\n", display_name);
+            vcpkg::printf(Color::Warning, "Package %s is excluded\n", display_name);
             return BuildResult::EXCLUDED;
         }
 
@@ -890,7 +890,7 @@ namespace vcpkg::Install
 
                 if (it == manifest_scf.feature_paragraphs.end())
                 {
-                    vcpkg::printf(Color::warning,
+                    vcpkg::printf(Color::Warning,
                                   "Warning: feature %s was passed, but that is not a feature that %s supports.",
                                   feature,
                                   manifest_scf.core_paragraph->name);
@@ -1037,7 +1037,7 @@ namespace vcpkg::Install
                     if (common_arch != vs_prompt)
                     {
                         const auto vs_prompt_view = to_zstring_view(vs_prompt);
-                        print2(vcpkg::Color::warning,
+                        print2(vcpkg::Color::Warning,
                                "warning: vcpkg appears to be in a Visual Studio prompt targeting ",
                                vs_prompt_view,
                                " but is installing packages for ",

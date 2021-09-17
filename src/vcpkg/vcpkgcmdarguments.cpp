@@ -26,7 +26,7 @@ namespace vcpkg
             {
                 if (place.has_value())
                 {
-                    vcpkg::printf(Color::error, "Error: both %s and -%s were specified as feature flags\n", flag, flag);
+                    vcpkg::printf(Color::Error, "Error: both %s and -%s were specified as feature flags\n", flag, flag);
                     LockGuardPtr<Metrics>(g_metrics)->track_property("error",
                                                                      "error feature flag +-" + flag.to_string());
                     Checks::exit_fail(VCPKG_LINE_INFO);
@@ -66,7 +66,7 @@ namespace vcpkg
     {
         if (nullptr != option_field)
         {
-            vcpkg::printf(Color::error, "Error: --%s specified multiple times\n", option_name);
+            vcpkg::printf(Color::Error, "Error: --%s specified multiple times\n", option_name);
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option specified multiple times");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -79,7 +79,7 @@ namespace vcpkg
     {
         if (option_field && option_field != new_setting)
         {
-            print2(Color::error, "Error: conflicting values specified for --", option_name, '\n');
+            print2(Color::Error, "Error: conflicting values specified for --", option_name, '\n');
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error conflicting switches");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -93,7 +93,7 @@ namespace vcpkg
     {
         if (new_value.size() == 0)
         {
-            print2(Color::error, "Error: expected value after ", option_name, '\n');
+            print2(Color::Error, "Error: expected value after ", option_name, '\n');
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -108,7 +108,7 @@ namespace vcpkg
     {
         if (new_value.size() == 0)
         {
-            print2(Color::error, "Error: expected value after ", option_name, '\n');
+            print2(Color::Error, "Error: expected value after ", option_name, '\n');
             LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -141,7 +141,7 @@ namespace vcpkg
                 auto lines = fs.read_lines(arg, ec);
                 if (ec)
                 {
-                    print2(Color::error, "Error: Could not open response file ", arg, '\n');
+                    print2(Color::Error, "Error: Could not open response file ", arg, '\n');
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
@@ -182,7 +182,7 @@ namespace vcpkg
                     return TryParseArgumentResult::FoundAndConsumedLookahead;
                 }
 
-                print2(Color::error, "Error: expected value after ", option, '\n');
+                print2(Color::Error, "Error: expected value after ", option, '\n');
                 LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
                 print_usage();
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -391,7 +391,7 @@ namespace vcpkg
         {
             if (actual_arg_count != command_structure.minimum_arity)
             {
-                vcpkg::printf(Color::error,
+                vcpkg::printf(Color::Error,
                               "Error: '%s' requires %u arguments, but %u were provided.\n",
                               this->command,
                               command_structure.minimum_arity,
@@ -403,7 +403,7 @@ namespace vcpkg
         {
             if (actual_arg_count < command_structure.minimum_arity)
             {
-                vcpkg::printf(Color::error,
+                vcpkg::printf(Color::Error,
                               "Error: '%s' requires at least %u arguments, but %u were provided\n",
                               this->command,
                               command_structure.minimum_arity,
@@ -412,7 +412,7 @@ namespace vcpkg
             }
             if (actual_arg_count > command_structure.maximum_arity)
             {
-                vcpkg::printf(Color::error,
+                vcpkg::printf(Color::Error,
                               "Error: '%s' requires at most %u arguments, but %u were provided\n",
                               this->command,
                               command_structure.maximum_arity,
@@ -446,7 +446,7 @@ namespace vcpkg
             if (option_it != options_copy.end())
             {
                 // This means that the switch was passed like '--a=xyz'
-                vcpkg::printf(Color::error, "Error: The option '--%s' does not accept an argument.\n", switch_.name);
+                vcpkg::printf(Color::Error, "Error: The option '--%s' does not accept an argument.\n", switch_.name);
                 options_copy.erase(option_it);
                 failed = true;
             }
@@ -465,14 +465,14 @@ namespace vcpkg
 
                 if (value.size() > 1)
                 {
-                    vcpkg::printf(Color::error, "Error: The option '%s' can only be passed once.\n", option.name);
+                    vcpkg::printf(Color::Error, "Error: The option '%s' can only be passed once.\n", option.name);
                     failed = true;
                 }
                 else if (value.front().empty())
                 {
                     // Fail when not given a value, e.g.: "vcpkg install sqlite3 --additional-ports="
                     vcpkg::printf(
-                        Color::error, "Error: The option '--%s' must be passed a non-empty argument.\n", option.name);
+                        Color::Error, "Error: The option '--%s' must be passed a non-empty argument.\n", option.name);
                     failed = true;
                 }
                 else
@@ -485,7 +485,7 @@ namespace vcpkg
             if (switch_it != switches_copy.end())
             {
                 // This means that the option was passed like '--a'
-                vcpkg::printf(Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
+                vcpkg::printf(Color::Error, "Error: The option '--%s' must be passed an argument.\n", option.name);
                 switches_copy.erase(switch_it);
                 failed = true;
             }
@@ -501,7 +501,7 @@ namespace vcpkg
                 {
                     if (v.empty())
                     {
-                        vcpkg::printf(Color::error,
+                        vcpkg::printf(Color::Error,
                                       "Error: The option '--%s' must be passed non-empty arguments.\n",
                                       option.name);
                         failed = true;
@@ -517,7 +517,7 @@ namespace vcpkg
             if (switch_it != switches_copy.end())
             {
                 // This means that the option was passed like '--a'
-                vcpkg::printf(Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
+                vcpkg::printf(Color::Error, "Error: The option '--%s' must be passed an argument.\n", option.name);
                 switches_copy.erase(switch_it);
                 failed = true;
             }
@@ -525,7 +525,7 @@ namespace vcpkg
 
         if (!switches_copy.empty() || !options_copy.empty())
         {
-            vcpkg::printf(Color::error, "Unknown option(s) for command '%s':\n", this->command);
+            vcpkg::printf(Color::Error, "Unknown option(s) for command '%s':\n", this->command);
             for (auto&& switch_ : switches_copy)
             {
                 print2("    '--", switch_, "'\n");
@@ -818,11 +818,11 @@ namespace vcpkg
         {
             if (el.is_inconsistent)
             {
-                vcpkg::printf(Color::warning,
+                vcpkg::printf(Color::Warning,
                               "Warning: %s feature specifically turned off, but --%s was specified.\n",
                               el.flag,
                               el.option);
-                vcpkg::printf(Color::warning, "Warning: Defaulting to %s being on.\n", el.flag);
+                vcpkg::printf(Color::Warning, "Warning: Defaulting to %s being on.\n", el.flag);
                 LockGuardPtr<Metrics>(g_metrics)->track_property(
                     "warning", Strings::format("warning %s alongside %s", el.flag, el.option));
             }

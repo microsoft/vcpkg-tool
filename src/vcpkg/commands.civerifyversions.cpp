@@ -313,7 +313,7 @@ namespace vcpkg::Commands::CIVerifyVersions
             auto git_tree_it = port_git_tree_map.find(port_name);
             if (git_tree_it == port_git_tree_map.end())
             {
-                vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
+                vcpkg::printf(Color::Error, "FAIL: %s\n", port_name);
                 errors.emplace(Strings::format("Error: While validating port %s.\n"
                                                "       Missing Git SHA.\n"
                                                "       Run:\n\n"
@@ -338,7 +338,7 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             if (manifest_exists && control_exists)
             {
-                vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
+                vcpkg::printf(Color::Error, "FAIL: %s\n", port_name);
                 errors.emplace(
                     Strings::format("Error: While validating port %s.\n"
                                     "       Both a manifest file and a CONTROL file exist in port directory: %s",
@@ -349,7 +349,7 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             if (!manifest_exists && !control_exists)
             {
-                vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
+                vcpkg::printf(Color::Error, "FAIL: %s\n", port_name);
                 errors.emplace(Strings::format("Error: While validating port %s.\n"
                                                "       No manifest file or CONTROL file exist in port directory: %s",
                                                port_name,
@@ -361,7 +361,7 @@ namespace vcpkg::Commands::CIVerifyVersions
             auto versions_file_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             if (!fs.exists(versions_file_path, IgnoreErrors{}))
             {
-                vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
+                vcpkg::printf(Color::Error, "FAIL: %s\n", port_name);
                 errors.emplace(Strings::format("Error: While validating port %s.\n"
                                                "       Missing expected versions file at: %s\n"
                                                "       Run:\n\n"
@@ -378,7 +378,7 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             if (!maybe_ok.has_value())
             {
-                vcpkg::printf(Color::error, "FAIL: %s\n", port_name);
+                vcpkg::printf(Color::Error, "FAIL: %s\n", port_name);
                 errors.emplace(maybe_ok.error());
                 continue;
             }
@@ -388,12 +388,12 @@ namespace vcpkg::Commands::CIVerifyVersions
 
         if (!errors.empty())
         {
-            print2(Color::error, "Found the following errors:\n");
+            print2(Color::Error, "Found the following errors:\n");
             for (auto&& error : errors)
             {
-                vcpkg::printf(Color::error, "%s\n", error);
+                vcpkg::printf(Color::Error, "%s\n", error);
             }
-            print2(Color::error,
+            print2(Color::Error,
                    "\nTo attempt to resolve all errors at once, run:\n\n"
                    "    vcpkg x-add-version --all\n\n");
             Checks::exit_fail(VCPKG_LINE_INFO);

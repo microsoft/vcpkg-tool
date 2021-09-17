@@ -487,9 +487,9 @@ namespace vcpkg::Paragraphs
             {
                 for (auto&& error : results.errors)
                 {
-                    print2(Color::warning, "Warning: an error occurred while parsing '", error->name, "'\n");
+                    print2(Color::Warning, "Warning: an error occurred while parsing '", error->name, "'\n");
                 }
-                print2(Color::warning, "Use '--debug' to get more information about the parse failures.\n\n");
+                print2(Color::Warning, "Use '--debug' to get more information about the parse failures.\n\n");
             }
         }
     }

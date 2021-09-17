@@ -200,7 +200,7 @@ namespace vcpkg::Help
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        print2(Color::error, "Error: unknown topic ", topic, '\n');
+        print2(Color::Error, "Error: unknown topic ", topic, '\n');
         help_topics(paths);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }

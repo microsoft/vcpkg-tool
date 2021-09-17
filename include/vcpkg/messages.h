@@ -1,6 +1,5 @@
 #include <string>
 #include <fmt/format.h>
-#include <vcpkg/base/system.write.h>
 
 namespace vcpkg::msg
 {
@@ -25,7 +24,6 @@ namespace vcpkg::msg
     DEFINE_MSG_ARG(StringView, email);
     DEFINE_MSG_ARG(StringView, vcpkg_version);
     DEFINE_MSG_ARG(StringView, error);
-    DEFINE_MSG_ARG(StringView, name);
 #undef DEFINE_MSG_ARG
 
     template <class... Tags>
@@ -56,11 +54,24 @@ namespace vcpkg::msg
     }
 
     template <class Message, class... Ts>
-    void print_error(Message, Ts... args)
+    void print(Message, Ts... args)
     {
-        write_text_to_std_handle(MessageImpl<Message>{}.format(args...), StdHandle::Err);
+        write_text_to_stdout(Color::None, MessageImpl<Message>{}.format(args...));
     }
 
+    template <class Message, class... Ts>
+    void print(Color c, Message, Ts... args)
+    {
+        write_text_to_stdout(c, MessageImpl<Message>{}.format(args...));
+    }
+
+#define DEFINE_MESSAGE_NOARGS(NAME, DEFAULT_STR) \
+    constexpr static struct NAME ## _t { \
+        using message_type = Message<>; \
+        static fmt::string_view default_format_string() noexcept { \
+            return DEFAULT_STR; \
+        } \
+    } NAME
 #define DEFINE_MESSAGE(NAME, DEFAULT_STR, ...) \
     constexpr static struct NAME ## _t { \
         using message_type = Message<__VA_ARGS__>; \
@@ -81,7 +92,7 @@ CMD=
         email_t,
         vcpkg_version_t,
         error_t);
-    DEFINE_MESSAGE(VcpkgTestMessage, "Bonjour à {name}\n", name_t);
+    DEFINE_MESSAGE_NOARGS(VcpkgTestMessage, "test message; hi!.\n");
 
 #undef DEFINE_MESSAGE
 }

@@ -22,7 +22,7 @@ namespace vcpkg::Commands::InitRegistry
         const auto path = fs.current_path(VCPKG_LINE_INFO) / path_argument;
         if (!fs.exists(path / ".git", IgnoreErrors{}))
         {
-            vcpkg::printf(Color::error,
+            vcpkg::printf(Color::Error,
                           "Could not create registry at %s because this is not a git repository root.\n"
                           "Use `git init %s` to create a git repository in this folder.\n",
                           path,

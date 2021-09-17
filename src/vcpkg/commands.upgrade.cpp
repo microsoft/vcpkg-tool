@@ -144,7 +144,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (!up_to_date.empty())
             {
-                print2(Color::success, "The following packages are up-to-date:\n");
+                print2(Color::Success, "The following packages are up-to-date:\n");
                 print2(Strings::join(
                            "", up_to_date, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
                        '\n');
@@ -152,7 +152,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (!not_installed.empty())
             {
-                print2(Color::error, "The following packages are not installed:\n");
+                print2(Color::Error, "The following packages are not installed:\n");
                 print2(Strings::join(
                            "", not_installed, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
                        '\n');
@@ -160,7 +160,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (!no_control_file.empty())
             {
-                print2(Color::error, "The following packages do not have a valid CONTROL or vcpkg.json:\n");
+                print2(Color::Error, "The following packages do not have a valid CONTROL or vcpkg.json:\n");
                 print2(Strings::join("",
                                      no_control_file,
                                      [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
@@ -190,7 +190,7 @@ namespace vcpkg::Commands::Upgrade
 
         if (!no_dry_run)
         {
-            print2(Color::warning,
+            print2(Color::Warning,
                    "If you are sure you want to rebuild the above packages, run this command with the "
                    "--no-dry-run option.\n");
             Checks::exit_fail(VCPKG_LINE_INFO);

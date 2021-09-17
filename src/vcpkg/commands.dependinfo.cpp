@@ -319,13 +319,13 @@ namespace vcpkg::Commands::DependInfo
 
                 if (show_depth)
                 {
-                    print2(Color::error, "(", info.depth, ") ");
+                    print2(Color::Error, "(", info.depth, ") ");
                 }
-                print2(Color::success, info.package);
+                print2(Color::Success, info.package);
                 if (!features.empty())
                 {
                     print2("[");
-                    print2(Color::warning, features);
+                    print2(Color::Warning, features);
                     print2("]");
                 }
                 print2(": ", dependencies, "\n");

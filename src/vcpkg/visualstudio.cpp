@@ -359,14 +359,14 @@ namespace vcpkg::VisualStudio
         if (!excluded_toolsets.empty())
         {
             print2(
-                Color::warning,
+                Color::Warning,
                 "Warning: The following VS instances are excluded because the English language pack is unavailable.\n");
             for (const Toolset& toolset : excluded_toolsets)
             {
                 print2("    ", toolset.visual_studio_root_path, '\n');
             }
 
-            print2(Color::warning, "Please install the English language pack.\n");
+            print2(Color::Warning, "Please install the English language pack.\n");
         }
 
         if (found_toolsets.empty() && Debug::g_debugging)

@@ -68,8 +68,8 @@ namespace
                     }
                     else
                     {
-                        print2(Color::error, "Invalid kind: ", value, "\n");
-                        print2(Color::error, "  Expected one of: utf-8, json, platform-expr\n\n");
+                        print2(Color::Error, "Invalid kind: ", value, "\n");
+                        print2(Color::Error, "  Expected one of: utf-8, json, platform-expr\n\n");
                         print_help_and_exit(true);
                     }
                 }
@@ -109,7 +109,7 @@ Options:
   --kind=...                One of {utf-8, json}
 )";
 
-            auto color = invalid ? Color::error : Color::success;
+            auto color = invalid ? Color::Error : Color::Success;
 
             print2(color, help);
             if (invalid)

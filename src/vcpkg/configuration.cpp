@@ -76,7 +76,7 @@ namespace vcpkg
         {
             LockGuardPtr<Metrics>(g_metrics)->track_property(
                 "registries-error-registry-modification-without-feature-flag", "defined");
-            vcpkg::printf(Color::warning,
+            vcpkg::printf(Color::Warning,
                           "Warning: configuration specified the \"registries\" or \"default-registries\" field, but "
                           "the %s feature flag was not enabled.\n",
                           VcpkgCmdArguments::REGISTRIES_FEATURE);

@@ -190,7 +190,7 @@ namespace vcpkg::Commands::Integrate
                 {
                     case ElevationPromptChoice::YES: break;
                     case ElevationPromptChoice::NO:
-                        print2(Color::warning, "Warning: Previous integration file was not removed\n");
+                        print2(Color::Warning, "Warning: Previous integration file was not removed\n");
                         Checks::exit_fail(VCPKG_LINE_INFO);
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
@@ -225,7 +225,7 @@ namespace vcpkg::Commands::Integrate
             {
                 case ElevationPromptChoice::YES: break;
                 case ElevationPromptChoice::NO:
-                    print2(Color::warning, "Warning: integration was not applied\n");
+                    print2(Color::Warning, "Warning: integration was not applied\n");
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
@@ -260,7 +260,7 @@ namespace vcpkg::Commands::Integrate
 
             if (!rc || ec)
             {
-                print2(Color::error, "Error: Failed to copy file: ", appdata_src_path, " -> ", appdata_dst_path, "\n");
+                print2(Color::Error, "Error: Failed to copy file: ", appdata_src_path, " -> ", appdata_dst_path, "\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -274,7 +274,7 @@ namespace vcpkg::Commands::Integrate
             if (!rc2 || ec)
             {
                 print2(
-                    Color::error, "Error: Failed to copy file: ", appdata_src_path2, " -> ", appdata_dst_path2, "\n");
+                    Color::Error, "Error: Failed to copy file: ", appdata_src_path2, " -> ", appdata_dst_path2, "\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -284,7 +284,7 @@ namespace vcpkg::Commands::Integrate
         std::error_code ec;
         fs.write_contents(pathtxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
 
-        print2(Color::success, "Applied user-wide integration for this vcpkg root.\n");
+        print2(Color::Success, "Applied user-wide integration for this vcpkg root.\n");
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
 #if defined(_WIN32)
         vcpkg::printf(
@@ -325,11 +325,11 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
 
         if (was_deleted)
         {
-            print2(Color::success, "User-wide integration was removed\n");
+            print2(Color::Success, "User-wide integration was removed\n");
         }
         else
         {
-            print2(Color::success, "User-wide integration is not installed\n");
+            print2(Color::Success, "User-wide integration is not installed\n");
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
@@ -376,7 +376,7 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
                            fs.exists(nuget_package, IgnoreErrors{}),
                            "Error: NuGet package creation \"succeeded\", but no .nupkg was produced. Expected %s",
                            nuget_package);
-        print2(Color::success, "Created nupkg: ", nuget_package, '\n');
+        print2(Color::Success, "Created nupkg: ", nuget_package, '\n');
 
         auto source_path = Strings::replace_all(buildsystems_dir, "`", "``");
 
@@ -408,7 +408,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         const int rc = cmd_execute(cmd);
         if (rc)
         {
-            vcpkg::printf(Color::error,
+            vcpkg::printf(Color::Error,
                           "%s\n"
                           "Could not run:\n"
                           "    '%s'\n",

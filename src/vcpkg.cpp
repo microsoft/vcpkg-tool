@@ -41,7 +41,7 @@ static constexpr int SURVEY_INITIAL_OFFSET_IN_HOURS = SURVEY_INTERVAL_IN_HOURS -
 
 static void invalid_command(const std::string& cmd)
 {
-    print2(Color::error, "invalid command: ", cmd, '\n');
+    print2(Color::Error, "invalid command: ", cmd, '\n');
     print_usage();
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
@@ -166,8 +166,6 @@ int main(const int argc, const char* const* const argv)
     auto& fs = get_real_filesystem();
     *(LockGuardPtr<ElapsedTimer>(GlobalState::timer)) = ElapsedTimer::create_started();
 
-    msg::print_error(msg::VcpkgTestMessage, msg::name = "la monde");
-
 #if defined(_WIN32)
     GlobalState::g_init_console_cp = GetConsoleCP();
     GlobalState::g_init_console_output_cp = GetConsoleOutputCP();
@@ -272,7 +270,7 @@ int main(const int argc, const char* const* const argv)
 
         if (args.send_metrics.value_or(false) && !metrics->metrics_enabled())
         {
-            print2(Color::warning, "Warning: passed --sendmetrics, but metrics are disabled.\n");
+            print2(Color::Warning, "Warning: passed --sendmetrics, but metrics are disabled.\n");
         }
     } // unlock g_metrics
 
@@ -303,7 +301,7 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    msg::print_error(msg::VcpkgHasCrashed,
+    msg::print(Color::Error, msg::VcpkgHasCrashed,
         msg::email = Commands::Contact::email(),
         msg::vcpkg_version = Commands::Version::version(),
         msg::error = exc_msg);

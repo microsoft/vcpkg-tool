@@ -1219,21 +1219,21 @@ namespace vcpkg
             }
             else
             {
-                print2(Color::warning,
+                print2(Color::Warning,
                        R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
     (only one of these should be used; the baseline from vcpkg-configuration.json will be used))");
             }
         }
         else if (auto default_registry = default_registry_.get())
         {
-            vcpkg::printf(Color::warning,
+            vcpkg::printf(Color::Warning,
                           "warning: the default registry has been replaced with a %s registry, but `builtin-baseline` "
                           "is specified in vcpkg.json. This field will have no effect.\n",
                           default_registry->kind());
         }
         else
         {
-            print2(Color::warning,
+            print2(Color::Warning,
                    "warning: the default registry has been disabled, but `builtin-baseline` is specified in "
                    "vcpkg.json. This field will have no effect.\n");
         }

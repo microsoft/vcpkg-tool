@@ -366,7 +366,7 @@ namespace
                 }
 
                 auto errors = Downloads::replace_secrets(std::move(maybe_success).error(), m_secrets);
-                print2(Color::warning, errors);
+                print2(Color::Warning, errors);
             }
 
             if (!m_put_url_templates.empty())
@@ -390,7 +390,7 @@ namespace
 
                 if (ec)
                 {
-                    vcpkg::printf(Color::warning, "Failed to store binary cache %s: %s\n", archive_path, ec.message());
+                    vcpkg::printf(Color::Warning, "Failed to store binary cache %s: %s\n", archive_path, ec.message());
                 }
                 else
                 {
@@ -624,7 +624,7 @@ namespace
 
             if (res.output.find("Authentication may require manual action.") != std::string::npos)
             {
-                print2(Color::warning,
+                print2(Color::Warning,
                        "One or more NuGet credential providers requested manual action. Add the binary "
                        "source 'interactive' to allow interactivity.\n");
             }
@@ -632,7 +632,7 @@ namespace
                          std::string::npos &&
                      res.exit_code != 0)
             {
-                print2(Color::warning,
+                print2(Color::Warning,
                        "One or more NuGet credential providers failed to authenticate. See "
                        "https://github.com/Microsoft/vcpkg/tree/master/docs/users/binarycaching.md for "
                        "more details on how to provide credentials.\n");
@@ -867,7 +867,7 @@ namespace
 
             if (run_nuget_commandline(cmdline) != 0)
             {
-                print2(Color::error, "Packing NuGet failed. Use --debug for more information.\n");
+                print2(Color::Error, "Packing NuGet failed. Use --debug for more information.\n");
                 return;
             }
 
@@ -896,7 +896,7 @@ namespace
                 if (run_nuget_commandline(cmd) != 0)
                 {
                     print2(
-                        Color::error, "Pushing NuGet to ", write_src, " failed. Use --debug for more information.\n");
+                        Color::Error, "Pushing NuGet to ", write_src, " failed. Use --debug for more information.\n");
                 }
             }
             for (auto&& write_cfg : m_write_configs)
@@ -923,7 +923,7 @@ namespace
                 if (run_nuget_commandline(cmd) != 0)
                 {
                     print2(
-                        Color::error, "Pushing NuGet with ", write_cfg, " failed. Use --debug for more information.\n");
+                        Color::Error, "Pushing NuGet with ", write_cfg, " failed. Use --debug for more information.\n");
                 }
             }
 
@@ -962,7 +962,7 @@ namespace
             return true;
         }
 
-        print2(Color::warning, "gsutil failed to upload with exit code: ", out.exit_code, '\n', out.output);
+        print2(Color::Warning, "gsutil failed to upload with exit code: ", out.exit_code, '\n', out.output);
         return false;
     }
 
@@ -976,7 +976,7 @@ namespace
             return true;
         }
 
-        print2(Color::warning, "gsutil failed to download with exit code: ", out.exit_code, '\n', out.output);
+        print2(Color::Warning, "gsutil failed to download with exit code: ", out.exit_code, '\n', out.output);
         return false;
     }
 

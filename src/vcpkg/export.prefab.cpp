@@ -686,7 +686,7 @@ namespace vcpkg::Export::Prefab
 )");
                 }
             }
-            print2(Color::success, Strings::format("Successfully exported %s. Checkout %s  \n", name, paths.prefab));
+            print2(Color::Success, Strings::format("Successfully exported %s. Checkout %s  \n", name, paths.prefab));
         }
     }
 }

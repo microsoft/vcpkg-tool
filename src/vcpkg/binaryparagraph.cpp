@@ -92,7 +92,7 @@ namespace vcpkg
 
         if (const auto err = parser.error_info(this->spec.to_string()))
         {
-            print2(Color::error, "Error: while parsing the Binary Paragraph for ", this->spec, '\n');
+            print2(Color::Error, "Error: while parsing the Binary Paragraph for ", this->spec, '\n');
             print_error_message(err);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }

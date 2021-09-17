@@ -148,7 +148,7 @@ namespace vcpkg::Build
 
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            print2(Color::error, "The build command requires all dependencies to be already installed.\n");
+            print2(Color::Error, "The build command requires all dependencies to be already installed.\n");
             print2("The following dependencies are missing:\n\n");
             for (const auto& p : result.unmet_dependencies)
             {
@@ -162,7 +162,7 @@ namespace vcpkg::Build
 
         if (result.code != BuildResult::SUCCEEDED)
         {
-            print2(Color::error, Build::create_error_message(result.code, spec), '\n');
+            print2(Color::Error, Build::create_error_message(result.code, spec), '\n');
             print2(Build::create_user_troubleshooting_message(*action, paths), '\n');
             return 1;
         }
@@ -863,7 +863,7 @@ namespace vcpkg::Build
 
         if (Strings::starts_with(triplet_file_path, paths.community_triplets))
         {
-            vcpkg::printf(vcpkg::Color::warning,
+            vcpkg::printf(vcpkg::Color::Warning,
                           "-- Using community triplet %s. This triplet configuration is not guaranteed to succeed.\n",
                           triplet.canonical_name());
             vcpkg::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);

@@ -1090,12 +1090,12 @@ namespace vcpkg
             Checks::check_exit(VCPKG_LINE_INFO, error_info != nullptr);
             if (!error_info->error.empty())
             {
-                print2(Color::error, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
+                print2(Color::Error, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
             }
 
             if (!error_info->other_errors.empty())
             {
-                print2(Color::error, "Errors occurred while parsing ", error_info->name, "\n");
+                print2(Color::Error, "Errors occurred while parsing ", error_info->name, "\n");
                 for (auto&& msg : error_info->other_errors)
                     print2("    ", msg, '\n');
             }
@@ -1106,7 +1106,7 @@ namespace vcpkg
         {
             if (!error_info->extra_fields.empty())
             {
-                print2(Color::error,
+                print2(Color::Error,
                        "Error: There are invalid fields in the control or manifest file of ",
                        error_info->name,
                        '\n');
@@ -1137,7 +1137,7 @@ namespace vcpkg
         {
             if (!error_info->missing_fields.empty())
             {
-                print2(Color::error, "Error: There are missing fields in the control file of ", error_info->name, '\n');
+                print2(Color::Error, "Error: There are missing fields in the control file of ", error_info->name, '\n');
                 print2("The following fields were missing:\n");
                 for (const auto& pr : error_info->missing_fields)
                 {
@@ -1150,7 +1150,7 @@ namespace vcpkg
         {
             if (!error_info->expected_types.empty())
             {
-                print2(Color::error,
+                print2(Color::Error,
                        "Error: There are invalid field types in the CONTROL or manifest file of ",
                        error_info->name,
                        '\n');
