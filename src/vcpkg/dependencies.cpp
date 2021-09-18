@@ -231,6 +231,26 @@ namespace vcpkg::Dependencies
                 return *m_scfl.get();
             }
 
+            Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec)
+            {
+                if (spec.feature() == "core")
+                {
+                    return get_scfl_or_exit().source_control_file->core_paragraph->supports_expression;
+                }
+                else if (spec.feature() != "default")
+                {
+                    auto maybe_paragraph = get_scfl_or_exit().source_control_file->find_feature(spec.feature());
+                    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
+                                                maybe_paragraph.has_value(),
+                                                "Package %s does not have a %s feature",
+                                                spec.name(),
+                                                spec.feature());
+
+                    return maybe_paragraph.get()->supports_expression;
+                }
+                return nullopt;
+            }
+
             PackageSpec m_spec;
             ExpectedS<const SourceControlFileLocation&> m_scfl;
 
@@ -855,33 +875,16 @@ namespace vcpkg::Dependencies
                 }
                 else
                 {
-                    const PlatformExpression::Expr* supports_expression = nullptr;
-                    if (spec.feature() == "core")
+                    auto supports_expression = clust.get_applicable_supports_expression(spec);
+                    if (supports_expression && !supports_expression.get()->is_empty())
                     {
-                        supports_expression =
-                            &clust.get_scfl_or_exit().source_control_file->core_paragraph->supports_expression;
-                    }
-                    else if (spec.feature() != "default")
-                    {
-                        auto maybe_paragraph =
-                            clust.get_scfl_or_exit().source_control_file->find_feature(spec.feature());
-                        Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                                    maybe_paragraph.has_value(),
-                                                    "Package %s does not have a %s feature",
-                                                    spec.name(),
-                                                    spec.feature());
-
-                        supports_expression = &maybe_paragraph.get()->supports_expression;
-                    }
-                    if (supports_expression && !supports_expression->is_empty())
-                    {
-                        if (!supports_expression->evaluate(
+                        if (!supports_expression.get()->evaluate(
                                 m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
                         {
                             const auto msg = Strings::format("%s[%s] is only supported on '%s'",
                                                              spec.name(),
                                                              spec.feature(),
-                                                             to_string(*supports_expression));
+                                                             to_string(*supports_expression.get()));
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
                                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: " + msg);
@@ -1944,21 +1947,11 @@ namespace vcpkg::Dependencies
                         "with detailed steps to reproduce the problem.");
                 }
 
-                const auto get_vars = [&]() {
-                    auto maybe_vars = m_var_provider.get_dep_info_vars(spec);
-                    if (!maybe_vars.has_value())
-                    {
-                        m_var_provider.load_dep_info_vars({&spec, 1});
-                        maybe_vars = m_var_provider.get_dep_info_vars(spec);
-                    }
-                    return maybe_vars.value_or_exit(VCPKG_LINE_INFO);
-                };
-
                 { // use if(init;condition) if we support c++17
                     const auto& supports_expr = p_vnode->scfl->source_control_file->core_paragraph->supports_expression;
                     if (!supports_expr.is_empty())
                     {
-                        if (!supports_expr.evaluate(get_vars()))
+                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec)))
                         {
                             const auto msg = Strings::concat(
                                 spec, "@", new_ver, " is only supported on '", to_string(supports_expr), "'\n");
@@ -1983,7 +1976,7 @@ namespace vcpkg::Dependencies
                     const auto& supports_expr = feature.get()->supports_expression;
                     if (!supports_expr.is_empty())
                     {
-                        if (!supports_expr.evaluate(get_vars()))
+                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec)))
                         {
                             const auto msg = Strings::concat(spec,
                                                              "@",

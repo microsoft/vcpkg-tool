@@ -27,6 +27,18 @@ namespace vcpkg::CMakeVars
         load_tag_vars(install_package_specs, port_provider, host_triplet);
     }
 
+    const std::unordered_map<std::string, std::string>& CMakeVarProvider::get_or_load_dep_info_vars(
+        const PackageSpec& spec) const
+    {
+        auto maybe_vars = get_dep_info_vars(spec);
+        if (!maybe_vars.has_value())
+        {
+            load_dep_info_vars({&spec, 1});
+            maybe_vars = get_dep_info_vars(spec);
+        }
+        return maybe_vars.value_or_exit(VCPKG_LINE_INFO);
+    }
+
     namespace
     {
         struct TripletCMakeVarProvider : CMakeVarProvider

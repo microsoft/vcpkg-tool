@@ -20,6 +20,8 @@ namespace vcpkg::CMakeVars
         virtual Optional<const std::unordered_map<std::string, std::string>&> get_dep_info_vars(
             const PackageSpec& spec) const = 0;
 
+        const std::unordered_map<std::string, std::string>& get_or_load_dep_info_vars(const PackageSpec& spec) const;
+
         virtual Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
             const PackageSpec& spec) const = 0;
 
