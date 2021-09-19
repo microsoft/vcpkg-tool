@@ -495,7 +495,7 @@ namespace vcpkg::Install
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
-                print2(Build::create_user_troubleshooting_message(action), '\n');
+                print2(Build::create_user_troubleshooting_message(action, paths), '\n');
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
