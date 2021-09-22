@@ -25,8 +25,8 @@ namespace vcpkg
     }
     static DWORD size_to_write(::size_t size)
     {
-        return size > DWORD_MAX
-            ? DWORD_MAX
+        return size > static_cast<DWORD>(-1) // DWORD_MAX
+            ? static_cast<DWORD>(-1)
             : static_cast<DWORD>(size);
     }
 
@@ -38,7 +38,7 @@ namespace vcpkg
         if (is_console(handle))
         {
             WORD original_color = 0;
-            if (c != Color::none)
+            if (c != Color::None)
             {
                 CONSOLE_SCREEN_BUFFER_INFO console_screen_buffer_info{};
                 ::GetConsoleScreenBufferInfo(handle, &console_screen_buffer_info);

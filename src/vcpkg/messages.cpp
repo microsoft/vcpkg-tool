@@ -5,19 +5,113 @@ namespace vcpkg
 {
     struct MessageContext::MessageContextImpl
     {
-        std::map<std::string, std::string, std::less<>> localized_strings;
-    };
+        // this is basically a SoA - each index is:
+        // {
+        //   name
+        //   default_string
+        //   localized_string
+        // }
+        // requires: names.size() == default_strings.size() == localized_strings.size()
+        static std::vector<std::string> names; // const after startup
+        static std::vector<std::string> default_strings; // const after startup
+        std::vector<std::string> localized_strings;
 
-    Optional<fmt::string_view> MessageContext::get_dynamic_format_string(StringView name) const
+        MessageContextImpl() : localized_strings(default_strings.size()) {}
+    };
+    std::vector<std::string> MessageContext::MessageContextImpl::default_strings{};
+    std::vector<std::string> MessageContext::MessageContextImpl::names{};
+
+    MessageContext::MessageContext(const Json::Object& message_map) : impl(std::make_unique<MessageContextImpl>())
     {
-        auto itr = impl->localized_strings.find(name);
-        if (itr == impl->localized_strings.end())
+        std::vector<std::string> names_without_localization;
+        auto& strs = impl->localized_strings;
+
+        for (::size_t index = 0; index < MessageContextImpl::names.size(); ++index)
         {
-            return nullopt;
+            const auto& name = MessageContextImpl::names[index];
+            if (auto p = message_map.get(MessageContextImpl::names[index]))
+            {
+                strs[index] = p->string().to_string();
+            }
+            else
+            {
+                names_without_localization.push_back(name);
+            }
+        }
+
+        if (!names_without_localization.empty())
+        {
+            println(Color::Warning, NoLocalizationForMessages);
+            for (const auto& name : names_without_localization)
+            {
+                write_text_to_stdout(Color::Warning, fmt::format("    - {}\n", name));
+            }
+        }
+    }
+
+    MessageContext::MessageContext(StringView language) : impl(std::make_unique<MessageContextImpl>())
+    {
+        (void)language;
+    }
+
+    ::size_t MessageContext::last_message_index()
+    {
+        return MessageContextImpl::names.size();
+    }
+
+    ::size_t MessageContext::_internal_register_message(StringView name, StringView format_string)
+    {
+        auto res = MessageContextImpl::names.size();
+        MessageContextImpl::names.push_back(name.to_string());
+        MessageContextImpl::default_strings.push_back(format_string.to_string());
+        return res;
+    }
+
+    StringView MessageContext::get_format_string(::size_t index) const
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, impl->localized_strings.size() == MessageContextImpl::default_strings.size());
+        Checks::check_exit(VCPKG_LINE_INFO, index < MessageContextImpl::default_strings.size());
+        const auto& localized = impl->localized_strings[index];
+        if(localized.empty())
+        {
+            return MessageContextImpl::default_strings[index];
         }
         else
         {
-            return fmt::string_view(itr->second);
+            return localized;
         }
+    }
+    StringView MessageContext::get_message_name(::size_t index)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, index < MessageContextImpl::names.size());
+        return MessageContextImpl::names[index];
+    }
+    StringView MessageContext::get_default_format_string(::size_t index)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, index < MessageContextImpl::default_strings.size());
+        return MessageContextImpl::default_strings[index];
+    }
+
+#define REGISTER_MESSAGE(NAME) \
+    const ::size_t MessageContext :: NAME ## _t :: index = _internal_register_message(name(), default_format_string());
+
+    REGISTER_MESSAGE(VcpkgHasCrashed);
+    REGISTER_MESSAGE(AllRequestedPackagesInstalled);
+    REGISTER_MESSAGE(NoLocalizationForMessages);
+
+    void GenerateDefaultMessageMapCommand::perform_and_exit(const VcpkgCmdArguments&, Filesystem&) const
+    {
+        Json::Object obj;
+        auto size = MessageContext::last_message_index();
+        for (::size_t index = 0; index < size; ++index)
+        {
+            obj.insert(
+                MessageContext::get_message_name(index).to_string(),
+                Json::Value::string(MessageContext::get_default_format_string(index).to_string())
+            );
+        }
+
+        write_text_to_stdout(Color::None, Json::stringify(obj, {}));
+        Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

@@ -1,6 +1,8 @@
 #include <string>
 #include <fmt/format.h>
 #include <vcpkg/base/system.print.h>
+#include <vcpkg/commands.interface.h>
+#include <vcpkg/base/json.h>
 
 namespace vcpkg
 {
@@ -22,7 +24,10 @@ namespace vcpkg
 
     struct MessageContext
     {
+        // load from "${SCRIPTS}/locales/${language}.json"
         explicit MessageContext(StringView language);
+        // load from the json object
+        explicit MessageContext(const Json::Object& message_map);
 
         template <class Message, class... Ts>
         void print(Message m, Ts... args) const
@@ -32,17 +37,19 @@ namespace vcpkg
         template <class Message, class... Ts>
         void println(Message m, Ts... args) const
         {
-            println(Color::None, m, args...);
+            print(Color::None, m, args...);
+            write_text_to_stdout(Color::None, "\n");
         }
 
         template <class Message, class... Ts>
         void print(Color c, Message, Ts... args) const
         {
             Message::check_format_args(args...);
+            auto fmt_string = get_format_string(Message::index);
             write_text_to_stdout(c,
                 fmt::vformat(
-                    get_format_string<Message>(),
-                    fmt::arg(args.name, *args.parameter)...
+                    fmt::string_view(fmt_string.begin(), fmt_string.size()),
+                    fmt::make_format_args(fmt::arg(args.name, *args.parameter)...)
                 )
             );
         }
@@ -52,6 +59,25 @@ namespace vcpkg
             print(c, m, args...);
             write_text_to_stdout(Color::None, "\n");
         }
+
+        static ::size_t last_message_index();
+
+        // REQUIRES: index < last_message_index()
+        StringView get_format_string(::size_t index) const;
+        // REQUIRES: index < last_message_index()
+        static StringView get_message_name(::size_t index);
+        // REQUIRES: index < last_message_index()
+        static StringView get_default_format_string(::size_t index);
+
+    private:
+        // returns the id to pass to `get_format_string`
+        // should only be called during startup
+        static ::size_t _internal_register_message(StringView name, StringView default_format_string);
+
+        struct MessageContextImpl;
+        std::unique_ptr<MessageContextImpl> impl;
+
+    public:
 
 #define DEFINE_MSG_ARG(TYPE, NAME) \
         constexpr static struct NAME ## _t { \
@@ -69,21 +95,23 @@ namespace vcpkg
 
 #define DEFINE_MESSAGE_NOARGS(NAME, DEFAULT_STR) \
     constexpr static struct NAME ## _t : detail::MessageCheckFormatArgs<> { \
-        static StringView name() noexcept { \
+        static StringView name() { \
             return #NAME; \
-        } \
-        static fmt::string_view default_format_string() noexcept { \
+        }; \
+        static StringView default_format_string() noexcept { \
             return DEFAULT_STR; \
         } \
+        static const ::size_t index; \
     } NAME
 #define DEFINE_MESSAGE(NAME, DEFAULT_STR, ...) \
     constexpr static struct NAME ## _t : detail::MessageCheckFormatArgs<__VA_ARGS__> { \
-        static StringView name() noexcept { \
+        static StringView name() { \
             return #NAME; \
         } \
-        static fmt::string_view default_format_string() noexcept { \
+        static StringView default_format_string() noexcept { \
             return DEFAULT_STR; \
         } \
+        static const ::size_t index; \
     } NAME
 
     DEFINE_MESSAGE(VcpkgHasCrashed, 
@@ -99,24 +127,14 @@ CMD=)",
         vcpkg_version_t,
         error_t);
     DEFINE_MESSAGE_NOARGS(AllRequestedPackagesInstalled, "All requested packages are currently installed.");
+    DEFINE_MESSAGE_NOARGS(NoLocalizationForMessages, "No localization for the following messages:");
 
 #undef DEFINE_MESSAGE
-
-    private:
-        template <class Message>
-        fmt::string_view get_format_string() const
-        {
-            auto fsopt = get_dynamic_format_string(Message::name());
-            if (auto fstr = fsopt.get())
-            {
-                return *fstr;
-            }
-            return Message::default_format_string();
-        }
-        Optional<fmt::string_view> get_dynamic_format_string(StringView name) const;
-
-        struct MessageContextImpl;
-        std::unique_ptr<MessageContextImpl> impl;
+#undef DEFINE_MESSAGE_NOARGS
     };
 
+    struct GenerateDefaultMessageMapCommand : Commands::BasicCommand
+    {
+        void perform_and_exit(const VcpkgCmdArguments&, Filesystem&) const override;
+    };
 }
