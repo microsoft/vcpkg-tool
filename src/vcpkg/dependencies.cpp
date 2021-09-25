@@ -1300,7 +1300,7 @@ namespace vcpkg::Dependencies
                 std::vector<std::string> features;
             };
 
-            // This object contains the current version within a given version sheme (except for the "string" scheme,
+            // This object contains the current version within a given version scheme (except for the "string" scheme,
             // there we save an object for every version)
             struct VersionSchemeInfo
             {
@@ -1317,11 +1317,22 @@ namespace vcpkg::Dependencies
 
             struct PackageNode
             {
-                // Mapping from version to the newest version in the cooresponding version sheme
+                // Mapping from version to the newest version in the corresponding version scheme
+                // For example, given the versions:
+                //   - "version-string": "1.0.0"
+                //   - "version": "1.0.1"
+                //   - "version": "1.0.2"
+                // you'd have a map:
+                //   {
+                //     "1.0.0": { "version-string": "1.0.0" },
+                //     "1.0.1": { "version": "1.0.2" },
+                //     "1.0.2": { "version": "1.0.2" }
+                //  }
                 std::map<Versions::Version, VersionSchemeInfo*, VersionTMapLess> vermap;
-                // We don't know how to compare "string" versions, so we save all versions seperatly
+                // We don't know how to compare "version-string" versions, so keep all the versions separately
                 std::map<std::string, VersionSchemeInfo> exacts;
-                // Within each version sheme("version", semver, date) we only track the newest version
+                // for each version type besides string (relaxed, semver, date), we only track the latest version
+                // required
                 Optional<std::unique_ptr<VersionSchemeInfo>> relaxed;
                 Optional<std::unique_ptr<VersionSchemeInfo>> semver;
                 Optional<std::unique_ptr<VersionSchemeInfo>> date;
@@ -1330,11 +1341,15 @@ namespace vcpkg::Dependencies
                 bool user_requested = false;
 
                 VersionSchemeInfo* get_node(const Versions::Version& ver);
-                // Created/Updates(is newer than existing) the version entry for the given sheme
+                // Adds the version to the version resolver:
+                //   - for string version schemes, just adds the newer version to the set
+                //   - for non-string version schemes:
+                //     - if the scheme doesn't exist in the set, adds the version to the set
+                //     - if the scheme already exists in the set, and the version is newer than the existing entry,
+                //     replaces the current entry for the scheme
                 VersionSchemeInfo& emplace_node(Versions::Scheme scheme, const Versions::Version& ver);
 
                 PackageNode() = default;
-                PackageNode(bool default_features) : default_features(default_features){};
                 PackageNode(const PackageNode&) = delete;
                 PackageNode(PackageNode&&) = default;
                 PackageNode& operator=(const PackageNode&) = delete;
@@ -1362,20 +1377,23 @@ namespace vcpkg::Dependencies
                 }
             };
 
-            std::vector<DepSpec> m_roots; // the roots of the dependency graph (given in the manifest file)
+            // the roots of the dependency graph (given in the manifest file)
+            std::vector<DepSpec> m_roots;
             // mapping from portname -> version. "overrides" field in manifest file
             std::map<std::string, Versions::Version> m_overrides;
-            std::map<PackageSpec, PackageNode> m_graph; // mapping from (portname, triplet) -> what to install
+            // mapping from { package specifier -> node containing resolution information for that package }
+            std::map<PackageSpec, PackageNode> m_graph;
 
             std::pair<const PackageSpec, PackageNode>& emplace_package(const PackageSpec& spec);
 
-            void add_dependency_from(std::pair<const PackageSpec, PackageNode>& ref,
-                                     const Dependency& dep,
-                                     const std::string& origin);
-            void add_port_at_version(std::pair<const PackageSpec, PackageNode>& graph_entry,
-                                     const Versions::Version& ver,
-                                     const std::string& origin);
-            void request_port_feature(std::pair<const PackageSpec, PackageNode>& ref,
+            // the following 4 functions will add stuff recursivly
+            void require_dependency(std::pair<const PackageSpec, PackageNode>& ref,
+                                    const Dependency& dep,
+                                    const std::string& origin);
+            void require_port_version(std::pair<const PackageSpec, PackageNode>& graph_entry,
+                                      const Versions::Version& ver,
+                                      const std::string& origin);
+            void require_port_feature(std::pair<const PackageSpec, PackageNode>& ref,
                                       const std::string& feature,
                                       const std::string& origin);
 
@@ -1552,12 +1570,12 @@ namespace vcpkg::Dependencies
                     // this is a feature dependency for oneself
                     for (auto&& f : dep.features)
                     {
-                        request_port_feature(ref, f, ref.first.name());
+                        require_port_feature(ref, f, ref.first.name());
                     }
                 }
                 else
                 {
-                    add_dependency_from(dep_node, dep, ref.first.name());
+                    require_dependency(dep_node, dep, ref.first.name());
                 }
 
                 p.first->second.emplace_back(dep_spec, "core");
@@ -1568,20 +1586,20 @@ namespace vcpkg::Dependencies
             }
         }
 
-        void VersionedPackageGraph::add_dependency_from(std::pair<const PackageSpec, PackageNode>& ref,
-                                                        const Dependency& dep,
-                                                        const std::string& origin)
+        void VersionedPackageGraph::require_dependency(std::pair<const PackageSpec, PackageNode>& ref,
+                                                       const Dependency& dep,
+                                                       const std::string& origin)
         {
             auto maybe_overlay = m_o_provider.get_control_file(ref.first.name());
             auto over_it = m_overrides.find(ref.first.name());
             if (auto p_overlay = maybe_overlay.get())
             {
                 auto overlay_version = to_version(*p_overlay->source_control_file);
-                add_port_at_version(ref, overlay_version, origin);
+                require_port_version(ref, overlay_version, origin);
             }
             else if (over_it != m_overrides.end())
             {
-                add_port_at_version(ref, over_it->second, origin);
+                require_port_version(ref, over_it->second, origin);
             }
             else
             {
@@ -1590,34 +1608,36 @@ namespace vcpkg::Dependencies
 
                 if (auto dv = dep_ver.get())
                 {
-                    add_port_at_version(ref, *dv, origin);
+                    require_port_version(ref, *dv, origin);
                 }
 
                 if (auto bv = base_ver.get())
                 {
-                    add_port_at_version(ref, *bv, origin);
+                    require_port_version(ref, *bv, origin);
                 }
             }
 
             for (auto&& f : dep.features)
             {
-                request_port_feature(ref, f, origin);
+                require_port_feature(ref, f, origin);
             }
         }
-        void VersionedPackageGraph::add_port_at_version(std::pair<const PackageSpec, PackageNode>& graph_entry,
-                                                        const Versions::Version& version,
-                                                        const std::string& origin)
+        void VersionedPackageGraph::require_port_version(std::pair<const PackageSpec, PackageNode>& graph_entry,
+                                                         const Versions::Version& version,
+                                                         const std::string& origin)
         {
             ExpectedS<const vcpkg::SourceControlFileAndLocation&> maybe_scfl;
 
-            // if this is a overload port, ignore the given version and use the version from the overlay
+            // if this port is an overlay port, ignore the given version and use the version from the overlay
             auto maybe_overlay = m_o_provider.get_control_file(graph_entry.first.name());
             if (auto p_overlay = maybe_overlay.get())
             {
                 auto overlay_version = to_version(*p_overlay->source_control_file);
-                if (version != overlay_version) // prevent endless recursion
+                // If the original request did not match the overlay version, restart this function to operate on the
+                // overlay version
+                if (version != overlay_version)
                 {
-                    return add_port_at_version(graph_entry, overlay_version, origin);
+                    return require_port_version(graph_entry, overlay_version, origin);
                 }
                 maybe_scfl = *p_overlay;
             }
@@ -1627,7 +1647,7 @@ namespace vcpkg::Dependencies
                 auto over_it = m_overrides.find(graph_entry.first.name());
                 if (over_it != m_overrides.end() && over_it->second != version)
                 {
-                    return add_port_at_version(graph_entry, over_it->second, origin);
+                    return require_port_version(graph_entry, over_it->second, origin);
                 }
                 maybe_scfl = m_ver_provider.get_control_file({graph_entry.first.name(), version});
             }
@@ -1681,7 +1701,7 @@ namespace vcpkg::Dependencies
             }
         }
 
-        void VersionedPackageGraph::request_port_feature(std::pair<const PackageSpec, PackageNode>& ref,
+        void VersionedPackageGraph::require_port_feature(std::pair<const PackageSpec, PackageNode>& ref,
                                                          const std::string& feature,
                                                          const std::string& origin)
         {
@@ -1755,20 +1775,35 @@ namespace vcpkg::Dependencies
             Util::sort_unique_erase(specs);
             m_var_provider.load_dep_info_vars(specs, m_host_triplet);
             const auto& vars = m_var_provider.get_dep_info_vars(toplevel).value_or_exit(VCPKG_LINE_INFO);
+            std::vector<const Dependency*> active_deps;
 
+            // First add all top level packages to ensure the default_features is set to false before recursing into the
+            // individual packages. Otherwise, a case like:
+            //     A -> B, C[core]
+            //     B -> C
+            // could install the default features of C. (A is the manifest/vcpkg.json)
             for (auto&& dep : deps)
             {
                 if (!dep.platform.evaluate(vars)) continue;
 
+                active_deps.push_back(&dep);
+
+                // Disable default features for deps with [core] as a dependency
+                // Note: x[core], x[y] will still eventually depend on defaults due to the second x[y]
+                if (Util::find(dep.features, "core") != dep.features.end())
+                {
+                    auto& node = emplace_package(dep_to_spec(dep));
+                    node.second.default_features = false;
+                }
+            }
+
+            for (auto pdep : active_deps)
+            {
+                const auto& dep = *pdep;
                 auto spec = dep_to_spec(dep);
 
                 auto& node = emplace_package(spec);
                 node.second.user_requested = true;
-                // Disable default features for deps with [core] as a dependency
-                if (Util::find(dep.features, "core") != dep.features.end())
-                {
-                    node.second.default_features = false;
-                }
 
                 auto maybe_overlay = m_o_provider.get_control_file(dep.name);
                 auto over_it = m_overrides.find(dep.name);
@@ -1776,12 +1811,12 @@ namespace vcpkg::Dependencies
                 {
                     auto ver = to_version(*p_overlay->source_control_file);
                     m_roots.push_back(DepSpec{spec, ver, dep.features});
-                    add_port_at_version(node, ver, toplevel.name());
+                    require_port_version(node, ver, toplevel.name());
                 }
                 else if (over_it != m_overrides.end())
                 {
                     m_roots.push_back(DepSpec{spec, over_it->second, dep.features});
-                    add_port_at_version(node, over_it->second, toplevel.name());
+                    require_port_version(node, over_it->second, toplevel.name());
                 }
                 else
                 {
@@ -1804,13 +1839,13 @@ namespace vcpkg::Dependencies
                                     *p_base_ver);
                                 if (r == VerComp::lt)
                                 {
-                                    add_port_at_version(node, *p_base_ver, "baseline");
-                                    add_port_at_version(node, *p_dep_ver, toplevel.name());
+                                    require_port_version(node, *p_base_ver, "baseline");
+                                    require_port_version(node, *p_dep_ver, toplevel.name());
                                 }
                                 else
                                 {
-                                    add_port_at_version(node, *p_dep_ver, toplevel.name());
-                                    add_port_at_version(node, *p_base_ver, "baseline");
+                                    require_port_version(node, *p_dep_ver, toplevel.name());
+                                    require_port_version(node, *p_base_ver, "baseline");
                                 }
                             }
                             else
@@ -1821,13 +1856,13 @@ namespace vcpkg::Dependencies
                         }
                         else
                         {
-                            add_port_at_version(node, *p_dep_ver, toplevel.name());
+                            require_port_version(node, *p_dep_ver, toplevel.name());
                         }
                     }
                     else if (auto p_base_ver = base_ver.get())
                     {
                         m_roots.push_back(DepSpec{spec, *p_base_ver, dep.features});
-                        add_port_at_version(node, *p_base_ver, toplevel.name());
+                        require_port_version(node, *p_base_ver, toplevel.name());
                     }
                     else
                     {
@@ -1837,7 +1872,7 @@ namespace vcpkg::Dependencies
 
                 for (auto&& f : dep.features)
                 {
-                    request_port_feature(node, f, toplevel.name());
+                    require_port_feature(node, f, toplevel.name());
                 }
             }
         }
@@ -1895,6 +1930,7 @@ namespace vcpkg::Dependencies
             };
             std::vector<Frame> stack;
 
+            // Adds a new Frame to the stack if the spec was not already added
             auto push = [&emitted, this, &stack, unsupported_port_action, &ret](
                             const PackageSpec& spec,
                             const Versions::Version& new_ver,
