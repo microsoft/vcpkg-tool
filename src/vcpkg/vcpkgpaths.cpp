@@ -1057,45 +1057,53 @@ namespace vcpkg
 
         std::vector<const Toolset*> candidates = Util::fmap(vs_toolsets, [](auto&& x) { return &x; });
         const auto tsv = prebuildinfo.platform_toolset.get();
+        const auto tsvf = prebuildinfo.platform_toolset_version.get();
         auto vsp = prebuildinfo.visual_studio_path.get();
         if (!vsp && !m_pimpl->default_vs_path.empty())
         {
             vsp = &m_pimpl->default_vs_path;
         }
+        
+        std::string error_message = "Could not find any Visual Studio instance";
 
-        if (tsv && vsp)
+        if (vsp)
         {
-            Util::erase_remove_if(
-                candidates, [&](const Toolset* t) { return *tsv != t->version || *vsp != t->visual_studio_root_path; });
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               !candidates.empty(),
-                               "Could not find Visual Studio instance at %s with %s toolset.",
-                               *vsp,
-                               *tsv);
-
-            Checks::check_exit(VCPKG_LINE_INFO, candidates.size() == 1);
-            return *candidates.back();
+            Util::erase_remove_if(candidates, [&](const Toolset* t) { return *vsp != t->visual_studio_root_path; });
+            error_message += " at " + (*vsp).native();
         }
 
         if (tsv)
         {
             Util::erase_remove_if(candidates, [&](const Toolset* t) { return *tsv != t->version; });
-            Checks::check_exit(
-                VCPKG_LINE_INFO, !candidates.empty(), "Could not find Visual Studio instance with %s toolset.", *tsv);
+            error_message += " with " + *tsv + " toolset";
         }
 
-        if (vsp)
+        if (tsvf)
         {
-            const auto vs_root_path = *vsp;
-            Util::erase_remove_if(candidates,
-                                  [&](const Toolset* t) { return vs_root_path != t->visual_studio_root_path; });
-            Checks::check_exit(
-                VCPKG_LINE_INFO, !candidates.empty(), "Could not find Visual Studio instance at %s.", vs_root_path);
+            Util::erase_remove_if(candidates, [&](const Toolset* t) {
+                const auto requested_version = *tsvf;
+                if (requested_version == t->full_version)
+                {
+                    return false;
+                }
+                // Check if requested version is part of the full version, ie "14.25" should match "14.25.28610"
+                return !(requested_version.size() < t->full_version.size() &&
+                         t->full_version[requested_version.size()] == '.' &&
+                         t->full_version.substr(0, tsvf->size()) == requested_version);
+            });
+            error_message += " for toolset version " + *tsvf;
         }
 
-        Checks::check_exit(VCPKG_LINE_INFO, !candidates.empty(), "No suitable Visual Studio instances were found");
-        return *candidates.front();
+        Checks::check_exit(VCPKG_LINE_INFO, !candidates.empty(), error_message + ".");
 
+        if (tsv && vsp)
+        {
+            return *candidates.back();
+        }
+        else
+        {
+            return *candidates.front();
+        }
 #endif
     }
 

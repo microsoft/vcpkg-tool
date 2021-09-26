@@ -245,7 +245,7 @@ namespace vcpkg::VisualStudio
                     auto toolset_version_full = subdir.filename();
                     auto toolset_version_prefix = toolset_version_full.substr(0, 4);
                     CStringView toolset_version;
-                    std::string vcvars_option;
+                    std::string vcvars_option = "-vcvars_ver=" + toolset_version_full.to_string();
                     if (toolset_version_prefix.size() != 4)
                     {
                         // unknown toolset
@@ -254,17 +254,14 @@ namespace vcpkg::VisualStudio
                     else if (toolset_version_prefix.byte_at_index(3) == '1')
                     {
                         toolset_version = V_141;
-                        vcvars_option = "-vcvars_ver=14.1";
                     }
                     else if (toolset_version_prefix.byte_at_index(3) == '2')
                     {
                         toolset_version = V_142;
-                        vcvars_option = "-vcvars_ver=14.2";
                     }
                     else if (toolset_version_prefix.byte_at_index(3) == '3')
                     {
                         toolset_version = V_143;
-                        vcvars_option = "-vcvars_ver=14.3";
                     }
                     else
                     {
@@ -281,6 +278,7 @@ namespace vcpkg::VisualStudio
                                         vcvarsall_bat,
                                         {vcvars_option},
                                         toolset_version,
+                                        toolset_version_full.to_string(),
                                         supported_architectures};
 
                         const auto english_language_pack = dumpbin_dir / "1033";
@@ -298,6 +296,7 @@ namespace vcpkg::VisualStudio
                                                       vcvarsall_bat,
                                                       {"-vcvars_ver=14.0"},
                                                       V_140,
+                                                      "14",
                                                       supported_architectures});
                         }
 
@@ -341,6 +340,7 @@ namespace vcpkg::VisualStudio
                                                  vcvarsall_bat,
                                                  {},
                                                  major_version == "14" ? V_140 : V_120,
+                                                 major_version,
                                                  supported_architectures};
 
                         const auto english_language_pack = vs_dumpbin_dir / "1033";

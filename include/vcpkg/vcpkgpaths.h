@@ -31,6 +31,7 @@ namespace vcpkg
         Path vcvarsall;
         std::vector<std::string> vcvarsall_options;
         CStringView version;
+        std::string full_version;
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
@@ -155,10 +156,7 @@ namespace vcpkg
         Optional<const Path&> get_manifest_path() const;
         const Configuration& get_configuration() const;
 
-        /// <summary>Retrieve a toolset matching a VS version</summary>
-        /// <remarks>
-        ///   Valid version strings are "v120", "v140", "v141", and "". Empty string gets the latest.
-        /// </remarks>
+        // Retrieve a toolset matching the requirements in prebuildinfo
         const Toolset& get_toolset(const Build::PreBuildInfo& prebuildinfo) const;
 
         View<Toolset> get_all_toolsets() const;

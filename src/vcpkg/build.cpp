@@ -1438,6 +1438,7 @@ namespace vcpkg::Build
             CMAKE_SYSTEM_NAME,
             CMAKE_SYSTEM_VERSION,
             PLATFORM_TOOLSET,
+            PLATFORM_TOOLSET_VERSION,
             VISUAL_STUDIO_PATH,
             CHAINLOAD_TOOLCHAIN_FILE,
             BUILD_TYPE,
@@ -1453,6 +1454,7 @@ namespace vcpkg::Build
             {"VCPKG_CMAKE_SYSTEM_NAME", VcpkgTripletVar::CMAKE_SYSTEM_NAME},
             {"VCPKG_CMAKE_SYSTEM_VERSION", VcpkgTripletVar::CMAKE_SYSTEM_VERSION},
             {"VCPKG_PLATFORM_TOOLSET", VcpkgTripletVar::PLATFORM_TOOLSET},
+            {"VCPKG_PLATFORM_TOOLSET_VERSION", VcpkgTripletVar::PLATFORM_TOOLSET_VERSION},
             {"VCPKG_VISUAL_STUDIO_PATH", VcpkgTripletVar::VISUAL_STUDIO_PATH},
             {"VCPKG_CHAINLOAD_TOOLCHAIN_FILE", VcpkgTripletVar::CHAINLOAD_TOOLCHAIN_FILE},
             {"VCPKG_BUILD_TYPE", VcpkgTripletVar::BUILD_TYPE},
@@ -1486,6 +1488,9 @@ namespace vcpkg::Build
                 case VcpkgTripletVar::CMAKE_SYSTEM_VERSION: cmake_system_version = variable_value; break;
                 case VcpkgTripletVar::PLATFORM_TOOLSET:
                     platform_toolset = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
+                    break;
+                case VcpkgTripletVar::PLATFORM_TOOLSET_VERSION:
+                    platform_toolset_version = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
                     break;
                 case VcpkgTripletVar::VISUAL_STUDIO_PATH:
                     visual_studio_path = variable_value.empty() ? nullopt : Optional<Path>{variable_value};
