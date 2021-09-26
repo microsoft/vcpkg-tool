@@ -1063,7 +1063,7 @@ namespace vcpkg
         {
             vsp = &m_pimpl->default_vs_path;
         }
-        
+
         std::string error_message = "Could not find any Visual Studio instance";
 
         if (vsp)
