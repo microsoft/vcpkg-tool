@@ -163,7 +163,7 @@ namespace vcpkg::Build
         if (result.code != BuildResult::SUCCEEDED)
         {
             print2(Color::error, Build::create_error_message(result.code, spec), '\n');
-            print2(Build::create_user_troubleshooting_message(spec), '\n');
+            print2(Build::create_user_troubleshooting_message(*action), '\n');
             return 1;
         }
 
@@ -1315,13 +1315,20 @@ namespace vcpkg::Build
         return Strings::format("Error: Building package %s failed with: %s", spec, Build::to_string(build_result));
     }
 
-    std::string create_user_troubleshooting_message(const PackageSpec& spec)
+    std::string create_user_troubleshooting_message(const InstallPlanAction& action)
     {
 #if defined(_WIN32)
         auto vcpkg_update_cmd = ".\\vcpkg";
 #else
         auto vcpkg_update_cmd = "./vcpkg";
 #endif
+
+        std::string package = action.displayname();
+        if (auto scfl = action.source_control_file_location.get())
+        {
+            Strings::append(package, " -> ", scfl->to_versiont());
+        }
+
         return Strings::format("Please ensure you're using the latest portfiles with `%s update`, then\n"
                                "submit an issue at https://github.com/Microsoft/vcpkg/issues including:\n"
                                "  Package: %s\n"
@@ -1329,7 +1336,7 @@ namespace vcpkg::Build
                                "\n"
                                "Additionally, attach any relevant sections from the log files above.",
                                vcpkg_update_cmd,
-                               spec,
+                               package,
                                Commands::Version::version());
     }
 
