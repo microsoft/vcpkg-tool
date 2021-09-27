@@ -220,8 +220,15 @@ static ExpectedS<Dependencies::ActionPlan> create_versioned_install_plan(
     const std::vector<DependencyOverride>& overrides,
     const PackageSpec& toplevel)
 {
-    return Dependencies::create_versioned_install_plan(
-        provider, bprovider, s_empty_mock_overlay, var_provider, deps, overrides, toplevel, Test::ARM_UWP);
+    return Dependencies::create_versioned_install_plan(provider,
+                                                       bprovider,
+                                                       s_empty_mock_overlay,
+                                                       var_provider,
+                                                       deps,
+                                                       overrides,
+                                                       toplevel,
+                                                       Test::ARM_UWP,
+                                                       Dependencies::UnsupportedPortAction::Error);
 }
 
 namespace vcpkg::Dependencies
@@ -235,8 +242,15 @@ namespace vcpkg::Dependencies
         const std::vector<DependencyOverride>& overrides,
         const PackageSpec& toplevel)
     {
-        return vcpkg::Dependencies::create_versioned_install_plan(
-            provider, bprovider, oprovider, var_provider, deps, overrides, toplevel, Test::ARM_UWP);
+        return vcpkg::Dependencies::create_versioned_install_plan(provider,
+                                                                  bprovider,
+                                                                  oprovider,
+                                                                  var_provider,
+                                                                  deps,
+                                                                  overrides,
+                                                                  toplevel,
+                                                                  Test::ARM_UWP,
+                                                                  Dependencies::UnsupportedPortAction::Error);
     }
 }
 
@@ -1716,11 +1730,18 @@ TEST_CASE ("version install self features", "[versionplan]")
 
 static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
                                           MockBaselineProvider& bp,
+                                          std::vector<Dependency> deps,
+                                          MockCMakeVarProvider& var_provider)
+{
+    return create_versioned_install_plan(vp, bp, var_provider, deps, {}, toplevel_spec());
+}
+
+static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
+                                          MockBaselineProvider& bp,
                                           std::vector<Dependency> deps)
 {
     MockCMakeVarProvider var_provider;
-
-    return create_versioned_install_plan(vp, bp, var_provider, deps, {}, toplevel_spec());
+    return create_versioned_install_plan(vp, bp, deps, var_provider);
 }
 
 TEST_CASE ("version install nonexisting features", "[versionplan]")
@@ -1963,7 +1984,7 @@ TEST_CASE ("version overlay ports", "[versionplan]")
                 Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1", 1}},
             },
             {
-                DependencyOverride{"a", {"2", 0}},
+                DependencyOverride{"a", "2", 0},
             },
             toplevel_spec()));
 
@@ -1980,11 +2001,92 @@ TEST_CASE ("version overlay ports", "[versionplan]")
                                                                                    Dependency{"a"},
                                                                                },
                                                                                {
-                                                                                   DependencyOverride{"a", {"2", 0}},
+                                                                                   DependencyOverride{"a", "2", 0},
                                                                                },
                                                                                toplevel_spec()));
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
+    }
+}
+
+TEST_CASE ("respect supports expression", "[versionplan]")
+{
+    using namespace PlatformExpression;
+    const auto supports_expression =
+        parse_platform_expression("windows", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO);
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    vp.emplace("a", {"1", 0}).source_control_file->core_paragraph->supports_expression = supports_expression;
+    vp.emplace("a", {"1", 1});
+    MockCMakeVarProvider var_provider;
+    var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "";
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}}, var_provider);
+    CHECK(install_plan.has_value());
+    var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
+    install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}}, var_provider);
+    CHECK_FALSE(install_plan.has_value());
+    SECTION ("override")
+    {
+        // override from non supported to supported version
+        MockOverlayProvider oprovider;
+        install_plan = Dependencies::create_versioned_install_plan(
+            vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 1}}, toplevel_spec());
+        CHECK(install_plan.has_value());
+        // override from supported to non supported version
+        bp.v["a"] = {"1", 1};
+        install_plan = Dependencies::create_versioned_install_plan(
+            vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 0}}, toplevel_spec());
+        CHECK_FALSE(install_plan.has_value());
+    }
+}
+
+TEST_CASE ("respect supports expressions of features", "[versionplan]")
+{
+    using namespace PlatformExpression;
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    auto a_x = std::make_unique<FeatureParagraph>();
+    a_x->name = "x";
+    a_x->supports_expression =
+        parse_platform_expression("windows", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO);
+    vp.emplace("a", {"1", 0}).source_control_file->feature_paragraphs.push_back(std::move(a_x));
+    a_x = std::make_unique<FeatureParagraph>();
+    a_x->name = "x";
+    vp.emplace("a", {"1", 1}).source_control_file->feature_paragraphs.push_back(std::move(a_x));
+
+    MockCMakeVarProvider var_provider;
+    var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "";
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {"x"}}}, var_provider);
+    CHECK(install_plan.has_value());
+    var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
+    install_plan = create_versioned_install_plan(vp, bp, {{"a", {"x"}}}, var_provider);
+    CHECK_FALSE(install_plan.has_value());
+    SECTION ("override")
+    {
+        // override from non supported to supported version
+        MockOverlayProvider oprovider;
+        install_plan = Dependencies::create_versioned_install_plan(vp,
+                                                                   bp,
+                                                                   oprovider,
+                                                                   var_provider,
+                                                                   {Dependency{"a", {"x"}}},
+                                                                   {DependencyOverride{"a", "1", 1}},
+                                                                   toplevel_spec());
+        CHECK(install_plan.has_value());
+        // override from supported to non supported version
+        bp.v["a"] = {"1", 1};
+        install_plan = Dependencies::create_versioned_install_plan(vp,
+                                                                   bp,
+                                                                   oprovider,
+                                                                   var_provider,
+                                                                   {Dependency{"a", {"x"}}},
+                                                                   {DependencyOverride{"a", "1", 0}},
+                                                                   toplevel_spec());
+        CHECK_FALSE(install_plan.has_value());
     }
 }

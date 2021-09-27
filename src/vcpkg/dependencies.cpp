@@ -231,6 +231,26 @@ namespace vcpkg::Dependencies
                 return *m_scfl.get();
             }
 
+            Optional<const PlatformExpression::Expr&> get_applicable_supports_expression(const FeatureSpec& spec)
+            {
+                if (spec.feature() == "core")
+                {
+                    return get_scfl_or_exit().source_control_file->core_paragraph->supports_expression;
+                }
+                else if (spec.feature() != "default")
+                {
+                    auto maybe_paragraph = get_scfl_or_exit().source_control_file->find_feature(spec.feature());
+                    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
+                                                maybe_paragraph.has_value(),
+                                                "Package %s does not have a %s feature",
+                                                spec.name(),
+                                                spec.feature());
+
+                    return maybe_paragraph.get()->supports_expression;
+                }
+                return nullopt;
+            }
+
             PackageSpec m_spec;
             ExpectedS<const SourceControlFileLocation&> m_scfl;
 
@@ -248,8 +268,8 @@ namespace vcpkg::Dependencies
                          Triplet host_triplet);
             ~PackageGraph();
 
-            void install(Span<const FeatureSpec> specs);
-            void upgrade(Span<const PackageSpec> specs);
+            void install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action);
+            void upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action);
             void mark_user_requested(const PackageSpec& spec);
 
             ActionPlan serialize(Graphs::Randomizer* randomizer) const;
@@ -258,6 +278,7 @@ namespace vcpkg::Dependencies
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
+            std::vector<std::string> m_warnings;
         };
 
     }
@@ -760,7 +781,7 @@ namespace vcpkg::Dependencies
         {
             pgraph.mark_user_requested(spec.spec());
         }
-        pgraph.install(feature_specs);
+        pgraph.install(feature_specs, options.unsupported_port_action);
 
         auto res = pgraph.serialize(options.randomizer);
 
@@ -793,7 +814,7 @@ namespace vcpkg::Dependencies
     }
 
     /// The list of specs to install should already have default features expanded
-    void PackageGraph::install(Span<const FeatureSpec> specs)
+    void PackageGraph::install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action)
     {
         // We batch resolving qualified dependencies, because it's an invocation of CMake which
         // takes ~150ms per call.
@@ -820,9 +841,12 @@ namespace vcpkg::Dependencies
                     // TODO: There's always the chance that we don't find the feature we're looking for (probably a
                     // malformed CONTROL file somewhere). We should probably output a better error.
                     const std::vector<Dependency>* paragraph_depends = nullptr;
+                    bool has_supports = false;
                     if (spec.feature() == "core")
                     {
                         paragraph_depends = &clust.get_scfl_or_exit().source_control_file->core_paragraph->dependencies;
+                        has_supports = !clust.get_scfl_or_exit()
+                                            .source_control_file->core_paragraph->supports_expression.is_empty();
                     }
                     else if (spec.feature() == "default")
                     {
@@ -837,14 +861,39 @@ namespace vcpkg::Dependencies
                                                     spec.name(),
                                                     spec.feature());
                         paragraph_depends = &maybe_paragraph.value_or_exit(VCPKG_LINE_INFO).dependencies;
+                        has_supports = !maybe_paragraph.get()->supports_expression.is_empty();
                     }
 
                     // And it has at least one qualified dependency
-                    if (paragraph_depends &&
-                        Util::any_of(*paragraph_depends, [](auto&& dep) { return !dep.platform.is_empty(); }))
+                    if (has_supports || (paragraph_depends && Util::any_of(*paragraph_depends, [](auto&& dep) {
+                                             return !dep.platform.is_empty();
+                                         })))
                     {
                         // Add it to the next batch run
                         qualified_dependencies.emplace_back(spec);
+                    }
+                }
+                else
+                {
+                    auto supports_expression = clust.get_applicable_supports_expression(spec);
+                    if (supports_expression && !supports_expression.get()->is_empty())
+                    {
+                        if (!supports_expression.get()->evaluate(
+                                m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
+                        {
+                            const auto msg = Strings::format("%s[%s] is only supported on '%s'",
+                                                             spec.name(),
+                                                             spec.feature(),
+                                                             to_string(*supports_expression.get()));
+                            if (unsupported_port_action == UnsupportedPortAction::Error)
+                            {
+                                Checks::exit_with_message(VCPKG_LINE_INFO, "Error: " + msg);
+                            }
+                            else
+                            {
+                                m_warnings.push_back("Warning: " + msg);
+                            }
+                        }
                     }
                 }
 
@@ -906,7 +955,7 @@ namespace vcpkg::Dependencies
         }
     }
 
-    void PackageGraph::upgrade(Span<const PackageSpec> specs)
+    void PackageGraph::upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action)
     {
         std::vector<FeatureSpec> reinstall_reqs;
 
@@ -915,7 +964,7 @@ namespace vcpkg::Dependencies
 
         Util::sort_unique_erase(reinstall_reqs);
 
-        install(reinstall_reqs);
+        install(reinstall_reqs, unsupported_port_action);
     }
 
     ActionPlan create_upgrade_plan(const PortFileProvider::PortFileProvider& port_provider,
@@ -926,7 +975,7 @@ namespace vcpkg::Dependencies
     {
         PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet);
 
-        pgraph.upgrade(specs);
+        pgraph.upgrade(specs, options.unsupported_port_action);
 
         return pgraph.serialize(options.randomizer);
     }
@@ -1043,7 +1092,7 @@ namespace vcpkg::Dependencies
                 plan.already_installed.emplace_back(InstalledPackageView(installed.ipv), p_cluster->request_type);
             }
         }
-
+        plan.warnings = m_warnings;
         return plan;
     }
 
@@ -1234,7 +1283,8 @@ namespace vcpkg::Dependencies
 
             void add_roots(View<Dependency> dep, const PackageSpec& toplevel);
 
-            ExpectedS<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel);
+            ExpectedS<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel,
+                                                        UnsupportedPortAction unsupported_port_action);
 
         private:
             const IVersionedPortfileProvider& m_ver_provider;
@@ -1850,7 +1900,8 @@ namespace vcpkg::Dependencies
         // This function is called after all versioning constraints have been resolved. It is responsible for
         // serializing out the final execution graph and performing all final validations (such as all required
         // features being selected and present)
-        ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan(const PackageSpec& toplevel)
+        ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan(
+            const PackageSpec& toplevel, UnsupportedPortAction unsupported_port_action)
         {
             if (m_errors.size() > 0)
             {
@@ -1868,10 +1919,11 @@ namespace vcpkg::Dependencies
             };
             std::vector<Frame> stack;
 
-            auto push = [&emitted, this, &stack](const PackageSpec& spec,
-                                                 const Versions::Version& new_ver,
-                                                 const PackageSpec& origin,
-                                                 View<std::string> features) -> Optional<std::string> {
+            auto push = [&emitted, this, &stack, unsupported_port_action, &ret](
+                            const PackageSpec& spec,
+                            const Versions::Version& new_ver,
+                            const PackageSpec& origin,
+                            View<std::string> features) -> Optional<std::string> {
                 auto&& node = m_graph[spec];
                 auto overlay = m_o_provider.get_control_file(spec.name());
                 auto over_it = m_overrides.find(spec.name());
@@ -1895,12 +1947,51 @@ namespace vcpkg::Dependencies
                         "with detailed steps to reproduce the problem.");
                 }
 
+                { // use if(init;condition) if we support c++17
+                    const auto& supports_expr = p_vnode->scfl->source_control_file->core_paragraph->supports_expression;
+                    if (!supports_expr.is_empty())
+                    {
+                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec)))
+                        {
+                            const auto msg = Strings::concat(
+                                spec, "@", new_ver, " is only supported on '", to_string(supports_expr), "'\n");
+                            if (unsupported_port_action == UnsupportedPortAction::Error)
+                            {
+                                return "Error: " + msg;
+                            }
+                            ret.warnings.emplace_back("Warning: " + msg);
+                        }
+                    }
+                }
+
                 for (auto&& f : features)
                 {
-                    if (f != "core" && !p_vnode->scfl->source_control_file->find_feature(f))
+                    if (f == "core") continue;
+                    auto feature = p_vnode->scfl->source_control_file->find_feature(f);
+                    if (!feature)
                     {
                         return Strings::concat(
                             "Error: ", spec, "@", new_ver, " does not have required feature ", f, "\n");
+                    }
+                    const auto& supports_expr = feature.get()->supports_expression;
+                    if (!supports_expr.is_empty())
+                    {
+                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec)))
+                        {
+                            const auto msg = Strings::concat(spec,
+                                                             "@",
+                                                             new_ver,
+                                                             " The feature ",
+                                                             f,
+                                                             " is only supported on '",
+                                                             to_string(supports_expr),
+                                                             "'\n");
+                            if (unsupported_port_action == UnsupportedPortAction::Error)
+                            {
+                                return "Error: " + msg;
+                            }
+                            ret.warnings.emplace_back("Warning: " + msg);
+                        }
                     }
                 }
 
@@ -2024,12 +2115,13 @@ namespace vcpkg::Dependencies
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
-                                                        Triplet host_triplet)
+                                                        Triplet host_triplet,
+                                                        UnsupportedPortAction unsupported_port_action)
     {
         VersionedPackageGraph vpg(provider, bprovider, oprovider, var_provider, host_triplet);
         for (auto&& o : overrides)
             vpg.add_override(o.name, {o.version, o.port_version});
         vpg.add_roots(deps, toplevel);
-        return vpg.finalize_extract_plan(toplevel);
+        return vpg.finalize_extract_plan(toplevel, unsupported_port_action);
     }
 }

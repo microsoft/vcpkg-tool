@@ -46,6 +46,7 @@ namespace vcpkg
         std::string name;
         std::vector<std::string> description;
         std::vector<Dependency> dependencies;
+        PlatformExpression::Expr supports_expression;
 
         Json::Object extra_info;
 
