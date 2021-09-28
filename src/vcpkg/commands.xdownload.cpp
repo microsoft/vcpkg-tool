@@ -23,9 +23,9 @@ namespace vcpkg::Commands::X_Download
         {OPTION_STORE, "Indicates the file should be stored instead of fetched"},
         {OPTION_SKIP_SHA512, "Do not check the SHA512 of the downloaded file"},
         {OPTION_ONLY_WARN_FOR_SHA512_MISMATCH,
-         "Only warn if the SHA512 of the downloaded file mismatched instead of fail"},
+         "Only warn if the SHA512 of the downloaded file was incorrect, instead of failing"},
         {OPTION_SHA512_MISMATCH_GUID_WRAPPED,
-         "Instead of displaying a user friendly message for a hash mismatch print a mashine readable one"},
+         "Instead of displaying a user friendly message for a hash mismatch, print a machine readable one"},
     };
     static constexpr CommandSetting FETCH_SETTINGS[] = {
         {OPTION_SHA512, "The hash of the file to be downloaded"},

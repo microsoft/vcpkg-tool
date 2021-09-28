@@ -949,7 +949,7 @@ namespace vcpkg::Build
                 {
                     current_entry.complete_stack_trace += line;
                     current_entry.complete_stack_trace += '\n';
-                    if (line.length() < 5) // a real entry can not only constis out of 5 chars
+                    if (line.length() < 5) // a real entry can not only consist of 5 chars
                         return;
                     parse_stack_trace_entry(line.substr(2));
                 }
@@ -961,21 +961,21 @@ namespace vcpkg::Build
         void parse_stack_trace_entry(std::string line)
         {
             auto colon = line.find(":");
-            const auto printError = [&] {
+            const auto print_error = [&] {
                 print2(Color::error,
-                       "The Strack trace line should have the format `path/fileName.cmake:<line_number> "
-                       "(functionName)` but is ",
+                       "The stacktrace line should have the format 'path/file_name.cmake:<line number> "
+                       "(function_name)' but is ",
                        line);
             };
             if (colon == std::string::npos)
             {
-                printError();
+                print_error();
                 return;
             }
             auto space = line.find(" ", colon);
             if (space == std::string::npos)
             {
-                printError();
+                print_error();
                 return;
             }
             const auto path = line.substr(0, colon);
@@ -990,7 +990,7 @@ namespace vcpkg::Build
             }
             catch (std::exception&)
             {
-                printError();
+                print_error();
                 return;
             }
         }
@@ -1000,21 +1000,21 @@ namespace vcpkg::Build
         {
             auto& fs = paths.get_filesystem();
 
-            for (const auto& stackTraceEntry : current_entry.stack_trace)
+            for (const auto& stacktrace_entry : current_entry.stack_trace)
             {
-                const auto file_path = paths.root / stackTraceEntry.path;
+                const auto file_path = paths.root / stacktrace_entry.path;
                 auto lines = fs.read_lines(file_path, VCPKG_LINE_INFO);
-                for (int i = stackTraceEntry.line - 1;
-                     i < std::min(stackTraceEntry.line + 10, static_cast<int>(lines.size()));
+                for (int i = stacktrace_entry.line - 1;
+                     i < std::min(stacktrace_entry.line + 10, static_cast<int>(lines.size()));
                      ++i)
                 {
-                    auto& currentLine = lines[i];
-                    const auto sha512_index = currentLine.find("SHA512");
+                    auto& current_line = lines[i];
+                    const auto sha512_index = current_line.find("SHA512");
                     if (sha512_index == std::string::npos) continue;
-                    const auto sha_start = currentLine.find_first_not_of(' ', sha512_index + 6);
+                    const auto sha_start = current_line.find_first_not_of(' ', sha512_index + 6);
                     if (sha_start == std::string::npos) continue;
-                    if (currentLine[sha_start] == '"') // found something like `set(HASH "abc123")` `SHA512 ${HASH}`
-                    {                                  // search for the old hash in the whole file and replace it
+                    if (current_line[sha_start] == '"') // found something like `set(HASH "abc123")` `SHA512 ${HASH}`
+                    {                                   // search for the old hash in the whole file and replace it
                         if (current_entry.old_hash == "0") break; // don't replace any 0
                         for (auto& line : lines)
                         {
@@ -1026,25 +1026,25 @@ namespace vcpkg::Build
 
                                 print2(Color::success,
                                        "## The wrong SHA512 in ",
-                                       stackTraceEntry.path,
+                                       stacktrace_entry.path,
                                        " was successfully updated.\n");
                                 return;
                             }
                         }
                     }
-                    auto sha_end = currentLine.find_first_not_of("0123456789abcdef", sha_start);
-                    if (sha_end == std::string::npos) sha_end = currentLine.size();
-                    const auto sha = currentLine.substr(sha_start, sha_end);
+                    auto sha_end = current_line.find_first_not_of("0123456789abcdef", sha_start);
+                    if (sha_end == std::string::npos) sha_end = current_line.size();
+                    const auto sha = current_line.substr(sha_start, sha_end);
                     if (sha == "0" || sha == current_entry.old_hash)
                     {
-                        currentLine.replace(sha_start, sha_end - sha_start, current_entry.new_hash);
+                        current_line.replace(sha_start, sha_end - sha_start, current_entry.new_hash);
                         fs.write_lines(file_path, lines, VCPKG_LINE_INFO);
 
                         print2(Color::success,
                                "## The wrong SHA512 in ",
-                               stackTraceEntry.path,
+                               stacktrace_entry.path,
                                ":",
-                               stackTraceEntry.line,
+                               stacktrace_entry.line,
                                " was successfully updated.\n");
                         return;
                     }
@@ -1110,7 +1110,7 @@ namespace vcpkg::Build
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
         int return_code;
         {
-            Sha512Scanner scanner(paths);
+            Sha512Scanner scanner{paths};
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(
                 command,

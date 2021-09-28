@@ -527,7 +527,7 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
     static constexpr StringLiteral OPTION_AUTO_UPDATE_SHA512_HASHES = "x-auto-update-sha512-hashes";
 
-    static constexpr std::array<CommandSwitch, 15> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 16> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -547,7 +547,7 @@ namespace vcpkg::Install
         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
         {OPTION_AUTO_UPDATE_SHA512_HASHES, "(experimental) Auto updates wrong sha512 file hashes in the portfiles"},
     }};
-    static constexpr std::array<CommandSwitch, 15> MANIFEST_INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 16> MANIFEST_INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
