@@ -600,6 +600,7 @@ namespace vcpkg::Commands::CI
             StatusParagraphs status_db = database_load_check(paths);
 
             auto collection_timer = ElapsedTimer::create_started();
+            binary_cache.set_ttl_for_unavailable(120);
             auto summary = Install::perform(args,
                                             action_plan,
                                             Install::KeepGoing::YES,

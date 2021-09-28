@@ -1146,6 +1146,20 @@ namespace vcpkg
         }
     }
 
+    void BinaryCache::set_ttl_for_unavailable(int seconds)
+    {
+        m_ttl_for_unavailable = seconds;
+        if (seconds > 0)
+        {
+            m_ttl_elapsed = ElapsedTimer::create_started();
+        }
+    }
+
+    bool BinaryCache::must_recheck_unavailable_entries() const noexcept
+    {
+        return m_ttl_for_unavailable > 0 && m_ttl_elapsed.elapsed().as<std::chrono::seconds>().count() > m_ttl_for_unavailable;
+    }
+
     RestoreResult BinaryCache::try_restore(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action)
     {
         const auto abi = action.package_abi().get();
@@ -1182,7 +1196,7 @@ namespace vcpkg
                 continue; // this one already tried :)
             }
 
-            if (cache_status.is_unavailable(m_providers.size()))
+            if (cache_status.is_unavailable(m_providers.size()) && !must_recheck_unavailable_entries())
             {
                 break;
             }

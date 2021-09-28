@@ -3,6 +3,7 @@
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
@@ -119,9 +120,18 @@ namespace vcpkg
         /// Returns a vector where each index corresponds to the matching index in `actions`.
         std::vector<CacheAvailability> precheck(const VcpkgPaths& paths, View<Dependencies::InstallPlanAction> actions);
 
+        /// Sets the time in seconds from now after which "unavailable" entries will be checked again.
+        /// A non-positive value disables re-checking.
+        void set_ttl_for_unavailable(int seconds);
+
     private:
+        /// Returns true when the lifetime for "unvailable" entries is exceeded.
+        bool must_recheck_unavailable_entries() const noexcept;
+
         std::unordered_map<std::string, CacheStatus> m_status;
         std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
+        ElapsedTimer m_ttl_elapsed;
+        int m_ttl_for_unavailable = 0;
     };
 
     ExpectedS<Downloads::DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
