@@ -4,14 +4,14 @@
 $metricsTagName = 'vcpkg.disable-metrics'
 $metricsAreDisabledMessage = 'Warning: passed --sendmetrics, but metrics are disabled.'
 
-function Test-Metrics-Enabled() {
+function Test-MetricsEnabled() {
     Param(
         [Parameter(ValueFromRemainingArguments)]
         [string[]]$TestArgs
     )
 
     $actualArgs = @('version', '--sendmetrics')
-    if ($TestArgs.Length -ne 0) {
+    if ($null -ne $TestArgs -and $TestArgs.Length -ne 0) {
         $actualArgs += $TestArgs
     }
 
@@ -27,17 +27,17 @@ function Test-Metrics-Enabled() {
 
 # By default, metrics are enabled.
 Require-FileNotExists $metricsTagName
-if (-Not (Test-Metrics-Enabled)) {
+if (-Not (Test-MetricsEnabled)) {
     throw "Metrics were not on by default."
 }
 
-if (Test-Metrics-Enabled '--disable-metrics') {
+if (Test-MetricsEnabled '--disable-metrics') {
     throw "Metrics were not disabled by switch."
 }
 
 $env:VCPKG_DISABLE_METRICS = 'ON'
 try {
-    if (Test-Metrics-Enabled) {
+    if (Test-MetricsEnabled) {
         throw "Environment variable did not disable metrics."
     }
 
@@ -47,7 +47,7 @@ try {
         throw "Disabled metrics emit message even without --sendmetrics"
     }
 
-    if (-Not (Test-Metrics-Enabled '--no-disable-metrics')) {
+    if (-Not (Test-MetricsEnabled '--no-disable-metrics')) {
         throw "Environment variable to disable metrics could not be overridden by switch."
     }
 } finally {
@@ -58,7 +58,7 @@ try {
 # the command line.
 Set-Content -Path $metricsTagName -Value ""
 try {
-    if (Test-Metrics-Enabled '--disable-metrics') {
+    if (Test-MetricsEnabled '--disable-metrics') {
         throw "Metrics were not force-disabled by the disable-metrics tag file."
     }
 }

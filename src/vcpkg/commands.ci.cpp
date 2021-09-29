@@ -333,7 +333,7 @@ namespace vcpkg::Commands::CI
             }
         }
 
-        var_provider.load_dep_info_vars(packages_with_qualified_deps);
+        var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
         auto action_plan =
             Dependencies::create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
 

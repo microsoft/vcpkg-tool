@@ -691,7 +691,7 @@ namespace vcpkg::Dependencies
         auto ctx = [&]() -> const PlatformExpression::Context& {
             if (!ctx_storage)
             {
-                var_provider.load_dep_info_vars({&spec, 1});
+                var_provider.load_dep_info_vars({&spec, 1}, host_triplet);
                 ctx_storage = var_provider.get_dep_info_vars(spec);
             }
             return ctx_storage.value_or_exit(VCPKG_LINE_INFO);
@@ -943,7 +943,7 @@ namespace vcpkg::Dependencies
                 auto qualified_package_specs =
                     Util::fmap(qualified_dependencies, [](const FeatureSpec& fspec) { return fspec.spec(); });
                 Util::sort_unique_erase(qualified_package_specs);
-                m_var_provider.load_dep_info_vars(qualified_package_specs);
+                m_var_provider.load_dep_info_vars(qualified_package_specs, m_graph->m_host_triplet);
 
                 // Put all the FeatureSpecs for which we had qualified dependencies back on the dependencies stack.
                 // We need to recheck if evaluating the triplet revealed any new dependencies.
@@ -1533,7 +1533,7 @@ namespace vcpkg::Dependencies
                     auto maybe_vars = m_var_provider.get_dep_info_vars(ref.first);
                     if (!maybe_vars)
                     {
-                        m_var_provider.load_dep_info_vars({&ref.first, 1});
+                        m_var_provider.load_dep_info_vars({&ref.first, 1}, m_host_triplet);
                         maybe_vars = m_var_provider.get_dep_info_vars(ref.first);
                     }
 
@@ -1763,7 +1763,7 @@ namespace vcpkg::Dependencies
 
             specs.push_back(toplevel);
             Util::sort_unique_erase(specs);
-            m_var_provider.load_dep_info_vars(specs);
+            m_var_provider.load_dep_info_vars(specs, m_host_triplet);
             const auto& vars = m_var_provider.get_dep_info_vars(toplevel).value_or_exit(VCPKG_LINE_INFO);
             std::vector<const Dependency*> active_deps;
 
@@ -1951,7 +1951,7 @@ namespace vcpkg::Dependencies
                     const auto& supports_expr = p_vnode->scfl->source_control_file->core_paragraph->supports_expression;
                     if (!supports_expr.is_empty())
                     {
-                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec)))
+                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
                             const auto msg = Strings::concat(
                                 spec, "@", new_ver, " is only supported on '", to_string(supports_expr), "'\n");
@@ -1976,7 +1976,7 @@ namespace vcpkg::Dependencies
                     const auto& supports_expr = feature.get()->supports_expression;
                     if (!supports_expr.is_empty())
                     {
-                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec)))
+                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
                             const auto msg = Strings::concat(spec,
                                                              "@",

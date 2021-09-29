@@ -20,9 +20,9 @@ $env:X_VCPKG_REGISTRIES_CACHE = Join-Path $TestingRoot 'registries'
 
 function Refresh-TestRoot {
     Remove-Item -Recurse -Force $TestingRoot -ErrorAction SilentlyContinue
-    mkdir $TestingRoot | Out-Null
-    mkdir $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
-    mkdir $NuGetRoot | Out-Null
+    New-Item -ItemType Directory -Force $TestingRoot | Out-Null
+    New-Item -ItemType Directory -Force $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
+    New-Item -ItemType Directory -Force $NuGetRoot | Out-Null
 }
 
 function Write-Stack {
