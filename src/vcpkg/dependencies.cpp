@@ -1951,7 +1951,7 @@ namespace vcpkg::Dependencies
                     const auto& supports_expr = p_vnode->scfl->source_control_file->core_paragraph->supports_expression;
                     if (!supports_expr.is_empty())
                     {
-                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec)))
+                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
                             const auto msg = Strings::concat(
                                 spec, "@", new_ver, " is only supported on '", to_string(supports_expr), "'\n");
@@ -1976,7 +1976,7 @@ namespace vcpkg::Dependencies
                     const auto& supports_expr = feature.get()->supports_expression;
                     if (!supports_expr.is_empty())
                     {
-                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec)))
+                        if (!supports_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet)))
                         {
                             const auto msg = Strings::concat(spec,
                                                              "@",
