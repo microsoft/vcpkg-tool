@@ -25,7 +25,7 @@ if (-not $IsLinux -and -not $IsMacOS) {
     Throw-IfFailed
     foreach ($project in @("VcpkgTriplet", "VcpkgTriplet2", "VcpkgUseStatic", "VcpkgUseStatic2")) {
         $Script:CurrentTest = "msbuild $iiroot\$project.vcxproj"
-        Run-Vcpkg $commonArgs env "msbuild $iiroot\$project.vcxproj /p:VCPKG_ROOT=$VcpkgRoot /p:VcpkgRoot=$TestingRoot /p:IntDir=$TestingRoot\int\ /p:OutDir=$TestingRoot\out\ "
+        Run-Vcpkg @commonArgs env "msbuild $iiroot\$project.vcxproj /p:VCPKG_ROOT=$VcpkgRoot /p:VcpkgRoot=$TestingRoot /p:IntDir=$TestingRoot\int\ /p:OutDir=$TestingRoot\out\ "
         Throw-IfFailed
         Remove-Item -Recurse -Force $TestingRoot\int
         Remove-Item -Recurse -Force $TestingRoot\out
