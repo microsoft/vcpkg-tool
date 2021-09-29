@@ -2070,67 +2070,24 @@ namespace vcpkg
 #if !defined(_WIN32)
             if (ec)
             {
-                auto dst = new_path;
-                dst += temp_suffix;
-
-                PosixFd i_fd{old_path.c_str(), O_RDONLY, ec};
-                if (ec) return;
-
-                PosixFd o_fd{dst.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0664, ec};
-                if (ec) return;
-
-#if defined(__linux__)
-                off_t bytes = 0;
-                struct stat info = {0};
-                i_fd.fstat(&info, ec);
-                if (ec) return;
-                auto written_bytes = sendfile(o_fd.get(), i_fd.get(), &bytes, info.st_size);
-#elif defined(__APPLE__)
-                auto written_bytes = fcopyfile(i_fd.get(), o_fd.get(), 0, COPYFILE_ALL);
-#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
-                ssize_t written_bytes = 0;
+                auto dst = new_path + temp_suffix;
+                this->copy_file(old_path, dst, CopyOptions::overwrite_existing, ec);
+                if (ec)
                 {
-                    constexpr std::size_t buffer_length = 4096;
-                    unsigned char buffer[buffer_length];
-                    while (auto read_bytes = i_fd.read(buffer, buffer_length))
-                    {
-                        if (read_bytes == -1)
-                        {
-                            written_bytes = -1;
-                            break;
-                        }
-                        auto remaining = read_bytes;
-                        while (remaining > 0)
-                        {
-                            auto read_result = o_fd.write(buffer, remaining);
-                            if (read_result == -1)
-                            {
-                                written_bytes = -1;
-                                // break two loops
-                                goto copy_failure;
-                            }
-                            remaining -= read_result;
-                        }
-                    }
-
-                copy_failure:;
-                }
-#endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
-                if (written_bytes == -1)
-                {
-                    ec.assign(errno, std::generic_category());
                     return;
                 }
 
-                i_fd.close();
-                o_fd.close();
-
                 this->rename(dst, new_path, ec);
-                if (ec) return;
+                if (ec)
+                {
+                    return;
+                }
+
                 this->remove(old_path, ec);
             }
 #endif // ^^^ !defined(_WIN32)
         }
+
         virtual bool remove(const Path& target, std::error_code& ec) override
         {
             auto as_stdfs = to_stdfs_path(target);
@@ -2250,9 +2207,146 @@ namespace vcpkg
                                CopyOptions options,
                                std::error_code& ec) override
         {
+#if defined(_WIN32)
             return stdfs::copy_file(
                 to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            PosixFd source_fd{source.c_str(), O_RDONLY, ec};
+            if (ec)
+            {
+                return false;
+            }
+
+            struct stat source_stat;
+            source_fd.fstat(&source_stat, ec);
+            if (ec)
+            {
+                return false;
+            }
+
+            if (!S_ISREG(source_stat.st_mode))
+            {
+                // N4861 [fs.op.copy.file]/4: "report an error if"
+                // is_regular_file(from) is false
+                ec = std::make_error_code(std::errc::invalid_argument);
+                return false;
+            }
+
+            bool destination_exists;
+            struct stat destination_stat;
+            if (lstat(destination.c_str(), &destination_stat) == 0)
+            {
+                if (!S_ISREG(destination_stat.st_mode))
+                {
+                    // /4 exists(to) and is_regular_file(to) is false
+                    ec = std::make_error_code(std::errc::invalid_argument);
+                    return false;
+                }
+
+                destination_exists = true;
+            }
+            else if (errno == ENOENT)
+            {
+                destination_exists = false;
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+
+            if (destination_exists && source_stat.st_dev == destination_stat.st_dev &&
+                source_stat.st_ino == destination_stat.st_ino)
+            {
+                // /4 exists(to) i s true and equivalent(from, to) is true
+                ec = std::make_error_code(std::errc::device_or_resource_busy);
+                return false;
+            }
+
+            auto masked_options =
+                static_cast<CopyOptions>(static_cast<int>(options) & static_cast<int>(CopyOptions::existing_mask));
+            if (destination_exists && masked_options == CopyOptions::none)
+            {
+                // /4 exists(to) is true and
+                //   (options & (copy_options::skip_existing |
+                //               copy_options::overwrite_existing |
+                //               copy_options::update_existing)) == copy_options::none
+                ec = std::make_error_code(std::errc::file_exists);
+                return false;
+            }
+
+            // /4: "Otherwise, copies the contents and attributes of the file from resolves to, to the file to resolves
+            // to, if
+            // * exists(to) is false
+            // * (options & copy_options::overwrite_existing) != copy_options::none
+            // * (options & copy_options::update_existing) != copy_options::none"
+            // Note that we don't implement update_existing.
+            if (destination_exists && masked_options == CopyOptions::skip_existing)
+            {
+                // /4 "Otherwise, no effects."
+                ec.clear();
+                return false;
+            }
+
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               !destination_exists || masked_options == CopyOptions::overwrite_existing);
+
+            PosixFd destination_fd{destination.c_str(),
+                                   O_WRONLY | O_CREAT | O_TRUNC,
+                                   static_cast<mode_t>(source_stat.st_mode & 0777u),
+                                   ec};
+            if (ec)
+            {
+                return false;
+            }
+
+#if defined(__linux__)
+            off_t bytes = 0;
+            if (sendfile(destination_fd.get(), source_fd.get(), &bytes, source_stat.st_size) == -1)
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+
+            return true;
+#elif defined(__APPLE__)
+            if (fcopyfile(source_fd.get(), destination_fd.get(), 0, COPYFILE_ALL) == -1)
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+
+            return true;
+#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
+            constexpr std::size_t buffer_length = 4096;
+            unsigned char buffer[buffer_length];
+            while (auto read_bytes = i_fd.read(buffer, buffer_length))
+            {
+                if (read_bytes == -1)
+                {
+                    ec.assign(errno, std::generic_category());
+                    return false;
+                }
+
+                auto remaining = read_bytes;
+                while (remaining > 0)
+                {
+                    auto write_result = destination_fd.write(buffer, remaining);
+                    if (write_result == -1)
+                    {
+                        ec.assign(errno, std::generic_category());
+                        return false;
+                    }
+
+                    remaining -= write_result;
+                }
+            }
+
+            return true;
+#endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
+#endif // ^^^ !_WIN32
         }
+
         virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) override
         {
             return stdfs::copy_symlink(to_stdfs_path(source), to_stdfs_path(destination), ec);
