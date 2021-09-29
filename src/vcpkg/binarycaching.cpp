@@ -1998,7 +1998,7 @@ std::string vcpkg::generate_nuspec(const VcpkgPaths& paths,
                                    details::NuGetRepoInfo rinfo)
 {
     auto& spec = action.spec;
-    auto& scf = *action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+    auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
     auto& version = scf.core_paragraph->version;
     const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
     const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);

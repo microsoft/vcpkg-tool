@@ -51,12 +51,12 @@ namespace vcpkg::Dependencies
         /// </summary>
         struct Cluster
         {
-            Cluster(const InstalledPackageView& ipv, ExpectedS<const SourceControlFileLocation&>&& scfl)
+            Cluster(const InstalledPackageView& ipv, ExpectedS<const SourceControlFileAndLocation&>&& scfl)
                 : m_spec(ipv.spec()), m_scfl(std::move(scfl)), m_installed(ipv)
             {
             }
 
-            Cluster(const PackageSpec& spec, const SourceControlFileLocation& scfl) : m_spec(spec), m_scfl(scfl) { }
+            Cluster(const PackageSpec& spec, const SourceControlFileAndLocation& scfl) : m_spec(spec), m_scfl(scfl) { }
 
             Cluster(const Cluster&) = delete;
             Cluster(Cluster&&) = default;
@@ -210,7 +210,7 @@ namespace vcpkg::Dependencies
                 }
             }
 
-            const SourceControlFileLocation& get_scfl_or_exit() const
+            const SourceControlFileAndLocation& get_scfl_or_exit() const
             {
 #if defined(_WIN32)
                 static auto vcpkg_remove_cmd = ".\\vcpkg";
@@ -252,7 +252,7 @@ namespace vcpkg::Dependencies
             }
 
             PackageSpec m_spec;
-            ExpectedS<const SourceControlFileLocation&> m_scfl;
+            ExpectedS<const SourceControlFileAndLocation&> m_scfl;
 
             Optional<ClusterInstalled> m_installed;
             Optional<ClusterInstallInfo> m_install_info;
@@ -306,7 +306,7 @@ namespace vcpkg::Dependencies
             auto it = m_graph.find(spec);
             if (it == m_graph.end())
             {
-                const SourceControlFileLocation* scfl = m_port_provider.get_control_file(spec.name()).get();
+                const SourceControlFileAndLocation* scfl = m_port_provider.get_control_file(spec.name()).get();
 
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    scfl,
@@ -325,7 +325,7 @@ namespace vcpkg::Dependencies
 
         Cluster& insert(const InstalledPackageView& ipv)
         {
-            ExpectedS<const SourceControlFileLocation&> maybe_scfl =
+            ExpectedS<const SourceControlFileAndLocation&> maybe_scfl =
                 m_port_provider.get_control_file(ipv.spec().name());
 
             if (maybe_scfl.has_value())
@@ -367,7 +367,7 @@ namespace vcpkg::Dependencies
     static std::string to_output_string(RequestType request_type,
                                         const CStringView s,
                                         const Build::BuildPackageOptions& options,
-                                        const SourceControlFileLocation* scfl,
+                                        const SourceControlFileAndLocation* scfl,
                                         const InstalledPackageView* ipv,
                                         const Path& builtin_ports_dir)
     {
@@ -420,12 +420,12 @@ namespace vcpkg::Dependencies
     }
 
     InstallPlanAction::InstallPlanAction(const PackageSpec& spec,
-                                         const SourceControlFileLocation& scfl,
+                                         const SourceControlFileAndLocation& scfl,
                                          const RequestType& request_type,
                                          Triplet host_triplet,
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies)
         : spec(spec)
-        , source_control_file_location(scfl)
+        , source_control_file_and_location(scfl)
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , request_type(request_type)
         , build_options{}
@@ -764,7 +764,7 @@ namespace vcpkg::Dependencies
                                         spec.package_spec.name(),
                                         maybe_scfl.error());
 
-            const SourceControlFileLocation* scfl = maybe_scfl.get();
+            const SourceControlFileAndLocation* scfl = maybe_scfl.get();
 
             const std::vector<std::string> all_features =
                 Util::fmap(scfl->source_control_file->feature_paragraphs,
@@ -1200,7 +1200,7 @@ namespace vcpkg::Dependencies
                 return to_output_string(p->request_type,
                                         p->displayname(),
                                         p->build_options,
-                                        p->source_control_file_location.get(),
+                                        p->source_control_file_and_location.get(),
                                         p->installed_package.get(),
                                         builtin_ports_dir);
             });
@@ -1306,7 +1306,7 @@ namespace vcpkg::Dependencies
             struct VersionSchemeInfo
             {
                 Versions::Scheme scheme;
-                const SourceControlFileLocation* scfl = nullptr;
+                const SourceControlFileAndLocation* scfl = nullptr;
                 Versions::Version version;
                 // This tracks a list of constraint sources for debugging purposes
                 std::vector<std::string> origins;
@@ -1621,7 +1621,7 @@ namespace vcpkg::Dependencies
                                                    const Versions::Version& version,
                                                    const std::string& origin)
         {
-            ExpectedS<const vcpkg::SourceControlFileLocation&> maybe_scfl;
+            ExpectedS<const vcpkg::SourceControlFileAndLocation&> maybe_scfl;
 
             auto maybe_overlay = m_o_provider.get_control_file(ref.first.name());
             if (auto p_overlay = maybe_overlay.get())
@@ -2089,7 +2089,7 @@ namespace vcpkg::Dependencies
                     if (back.deps.empty())
                     {
                         emitted[back.ipa.spec] = m_graph[back.ipa.spec].get_node(
-                            to_version(*back.ipa.source_control_file_location.get()->source_control_file));
+                            to_version(*back.ipa.source_control_file_and_location.get()->source_control_file));
                         ret.install_actions.push_back(std::move(back.ipa));
                         stack.pop_back();
                     }
