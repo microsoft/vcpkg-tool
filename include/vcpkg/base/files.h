@@ -33,7 +33,6 @@ namespace vcpkg
         existing_mask = 0xF,
         skip_existing = 0x1,
         overwrite_existing = 0x2,
-        update_existing = 0x4,
 
         recursive = 0x10,
 
@@ -370,11 +369,7 @@ namespace vcpkg
 
     void print_paths(const std::vector<Path>& paths);
 
-#if defined(_WIN32)
-    constexpr char preferred_separator = '\\';
-#else
-    constexpr char preferred_separator = '/';
-#endif // _WIN32
+    constexpr char preferred_separator = VCPKG_PREFERED_SEPARATOR[0];
 
 #if defined(_WIN32)
     Path win32_fix_path_case(const Path& source);
