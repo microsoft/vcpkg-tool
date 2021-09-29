@@ -1096,14 +1096,7 @@ namespace vcpkg
 
         Checks::check_exit(VCPKG_LINE_INFO, !candidates.empty(), error_message + ".");
 
-        if (tsv && vsp)
-        {
-            return *candidates.back();
-        }
-        else
-        {
-            return *candidates.front();
-        }
+        return *candidates.front();
 #endif
     }
 
