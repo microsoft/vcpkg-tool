@@ -702,6 +702,27 @@ namespace
             }
         }
     };
+
+#if defined(_DIRENT_HAVE_D_TYPE)
+    enum class PosixDType : unsigned char
+    {
+        Unknown = DT_UNKNOWN,
+        Regular = DT_REG,
+        Directory = DT_DIR,
+    };
+
+    PosixDType get_d_type(struct dirent* d) noexcept { return static_cast<PosixDType>(d->d_type); }
+#else
+    enum class PosixDType : unsigned char
+    {
+        Unknown = 0,
+        Regular = 1,
+        Directory = 2,
+    };
+
+    PosixDType get_d_type(struct dirent*) noexcept { return PosixDType::Unknown; }
+#endif
+
 #endif // ^^^ !_WIN32
 }
 
@@ -1828,30 +1849,17 @@ namespace vcpkg
         {
             return get_regular_files_impl<stdfs::directory_iterator>(dir, ec);
         }
-#else // ^^^ _WIN32 // !_WIN32 vvv
-#if defined(_DIRENT_HAVE_D_TYPE)
-#define VCPKG_GET_D_TYPE(dirent) ((dirent)->d_type)
-#define VCPKG_DT_UNKNOWN DT_UNKNOWN
-#define VCPKG_DT_REG DT_REG
-#define VCPKG_DT_DIR DT_DIR
-#else
-#define VCPKG_GET_D_TYPE(dirent) 0
-#define VCPKG_DT_UNKNOWN 0
-#define VCPKG_DT_REG 1
-#define VCPKG_DT_DIR 2
-#endif
-
-        // Selector is a function taking (unsigned char dtype, mode_t mode) and returning bool
-        // dtype is the value from the d_type member of struct dirent. If the system does not support the d_type
-        // member, this will always be set to VCPKG_DT_UNKNOWN.
-        // mode is the st_mode member of struct stat. It is populated if and only if dtype is VCPKG_DT_UNKNOWN.
-        // Note that many file systems always set dtype to DT_UNKNOWN, so the lstat fallback must exist even on systems
-        // which have the d_type member
-        template<class Selector>
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+       // Selector is a function taking (PosixDType, mode_t mode) and returning bool
+       // dtype is the value from the d_type member of struct dirent. If the system does not support the d_type
+       // member, this will always be set to PosixDType::Unknown.
+       // mode is the st_mode member of struct stat. It is populated if and only if dtype is PosixDType::Unknown.
+       // Note that many file systems always set dtype to DT_UNKNOWN, so the lstat fallback must exist even on systems
+       // which have the d_type member
         static void get_files_recursive_impl(std::vector<Path>& result,
                                              const Path& base,
                                              std::error_code& ec,
-                                             Selector selector)
+                                             bool (*selector)(PosixDType, mode_t))
         {
             ReadDirOp op{base, ec};
             if (ec)
@@ -1881,8 +1889,9 @@ namespace vcpkg
                         continue;
                     }
 
-                    auto full = base / entry->d_name;
-                    if (VCPKG_GET_D_TYPE(entry) == VCPKG_DT_UNKNOWN)
+                    const auto full = base / entry->d_name;
+                    const auto entry_dtype = get_d_type(entry);
+                    if (entry_dtype == PosixDType::Unknown)
                     {
                         struct stat s;
                         if (stat(full.c_str(), &s) != 0 && errno != ENOENT)
@@ -1892,7 +1901,7 @@ namespace vcpkg
                             return;
                         }
 
-                        if (selector(VCPKG_DT_UNKNOWN, s.st_mode))
+                        if (selector(PosixDType::Unknown, s.st_mode))
                         {
                             // push results before recursion to get outer entries first
                             result.push_back(full);
@@ -1909,13 +1918,13 @@ namespace vcpkg
                     }
                     else
                     {
-                        if (selector(VCPKG_GET_D_TYPE(entry), 0))
+                        if (selector(entry_dtype, 0))
                         {
                             // push results before recursion to get outer entries first
                             result.push_back(full);
                         }
 
-                        if (VCPKG_GET_D_TYPE(entry) == VCPKG_DT_DIR)
+                        if (entry_dtype == PosixDType::Directory)
                         {
                             get_files_recursive_impl(result, full, ec, selector);
                             if (ec)
@@ -1928,14 +1937,13 @@ namespace vcpkg
             }
         }
 
-        // Selector is a function taking (unsigned char dtype, const Path&) and returning bool
+        // Selector is a function taking (PosixDType dtype, const Path&) and returning bool
         // (This is similar to the recursive version, but the non-recursive version doesn't need to do stat calls
         // so selector needs to do them if it wants.)
-        template<class Selector>
         static void get_files_non_recursive_impl(std::vector<Path>& result,
                                                  const Path& base,
                                                  std::error_code& ec,
-                                                 Selector selector)
+                                                 bool (*selector)(PosixDType, const Path&))
         {
             ReadDirOp op{base, ec};
             if (ec)
@@ -1966,7 +1974,7 @@ namespace vcpkg
                     }
 
                     auto full = base / entry->d_name;
-                    if (selector(VCPKG_GET_D_TYPE(entry), full))
+                    if (selector(get_d_type(entry), full))
                     {
                         result.push_back(std::move(full));
                     }
@@ -1977,22 +1985,22 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, [](unsigned char, mode_t) { return true; });
+            get_files_recursive_impl(result, dir, ec, [](PosixDType, mode_t) { return true; });
             return result;
         }
 
         virtual std::vector<Path> get_files_non_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_non_recursive_impl(result, dir, ec, [](unsigned char, const Path&) { return true; });
+            get_files_non_recursive_impl(result, dir, ec, [](PosixDType, const Path&) { return true; });
             return result;
         }
 
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, [](unsigned char dtype, mode_t mode) {
-                return dtype == VCPKG_DT_DIR || S_ISDIR(mode);
+            get_files_recursive_impl(result, dir, ec, [](PosixDType dtype, mode_t mode) {
+                return dtype == PosixDType::Directory || S_ISDIR(mode);
             });
 
             return result;
@@ -2001,8 +2009,9 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_non_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_non_recursive_impl(result, dir, ec, [](unsigned char dtype, const Path& p) {
-                return dtype == VCPKG_DT_DIR || (dtype == VCPKG_DT_UNKNOWN && posix_is_directory(p.c_str()));
+            get_files_non_recursive_impl(result, dir, ec, [](PosixDType dtype, const Path& p) {
+                return dtype == PosixDType::Directory ||
+                       (dtype == PosixDType::Unknown && posix_is_directory(p.c_str()));
             });
 
             return result;
@@ -2011,8 +2020,8 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, [](unsigned char dtype, mode_t mode) {
-                return dtype == VCPKG_DT_REG || S_ISREG(mode);
+            get_files_recursive_impl(result, dir, ec, [](PosixDType dtype, mode_t mode) {
+                return dtype == PosixDType::Regular || S_ISREG(mode);
             });
 
             return result;
@@ -2021,8 +2030,9 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_non_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_non_recursive_impl(result, dir, ec, [](unsigned char dtype, const Path& p) {
-                return dtype == VCPKG_DT_REG || (dtype == VCPKG_DT_UNKNOWN && posix_is_regular_file(p.c_str()));
+            get_files_non_recursive_impl(result, dir, ec, [](PosixDType dtype, const Path& p) {
+                return dtype == PosixDType::Regular ||
+                       (dtype == PosixDType::Unknown && posix_is_regular_file(p.c_str()));
             });
 
             return result;
@@ -2402,9 +2412,9 @@ namespace vcpkg
 
             ~ExclusiveFileLock() override
             {
-                if (fd && locked)
+                if (locked)
                 {
-                    Checks::check_exit(VCPKG_LINE_INFO, fd.flock(LOCK_UN) == 0);
+                    Checks::check_exit(VCPKG_LINE_INFO, fd && fd.flock(LOCK_UN) == 0);
                 }
             }
 #endif
