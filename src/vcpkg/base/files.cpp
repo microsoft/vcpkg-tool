@@ -591,7 +591,7 @@ namespace
         void swap(PosixFd& other) noexcept { std::swap(fd, other.fd); }
 
         PosixFd(const PosixFd&) = delete;
-        PosixFd(PosixFd&& other) : fd(other.fd) { other.fd = -1; }
+        PosixFd(PosixFd&& other) : fd(std::exchange(other.fd, -1)) { }
         PosixFd& operator=(const PosixFd&) = delete;
         PosixFd& operator=(PosixFd&& other)
         {
