@@ -656,7 +656,11 @@ namespace
 
         ReadDirOp(const Path& base, std::error_code& ec) : dirp(opendir(base.c_str()))
         {
-            if (!dirp)
+            if (dirp)
+            {
+                ec.clear();
+            }
+            else
             {
                 ec.assign(errno, std::generic_category());
             }
