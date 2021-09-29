@@ -1,3 +1,5 @@
+#include <vcpkg/base/system_headers.h>
+
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -5,14 +7,16 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#if defined(_WIN32)
-#include <vcpkg/base/system_headers.h>
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#include <assert.h>
+
+#if !defined(_WIN32)
+#include <dirent.h>
 #include <fcntl.h>
+#include <limits.h>
 
 #include <sys/file.h>
 #include <sys/stat.h>
-#endif // _WIN32
+#endif // !_WIN32
 
 #if defined(__linux__)
 #include <sys/sendfile.h>
@@ -23,6 +27,7 @@
 #include <algorithm>
 #include <list>
 #include <string>
+#include <thread>
 
 #if !defined(VCPKG_USE_STD_FILESYSTEM)
 #error The build system must set VCPKG_USE_STD_FILESYSTEM.
@@ -44,17 +49,17 @@ namespace
 {
     using namespace vcpkg;
 
+    struct IsSlash
+    {
+        bool operator()(const char c) const noexcept
+        {
+            return c == '/'
 #if defined(_WIN32)
-    struct IsSlash
-    {
-        bool operator()(const wchar_t c) const noexcept { return c == L'/' || c == L'\\'; }
+                   || c == '\\'
+#endif // _WIN32
+                ;
+        }
     };
-#else
-    struct IsSlash
-    {
-        bool operator()(const char c) const noexcept { return c == '/'; }
-    };
-#endif
 
     constexpr IsSlash is_slash;
 
@@ -62,6 +67,10 @@ namespace
     bool is_dot_dot(StringView sv)
     {
         return sv.size() == 2 && sv.byte_at_index(0) == '.' && sv.byte_at_index(1) == '.';
+    }
+    bool is_dot_or_dot_dot(const char* ntbs)
+    {
+        return ntbs[0] == '.' && (ntbs[1] == '\0' || (ntbs[1] == '.' && ntbs[2] == '\0'));
     }
 
     [[noreturn]] void exit_filesystem_call_error(LineInfo li,
@@ -84,7 +93,6 @@ namespace
             case static_cast<int>(CopyOptions::overwrite_existing):
                 result |= stdfs::copy_options::overwrite_existing;
                 break;
-            case static_cast<int>(CopyOptions::update_existing): result |= stdfs::copy_options::update_existing; break;
         }
 
         if (unpacked & static_cast<int>(CopyOptions::recursive))
@@ -382,11 +390,6 @@ namespace
 #endif // ^^^ !_WIN32
     }
 
-    VCPKG_CLANG_DIAGNOSTIC(push)
-    VCPKG_CLANG_DIAGNOSTIC(ignored "-Wunused-const-variable")
-    constexpr char preferred_separator = VCPKG_PREFERED_SEPARATOR[0];
-    VCPKG_CLANG_DIAGNOSTIC(pop)
-
     void translate_not_found_to_success(std::error_code& ec)
     {
         if (ec && (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory))
@@ -550,6 +553,177 @@ namespace
 
         vcpkg_remove_all(entry, ec, failure_point);
     }
+
+#if !defined(_WIN32)
+    bool posix_is_directory(const char* target) noexcept
+    {
+        struct stat s;
+        if (lstat(target, &s) != 0)
+        {
+            return false;
+        }
+
+        return S_ISDIR(s.st_mode);
+    }
+
+    bool posix_is_regular_file(const char* target) noexcept
+    {
+        struct stat s;
+        if (lstat(target, &s) != 0)
+        {
+            return false;
+        }
+
+        return S_ISREG(s.st_mode);
+    }
+
+    struct PosixFd
+    {
+        PosixFd() = default;
+
+        PosixFd(const char* path, int oflag, std::error_code& ec) noexcept : fd(open(path, oflag)) { check_error(ec); }
+
+        PosixFd(const char* path, int oflag, mode_t mode, std::error_code& ec) noexcept : fd(open(path, oflag, mode))
+        {
+            check_error(ec);
+        }
+
+        void swap(PosixFd& other) noexcept { std::swap(fd, other.fd); }
+
+        PosixFd(const PosixFd&) = delete;
+        PosixFd(PosixFd&& other) : fd(std::exchange(other.fd, -1)) { }
+        PosixFd& operator=(const PosixFd&) = delete;
+        PosixFd& operator=(PosixFd&& other)
+        {
+            PosixFd{std::move(other)}.swap(*this);
+            return *this;
+        }
+
+        int flock(int operation) const noexcept { return ::flock(fd, operation); }
+
+        ssize_t read(void* buf, size_t count) const noexcept { return ::read(fd, buf, count); }
+
+        ssize_t write(void* buf, size_t count) const noexcept { return ::write(fd, buf, count); }
+
+        int fstat(struct stat* statbuf) const noexcept { return ::fstat(fd, statbuf); }
+
+        void fstat(struct stat* statbuf, std::error_code& ec) const noexcept
+        {
+            if (::fstat(fd, statbuf) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+        }
+
+        operator bool() const noexcept { return fd >= 0; }
+
+        int get() const noexcept { return fd; }
+
+        void close() noexcept
+        {
+            if (fd >= 0)
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, ::close(fd) == 0);
+                fd = -1;
+            }
+        }
+
+        ~PosixFd() { close(); }
+
+    private:
+        int fd = -1;
+
+        void check_error(std::error_code& ec)
+        {
+            if (fd >= 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+        }
+    };
+
+    struct ReadDirOp
+    {
+        DIR* dirp;
+
+        ReadDirOp(const Path& base, std::error_code& ec) : dirp(opendir(base.c_str()))
+        {
+            if (dirp)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+        }
+
+        ReadDirOp(const ReadDirOp&) = delete;
+        ReadDirOp& operator=(const ReadDirOp&) = delete;
+
+        const dirent* read() const
+        {
+            // https://www.gnu.org/software/libc/manual/html_node/Reading_002fClosing-Directory.html
+            // > In the GNU C Library, it is safe to call readdir from multiple threads as long as
+            // > each thread uses its own DIR object. POSIX.1-2008 does not require this to be safe,
+            // > but we are not aware of any operating systems where it does not work.
+            return readdir(dirp);
+        }
+
+        const dirent* read(std::error_code& ec) const
+        {
+            errno = 0;
+            const dirent* result = readdir(dirp);
+            if (result || errno == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+
+            return result;
+        }
+
+        ~ReadDirOp()
+        {
+            if (dirp)
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, closedir(dirp) == 0);
+            }
+        }
+    };
+
+#if defined(_DIRENT_HAVE_D_TYPE)
+    enum class PosixDType : unsigned char
+    {
+        Unknown = DT_UNKNOWN,
+        Regular = DT_REG,
+        Directory = DT_DIR,
+    };
+
+    PosixDType get_d_type(const struct dirent* d) noexcept { return static_cast<PosixDType>(d->d_type); }
+#else
+    enum class PosixDType : unsigned char
+    {
+        Unknown = 0,
+        Regular = 1,
+        Directory = 2,
+    };
+
+    PosixDType get_d_type(const struct dirent*) noexcept { return PosixDType::Unknown; }
+#endif
+
+#endif // ^^^ !_WIN32
 }
 
 #if defined(_WIN32)
@@ -1547,6 +1721,7 @@ namespace vcpkg
             }
         }
 
+#if defined(_WIN32)
         template<class Iter>
         static std::vector<Path> get_files_impl(const Path& dir, std::error_code& ec)
         {
@@ -1596,11 +1771,7 @@ namespace vcpkg
             {
                 while (b != e)
                 {
-#if VCPKG_USE_STD_FILESYSTEM
                     if (b->is_directory(ec))
-#else  // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
-                    if (stdfs::is_directory(b->path(), ec))
-#endif // VCPKG_USE_STD_FILESYSTEM
                     {
                         ret.push_back(from_stdfs_path(b->path()));
                     }
@@ -1646,11 +1817,7 @@ namespace vcpkg
             {
                 while (b != e)
                 {
-#if VCPKG_USE_STD_FILESYSTEM
                     if (b->is_regular_file(ec))
-#else  // ^^^ VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
-                    if (stdfs::is_regular_file(b->path(), ec))
-#endif // VCPKG_USE_STD_FILESYSTEM
                     {
                         ret.push_back(from_stdfs_path(b->path()));
                     }
@@ -1682,6 +1849,195 @@ namespace vcpkg
         {
             return get_regular_files_impl<stdfs::directory_iterator>(dir, ec);
         }
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+       // Selector is a function taking (PosixDType, mode_t mode) and returning bool
+       // dtype is the value from the d_type member of struct dirent. If the system does not support the d_type
+       // member, this will always be set to PosixDType::Unknown.
+       // mode is the st_mode member of struct stat. It is populated if and only if dtype is PosixDType::Unknown.
+       // Note that many file systems always set dtype to DT_UNKNOWN, so the lstat fallback must exist even on systems
+       // which have the d_type member
+        static void get_files_recursive_impl(std::vector<Path>& result,
+                                             const Path& base,
+                                             std::error_code& ec,
+                                             bool (*selector)(PosixDType, mode_t))
+        {
+            ReadDirOp op{base, ec};
+            if (ec)
+            {
+                translate_not_found_to_success(ec);
+            }
+            else
+            {
+                for (;;)
+                {
+                    errno = 0;
+                    auto entry = op.read();
+                    if (!entry)
+                    {
+                        if (errno != 0)
+                        {
+                            ec.assign(errno, std::generic_category());
+                            return;
+                        }
+
+                        // no more entries left
+                        break;
+                    }
+
+                    if (is_dot_or_dot_dot(entry->d_name))
+                    {
+                        continue;
+                    }
+
+                    const auto full = base / entry->d_name;
+                    const auto entry_dtype = get_d_type(entry);
+                    if (entry_dtype == PosixDType::Unknown)
+                    {
+                        struct stat s;
+                        if (stat(full.c_str(), &s) != 0 && errno != ENOENT)
+                        {
+                            ec.assign(errno, std::generic_category());
+                            result.clear();
+                            return;
+                        }
+
+                        if (selector(PosixDType::Unknown, s.st_mode))
+                        {
+                            // push results before recursion to get outer entries first
+                            result.push_back(full);
+                        }
+
+                        if (S_ISDIR(s.st_mode))
+                        {
+                            get_files_recursive_impl(result, full, ec, selector);
+                            if (ec)
+                            {
+                                return;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (selector(entry_dtype, 0))
+                        {
+                            // push results before recursion to get outer entries first
+                            result.push_back(full);
+                        }
+
+                        if (entry_dtype == PosixDType::Directory)
+                        {
+                            get_files_recursive_impl(result, full, ec, selector);
+                            if (ec)
+                            {
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Selector is a function taking (PosixDType dtype, const Path&) and returning bool
+        // (This is similar to the recursive version, but the non-recursive version doesn't need to do stat calls
+        // so selector needs to do them if it wants.)
+        static void get_files_non_recursive_impl(std::vector<Path>& result,
+                                                 const Path& base,
+                                                 std::error_code& ec,
+                                                 bool (*selector)(PosixDType, const Path&))
+        {
+            ReadDirOp op{base, ec};
+            if (ec)
+            {
+                translate_not_found_to_success(ec);
+            }
+            else
+            {
+                for (;;)
+                {
+                    errno = 0;
+                    auto entry = op.read();
+                    if (!entry)
+                    {
+                        if (errno != 0)
+                        {
+                            ec.assign(errno, std::generic_category());
+                            return;
+                        }
+
+                        // no more entries left
+                        break;
+                    }
+
+                    if (is_dot_or_dot_dot(entry->d_name))
+                    {
+                        continue;
+                    }
+
+                    auto full = base / entry->d_name;
+                    if (selector(get_d_type(entry), full))
+                    {
+                        result.push_back(std::move(full));
+                    }
+                }
+            }
+        }
+
+        virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            get_files_recursive_impl(result, dir, ec, [](PosixDType, mode_t) { return true; });
+            return result;
+        }
+
+        virtual std::vector<Path> get_files_non_recursive(const Path& dir, std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            get_files_non_recursive_impl(result, dir, ec, [](PosixDType, const Path&) { return true; });
+            return result;
+        }
+
+        virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            get_files_recursive_impl(result, dir, ec, [](PosixDType dtype, mode_t mode) {
+                return dtype == PosixDType::Directory || S_ISDIR(mode);
+            });
+
+            return result;
+        }
+
+        virtual std::vector<Path> get_directories_non_recursive(const Path& dir, std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            get_files_non_recursive_impl(result, dir, ec, [](PosixDType dtype, const Path& p) {
+                return dtype == PosixDType::Directory ||
+                       (dtype == PosixDType::Unknown && posix_is_directory(p.c_str()));
+            });
+
+            return result;
+        }
+
+        virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            get_files_recursive_impl(result, dir, ec, [](PosixDType dtype, mode_t mode) {
+                return dtype == PosixDType::Regular || S_ISREG(mode);
+            });
+
+            return result;
+        }
+
+        virtual std::vector<Path> get_regular_files_non_recursive(const Path& dir, std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            get_files_non_recursive_impl(result, dir, ec, [](PosixDType dtype, const Path& p) {
+                return dtype == PosixDType::Regular ||
+                       (dtype == PosixDType::Unknown && posix_is_regular_file(p.c_str()));
+            });
+
+            return result;
+        }
+#endif // ^^^ !_WIN32
 
         virtual void write_lines(const Path& file_path,
                                  const std::vector<std::string>& lines,
@@ -1717,29 +2073,26 @@ namespace vcpkg
                 auto dst = new_path;
                 dst += temp_suffix;
 
-                int i_fd = open(old_path.c_str(), O_RDONLY);
-                if (i_fd == -1) return;
+                PosixFd i_fd{old_path.c_str(), O_RDONLY, ec};
+                if (ec) return;
 
-                int o_fd = creat(dst.c_str(), 0664);
-                if (o_fd == -1)
-                {
-                    close(i_fd);
-                    return;
-                }
+                PosixFd o_fd{dst.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0664, ec};
+                if (ec) return;
 
 #if defined(__linux__)
                 off_t bytes = 0;
                 struct stat info = {0};
-                fstat(i_fd, &info);
-                auto written_bytes = sendfile(o_fd, i_fd, &bytes, info.st_size);
+                i_fd.fstat(&info, ec);
+                if (ec) return;
+                auto written_bytes = sendfile(o_fd.get(), i_fd.get(), &bytes, info.st_size);
 #elif defined(__APPLE__)
-                auto written_bytes = fcopyfile(i_fd, o_fd, 0, COPYFILE_ALL);
+                auto written_bytes = fcopyfile(i_fd.get(), o_fd.get(), 0, COPYFILE_ALL);
 #else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
                 ssize_t written_bytes = 0;
                 {
                     constexpr std::size_t buffer_length = 4096;
-                    auto buffer = std::make_unique<unsigned char[]>(buffer_length);
-                    while (auto read_bytes = read(i_fd, buffer.get(), buffer_length))
+                    unsigned char buffer[buffer_length];
+                    while (auto read_bytes = i_fd.read(buffer, buffer_length))
                     {
                         if (read_bytes == -1)
                         {
@@ -1749,7 +2102,7 @@ namespace vcpkg
                         auto remaining = read_bytes;
                         while (remaining > 0)
                         {
-                            auto read_result = write(o_fd, buffer.get(), remaining);
+                            auto read_result = o_fd.write(buffer, remaining);
                             if (read_result == -1)
                             {
                                 written_bytes = -1;
@@ -1766,14 +2119,11 @@ namespace vcpkg
                 if (written_bytes == -1)
                 {
                     ec.assign(errno, std::generic_category());
-                    close(i_fd);
-                    close(o_fd);
-
                     return;
                 }
 
-                close(i_fd);
-                close(o_fd);
+                i_fd.close();
+                o_fd.close();
 
                 this->rename(dst, new_path, ec);
                 if (ec) return;
@@ -1996,7 +2346,7 @@ namespace vcpkg
 #if defined(_WIN32)
             HANDLE handle = INVALID_HANDLE_VALUE;
             stdfs::path native;
-            ExclusiveFileLock(stdfs::path&& native, std::error_code& ec) : native(std::move(native)) { ec.clear(); }
+            ExclusiveFileLock(const Path& path, std::error_code& ec) : native(to_stdfs_path(path)) { ec.clear(); }
 
             bool lock_attempt(std::error_code& ec)
             {
@@ -2034,24 +2384,16 @@ namespace vcpkg
                 }
             }
 #else // ^^^ _WIN32 / !_WIN32 vvv
-            int fd;
+            PosixFd fd;
             bool locked = false;
-            ExclusiveFileLock(stdfs::path&& native, std::error_code& ec)
-                : fd(::open(native.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))
+            ExclusiveFileLock(const Path& path, std::error_code& ec)
+                : fd(path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, ec)
             {
-                if (fd < 0)
-                {
-                    ec.assign(errno, std::generic_category());
-                }
-                else
-                {
-                    ec.clear();
-                }
             }
 
             bool lock_attempt(std::error_code& ec)
             {
-                if (::flock(fd, LOCK_EX | LOCK_NB) == 0)
+                if (fd.flock(LOCK_EX | LOCK_NB) == 0)
                 {
                     ec.clear();
                     locked = true;
@@ -2070,14 +2412,9 @@ namespace vcpkg
 
             ~ExclusiveFileLock() override
             {
-                if (fd > 0)
+                if (locked)
                 {
-                    if (locked)
-                    {
-                        Checks::check_exit(VCPKG_LINE_INFO, flock(fd, LOCK_UN) == 0);
-                    }
-
-                    Checks::check_exit(VCPKG_LINE_INFO, close(fd) == 0);
+                    Checks::check_exit(VCPKG_LINE_INFO, fd && fd.flock(LOCK_UN) == 0);
                 }
             }
 #endif
@@ -2086,7 +2423,7 @@ namespace vcpkg
         virtual std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
                                                                              std::error_code& ec) override
         {
-            auto result = std::make_unique<ExclusiveFileLock>(to_stdfs_path(lockfile), ec);
+            auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (!ec && !result->lock_attempt(ec) && !ec)
             {
                 vcpkg::printf("Waiting to take filesystem lock on %s...\n", lockfile);
@@ -2102,7 +2439,7 @@ namespace vcpkg
         virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
                                                                                  std::error_code& ec) override
         {
-            auto result = std::make_unique<ExclusiveFileLock>(to_stdfs_path(lockfile), ec);
+            auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (!ec && !result->lock_attempt(ec) && !ec)
             {
                 Debug::print("Waiting to take filesystem lock on ", lockfile, "...\n");
@@ -2131,9 +2468,9 @@ namespace vcpkg
         {
 #if defined(_WIN32)
             static constexpr StringLiteral EXTS[] = {".cmd", ".exe", ".bat"};
-#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
             static constexpr StringLiteral EXTS[] = {""};
-#endif // ^^^!defined(_WIN32)
+#endif // ^^^!_WIN32
             const Path pname = name;
             auto path_bases = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
 

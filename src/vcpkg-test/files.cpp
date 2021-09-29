@@ -215,8 +215,8 @@ static void test_op_slash(StringView base, StringView append, StringView expecte
 
 TEST_CASE ("vcpkg Path::operator/", "[filesystem][files]")
 {
-    test_op_slash("/a/b", "c/d", "/a/b" VCPKG_PREFERED_SEPARATOR "c/d");
-    test_op_slash("a/b", "c/d", "a/b" VCPKG_PREFERED_SEPARATOR "c/d");
+    test_op_slash("/a/b", "c/d", "/a/b" VCPKG_PREFERRED_SEPARATOR "c/d");
+    test_op_slash("a/b", "c/d", "a/b" VCPKG_PREFERRED_SEPARATOR "c/d");
     test_op_slash("/a/b", "/c/d", "/c/d");
 
 #if defined(_WIN32)
@@ -272,13 +272,13 @@ TEST_CASE ("vcpkg Path::preferred and Path::make_preferred", "[filesystem][files
 {
     test_preferred("", "");
     test_preferred("hello", "hello");
-    test_preferred("/hello", VCPKG_PREFERED_SEPARATOR "hello");
-    test_preferred("hello/", "hello" VCPKG_PREFERED_SEPARATOR);
-    test_preferred("hello/////////there", "hello" VCPKG_PREFERED_SEPARATOR "there");
-    test_preferred("hello/////////there///" VCPKG_PREFERED_SEPARATOR "world",
-                   "hello" VCPKG_PREFERED_SEPARATOR "there" VCPKG_PREFERED_SEPARATOR "world");
-    test_preferred("/a/b", VCPKG_PREFERED_SEPARATOR "a" VCPKG_PREFERED_SEPARATOR "b");
-    test_preferred("a/b", "a" VCPKG_PREFERED_SEPARATOR "b");
+    test_preferred("/hello", VCPKG_PREFERRED_SEPARATOR "hello");
+    test_preferred("hello/", "hello" VCPKG_PREFERRED_SEPARATOR);
+    test_preferred("hello/////////there", "hello" VCPKG_PREFERRED_SEPARATOR "there");
+    test_preferred("hello/////////there///" VCPKG_PREFERRED_SEPARATOR "world",
+                   "hello" VCPKG_PREFERRED_SEPARATOR "there" VCPKG_PREFERRED_SEPARATOR "world");
+    test_preferred("/a/b", VCPKG_PREFERRED_SEPARATOR "a" VCPKG_PREFERRED_SEPARATOR "b");
+    test_preferred("a/b", "a" VCPKG_PREFERRED_SEPARATOR "b");
 
 #if defined(_WIN32)
     test_preferred(R"(\\server/share\a/b)", R"(\\server\share\a\b)");

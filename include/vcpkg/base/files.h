@@ -11,9 +11,9 @@
 #include <system_error>
 
 #if defined(_WIN32)
-#define VCPKG_PREFERED_SEPARATOR "\\"
+#define VCPKG_PREFERRED_SEPARATOR "\\"
 #else // ^^^ _WIN32 / !_WIN32 vvv
-#define VCPKG_PREFERED_SEPARATOR "/"
+#define VCPKG_PREFERRED_SEPARATOR "/"
 #endif // _WIN32
 
 namespace vcpkg
@@ -33,7 +33,6 @@ namespace vcpkg
         existing_mask = 0xF,
         skip_existing = 0x1,
         overwrite_existing = 0x2,
-        update_existing = 0x4,
 
         recursive = 0x10,
 
@@ -370,11 +369,7 @@ namespace vcpkg
 
     void print_paths(const std::vector<Path>& paths);
 
-#if defined(_WIN32)
-    constexpr char preferred_separator = '\\';
-#else
-    constexpr char preferred_separator = '/';
-#endif // _WIN32
+    constexpr char preferred_separator = VCPKG_PREFERRED_SEPARATOR[0];
 
 #if defined(_WIN32)
     Path win32_fix_path_case(const Path& source);
