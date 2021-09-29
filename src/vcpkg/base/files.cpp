@@ -711,7 +711,7 @@ namespace
         Directory = DT_DIR,
     };
 
-    PosixDType get_d_type(struct dirent* d) noexcept { return static_cast<PosixDType>(d->d_type); }
+    PosixDType get_d_type(const struct dirent* d) noexcept { return static_cast<PosixDType>(d->d_type); }
 #else
     enum class PosixDType : unsigned char
     {
@@ -720,7 +720,7 @@ namespace
         Directory = 2,
     };
 
-    PosixDType get_d_type(struct dirent*) noexcept { return PosixDType::Unknown; }
+    PosixDType get_d_type(const struct dirent*) noexcept { return PosixDType::Unknown; }
 #endif
 
 #endif // ^^^ !_WIN32
