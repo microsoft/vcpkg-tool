@@ -28,8 +28,7 @@ namespace vcpkg::CMakeVars
     }
 
     const std::unordered_map<std::string, std::string>& CMakeVarProvider::get_or_load_dep_info_vars(
-        const PackageSpec& spec,
-        Triplet host_triplet) const
+        const PackageSpec& spec, Triplet host_triplet) const
     {
         auto maybe_vars = get_dep_info_vars(spec);
         if (!maybe_vars.has_value())
