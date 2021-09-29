@@ -1324,7 +1324,7 @@ namespace vcpkg::Build
 #endif
 
         std::string package = action.displayname();
-        if (auto scfl = action.source_control_file_location.get())
+        if (auto scfl = action.source_control_file_and_location.get())
         {
             Strings::append(package, " -> ", scfl->to_versiont());
         }

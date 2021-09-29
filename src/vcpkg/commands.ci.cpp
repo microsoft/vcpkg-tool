@@ -524,7 +524,8 @@ namespace vcpkg::Commands::CI
             return FullPackageSpec{spec, std::move(default_features)};
         });
 
-        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet);
+        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
+                                                                 Dependencies::UnsupportedPortAction::Warn);
 
         struct RandomizerInstance : Graphs::Randomizer
         {
