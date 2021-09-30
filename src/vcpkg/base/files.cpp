@@ -512,7 +512,7 @@ namespace
         }
         vcpkg_remove_all(entry, ec, failure_point);
     }
-#else  // ^^^ _WIN32 // !_WIN32 vvv
+#else // ^^^ _WIN32 // !_WIN32 vvv
     bool posix_is_directory(const char* target) noexcept
     {
         struct stat s;
@@ -670,7 +670,7 @@ namespace
     };
 
     PosixDType get_d_type(const struct dirent* d) noexcept { return static_cast<PosixDType>(d->d_type); }
-#else // ^^^ _DIRENT_HAVE_D_TYPE // !_DIRENT_HAVE_D_TYPE
+#else  // ^^^ _DIRENT_HAVE_D_TYPE // !_DIRENT_HAVE_D_TYPE
     enum class PosixDType : unsigned char
     {
         Unknown = 0,
