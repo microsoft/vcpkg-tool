@@ -109,6 +109,7 @@ namespace
         return result;
     }
 
+#if defined(_WIN32)
     FileType convert_file_type(stdfs::file_type type) noexcept
     {
         switch (type)
@@ -123,12 +124,11 @@ namespace
             case stdfs::file_type::fifo: return FileType::fifo;
             case stdfs::file_type::socket: return FileType::socket;
             case stdfs::file_type::unknown: return FileType::unknown;
-#if defined(_WIN32)
             case stdfs::file_type::junction: return FileType::junction;
-#endif // _WIN32
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
+#endif // _WIN32
 
     stdfs::path to_stdfs_path(const Path& utfpath)
     {
