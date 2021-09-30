@@ -398,6 +398,7 @@ namespace
         }
     }
 
+#if defined(_WIN32)
     struct RemoveAllErrorInfo
     {
         std::error_code ec;
@@ -417,9 +418,8 @@ namespace
     };
 
     // does _not_ follow symlinks
-    void set_writeable(const stdfs::path& target, std::error_code& ec) noexcept
+    void remove_file_attribute_readonly(const stdfs::path& target, std::error_code& ec) noexcept
     {
-#if defined(_WIN32)
         auto const file_name = target.c_str();
         WIN32_FILE_ATTRIBUTE_DATA attributes;
         if (!GetFileAttributesExW(file_name, GetFileExInfoStandard, &attributes))
@@ -434,25 +434,6 @@ namespace
         {
             ec.assign(GetLastError(), std::system_category());
         }
-#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
-        struct stat s;
-        if (lstat(target.c_str(), &s))
-        {
-            ec.assign(errno, std::system_category());
-            return;
-        }
-
-        auto mode = s.st_mode;
-        // if the file is a symlink, perms don't matter
-        if (!(mode & S_IFLNK))
-        {
-            mode |= S_IWUSR;
-            if (chmod(target.c_str(), mode))
-            {
-                ec.assign(errno, std::system_category());
-            }
-        }
-#endif // ^^^ !defined(_WIN32)
     }
 
     // Custom implementation of stdfs::remove_all intended to be resilient to transient issues
@@ -472,7 +453,7 @@ namespace
 
         if ((path_status.permissions() & stdfs::perms::owner_write) != stdfs::perms::owner_write)
         {
-            set_writeable(current_entry, ec);
+            remove_file_attribute_readonly(current_entry, ec);
             if (err.check_ec(ec, current_entry)) return;
         }
 
@@ -483,33 +464,16 @@ namespace
                 vcpkg_remove_all_impl(entry, err);
                 if (err.ec) return;
             }
-#if defined(_WIN32)
             if (!RemoveDirectoryW(current_entry.path().c_str()))
             {
                 ec.assign(GetLastError(), std::system_category());
             }
-#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
-            if (rmdir(current_entry.path().c_str()))
-            {
-                ec.assign(errno, std::system_category());
-            }
-#endif // ^^^ !defined(_WIN32)
         }
-#if VCPKG_USE_STD_FILESYSTEM
         else
         {
             stdfs::remove(current_entry.path(), ec);
             if (err.check_ec(ec, current_entry)) return;
         }
-#else  // ^^^  VCPKG_USE_STD_FILESYSTEM // !VCPKG_USE_STD_FILESYSTEM vvv
-        else
-        {
-            if (unlink(current_entry.path().c_str()))
-            {
-                ec.assign(errno, std::system_category());
-            }
-        }
-#endif // ^^^ !VCPKG_USE_STD_FILESYSTEM
 
         err.check_ec(ec, current_entry);
     }
@@ -537,24 +501,18 @@ namespace
         failure_point = std::move(err.failure_point);
     }
 
-    void vcpkg_remove_all(const stdfs::path& base, std::error_code& ec, Path& failure_point)
+    void vcpkg_remove_all(const Path& base, std::error_code& ec, Path& failure_point)
     {
-#if VCPKG_USE_STD_FILESYSTEM
-        stdfs::directory_entry entry(base, ec);
+        stdfs::directory_entry entry(to_stdfs_path(base), ec);
         translate_not_found_to_success(ec);
         if (ec)
         {
-            failure_point = from_stdfs_path(base);
+            failure_point = base;
             return;
         }
-#else
-        stdfs::directory_entry entry(base);
-#endif // VCPKG_USE_STD_FILESYSTEM
-
         vcpkg_remove_all(entry, ec, failure_point);
     }
-
-#if !defined(_WIN32)
+#else  // ^^^ _WIN32 // !_WIN32 vvv
     bool posix_is_directory(const char* target) noexcept
     {
         struct stat s;
@@ -712,7 +670,7 @@ namespace
     };
 
     PosixDType get_d_type(const struct dirent* d) noexcept { return static_cast<PosixDType>(d->d_type); }
-#else
+#else // ^^^ _DIRENT_HAVE_D_TYPE // !_DIRENT_HAVE_D_TYPE
     enum class PosixDType : unsigned char
     {
         Unknown = 0,
@@ -721,8 +679,65 @@ namespace
     };
 
     PosixDType get_d_type(const struct dirent*) noexcept { return PosixDType::Unknown; }
-#endif
+#endif // ^^^ !_DIRENT_HAVE_D_TYPE
 
+    void vcpkg_remove_all(const Path& base, std::error_code& ec, Path& failure_point)
+    {
+        {
+            ReadDirOp op{base, ec};
+            if (!ec)
+            {
+                // it was a directory, so delete everything inside
+                for (;;)
+                {
+                    errno = 0;
+                    auto entry = op.read();
+                    if (!entry)
+                    {
+                        if (errno != 0)
+                        {
+                            ec.assign(errno, std::generic_category());
+                            failure_point = base;
+                            return;
+                        }
+
+                        // no more entries left, fall down to unlink below
+                        break;
+                    }
+
+                    // delete base / entry.d_name, recursively
+                    if (is_dot_or_dot_dot(entry->d_name))
+                    {
+                        continue;
+                    }
+
+                    vcpkg_remove_all(base / entry->d_name, ec, failure_point);
+                    if (ec)
+                    {
+                        // removing a contained entity failed; the recursive call will set failure_point
+                        return;
+                    }
+                }
+            }
+            else if (ec == std::errc::not_a_directory)
+            {
+                // was not a directory, fall down to the unlink below
+                ec.clear();
+            }
+            else
+            {
+                // some other IO error occurred trying to open the directory
+                failure_point = base;
+                return;
+            }
+        } // close op
+
+        if (::unlink(base.c_str()) != 0)
+        {
+            ec.assign(errno, std::generic_category());
+            failure_point = base;
+        }
+    }
 #endif // ^^^ !_WIN32
 }
 
@@ -1507,6 +1522,34 @@ namespace vcpkg
         this->remove_all(base, ec, failure_point);
     }
 
+    void Filesystem::remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point)
+    {
+        for (auto&& subdir : this->get_directories_non_recursive(base, ec))
+        {
+            if (ec)
+            {
+                return;
+            }
+
+            this->remove_all(subdir, ec, failure_point);
+        }
+
+        if (ec)
+        {
+            return;
+        }
+
+        for (auto&& file : this->get_files_non_recursive(base, ec))
+        {
+            this->remove(file, ec);
+            if (ec)
+            {
+                failure_point = file;
+                return;
+            }
+        }
+    }
+
     void Filesystem::remove_all_inside(const Path& base, LineInfo li)
     {
         std::error_code ec;
@@ -2133,12 +2176,12 @@ namespace vcpkg
         }
         virtual bool remove(const Path& target, std::error_code& ec) override
         {
+#if defined(_WIN32)
             auto as_stdfs = to_stdfs_path(target);
             bool result = stdfs::remove(as_stdfs, ec);
-#if defined(_WIN32)
             if (ec && ec == std::error_code(ERROR_ACCESS_DENIED, std::system_category()))
             {
-                set_writeable(as_stdfs, ec);
+                remove_file_attribute_readonly(as_stdfs, ec);
                 if (ec)
                 {
                     return false;
@@ -2146,64 +2189,24 @@ namespace vcpkg
 
                 return stdfs::remove(as_stdfs, ec);
             }
-#endif // _WIN32
 
             return result;
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            if (::remove(target.c_str()) == 0)
+            {
+                ec.clear();
+                return true;
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+#endif // _WIN32
         }
         virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) override
         {
-            vcpkg_remove_all(to_stdfs_path(base), ec, failure_point);
-        }
-
-        virtual void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) override
-        {
-            stdfs::directory_iterator last{};
-            stdfs::directory_iterator first(to_stdfs_path(base), ec);
-            if (ec)
-            {
-                failure_point = base;
-                return;
-            }
-
-            for (;;)
-            {
-                if (first == last)
-                {
-                    return;
-                }
-
-                auto stats = first->status(ec);
-                if (ec)
-                {
-                    break;
-                }
-
-                auto& thisPath = first->path();
-                if (stats.type() == stdfs::file_type::directory)
-                {
-                    vcpkg_remove_all(*first, ec, failure_point);
-                    if (ec)
-                    {
-                        return; // keep inner failure_point
-                    }
-                }
-                else
-                {
-                    stdfs::remove(thisPath, ec);
-                    if (ec)
-                    {
-                        break;
-                    }
-                }
-
-                first.increment(ec);
-                if (ec)
-                {
-                    break;
-                }
-            }
-
-            failure_point = from_stdfs_path(first->path());
+            vcpkg_remove_all(base, ec, failure_point);
         }
 
         virtual bool is_directory(const Path& target) const override

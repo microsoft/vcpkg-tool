@@ -270,7 +270,7 @@ namespace vcpkg
         void remove_all(const Path& base, std::error_code& ec);
         void remove_all(const Path& base, LineInfo li);
 
-        virtual void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) = 0;
+        void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point);
         void remove_all_inside(const Path& base, std::error_code& ec);
         void remove_all_inside(const Path& base, LineInfo li);
 
