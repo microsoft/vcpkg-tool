@@ -2334,11 +2334,46 @@ namespace vcpkg
 
         virtual Path current_path(std::error_code& ec) const override
         {
+#if defined(_WIN32)
             return from_stdfs_path(stdfs::current_path(ec));
+#else  // ^^^ _WIN32 // !_WIN32
+            std::string buf;
+            buf.resize(PATH_MAX);
+            for (;;)
+            {
+                if (getcwd(&buf[0], buf.size() + 1) != nullptr)
+                {
+                    buf.resize(strlen(buf.c_str()));
+                    ec.clear();
+                    break;
+                }
+
+                if (errno != ERANGE)
+                {
+                    ec.assign(errno, std::generic_category());
+                    buf.clear();
+                    break;
+                }
+
+                buf.append(PATH_MAX, '\0');
+            }
+
+            return Path{std::move(buf)};
+#endif // ^^^ !_WIN32
         }
         virtual void current_path(const Path& new_current_path, std::error_code& ec) override
         {
+#if defined(_WIN32)
             stdfs::current_path(to_stdfs_path(new_current_path), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            if (chdir(new_current_path.c_str()) == 0)
+            {
+                ec.clear();
+                return;
+            }
+
+            ec.assign(errno, std::generic_category());
+#endif // ^^^ !_WIN32
         }
 
         struct ExclusiveFileLock : IExclusiveFileLock
