@@ -619,6 +619,18 @@ namespace
             }
         }
 
+        void ftruncate(off_t length, std::error_code& ec) const noexcept
+        {
+            if (::ftruncate(fd, length) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+        }
+
         operator bool() const noexcept { return fd >= 0; }
 
         int get() const noexcept { return fd; }
@@ -2232,72 +2244,47 @@ namespace vcpkg
                 return false;
             }
 
-            bool destination_exists;
-            struct stat destination_stat;
-            if (lstat(destination.c_str(), &destination_stat) == 0)
+            int open_options = O_WRONLY | O_CREAT;
+            if (masked_options != CopyOptions::overwrite_existing)
             {
-                if (!S_ISREG(destination_stat.st_mode))
+                open_options |= O_EXCL;
+            }
+
+            PosixFd destination_fd{destination.c_str(), open_options, mode, ec};
+            if (ec)
+            {
+                if (masked_options == CopyOptions::skip_existing && ec == std::errc::file_exists)
                 {
-                    // /4 exists(to) and is_regular_file(to) is false
-                    ec = std::make_error_code(std::errc::invalid_argument);
-                    return false;
+                    ec.clear();
                 }
 
-                destination_exists = true;
-            }
-            else if (errno == ENOENT)
-            {
-                destination_exists = false;
-            }
-            else
-            {
-                ec.assign(errno, std::generic_category());
                 return false;
             }
 
-            if (destination_exists && source_stat.st_dev == destination_stat.st_dev &&
+            struct stat destination_stat;
+            destination_fd.fstat(&destination_stat, ec);
+            if (ec)
+            {
+                return false;
+            }
+            else if (!S_ISREG(destination_stat.st_mode)
+            {
+                ec = std::make_error_code(std::errc::invalid_argument);
+                return false;
+            }
+
+            if (source_stat.st_dev == destination_stat.st_dev &&
                 source_stat.st_ino == destination_stat.st_ino)
             {
-                // /4 exists(to) i s true and equivalent(from, to) is true
+                // /4 exists(to) is true and equivalent(from, to) is true
                 ec = std::make_error_code(std::errc::device_or_resource_busy);
                 return false;
             }
 
-            auto masked_options =
-                static_cast<CopyOptions>(static_cast<int>(options) & static_cast<int>(CopyOptions::existing_mask));
-            if (destination_exists && masked_options == CopyOptions::none)
+            if (masked_options == CopyOptions::overwrite_existing)
             {
-                // /4 exists(to) is true and
-                //   (options & (copy_options::skip_existing |
-                //               copy_options::overwrite_existing |
-                //               copy_options::update_existing)) == copy_options::none
-                ec = std::make_error_code(std::errc::file_exists);
-                return false;
-            }
-
-            // /4: "Otherwise, copies the contents and attributes of the file from resolves to, to the file to resolves
-            // to, if
-            // * exists(to) is false
-            // * (options & copy_options::overwrite_existing) != copy_options::none
-            // * (options & copy_options::update_existing) != copy_options::none"
-            // Note that we don't implement update_existing.
-            if (destination_exists && masked_options == CopyOptions::skip_existing)
-            {
-                // /4 "Otherwise, no effects."
-                ec.clear();
-                return false;
-            }
-
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               !destination_exists || masked_options == CopyOptions::overwrite_existing);
-
-            PosixFd destination_fd{destination.c_str(),
-                                   O_WRONLY | O_CREAT | O_TRUNC,
-                                   static_cast<mode_t>(source_stat.st_mode & 0777u),
-                                   ec};
-            if (ec)
-            {
-                return false;
+                destination_fd.ftruncate(0, ec);
+                if (ec) return false;
             }
 
 #if defined(__linux__)
