@@ -2355,6 +2355,7 @@ namespace vcpkg
                     break;
                 }
 
+                // the current working directory is too big for the size of the string; resize and try again.
                 buf.append(PATH_MAX, '\0');
             }
 
