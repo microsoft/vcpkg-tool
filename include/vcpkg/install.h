@@ -38,7 +38,6 @@ namespace vcpkg::Install
     struct InstallSummary
     {
         std::vector<SpecSummary> results;
-        std::string total_elapsed_time;
 
         void print() const;
         std::string xunit_results() const;
