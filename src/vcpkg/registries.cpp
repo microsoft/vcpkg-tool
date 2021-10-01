@@ -1171,10 +1171,13 @@ namespace vcpkg
             StringView lockdata_key(data->first);
             print2("Fetching registry information from ", lockdata_key, "...\n");
 
-            auto at = std::find(lockdata_key.begin(), lockdata_key.end(), '@');
-            auto repoSize = lockdata_key.size() - std::distance(at, lockdata_key.end());
-            auto repo = lockdata_key.substr(0, repoSize);
-            auto reference = repoSize == lockdata_key.size() ? "HEAD" : lockdata_key.substr(repoSize + 1);
+            auto at_position = lockdata_key.end() - std::find(lockdata_key.begin(), lockdata_key.end(), '@');
+            auto repo = lockdata_key.substr(0, at_position);
+            auto reference = lockdata_key.substr(at_position + 1);
+            if (reference.size() == 0)
+            {
+                reference = "HEAD";
+            }
 
             data->second.value = paths.git_fetch_from_remote_registry(repo, reference).value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
