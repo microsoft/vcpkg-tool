@@ -2252,6 +2252,8 @@ namespace vcpkg
                 open_options |= O_EXCL;
             }
 
+            // TODO: Add write bits
+
             PosixFd destination_fd{destination.c_str(), open_options, mode, ec};
             if (ec)
             {
@@ -2333,6 +2335,8 @@ namespace vcpkg
 
             return true;
 #endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
+
+        // TODO set perms
 #endif // ^^^ !_WIN32
         }
 
