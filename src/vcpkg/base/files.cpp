@@ -2244,6 +2244,8 @@ namespace vcpkg
                 return false;
             }
 
+            auto masked_options =
+                static_cast<CopyOptions>(static_cast<int>(options) & static_cast<int>(CopyOptions::existing_mask));
             int open_options = O_WRONLY | O_CREAT;
             if (masked_options != CopyOptions::overwrite_existing)
             {
