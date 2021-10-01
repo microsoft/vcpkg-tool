@@ -1148,14 +1148,13 @@ namespace vcpkg
 
     LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference)
     {
-        auto lockdata_key = repo.to_string();
-        if (reference != "HEAD")
-        {
-            // old-style, only repo. implicitly HEAD
-            Strings::append(lockdata_key, "@", reference);
-        }
+        auto lockdata_key = Strings::concat(repo, "@", reference);
 
         auto it = lockdata.find(lockdata_key);
+        if (it == lockdata.end() && reference == "HEAD")
+        {
+            it = lockdata.find(StringView(lockdata_key).substr(0, lockdata_key.size() - 5));
+        }
         if (it == lockdata.end())
         {
             print2("Fetching registry information from ", lockdata_key, "...\n");
