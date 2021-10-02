@@ -536,11 +536,14 @@ TEST_CASE ("remove all symlinks", "[files]")
     fs.create_directory(symlink_inside_dir, VCPKG_LINE_INFO);
     std::error_code ec;
     fs.create_directory_symlink(target_root, symlink_inside_dir / "symlink", ec);
-    if (ec) {
+    if (ec)
+    {
         // if we get not supported or permission denied, assume symlinks aren't supported
         // on this system and the test is a no-op
         REQUIRE((ec == std::errc::not_supported || ec == std::errc::permission_denied));
-    } else {
+    }
+    else
+    {
         const auto symlink_direct = temp_dir / "direct_symlink";
         fs.create_directory_symlink(target_root, symlink_direct, VCPKG_LINE_INFO);
 
