@@ -139,12 +139,16 @@ namespace
 #endif // ^^^ !_WIN32
     }
 
-#if defined(_WIN32)
+#if defined(VCPKG_USE_STD_FILESYSTEM)
     Path from_stdfs_path(const stdfs::path& stdpath)
     {
+#if defined(_WIN32)
         return Strings::to_utf8(stdpath.native());
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        return stdpath.native();
+#endif // ^^^ !_WIN32
     }
-#endif // ^^^ _WIN32
+#endif // ^^^ VCPKG_USE_STD_FILESYSTEM
 
 #if defined(_WIN32)
     // The Win32 version of this implementation is effectively forked from
