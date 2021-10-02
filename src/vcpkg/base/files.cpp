@@ -139,16 +139,9 @@ namespace
 #endif // ^^^ !_WIN32
     }
 
-#if defined(VCPKG_USE_STD_FILESYSTEM)
-    Path from_stdfs_path(const stdfs::path& stdpath)
-    {
 #if defined(_WIN32)
-        return Strings::to_utf8(stdpath.native());
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-        return stdpath.native();
-#endif // ^^^ !_WIN32
-    }
-#endif // ^^^ VCPKG_USE_STD_FILESYSTEM
+    Path from_stdfs_path(const stdfs::path& stdpath) { return Strings::to_utf8(stdpath.native()); }
+#endif // ^^^ _WIN32
 
 #if defined(_WIN32)
     // The Win32 version of this implementation is effectively forked from
@@ -2350,9 +2343,9 @@ namespace vcpkg
 
         virtual Path absolute(const Path& target, std::error_code& ec) const override
         {
-#if VCPKG_USE_STD_FILESYSTEM
+#if defined(_WIN32)
             return from_stdfs_path(stdfs::absolute(to_stdfs_path(target), ec));
-#else  // ^^^ VCPKG_USE_STD_FILESYSTEM  /  !VCPKG_USE_STD_FILESYSTEM  vvv
+#else  // ^^^ _WIN32  /  !_WIN32  vvv
             if (target.is_absolute())
             {
                 return target;
@@ -2363,7 +2356,7 @@ namespace vcpkg
                 if (ec) return Path();
                 return std::move(current_path) / target;
             }
-#endif // ^^^ !VCPKG_USE_STD_FILESYSTEM
+#endif // ^^^ !_WIN32
         }
 
         virtual Path almost_canonical(const Path& target, std::error_code& ec) const override
