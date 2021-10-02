@@ -20,6 +20,7 @@ option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
+option(VCPKG_PDB_SUFFIX "Option to append to the name of the PDB for the shipping vcpkg binaries." "")
 
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
     "BUILD_TESTING" OFF)
@@ -137,6 +138,9 @@ target_compile_definitions(vcpkglib PUBLIC
     VCPKG_VERSION=${VCPKG_VERSION}
     VCPKG_BASE_VERSION=${VCPKG_BASE_VERSION}
 )
+if (WIN32)
+    target_compile_options(vcpkglib PRIVATE /EHsc)
+endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -186,6 +190,12 @@ if(VCPKG_ADD_SOURCELINK)
         REF "${VCPKG_VERSION}"
     )
 endif()
+if(VCPKG_PDB_SUFFIX)
+    set_property(TARGET vcpkg PROPERTY PDB_NAME "vcpkg${VCPKG_PDB_SUFFIX}")
+endif()
+if (WIN32)
+    target_compile_options(vcpkg PRIVATE /EHsc)
+endif()
 
 # === Target: vcpkg-test ===
 
@@ -212,6 +222,9 @@ if(VCPKG_BUILD_FUZZING)
     add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES})
     target_link_libraries(vcpkg-fuzz PRIVATE vcpkglib)
     vcpkg_target_add_warning_options(vcpkg-fuzz)
+    if (WIN32)
+        target_compile_options(vcpkg-fuzz PRIVATE /EHsc)
+    endif()
 endif()
 
 
@@ -221,7 +234,10 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES})
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
-    target_link_libraries(tls12-download winhttp wintrust)
+    target_link_libraries(tls12-download winhttp wintrust shell32)
+    if(VCPKG_PDB_SUFFIX)
+        set_property(TARGET tls12-download PROPERTY PDB_NAME "tls12-download${VCPKG_PDB_SUFFIX}")
+    endif()
 endif()
 
 
