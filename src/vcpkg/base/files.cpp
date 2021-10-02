@@ -701,7 +701,7 @@ namespace
                             return;
                         }
 
-                        // no more entries left, fall down to unlink below
+                        // no more entries left, fall down to remove below
                         break;
                     }
 
@@ -721,7 +721,7 @@ namespace
             }
             else if (ec == std::errc::not_a_directory)
             {
-                // was not a directory, fall down to the unlink below
+                // was not a directory, fall down to the remove below
                 ec.clear();
             }
             else
@@ -732,7 +732,7 @@ namespace
             }
         } // close op
 
-        if (::unlink(base.c_str()) != 0)
+        if (::remove(base.c_str()) != 0)
         {
             ec.assign(errno, std::generic_category());
             failure_point = base;
