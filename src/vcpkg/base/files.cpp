@@ -667,6 +667,11 @@ namespace
         Unknown = DT_UNKNOWN,
         Regular = DT_REG,
         Directory = DT_DIR,
+        Fifo = DT_FIFO,
+        Socket = DT_SOCK,
+        CharacterDevice = DT_CHR,
+        BlockDevice = DT_BLK,
+        Link = DT_LNK
     };
 
     PosixDType get_d_type(const struct dirent* d) noexcept { return static_cast<PosixDType>(d->d_type); }
@@ -676,66 +681,92 @@ namespace
         Unknown = 0,
         Regular = 1,
         Directory = 2,
+        Fifo = 3,
+        Socket = 4,
+        CharacterDevice = 5,
+        BlockDevice = 6,
+        Link = 7
     };
 
     PosixDType get_d_type(const struct dirent*) noexcept { return PosixDType::Unknown; }
 #endif // ^^^ !_DIRENT_HAVE_D_TYPE
+    void mark_recursive_error(const Path& base, std::error_code& ec, Path& failure_point) {
+        failure_point = base;
+        ec.assign(errno, std::generic_category());
+    }
 
-    void vcpkg_remove_all(const Path& base, std::error_code& ec, Path& failure_point)
+    void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point);
+
+    void vcpkg_remove_all(const Path& base, std::error_code& ec, Path& failure_point, PosixDType base_dtype = PosixDType::Unknown)
     {
-        {
-            ReadDirOp op{base, ec};
-            if (!ec)
-            {
-                // it was a directory, so delete everything inside
-                for (;;)
-                {
-                    errno = 0;
-                    auto entry = op.read();
-                    if (!entry)
-                    {
-                        if (errno != 0)
-                        {
-                            ec.assign(errno, std::generic_category());
-                            failure_point = base;
-                            return;
-                        }
-
-                        // no more entries left, fall down to remove below
-                        break;
-                    }
-
-                    // delete base / entry.d_name, recursively
-                    if (is_dot_or_dot_dot(entry->d_name))
-                    {
-                        continue;
-                    }
-
-                    vcpkg_remove_all(base / entry->d_name, ec, failure_point);
-                    if (ec)
-                    {
-                        // removing a contained entity failed; the recursive call will set failure_point
-                        return;
-                    }
+        struct stat s;
+        if (base_dtype == PosixDType::Unknown) {
+            // We have to check that `base` isn't a symbolic link
+            if (::lstat(base.c_str(), &s) != 0) {
+                if (errno != ENOENT) {
+                    mark_recursive_error(base, ec, failure_point);
+                    return;
                 }
-            }
-            else if (ec == std::errc::not_a_directory)
-            {
-                // was not a directory, fall down to the remove below
+
                 ec.clear();
-            }
-            else
-            {
-                // some other IO error occurred trying to open the directory
-                failure_point = base;
                 return;
             }
-        } // close op
 
-        if (::remove(base.c_str()) != 0)
+            if (S_ISDIR(s.st_mode)) {
+                vcpkg_remove_all_directory(base, ec, failure_point);
+                return;
+            }
+        } else if (base_dtype == PosixDType::Directory) {
+            vcpkg_remove_all_directory(base, ec, failure_point);
+            return;
+        }
+
+        if (::unlink(base.c_str()) != 0) {
+            mark_recursive_error(base, ec, failure_point);
+        }
+    }
+
+    void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point) {
+        // it was a directory, so delete everything inside
+        ReadDirOp op{base, ec};
+        if (ec)
         {
-            ec.assign(errno, std::generic_category());
-            failure_point = base;
+            mark_recursive_error(base, ec, failure_point);
+            return;
+        }
+
+        for (;;)
+        {
+            errno = 0;
+            const auto entry = op.read();
+            if (!entry)
+            {
+                if (errno != 0)
+                {
+                    mark_recursive_error(base, ec, failure_point);
+                    return;
+                }
+
+                // no more entries left, fall down to remove below
+                break;
+            }
+
+            // delete base / entry.d_name, recursively
+            if (is_dot_or_dot_dot(entry->d_name))
+            {
+                continue;
+            }
+
+            vcpkg_remove_all(base / entry->d_name, ec, failure_point, get_d_type(entry));
+            if (ec)
+            {
+                // removing a contained entity failed; the recursive call will set failure_point
+                return;
+            }
+        }
+
+        if (::rmdir(base.c_str()) != 0) {
+            mark_recursive_error(base, ec, failure_point);
         }
     }
 #endif // ^^^ !_WIN32
