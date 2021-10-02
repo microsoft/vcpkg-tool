@@ -690,20 +690,27 @@ namespace
 
     PosixDType get_d_type(const struct dirent*) noexcept { return PosixDType::Unknown; }
 #endif // ^^^ !_DIRENT_HAVE_D_TYPE
-    void mark_recursive_error(const Path& base, std::error_code& ec, Path& failure_point) {
+    void mark_recursive_error(const Path& base, std::error_code& ec, Path& failure_point)
+    {
         failure_point = base;
         ec.assign(errno, std::generic_category());
     }
 
     void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point);
 
-    void vcpkg_remove_all(const Path& base, std::error_code& ec, Path& failure_point, PosixDType base_dtype = PosixDType::Unknown)
+    void vcpkg_remove_all(const Path& base,
+                          std::error_code& ec,
+                          Path& failure_point,
+                          PosixDType base_dtype = PosixDType::Unknown)
     {
         struct stat s;
-        if (base_dtype == PosixDType::Unknown) {
+        if (base_dtype == PosixDType::Unknown)
+        {
             // We have to check that `base` isn't a symbolic link
-            if (::lstat(base.c_str(), &s) != 0) {
-                if (errno != ENOENT) {
+            if (::lstat(base.c_str(), &s) != 0)
+            {
+                if (errno != ENOENT)
+                {
                     mark_recursive_error(base, ec, failure_point);
                     return;
                 }
@@ -712,21 +719,26 @@ namespace
                 return;
             }
 
-            if (S_ISDIR(s.st_mode)) {
+            if (S_ISDIR(s.st_mode))
+            {
                 vcpkg_remove_all_directory(base, ec, failure_point);
                 return;
             }
-        } else if (base_dtype == PosixDType::Directory) {
+        }
+        else if (base_dtype == PosixDType::Directory)
+        {
             vcpkg_remove_all_directory(base, ec, failure_point);
             return;
         }
 
-        if (::unlink(base.c_str()) != 0) {
+        if (::unlink(base.c_str()) != 0)
+        {
             mark_recursive_error(base, ec, failure_point);
         }
     }
 
-    void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point) {
+    void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point)
+    {
         // it was a directory, so delete everything inside
         ReadDirOp op{base, ec};
         if (ec)
@@ -765,7 +777,8 @@ namespace
             }
         }
 
-        if (::rmdir(base.c_str()) != 0) {
+        if (::rmdir(base.c_str()) != 0)
+        {
             mark_recursive_error(base, ec, failure_point);
         }
     }
@@ -2223,7 +2236,7 @@ namespace vcpkg
 
             return result;
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            if (::remove(target.c_str()) == 0)
+            if (::remove(target.c_str()) == 0 || errno == ENOENT)
             {
                 ec.clear();
                 return true;
