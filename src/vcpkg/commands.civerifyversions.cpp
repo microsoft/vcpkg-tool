@@ -153,8 +153,6 @@ namespace vcpkg::Commands::CIVerifyVersions
             }
         }
 
-        const auto& top_entry = versions.front();
-
         auto maybe_scf = Paragraphs::try_load_port(paths.get_filesystem(), port_path);
         if (!maybe_scf.has_value())
         {
@@ -169,42 +167,28 @@ namespace vcpkg::Commands::CIVerifyVersions
 
         const auto local_port_version = maybe_scf.value_or_exit(VCPKG_LINE_INFO)->to_schemed_version();
 
-        if (top_entry.first.versiont != local_port_version.versiont)
+        auto versions_end = versions.end();
+        auto it = std::find_if(versions.begin(), versions_end, [&](auto&& entry) {
+            return entry.first.versiont == local_port_version.versiont;
+        });
+        if (it == versions_end)
         {
-            auto versions_end = versions.end();
-            auto it = std::find_if(versions.begin(), versions_end, [&](auto&& entry) {
-                return entry.first.versiont == local_port_version.versiont;
-            });
-            if (it != versions_end)
-            {
-                return {
-                    Strings::format("Error: While reading versions for port %s from file: %s\n"
-                                    "       Local port version `%s` exists in version file but it's not the first "
-                                    "entry in the \"versions\" array.",
-                                    port_name,
-                                    versions_file_path,
-                                    local_port_version.versiont),
-                    expected_right_tag,
-                };
-            }
-            else
-            {
-                return {
-                    Strings::format("Error: While reading versions for port %s from file: %s\n"
-                                    "       Version `%s` was not found in versions file.\n"
-                                    "       Run:\n\n"
-                                    "           vcpkg x-add-version %s\n\n"
-                                    "       to add the new port version.",
-                                    port_name,
-                                    versions_file_path,
-                                    local_port_version.versiont,
-                                    port_name),
-                    expected_right_tag,
-                };
-            }
+            return {
+                Strings::format("Error: While reading versions for port %s from file: %s\n"
+                                "       Version `%s` was not found in versions file.\n"
+                                "       Run:\n\n"
+                                "           vcpkg x-add-version %s\n\n"
+                                "       to add the new port version.",
+                                port_name,
+                                versions_file_path,
+                                local_port_version.versiont,
+                                port_name),
+                expected_right_tag,
+            };
         }
+        auto& entry = *it;
 
-        if (top_entry.first.scheme != local_port_version.scheme)
+        if (entry.first.scheme != local_port_version.scheme)
         {
             return {
                 Strings::format("Error: While reading versions for port %s from file: %s\n"
@@ -216,15 +200,15 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "       to overwrite the declared version's scheme.",
                                 port_name,
                                 versions_file_path,
-                                top_entry.first.versiont,
-                                get_scheme_name(top_entry.first.scheme),
+                                entry.first.versiont,
+                                get_scheme_name(entry.first.scheme),
                                 get_scheme_name(local_port_version.scheme),
                                 port_name),
                 expected_right_tag,
             };
         }
 
-        if (local_git_tree != top_entry.second)
+        if (local_git_tree != entry.second)
         {
             return {
                 Strings::format("Error: While reading versions for port %s from file: %s\n"
@@ -237,8 +221,8 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "       to add a new version.",
                                 port_name,
                                 versions_file_path,
-                                top_entry.first.versiont,
-                                top_entry.second,
+                                entry.first.versiont,
+                                entry.second,
                                 local_git_tree,
                                 port_name),
                 expected_right_tag,
@@ -264,7 +248,7 @@ namespace vcpkg::Commands::CIVerifyVersions
         }
 
         auto&& baseline_version = maybe_baseline->second;
-        if (baseline_version != top_entry.first.versiont)
+        if (baseline_version != entry.first.versiont)
         {
             return {
                 Strings::format("Error: While reading baseline version for port %s.\n"
@@ -279,14 +263,14 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 port_name,
                                 versions_file_path,
                                 baseline_version,
-                                top_entry.first.versiont,
+                                entry.first.versiont,
                                 port_name),
                 expected_right_tag,
             };
         }
 
         return {
-            Strings::format("OK: %s\t%s -> %s\n", top_entry.second, port_name, top_entry.first.versiont),
+            Strings::format("OK: %s\t%s -> %s\n", entry.second, port_name, entry.first.versiont),
             expected_left_tag,
         };
     }
