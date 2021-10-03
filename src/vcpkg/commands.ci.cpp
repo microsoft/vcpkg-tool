@@ -435,8 +435,7 @@ namespace vcpkg::Commands::CI
     }
 
     // This algorithm reduces an action plan to ports that differ from the parent revision, plus dependencies.
-    static void reduce_action_plan(Dependencies::ActionPlan& action_plan,
-                                   const std::vector<std::string>& parent_hashes)
+    static void reduce_action_plan(Dependencies::ActionPlan& action_plan, const std::vector<std::string>& parent_hashes)
     {
         std::set<PackageSpec> to_keep;
         for (auto it = action_plan.install_actions.rbegin(); it != action_plan.install_actions.rend(); ++it)
@@ -619,10 +618,11 @@ namespace vcpkg::Commands::CI
             const auto& parsed_parent_hashes = parsed_json.value_or_exit(VCPKG_LINE_INFO).first.array();
             std::vector<std::string> parent_hashes;
             parent_hashes.reserve(parsed_parent_hashes.size());
-            std::transform(parsed_parent_hashes.begin(),
-                            parsed_parent_hashes.end(),
-                            std::back_inserter(parent_hashes),
-                            [](const auto& json_object) { return json_object.object().get("abi")->string().to_string(); });
+            std::transform(
+                parsed_parent_hashes.begin(),
+                parsed_parent_hashes.end(),
+                std::back_inserter(parent_hashes),
+                [](const auto& json_object) { return json_object.object().get("abi")->string().to_string(); });
             reduce_action_plan(action_plan, parent_hashes);
         }
 
