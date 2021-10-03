@@ -93,14 +93,17 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
+    static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
     static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
-    static constexpr std::array<CommandSetting, 6> CI_SETTINGS = {
+    static constexpr std::array<CommandSetting, 7> CI_SETTINGS = {
         {{OPTION_EXCLUDE, "Comma separated list of ports to skip"},
          {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
          {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
          {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
          {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
+         {OPTION_PARENT_HASHES,
+          "File to read package hashes for a parent CI state, to reduce the set of changed packages"},
          {OPTION_SKIPPED_CASCADE_COUNT,
           "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
 
@@ -431,6 +434,31 @@ namespace vcpkg::Commands::CI
         });
     }
 
+    // This algorithm reduces an action plan to ports that differ from the parent revision, plus dependencies.
+    static void reduce_action_plan(Dependencies::ActionPlan& action_plan,
+                                   const std::vector<std::string>& parent_hashes)
+    {
+        std::set<PackageSpec> to_keep;
+        for (auto it = action_plan.install_actions.rbegin(); it != action_plan.install_actions.rend(); ++it)
+        {
+            auto abi = it->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
+            auto it_parent = std::find(parent_hashes.begin(), parent_hashes.end(), abi);
+            if (it_parent == parent_hashes.end())
+            {
+                to_keep.insert(it->spec);
+            }
+
+            if (Util::Sets::contains(to_keep, it->spec) && it->plan_type != InstallPlanType::EXCLUDED)
+            {
+                to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
+            }
+        }
+
+        Util::erase_remove_if(action_plan.install_actions, [&to_keep](const InstallPlanAction& action) {
+            return !Util::Sets::contains(to_keep, action.spec);
+        });
+    }
+
     static std::set<std::string> parse_exclusions(const std::unordered_map<std::string, std::string>& settings,
                                                   StringLiteral opt)
     {
@@ -581,6 +609,22 @@ namespace vcpkg::Commands::CI
         }
 
         reduce_action_plan(action_plan, split_specs->known);
+
+        auto it_parent_hashes = settings.find(OPTION_PARENT_HASHES);
+        if (it_parent_hashes != settings.end())
+        {
+            const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
+            auto contents = filesystem.read_contents(parent_hashes_path, VCPKG_LINE_INFO);
+            auto parsed_json = Json::parse(contents, parent_hashes_path);
+            const auto& parsed_parent_hashes = parsed_json.value_or_exit(VCPKG_LINE_INFO).first.array();
+            std::vector<std::string> parent_hashes;
+            parent_hashes.reserve(parsed_parent_hashes.size());
+            std::transform(parsed_parent_hashes.begin(),
+                            parsed_parent_hashes.end(),
+                            std::back_inserter(parent_hashes),
+                            [](const auto& json_object) { return json_object.object().get("abi")->string().to_string(); });
+            reduce_action_plan(action_plan, parent_hashes);
+        }
 
         vcpkg::printf("Time to determine pass/fail: %s\n", timer.elapsed());
 
