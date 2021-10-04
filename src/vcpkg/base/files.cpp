@@ -2404,7 +2404,13 @@ namespace vcpkg
             {
                 ReadDirOp rdo{target, ec};
                 if (ec) return false;
-                return rdo.read(ec) == nullptr;
+                const dirent* entry;
+                do {
+                    entry = rdo.read(ec);
+                    if (ec) { return false; }
+                    if (entry == nullptr) { return true; }
+                } while (is_dot_or_dot_dot(entry->d_name));
+                return false;
             }
 
             return st.st_size == 0;
