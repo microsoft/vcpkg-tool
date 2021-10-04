@@ -575,7 +575,10 @@ namespace
     {
         PosixFd() = default;
 
-        PosixFd(const char* path, int oflag, std::error_code& ec) noexcept : fd(::open(path, oflag)) { check_error(ec); }
+        PosixFd(const char* path, int oflag, std::error_code& ec) noexcept : fd(::open(path, oflag))
+        {
+            check_error(ec);
+        }
 
         PosixFd(const char* path, int oflag, mode_t mode, std::error_code& ec) noexcept : fd(::open(path, oflag, mode))
         {
@@ -1973,24 +1976,37 @@ namespace vcpkg
             return get_regular_files_impl<stdfs::directory_iterator>(dir, ec);
         }
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-        static void insert_if_stat_matches(std::vector<Path>& result, const Path& full, struct stat* s, bool want_directories, bool want_regular_files, bool want_other) {
-            if (S_ISDIR(s->st_mode)) {
-                if (!want_directories) {
+        static void insert_if_stat_matches(std::vector<Path>& result,
+                                           const Path& full,
+                                           struct stat* s,
+                                           bool want_directories,
+                                           bool want_regular_files,
+                                           bool want_other)
+        {
+            if (S_ISDIR(s->st_mode))
+            {
+                if (!want_directories)
+                {
                     return;
                 }
-            } else if (S_ISREG(s->st_mode)) {
-                if (!want_regular_files) {
+            }
+            else if (S_ISREG(s->st_mode))
+            {
+                if (!want_regular_files)
+                {
                     return;
                 }
-            } else {
-                if (!want_other) {
+            }
+            else
+            {
+                if (!want_other)
+                {
                     return;
                 }
             }
 
             result.push_back(full);
         }
-
 
         static void get_files_recursive_impl(std::vector<Path>& result,
                                              const Path& base,
@@ -2031,71 +2047,85 @@ namespace vcpkg
                     const auto entry_dtype = get_d_type(entry);
                     struct stat s;
                     struct stat ls;
-                    switch (entry_dtype) {
+                    switch (entry_dtype)
+                    {
                         case PosixDType::Directory:
-                        if (want_directories)
-                        {
-                            // push results before recursion to get outer entries first
-                            result.push_back(full);
-                        }
-
-                        get_files_recursive_impl(result, full, ec, want_directories, want_regular_files, want_other);
-                        if (ec)
-                        {
-                            return;
-                        }
-
-                        break;
-                    case PosixDType::Regular:
-                        if (want_regular_files) {
-                            result.push_back(full);
-                        }
-
-                        break;
-
-                    case PosixDType::Fifo:
-                    case PosixDType::Socket:
-                    case PosixDType::CharacterDevice:
-                    case PosixDType::BlockDevice:
-                        if (want_other) {
-                            result.push_back(full);
-                        }
-
-                        break;
-
-                    case PosixDType::Unknown:
-                    default:
-                        if (::lstat(full.c_str(), &ls) != 0 && errno != ENOENT)
-                        {
-                            ec.assign(errno, std::generic_category());
-                            result.clear();
-                            return;
-                        }
-
-                        if (S_ISLNK(ls.st_mode)) {
-                            if (want_directories && want_regular_files && want_other) {
-                                // skip extra stat syscall since we want everything
+                            if (want_directories)
+                            {
+                                // push results before recursion to get outer entries first
                                 result.push_back(full);
-                            } else {
-                                if (::stat(full.c_str(), &s) != 0 && errno != ENOENT)
-                                {
-                                    ec.assign(errno, std::generic_category());
-                                    result.clear();
-                                    return;
-                                }
-
-                                insert_if_stat_matches(result, full, &s, want_directories, want_regular_files, want_other);
                             }
-                        } else {
-                            // push results before recursion to get outer entries first
-                            insert_if_stat_matches(result, full, &ls, want_directories, want_regular_files, want_other);
-                        }
 
-                        // recursion check doesn't follow symlinks:
-                        if (S_ISDIR(ls.st_mode)) {
-                            get_files_recursive_impl(result, full, ec, want_directories, want_regular_files, want_other);
-                        }
-                        break;
+                            get_files_recursive_impl(
+                                result, full, ec, want_directories, want_regular_files, want_other);
+                            if (ec)
+                            {
+                                return;
+                            }
+
+                            break;
+                        case PosixDType::Regular:
+                            if (want_regular_files)
+                            {
+                                result.push_back(full);
+                            }
+
+                            break;
+
+                        case PosixDType::Fifo:
+                        case PosixDType::Socket:
+                        case PosixDType::CharacterDevice:
+                        case PosixDType::BlockDevice:
+                            if (want_other)
+                            {
+                                result.push_back(full);
+                            }
+
+                            break;
+
+                        case PosixDType::Unknown:
+                        default:
+                            if (::lstat(full.c_str(), &ls) != 0 && errno != ENOENT)
+                            {
+                                ec.assign(errno, std::generic_category());
+                                result.clear();
+                                return;
+                            }
+
+                            if (S_ISLNK(ls.st_mode))
+                            {
+                                if (want_directories && want_regular_files && want_other)
+                                {
+                                    // skip extra stat syscall since we want everything
+                                    result.push_back(full);
+                                }
+                                else
+                                {
+                                    if (::stat(full.c_str(), &s) != 0 && errno != ENOENT)
+                                    {
+                                        ec.assign(errno, std::generic_category());
+                                        result.clear();
+                                        return;
+                                    }
+
+                                    insert_if_stat_matches(
+                                        result, full, &s, want_directories, want_regular_files, want_other);
+                                }
+                            }
+                            else
+                            {
+                                // push results before recursion to get outer entries first
+                                insert_if_stat_matches(
+                                    result, full, &ls, want_directories, want_regular_files, want_other);
+                            }
+
+                            // recursion check doesn't follow symlinks:
+                            if (S_ISDIR(ls.st_mode))
+                            {
+                                get_files_recursive_impl(
+                                    result, full, ec, want_directories, want_regular_files, want_other);
+                            }
+                            break;
                     }
                 }
             }
@@ -2172,19 +2202,17 @@ namespace vcpkg
         {
             std::vector<Path> result;
             get_files_non_recursive_impl(result, dir, ec, [](PosixDType dtype, const Path& p) {
-                switch (dtype) {
-                    case PosixDType::Directory:
-                        return true;
+                switch (dtype)
+                {
+                    case PosixDType::Directory: return true;
                     case PosixDType::BlockDevice:
                     case PosixDType::CharacterDevice:
                     case PosixDType::Fifo:
                     case PosixDType::Regular:
-                    case PosixDType::Socket:
-                        return false;
+                    case PosixDType::Socket: return false;
                     case PosixDType::Link:
                     case PosixDType::Unknown:
-                    default:
-                        return stat_is_directory(p.c_str());
+                    default: return stat_is_directory(p.c_str());
                 }
             });
 
@@ -2202,19 +2230,17 @@ namespace vcpkg
         {
             std::vector<Path> result;
             get_files_non_recursive_impl(result, dir, ec, [](PosixDType dtype, const Path& p) {
-                switch (dtype) {
-                    case PosixDType::Regular:
-                        return true;
+                switch (dtype)
+                {
+                    case PosixDType::Regular: return true;
                     case PosixDType::BlockDevice:
                     case PosixDType::CharacterDevice:
                     case PosixDType::Fifo:
                     case PosixDType::Directory:
-                    case PosixDType::Socket:
-                        return false;
+                    case PosixDType::Socket: return false;
                     case PosixDType::Link:
                     case PosixDType::Unknown:
-                    default:
-                        return stat_is_regular_file(p.c_str());
+                    default: return stat_is_regular_file(p.c_str());
                 }
             });
 
@@ -2405,10 +2431,17 @@ namespace vcpkg
                 ReadDirOp rdo{target, ec};
                 if (ec) return false;
                 const dirent* entry;
-                do {
+                do
+                {
                     entry = rdo.read(ec);
-                    if (ec) { return false; }
-                    if (entry == nullptr) { return true; }
+                    if (ec)
+                    {
+                        return false;
+                    }
+                    if (entry == nullptr)
+                    {
+                        return true;
+                    }
                 } while (is_dot_or_dot_dot(entry->d_name));
                 return false;
             }

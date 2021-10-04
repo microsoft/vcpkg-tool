@@ -143,7 +143,8 @@ namespace
     }
 
     template<class Enumerator, class ExpectedGenerator>
-    void do_filesystem_enumeration_test(Enumerator&& enumerator, ExpectedGenerator&& generate_expected) {
+    void do_filesystem_enumeration_test(Enumerator&& enumerator, ExpectedGenerator&& generate_expected)
+    {
         urbg_t urbg;
 
         auto& fs = setup();
@@ -173,11 +174,14 @@ namespace
 
         std::error_code ec;
         fs.create_symlink(target_file, target_symlink, ec);
-        if (ec) {
+        if (ec)
+        {
             // if we get not supported or permission denied, assume symlinks aren't supported
             // on this system and the test is a no-op
             REQUIRE((ec == std::errc::not_supported || ec == std::errc::permission_denied));
-        } else {
+        }
+        else
+        {
             fs.create_symlink(target_inside_file, target_inside_symlink, VCPKG_LINE_INFO);
             fs.create_directory_symlink(target_directory, target_directory_symlink, VCPKG_LINE_INFO);
             fs.create_directory_symlink(target_inside_directory, target_inside_directory_symlink, VCPKG_LINE_INFO);
@@ -617,9 +621,8 @@ TEST_CASE ("remove all symlinks", "[files]")
 
 TEST_CASE ("get_files_recursive_symlinks", "[files]")
 {
-    do_filesystem_enumeration_test([](Filesystem& fs, const Path& root) {
-        return fs.get_files_recursive(root, VCPKG_LINE_INFO);
-        },
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_files_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "file.txt",
@@ -630,78 +633,73 @@ TEST_CASE ("get_files_recursive_symlinks", "[files]")
                 root / "some-directory" / "symlink-to-some-inner-directory",
                 root / "symlink-to-file.txt",
                 root / "symlink-to-some-directory",
-                };
+            };
         });
 }
 
 TEST_CASE ("get_files_non_recursive_symlinks", "[files]")
 {
-    do_filesystem_enumeration_test([](Filesystem& fs, const Path& root) {
-        return fs.get_files_non_recursive(root, VCPKG_LINE_INFO);
-        },
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_files_non_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "file.txt",
                 root / "some-directory",
                 root / "symlink-to-file.txt",
                 root / "symlink-to-some-directory",
-                };
+            };
         });
 }
 
 TEST_CASE ("get_directories_recursive_symlinks", "[files]")
 {
-    do_filesystem_enumeration_test([](Filesystem& fs, const Path& root) {
-        return fs.get_directories_recursive(root, VCPKG_LINE_INFO);
-        },
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_directories_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "some-directory",
                 root / "some-directory" / "some-inner-directory",
                 root / "some-directory" / "symlink-to-some-inner-directory",
                 root / "symlink-to-some-directory",
-                };
+            };
         });
 }
 
 TEST_CASE ("get_directories_non_recursive_symlinks", "[files]")
 {
-    do_filesystem_enumeration_test([](Filesystem& fs, const Path& root) {
-        return fs.get_directories_non_recursive(root, VCPKG_LINE_INFO);
-        },
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_directories_non_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "some-directory",
                 root / "symlink-to-some-directory",
-                };
+            };
         });
 }
 
 TEST_CASE ("get_regular_files_recursive_symlinks", "[files]")
 {
-    do_filesystem_enumeration_test([](Filesystem& fs, const Path& root) {
-        return fs.get_regular_files_recursive(root, VCPKG_LINE_INFO);
-        },
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_regular_files_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "file.txt",
                 root / "some-directory" / "file2.txt",
                 root / "some-directory" / "symlink-to-file2.txt",
                 root / "symlink-to-file.txt",
-                };
+            };
         });
 }
 
 TEST_CASE ("get_regular_files_non_recursive_symlinks", "[files]")
 {
-    do_filesystem_enumeration_test([](Filesystem& fs, const Path& root) {
-        return fs.get_regular_files_non_recursive(root, VCPKG_LINE_INFO);
-        },
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_regular_files_non_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "file.txt",
                 root / "symlink-to-file.txt",
-                };
+            };
         });
 }
 
