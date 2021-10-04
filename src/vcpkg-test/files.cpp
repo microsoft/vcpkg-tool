@@ -519,6 +519,53 @@ TEST_CASE ("remove all", "[files]")
     CHECK_EC_ON_FILE(temp_dir, ec);
 }
 
+TEST_CASE ("remove all symlinks", "[files]")
+{
+    urbg_t urbg;
+
+    auto& fs = setup();
+
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    INFO("temp dir is: " << temp_dir.native());
+
+    const auto target_root = temp_dir / "target";
+    fs.create_directories(target_root, VCPKG_LINE_INFO);
+    const auto target_file = target_root / "file.txt";
+    fs.write_contents(target_file, "", VCPKG_LINE_INFO);
+    const auto symlink_inside_dir = temp_dir / "symlink_inside";
+    fs.create_directory(symlink_inside_dir, VCPKG_LINE_INFO);
+    std::error_code ec;
+    fs.create_directory_symlink(target_root, symlink_inside_dir / "symlink", ec);
+    if (ec)
+    {
+        // if we get not supported or permission denied, assume symlinks aren't supported
+        // on this system and the test is a no-op
+        REQUIRE((ec == std::errc::not_supported || ec == std::errc::permission_denied));
+    }
+    else
+    {
+        const auto symlink_direct = temp_dir / "direct_symlink";
+        fs.create_directory_symlink(target_root, symlink_direct, VCPKG_LINE_INFO);
+
+        // removing a directory with a symlink inside should remove the symlink and not the target:
+        fs.remove_all(symlink_inside_dir, VCPKG_LINE_INFO);
+        REQUIRE(!fs.exists(symlink_inside_dir, VCPKG_LINE_INFO));
+        REQUIRE(fs.exists(target_root, VCPKG_LINE_INFO));
+
+        // removing a symlink should remove the symlink and not the target:
+        fs.remove_all(symlink_direct, VCPKG_LINE_INFO);
+        REQUIRE(!fs.exists(symlink_direct, VCPKG_LINE_INFO));
+        REQUIRE(fs.exists(target_root, VCPKG_LINE_INFO));
+    }
+
+    Path fp;
+    fs.remove_all(temp_dir, ec, fp);
+    CHECK_EC_ON_FILE(fp, ec);
+
+    REQUIRE_FALSE(fs.exists(temp_dir, ec));
+    CHECK_EC_ON_FILE(temp_dir, ec);
+}
+
 TEST_CASE ("LinesCollector", "[files]")
 {
     using Strings::LinesCollector;
