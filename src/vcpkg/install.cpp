@@ -472,7 +472,6 @@ namespace vcpkg::Install
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
 
-        const auto timer = ElapsedTimer::create_started();
         for (auto&& action : action_plan.remove_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
@@ -503,7 +502,7 @@ namespace vcpkg::Install
             this_install.current_summary->build_result = std::move(result);
         }
 
-        return InstallSummary{std::move(results), timer.to_string()};
+        return InstallSummary{std::move(results)};
     }
 
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
@@ -1086,7 +1085,7 @@ namespace vcpkg::Install
                                                Build::null_build_logs_recorder(),
                                                var_provider);
 
-        print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
+        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {

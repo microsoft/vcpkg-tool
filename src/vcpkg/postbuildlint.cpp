@@ -262,7 +262,8 @@ namespace vcpkg::PostBuildLint
         {
             vcpkg::printf(Color::warning,
                           "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to "
-                          "/share/%s/cmake.\nPlease use the helper function `vcpkg_fixup_cmake_targets()`\n",
+                          "/share/%s/cmake.\nPlease use the helper function `vcpkg_cmake_config_fixup()` "
+                          "from the port vcpkg-cmake-config.`\n",
                           spec.name());
             return LintStatus::ERROR_DETECTED;
         }
