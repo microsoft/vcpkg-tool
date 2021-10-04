@@ -568,7 +568,7 @@ namespace
             return FileType::socket;
         }
 
-        return FileType::none;
+        return FileType::unknown;
     }
 
     struct PosixFd
