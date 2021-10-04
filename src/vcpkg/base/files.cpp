@@ -2481,7 +2481,7 @@ namespace vcpkg
             if (is_slash(*first))
             {
                 this_create.push_back('/');
-                first = std::find_if_not(first, last, is_slash);
+                first = std::find_if_not(first, last, is_slash); // collapse multiple slashes
             }
 
             bool last_mkdir_created = false;
@@ -2509,7 +2509,7 @@ namespace vcpkg
                 }
 
                 this_create.push_back('/');
-                first = std::find_if_not(next_slash, last, is_slash);
+                first = std::find_if_not(next_slash, last, is_slash); // collapse multiple slashes
             }
 
 #endif // _WIN32
