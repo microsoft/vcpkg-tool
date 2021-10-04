@@ -509,10 +509,10 @@ namespace
     }
 
 #else // ^^^ _WIN32 // !_WIN32 vvv
-    bool lstat_is_directory(const char* target) noexcept
+    bool stat_is_directory(const char* target) noexcept
     {
         struct stat s;
-        if (lstat(target, &s) != 0)
+        if (stat(target, &s) != 0)
         {
             return false;
         }
@@ -520,10 +520,10 @@ namespace
         return S_ISDIR(s.st_mode);
     }
 
-    bool lstat_is_regular_file(const char* target) noexcept
+    bool stat_is_regular_file(const char* target) noexcept
     {
         struct stat s;
-        if (lstat(target, &s) != 0)
+        if (stat(target, &s) != 0)
         {
             return false;
         }
@@ -1973,16 +1973,31 @@ namespace vcpkg
             return get_regular_files_impl<stdfs::directory_iterator>(dir, ec);
         }
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-       // Selector is a function taking (PosixDType, mode_t mode) and returning bool
-       // dtype is the value from the d_type member of struct dirent. If the system does not support the d_type
-       // member, this will always be set to PosixDType::Unknown.
-       // mode is the st_mode member of struct stat. It is populated if and only if dtype is PosixDType::Unknown.
-       // Note that many file systems always set dtype to DT_UNKNOWN, so the lstat fallback must exist even on systems
-       // which have the d_type member
+        static void insert_if_stat_matches(std::vector<Path>& result, const Path& full, struct stat* s, bool want_directories, bool want_regular_files, bool want_other) {
+            if (S_ISDIR(s->st_mode)) {
+                if (!want_directories) {
+                    return;
+                }
+            } else if (S_ISREG(s->st_mode)) {
+                if (!want_regular_files) {
+                    return;
+                }
+            } else {
+                if (!want_other) {
+                    return;
+                }
+            }
+
+            result.push_back(full);
+        }
+
+
         static void get_files_recursive_impl(std::vector<Path>& result,
                                              const Path& base,
                                              std::error_code& ec,
-                                             bool (*selector)(PosixDType, mode_t))
+                                             bool want_directories,
+                                             bool want_regular_files,
+                                             bool want_other)
         {
             ReadDirOp op{base, ec};
             if (ec)
@@ -2014,47 +2029,73 @@ namespace vcpkg
 
                     const auto full = base / entry->d_name;
                     const auto entry_dtype = get_d_type(entry);
-                    if (entry_dtype == PosixDType::Unknown)
-                    {
-                        struct stat s;
-                        if (stat(full.c_str(), &s) != 0 && errno != ENOENT)
+                    struct stat s;
+                    struct stat ls;
+                    switch (entry_dtype) {
+                        case PosixDType::Directory:
+                        if (want_directories)
+                        {
+                            // push results before recursion to get outer entries first
+                            result.push_back(full);
+                        }
+
+                        get_files_recursive_impl(result, full, ec, want_directories, want_regular_files, want_other);
+                        if (ec)
+                        {
+                            return;
+                        }
+
+                        break;
+                    case PosixDType::Regular:
+                        if (want_regular_files) {
+                            result.push_back(full);
+                        }
+
+                        break;
+
+                    case PosixDType::Fifo:
+                    case PosixDType::Socket:
+                    case PosixDType::CharacterDevice:
+                    case PosixDType::BlockDevice:
+                        if (want_other) {
+                            result.push_back(full);
+                        }
+
+                        break;
+
+                    case PosixDType::Unknown:
+                    default:
+                        if (lstat(full.c_str(), &ls) != 0 && errno != ENOENT)
                         {
                             ec.assign(errno, std::generic_category());
                             result.clear();
                             return;
                         }
 
-                        if (selector(PosixDType::Unknown, s.st_mode))
-                        {
+                        if (S_ISLNK(ls.st_mode)) {
+                            if (want_directories && want_regular_files && want_other) {
+                                // skip extra stat syscall since we want everything
+                                result.push_back(full);
+                            } else {
+                                if (stat(full.c_str(), &s) != 0 && errno != ENOENT)
+                                {
+                                    ec.assign(errno, std::generic_category());
+                                    result.clear();
+                                    return;
+                                }
+
+                                insert_if_stat_matches(result, full, &s, want_directories, want_regular_files, want_other);
+                            }
+                        } else {
                             // push results before recursion to get outer entries first
-                            result.push_back(full);
+                            insert_if_stat_matches(result, full, &ls, want_directories, want_regular_files, want_other);
                         }
 
-                        if (S_ISDIR(s.st_mode))
-                        {
-                            get_files_recursive_impl(result, full, ec, selector);
-                            if (ec)
-                            {
-                                return;
-                            }
+                        // recursion check doesn't follow symlinks:
+                        if (S_ISDIR(ls.st_mode)) {
+                            get_files_recursive_impl(result, full, ec, want_directories, want_regular_files, want_other);
                         }
-                    }
-                    else
-                    {
-                        if (selector(entry_dtype, 0))
-                        {
-                            // push results before recursion to get outer entries first
-                            result.push_back(full);
-                        }
-
-                        if (entry_dtype == PosixDType::Directory)
-                        {
-                            get_files_recursive_impl(result, full, ec, selector);
-                            if (ec)
-                            {
-                                return;
-                            }
-                        }
+                        break;
                     }
                 }
             }
@@ -2108,7 +2149,7 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, [](PosixDType, mode_t) { return true; });
+            get_files_recursive_impl(result, dir, ec, true, true, true);
             return result;
         }
 
@@ -2122,9 +2163,7 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, [](PosixDType dtype, mode_t mode) {
-                return dtype == PosixDType::Directory || S_ISDIR(mode);
-            });
+            get_files_recursive_impl(result, dir, ec, true, false, false);
 
             return result;
         }
@@ -2133,8 +2172,20 @@ namespace vcpkg
         {
             std::vector<Path> result;
             get_files_non_recursive_impl(result, dir, ec, [](PosixDType dtype, const Path& p) {
-                return dtype == PosixDType::Directory ||
-                       (dtype == PosixDType::Unknown && lstat_is_directory(p.c_str()));
+                switch (dtype) {
+                    case PosixDType::Directory:
+                        return true;
+                    case PosixDType::BlockDevice:
+                    case PosixDType::CharacterDevice:
+                    case PosixDType::Fifo:
+                    case PosixDType::Regular:
+                    case PosixDType::Socket:
+                        return false;
+                    case PosixDType::Link:
+                    case PosixDType::Unknown:
+                    default:
+                        return stat_is_directory(p.c_str());
+                }
             });
 
             return result;
@@ -2143,10 +2194,7 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, [](PosixDType dtype, mode_t mode) {
-                return dtype == PosixDType::Regular || S_ISREG(mode);
-            });
-
+            get_files_recursive_impl(result, dir, ec, false, true, false);
             return result;
         }
 
@@ -2154,8 +2202,20 @@ namespace vcpkg
         {
             std::vector<Path> result;
             get_files_non_recursive_impl(result, dir, ec, [](PosixDType dtype, const Path& p) {
-                return dtype == PosixDType::Regular ||
-                       (dtype == PosixDType::Unknown && lstat_is_regular_file(p.c_str()));
+                switch (dtype) {
+                    case PosixDType::Regular:
+                        return true;
+                    case PosixDType::BlockDevice:
+                    case PosixDType::CharacterDevice:
+                    case PosixDType::Fifo:
+                    case PosixDType::Directory:
+                    case PosixDType::Socket:
+                        return false;
+                    case PosixDType::Link:
+                    case PosixDType::Unknown:
+                    default:
+                        return stat_is_regular_file(p.c_str());
+                }
             });
 
             return result;
