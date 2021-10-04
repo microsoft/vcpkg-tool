@@ -512,7 +512,7 @@ namespace
     bool stat_is_directory(const char* target) noexcept
     {
         struct stat s;
-        if (stat(target, &s) != 0)
+        if (::stat(target, &s) != 0)
         {
             return false;
         }
@@ -523,7 +523,7 @@ namespace
     bool stat_is_regular_file(const char* target) noexcept
     {
         struct stat s;
-        if (stat(target, &s) != 0)
+        if (::stat(target, &s) != 0)
         {
             return false;
         }
@@ -575,9 +575,9 @@ namespace
     {
         PosixFd() = default;
 
-        PosixFd(const char* path, int oflag, std::error_code& ec) noexcept : fd(open(path, oflag)) { check_error(ec); }
+        PosixFd(const char* path, int oflag, std::error_code& ec) noexcept : fd(::open(path, oflag)) { check_error(ec); }
 
-        PosixFd(const char* path, int oflag, mode_t mode, std::error_code& ec) noexcept : fd(open(path, oflag, mode))
+        PosixFd(const char* path, int oflag, mode_t mode, std::error_code& ec) noexcept : fd(::open(path, oflag, mode))
         {
             check_error(ec);
         }
@@ -2065,7 +2065,7 @@ namespace vcpkg
 
                     case PosixDType::Unknown:
                     default:
-                        if (lstat(full.c_str(), &ls) != 0 && errno != ENOENT)
+                        if (::lstat(full.c_str(), &ls) != 0 && errno != ENOENT)
                         {
                             ec.assign(errno, std::generic_category());
                             result.clear();
@@ -2077,7 +2077,7 @@ namespace vcpkg
                                 // skip extra stat syscall since we want everything
                                 result.push_back(full);
                             } else {
-                                if (stat(full.c_str(), &s) != 0 && errno != ENOENT)
+                                if (::stat(full.c_str(), &s) != 0 && errno != ENOENT)
                                 {
                                     ec.assign(errno, std::generic_category());
                                     result.clear();
@@ -2366,7 +2366,7 @@ namespace vcpkg
             return stdfs::is_directory(to_stdfs_path(target));
 #else  // ^^^ _WIN32 // !_WIN32 vvv
             struct stat s;
-            if (stat(target.c_str(), &s) != 0)
+            if (::stat(target.c_str(), &s) != 0)
             {
                 return false;
             }
@@ -2380,7 +2380,7 @@ namespace vcpkg
             return stdfs::is_regular_file(to_stdfs_path(target));
 #else  // ^^^ _WIN32 // !_WIN32 vvv
             struct stat s;
-            if (stat(target.c_str(), &s) != 0)
+            if (::stat(target.c_str(), &s) != 0)
             {
                 return false;
             }
@@ -2420,7 +2420,7 @@ namespace vcpkg
 #if !defined(_WIN32)
         static int posix_create_directory(const char* new_directory)
         {
-            if (mkdir(new_directory, 0777) == 0)
+            if (::mkdir(new_directory, 0777) == 0)
             {
                 return -1;
             }
@@ -2429,7 +2429,7 @@ namespace vcpkg
             if (last_error == EEXIST)
             {
                 struct stat s;
-                if (stat(new_directory, &s) == 0)
+                if (::stat(new_directory, &s) == 0)
                 {
                     if (S_ISDIR(s.st_mode))
                     {
@@ -2518,7 +2518,7 @@ namespace vcpkg
 #if !defined(_WIN32)
         static void posix_create_symlink(const Path& to, const Path& from, std::error_code& ec)
         {
-            if (symlink(to.c_str(), from.c_str()) == 0)
+            if (::symlink(to.c_str(), from.c_str()) == 0)
             {
                 ec.clear();
             }
@@ -2550,7 +2550,7 @@ namespace vcpkg
 #if defined(_WIN32)
             stdfs::create_hard_link(to_stdfs_path(to), to_stdfs_path(from), ec);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            if (link(from.c_str(), to.c_str()) == 0)
+            if (::link(from.c_str(), to.c_str()) == 0)
             {
                 ec.clear();
             }
@@ -2588,7 +2588,7 @@ namespace vcpkg
             return convert_file_type(result.type());
 #else  // ^^^ _WIN32 // !_WIN32 vvv
             struct stat s;
-            if (stat(target.c_str(), &s) == 0)
+            if (::stat(target.c_str(), &s) == 0)
             {
                 ec.clear();
                 return posix_translate_stat_mode_to_file_type(s.st_mode);
@@ -2612,7 +2612,7 @@ namespace vcpkg
             return convert_file_type(result.type());
 #else  // ^^^ _WIN32 // !_WIN32 vvv
             struct stat s;
-            if (lstat(target.c_str(), &s) == 0)
+            if (::lstat(target.c_str(), &s) == 0)
             {
                 ec.clear();
                 return posix_translate_stat_mode_to_file_type(s.st_mode);
