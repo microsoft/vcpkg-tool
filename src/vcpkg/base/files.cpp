@@ -2425,8 +2425,8 @@ namespace vcpkg
                 return -1;
             }
 
-            auto last_error = errno;
-            if (last_error == EEXIST)
+            auto mkdir_error = errno;
+            if (mkdir_error == EEXIST)
             {
                 struct stat s;
                 if (::stat(new_directory, &s) == 0)
@@ -2442,7 +2442,7 @@ namespace vcpkg
                 }
             }
 
-            return last_error;
+            return mkdir_error;
         }
 #endif // ^^^ !_WIN32
 
