@@ -243,7 +243,7 @@ namespace vcpkg::Dependencies
                     Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
                                                 maybe_paragraph.has_value(),
                                                 "Package %s does not have a %s feature",
-                                                spec.name(),
+                                                spec.port(),
                                                 spec.feature());
 
                     return maybe_paragraph.get()->supports_expression;
@@ -882,7 +882,7 @@ namespace vcpkg::Dependencies
                                 m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
                         {
                             const auto msg = Strings::format("%s[%s] is only supported on '%s'",
-                                                             spec.name(),
+                                                             spec.port(),
                                                              spec.feature(),
                                                              to_string(*supports_expression.get()));
                             if (unsupported_port_action == UnsupportedPortAction::Error)
