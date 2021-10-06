@@ -1,6 +1,7 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
+#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -524,7 +525,8 @@ namespace vcpkg::Commands::CI
             return FullPackageSpec{spec, std::move(default_features)};
         });
 
-        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet);
+        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
+                                                                 Dependencies::UnsupportedPortAction::Warn);
 
         struct RandomizerInstance : Graphs::Randomizer
         {
@@ -645,7 +647,7 @@ namespace vcpkg::Commands::CI
         for (auto&& result : results)
         {
             print2("\nTriplet: ", result.triplet, "\n");
-            print2("Total elapsed time: ", result.summary.total_elapsed_time, "\n");
+            print2("Total elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n");
             result.summary.print();
         }
 
