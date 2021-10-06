@@ -109,6 +109,7 @@ namespace
         return result;
     }
 
+#if defined(_WIN32)
     FileType convert_file_type(stdfs::file_type type) noexcept
     {
         switch (type)
@@ -123,12 +124,11 @@ namespace
             case stdfs::file_type::fifo: return FileType::fifo;
             case stdfs::file_type::socket: return FileType::socket;
             case stdfs::file_type::unknown: return FileType::unknown;
-#if defined(_WIN32)
             case stdfs::file_type::junction: return FileType::junction;
-#endif // _WIN32
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
+#endif // _WIN32
 
     stdfs::path to_stdfs_path(const Path& utfpath)
     {
@@ -507,11 +507,12 @@ namespace
         }
         vcpkg_remove_all(entry, ec, failure_point);
     }
+
 #else // ^^^ _WIN32 // !_WIN32 vvv
-    bool posix_is_directory(const char* target) noexcept
+    bool stat_is_directory(const char* target) noexcept
     {
         struct stat s;
-        if (lstat(target, &s) != 0)
+        if (::stat(target, &s) != 0)
         {
             return false;
         }
@@ -519,10 +520,10 @@ namespace
         return S_ISDIR(s.st_mode);
     }
 
-    bool posix_is_regular_file(const char* target) noexcept
+    bool stat_is_regular_file(const char* target) noexcept
     {
         struct stat s;
-        if (lstat(target, &s) != 0)
+        if (::stat(target, &s) != 0)
         {
             return false;
         }
@@ -530,13 +531,56 @@ namespace
         return S_ISREG(s.st_mode);
     }
 
+    FileType posix_translate_stat_mode_to_file_type(mode_t mode) noexcept
+    {
+        if (S_ISBLK(mode))
+        {
+            return FileType::block;
+        }
+
+        if (S_ISCHR(mode))
+        {
+            return FileType::character;
+        }
+
+        if (S_ISDIR(mode))
+        {
+            return FileType::directory;
+        }
+
+        if (S_ISFIFO(mode))
+        {
+            return FileType::fifo;
+        }
+
+        if (S_ISREG(mode))
+        {
+            return FileType::regular;
+        }
+
+        if (S_ISLNK(mode))
+        {
+            return FileType::symlink;
+        }
+
+        if (S_ISSOCK(mode))
+        {
+            return FileType::socket;
+        }
+
+        return FileType::unknown;
+    }
+
     struct PosixFd
     {
         PosixFd() = default;
 
-        PosixFd(const char* path, int oflag, std::error_code& ec) noexcept : fd(open(path, oflag)) { check_error(ec); }
+        PosixFd(const char* path, int oflag, std::error_code& ec) noexcept : fd(::open(path, oflag))
+        {
+            check_error(ec);
+        }
 
-        PosixFd(const char* path, int oflag, mode_t mode, std::error_code& ec) noexcept : fd(open(path, oflag, mode))
+        PosixFd(const char* path, int oflag, mode_t mode, std::error_code& ec) noexcept : fd(::open(path, oflag, mode))
         {
             check_error(ec);
         }
@@ -1932,16 +1976,44 @@ namespace vcpkg
             return get_regular_files_impl<stdfs::directory_iterator>(dir, ec);
         }
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-       // Selector is a function taking (PosixDType, mode_t mode) and returning bool
-       // dtype is the value from the d_type member of struct dirent. If the system does not support the d_type
-       // member, this will always be set to PosixDType::Unknown.
-       // mode is the st_mode member of struct stat. It is populated if and only if dtype is PosixDType::Unknown.
-       // Note that many file systems always set dtype to DT_UNKNOWN, so the lstat fallback must exist even on systems
-       // which have the d_type member
+        static void insert_if_stat_matches(std::vector<Path>& result,
+                                           const Path& full,
+                                           struct stat* s,
+                                           bool want_directories,
+                                           bool want_regular_files,
+                                           bool want_other)
+        {
+            if (S_ISDIR(s->st_mode))
+            {
+                if (!want_directories)
+                {
+                    return;
+                }
+            }
+            else if (S_ISREG(s->st_mode))
+            {
+                if (!want_regular_files)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                if (!want_other)
+                {
+                    return;
+                }
+            }
+
+            result.push_back(full);
+        }
+
         static void get_files_recursive_impl(std::vector<Path>& result,
                                              const Path& base,
                                              std::error_code& ec,
-                                             bool (*selector)(PosixDType, mode_t))
+                                             bool want_directories,
+                                             bool want_regular_files,
+                                             bool want_other)
         {
             ReadDirOp op{base, ec};
             if (ec)
@@ -1973,47 +2045,87 @@ namespace vcpkg
 
                     const auto full = base / entry->d_name;
                     const auto entry_dtype = get_d_type(entry);
-                    if (entry_dtype == PosixDType::Unknown)
+                    struct stat s;
+                    struct stat ls;
+                    switch (entry_dtype)
                     {
-                        struct stat s;
-                        if (stat(full.c_str(), &s) != 0 && errno != ENOENT)
-                        {
-                            ec.assign(errno, std::generic_category());
-                            result.clear();
-                            return;
-                        }
+                        case PosixDType::Directory:
+                            if (want_directories)
+                            {
+                                // push results before recursion to get outer entries first
+                                result.push_back(full);
+                            }
 
-                        if (selector(PosixDType::Unknown, s.st_mode))
-                        {
-                            // push results before recursion to get outer entries first
-                            result.push_back(full);
-                        }
-
-                        if (S_ISDIR(s.st_mode))
-                        {
-                            get_files_recursive_impl(result, full, ec, selector);
+                            get_files_recursive_impl(
+                                result, full, ec, want_directories, want_regular_files, want_other);
                             if (ec)
                             {
                                 return;
                             }
-                        }
-                    }
-                    else
-                    {
-                        if (selector(entry_dtype, 0))
-                        {
-                            // push results before recursion to get outer entries first
-                            result.push_back(full);
-                        }
 
-                        if (entry_dtype == PosixDType::Directory)
-                        {
-                            get_files_recursive_impl(result, full, ec, selector);
-                            if (ec)
+                            break;
+                        case PosixDType::Regular:
+                            if (want_regular_files)
                             {
+                                result.push_back(full);
+                            }
+
+                            break;
+
+                        case PosixDType::Fifo:
+                        case PosixDType::Socket:
+                        case PosixDType::CharacterDevice:
+                        case PosixDType::BlockDevice:
+                            if (want_other)
+                            {
+                                result.push_back(full);
+                            }
+
+                            break;
+
+                        case PosixDType::Unknown:
+                        default:
+                            if (::lstat(full.c_str(), &ls) != 0 && errno != ENOENT)
+                            {
+                                ec.assign(errno, std::generic_category());
+                                result.clear();
                                 return;
                             }
-                        }
+
+                            if (S_ISLNK(ls.st_mode))
+                            {
+                                if (want_directories && want_regular_files && want_other)
+                                {
+                                    // skip extra stat syscall since we want everything
+                                    result.push_back(full);
+                                }
+                                else
+                                {
+                                    if (::stat(full.c_str(), &s) != 0 && errno != ENOENT)
+                                    {
+                                        ec.assign(errno, std::generic_category());
+                                        result.clear();
+                                        return;
+                                    }
+
+                                    insert_if_stat_matches(
+                                        result, full, &s, want_directories, want_regular_files, want_other);
+                                }
+                            }
+                            else
+                            {
+                                // push results before recursion to get outer entries first
+                                insert_if_stat_matches(
+                                    result, full, &ls, want_directories, want_regular_files, want_other);
+                            }
+
+                            // recursion check doesn't follow symlinks:
+                            if (S_ISDIR(ls.st_mode))
+                            {
+                                get_files_recursive_impl(
+                                    result, full, ec, want_directories, want_regular_files, want_other);
+                            }
+                            break;
                     }
                 }
             }
@@ -2067,7 +2179,7 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, [](PosixDType, mode_t) { return true; });
+            get_files_recursive_impl(result, dir, ec, true, true, true);
             return result;
         }
 
@@ -2081,9 +2193,7 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, [](PosixDType dtype, mode_t mode) {
-                return dtype == PosixDType::Directory || S_ISDIR(mode);
-            });
+            get_files_recursive_impl(result, dir, ec, true, false, false);
 
             return result;
         }
@@ -2092,8 +2202,18 @@ namespace vcpkg
         {
             std::vector<Path> result;
             get_files_non_recursive_impl(result, dir, ec, [](PosixDType dtype, const Path& p) {
-                return dtype == PosixDType::Directory ||
-                       (dtype == PosixDType::Unknown && posix_is_directory(p.c_str()));
+                switch (dtype)
+                {
+                    case PosixDType::Directory: return true;
+                    case PosixDType::BlockDevice:
+                    case PosixDType::CharacterDevice:
+                    case PosixDType::Fifo:
+                    case PosixDType::Regular:
+                    case PosixDType::Socket: return false;
+                    case PosixDType::Link:
+                    case PosixDType::Unknown:
+                    default: return stat_is_directory(p.c_str());
+                }
             });
 
             return result;
@@ -2102,10 +2222,7 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, [](PosixDType dtype, mode_t mode) {
-                return dtype == PosixDType::Regular || S_ISREG(mode);
-            });
-
+            get_files_recursive_impl(result, dir, ec, false, true, false);
             return result;
         }
 
@@ -2113,8 +2230,18 @@ namespace vcpkg
         {
             std::vector<Path> result;
             get_files_non_recursive_impl(result, dir, ec, [](PosixDType dtype, const Path& p) {
-                return dtype == PosixDType::Regular ||
-                       (dtype == PosixDType::Unknown && posix_is_regular_file(p.c_str()));
+                switch (dtype)
+                {
+                    case PosixDType::Regular: return true;
+                    case PosixDType::BlockDevice:
+                    case PosixDType::CharacterDevice:
+                    case PosixDType::Fifo:
+                    case PosixDType::Directory:
+                    case PosixDType::Socket: return false;
+                    case PosixDType::Link:
+                    case PosixDType::Unknown:
+                    default: return stat_is_regular_file(p.c_str());
+                }
             });
 
             return result;
@@ -2140,7 +2267,18 @@ namespace vcpkg
         }
         virtual void rename(const Path& old_path, const Path& new_path, std::error_code& ec) override
         {
+#if defined(_WIN32)
             stdfs::rename(to_stdfs_path(old_path), to_stdfs_path(new_path), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            if (::rename(old_path.c_str(), new_path.c_str()) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+#endif // ^^^ !_WIN32
         }
         virtual void rename_or_copy(const Path& old_path,
                                     const Path& new_path,
@@ -2250,35 +2388,210 @@ namespace vcpkg
 
         virtual bool is_directory(const Path& target) const override
         {
+#if defined(_WIN32)
             return stdfs::is_directory(to_stdfs_path(target));
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::stat(target.c_str(), &s) != 0)
+            {
+                return false;
+            }
+
+            return S_ISDIR(s.st_mode);
+#endif // ^^^ !_WIN32
         }
         virtual bool is_regular_file(const Path& target) const override
         {
+#if defined(_WIN32)
             return stdfs::is_regular_file(to_stdfs_path(target));
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::stat(target.c_str(), &s) != 0)
+            {
+                return false;
+            }
+
+            return S_ISREG(s.st_mode);
+#endif // ^^^ !_WIN32
         }
         virtual bool is_empty(const Path& target, std::error_code& ec) const override
         {
+#if defined(_WIN32)
             return stdfs::is_empty(to_stdfs_path(target), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat st;
+            if (::stat(target.c_str(), &st) != 0)
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+
+            if (S_ISDIR(st.st_mode))
+            {
+                ReadDirOp rdo{target, ec};
+                if (ec) return false;
+                const dirent* entry;
+                do
+                {
+                    entry = rdo.read(ec);
+                    if (ec)
+                    {
+                        return false;
+                    }
+                    if (entry == nullptr)
+                    {
+                        return true;
+                    }
+                } while (is_dot_or_dot_dot(entry->d_name));
+                return false;
+            }
+
+            return st.st_size == 0;
+#endif // ^^^ !_WIN32
         }
+
+#if !defined(_WIN32)
+        static int posix_create_directory(const char* new_directory)
+        {
+            if (::mkdir(new_directory, 0777) == 0)
+            {
+                return -1;
+            }
+
+            auto mkdir_error = errno;
+            if (mkdir_error == EEXIST)
+            {
+                struct stat s;
+                if (::stat(new_directory, &s) == 0)
+                {
+                    if (S_ISDIR(s.st_mode))
+                    {
+                        return 0;
+                    }
+                }
+                else
+                {
+                    return errno;
+                }
+            }
+
+            return mkdir_error;
+        }
+#endif // ^^^ !_WIN32
+
         virtual bool create_directory(const Path& new_directory, std::error_code& ec) override
         {
+#if defined(_WIN32)
             return stdfs::create_directory(to_stdfs_path(new_directory), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            auto attempt = posix_create_directory(new_directory.c_str());
+            if (attempt <= 0)
+            {
+                ec.clear();
+                return attempt != 0;
+            }
+
+            ec.assign(attempt, std::generic_category());
+            return false;
+#endif // ^^^ !_WIN32
         }
         virtual bool create_directories(const Path& new_directory, std::error_code& ec) override
         {
+#if defined(_WIN32)
             return stdfs::create_directories(to_stdfs_path(new_directory), ec);
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            ec.clear();
+            if (new_directory.empty())
+            {
+                return false;
+            }
+
+            const auto& new_str = new_directory.native();
+            auto first = new_str.begin();
+            const auto last = new_str.end();
+            std::string this_create;
+            // establish the !is_slash(*first) loop invariant
+            if (is_slash(*first))
+            {
+                this_create.push_back('/');
+                first = std::find_if_not(first, last, is_slash); // collapse multiple slashes
+            }
+
+            bool last_mkdir_created = false;
+            for (;;)
+            {
+                if (first == last)
+                {
+                    return last_mkdir_created;
+                }
+
+                assert(!is_slash(*first));
+                const auto next_slash = std::find_if(first, last, is_slash);
+                this_create.append(first, next_slash);
+                const auto attempt = posix_create_directory(this_create.c_str());
+                if (attempt > 0)
+                {
+                    ec.assign(attempt, std::generic_category());
+                    return false;
+                }
+
+                last_mkdir_created = attempt != 0;
+                if (next_slash == last)
+                {
+                    return last_mkdir_created;
+                }
+
+                this_create.push_back('/');
+                first = std::find_if_not(next_slash, last, is_slash); // collapse multiple slashes
+            }
+
+#endif // _WIN32
         }
+
+#if !defined(_WIN32)
+        static void posix_create_symlink(const Path& to, const Path& from, std::error_code& ec)
+        {
+            if (::symlink(to.c_str(), from.c_str()) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+        }
+#endif // !_WIN32
+
         virtual void create_symlink(const Path& to, const Path& from, std::error_code& ec) override
         {
+#if defined(_WIN32)
             stdfs::create_symlink(to_stdfs_path(to), to_stdfs_path(from), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            posix_create_symlink(to, from, ec);
+#endif // _WIN32
         }
         virtual void create_directory_symlink(const Path& to, const Path& from, std::error_code& ec) override
         {
+#if defined(_WIN32)
             stdfs::create_directory_symlink(to_stdfs_path(to), to_stdfs_path(from), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            posix_create_symlink(to, from, ec);
+#endif // _WIN32
         }
         virtual void create_hard_link(const Path& to, const Path& from, std::error_code& ec) override
         {
+#if defined(_WIN32)
             stdfs::create_hard_link(to_stdfs_path(to), to_stdfs_path(from), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            if (::link(from.c_str(), to.c_str()) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+#endif // _WIN32
         }
         virtual void copy(const Path& source,
                           const Path& destination,
@@ -2302,15 +2615,51 @@ namespace vcpkg
 
         virtual FileType status(const Path& target, std::error_code& ec) const override
         {
+#if defined(_WIN32)
             auto result = stdfs::status(to_stdfs_path(target), ec);
             translate_not_found_to_success(ec);
             return convert_file_type(result.type());
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::stat(target.c_str(), &s) == 0)
+            {
+                ec.clear();
+                return posix_translate_stat_mode_to_file_type(s.st_mode);
+            }
+
+            if (errno == ENOENT)
+            {
+                ec.clear();
+                return FileType::not_found;
+            }
+
+            ec.assign(errno, std::generic_category());
+            return FileType::unknown;
+#endif // ^^^ !_WIN32
         }
         virtual FileType symlink_status(const Path& target, std::error_code& ec) const override
         {
+#if defined(_WIN32)
             auto result = stdfs::symlink_status(to_stdfs_path(target), ec);
             translate_not_found_to_success(ec);
             return convert_file_type(result.type());
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::lstat(target.c_str(), &s) == 0)
+            {
+                ec.clear();
+                return posix_translate_stat_mode_to_file_type(s.st_mode);
+            }
+
+            if (errno == ENOENT)
+            {
+                ec.clear();
+                return FileType::not_found;
+            }
+
+            ec.assign(errno, std::generic_category());
+            return FileType::unknown;
+#endif // ^^^ !_WIN32
         }
         virtual void write_contents(const Path& file_path, const std::string& data, std::error_code& ec) override
         {
@@ -2345,7 +2694,7 @@ namespace vcpkg
         {
 #if defined(_WIN32)
             return from_stdfs_path(stdfs::absolute(to_stdfs_path(target), ec));
-#else  // ^^^ _WIN32  /  !_WIN32  vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
             if (target.is_absolute())
             {
                 return target;
