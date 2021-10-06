@@ -22,13 +22,21 @@ jobs:
         targetArgument: '$(Build.SourcesDirectory)'
         result: 'PoliCheck.xml'
     - task: CmdLine@2
-      displayName: "Build vcpkg with CMake"
+      displayName: "Build vcpkg x86 with CMake"
       inputs:
         failOnStderr: true
         script: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -B "$(Build.StagingDirectory)"
-          ninja.exe -C "$(Build.StagingDirectory)"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -B "$(Build.BinariesDirectory)\x86"
+          ninja.exe -C "$(Build.BinariesDirectory)\x86"
+    - task: CmdLine@2
+      displayName: "Build vcpkg arm64 with CMake"
+      inputs:
+        failOnStderr: true
+        script: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=x86
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_PDB_SUFFIX=".arm64" -B "$(Build.BinariesDirectory)\arm64"
+          ninja.exe -C "$(Build.BinariesDirectory)\arm64"
     - task: MicroBuildSigningPlugin@2
       inputs:
         signType: 'real'
@@ -44,36 +52,32 @@ jobs:
         feedsToUse: 'config'
         restoreDirectory: '$(Build.SourcesDirectory)\packages'
     - task: MSBuild@1
-      displayName: 'Sign vcpkg.exe'
+      displayName: 'Sign Binaries'
       inputs:
         solution: 'azure-pipelines\signing.signproj'
-        msbuildArguments: '/p:OutDir=$(Build.ArtifactStagingDirectory)\ /p:IntermediateOutputPath=$(Build.StagingDirectory)\'
+        msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
     - task: BinSkim@3
       inputs:
         InputType: 'CommandLine'
-        arguments: 'analyze "$(Build.StagingDirectory)\vcpkg.exe"'
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish vcpkg.exe'
+        arguments: 'analyze "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.BinariesDirectory)\x86\tls12-download.exe" "$(Build.BinariesDirectory)\arm64\vcpkg.exe" "$(Build.BinariesDirectory)\arm64\tls12-download.exe"'
+    - task: CmdLine@2
+      displayName: 'Prepare Drop'
       inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)\vcpkg.exe'
-        ArtifactName: 'Drop'
-        publishLocation: 'Container'
+        failOnStderr: true
+        script: |
+          mkdir "$(Build.ArtifactStagingDirectory)\drop"
+          move "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
+          move "$(Build.BinariesDirectory)\x86\vcpkg.pdb" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.pdb"
+          move "$(Build.BinariesDirectory)\x86\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe"
+          move "$(Build.BinariesDirectory)\x86\tls12-download.pdb" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.pdb"
+          move "$(Build.BinariesDirectory)\arm64\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.arm64.exe"
+          move "$(Build.BinariesDirectory)\arm64\vcpkg.arm64.pdb" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.arm64.pdb"
+          move "$(Build.BinariesDirectory)\arm64\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.arm64.exe"
+          move "$(Build.BinariesDirectory)\arm64\tls12-download.arm64.pdb" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.arm64.pdb"
     - task: PublishBuildArtifacts@1
-      displayName: 'Publish vcpkg.pdb'
+      displayName: 'Publish Drop'
       inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)\vcpkg.pdb'
-        ArtifactName: 'Drop'
-        publishLocation: 'Container'
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish tls12-download.exe'
-      inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)\tls12-download.exe'
-        ArtifactName: 'Drop'
-        publishLocation: 'Container'
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish tls12-download.pdb'
-      inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)\tls12-download.pdb'
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)\drop'
         ArtifactName: 'Drop'
         publishLocation: 'Container'
     - task: MicroBuildCleanup@1
@@ -89,13 +93,12 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
-          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -B "$(Build.StagingDirectory)"
-          make -j 8 -C "$(Build.StagingDirectory)"
-          zip -j "$(Build.StagingDirectory)/vcpkg-macos.zip" "$(Build.StagingDirectory)/vcpkg"
+          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -B "$(Build.BinariesDirectory)"
+          make -j 8 -C "$(Build.BinariesDirectory)"
+          zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/vcpkg"
     - task: PublishBuildArtifacts@1
       displayName: "Publish Unsigned MacOS Binary"
       inputs:
-        PathtoPublish: '$(Build.StagingDirectory)/vcpkg-macos.zip'
         ArtifactName: 'staging'
         publishLocation: 'Container'
   - job: macos_sign
