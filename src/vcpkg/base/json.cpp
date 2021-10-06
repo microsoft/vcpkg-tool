@@ -4,8 +4,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/unicode.h>
 
-#include <inttypes.h>
-
+#include <cinttypes>
 #include <regex>
 
 namespace vcpkg::Json
@@ -250,7 +249,7 @@ namespace vcpkg::Json
     }
     Value Value::number(double d) noexcept
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, isfinite(d));
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, std::isfinite(d));
         Value val;
         val.underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), d);
         return val;

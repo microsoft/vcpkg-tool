@@ -8,10 +8,9 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/view.h>
 
-#include <errno.h>
-#include <inttypes.h>
-#include <limits.h>
-
+#include <cerrno>
+#include <cinttypes>
+#include <climits>
 #include <vector>
 
 namespace vcpkg::Strings::details

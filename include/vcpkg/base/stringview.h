@@ -2,9 +2,8 @@
 
 #include <vcpkg/base/fwd/stringview.h>
 
-#include <stddef.h>
-#include <string.h>
-
+#include <cstddef>
+#include <cstring>
 #include <iterator>
 #include <limits>
 #include <string>

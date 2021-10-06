@@ -2,8 +2,7 @@
 
 #include <vcpkg/base/files.h>
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <vector>
 
 namespace vcpkg

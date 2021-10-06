@@ -2,7 +2,7 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 namespace vcpkg
 {

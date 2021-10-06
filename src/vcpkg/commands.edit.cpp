@@ -9,7 +9,7 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <limits.h>
+#include <climits>
 
 #if defined(_WIN32)
 namespace

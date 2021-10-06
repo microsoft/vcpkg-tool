@@ -2,11 +2,10 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
-#include <locale.h>
-#include <stdarg.h>
-#include <stdio.h>
-
 #include <algorithm>
+#include <clocale>
+#include <cstdarg>
+#include <cstdio>
 #include <string>
 #include <vector>
 

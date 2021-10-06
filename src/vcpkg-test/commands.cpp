@@ -5,7 +5,7 @@
 #include <vcpkg/commands.upload-metrics.h>
 #include <vcpkg/commands.version.h>
 
-#include <stddef.h>
+#include <cstddef>
 
 using namespace vcpkg;
 

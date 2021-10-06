@@ -6,8 +6,7 @@
 
 #include <vcpkg/platform-expression.h>
 
-#include <string.h>
-
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <utility>

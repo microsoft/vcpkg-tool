@@ -6,8 +6,7 @@
 
 #include <vcpkg/statusparagraph.h>
 
-#include <stdlib.h>
-
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <vector>

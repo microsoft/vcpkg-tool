@@ -7,12 +7,13 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <assert.h>
+#include <cassert>
 
 #if !defined(_WIN32)
 #include <dirent.h>
 #include <fcntl.h>
-#include <limits.h>
+
+#include <climits>
 
 #include <sys/file.h>
 #include <sys/stat.h>

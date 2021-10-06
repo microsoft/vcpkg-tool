@@ -4,7 +4,7 @@
 #include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/system.debug.h>
 
-#include <stdio.h>
+#include <cstdio>
 
 using namespace std;
 

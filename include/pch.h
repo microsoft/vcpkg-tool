@@ -11,19 +11,18 @@
 #include <winhttp.h>
 #endif
 
-#include <locale.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
-
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <cassert>
 #include <cctype>
 #include <chrono>
+#include <clocale>
+#include <cmath>
+#include <cstdarg>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <functional>
 #include <iterator>
 #include <limits>
@@ -41,8 +40,7 @@
 #include <sys/time.h>
 #endif
 
-#include <time.h>
-
+#include <ctime>
 #include <system_error>
 #include <thread>
 #include <type_traits>
