@@ -35,10 +35,6 @@ namespace vcpkg
         overwrite_existing = 0x2,
 
         recursive = 0x10,
-
-        symlinks_mask = 0xF00,
-        copy_symlinks = 0x100,
-        skip_symlinks = 0x200,
     };
 
     struct Path
