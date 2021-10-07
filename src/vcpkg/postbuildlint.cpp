@@ -853,23 +853,43 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_no_absolute_paths_in(const Filesystem& fs,
                                                  const Path& dir,
-                                                 Span<std::string> absolute_paths)
+                                                 Span<Path> absolute_paths)
     {
-        const auto is_script = [&fs](const Path& path) {
-            if (!path.extension().empty()) return false;
-            return Strings::starts_with(fs.read_contents(path, VCPKG_LINE_INFO), "#!");
-        };
 
-        static std::unordered_set<std::string> extensions = {
+        static constexpr StringLiteral extensions[] = {
             "h", "hpp", "hxx", "py", "sh", "cmake", "pc", "la", "yaml", "cfg", "conf"};
-        std::vector<Path> files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
-        Util::erase_remove_if(files, [&is_script](const Path& path) {
-            return extensions.find(path.extension().to_string()) == extensions.end() && !is_script(path);
-        });
-        Util::erase_remove_if(files, [&fs, &absolute_paths](const Path& path) {
-            return !Util::any_of(fs.read_lines(path, VCPKG_LINE_INFO), [&absolute_paths](const auto& line) {
-                return Util::any_of(absolute_paths, [&line](StringView path) { return Strings::contains(line, path); });
-            });
+        std::vector<std::pair<Path, std::string>> files_and_contents;
+        for (auto& path : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
+        {
+            if (Util::Vectors::contains(extensions, path.extension()))
+            {
+                auto contents = fs.read_contents(path, VCPKG_LINE_INFO);
+                files_and_contents.emplace_back(std::move(path), std::move(contents));
+            }
+            else if (path.extension().empty())
+            {
+                auto contents = fs.read_contents(path, VCPKG_LINE_INFO);
+                if (Strings::starts_with(contents, "#!"))
+                {
+                    files_and_contents.emplace_back(std::move(path), std::move(contents));
+                }
+            }
+        }
+        Util::erase_remove_if(files_and_contents, [&fs, &absolute_paths](const std::pair<Path, std::string>& path_and_contents) {
+            for (const auto& path : absolute_paths)
+            {
+                if (Strings::contains(path_and_contents.second, path.native()))
+                {
+                    return true;
+                }
+#if defined(_WIN32)
+                if (Strings::contains(path_and_contents.second, path.generic_u8string()))
+                {
+                    return true;
+                }
+#endif
+            }
+            return false;
         });
 
         if (!files.empty())
