@@ -851,17 +851,14 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_no_absolute_paths_in(const Filesystem& fs,
-                                                 const Path& dir,
-                                                 Span<Path> absolute_paths)
+    static LintStatus check_no_absolute_paths_in(const Filesystem& fs, const Path& dir, Span<Path> absolute_paths)
     {
-
-        static constexpr StringLiteral extensions[] = {
+        static constexpr std::array<StringLiteral, 11> extensions = {
             "h", "hpp", "hxx", "py", "sh", "cmake", "pc", "la", "yaml", "cfg", "conf"};
         std::vector<std::pair<Path, std::string>> files_and_contents;
         for (auto& path : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
         {
-            if (Util::Vectors::contains(extensions, path.extension()))
+            if (Util::contains(extensions, path.extension()))
             {
                 auto contents = fs.read_contents(path, VCPKG_LINE_INFO);
                 files_and_contents.emplace_back(std::move(path), std::move(contents));
@@ -875,30 +872,34 @@ namespace vcpkg::PostBuildLint
                 }
             }
         }
-        Util::erase_remove_if(files_and_contents, [&fs, &absolute_paths](const std::pair<Path, std::string>& path_and_contents) {
-            for (const auto& path : absolute_paths)
-            {
-                if (Strings::contains(path_and_contents.second, path.native()))
-                {
-                    return true;
-                }
+        std::vector<std::string> string_paths;
+        for (const auto& path : absolute_paths)
+        {
+            string_paths.push_back(path.native());
 #if defined(_WIN32)
-                if (Strings::contains(path_and_contents.second, path.generic_u8string()))
-                {
-                    return true;
-                }
+            string_paths.push_back(path.generic_u8string());
 #endif
-            }
-            return false;
-        });
+        }
 
-        if (!files.empty())
+        std::string result;
+        for (const auto& path_and_contents : files_and_contents)
+        {
+            if (Util::any_of(string_paths, [&path_and_contents](const std::string& path) {
+                    return Strings::contains(path_and_contents.second, path);
+                }))
+            {
+                result += "\n    ";
+                result += path_and_contents.first.native();
+            }
+        }
+
+        if (!result.empty())
         {
             print2(Color::warning,
                    "The following files contain an absolute path ('",
                    Strings::join("', '", absolute_paths),
-                   "'):\n    ",
-                   Strings::join("\n    ", files),
+                   "'):",
+                   result,
                    "\n"
                    "There must be no absolute path, only relative ones.\n\n");
             return LintStatus::ERROR_DETECTED;
@@ -1027,7 +1028,7 @@ namespace vcpkg::PostBuildLint
         error_count += check_no_files_in_dir(fs, package_dir);
         error_count += check_no_files_in_dir(fs, package_dir / "debug");
         error_count += check_no_absolute_paths_in(
-            fs, package_dir, std::vector<std::string>{package_dir.native(), paths.installed.native()});
+            fs, package_dir, std::vector<Path>{package_dir.native(), paths.installed.native()});
 
         return error_count;
     }
