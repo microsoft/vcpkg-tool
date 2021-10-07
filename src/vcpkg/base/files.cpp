@@ -628,6 +628,18 @@ namespace
             }
         }
 
+        void fchmod(mode_t new_mode, std::error_code& ec) const noexcept
+        {
+            if (::fchmod(fd, new_mode) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+        }
+
         operator bool() const noexcept { return fd >= 0; }
 
         int get() const noexcept { return fd; }
@@ -2604,12 +2616,14 @@ namespace vcpkg
             int open_options = O_WRONLY | O_CREAT;
             if (masked_options != CopyOptions::overwrite_existing)
             {
+                // the standard wording suggests that we should create a file through a broken symlink which would
+                // forbid use of O_EXCL. However, implementations like boost::copy_file don't do this and doing it
+                // would introduce more potential for TOCTOU bugs
                 open_options |= O_EXCL;
             }
 
-            // TODO: Add write bits
-
-            PosixFd destination_fd{destination.c_str(), open_options, mode, ec};
+            const mode_t open_mode = source_stat.st_mode | 0222; // ensure the file is created writable
+            PosixFd destination_fd{destination.c_str(), open_options, open_mode, ec};
             if (ec)
             {
                 if (masked_options == CopyOptions::skip_existing && ec == std::errc::file_exists)
@@ -2626,14 +2640,13 @@ namespace vcpkg
             {
                 return false;
             }
-            else if (!S_ISREG(destination_stat.st_mode)
+            else if (!S_ISREG(destination_stat.st_mode))
             {
                 ec = std::make_error_code(std::errc::invalid_argument);
                 return false;
             }
 
-            if (source_stat.st_dev == destination_stat.st_dev &&
-                source_stat.st_ino == destination_stat.st_ino)
+            if (source_stat.st_dev == destination_stat.st_dev && source_stat.st_ino == destination_stat.st_ino)
             {
                 // /4 exists(to) is true and equivalent(from, to) is true
                 ec = std::make_error_code(std::errc::device_or_resource_busy);
@@ -2654,7 +2667,8 @@ namespace vcpkg
                 return false;
             }
 
-            return true;
+            destination_fd.fchmod(source_stat.st_mode, ec);
+            return !ec;
 #elif defined(__APPLE__)
             if (fcopyfile(source_fd.get(), destination_fd.get(), 0, COPYFILE_ALL) == -1)
             {
@@ -2662,6 +2676,7 @@ namespace vcpkg
                 return false;
             }
 
+            // fcopyfile copies the mode so no need to fchmod here
             return true;
 #else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
             constexpr std::size_t buffer_length = 4096;
@@ -2688,10 +2703,9 @@ namespace vcpkg
                 }
             }
 
-            return true;
+            destination_fd.fchmod(source_stat.st_mode, ec);
+            return !ec;
 #endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
-
-        // TODO set perms
 #endif // ^^^ !_WIN32
         }
 
