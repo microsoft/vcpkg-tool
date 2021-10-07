@@ -77,7 +77,7 @@ namespace
                 auto e = get_lock_entry(paths);
                 e.ensure_up_to_date(paths);
                 auto maybe_tree =
-                    paths.git_find_object_id_for_remote_registry_path(e.value(), registry_versions_dir_name);
+                    paths.git_find_object_id_for_remote_registry_path(e.commit_id(), registry_versions_dir_name);
                 if (!maybe_tree)
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-no-versions-at-commit",
@@ -86,7 +86,7 @@ namespace
                         VCPKG_LINE_INFO,
                         "Error: could not find the git tree for `versions` in repo `%s` at commit `%s`: %s",
                         m_repo,
-                        e.value(),
+                        e.commit_id(),
                         maybe_tree.error());
                 }
                 auto maybe_path = paths.git_checkout_object_from_remote_registry(*maybe_tree.get());
@@ -117,7 +117,7 @@ namespace
             if (!m_stale_versions_tree.has_value())
             {
                 auto maybe_tree =
-                    paths.git_find_object_id_for_remote_registry_path(e.value(), registry_versions_dir_name);
+                    paths.git_find_object_id_for_remote_registry_path(e.commit_id(), registry_versions_dir_name);
                 if (!maybe_tree)
                 {
                     // This could be caused by git gc or otherwise -- fall back to full fetch
@@ -507,7 +507,7 @@ namespace
                     "commit SHA (40 lowercase hexadecimal characters).\n"
                     "The current HEAD of that repo is \"%s\".\n",
                     m_repo,
-                    e.value());
+                    e.commit_id());
             }
 
             auto path_to_baseline = Path(registry_versions_dir_name) / "baseline.json";
@@ -1142,18 +1142,21 @@ namespace vcpkg
 
     LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference)
     {
-        auto lockdata_key = Strings::concat(repo, "@", reference);
-
-        auto it = lockdata.find(lockdata_key);
-        if (it == lockdata.end() && reference == "HEAD")
+        auto it = lockdata.find(repo);
+        if (it != lockdata.end() && it->second.reference != reference)
         {
-            it = lockdata.find(StringView(lockdata_key).substr(0, lockdata_key.size() - 5));
+            print2("Reference of registry ", repo, " has been changed to ", reference, "...\n");
+            it = lockdata.end();
         }
+
         if (it == lockdata.end())
         {
-            print2("Fetching registry information from ", lockdata_key, "...\n");
+            print2("Fetching registry information from ", repo, " (", reference, ")...\n");
             auto x = paths.git_fetch_from_remote_registry(repo, reference);
-            it = lockdata.emplace(std::move(lockdata_key), EntryData{x.value_or_exit(VCPKG_LINE_INFO), false}).first;
+            it = lockdata
+                     .emplace(repo.to_string(),
+                              EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false})
+                     .first;
             modified = true;
         }
         return {this, it};
@@ -1162,18 +1165,12 @@ namespace vcpkg
     {
         if (data->second.stale)
         {
-            StringView lockdata_key(data->first);
-            print2("Fetching registry information from ", lockdata_key, "...\n");
+            StringView repo(data->first);
+            StringView reference(data->second.reference);
+            print2("Fetching registry information from ", repo, " (", reference, ")...\n");
 
-            auto at_position = lockdata_key.end() - std::find(lockdata_key.begin(), lockdata_key.end(), '@');
-            auto repo = lockdata_key.substr(0, at_position);
-            auto reference = lockdata_key.substr(at_position + 1);
-            if (reference.size() == 0)
-            {
-                reference = "HEAD";
-            }
-
-            data->second.value = paths.git_fetch_from_remote_registry(repo, reference).value_or_exit(VCPKG_LINE_INFO);
+            data->second.commit_id =
+                paths.git_fetch_from_remote_registry(repo, reference).value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
             lockfile->modified = true;
         }

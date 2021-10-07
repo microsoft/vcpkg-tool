@@ -508,6 +508,37 @@ namespace vcpkg
         });
     }
 
+    static LockFile load_lockfile(const Json::Object& obj)
+    {
+        LockFile ret;
+        for (const auto& [repo, commit_info_value] : obj)
+        {
+            if (!commit_info_value.is_object())
+            {
+                Debug::print("Lockfile value for key '", repo, "' was not an object\n");
+                return ret;
+            }
+
+            for (const auto& [reference, commit] : commit_info_value.object())
+            {
+                if (!commit.is_string())
+                {
+                    Debug::print("Lockfile value for key '", reference, "' was not a string\n");
+                    return ret;
+                }
+                auto sv = commit.string();
+                if (!is_git_commit_sha(sv))
+                {
+                    Debug::print("Lockfile value for key '", reference, "' was not a git commit sha\n");
+                    return ret;
+                }
+                ret.lockdata.emplace(repo.to_string(),
+                                     LockFile::EntryData{reference.to_string(), sv.to_string(), true});
+            }
+        }
+        return ret;
+    }
+
     static LockFile load_lockfile(const Filesystem& fs, const Path& p)
     {
         LockFile ret;
@@ -521,27 +552,13 @@ namespace vcpkg
         else if (auto lock_contents = maybe_lock_contents.get())
         {
             auto& doc = lock_contents->first;
-            if (doc.is_object())
+            if (!doc.is_object())
             {
-                for (auto&& x : doc.object())
-                {
-                    if (!x.second.is_string())
-                    {
-                        Debug::print("Lockfile value for key '", x.first, "' was not a string\n");
-                        return ret;
-                    }
-                    auto sv = x.second.string();
-                    if (!is_git_commit_sha(sv))
-                    {
-                        Debug::print("Lockfile value for key '", x.first, "' was not a git commit sha\n");
-                        return ret;
-                    }
-                    ret.lockdata.emplace(x.first.to_string(), LockFile::EntryData{sv.to_string(), true});
-                }
+                Debug::print("Lockfile was not an object\n");
                 return ret;
             }
-            Debug::print("Lockfile was not an object\n");
-            return ret;
+
+            return load_lockfile(doc.object());
         }
         else
         {
@@ -568,7 +585,10 @@ namespace vcpkg
         Json::Object obj;
         for (auto&& data : lockfile.lockdata)
         {
-            obj.insert(data.first, Json::Value::string(data.second.value));
+            Json::Object repo_info;
+            repo_info.insert(data.second.reference, Json::Value::string(data.second.commit_id));
+            
+            obj.insert(data.first, Json::Value::object(std::move(repo_info)));
         }
         get_filesystem().write_rename_contents(
             lockfile_path(*this), "vcpkg-lock.json.tmp", Json::stringify(obj, {}), VCPKG_LINE_INFO);

@@ -24,7 +24,8 @@ namespace vcpkg
     {
         struct EntryData
         {
-            std::string value;
+            std::string reference;
+            std::string commit_id;
             bool stale;
         };
         struct Entry
@@ -32,7 +33,8 @@ namespace vcpkg
             LockFile* lockfile;
             std::map<std::string, EntryData, std::less<>>::iterator data;
 
-            const std::string& value() const { return data->second.value; }
+            const std::string& reference() const { return data->second.reference; }
+            const std::string& commit_id() const { return data->second.commit_id; }
             bool stale() const { return data->second.stale; }
             const std::string& uri() const { return data->first; }
 
