@@ -787,6 +787,42 @@ TEST_CASE ("copy_file", "[files]")
     CHECK_EC_ON_FILE(temp_dir, ec);
 }
 
+TEST_CASE ("copy_symlink", "[files]")
+{
+    urbg_t urbg;
+
+    auto& fs = setup();
+
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    INFO("temp dir is: " << temp_dir.native());
+
+    fs.create_directory(temp_dir, VCPKG_LINE_INFO);
+    fs.create_directory(temp_dir / "dir", VCPKG_LINE_INFO);
+    fs.write_contents(temp_dir / "file", "some file contents", VCPKG_LINE_INFO);
+
+    std::error_code ec;
+    fs.create_symlink("../file", temp_dir / "dir/sym", ec); // note: relative
+    if (ec)
+    {
+        // if we get not supported or permission denied, assume symlinks aren't supported
+        // on this system and the test is a no-op
+        REQUIRE((ec == std::errc::not_supported || ec == std::errc::permission_denied));
+    }
+    else
+    {
+        REQUIRE(fs.read_contents(temp_dir / "dir/sym", VCPKG_LINE_INFO) == "some file contents");
+        fs.copy_symlink(temp_dir / "dir/sym", temp_dir / "dir/sym_copy", VCPKG_LINE_INFO);
+        REQUIRE(fs.read_contents(temp_dir / "dir/sym_copy", VCPKG_LINE_INFO) == "some file contents");
+    }
+
+    Path fp;
+    fs.remove_all(temp_dir, ec, fp);
+    CHECK_EC_ON_FILE(fp, ec);
+
+    REQUIRE_FALSE(fs.exists(temp_dir, ec));
+    CHECK_EC_ON_FILE(temp_dir, ec);
+}
+
 TEST_CASE ("LinesCollector", "[files]")
 {
     using Strings::LinesCollector;

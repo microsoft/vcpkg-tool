@@ -100,12 +100,6 @@ namespace
             result |= stdfs::copy_options::recursive;
         }
 
-        switch (unpacked & static_cast<int>(CopyOptions::symlinks_mask))
-        {
-            case static_cast<int>(CopyOptions::copy_symlinks): result |= stdfs::copy_options::copy_symlinks; break;
-            case static_cast<int>(CopyOptions::skip_symlinks): result |= stdfs::copy_options::skip_symlinks; break;
-        }
-
         return result;
     }
 
@@ -2711,7 +2705,43 @@ namespace vcpkg
 
         virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) override
         {
-            return stdfs::copy_symlink(to_stdfs_path(source), to_stdfs_path(destination), ec);
+#if defined(_WIN32)
+            stdfs::copy_symlink(to_stdfs_path(source), to_stdfs_path(destination), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            std::string buffer;
+            buffer.resize(buffer.capacity());
+            for (;;)
+            {
+                ssize_t result = ::readlink(source.c_str(), &buffer[0], buffer.size());
+                if (result < 0)
+                {
+                    ec.assign(errno, std::generic_category());
+                    return;
+                }
+
+                if (static_cast<size_t>(result) == buffer.size())
+                {
+                    // we might not have used a big enough buffer, grow and retry
+                    buffer.append(PATH_MAX, '\0');
+                    continue;
+                }
+
+                buffer.resize(static_cast<size_t>(result));
+                // "Conforming applications should not assume that the returned contents of the
+                // symbolic link are null-terminated." -- but std::string already adds the extra
+                // null we need
+                break;
+            }
+
+            if (::symlink(buffer.c_str(), destination.c_str()) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+#endif // ^^^ !_WIN32
         }
 
         virtual FileType status(const Path& target, std::error_code& ec) const override
