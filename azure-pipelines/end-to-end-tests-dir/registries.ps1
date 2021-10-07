@@ -290,7 +290,7 @@ try
     "---"
     Get-Content $installRoot/vcpkg/vcpkg-lock.json -Raw
     "---"
-    "{`n  $(ConvertTo-Json $gitRegistryUpstream): `{`n    `"HEAD`": `"$gitBaselineCommit`"`n  }`n}`n"
+    "{`n  $(ConvertTo-Json $gitRegistryUpstream): `{`n    `"$gitReference`": `"$gitBaselineCommit`"`n  }`n}`n"
     "---"
     Require-FileEquals $installRoot/vcpkg/vcpkg-lock.json "{`n  $(ConvertTo-Json $gitRegistryUpstream): `{`n    `"$gitReference`": `"$gitBaselineCommit`"`n  }`n}`n"
 
