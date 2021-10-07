@@ -511,16 +511,22 @@ namespace vcpkg
     static LockFile load_lockfile(const Json::Object& obj)
     {
         LockFile ret;
-        for (const auto& [repo, commit_info_value] : obj)
+        for (auto&& repo_to_commit_info_value : obj)
         {
+            auto repo = repo_to_commit_info_value.first;
+            const auto& commit_info_value = repo_to_commit_info_value.second;
+
             if (!commit_info_value.is_object())
             {
                 Debug::print("Lockfile value for key '", repo, "' was not an object\n");
                 return ret;
             }
 
-            for (const auto& [reference, commit] : commit_info_value.object())
+            for (auto&& reference_to_commit : commit_info_value.object())
             {
+                auto reference = reference_to_commit.first;
+                const auto& commit = reference_to_commit.second;
+
                 if (!commit.is_string())
                 {
                     Debug::print("Lockfile value for key '", reference, "' was not a string\n");
