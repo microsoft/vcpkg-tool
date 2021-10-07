@@ -217,11 +217,6 @@ try
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
     Throw-IfFailed
 
-    "---"
-    Get-Content $installRoot/vcpkg/vcpkg-lock.json -Raw
-    "---"
-    "{`n  $(ConvertTo-Json $gitRegistryUpstream): `{`n    `"HEAD`": `"$gitBaselineCommit`"`n  }`n}`n"
-    "---"
     Require-FileEquals $installRoot/vcpkg/vcpkg-lock.json "{`n  $(ConvertTo-Json $gitRegistryUpstream): `{`n    `"HEAD`": `"$gitBaselineCommit`"`n  }`n}`n"
 
     # Using the lock file means we can reinstall without pulling from the upstream registry
@@ -245,6 +240,8 @@ try
         -Value "{`n  `"/`": `"$gitBaselineCommit`"`n}`n"
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
     Throw-IfFailed
+
+    Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
 }
 finally
 {
@@ -289,6 +286,12 @@ try
 
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
     Throw-IfFailed
+
+    "---"
+    Get-Content $installRoot/vcpkg/vcpkg-lock.json -Raw
+    "---"
+    "{`n  $(ConvertTo-Json $gitRegistryUpstream): `{`n    `"HEAD`": `"$gitBaselineCommit`"`n  }`n}`n"
+    "---"
     Require-FileEquals $installRoot/vcpkg/vcpkg-lock.json "{`n  $(ConvertTo-Json $gitRegistryUpstream): `{`n    `"$gitReference`": `"$gitBaselineCommit`"`n  }`n}`n"
 
     # Using the lock file means we can reinstall without pulling from the upstream registry
@@ -313,6 +316,8 @@ try
         -Value "{`n  `"/`": `"$gitBaselineCommit`"`n}`n"
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
     Throw-IfFailed
+
+    Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
 }
 finally
 {
