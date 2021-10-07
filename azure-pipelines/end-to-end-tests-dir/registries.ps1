@@ -110,16 +110,16 @@ try
     $gitBaselineCommit = git rev-parse HEAD
     $gitRefVersionsObject = git rev-parse HEAD:versions
 
-    $gitReference = 'some-branch'
-    $CurrentTest = 'git checkout -b'
-    git @gitConfigOptions checkout -b $gitReference
-    Throw-IfFailed
-
-    $CurrentTest = 'git commit --allow-empty'
-    git @gitConfigOptions commit --allow-empty -m "second commit"
-    Throw-IfFailed
-
-    $gitReferenceBaselineCommit = git rev-parse HEAD
+#   $gitReference = 'some-branch'
+#   $CurrentTest = 'git checkout -b'
+#   git @gitConfigOptions checkout -b $gitReference
+#   Throw-IfFailed
+#
+#   $CurrentTest = 'git commit --allow-empty'
+#   git @gitConfigOptions commit --allow-empty -m "second commit"
+#   Throw-IfFailed
+#
+#   $gitReferenceBaselineCommit = git rev-parse HEAD
 }
 finally
 {
