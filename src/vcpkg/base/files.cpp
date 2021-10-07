@@ -610,6 +610,30 @@ namespace
             }
         }
 
+        void ftruncate(off_t length, std::error_code& ec) const noexcept
+        {
+            if (::ftruncate(fd, length) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+        }
+
+        void fchmod(mode_t new_mode, std::error_code& ec) const noexcept
+        {
+            if (::fchmod(fd, new_mode) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+        }
+
         operator bool() const noexcept { return fd >= 0; }
 
         int get() const noexcept { return fd; }
@@ -2284,67 +2308,24 @@ namespace vcpkg
 #if !defined(_WIN32)
             if (ec)
             {
-                auto dst = new_path;
-                dst += temp_suffix;
-
-                PosixFd i_fd{old_path.c_str(), O_RDONLY, ec};
-                if (ec) return;
-
-                PosixFd o_fd{dst.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0664, ec};
-                if (ec) return;
-
-#if defined(__linux__)
-                off_t bytes = 0;
-                struct stat info = {0};
-                i_fd.fstat(&info, ec);
-                if (ec) return;
-                auto written_bytes = sendfile(o_fd.get(), i_fd.get(), &bytes, info.st_size);
-#elif defined(__APPLE__)
-                auto written_bytes = fcopyfile(i_fd.get(), o_fd.get(), 0, COPYFILE_ALL);
-#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
-                ssize_t written_bytes = 0;
+                auto dst = new_path + temp_suffix;
+                this->copy_file(old_path, dst, CopyOptions::overwrite_existing, ec);
+                if (ec)
                 {
-                    constexpr std::size_t buffer_length = 4096;
-                    unsigned char buffer[buffer_length];
-                    while (auto read_bytes = i_fd.read(buffer, buffer_length))
-                    {
-                        if (read_bytes == -1)
-                        {
-                            written_bytes = -1;
-                            break;
-                        }
-                        auto remaining = read_bytes;
-                        while (remaining > 0)
-                        {
-                            auto read_result = o_fd.write(buffer, remaining);
-                            if (read_result == -1)
-                            {
-                                written_bytes = -1;
-                                // break two loops
-                                goto copy_failure;
-                            }
-                            remaining -= read_result;
-                        }
-                    }
-
-                copy_failure:;
-                }
-#endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
-                if (written_bytes == -1)
-                {
-                    ec.assign(errno, std::generic_category());
                     return;
                 }
 
-                i_fd.close();
-                o_fd.close();
-
                 this->rename(dst, new_path, ec);
-                if (ec) return;
+                if (ec)
+                {
+                    return;
+                }
+
                 this->remove(old_path, ec);
             }
 #endif // ^^^ !defined(_WIN32)
         }
+
         virtual bool remove(const Path& target, std::error_code& ec) override
         {
 #if defined(_WIN32)
@@ -2599,9 +2580,129 @@ namespace vcpkg
                                CopyOptions options,
                                std::error_code& ec) override
         {
+#if defined(_WIN32)
             return stdfs::copy_file(
                 to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            PosixFd source_fd{source.c_str(), O_RDONLY, ec};
+            if (ec)
+            {
+                return false;
+            }
+
+            struct stat source_stat;
+            source_fd.fstat(&source_stat, ec);
+            if (ec)
+            {
+                return false;
+            }
+
+            if (!S_ISREG(source_stat.st_mode))
+            {
+                // N4861 [fs.op.copy.file]/4: "report an error if"
+                // is_regular_file(from) is false
+                ec = std::make_error_code(std::errc::invalid_argument);
+                return false;
+            }
+
+            auto masked_options =
+                static_cast<CopyOptions>(static_cast<int>(options) & static_cast<int>(CopyOptions::existing_mask));
+            int open_options = O_WRONLY | O_CREAT;
+            if (masked_options != CopyOptions::overwrite_existing)
+            {
+                // the standard wording suggests that we should create a file through a broken symlink which would
+                // forbid use of O_EXCL. However, implementations like boost::copy_file don't do this and doing it
+                // would introduce more potential for TOCTOU bugs
+                open_options |= O_EXCL;
+            }
+
+            const mode_t open_mode = source_stat.st_mode | 0222; // ensure the file is created writable
+            PosixFd destination_fd{destination.c_str(), open_options, open_mode, ec};
+            if (ec)
+            {
+                if (masked_options == CopyOptions::skip_existing && ec == std::errc::file_exists)
+                {
+                    ec.clear();
+                }
+
+                return false;
+            }
+
+            struct stat destination_stat;
+            destination_fd.fstat(&destination_stat, ec);
+            if (ec)
+            {
+                return false;
+            }
+            else if (!S_ISREG(destination_stat.st_mode))
+            {
+                ec = std::make_error_code(std::errc::invalid_argument);
+                return false;
+            }
+
+            if (source_stat.st_dev == destination_stat.st_dev && source_stat.st_ino == destination_stat.st_ino)
+            {
+                // /4 exists(to) is true and equivalent(from, to) is true
+                ec = std::make_error_code(std::errc::device_or_resource_busy);
+                return false;
+            }
+
+            if (masked_options == CopyOptions::overwrite_existing)
+            {
+                destination_fd.ftruncate(0, ec);
+                if (ec) return false;
+            }
+
+#if defined(__linux__)
+            off_t bytes = 0;
+            if (sendfile(destination_fd.get(), source_fd.get(), &bytes, source_stat.st_size) == -1)
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+
+            destination_fd.fchmod(source_stat.st_mode, ec);
+            return !ec;
+#elif defined(__APPLE__)
+            if (fcopyfile(source_fd.get(), destination_fd.get(), 0, COPYFILE_ALL) == -1)
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+
+            // fcopyfile copies the mode so no need to fchmod here
+            return true;
+#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
+            constexpr std::size_t buffer_length = 4096;
+            unsigned char buffer[buffer_length];
+            while (auto read_bytes = i_fd.read(buffer, buffer_length))
+            {
+                if (read_bytes == -1)
+                {
+                    ec.assign(errno, std::generic_category());
+                    return false;
+                }
+
+                auto remaining = read_bytes;
+                while (remaining > 0)
+                {
+                    auto write_result = destination_fd.write(buffer, remaining);
+                    if (write_result == -1)
+                    {
+                        ec.assign(errno, std::generic_category());
+                        return false;
+                    }
+
+                    remaining -= write_result;
+                }
+            }
+
+            destination_fd.fchmod(source_stat.st_mode, ec);
+            return !ec;
+#endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
+#endif // ^^^ !_WIN32
         }
+
         virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) override
         {
 #if defined(_WIN32)

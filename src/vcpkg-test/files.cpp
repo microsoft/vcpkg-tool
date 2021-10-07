@@ -11,6 +11,10 @@
 
 #include <vcpkg-test/util.h>
 
+#if !defined(_WIN32)
+#include <sys/stat.h>
+#endif // ^^^ !_WIN32
+
 using namespace vcpkg;
 using Test::base_temporary_directory;
 
@@ -701,6 +705,86 @@ TEST_CASE ("get_regular_files_non_recursive_symlinks", "[files]")
                 root / "symlink-to-file.txt",
             };
         });
+}
+
+TEST_CASE ("copy_file", "[files]")
+{
+    urbg_t urbg;
+
+    auto& fs = setup();
+
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    INFO("temp dir is: " << temp_dir.native());
+
+    fs.create_directory(temp_dir, VCPKG_LINE_INFO);
+    const auto existing_from = temp_dir / "a";
+    constexpr StringLiteral existing_from_contents = "hello there";
+    fs.write_contents(existing_from, existing_from_contents, VCPKG_LINE_INFO);
+
+    const auto existing_to = temp_dir / "already_existing";
+    constexpr StringLiteral existing_to_contents = "already existing file";
+    fs.write_contents(existing_to, existing_to_contents, VCPKG_LINE_INFO);
+
+    std::error_code ec;
+
+    // N4861 [fs.op.copy.file]/4.1:
+    // "report an error [...] if ..."
+    //
+    // is_regular_file(from) is false
+    REQUIRE(!fs.copy_file(temp_dir, temp_dir / "b", CopyOptions::overwrite_existing, ec));
+    REQUIRE(ec);
+    REQUIRE(!fs.copy_file(temp_dir / "nonexistent", temp_dir / "b", CopyOptions::overwrite_existing, ec));
+    REQUIRE(ec);
+
+    // exists(to) is true and is_regular_file(to) is false
+    fs.create_directory(temp_dir / "a_directory", VCPKG_LINE_INFO);
+    REQUIRE(!fs.copy_file(existing_from, temp_dir / "a_directory", CopyOptions::overwrite_existing, ec));
+    REQUIRE(ec);
+
+    // exists(to) is true and equivalent(from, true) is true
+    REQUIRE(!fs.copy_file(existing_from, temp_dir / "a/../a", CopyOptions::overwrite_existing, ec));
+    REQUIRE(ec);
+
+    // exists(to) is true and [neither skip_existing nor overwrite_existing]
+    REQUIRE(!fs.copy_file(existing_from, existing_to, CopyOptions::none, ec));
+    REQUIRE(ec);
+
+    // Otherwise, copy the contents and attributes of the file from resolves to to the file
+    // to resolves to, if
+
+    // exists(to) is false
+    REQUIRE(fs.copy_file(existing_from, temp_dir / "b", CopyOptions::none, ec));
+    REQUIRE(!ec);
+    REQUIRE(fs.read_contents(temp_dir / "b", VCPKG_LINE_INFO) == existing_from_contents);
+
+    // [skip_existing]
+    REQUIRE(!fs.copy_file(existing_from, existing_to, CopyOptions::skip_existing, ec));
+    REQUIRE(!ec);
+    REQUIRE(fs.read_contents(existing_to, VCPKG_LINE_INFO) == existing_to_contents);
+
+    // [overwrite_existing]
+    REQUIRE(fs.copy_file(existing_from, existing_to, CopyOptions::overwrite_existing, ec));
+    REQUIRE(!ec);
+    REQUIRE(fs.read_contents(existing_to, VCPKG_LINE_INFO) == existing_from_contents);
+
+#if !defined(_WIN32)
+    // Also check that mode bits are copied
+    REQUIRE(::chmod(existing_from.c_str(), 0555) == 0); // note: not writable
+    const auto attributes_target = temp_dir / "attributes_target";
+    fs.copy_file(existing_from, attributes_target, CopyOptions::none, VCPKG_LINE_INFO);
+    REQUIRE(fs.read_contents(attributes_target, VCPKG_LINE_INFO) == existing_from_contents);
+    struct stat copied_attributes_stat;
+    REQUIRE(::stat(attributes_target.c_str(), &copied_attributes_stat) == 0);
+    const auto actual_mode = copied_attributes_stat.st_mode & 0777;
+    REQUIRE(actual_mode == 0555);
+#endif // ^^^ !_WIN32
+
+    Path fp;
+    fs.remove_all(temp_dir, ec, fp);
+    CHECK_EC_ON_FILE(fp, ec);
+
+    REQUIRE_FALSE(fs.exists(temp_dir, ec));
+    CHECK_EC_ON_FILE(temp_dir, ec);
 }
 
 TEST_CASE ("copy_symlink", "[files]")
