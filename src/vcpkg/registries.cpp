@@ -876,6 +876,7 @@ namespace
             RegistryImplDeserializer::BASELINE,
             RegistryImplDeserializer::PATH,
             RegistryImplDeserializer::REPO,
+            RegistryImplDeserializer::REFERENCE,
             PACKAGES,
         };
         return t;
