@@ -2629,9 +2629,10 @@ namespace vcpkg
                 // "Conforming applications should not assume that the returned contents of the
                 // symbolic link are null-terminated." -- but std::string already adds the extra
                 // null we need
+                break;
             }
 
-            if (::symlink(destination.c_str(), buffer.c_str()) == 0)
+            if (::symlink(buffer.c_str(), destination.c_str()) == 0)
             {
                 ec.clear();
             }

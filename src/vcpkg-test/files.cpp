@@ -727,6 +727,8 @@ TEST_CASE ("copy_symlink", "[files]")
     else
     {
         REQUIRE(fs.read_contents(temp_dir / "dir/sym", VCPKG_LINE_INFO) == "some file contents");
+        fs.copy_symlink(temp_dir / "dir/sym", temp_dir / "dir/sym_copy", VCPKG_LINE_INFO);
+        REQUIRE(fs.read_contents(temp_dir / "dir/sym_copy", VCPKG_LINE_INFO) == "some file contents");
     }
 
     Path fp;
