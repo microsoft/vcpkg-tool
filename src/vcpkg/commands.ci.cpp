@@ -427,8 +427,11 @@ namespace vcpkg::Commands::CI
                 {
                     it->plan_type = InstallPlanType::EXCLUDED;
                 }
-                it->build_options = vcpkg::Build::backcompat_prohibiting_package_options;
-                to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
+                else
+                {
+                    it->build_options = vcpkg::Build::backcompat_prohibiting_package_options;
+                    to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
+                }
             }
         }
 
@@ -596,6 +599,9 @@ namespace vcpkg::Commands::CI
             parent_hashes = Util::fmap(parsed_json.first.array(), [](const auto& json_object) {
                 auto abi = json_object.object().get("abi");
                 Checks::check_exit(VCPKG_LINE_INFO, abi);
+#ifdef _MSC_VER
+                _Analysis_assume_(abi);
+#endif
                 return abi->string().to_string();
             });
         }
