@@ -494,14 +494,14 @@ namespace vcpkg::Paragraphs
         }
     }
 
-    std::vector<SourceControlFileLocation> load_all_registry_ports(const VcpkgPaths& paths)
+    std::vector<SourceControlFileAndLocation> load_all_registry_ports(const VcpkgPaths& paths)
     {
         auto results = try_load_all_registry_ports(paths);
         load_results_print_error(results);
         return std::move(results.paragraphs);
     }
 
-    std::vector<SourceControlFileLocation> load_overlay_ports(const Filesystem& fs, const Path& directory)
+    std::vector<SourceControlFileAndLocation> load_overlay_ports(const Filesystem& fs, const Path& directory)
     {
         LoadResults ret;
 

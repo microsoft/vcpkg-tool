@@ -331,38 +331,49 @@ namespace vcpkg::Install
 
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
         {
-            if (use_head_version)
-                vcpkg::printf("Building package %s from HEAD...\n", display_name_with_features);
+            std::unique_ptr<BinaryControlFile> bcf;
+            auto restore = binary_cache.try_restore(paths, action);
+            if (restore == RestoreResult::restored)
+            {
+                auto maybe_bcf = Paragraphs::try_load_cached_package(paths, action.spec);
+                bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
+            }
+            else if (action.build_options.build_missing == Build::BuildMissing::NO)
+            {
+                return BuildResult::CACHE_MISSING;
+            }
             else
-                vcpkg::printf("Building package %s...\n", display_name_with_features);
-
-            auto result = Build::build_package(args, paths, action, binary_cache, build_logs_recorder, status_db);
-
-            if (BuildResult::DOWNLOADED == result.code)
             {
-                print2(Color::success, "Downloaded sources for package ", display_name_with_features, "\n");
-                return result;
+                if (use_head_version)
+                    vcpkg::printf("Building package %s from HEAD...\n", display_name_with_features);
+                else
+                    vcpkg::printf("Building package %s...\n", display_name_with_features);
+
+                auto result = Build::build_package(args, paths, action, binary_cache, build_logs_recorder, status_db);
+
+                if (BuildResult::DOWNLOADED == result.code)
+                {
+                    print2(Color::success, "Downloaded sources for package ", display_name_with_features, "\n");
+                    return result;
+                }
+
+                if (result.code != Build::BuildResult::SUCCEEDED)
+                {
+                    print2(Color::error, Build::create_error_message(result.code, action.spec), "\n");
+                    return result;
+                }
+
+                bcf = std::move(result.binary_control_file);
             }
+            // Build or restore succeeded and `bcf` is populated with the control file.
+            Checks::check_exit(VCPKG_LINE_INFO, bcf != nullptr);
 
-            if (result.code != Build::BuildResult::SUCCEEDED)
-            {
-                print2(Color::error, Build::create_error_message(result.code, action.spec), "\n");
-                return result;
-            }
-
-            vcpkg::printf("Building package %s... done\n", display_name_with_features);
-
-            auto bcf = std::make_unique<BinaryControlFile>(
-                Paragraphs::try_load_cached_package(paths, action.spec).value_or_exit(VCPKG_LINE_INFO));
             vcpkg::printf("Installing package %s...\n", display_name_with_features);
             const auto install_result = install_package(paths, *bcf, &status_db);
             BuildResult code;
             switch (install_result)
             {
-                case InstallResult::SUCCESS:
-                    vcpkg::printf(Color::success, "Installing package %s... done\n", display_name_with_features);
-                    code = BuildResult::SUCCEEDED;
-                    break;
+                case InstallResult::SUCCESS: code = BuildResult::SUCCEEDED; break;
                 case InstallResult::FILE_CONFLICTS: code = BuildResult::FILE_CONFLICTS; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
@@ -461,7 +472,6 @@ namespace vcpkg::Install
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
 
-        const auto timer = ElapsedTimer::create_started();
         for (auto&& action : action_plan.remove_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
@@ -484,7 +494,7 @@ namespace vcpkg::Install
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
-                print2(Build::create_user_troubleshooting_message(action.spec), '\n');
+                print2(Build::create_user_troubleshooting_message(action), '\n');
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -492,7 +502,7 @@ namespace vcpkg::Install
             this_install.current_summary->build_result = std::move(result);
         }
 
-        return InstallSummary{std::move(results), timer.to_string()};
+        return InstallSummary{std::move(results)};
     }
 
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
@@ -513,8 +523,9 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_MANIFEST_NO_DEFAULT_FEATURES = "x-no-default-features";
     static constexpr StringLiteral OPTION_MANIFEST_FEATURE = "x-feature";
     static constexpr StringLiteral OPTION_PROHIBIT_BACKCOMPAT_FEATURES = "x-prohibit-backcompat-features";
+    static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 14> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 15> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -531,8 +542,9 @@ namespace vcpkg::Install
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES,
          "(experimental) Fail install if a package attempts to use a deprecated feature"},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
-    static constexpr std::array<CommandSwitch, 14> MANIFEST_INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 15> MANIFEST_INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -547,6 +559,7 @@ namespace vcpkg::Install
         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_MANIFEST_NO_DEFAULT_FEATURES, "Don't install the default features from the manifest."},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
@@ -583,13 +596,19 @@ namespace vcpkg::Install
         nullptr,
     };
 
-    void print_usage_information(const BinaryParagraph& bpgh, const VcpkgPaths& paths)
+    void print_usage_information(const BinaryParagraph& bpgh,
+                                 std::set<std::string>& printed_usages,
+                                 const VcpkgPaths& paths)
     {
-        auto usage = get_cmake_usage(bpgh, paths);
-
-        if (!usage.message.empty())
+        auto message = get_cmake_usage(bpgh, paths).message;
+        if (!message.empty())
         {
-            print2(usage.message);
+            auto existing = printed_usages.lower_bound(message);
+            if (existing == printed_usages.end() || *existing != message)
+            {
+                print2(message);
+                printed_usages.insert(existing, std::move(message));
+            }
         }
     }
 
@@ -694,7 +713,7 @@ namespace vcpkg::Install
 
                     const auto name = cmakeify(bpgh.spec.name());
                     auto msg = Strings::concat(
-                        "The package ", bpgh.spec, " is header only and can be used from CMake via:\n\n");
+                        "The package ", bpgh.spec.name(), " is header only and can be used from CMake via:\n\n");
                     Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
                     Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
 
@@ -703,7 +722,7 @@ namespace vcpkg::Install
             }
             else
             {
-                auto msg = Strings::concat("The package ", bpgh.spec, " provides CMake targets:\n\n");
+                auto msg = Strings::concat("The package ", bpgh.spec.name(), " provides CMake targets:\n\n");
 
                 for (auto&& library_target_pair : library_targets)
                 {
@@ -779,6 +798,9 @@ namespace vcpkg::Install
             to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads);
         const bool prohibit_backcompat_features =
             Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES));
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+                                                 ? Dependencies::UnsupportedPortAction::Warn
+                                                 : Dependencies::UnsupportedPortAction::Error;
 
         BinaryCache binary_cache;
         if (!only_downloads)
@@ -912,11 +934,14 @@ namespace vcpkg::Install
             auto baseprovider = PortFileProvider::make_baseline_provider(paths);
 
             std::vector<std::string> extended_overlay_ports;
-            extended_overlay_ports.reserve(args.overlay_ports.size() + 1);
+            extended_overlay_ports.reserve(args.overlay_ports.size() + 2);
             extended_overlay_ports.push_back(manifest_path.parent_path().to_string());
             Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
+            if (paths.get_configuration().registry_set.is_default_builtin_registry())
+            {
+                extended_overlay_ports.push_back(paths.builtin_ports_directory().native());
+            }
             auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
-
             PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
             auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
                                                                             *baseprovider,
@@ -925,9 +950,13 @@ namespace vcpkg::Install
                                                                             dependencies,
                                                                             manifest_scf.core_paragraph->overrides,
                                                                             toplevel,
-                                                                            host_triplet)
+                                                                            host_triplet,
+                                                                            unsupported_port_action)
                                     .value_or_exit(VCPKG_LINE_INFO);
-
+            for (const auto& warning : install_plan.warnings)
+            {
+                print2(Color::warning, warning, '\n');
+            }
             for (InstallPlanAction& action : install_plan.install_actions)
             {
                 action.build_options = install_plan_options;
@@ -969,9 +998,13 @@ namespace vcpkg::Install
         StatusParagraphs status_db = database_load_check(paths);
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
-        auto action_plan =
-            Dependencies::create_feature_install_plan(provider, var_provider, specs, status_db, {host_triplet});
+        auto action_plan = Dependencies::create_feature_install_plan(
+            provider, var_provider, specs, status_db, {host_triplet, unsupported_port_action});
 
+        for (const auto& warning : action_plan.warnings)
+        {
+            print2(Color::warning, warning, '\n');
+        }
         for (auto&& action : action_plan.install_actions)
         {
             action.build_options = install_plan_options;
@@ -1052,7 +1085,7 @@ namespace vcpkg::Install
                                                Build::null_build_logs_recorder(),
                                                var_provider);
 
-        print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
+        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {
@@ -1070,13 +1103,14 @@ namespace vcpkg::Install
             fs.write_contents(it_xunit->second, xunit_doc, VCPKG_LINE_INFO);
         }
 
+        std::set<std::string> printed_usages;
         for (auto&& result : summary.results)
         {
             if (!result.action) continue;
             if (result.action->request_type != RequestType::USER_REQUESTED) continue;
             auto bpgh = result.get_binary_paragraph();
             if (!bpgh) continue;
-            print_usage_information(*bpgh, paths);
+            print_usage_information(*bpgh, printed_usages, paths);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
@@ -1177,8 +1211,9 @@ namespace vcpkg::Install
 
         for (auto&& install_action : plan.install_actions)
         {
-            auto&& version_as_string =
-                install_action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).to_versiont().to_string();
+            auto&& version_as_string = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
+                                           .to_versiont()
+                                           .to_string();
             if (!specs_string.empty()) specs_string.push_back(',');
             specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
                                             ":",

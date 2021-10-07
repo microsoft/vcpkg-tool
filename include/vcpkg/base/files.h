@@ -7,12 +7,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <memory>
 #include <system_error>
 
 #if defined(_WIN32)
-#define VCPKG_PREFERED_SEPARATOR "\\"
+#define VCPKG_PREFERRED_SEPARATOR "\\"
 #else // ^^^ _WIN32 / !_WIN32 vvv
-#define VCPKG_PREFERED_SEPARATOR "/"
+#define VCPKG_PREFERRED_SEPARATOR "/"
 #endif // _WIN32
 
 namespace vcpkg
@@ -32,7 +33,6 @@ namespace vcpkg
         existing_mask = 0xF,
         skip_existing = 0x1,
         overwrite_existing = 0x2,
-        update_existing = 0x4,
 
         recursive = 0x10,
 
@@ -103,30 +103,6 @@ namespace vcpkg
         std::string m_str;
     };
 
-#if defined(_WIN32)
-    struct SystemHandle
-    {
-        using type = intptr_t; // HANDLE
-        type system_handle = -1;
-
-        bool is_valid() const { return system_handle != -1; }
-    };
-#else
-    struct SystemHandle
-    {
-        using type = int; // file descriptor
-        type system_handle = -1;
-
-        bool is_valid() const { return system_handle != -1; }
-    };
-#endif
-
-    inline bool operator==(SystemHandle lhs, SystemHandle rhs) noexcept
-    {
-        return lhs.system_handle == rhs.system_handle;
-    }
-    inline bool operator!=(SystemHandle lhs, SystemHandle rhs) noexcept { return !(lhs == rhs); }
-
     enum class FileType
     {
         none,
@@ -177,7 +153,7 @@ namespace vcpkg
         {
 #if defined(_WIN32)
             return ::_fseeki64(m_fs, static_cast<long long>(offset), origin);
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
             Checks::check_exit(VCPKG_LINE_INFO, offset < LLONG_MAX);
             return ::fseek(m_fs, offset, origin);
 #endif // ^^^ !_WIN32
@@ -186,7 +162,7 @@ namespace vcpkg
         {
 #if defined(_WIN32)
             return ::_fseeki64(m_fs, offset, origin);
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
             return ::fseek(m_fs, offset, origin);
 #endif // ^^^ !_WIN32
         }
@@ -196,7 +172,7 @@ namespace vcpkg
             return this->seek(static_cast<long long>(offset), origin);
         }
         int eof() const noexcept { return ::feof(m_fs); }
-        int error() const noexcept { return ::ferror(m_fs); }
+        std::error_code error() const noexcept { return std::error_code(::ferror(m_fs), std::generic_category()); }
 
         ~FilePointer()
         {
@@ -229,6 +205,11 @@ namespace vcpkg
         }
 
         int put(int c) const noexcept { return ::fputc(c, m_fs); }
+    };
+
+    struct IExclusiveFileLock
+    {
+        virtual ~IExclusiveFileLock() = default;
     };
 
     struct Filesystem
@@ -289,7 +270,7 @@ namespace vcpkg
         void remove_all(const Path& base, std::error_code& ec);
         void remove_all(const Path& base, LineInfo li);
 
-        virtual void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) = 0;
+        void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point);
         void remove_all_inside(const Path& base, std::error_code& ec);
         void remove_all_inside(const Path& base, LineInfo li);
 
@@ -362,13 +343,14 @@ namespace vcpkg
         // however, if `/a/b` doesn't exist, then the functions will fail.
 
         // waits forever for the file lock
-        virtual SystemHandle take_exclusive_file_lock(const Path& lockfile, std::error_code&) = 0;
-        SystemHandle take_exclusive_file_lock(const Path& lockfile, LineInfo li);
+        virtual std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
+                                                                             std::error_code&) = 0;
+        std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile, LineInfo li);
 
         // waits, at most, 1.5 seconds, for the file lock
-        virtual SystemHandle try_take_exclusive_file_lock(const Path& lockfile, std::error_code&) = 0;
-
-        virtual void unlock_file_lock(SystemHandle handle, std::error_code&) = 0;
+        virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
+                                                                                 std::error_code&) = 0;
+        std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile, LineInfo li);
 
         virtual std::vector<Path> find_from_PATH(const std::string& name) const = 0;
 
@@ -387,54 +369,11 @@ namespace vcpkg
 
     void print_paths(const std::vector<Path>& paths);
 
-#if defined(_WIN32)
-    constexpr char preferred_separator = '\\';
-#else
-    constexpr char preferred_separator = '/';
-#endif // _WIN32
+    constexpr char preferred_separator = VCPKG_PREFERRED_SEPARATOR[0];
 
 #if defined(_WIN32)
     Path win32_fix_path_case(const Path& source);
 #endif // _WIN32
-
-    struct ExclusiveFileLock
-    {
-        enum class Wait
-        {
-            Yes,
-            No,
-        };
-
-        ExclusiveFileLock() = default;
-        ExclusiveFileLock(ExclusiveFileLock&&) = delete;
-        ExclusiveFileLock& operator=(ExclusiveFileLock&&) = delete;
-
-        ExclusiveFileLock(Wait wait, Filesystem& fs, const Path& lockfile, std::error_code& ec) : m_fs(&fs)
-        {
-            switch (wait)
-            {
-                case Wait::Yes: m_handle = m_fs->take_exclusive_file_lock(lockfile, ec); break;
-                case Wait::No: m_handle = m_fs->try_take_exclusive_file_lock(lockfile, ec); break;
-            }
-        }
-        ~ExclusiveFileLock() { clear(); }
-
-        explicit operator bool() const { return m_handle.is_valid(); }
-        bool has_lock() const { return m_handle.is_valid(); }
-
-        void clear()
-        {
-            if (m_fs && m_handle.is_valid())
-            {
-                std::error_code ignore;
-                m_fs->unlock_file_lock(std::exchange(m_handle, SystemHandle{}), ignore);
-            }
-        }
-
-    private:
-        Filesystem* m_fs;
-        SystemHandle m_handle;
-    };
 
     struct NotExtensionCaseSensitive
     {

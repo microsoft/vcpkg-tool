@@ -170,7 +170,7 @@ namespace
         Checks::check_exit(VCPKG_LINE_INFO, created_last, "unable to clear path: %s", dir);
     }
 
-    static ExitCodeAndOutput decompress_archive(const VcpkgPaths& paths, const Path& dst, const Path& archive_path)
+    static Command decompress_archive_cmd(const VcpkgPaths& paths, const Path& dst, const Path& archive_path)
     {
         Command cmd;
 #if defined(_WIN32)
@@ -184,16 +184,7 @@ namespace
         (void)paths;
         cmd.string_arg("unzip").string_arg("-qq").path_arg(archive_path).string_arg("-d" + dst.native());
 #endif
-        return cmd_execute_and_capture_output(cmd, get_clean_environment());
-    }
-
-    static ExitCodeAndOutput clean_decompress_archive(const VcpkgPaths& paths,
-                                                      const PackageSpec& spec,
-                                                      const Path& archive_path)
-    {
-        auto pkg_path = paths.package_dir(spec);
-        clean_prepare_dir(paths.get_filesystem(), pkg_path);
-        return decompress_archive(paths, pkg_path, archive_path);
+        return cmd;
     }
 
     // Compress the source directory into the destination file.
@@ -242,50 +233,111 @@ namespace
                       View<Dependencies::InstallPlanAction> actions,
                       View<CacheStatus*> cache_status) const override
         {
-            for (size_t idx = 0; idx < actions.size(); ++idx)
+            std::vector<size_t> to_try_restore_idxs;
+            std::vector<const Dependencies::InstallPlanAction*> to_try_restore;
+
+            for (const auto& archives_root_dir : m_read_dirs)
             {
-                auto&& action = actions[idx];
-                if (action.has_package_abi() && cache_status[idx]->should_attempt_restore(this))
+                const auto timer = ElapsedTimer::create_started();
+                to_try_restore_idxs.clear();
+                to_try_restore.clear();
+                for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
-                    if (try_restore(paths, actions[idx]) == RestoreResult::restored)
+                    auto&& action = actions[idx];
+                    if (action.has_package_abi() && cache_status[idx]->should_attempt_restore(this))
                     {
-                        cache_status[idx]->mark_restored();
+                        to_try_restore_idxs.push_back(idx);
+                        to_try_restore.push_back(&action);
+                    }
+                }
+                auto results = try_restore_n(paths, to_try_restore, archives_root_dir);
+                int num_restored = 0;
+                for (size_t n = 0; n < to_try_restore.size(); ++n)
+                {
+                    if (results[n] == RestoreResult::restored)
+                    {
+                        cache_status[to_try_restore_idxs[n]]->mark_restored();
+                        ++num_restored;
+                    }
+                }
+
+                print2("Restored ",
+                       num_restored,
+                       " packages from ",
+                       archives_root_dir.native(),
+                       " in ",
+                       timer.elapsed(),
+                       ". Use --debug to see more details.\n");
+            }
+        }
+
+        std::vector<RestoreResult> try_restore_n(const VcpkgPaths& paths,
+                                                 View<const Dependencies::InstallPlanAction*> actions,
+                                                 const Path& archives_root_dir) const
+        {
+            auto& fs = paths.get_filesystem();
+            std::vector<RestoreResult> results(actions.size(), RestoreResult::unavailable);
+            std::vector<size_t> action_idxs;
+            std::vector<Command> jobs;
+            std::vector<Path> archive_paths;
+            for (size_t i = 0; i < actions.size(); ++i)
+            {
+                const auto& action = *actions[i];
+                const auto& spec = action.spec;
+                const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                const auto archive_subpath = make_archive_subpath(abi_tag);
+                auto archive_path = archives_root_dir / archive_subpath;
+                if (fs.exists(archive_path, IgnoreErrors{}))
+                {
+                    auto pkg_path = paths.package_dir(spec);
+                    clean_prepare_dir(paths.get_filesystem(), pkg_path);
+                    jobs.push_back(decompress_archive_cmd(paths, pkg_path, archive_path));
+                    action_idxs.push_back(i);
+                    archive_paths.push_back(std::move(archive_path));
+                }
+            }
+
+            auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+
+            for (size_t j = 0; j < jobs.size(); ++j)
+            {
+                const auto i = action_idxs[j];
+                const auto& archive_result = job_results[j];
+                if (archive_result.exit_code == 0)
+                {
+                    results[i] = RestoreResult::restored;
+                    Debug::print("Restored ", archive_paths[j].native(), '\n');
+                }
+                else
+                {
+                    if (actions[i]->build_options.purge_decompress_failure == Build::PurgeDecompressFailure::YES)
+                    {
+                        Debug::print(
+                            "Failed to decompress archive package; purging: ", archive_paths[j].native(), '\n');
+                        fs.remove(archive_paths[j], IgnoreErrors{});
+                    }
+                    else
+                    {
+                        Debug::print("Failed to decompress archive package: ", archive_paths[j].native(), '\n');
                     }
                 }
             }
+            return results;
         }
 
         RestoreResult try_restore(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
         {
-            auto& fs = paths.get_filesystem();
-            auto& spec = action.spec;
-            const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-            const auto archive_subpath = make_archive_subpath(abi_tag);
+            // Note: this method is almost never called -- it will only be called if another provider promised to
+            // restore a package but then failed at runtime
+            auto p_action = &action;
             for (const auto& archives_root_dir : m_read_dirs)
             {
-                auto archive_path = archives_root_dir / archive_subpath;
-                if (fs.exists(archive_path, IgnoreErrors{}))
+                if (try_restore_n(paths, {&p_action, 1}, archives_root_dir)[0] == RestoreResult::restored)
                 {
-                    print2("Using cached binary package: ", archive_path, "\n");
-
-                    int archive_result = clean_decompress_archive(paths, spec, archive_path).exit_code;
-
-                    if (archive_result == 0)
-                    {
-                        return RestoreResult::restored;
-                    }
-
-                    print2("Failed to decompress archive package\n");
-                    if (action.build_options.purge_decompress_failure == Build::PurgeDecompressFailure::YES)
-                    {
-                        print2("Purging bad archive\n");
-                        fs.remove(archive_path, IgnoreErrors{});
-                    }
+                    print2("Restored from ", archives_root_dir.native(), "\n");
+                    return RestoreResult::restored;
                 }
-
-                vcpkg::printf("Could not locate cached archive: %s\n", archive_path);
             }
-
             return RestoreResult::unavailable;
         }
 
@@ -409,6 +461,7 @@ namespace
                       View<Dependencies::InstallPlanAction> actions,
                       View<CacheStatus*> cache_status) const override
         {
+            const auto timer = ElapsedTimer::create_started();
             auto& fs = paths.get_filesystem();
             size_t this_restore_count = 0;
             std::vector<std::pair<std::string, Path>> url_paths;
@@ -437,30 +490,39 @@ namespace
                 print2("Attempting to fetch ", url_paths.size(), " packages from HTTP servers.\n");
 
                 auto codes = Downloads::download_files(fs, url_paths);
+                std::vector<size_t> action_idxs;
+                std::vector<Command> jobs;
                 for (size_t i = 0; i < codes.size(); ++i)
                 {
                     if (codes[i] == 200)
                     {
-                        int archive_result = decompress_archive(paths,
-                                                                paths.package_dir(actions[url_indices[i]].spec),
-                                                                url_paths[i].second)
-                                                 .exit_code;
-                        if (archive_result == 0)
-                        {
-                            // decompression success
-                            ++this_restore_count;
-                            fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
-                            cache_status[url_indices[i]]->mark_restored();
-                        }
-                        else
-                        {
-                            Debug::print("Failed to decompress ", url_paths[i].second, '\n');
-                        }
+                        action_idxs.push_back(i);
+                        jobs.push_back(decompress_archive_cmd(
+                            paths, paths.package_dir(actions[url_indices[i]].spec), url_paths[i].second));
+                    }
+                }
+                auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+                for (size_t j = 0; j < jobs.size(); ++j)
+                {
+                    const auto i = action_idxs[j];
+                    if (job_results[j].exit_code == 0)
+                    {
+                        ++this_restore_count;
+                        fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
+                        cache_status[url_indices[i]]->mark_restored();
+                    }
+                    else
+                    {
+                        Debug::print("Failed to decompress ", url_paths[i].second, '\n');
                     }
                 }
             }
 
-            print2("Restored ", this_restore_count, " packages from HTTP servers. Use --debug for more information.\n");
+            print2("Restored ",
+                   this_restore_count,
+                   " packages from HTTP servers in ",
+                   timer.elapsed(),
+                   ". Use --debug for more information.\n");
         }
 
         void precheck(const VcpkgPaths&,
@@ -627,6 +689,7 @@ namespace
             {
                 return;
             }
+            const auto timer = ElapsedTimer::create_started();
 
             auto& fs = paths.get_filesystem();
 
@@ -735,7 +798,7 @@ namespace
                 Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
                     // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the
                     // output directory
-                    auto nupkg_path = paths.package_dir(nuget_ref.spec) / nuget_ref.reference.id + ".nupkg";
+                    const auto nupkg_path = paths.packages / nuget_ref.reference.id / nuget_ref.reference.id + ".nupkg";
                     if (fs.exists(nupkg_path, IgnoreErrors{}))
                     {
                         fs.remove(nupkg_path, VCPKG_LINE_INFO);
@@ -743,6 +806,13 @@ namespace
                                            !fs.exists(nupkg_path, IgnoreErrors{}),
                                            "Unable to remove nupkg after restoring: %s",
                                            nupkg_path);
+                        const auto nuget_dir = nuget_ref.spec.dir();
+                        if (nuget_dir != nuget_ref.reference.id)
+                        {
+                            const auto path_from = paths.packages / nuget_ref.reference.id;
+                            const auto path_to = paths.packages / nuget_dir;
+                            fs.rename(path_from, path_to, VCPKG_LINE_INFO);
+                        }
                         cache_status[nuget_ref.result_index]->mark_restored();
                         return true;
                     }
@@ -753,7 +823,9 @@ namespace
 
             print2("Restored ",
                    total_restore_attempts - attempts.size(),
-                   " packages from NuGet. Use --debug for more information.\n");
+                   " packages from NuGet in ",
+                   timer.elapsed(),
+                   ". Use --debug for more information.\n");
         }
 
         RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
@@ -926,6 +998,8 @@ namespace
         {
             auto& fs = paths.get_filesystem();
 
+            const auto timer = ElapsedTimer::create_started();
+
             size_t restored_count = 0;
             for (const auto& prefix : m_read_prefixes)
             {
@@ -950,25 +1024,40 @@ namespace
                 if (url_paths.empty()) break;
 
                 print2("Attempting to fetch ", url_paths.size(), " packages from GCS.\n");
+                std::vector<Command> jobs;
+                std::vector<size_t> idxs;
                 for (size_t idx = 0; idx < url_paths.size(); ++idx)
                 {
                     auto&& action = actions[url_indices[idx]];
                     auto&& url_path = url_paths[idx];
                     if (!gsutil_download_file(url_path.first, url_path.second)) continue;
-                    if (decompress_archive(paths, paths.package_dir(action.spec), url_path.second).exit_code != 0)
+                    jobs.push_back(decompress_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
+                    idxs.push_back(idx);
+                }
+
+                const auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+
+                for (size_t j = 0; j < jobs.size(); ++j)
+                {
+                    const auto idx = idxs[j];
+                    if (job_results[j].exit_code != 0)
                     {
-                        Debug::print("Failed to decompress ", url_path.second, '\n');
+                        Debug::print("Failed to decompress ", url_paths[idx].second, '\n');
                         continue;
                     }
 
                     // decompression success
                     ++restored_count;
-                    fs.remove(url_path.second, VCPKG_LINE_INFO);
+                    fs.remove(url_paths[idx].second, VCPKG_LINE_INFO);
                     cache_status[url_indices[idx]]->mark_restored();
                 }
             }
 
-            print2("Restored ", restored_count, " packages from GCS servers. Use --debug for more information.\n");
+            print2("Restored ",
+                   restored_count,
+                   " packages from GCS servers in ",
+                   timer.elapsed(),
+                   ". Use --debug for more information.\n");
         }
 
         RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
@@ -1916,7 +2005,7 @@ std::string vcpkg::generate_nuspec(const VcpkgPaths& paths,
                                    details::NuGetRepoInfo rinfo)
 {
     auto& spec = action.spec;
-    auto& scf = *action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+    auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
     auto& version = scf.core_paragraph->version;
     const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
     const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
@@ -1993,10 +2082,12 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
              "source changes or disappears.");
     tbl.blank();
     tbl.blank();
-    tbl.text(Strings::concat(
-        "Asset caching can be configured by setting the environment variable ",
-        VcpkgCmdArguments::ASSET_SOURCES_ENV,
-        " to a semicolon-delimited list of source strings. Characters can be escaped using backtick (`)."));
+    tbl.text(Strings::concat("Asset caching can be configured either by setting the environment variable ",
+                             VcpkgCmdArguments::ASSET_SOURCES_ENV,
+                             " to a semicolon-delimited list of source strings or by passing a sequence of `--",
+                             VcpkgCmdArguments::ASSET_SOURCES_ARG,
+                             "=<source>` command line options. Command line sources are interpreted after environment "
+                             "sources. Commas, semicolons, and backticks can be escaped using backtick (`)."));
     tbl.blank();
     tbl.blank();
     tbl.header("Valid source strings");

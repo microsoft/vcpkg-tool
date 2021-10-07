@@ -115,6 +115,16 @@ namespace vcpkg
         return cmd_execute_and_capture_output(cmd_line, InWorkingDirectory{Path()}, env);
     }
 
+    std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
+                                                                           InWorkingDirectory wd,
+                                                                           const Environment& env = {});
+
+    inline std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
+                                                                                  const Environment& env = {})
+    {
+        return cmd_execute_and_capture_output_parallel(cmd_lines, InWorkingDirectory{Path()}, env);
+    }
+
     int cmd_execute_and_stream_lines(const Command& cmd_line,
                                      InWorkingDirectory wd,
                                      std::function<void(StringView)> per_line_cb,

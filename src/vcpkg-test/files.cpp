@@ -141,6 +141,59 @@ namespace
 
         return fs;
     }
+
+    template<class Enumerator, class ExpectedGenerator>
+    void do_filesystem_enumeration_test(Enumerator&& enumerator, ExpectedGenerator&& generate_expected)
+    {
+        urbg_t urbg;
+
+        auto& fs = setup();
+
+        auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+        INFO("temp dir is: " << temp_dir.native());
+
+        const auto target_root = temp_dir / "target";
+
+        const auto target_file = target_root / "file.txt";
+        const auto target_symlink = target_root / "symlink-to-file.txt";
+        const auto target_directory = target_root / "some-directory";
+        const auto target_directory_symlink = target_root / "symlink-to-some-directory";
+
+        const auto target_inside_file = target_directory / "file2.txt";
+        const auto target_inside_symlink = target_directory / "symlink-to-file2.txt";
+        const auto target_inside_directory = target_directory / "some-inner-directory";
+        const auto target_inside_directory_symlink = target_directory / "symlink-to-some-inner-directory";
+
+        fs.create_directory(temp_dir, VCPKG_LINE_INFO);
+        fs.create_directory(target_root, VCPKG_LINE_INFO);
+        fs.create_directory(target_directory, VCPKG_LINE_INFO);
+        fs.create_directory(target_inside_directory, VCPKG_LINE_INFO);
+
+        fs.write_contents(target_file, "file", VCPKG_LINE_INFO);
+        fs.write_contents(target_inside_file, "file in directory", VCPKG_LINE_INFO);
+
+        std::error_code ec;
+        fs.create_symlink(target_file, target_symlink, ec);
+        if (ec)
+        {
+            // if we get not supported or permission denied, assume symlinks aren't supported
+            // on this system and the test is a no-op
+            REQUIRE((ec == std::errc::not_supported || ec == std::errc::permission_denied));
+        }
+        else
+        {
+            fs.create_symlink(target_inside_file, target_inside_symlink, VCPKG_LINE_INFO);
+            fs.create_directory_symlink(target_directory, target_directory_symlink, VCPKG_LINE_INFO);
+            fs.create_directory_symlink(target_inside_directory, target_inside_directory_symlink, VCPKG_LINE_INFO);
+
+            auto results = std::forward<Enumerator>(enumerator)(fs, target_root);
+            std::sort(results.begin(), results.end());
+            auto expected = std::forward<ExpectedGenerator>(generate_expected)(target_root);
+            REQUIRE(results == expected);
+        }
+
+        fs.remove_all(temp_dir, VCPKG_LINE_INFO);
+    }
 }
 
 TEST_CASE ("vcpkg Path regular operations", "[filesystem][files]")
@@ -199,7 +252,7 @@ TEST_CASE ("vcpkg Path generic", "[filesystem][files]")
     Path bp("some\\path\\/\\/with\\backslashes");
 #if defined(_WIN32)
     CHECK(bp.generic_u8string() == StringView("some/path////with/backslashes"));
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
     CHECK(bp.generic_u8string() == StringView("some\\path\\/\\/with\\backslashes"));
 #endif // _WIN32
 }
@@ -215,8 +268,8 @@ static void test_op_slash(StringView base, StringView append, StringView expecte
 
 TEST_CASE ("vcpkg Path::operator/", "[filesystem][files]")
 {
-    test_op_slash("/a/b", "c/d", "/a/b" VCPKG_PREFERED_SEPARATOR "c/d");
-    test_op_slash("a/b", "c/d", "a/b" VCPKG_PREFERED_SEPARATOR "c/d");
+    test_op_slash("/a/b", "c/d", "/a/b" VCPKG_PREFERRED_SEPARATOR "c/d");
+    test_op_slash("a/b", "c/d", "a/b" VCPKG_PREFERRED_SEPARATOR "c/d");
     test_op_slash("/a/b", "/c/d", "/c/d");
 
 #if defined(_WIN32)
@@ -227,7 +280,7 @@ TEST_CASE ("vcpkg Path::operator/", "[filesystem][files]")
     test_op_slash("C:/a/b", "D:/c/d", "D:/c/d");
     test_op_slash("C:/a/b", "D:c/d", "D:c/d");
     test_op_slash("C:/a/b", "C:c/d", "C:/a/b\\c/d");
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
     test_op_slash("C:/a/b", "c/d", "C:/a/b/c/d");
     test_op_slash("C:a/b", "c/d", "C:a/b/c/d");
     test_op_slash("C:a/b", "/c/d", "/c/d");
@@ -272,18 +325,18 @@ TEST_CASE ("vcpkg Path::preferred and Path::make_preferred", "[filesystem][files
 {
     test_preferred("", "");
     test_preferred("hello", "hello");
-    test_preferred("/hello", VCPKG_PREFERED_SEPARATOR "hello");
-    test_preferred("hello/", "hello" VCPKG_PREFERED_SEPARATOR);
-    test_preferred("hello/////////there", "hello" VCPKG_PREFERED_SEPARATOR "there");
-    test_preferred("hello/////////there///" VCPKG_PREFERED_SEPARATOR "world",
-                   "hello" VCPKG_PREFERED_SEPARATOR "there" VCPKG_PREFERED_SEPARATOR "world");
-    test_preferred("/a/b", VCPKG_PREFERED_SEPARATOR "a" VCPKG_PREFERED_SEPARATOR "b");
-    test_preferred("a/b", "a" VCPKG_PREFERED_SEPARATOR "b");
+    test_preferred("/hello", VCPKG_PREFERRED_SEPARATOR "hello");
+    test_preferred("hello/", "hello" VCPKG_PREFERRED_SEPARATOR);
+    test_preferred("hello/////////there", "hello" VCPKG_PREFERRED_SEPARATOR "there");
+    test_preferred("hello/////////there///" VCPKG_PREFERRED_SEPARATOR "world",
+                   "hello" VCPKG_PREFERRED_SEPARATOR "there" VCPKG_PREFERRED_SEPARATOR "world");
+    test_preferred("/a/b", VCPKG_PREFERRED_SEPARATOR "a" VCPKG_PREFERRED_SEPARATOR "b");
+    test_preferred("a/b", "a" VCPKG_PREFERRED_SEPARATOR "b");
 
 #if defined(_WIN32)
     test_preferred(R"(\\server/share\a/b)", R"(\\server\share\a\b)");
     test_preferred(R"(//server/share\a/b)", R"(\\server\share\a\b)");
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
     test_preferred(R"(//server/share\a/b)", R"(/server/share\a/b)");
     test_preferred(R"(//server/share\a/b)", R"(/server/share\a/b)");
 #endif // ^^^ !_WIN32
@@ -419,7 +472,7 @@ TEST_CASE ("Path::make_parent_path and Path::parent_path", "[filesystem][files]"
     test_parent_path(R"(\\server\a)", R"(\\server\)");
     test_parent_path(R"(\\server\a\)", R"(\\server\a)");
     test_parent_path(R"(\\server\a\b)", R"(\\server\a)");
-#else // ^^^ _WIN32 / !_WIN32 vvv
+#else  // ^^^ _WIN32 / !_WIN32 vvv
     test_parent_path("C:/", "C:");
     test_parent_path("C:/a", "C:");
     test_parent_path("C:/a/", "C:/a");
@@ -470,7 +523,7 @@ TEST_CASE ("Path decomposition", "[filesystem][files]")
     bool single_slash_is_absolute =
 #if defined(_WIN32)
         false
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
         true
 #endif // ^^^ !_WIN32
         ;
@@ -478,7 +531,7 @@ TEST_CASE ("Path decomposition", "[filesystem][files]")
     bool drive_is_absolute =
 #if defined(_WIN32)
         true
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
         false
 #endif // ^^^ !_WIN32
         ;
@@ -488,7 +541,7 @@ TEST_CASE ("Path decomposition", "[filesystem][files]")
 #if defined(_WIN32)
     test_path_decomposition("C:a", false, "a", "");
     test_path_decomposition("C:a.ext", false, "a", ".ext");
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
     test_path_decomposition("C:a", false, "C:a", "");
     test_path_decomposition("C:a.ext", false, "C:a", ".ext");
 #endif // ^^^ !_WIN32
@@ -517,6 +570,137 @@ TEST_CASE ("remove all", "[files]")
 
     REQUIRE_FALSE(fs.exists(temp_dir, ec));
     CHECK_EC_ON_FILE(temp_dir, ec);
+}
+
+TEST_CASE ("remove all symlinks", "[files]")
+{
+    urbg_t urbg;
+
+    auto& fs = setup();
+
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    INFO("temp dir is: " << temp_dir.native());
+
+    const auto target_root = temp_dir / "target";
+    fs.create_directories(target_root, VCPKG_LINE_INFO);
+    const auto target_file = target_root / "file.txt";
+    fs.write_contents(target_file, "", VCPKG_LINE_INFO);
+    const auto symlink_inside_dir = temp_dir / "symlink_inside";
+    fs.create_directory(symlink_inside_dir, VCPKG_LINE_INFO);
+    std::error_code ec;
+    fs.create_directory_symlink(target_root, symlink_inside_dir / "symlink", ec);
+    if (ec)
+    {
+        // if we get not supported or permission denied, assume symlinks aren't supported
+        // on this system and the test is a no-op
+        REQUIRE((ec == std::errc::not_supported || ec == std::errc::permission_denied));
+    }
+    else
+    {
+        const auto symlink_direct = temp_dir / "direct_symlink";
+        fs.create_directory_symlink(target_root, symlink_direct, VCPKG_LINE_INFO);
+
+        // removing a directory with a symlink inside should remove the symlink and not the target:
+        fs.remove_all(symlink_inside_dir, VCPKG_LINE_INFO);
+        REQUIRE(!fs.exists(symlink_inside_dir, VCPKG_LINE_INFO));
+        REQUIRE(fs.exists(target_root, VCPKG_LINE_INFO));
+
+        // removing a symlink should remove the symlink and not the target:
+        fs.remove_all(symlink_direct, VCPKG_LINE_INFO);
+        REQUIRE(!fs.exists(symlink_direct, VCPKG_LINE_INFO));
+        REQUIRE(fs.exists(target_root, VCPKG_LINE_INFO));
+    }
+
+    Path fp;
+    fs.remove_all(temp_dir, ec, fp);
+    CHECK_EC_ON_FILE(fp, ec);
+
+    REQUIRE_FALSE(fs.exists(temp_dir, ec));
+    CHECK_EC_ON_FILE(temp_dir, ec);
+}
+
+TEST_CASE ("get_files_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_files_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "file.txt",
+                root / "some-directory",
+                root / "some-directory" / "file2.txt",
+                root / "some-directory" / "some-inner-directory",
+                root / "some-directory" / "symlink-to-file2.txt",
+                root / "some-directory" / "symlink-to-some-inner-directory",
+                root / "symlink-to-file.txt",
+                root / "symlink-to-some-directory",
+            };
+        });
+}
+
+TEST_CASE ("get_files_non_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_files_non_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "file.txt",
+                root / "some-directory",
+                root / "symlink-to-file.txt",
+                root / "symlink-to-some-directory",
+            };
+        });
+}
+
+TEST_CASE ("get_directories_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_directories_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "some-directory",
+                root / "some-directory" / "some-inner-directory",
+                root / "some-directory" / "symlink-to-some-inner-directory",
+                root / "symlink-to-some-directory",
+            };
+        });
+}
+
+TEST_CASE ("get_directories_non_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_directories_non_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "some-directory",
+                root / "symlink-to-some-directory",
+            };
+        });
+}
+
+TEST_CASE ("get_regular_files_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_regular_files_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "file.txt",
+                root / "some-directory" / "file2.txt",
+                root / "some-directory" / "symlink-to-file2.txt",
+                root / "symlink-to-file.txt",
+            };
+        });
+}
+
+TEST_CASE ("get_regular_files_non_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_regular_files_non_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "file.txt",
+                root / "symlink-to-file.txt",
+            };
+        });
 }
 
 TEST_CASE ("LinesCollector", "[files]")

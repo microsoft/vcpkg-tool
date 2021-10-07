@@ -257,7 +257,7 @@ namespace vcpkg
             Cache<Triplet, Path> m_triplets_cache;
             Build::EnvCache m_env_cache;
 
-            vcpkg::SystemHandle file_lock_handle;
+            std::unique_ptr<IExclusiveFileLock> file_lock_handle;
 
             Optional<std::pair<Json::Object, Json::JsonStyle>> m_manifest_doc;
             Path m_manifest_path;
@@ -391,7 +391,7 @@ namespace vcpkg
         downloads =
             process_output_directory(filesystem, root, args.downloads_root_dir.get(), "downloads", VCPKG_LINE_INFO);
         m_pimpl->m_download_manager = Downloads::DownloadManager{
-            parse_download_configuration(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO)};
+            parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
         packages =
             process_output_directory(filesystem, root, args.packages_root_dir.get(), "packages", VCPKG_LINE_INFO);
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);
@@ -851,9 +851,7 @@ namespace vcpkg
 
         auto lock_file = work_tree / ".vcpkg-lock";
 
-        std::error_code ec;
-        ExclusiveFileLock guard(ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
-
+        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
         Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
                                     .string_arg("fetch")
                                     .string_arg("--update-shallow")
@@ -889,8 +887,7 @@ namespace vcpkg
 
         auto lock_file = work_tree / ".vcpkg-lock";
 
-        std::error_code ec;
-        ExclusiveFileLock guard(ExclusiveFileLock::Wait::Yes, fs, lock_file, ec);
+        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
 
         auto dot_git_dir = m_pimpl->registries_dot_git_dir;
 
@@ -1146,16 +1143,5 @@ namespace vcpkg
         }
     }
 
-    VcpkgPaths::~VcpkgPaths()
-    {
-        std::error_code ec;
-        if (m_pimpl->file_lock_handle.is_valid())
-        {
-            m_pimpl->fs_ptr->unlock_file_lock(m_pimpl->file_lock_handle, ec);
-            if (ec)
-            {
-                Debug::print("Failed to unlock filesystem lock: ", ec.message(), '\n');
-            }
-        }
-    }
+    VcpkgPaths::~VcpkgPaths() = default;
 }

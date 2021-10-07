@@ -621,9 +621,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         "description": "d",
         "dependencies": ["bd"],
         "default-features": ["df"],
-        "features": [
-            {
-                "name": "iroh",
+        "features": {
+            "iroh" : {
                 "description": "zuko's uncle",
                 "dependencies": [
                     "firebending",
@@ -637,11 +636,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                     }
                 ]
             },
-            {
-                "name": "zuko",
-                "description": ["son of the fire lord", "firebending 師父"]
+            "zuko": {
+                "description": ["son of the fire lord", "firebending 師父"],
+                "supports": "!(windows & arm)"
             }
-        ]
+        }
     })json");
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
@@ -656,6 +655,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "bd");
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
     REQUIRE(pgh.core_paragraph->default_features[0] == "df");
+    REQUIRE(pgh.core_paragraph->supports_expression.is_empty());
 
     REQUIRE(pgh.feature_paragraphs.size() == 2);
 
@@ -681,6 +681,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[1]->description.size() == 2);
     REQUIRE(pgh.feature_paragraphs[1]->description[0] == "son of the fire lord");
     REQUIRE(pgh.feature_paragraphs[1]->description[1] == "firebending 師父");
+    REQUIRE(!pgh.feature_paragraphs[1]->supports_expression.is_empty());
+    REQUIRE_FALSE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
+        {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
+        {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
 
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
 }

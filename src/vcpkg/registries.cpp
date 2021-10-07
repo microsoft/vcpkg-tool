@@ -324,12 +324,6 @@ namespace
             if (auto scfp = found_scf.get())
             {
                 auto& scf = *scfp;
-                auto maybe_error = scf->check_against_feature_flags(port_directory, paths.get_feature_flags());
-                if (maybe_error)
-                {
-                    Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Parsing manifest failed: %s", *maybe_error.get());
-                }
-
                 if (scf->core_paragraph->name == port_name)
                 {
                     return std::make_unique<BuiltinPortTreeRegistryEntry>(

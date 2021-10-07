@@ -152,7 +152,6 @@ namespace vcpkg::Remove
             case RemovePlanType::REMOVE:
                 vcpkg::printf("Removing package %s...\n", display_name);
                 remove_package(paths, action.spec, status_db);
-                vcpkg::printf(Color::success, "Removing package %s... done\n", display_name);
                 break;
             case RemovePlanType::UNKNOWN:
             default: Checks::unreachable(VCPKG_LINE_INFO);

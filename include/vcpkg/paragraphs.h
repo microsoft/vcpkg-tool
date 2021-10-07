@@ -33,7 +33,7 @@ namespace vcpkg::Paragraphs
 
     struct LoadResults
     {
-        std::vector<SourceControlFileLocation> paragraphs;
+        std::vector<SourceControlFileAndLocation> paragraphs;
         std::vector<std::unique_ptr<Parse::ParseControlErrorInfo>> errors;
     };
 
@@ -41,11 +41,11 @@ namespace vcpkg::Paragraphs
     // as opposed to making it a function
     constexpr struct
     {
-        const std::string& operator()(const SourceControlFileLocation* loc) const
+        const std::string& operator()(const SourceControlFileAndLocation* loc) const
         {
             return (*this)(*loc->source_control_file);
         }
-        const std::string& operator()(const SourceControlFileLocation& loc) const
+        const std::string& operator()(const SourceControlFileAndLocation& loc) const
         {
             return (*this)(*loc.source_control_file);
         }
@@ -54,6 +54,6 @@ namespace vcpkg::Paragraphs
 
     LoadResults try_load_all_registry_ports(const VcpkgPaths& paths);
 
-    std::vector<SourceControlFileLocation> load_all_registry_ports(const VcpkgPaths& paths);
-    std::vector<SourceControlFileLocation> load_overlay_ports(const Filesystem& fs, const Path& dir);
+    std::vector<SourceControlFileAndLocation> load_all_registry_ports(const VcpkgPaths& paths);
+    std::vector<SourceControlFileAndLocation> load_overlay_ports(const Filesystem& fs, const Path& dir);
 }

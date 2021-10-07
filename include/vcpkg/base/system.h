@@ -45,7 +45,7 @@ namespace vcpkg
 
     const Optional<Path>& get_program_files_platform_bitness();
 
-    int get_num_logical_cores();
+    int get_concurrency();
 
     Optional<CPUArchitecture> guess_visual_studio_prompt_target_architecture();
 }

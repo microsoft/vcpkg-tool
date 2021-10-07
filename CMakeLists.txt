@@ -1,4 +1,14 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.15) # 3.15 for MSVC_RUNTIME_LIBRARY, removing default warning flags
+
+cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0092 NEW)
+if(NOT CMAKE_MSVC_RUNTIME_LIBRARY)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
+if(WIN32)
+    string(APPEND CMAKE_CXX_FLAGS " /EHsc")
+endif()
 
 # ===============
 # === Options ===
@@ -14,6 +24,7 @@ option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
+set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
 
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
     "BUILD_TESTING" OFF)
@@ -25,9 +36,7 @@ endif()
 
 set(LANGUAGES "CXX")
 if(VCPKG_BUILD_TLS12_DOWNLOADER)
-    # 3.16 for MSVC_RUNTIME_LIBRARY
     list(APPEND LANGUAGES "C")
-    cmake_minimum_required(VERSION 3.16)
 endif()
 
 project(vcpkg
@@ -88,13 +97,12 @@ if(NOT DEFINED VCPKG_VERSION OR VCPKG_VERSION STREQUAL "")
     set(VCPKG_VERSION "unknownhash")
 endif()
 
-set(VCPKG_BASE_VERSION "2021-08-03")
+set(VCPKG_BASE_VERSION "2021-09-10")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
 if(MSVC)
-    string(REGEX REPLACE "[-/]W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi /guard:cf")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DEBUG /debugtype:cv,fixup /guard:cf")
@@ -107,6 +115,12 @@ if(APPLE)
     set(CMAKE_C_ARCHIVE_FINISH   "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
     set(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
 endif()
+
+# =======================
+# === Paths detection ===
+# =======================
+
+include(GNUInstallDirs)
 
 # ===============
 # === Targets ===
@@ -177,6 +191,9 @@ if(VCPKG_ADD_SOURCELINK)
         REF "${VCPKG_VERSION}"
     )
 endif()
+if(VCPKG_PDB_SUFFIX)
+    set_property(TARGET vcpkg PROPERTY PDB_NAME "vcpkg${VCPKG_PDB_SUFFIX}")
+endif()
 
 # === Target: vcpkg-test ===
 
@@ -212,7 +229,10 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES})
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
-    target_link_libraries(tls12-download winhttp wintrust)
+    target_link_libraries(tls12-download winhttp wintrust shell32)
+    if(VCPKG_PDB_SUFFIX)
+        set_property(TARGET tls12-download PROPERTY PDB_NAME "tls12-download${VCPKG_PDB_SUFFIX}")
+    endif()
 endif()
 
 
@@ -238,3 +258,12 @@ if(CLANG_FORMAT)
         COMMAND "${CLANG_FORMAT}" -i -verbose ${TLS12_DOWNLOAD_SOURCES}
     )
 endif()
+
+# ====================
+# === Installation ===
+# ====================
+
+install(TARGETS vcpkg
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
