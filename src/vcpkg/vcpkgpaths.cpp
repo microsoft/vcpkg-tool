@@ -593,7 +593,7 @@ namespace vcpkg
         {
             Json::Object repo_info;
             repo_info.insert(data.second.reference, Json::Value::string(data.second.commit_id));
-            
+
             obj.insert(data.first, Json::Value::object(std::move(repo_info)));
         }
         get_filesystem().write_rename_contents(
