@@ -1,5 +1,6 @@
 {
   "VcpkgHasCrashed": "vcpkg.exe has crashed.\nPlease send an email to:\n    {email}\ncontaining a brief summary of what you were trying to do and the following data blob:\n\nVersion={vcpkg_version}\nEXCEPTION='{error}'\nCMD=",
+  "_VcpkgHasCrashed.comment": "Don't localize the data blob (the data after the colon)",
   "AllRequestedPackagesInstalled": "All requested packages are currently installed.",
   "NoLocalizationForMessages": "No localization for the following messages:"
 }

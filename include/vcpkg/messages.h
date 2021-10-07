@@ -4,49 +4,59 @@
 #include <vcpkg/commands.interface.h>
 #include <vcpkg/base/json.h>
 
-namespace vcpkg
+namespace vcpkg::msg
 {
-    namespace detail
-    {
-        template <class Tag>
-        struct MessageArgument
+        namespace detail
         {
-            const char* name;
-            const typename Tag::type* parameter; // always valid
-        };
+            template <class Tag>
+            struct MessageArgument
+            {
+                const char* name;
+                const typename Tag::type* parameter; // always valid
+            };
 
-        template <class... Tags>
-        struct MessageCheckFormatArgs
-        {
-            static constexpr void check_format_args(const detail::MessageArgument<Tags>&...) noexcept { }
-        };
+            template <class... Tags>
+            struct MessageCheckFormatArgs
+            {
+                static constexpr void check_format_args(const detail::MessageArgument<Tags>&...) noexcept { }
+            };
 
-    }
+            ::size_t last_message_index();
 
-    struct MessageContext
-    {
-        // load from "${SCRIPTS}/locales/${language}.json"
-        explicit MessageContext(StringView language);
+            // REQUIRES: index < last_message_index()
+            StringView get_format_string(::size_t index);
+            // REQUIRES: index < last_message_index()
+            StringView get_message_name(::size_t index);
+            // REQUIRES: index < last_message_index()
+            StringView get_default_format_string(::size_t index);
+            // REQUIRES: index < last_message_index()
+            StringView get_localization_comment(::size_t index);
+        }
+
+        // load from "locale_base/${language}.json"
+        void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base);
         // load from the json object
-        explicit MessageContext(const Json::Object& message_map);
+        void threadunsafe_initialize_context(const Json::Object& message_map);
+        // initialize without any localized messages (use default messages only)
+        void threadunsafe_initialize_context();
 
         template <class Message, class... Ts>
-        void print(Message m, Ts... args) const
+        void print(Message m, Ts... args)
         {
             print(Color::None, m, args...);
         }
         template <class Message, class... Ts>
-        void println(Message m, Ts... args) const
+        void println(Message m, Ts... args)
         {
             print(Color::None, m, args...);
             write_text_to_stdout(Color::None, "\n");
         }
 
         template <class Message, class... Ts>
-        void print(Color c, Message, Ts... args) const
+        void print(Color c, Message, Ts... args)
         {
             Message::check_format_args(args...);
-            auto fmt_string = get_format_string(Message::index);
+            auto fmt_string = detail::get_format_string(Message::index);
             write_text_to_stdout(c,
                 fmt::vformat(
                     fmt::string_view(fmt_string.begin(), fmt_string.size()),
@@ -55,55 +65,26 @@ namespace vcpkg
             );
         }
         template <class Message, class... Ts>
-        void println(Color c, Message m, Ts... args) const
+        void println(Color c, Message m, Ts... args)
         {
             print(c, m, args...);
             write_text_to_stdout(Color::None, "\n");
         }
 
-        static ::size_t last_message_index();
+// these use `constexpr static` in order to work with GCC 6
+#define DECLARE_MSG_ARG(TYPE, NAME) \
+    constexpr static struct NAME ## _t { \
+        using type = TYPE; \
+        detail::MessageArgument<NAME ## _t> operator=(const TYPE& t) const noexcept \
+        { \
+            return detail::MessageArgument<NAME ## _t>{#NAME, &t}; \
+        } \
+    } NAME = {}
 
-        // REQUIRES: index < last_message_index()
-        StringView get_format_string(::size_t index) const;
-        // REQUIRES: index < last_message_index()
-        static StringView get_message_name(::size_t index);
-        // REQUIRES: index < last_message_index()
-        static StringView get_default_format_string(::size_t index);
-        // REQUIRES: index < last_message_index()
-        static StringView get_localization_comment(::size_t index);
-
-    private:
-        // returns the id to pass to `get_format_string`
-        // should only be called during startup
-        static ::size_t _internal_register_message(StringView name, StringView default_format_string, StringView comment);
-
-        struct MessageContextImpl;
-        std::unique_ptr<MessageContextImpl> impl;
-
-        template <class Message>
-        struct MessageComment
-        {
-            static StringView comment()
-            {
-                return "";
-            }
-        };
-
-
-    public:
-#define DEFINE_MSG_ARG(TYPE, NAME) \
-        constexpr static struct NAME ## _t { \
-            using type = TYPE; \
-            detail::MessageArgument<NAME ## _t> operator=(const TYPE& t) const noexcept \
-            { \
-                return detail::MessageArgument<NAME ## _t>{#NAME, &t}; \
-            } \
-        } NAME = {}
-
-        DEFINE_MSG_ARG(StringView, email);
-        DEFINE_MSG_ARG(StringView, vcpkg_version);
-        DEFINE_MSG_ARG(StringView, error);
-#undef DEFINE_MSG_ARG
+    DECLARE_MSG_ARG(StringView, email);
+    DECLARE_MSG_ARG(StringView, vcpkg_version);
+    DECLARE_MSG_ARG(StringView, error);
+#undef DECLARE_MSG_ARG
 
 #define DEFINE_MESSAGE_NOARGS(NAME, COMMENT, DEFAULT_STR) \
     constexpr static struct NAME ## _t : detail::MessageCheckFormatArgs<> { \
@@ -147,10 +128,8 @@ CMD=)",
     DEFINE_MESSAGE_NOARGS(AllRequestedPackagesInstalled, "", "All requested packages are currently installed.");
     DEFINE_MESSAGE_NOARGS(NoLocalizationForMessages, "", "No localization for the following messages:");
 
-#undef ADD_MESSAGE_COMMENT
 #undef DEFINE_MESSAGE
 #undef DEFINE_MESSAGE_NOARGS
-    };
 
     struct GenerateDefaultMessageMapCommand : Commands::BasicCommand
     {

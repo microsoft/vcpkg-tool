@@ -47,7 +47,7 @@ namespace vcpkg::Commands
         static const Contact::ContactCommand contact{};
         static const InitRegistry::InitRegistryCommand init_registry{};
         static const X_Download::XDownloadCommand xdownload{};
-        static const GenerateDefaultMessageMapCommand generate_default_message_map{};
+        static const msg::GenerateDefaultMessageMapCommand generate_default_message_map{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
