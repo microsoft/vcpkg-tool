@@ -14,12 +14,14 @@ namespace vcpkg
         // requires: names.size() == default_strings.size() == localized_strings.size()
         static std::vector<std::string> names; // const after startup
         static std::vector<std::string> default_strings; // const after startup
+        static std::vector<std::string> localization_comments; // const after startup
         std::vector<std::string> localized_strings;
 
         MessageContextImpl() : localized_strings(default_strings.size()) {}
     };
     std::vector<std::string> MessageContext::MessageContextImpl::default_strings{};
     std::vector<std::string> MessageContext::MessageContextImpl::names{};
+    std::vector<std::string> MessageContext::MessageContextImpl::localization_comments{};
 
     MessageContext::MessageContext(const Json::Object& message_map) : impl(std::make_unique<MessageContextImpl>())
     {
@@ -59,11 +61,12 @@ namespace vcpkg
         return MessageContextImpl::names.size();
     }
 
-    ::size_t MessageContext::_internal_register_message(StringView name, StringView format_string)
+    ::size_t MessageContext::_internal_register_message(StringView name, StringView format_string, StringView comment)
     {
         auto res = MessageContextImpl::names.size();
         MessageContextImpl::names.push_back(name.to_string());
         MessageContextImpl::default_strings.push_back(format_string.to_string());
+        MessageContextImpl::localization_comments.push_back(comment.to_string());
         return res;
     }
 
@@ -91,9 +94,15 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, index < MessageContextImpl::default_strings.size());
         return MessageContextImpl::default_strings[index];
     }
+    StringView MessageContext::get_localization_comment(::size_t index)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, index < MessageContextImpl::localization_comments.size());
+        return MessageContextImpl::localization_comments[index];
+    }
 
 #define REGISTER_MESSAGE(NAME) \
-    const ::size_t MessageContext :: NAME ## _t :: index = _internal_register_message(name(), default_format_string());
+    const ::size_t MessageContext :: NAME ## _t :: index = \
+        _internal_register_message(name(), default_format_string(), NAME ## _t::localization_comment())
 
     REGISTER_MESSAGE(VcpkgHasCrashed);
     REGISTER_MESSAGE(AllRequestedPackagesInstalled);
@@ -109,6 +118,14 @@ namespace vcpkg
                 MessageContext::get_message_name(index).to_string(),
                 Json::Value::string(MessageContext::get_default_format_string(index).to_string())
             );
+            auto loc_comment = MessageContext::get_localization_comment(index);
+            if (!loc_comment.empty())
+            {
+                obj.insert(
+                    fmt::format("_{}.comment", MessageContext::get_message_name(index)),
+                    Json::Value::string(loc_comment.to_string())
+                );
+            }
         }
 
         write_text_to_stdout(Color::None, Json::stringify(obj, {}));

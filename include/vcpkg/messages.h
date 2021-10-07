@@ -20,6 +20,7 @@ namespace vcpkg
         {
             static constexpr void check_format_args(const detail::MessageArgument<Tags>&...) noexcept { }
         };
+
     }
 
     struct MessageContext
@@ -68,17 +69,28 @@ namespace vcpkg
         static StringView get_message_name(::size_t index);
         // REQUIRES: index < last_message_index()
         static StringView get_default_format_string(::size_t index);
+        // REQUIRES: index < last_message_index()
+        static StringView get_localization_comment(::size_t index);
 
     private:
         // returns the id to pass to `get_format_string`
         // should only be called during startup
-        static ::size_t _internal_register_message(StringView name, StringView default_format_string);
+        static ::size_t _internal_register_message(StringView name, StringView default_format_string, StringView comment);
 
         struct MessageContextImpl;
         std::unique_ptr<MessageContextImpl> impl;
 
-    public:
+        template <class Message>
+        struct MessageComment
+        {
+            static StringView comment()
+            {
+                return "";
+            }
+        };
 
+
+    public:
 #define DEFINE_MSG_ARG(TYPE, NAME) \
         constexpr static struct NAME ## _t { \
             using type = TYPE; \
@@ -86,35 +98,41 @@ namespace vcpkg
             { \
                 return detail::MessageArgument<NAME ## _t>{#NAME, &t}; \
             } \
-        } NAME
+        } NAME = {}
 
         DEFINE_MSG_ARG(StringView, email);
         DEFINE_MSG_ARG(StringView, vcpkg_version);
         DEFINE_MSG_ARG(StringView, error);
 #undef DEFINE_MSG_ARG
 
-#define DEFINE_MESSAGE_NOARGS(NAME, DEFAULT_STR) \
+#define DEFINE_MESSAGE_NOARGS(NAME, COMMENT, DEFAULT_STR) \
     constexpr static struct NAME ## _t : detail::MessageCheckFormatArgs<> { \
         static StringView name() { \
             return #NAME; \
+        }; \
+        static StringView localization_comment() { \
+            return COMMENT; \
         }; \
         static StringView default_format_string() noexcept { \
             return DEFAULT_STR; \
         } \
         static const ::size_t index; \
-    } NAME
-#define DEFINE_MESSAGE(NAME, DEFAULT_STR, ...) \
+    } NAME = {}
+#define DEFINE_MESSAGE(NAME, COMMENT, DEFAULT_STR, ...) \
     constexpr static struct NAME ## _t : detail::MessageCheckFormatArgs<__VA_ARGS__> { \
         static StringView name() { \
             return #NAME; \
         } \
+        static StringView localization_comment() { \
+            return COMMENT; \
+        }; \
         static StringView default_format_string() noexcept { \
             return DEFAULT_STR; \
         } \
         static const ::size_t index; \
-    } NAME
+    } NAME = {}
 
-    DEFINE_MESSAGE(VcpkgHasCrashed, 
+    DEFINE_MESSAGE(VcpkgHasCrashed, "Don't localize the data blob (the data after the colon)",
 R"(vcpkg.exe has crashed.
 Please send an email to:
     {email}
@@ -126,9 +144,10 @@ CMD=)",
         email_t,
         vcpkg_version_t,
         error_t);
-    DEFINE_MESSAGE_NOARGS(AllRequestedPackagesInstalled, "All requested packages are currently installed.");
-    DEFINE_MESSAGE_NOARGS(NoLocalizationForMessages, "No localization for the following messages:");
+    DEFINE_MESSAGE_NOARGS(AllRequestedPackagesInstalled, "", "All requested packages are currently installed.");
+    DEFINE_MESSAGE_NOARGS(NoLocalizationForMessages, "", "No localization for the following messages:");
 
+#undef ADD_MESSAGE_COMMENT
 #undef DEFINE_MESSAGE
 #undef DEFINE_MESSAGE_NOARGS
     };
