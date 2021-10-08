@@ -741,17 +741,17 @@ namespace vcpkg::PostBuildLint
             const auto pkgconfig_parent_name = Path(parent_path.parent_path()).filename().to_string();
             // Always allow .pc files in "lib/pkgconfig":
             if (pkgconfig_parent_name == "lib") return true;
-            // Allow .pc in "share/pkgconfig" if and only if it contains no "Lib:" or "Libs.private:" directives:
-            return pkgconfig_parent_name == "share"
-                && !Util::any_of(fs.read_lines(path, VCPKG_LINE_INFO),
-                                 [](const auto& line) { return Strings::starts_with(line, "Lib:") || Strings::starts_with(line, "Libs.private:"); }));
+            // Allow .pc in "share/pkgconfig" if and only if it contains no "Libs:" or "Libs.private:" directives:
+            return pkgconfig_parent_name == "share" &&
+                   !Util::any_of(fs.read_lines(path, VCPKG_LINE_INFO),
+                                 [](const auto& line) { return Strings::starts_with(line, "Libs"); });
         });
 
-        if (!pkgconfig_files.empty())
+        if (!misplaced_pkgconfig_files.empty())
         {
             print2(Color::warning, "There should be no pkgconfig directories outside of lib and debug/lib.\n");
             print2("The following misplaced pkgconfig files were found:\n");
-            print_paths(pkgconfig_files);
+            print_paths(misplaced_pkgconfig_files);
             print2(
                 Color::warning,
                 "You can move the pkgconfig files with the following commands:\n"
