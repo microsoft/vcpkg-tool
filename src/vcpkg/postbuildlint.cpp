@@ -732,19 +732,19 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_pkgconfig_dir_only_in_lib_dir(const Filesystem& fs, const Path& dir)
     {
-        const auto allowed_in_share = [&fs](const Path& path) {
-            // If there is a "Lib:" or "Libs.private:" line in the .pc file, then the file must be in /lib/pkgconfig
-            return !Util::any_of(fs.read_lines(path, VCPKG_LINE_INFO),
-                                 [](const auto& line) { return Strings::starts_with(line, "Libs"); });
-        };
-
-        std::vector<Path> pkgconfig_files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
-        Util::erase_remove_if(pkgconfig_files, [&allowed_in_share](const Path& path) {
+        std::vector<Path> misplaced_pkgconfig_files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
+        Util::erase_remove_if(misplaced_pkgconfig_files, [&fs](const Path& path) {
             if (!Strings::ends_with(path, ".pc")) return true;
+            // Always forbid .pc files not in a "pkgconfig" directory:
             const auto parent_path = Path(path.parent_path());
             if (parent_path.filename() != "pkgconfig") return false;
             const auto pkgconfig_parent_name = Path(parent_path.parent_path()).filename().to_string();
-            return pkgconfig_parent_name == "lib" || (pkgconfig_parent_name == "share" && allowed_in_share(path));
+            // Always allow .pc files in "lib/pkgconfig":
+            if (pkgconfig_parent_name == "lib") return true;
+            // Allow .pc in "share/pkgconfig" if and only if it contains no "Lib:" or "Libs.private:" directives:
+            return pkgconfig_parent_name == "share"
+                && !Util::any_of(fs.read_lines(path, VCPKG_LINE_INFO),
+                                 [](const auto& line) { return Strings::starts_with(line, "Lib:") || Strings::starts_with(line, "Libs.private:"); }));
         });
 
         if (!pkgconfig_files.empty())
