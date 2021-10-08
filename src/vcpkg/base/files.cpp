@@ -29,21 +29,10 @@
 #include <string>
 #include <thread>
 
-#if !defined(VCPKG_USE_STD_FILESYSTEM)
-#error The build system must set VCPKG_USE_STD_FILESYSTEM.
-#endif // !defined(VCPKG_USE_STD_FILESYSTEM)
-
-#if VCPKG_USE_STD_FILESYSTEM
+#if defined(_WIN32)
 #include <filesystem>
-#else
-#include <experimental/filesystem>
-#endif
-
-#if VCPKG_USE_STD_FILESYSTEM
 namespace stdfs = std::filesystem;
-#else
-namespace stdfs = std::experimental::filesystem;
-#endif
+#endif // _WIN32
 
 namespace
 {
@@ -82,28 +71,18 @@ namespace
             li, Strings::concat(call_name, "(", Strings::join(", ", args.begin(), args.end()), "): ", ec.message()));
     }
 
+#if defined(_WIN32)
     stdfs::copy_options convert_copy_options(CopyOptions options)
     {
-        stdfs::copy_options result{};
-        const auto unpacked = static_cast<int>(options);
-
-        switch (unpacked & static_cast<int>(CopyOptions::existing_mask))
+        switch (options)
         {
-            case static_cast<int>(CopyOptions::skip_existing): result |= stdfs::copy_options::skip_existing; break;
-            case static_cast<int>(CopyOptions::overwrite_existing):
-                result |= stdfs::copy_options::overwrite_existing;
-                break;
+            case CopyOptions::none: return stdfs::copy_options::none;
+            case CopyOptions::skip_existing: return stdfs::copy_options::skip_existing;
+            case CopyOptions::overwrite_existing: return stdfs::copy_options::overwrite_existing;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
-
-        if (unpacked & static_cast<int>(CopyOptions::recursive))
-        {
-            result |= stdfs::copy_options::recursive;
-        }
-
-        return result;
     }
 
-#if defined(_WIN32)
     FileType convert_file_type(stdfs::file_type type) noexcept
     {
         switch (type)
@@ -122,22 +101,11 @@ namespace
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
-#endif // _WIN32
 
-    stdfs::path to_stdfs_path(const Path& utfpath)
-    {
-#if defined(_WIN32)
-        return stdfs::path(Strings::to_utf16(utfpath.native()));
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-        return stdfs::path(utfpath.native());
-#endif // ^^^ !_WIN32
-    }
+    stdfs::path to_stdfs_path(const Path& utfpath) { return stdfs::path(Strings::to_utf16(utfpath.native())); }
 
-#if defined(_WIN32)
     Path from_stdfs_path(const stdfs::path& stdpath) { return Strings::to_utf8(stdpath.native()); }
-#endif // ^^^ _WIN32
 
-#if defined(_WIN32)
     // The Win32 version of this implementation is effectively forked from
     // https://github.com/microsoft/STL/blob/bd7adb4a932725f60ba096580c415616486ab64c/stl/inc/filesystem#L436
     // converted to speak UTF-8 rather than UTF-16.
@@ -1539,10 +1507,10 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::copy(const Path& source, const Path& destination, CopyOptions options, LineInfo li)
+    void Filesystem::copy_regular_recursive(const Path& source, const Path& destination, LineInfo li)
     {
         std::error_code ec;
-        this->copy(source, destination, options, ec);
+        this->copy_regular_recursive(source, destination, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {source, destination});
@@ -2568,13 +2536,45 @@ namespace vcpkg
             }
 #endif // _WIN32
         }
-        virtual void copy(const Path& source,
-                          const Path& destination,
-                          CopyOptions options,
-                          std::error_code& ec) override
+
+        virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) override
         {
-            stdfs::copy(to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
+#if defined(_WIN32)
+            stdfs::copy(to_stdfs_path(source), to_stdfs_path(destination), stdfs::copy_options::recursive, ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            ReadDirOp rd{source.c_str(), ec};
+            if (ec)
+            {
+                if (ec == std::errc::not_a_directory)
+                {
+                    this->copy_file(source, destination, CopyOptions::none, ec);
+                }
+
+                return;
+            }
+
+            this->create_directory(destination, ec);
+            Path source_entry_name;
+            Path destination_entry_name;
+            const dirent* entry;
+            // the !ec check is either for the create_directory above on the first iteration, or for the most
+            // recent copy_file or copy_regular_recursive on subsequent iterations
+            while (!ec && (entry = rd.read(ec)))
+            {
+                source_entry_name = source / entry->d_name;
+                destination_entry_name = destination / entry->d_name;
+                if (get_d_type(entry) == PosixDType::Regular)
+                {
+                    this->copy_file(source_entry_name, destination_entry_name, CopyOptions::none, ec);
+                }
+                else
+                {
+                    this->copy_regular_recursive(source_entry_name, destination_entry_name, ec);
+                }
+            }
+#endif // ^^^ !_WIN32
         }
+
         virtual bool copy_file(const Path& source,
                                const Path& destination,
                                CopyOptions options,
@@ -2605,10 +2605,8 @@ namespace vcpkg
                 return false;
             }
 
-            auto masked_options =
-                static_cast<CopyOptions>(static_cast<int>(options) & static_cast<int>(CopyOptions::existing_mask));
             int open_options = O_WRONLY | O_CREAT;
-            if (masked_options != CopyOptions::overwrite_existing)
+            if (options != CopyOptions::overwrite_existing)
             {
                 // the standard wording suggests that we should create a file through a broken symlink which would
                 // forbid use of O_EXCL. However, implementations like boost::copy_file don't do this and doing it
@@ -2620,7 +2618,7 @@ namespace vcpkg
             PosixFd destination_fd{destination.c_str(), open_options, open_mode, ec};
             if (ec)
             {
-                if (masked_options == CopyOptions::skip_existing && ec == std::errc::file_exists)
+                if (options == CopyOptions::skip_existing && ec == std::errc::file_exists)
                 {
                     ec.clear();
                 }
@@ -2647,7 +2645,7 @@ namespace vcpkg
                 return false;
             }
 
-            if (masked_options == CopyOptions::overwrite_existing)
+            if (options == CopyOptions::overwrite_existing)
             {
                 destination_fd.ftruncate(0, ec);
                 if (ec) return false;
