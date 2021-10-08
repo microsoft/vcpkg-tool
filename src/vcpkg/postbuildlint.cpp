@@ -584,7 +584,7 @@ namespace vcpkg::PostBuildLint
             ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
             Checks::check_exit(
                 VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
-            if (!Util::contains(Strings::split(ec_data.output, ' '), requested_arch))
+            if (!Util::contains(Strings::split(Strings::trim(ec_data.output), ' '), requested_arch))
             {
                 binaries_with_invalid_architecture.push_back({file, ec_data.output});
             }
