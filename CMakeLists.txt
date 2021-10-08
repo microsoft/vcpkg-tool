@@ -44,6 +44,7 @@ project(vcpkg
     HOMEPAGE_URL "https://github.com/microsoft/vcpkg"
     LANGUAGES ${LANGUAGES}
 )
+
 include(cmake/utilities.cmake)
 
 # =============
@@ -69,8 +70,6 @@ set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
 # ========================
 
 vcpkg_detect_compiler()
-vcpkg_detect_standard_library()
-vcpkg_detect_std_filesystem()
 
 if(VCPKG_EMBED_GIT_SHA)
     find_package(Git REQUIRED)
@@ -138,7 +137,6 @@ target_include_directories(vcpkglib PUBLIC include)
 
 vcpkg_target_add_warning_options(vcpkglib)
 target_compile_definitions(vcpkglib PUBLIC
-    VCPKG_USE_STD_FILESYSTEM=$<BOOL:${VCPKG_USE_STD_FILESYSTEM}>
     VCPKG_VERSION=${VCPKG_VERSION}
     VCPKG_BASE_VERSION=${VCPKG_BASE_VERSION}
 )
@@ -146,10 +144,6 @@ target_compile_definitions(vcpkglib PUBLIC
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(vcpkglib PRIVATE Threads::Threads)
-
-if(VCPKG_CXXFS_LIBRARY)
-    target_link_libraries(vcpkglib PRIVATE ${VCPKG_CXXFS_LIBRARY})
-endif()
 
 if(MSVC)
     get_target_property(_srcs vcpkglib SOURCES)
