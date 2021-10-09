@@ -1,7 +1,6 @@
 #include <string>
 #include <fmt/format.h>
 #include <vcpkg/base/system.print.h>
-#include <vcpkg/commands.interface.h>
 #include <vcpkg/base/json.h>
 
 namespace vcpkg::msg
@@ -41,33 +40,38 @@ namespace vcpkg::msg
         void threadunsafe_initialize_context();
 
         template <class Message, class... Ts>
+        std::string format(Message, Ts... args)
+        {
+            Message::check_format_args(args...);
+            auto fmt_string = detail::get_format_string(Message::index);
+            return fmt::vformat(
+                fmt::string_view(fmt_string.begin(), fmt_string.size()),
+                fmt::make_format_args(fmt::arg(args.name, *args.parameter)...)
+            );
+        }
+
+
+        template <class Message, class... Ts>
         void print(Message m, Ts... args)
         {
-            print(Color::None, m, args...);
+            write_text_to_stdout(Color::None, format(m, args...));
         }
         template <class Message, class... Ts>
         void println(Message m, Ts... args)
         {
-            print(Color::None, m, args...);
+            write_text_to_stdout(Color::None, format(m, args...));
             write_text_to_stdout(Color::None, "\n");
         }
 
         template <class Message, class... Ts>
-        void print(Color c, Message, Ts... args)
+        void print(Color c, Message m, Ts... args)
         {
-            Message::check_format_args(args...);
-            auto fmt_string = detail::get_format_string(Message::index);
-            write_text_to_stdout(c,
-                fmt::vformat(
-                    fmt::string_view(fmt_string.begin(), fmt_string.size()),
-                    fmt::make_format_args(fmt::arg(args.name, *args.parameter)...)
-                )
-            );
+            write_text_to_stdout(c, format(m, args...));
         }
         template <class Message, class... Ts>
         void println(Color c, Message m, Ts... args)
         {
-            print(c, m, args...);
+            write_text_to_stdout(c, format(m, args...));
             write_text_to_stdout(Color::None, "\n");
         }
 
@@ -131,8 +135,4 @@ CMD=)",
 #undef DEFINE_MESSAGE
 #undef DEFINE_MESSAGE_NOARGS
 
-    struct GenerateDefaultMessageMapCommand : Commands::BasicCommand
-    {
-        void perform_and_exit(const VcpkgCmdArguments&, Filesystem&) const override;
-    };
 }

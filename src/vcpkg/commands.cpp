@@ -16,6 +16,7 @@
 #include <vcpkg/commands.env.h>
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/commands.format-manifest.h>
+#include <vcpkg/commands.generate-message-map.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.hash.h>
 #include <vcpkg/commands.info.h>
@@ -35,7 +36,6 @@
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
 #include <vcpkg/install.h>
-#include <vcpkg/messages.h>
 #include <vcpkg/remove.h>
 #include <vcpkg/update.h>
 
@@ -47,7 +47,7 @@ namespace vcpkg::Commands
         static const Contact::ContactCommand contact{};
         static const InitRegistry::InitRegistryCommand init_registry{};
         static const X_Download::XDownloadCommand xdownload{};
-        static const msg::GenerateDefaultMessageMapCommand generate_default_message_map{};
+        static const GenerateDefaultMessageMapCommand generate_default_message_map{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
