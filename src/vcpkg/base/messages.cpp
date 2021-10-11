@@ -192,7 +192,7 @@ namespace vcpkg::msg
         threadunsafe_initialize_context(message_map.first.object());
     }
 
-    ::size_t detail::last_message_index()
+    ::size_t detail::number_of_messages()
     {
         return message_names.size();
     }

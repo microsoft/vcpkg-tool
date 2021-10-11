@@ -50,7 +50,7 @@ namespace vcpkg::msg
 
         ::size_t startup_register_message(StringView name, StringView format_string, StringView comment);
 
-        ::size_t last_message_index();
+        ::size_t number_of_messages();
 
         // REQUIRES: index < last_message_index()
         StringView get_format_string(::size_t index);
