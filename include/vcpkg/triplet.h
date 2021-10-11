@@ -4,6 +4,7 @@
 
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/format.h>
 
 #include <string>
 
@@ -41,11 +42,21 @@ namespace vcpkg
     Triplet default_host_triplet(const VcpkgCmdArguments& args);
 }
 
-namespace std
+template<>
+struct std::hash<vcpkg::Triplet>
 {
-    template<>
-    struct hash<vcpkg::Triplet>
+    ::size_t operator()(vcpkg::Triplet t) const { return t.hash_code(); }
+};
+template <>
+struct fmt::formatter<vcpkg::Triplet>
+{
+    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin())
     {
-        size_t operator()(vcpkg::Triplet t) const { return t.hash_code(); }
-    };
-}
+        return vcpkg::basic_format_parse_impl(ctx);
+    }
+    template <class FormatContext>
+    auto format(const vcpkg::Triplet& triplet, FormatContext& ctx) -> decltype(ctx.out())
+    {
+        return format_to(ctx.out(), "{}", triplet.canonical_name());
+    }
+};

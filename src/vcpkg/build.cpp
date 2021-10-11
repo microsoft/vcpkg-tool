@@ -863,9 +863,7 @@ namespace vcpkg::Build
 
         if (Strings::starts_with(triplet_file_path, paths.community_triplets))
         {
-            vcpkg::printf(vcpkg::Color::Warning,
-                          "-- Using community triplet %s. This triplet configuration is not guaranteed to succeed.\n",
-                          triplet.canonical_name());
+            msg::println(Color::Warning, msg::UsingCommunityTriplet, msg::triplet = triplet);
             vcpkg::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
         else if (!Strings::starts_with(triplet_file_path, paths.triplets))

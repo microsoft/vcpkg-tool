@@ -1,93 +1,126 @@
+#pragma once
+
 #include <string>
 #include <fmt/format.h>
-#include <vcpkg/base/system.print.h>
-#include <vcpkg/base/json.h>
+#include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/lineinfo.h>
+
+namespace vcpkg
+{
+#if defined(_WIN32)
+    enum class Color : unsigned short
+    {
+        None = 0,
+        Success = 0x0A, // FOREGROUND_GREEN | FOREGROUND_INTENSITY
+        Error = 0xC,    // FOREGROUND_RED | FOREGROUND_INTENSITY
+        Warning = 0xE,  // FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY
+    };
+#else
+    enum class Color : char
+    {
+        None = 0,
+        Success = '2', // [with 9] bright green
+        Error = '1',   // [with 9] bright red
+        Warning = '3', // [with 9] bright yellow
+    };
+#endif
+}
 
 namespace vcpkg::msg
 {
-        namespace detail
+    namespace detail
+    {
+        template <class Tag, class Type>
+        struct MessageArgument
         {
-            template <class Tag>
-            struct MessageArgument
-            {
-                const char* name;
-                const typename Tag::type* parameter; // always valid
-            };
+            const char* name;
+            const Type* parameter; // always valid
+        };
 
-            template <class... Tags>
-            struct MessageCheckFormatArgs
-            {
-                static constexpr void check_format_args(const detail::MessageArgument<Tags>&...) noexcept { }
-            };
-
-            ::size_t last_message_index();
-
-            // REQUIRES: index < last_message_index()
-            StringView get_format_string(::size_t index);
-            // REQUIRES: index < last_message_index()
-            StringView get_message_name(::size_t index);
-            // REQUIRES: index < last_message_index()
-            StringView get_default_format_string(::size_t index);
-            // REQUIRES: index < last_message_index()
-            StringView get_localization_comment(::size_t index);
-        }
-
-        // load from "locale_base/${language}.json"
-        void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base);
-        // load from the json object
-        void threadunsafe_initialize_context(const Json::Object& message_map);
-        // initialize without any localized messages (use default messages only)
-        void threadunsafe_initialize_context();
-
-        template <class Message, class... Ts>
-        std::string format(Message, Ts... args)
+        template <class... Tags>
+        struct MessageCheckFormatArgs
         {
-            Message::check_format_args(args...);
-            auto fmt_string = detail::get_format_string(Message::index);
-            return fmt::vformat(
-                fmt::string_view(fmt_string.begin(), fmt_string.size()),
-                fmt::make_format_args(fmt::arg(args.name, *args.parameter)...)
-            );
-        }
+            template <class... Tys>
+            static constexpr void check_format_args(const detail::MessageArgument<Tags, Tys>&...) noexcept { }
+        };
+
+        ::size_t last_message_index();
+
+        // REQUIRES: index < last_message_index()
+        StringView get_format_string(::size_t index);
+        // REQUIRES: index < last_message_index()
+        StringView get_message_name(::size_t index);
+        // REQUIRES: index < last_message_index()
+        StringView get_default_format_string(::size_t index);
+        // REQUIRES: index < last_message_index()
+        StringView get_localization_comment(::size_t index);
+    }
+
+    void write_text_to_stdout(Color c, StringView sv);
+
+    // load from "locale_base/${language}.json"
+    void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base);
+    // load from the json object
+    void threadunsafe_initialize_context(const Json::Object& message_map);
+    // initialize without any localized messages (use default messages only)
+    void threadunsafe_initialize_context();
+
+    template <class Message, class... Ts>
+    std::string format(Message, Ts... args)
+    {
+        Message::check_format_args(args...);
+        auto fmt_string = detail::get_format_string(Message::index);
+        return fmt::vformat(
+            fmt::string_view(fmt_string.begin(), fmt_string.size()),
+            fmt::make_format_args(fmt::arg(args.name, *args.parameter)...)
+        );
+    }
 
 
-        template <class Message, class... Ts>
-        void print(Message m, Ts... args)
-        {
-            write_text_to_stdout(Color::None, format(m, args...));
-        }
-        template <class Message, class... Ts>
-        void println(Message m, Ts... args)
-        {
-            write_text_to_stdout(Color::None, format(m, args...));
-            write_text_to_stdout(Color::None, "\n");
-        }
+    template <class Message, class... Ts>
+    void print(Message m, Ts... args)
+    {
+        write_text_to_stdout(Color::None, format(m, args...));
+    }
+    template <class Message, class... Ts>
+    void println(Message m, Ts... args)
+    {
+        write_text_to_stdout(Color::None, format(m, args...));
+        write_text_to_stdout(Color::None, "\n");
+    }
 
-        template <class Message, class... Ts>
-        void print(Color c, Message m, Ts... args)
-        {
-            write_text_to_stdout(c, format(m, args...));
-        }
-        template <class Message, class... Ts>
-        void println(Color c, Message m, Ts... args)
-        {
-            write_text_to_stdout(c, format(m, args...));
-            write_text_to_stdout(Color::None, "\n");
-        }
+    template <class Message, class... Ts>
+    void print(Color c, Message m, Ts... args)
+    {
+        write_text_to_stdout(c, format(m, args...));
+    }
+    template <class Message, class... Ts>
+    void println(Color c, Message m, Ts... args)
+    {
+        write_text_to_stdout(c, format(m, args...));
+        write_text_to_stdout(Color::None, "\n");
+    }
 
 // these use `constexpr static` in order to work with GCC 6
-#define DECLARE_MSG_ARG(TYPE, NAME) \
+#define DECLARE_MSG_ARG(NAME) \
     constexpr static struct NAME ## _t { \
-        using type = TYPE; \
-        detail::MessageArgument<NAME ## _t> operator=(const TYPE& t) const noexcept \
+        template <class T> \
+        detail::MessageArgument<NAME ## _t, T> operator=(const T& t) const noexcept \
         { \
-            return detail::MessageArgument<NAME ## _t>{#NAME, &t}; \
+            return detail::MessageArgument<NAME ## _t, T>{#NAME, &t}; \
         } \
     } NAME = {}
 
-    DECLARE_MSG_ARG(StringView, email);
-    DECLARE_MSG_ARG(StringView, vcpkg_version);
-    DECLARE_MSG_ARG(StringView, error);
+    DECLARE_MSG_ARG(email);
+    DECLARE_MSG_ARG(vcpkg_version);
+    DECLARE_MSG_ARG(error);
+    DECLARE_MSG_ARG(triplet);
+    DECLARE_MSG_ARG(version);
+    DECLARE_MSG_ARG(line_info);
+    DECLARE_MSG_ARG(file);
+    DECLARE_MSG_ARG(port);
+    DECLARE_MSG_ARG(option);
 #undef DECLARE_MSG_ARG
 
 #define DEFINE_MESSAGE_NOARGS(NAME, COMMENT, DEFAULT_STR) \
@@ -129,6 +162,40 @@ CMD=)",
         email_t,
         vcpkg_version_t,
         error_t);
+    DEFINE_MESSAGE(UnreachableCode, "", "Error: Unreachable code was reached\n{line_info}",
+        line_info_t);
+    DEFINE_MESSAGE(FailedToStoreBinaryCache, "", "Failed to store binary cache {file}: {error}",
+        file_t,
+        error_t);
+    DEFINE_MESSAGE(UsingCommunityTriplet,
+        "Make sure to keep the `--` at the front",
+        "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.",
+        triplet_t);
+
+    // commands.add-version.cpp
+    DEFINE_MESSAGE(VersionAlreadyInBaseline, "", "Version `{version}` is already in `{file}`\n",
+        version_t,
+        file_t);
+    DEFINE_MESSAGE(VersionAddedToBaseline, "", "Added version `{version}` to `{file}`.\n",
+        version_t,
+        file_t);
+    DEFINE_MESSAGE(NoLocalGitShaFoundForPort, "", R"(Warning: No local Git SHA was found for port `{port}`.
+-- Did you remember to commit your changes?
+***No files were updated.***)",
+        port_t);
+    DEFINE_MESSAGE(PortNotProperlyFormatted, "",
+R"(Error: The port `{port}` is not properly formatted.
+Run `vcpkg format-manifest ports/{port}/vcpkg.json` to format the file.
+Don't forget to commit the result!)",
+                                      port_t);
+    DEFINE_MESSAGE(CouldntLoadPort, "", "Error: Couldn't load port `{port}`.", port_t);
+    DEFINE_MESSAGE(AddVersionUseOptionAll, "",
+        "Error: Use option `--{option}` to update version files for all ports at once.",
+        option_t);
+    DEFINE_MESSAGE(AddVersionIgnoringOptionAll, "",
+        "Warning: Ignoring option `--{option}` since a port name argument was provided.",
+        option_t);
+
     DEFINE_MESSAGE_NOARGS(AllRequestedPackagesInstalled, "", "All requested packages are currently installed.");
     DEFINE_MESSAGE_NOARGS(NoLocalizationForMessages, "", "No localization for the following messages:");
 

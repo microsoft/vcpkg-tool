@@ -40,8 +40,7 @@ namespace vcpkg
 
     [[noreturn]] void Checks::unreachable(const LineInfo& line_info)
     {
-        vcpkg::printf(
-            Color::Error, "Error: Unreachable code was reached\n%s(%d)\n", line_info.file_name, line_info.line_number);
+        msg::println(Color::Error, msg::UnreachableCode, msg::line_info = line_info);
 #ifndef NDEBUG
         std::abort();
 #else

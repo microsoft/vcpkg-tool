@@ -390,7 +390,7 @@ namespace
 
                 if (ec)
                 {
-                    vcpkg::printf(Color::Warning, "Failed to store binary cache %s: %s\n", archive_path, ec.message());
+                    msg::println(msg::FailedToStoreBinaryCache, msg::file = archive_path, msg::error = ec.message());
                 }
                 else
                 {

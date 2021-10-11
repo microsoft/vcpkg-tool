@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/format.h>
 
 #include <algorithm>
 #include <cstddef>
@@ -50,3 +51,17 @@ namespace vcpkg
     inline bool operator==(const char* l, ZStringView r) { return strcmp(l, r.c_str()) == 0; }
     inline bool operator==(ZStringView l, const char* r) { return strcmp(l.c_str(), r) == 0; }
 }
+
+template <>
+struct fmt::formatter<vcpkg::ZStringView> : fmt::formatter<vcpkg::StringView>
+{
+    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin())
+    {
+        return vcpkg::basic_format_parse_impl(ctx);
+    }
+    template <class FormatContext>
+    auto format(const vcpkg::ZStringView& s, FormatContext& ctx) -> decltype(ctx.out())
+    {
+        return fmt::formatter<vcpkg::StringView>::format(s, ctx);
+    }
+};

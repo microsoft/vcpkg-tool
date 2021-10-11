@@ -127,7 +127,7 @@ namespace
             {
                 if (print_success)
                 {
-                    vcpkg::printf(Color::Success, "Version `%s` is already in `%s`\n", version, baseline_path);
+                    msg::println(Color::Success, msg::VersionAlreadyInBaseline, msg::version = version, msg::file = baseline_path);
                 }
                 return;
             }
@@ -141,7 +141,7 @@ namespace
         write_baseline_file(fs, baseline_map, baseline_path);
         if (print_success)
         {
-            vcpkg::printf(Color::Success, "Added version `%s` to `%s`.\n", version.to_string(), baseline_path);
+            msg::println(Color::Success, msg::VersionAddedToBaseline, msg::version = version, msg::file = baseline_path);
         }
         return;
     }
@@ -291,9 +291,7 @@ namespace vcpkg::Commands::AddVersion
         {
             if (add_all)
             {
-                vcpkg::printf(Color::Warning,
-                              "Warning: Ignoring option `--%s` since a port name argument was provided.\n",
-                              OPTION_ALL);
+                msg::println(Color::Warning, msg::AddVersionIgnoringOptionAll, msg::option = OPTION_ALL);
             }
             port_names.emplace_back(args.command_arguments[0]);
         }
@@ -301,9 +299,7 @@ namespace vcpkg::Commands::AddVersion
         {
             if (!add_all)
             {
-                vcpkg::printf(Color::Error,
-                              "Error: Use option `--%s` to update version files for all ports at once.\n",
-                              OPTION_ALL);
+                msg::println(Color::Error, msg::AddVersionUseOptionAll, msg::option = OPTION_ALL);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -334,7 +330,7 @@ namespace vcpkg::Commands::AddVersion
             if (!maybe_scf.has_value())
             {
                 if (add_all) continue;
-                vcpkg::printf(Color::Error, "Error: Couldn't load port `%s`.", port_name);
+                msg::println(Color::Error, msg::CouldntLoadPort, msg::port = port_name);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -351,12 +347,7 @@ namespace vcpkg::Commands::AddVersion
                     const auto formatted_content = Json::stringify(json, {});
                     if (current_file_content != formatted_content)
                     {
-                        vcpkg::printf(Color::Error,
-                                      "Error: The port `%s` is not properly formatted.\n"
-                                      "Run `vcpkg format-manifest ports/%s/vcpkg.json` to format the file.\n"
-                                      "Don't forget to commit the result!\n",
-                                      port_name,
-                                      port_name);
+                        msg::println(Color::Error, msg::PortNotProperlyFormatted, msg::port = port_name);
                         Checks::exit_fail(VCPKG_LINE_INFO);
                     }
                 }
@@ -366,11 +357,7 @@ namespace vcpkg::Commands::AddVersion
             auto git_tree_it = git_tree_map.find(port_name);
             if (git_tree_it == git_tree_map.end())
             {
-                vcpkg::printf(Color::Warning,
-                              "Warning: No local Git SHA was found for port `%s`.\n"
-                              "-- Did you remember to commit your changes?\n"
-                              "***No files were updated.***\n",
-                              port_name);
+                msg::println(Color::Warning, msg::NoLocalGitShaFoundForPort, msg::port = port_name);
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
