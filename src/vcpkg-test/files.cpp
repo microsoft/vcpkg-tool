@@ -602,8 +602,6 @@ TEST_CASE ("remove readonly", "[files]")
     fs.create_directory(temp_dir, VCPKG_LINE_INFO);
     const auto writable_dir = temp_dir / "writable_dir";
     fs.create_directory(writable_dir, VCPKG_LINE_INFO);
-    const auto readonly_dir = temp_dir / "readonly_dir";
-    fs.create_directory(readonly_dir, VCPKG_LINE_INFO);
 
     const auto writable_dir_writable_file = writable_dir / "writable_file";
     fs.write_contents(writable_dir_writable_file, "content", VCPKG_LINE_INFO);
@@ -611,6 +609,18 @@ TEST_CASE ("remove readonly", "[files]")
     const auto writable_dir_readonly_file = writable_dir / "readonly_file";
     fs.write_contents(writable_dir_readonly_file, "content", VCPKG_LINE_INFO);
     set_readonly(writable_dir_readonly_file);
+
+    CHECK(fs.remove(writable_dir_writable_file, VCPKG_LINE_INFO));
+    CHECK(fs.remove(writable_dir_readonly_file, VCPKG_LINE_INFO));
+
+    CHECK(fs.remove(writable_dir, VCPKG_LINE_INFO));
+
+#if defined(_WIN32)
+    // On Win32, FILE_ATTRIBUTE_READONLY on directories should be ignored by remove.
+    // We don't support resolving this problem on POSIX because in all the places where it
+    // would matter, vcpkg doesn't create directories without writable bits (for now).
+    const auto readonly_dir = temp_dir / "readonly_dir";
+    fs.create_directory(readonly_dir, VCPKG_LINE_INFO);
 
     const auto readonly_dir_writable_file = readonly_dir / "writable_file";
     fs.write_contents(readonly_dir_writable_file, "content", VCPKG_LINE_INFO);
@@ -621,13 +631,11 @@ TEST_CASE ("remove readonly", "[files]")
 
     set_readonly(readonly_dir);
 
-    CHECK(fs.remove(writable_dir_writable_file, VCPKG_LINE_INFO));
-    CHECK(fs.remove(writable_dir_readonly_file, VCPKG_LINE_INFO));
     CHECK(fs.remove(readonly_dir_writable_file, VCPKG_LINE_INFO));
     CHECK(fs.remove(readonly_dir_readonly_file, VCPKG_LINE_INFO));
 
-    CHECK(fs.remove(writable_dir, VCPKG_LINE_INFO));
     CHECK(fs.remove(readonly_dir, VCPKG_LINE_INFO));
+#endif // ^^^ _WIN32
 
     CHECK(fs.remove(temp_dir, VCPKG_LINE_INFO));
     std::error_code ec;
