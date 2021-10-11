@@ -127,6 +127,9 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(file);
     DECLARE_MSG_ARG(port);
     DECLARE_MSG_ARG(option);
+    DECLARE_MSG_ARG(sha);
+    DECLARE_MSG_ARG(old_value);
+    DECLARE_MSG_ARG(new_value);
 #undef DECLARE_MSG_ARG
 
 #define REGISTER_MESSAGE(NAME) \
