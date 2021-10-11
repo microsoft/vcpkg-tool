@@ -24,6 +24,31 @@ namespace
 
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
+    DECLARE_AND_REGISTER_MESSAGE(VersionAlreadyInBaseline, "", "Version `{version}` is already in `{file}`\n",
+        msg::version,
+        msg::file);
+    DECLARE_AND_REGISTER_MESSAGE(VersionAddedToBaseline, "", "Added version `{version}` to `{file}`.\n",
+        msg::version,
+        msg::file);
+    DECLARE_AND_REGISTER_MESSAGE(NoLocalGitShaFoundForPort, "",
+R"(Warning: No local Git SHA was found for port `{port}`.
+-- Did you remember to commit your changes?
+***No files were updated.***)",
+        msg::port);
+    DECLARE_AND_REGISTER_MESSAGE(PortNotProperlyFormatted, "",
+R"(Error: The port `{port}` is not properly formatted.
+Run `vcpkg format-manifest ports/{port}/vcpkg.json` to format the file.
+Don't forget to commit the result!)",
+                                      msg::port);
+    DECLARE_AND_REGISTER_MESSAGE(CouldntLoadPort, "", "Error: Couldn't load port `{port}`.", msg::port);
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionUseOptionAll, "",
+        "Error: Use option `--{option}` to update version files for all ports at once.",
+        msg::option);
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionIgnoringOptionAll, "",
+        "Warning: Ignoring option `--{option}` since a port name argument was provided.",
+        msg::option);
+
+
     void insert_version_to_json_object(Json::Object& obj, const VersionT& version, StringLiteral version_field)
     {
         obj.insert(version_field, Json::Value::string(version.text()));
@@ -127,7 +152,7 @@ namespace
             {
                 if (print_success)
                 {
-                    msg::println(Color::Success, msg::VersionAlreadyInBaseline, msg::version = version, msg::file = baseline_path);
+                    msg::println(Color::Success, msgVersionAlreadyInBaseline, msg::version = version, msg::file = baseline_path);
                 }
                 return;
             }
@@ -141,7 +166,7 @@ namespace
         write_baseline_file(fs, baseline_map, baseline_path);
         if (print_success)
         {
-            msg::println(Color::Success, msg::VersionAddedToBaseline, msg::version = version, msg::file = baseline_path);
+            msg::println(Color::Success, msgVersionAddedToBaseline, msg::version = version, msg::file = baseline_path);
         }
         return;
     }
@@ -291,7 +316,7 @@ namespace vcpkg::Commands::AddVersion
         {
             if (add_all)
             {
-                msg::println(Color::Warning, msg::AddVersionIgnoringOptionAll, msg::option = OPTION_ALL);
+                msg::println(Color::Warning, msgAddVersionIgnoringOptionAll, msg::option = OPTION_ALL);
             }
             port_names.emplace_back(args.command_arguments[0]);
         }
@@ -299,7 +324,7 @@ namespace vcpkg::Commands::AddVersion
         {
             if (!add_all)
             {
-                msg::println(Color::Error, msg::AddVersionUseOptionAll, msg::option = OPTION_ALL);
+                msg::println(Color::Error, msgAddVersionUseOptionAll, msg::option = OPTION_ALL);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -330,7 +355,7 @@ namespace vcpkg::Commands::AddVersion
             if (!maybe_scf.has_value())
             {
                 if (add_all) continue;
-                msg::println(Color::Error, msg::CouldntLoadPort, msg::port = port_name);
+                msg::println(Color::Error, msgCouldntLoadPort, msg::port = port_name);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -347,7 +372,7 @@ namespace vcpkg::Commands::AddVersion
                     const auto formatted_content = Json::stringify(json, {});
                     if (current_file_content != formatted_content)
                     {
-                        msg::println(Color::Error, msg::PortNotProperlyFormatted, msg::port = port_name);
+                        msg::println(Color::Error, msgPortNotProperlyFormatted, msg::port = port_name);
                         Checks::exit_fail(VCPKG_LINE_INFO);
                     }
                 }
@@ -357,7 +382,7 @@ namespace vcpkg::Commands::AddVersion
             auto git_tree_it = git_tree_map.find(port_name);
             if (git_tree_it == git_tree_map.end())
             {
-                msg::println(Color::Warning, msg::NoLocalGitShaFoundForPort, msg::port = port_name);
+                msg::println(Color::Warning, msgNoLocalGitShaFoundForPort, msg::port = port_name);
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }

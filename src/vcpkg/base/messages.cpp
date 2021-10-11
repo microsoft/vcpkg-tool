@@ -4,6 +4,8 @@
 
 namespace vcpkg::msg
 {
+    DECLARE_AND_REGISTER_SIMPLE_MESSAGE(NoLocalizationForMessages, "", "No localization for the following messages:");
+
     // basic implementation - the write_text_to_stdout
 #if defined(_WIN32)
     static bool is_console(HANDLE h)
@@ -167,7 +169,7 @@ namespace vcpkg::msg
 
         if (!names_without_localization.empty())
         {
-            println(Color::Warning, NoLocalizationForMessages);
+            println(Color::Warning, msgNoLocalizationForMessages);
             for (const auto& name : names_without_localization)
             {
                 write_text_to_stdout(Color::Warning, fmt::format("    - {}\n", name));
@@ -233,19 +235,4 @@ namespace vcpkg::msg
         Checks::check_exit(VCPKG_LINE_INFO, index < localization_comments.size());
         return localization_comments[index];
     }
-
-    REGISTER_MESSAGE(VcpkgHasCrashed);
-    REGISTER_MESSAGE(AllRequestedPackagesInstalled);
-    REGISTER_MESSAGE(NoLocalizationForMessages);
-    REGISTER_MESSAGE(UnreachableCode);
-    REGISTER_MESSAGE(FailedToStoreBinaryCache);
-    REGISTER_MESSAGE(UsingCommunityTriplet);
-    REGISTER_MESSAGE(VersionAlreadyInBaseline);
-    REGISTER_MESSAGE(VersionAddedToBaseline);
-    REGISTER_MESSAGE(NoLocalGitShaFoundForPort);
-    REGISTER_MESSAGE(PortNotProperlyFormatted);
-    REGISTER_MESSAGE(CouldntLoadPort);
-    REGISTER_MESSAGE(AddVersionUseOptionAll);
-    REGISTER_MESSAGE(AddVersionIgnoringOptionAll);
-
 }

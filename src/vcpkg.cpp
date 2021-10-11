@@ -39,6 +39,20 @@ static constexpr int SURVEY_INTERVAL_IN_HOURS = 24 * 30 * 6;
 // Initial survey appears after 10 days. Therefore, subtract 24 hours/day * 10 days
 static constexpr int SURVEY_INITIAL_OFFSET_IN_HOURS = SURVEY_INTERVAL_IN_HOURS - 24 * 10;
 
+
+DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed, "Don't localize the data blob (the data after the colon)",
+R"(vcpkg.exe has crashed.
+Please send an email to:
+    {email}
+containing a brief summary of what you were trying to do and the following data blob:
+
+Version={vcpkg_version}
+EXCEPTION='{error}'
+CMD=)",
+    msg::email,
+    msg::vcpkg_version,
+    msg::error);
+
 static void invalid_command(const std::string& cmd)
 {
     print2(Color::Error, "invalid command: ", cmd, '\n');
@@ -320,7 +334,7 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    msg::println(msg::VcpkgHasCrashed,
+    msg::println(msgVcpkgHasCrashed,
         msg::email = Commands::Contact::email(),
         msg::vcpkg_version = Commands::Version::version(),
         msg::error = exc_msg);

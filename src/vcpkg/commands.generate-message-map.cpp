@@ -26,6 +26,8 @@ namespace vcpkg::Commands
             }
         }
 
+        obj.sort_keys();
+
         write_text_to_stdout(Color::None, Json::stringify(obj, {}));
         Checks::exit_success(VCPKG_LINE_INFO);
     }

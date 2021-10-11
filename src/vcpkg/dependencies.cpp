@@ -22,6 +22,8 @@ namespace vcpkg::Dependencies
 
     namespace
     {
+        DECLARE_AND_REGISTER_SIMPLE_MESSAGE(AllRequestedPackagesInstalled, "", "All requested packages are currently installed.");
+
         struct ClusterInstalled
         {
             ClusterInstalled(const InstalledPackageView& ipv) : ipv(ipv)
@@ -1146,7 +1148,7 @@ namespace vcpkg::Dependencies
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
             action_plan.install_actions.empty())
         {
-            msg::println(msg::AllRequestedPackagesInstalled);
+            msg::println(msgAllRequestedPackagesInstalled);
             return;
         }
 

@@ -26,6 +26,10 @@ namespace
     static constexpr StringLiteral s_binarycaching_doc_url =
         "https://github.com/Microsoft/vcpkg/tree/master/docs/users/binarycaching.md";
 
+    DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBinaryCache, "", "Failed to store binary cache {file}: {error}",
+        msg::file,
+        msg::error);
+
     struct ConfigSegmentsParser : Parse::ParserBase
     {
         using Parse::ParserBase::ParserBase;
@@ -390,7 +394,7 @@ namespace
 
                 if (ec)
                 {
-                    msg::println(msg::FailedToStoreBinaryCache, msg::file = archive_path, msg::error = ec.message());
+                    msg::println(msgFailedToStoreBinaryCache, msg::file = archive_path, msg::error = ec.message());
                 }
                 else
                 {

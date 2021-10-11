@@ -8,6 +8,9 @@ namespace vcpkg
 {
     static void (*g_shutdown_handler)() = nullptr;
 
+    DECLARE_AND_REGISTER_MESSAGE(UnreachableCode, "", "Error: Unreachable code was reached\n{line_info}",
+        msg::line_info);
+
     void Checks::register_global_shutdown_handler(void (*func)())
     {
         if (g_shutdown_handler)
@@ -40,7 +43,7 @@ namespace vcpkg
 
     [[noreturn]] void Checks::unreachable(const LineInfo& line_info)
     {
-        msg::println(Color::Error, msg::UnreachableCode, msg::line_info = line_info);
+        msg::println(Color::Error, msgUnreachableCode, msg::line_info = line_info);
 #ifndef NDEBUG
         std::abort();
 #else

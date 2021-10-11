@@ -50,6 +50,11 @@ namespace
     };
 
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
+
+    DECLARE_AND_REGISTER_MESSAGE(UsingCommunityTriplet,
+        "Make sure to keep the `--` at the front",
+        "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.",
+        msg::triplet);
 }
 
 namespace vcpkg::Build
@@ -863,7 +868,7 @@ namespace vcpkg::Build
 
         if (Strings::starts_with(triplet_file_path, paths.community_triplets))
         {
-            msg::println(Color::Warning, msg::UsingCommunityTriplet, msg::triplet = triplet);
+            msg::println(Color::Warning, msgUsingCommunityTriplet, msg::triplet = triplet);
             vcpkg::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);
         }
         else if (!Strings::starts_with(triplet_file_path, paths.triplets))

@@ -45,6 +45,9 @@ namespace vcpkg::msg
             static constexpr void check_format_args(const detail::MessageArgument<Tags, Tys>&...) noexcept { }
         };
 
+        template <class... Args>
+        MessageCheckFormatArgs<Args...> make_message_check_format_args(const Args&... args);
+
         ::size_t startup_register_message(StringView name, StringView format_string, StringView comment);
 
         ::size_t last_message_index();
@@ -127,10 +130,14 @@ namespace vcpkg::msg
 #undef DECLARE_MSG_ARG
 
 #define REGISTER_MESSAGE(NAME) \
-    const ::size_t NAME ## _t :: index = \
-        ::vcpkg::msg::detail::startup_register_message(name(), default_format_string(), NAME ## _t::localization_comment())
+    const ::size_t NAME ## _msg_t :: index = \
+        ::vcpkg::msg::detail::startup_register_message( \
+            NAME ## _msg_t::name(), \
+            NAME ## _msg_t::default_format_string(), \
+            NAME ## _msg_t::localization_comment())
+
 #define DECLARE_SIMPLE_MESSAGE(NAME, COMMENT, DEFAULT_STR) \
-    constexpr struct NAME ## _t : ::vcpkg::msg::detail::MessageCheckFormatArgs<> { \
+    constexpr struct NAME ## _msg_t : ::vcpkg::msg::detail::MessageCheckFormatArgs<> { \
         static StringView name() { \
             return #NAME; \
         }; \
@@ -141,14 +148,14 @@ namespace vcpkg::msg
             return DEFAULT_STR; \
         } \
         static const ::size_t index; \
-    } NAME = {}
+    } msg ## NAME = {}
 
 #define DECLARE_AND_REGISTER_SIMPLE_MESSAGE(NAME, COMMENT, DEFAULT_STR) \
     DECLARE_SIMPLE_MESSAGE(NAME, COMMENT, DEFAULT_STR); \
     REGISTER_MESSAGE(NAME)
 
 #define DECLARE_MESSAGE(NAME, COMMENT, DEFAULT_STR, ...) \
-    constexpr struct NAME ## _t : detail::MessageCheckFormatArgs<__VA_ARGS__> { \
+    constexpr struct NAME ## _msg_t : decltype(::vcpkg::msg::detail::make_message_check_format_args(__VA_ARGS__)) { \
         static StringView name() { \
             return #NAME; \
         } \
@@ -159,58 +166,8 @@ namespace vcpkg::msg
             return DEFAULT_STR; \
         } \
         static const ::size_t index; \
-    } NAME = {}
+    } msg ## NAME = {}
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, COMMENT, DEFAULT_STR, ...) \
     DECLARE_MESSAGE(NAME, COMMENT, DEFAULT_STR, __VA_ARGS__); \
     REGISTER_MESSAGE(NAME)
-
-    DECLARE_MESSAGE(VcpkgHasCrashed, "Don't localize the data blob (the data after the colon)",
-R"(vcpkg.exe has crashed.
-Please send an email to:
-    {email}
-containing a brief summary of what you were trying to do and the following data blob:
-
-Version={vcpkg_version}
-EXCEPTION='{error}'
-CMD=)",
-        email_t,
-        vcpkg_version_t,
-        error_t);
-    DECLARE_MESSAGE(UnreachableCode, "", "Error: Unreachable code was reached\n{line_info}",
-        line_info_t);
-    DECLARE_MESSAGE(FailedToStoreBinaryCache, "", "Failed to store binary cache {file}: {error}",
-        file_t,
-        error_t);
-    DECLARE_MESSAGE(UsingCommunityTriplet,
-        "Make sure to keep the `--` at the front",
-        "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.",
-        triplet_t);
-
-    // commands.add-version.cpp
-    DECLARE_MESSAGE(VersionAlreadyInBaseline, "", "Version `{version}` is already in `{file}`\n",
-        version_t,
-        file_t);
-    DECLARE_MESSAGE(VersionAddedToBaseline, "", "Added version `{version}` to `{file}`.\n",
-        version_t,
-        file_t);
-    DECLARE_MESSAGE(NoLocalGitShaFoundForPort, "", R"(Warning: No local Git SHA was found for port `{port}`.
--- Did you remember to commit your changes?
-***No files were updated.***)",
-        port_t);
-    DECLARE_MESSAGE(PortNotProperlyFormatted, "",
-R"(Error: The port `{port}` is not properly formatted.
-Run `vcpkg format-manifest ports/{port}/vcpkg.json` to format the file.
-Don't forget to commit the result!)",
-                                      port_t);
-    DECLARE_MESSAGE(CouldntLoadPort, "", "Error: Couldn't load port `{port}`.", port_t);
-    DECLARE_MESSAGE(AddVersionUseOptionAll, "",
-        "Error: Use option `--{option}` to update version files for all ports at once.",
-        option_t);
-    DECLARE_MESSAGE(AddVersionIgnoringOptionAll, "",
-        "Warning: Ignoring option `--{option}` since a port name argument was provided.",
-        option_t);
-
-    DECLARE_SIMPLE_MESSAGE(AllRequestedPackagesInstalled, "", "All requested packages are currently installed.");
-    DECLARE_SIMPLE_MESSAGE(NoLocalizationForMessages, "", "No localization for the following messages:");
-
 }
