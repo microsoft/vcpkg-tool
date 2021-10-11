@@ -294,6 +294,8 @@ namespace vcpkg
         void create_best_link(const Path& to, const Path& from, LineInfo);
 
         // copies regular files and directories, recursively.
+        // symlinks are followed and copied as if they were regular files or directories
+        //   (like std::filesystem::copy(..., std::filesystem::copy_options::recursive))
         virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) = 0;
         void copy_regular_recursive(const Path& source, const Path& destination, LineInfo);
 
