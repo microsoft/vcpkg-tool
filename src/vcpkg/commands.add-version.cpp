@@ -44,7 +44,7 @@ R"(Warning: No local Git SHA was found for port `{port}`.
 -- Did you remember to commit your changes?
 ***No files were updated.***)",
         msg::port);
-    DECLARE_AND_REGISTER_MESSAGE(LocalPortShaSameAsVersion, "Don't remove the `--`s",
+    DECLARE_AND_REGISTER_MESSAGE(LocalPortShaSameAsVersion, "",
 R"(Warning: Local port files SHA is the same as version `{version}` in `{file}`.
 -- SHA: {sha}
 -- Did you remember to commit your changes?
