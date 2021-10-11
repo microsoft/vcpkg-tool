@@ -1,6 +1,20 @@
 {
+  "AllRequestedPackagesInstalled": "All requested packages are currently installed.",
+  "CouldntFindRequiredFile": "Error: Couldn't find required file `{file}`.",
+  "CouldntLoadPort": "Error: Couldn't load port `{port}`.",
+  "FailedToStoreBinaryCache": "Failed to store binary cache {file}: {error}",
+  "IgnoringOptionAll": "Warning: Ignoring option `--{option}` since a port name argument was provided.",
+  "LocalPortShaSameAsVersion": "Warning: Local port files SHA is the same as version `{version}` in `{file}`.\n-- SHA: {sha}\n-- Did you remember to commit your changes?\n***No files were updated.***",
+  "_LocalPortShaSameAsVersion.comment": "Don't remove the `--`s",
+  "NoLocalGitShaFoundForPort": "Warning: No local Git SHA was found for port `{port}`.\n-- Did you remember to commit your changes?\n***No files were updated.***",
+  "NoVersionOrPortVersionChanges": "Error: Local changes detected for {port} but no changes to version or port version.\n-- Version: {version}\n-- Old SHA: {old_value}\n-- New SHA: {new_value}\n-- Did you remember to update the version or port version?\n-- Pass `--overwrite-version` to bypass this check.\n***No files were updated.***",
+  "PortNotProperlyFormatted": "Error: The port `{port}` is not properly formatted.\nRun `vcpkg format-manifest ports/{port}/vcpkg.json` to format the file.\nDon't forget to commit the result!",
+  "UnableToParseVersionsFile": "Error: Unable to parse versions file {file}.\n{error}",
+  "UseOptionAll": "Error: Use option `--{option}` to update version files for all ports at once.",
+  "UsingCommunityTriplet": "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.",
+  "_UsingCommunityTriplet.comment": "Make sure to keep the `--` at the front",
   "VcpkgHasCrashed": "vcpkg.exe has crashed.\nPlease send an email to:\n    {email}\ncontaining a brief summary of what you were trying to do and the following data blob:\n\nVersion={vcpkg_version}\nEXCEPTION='{error}'\nCMD=",
   "_VcpkgHasCrashed.comment": "Don't localize the data blob (the data after the colon)",
-  "AllRequestedPackagesInstalled": "All requested packages are currently installed.",
-  "NoLocalizationForMessages": "No localization for the following messages:"
+  "VersionAddedToFile": "Added version `{version}` to `{file}`.",
+  "VersionAlreadyInFile": "Version `{version}` is already in `{file}`."
 }
