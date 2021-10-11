@@ -33,13 +33,16 @@ namespace
 
     std::string get_random_filename(urbg_t& urbg) { return Strings::b32_encode(urbg()); }
 
-#if defined(_WIN32)
     bool is_valid_symlink_failure(const std::error_code& ec) noexcept
     {
+#if defined(_WIN32)
         // on Windows, creating symlinks requires admin rights, so we ignore such failures
         return ec == std::error_code(ERROR_PRIVILEGE_NOT_HELD, std::system_category());
+#else  // ^^^ _WIN32 // !_WIN32
+        (void)ec;
+        return false; // symlinks should always work on non-windows
+#endif // ^^^ !_WIN32
     }
-#endif // ^^^ _WIN32
 
     void create_directory_tree(urbg_t& urbg, Filesystem& fs, const Path& base, std::uint32_t remaining_depth = 5)
     {
@@ -180,9 +183,7 @@ namespace
         fs.create_symlink(target_file, target_symlink, ec);
         if (ec)
         {
-            // if we get not supported or permission denied, assume symlinks aren't supported
-            // on this system and the test is a no-op
-            REQUIRE((ec == std::errc::not_supported || ec == std::errc::permission_denied));
+            REQUIRE(is_valid_symlink_failure(ec));
         }
         else
         {
@@ -556,6 +557,92 @@ TEST_CASE ("Path decomposition", "[filesystem][files]")
     test_path_decomposition("//server/a.ext", true, "a", ".ext");
 }
 
+static void set_readonly(const Path& target)
+{
+#if defined(_WIN32)
+    auto as_unicode = Strings::to_utf16(target.native());
+
+    const DWORD old_attributes = ::GetFileAttributesW(as_unicode.c_str());
+    if (old_attributes == INVALID_FILE_ATTRIBUTES)
+    {
+        throw std::runtime_error("failed to get existing attributes to set readonly");
+    }
+
+    const DWORD new_attributes = old_attributes | FILE_ATTRIBUTE_READONLY;
+    if (::SetFileAttributesW(as_unicode.c_str(), new_attributes) == 0)
+    {
+        throw std::runtime_error("failed to set readonly attributes");
+    }
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+    struct stat s;
+    if (::stat(target.c_str(), &s) != 0)
+    {
+        throw std::runtime_error("failed to get existing attributes to set readonly");
+    }
+
+    const mode_t all_write_bits = 0222;
+    const mode_t all_except_write_bits = ~all_write_bits;
+    const mode_t new_bits = s.st_mode & all_except_write_bits;
+    if (::chmod(target.c_str(), new_bits) != 0)
+    {
+        throw std::runtime_error("failed to set readonly attributes");
+    }
+#endif // ^^^ !_WIN32
+}
+
+TEST_CASE ("remove readonly", "[files]")
+{
+    urbg_t urbg;
+
+    auto& fs = setup();
+
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    INFO("temp dir is: " << temp_dir.native());
+
+    fs.create_directory(temp_dir, VCPKG_LINE_INFO);
+    const auto writable_dir = temp_dir / "writable_dir";
+    fs.create_directory(writable_dir, VCPKG_LINE_INFO);
+
+    const auto writable_dir_writable_file = writable_dir / "writable_file";
+    fs.write_contents(writable_dir_writable_file, "content", VCPKG_LINE_INFO);
+
+    const auto writable_dir_readonly_file = writable_dir / "readonly_file";
+    fs.write_contents(writable_dir_readonly_file, "content", VCPKG_LINE_INFO);
+    set_readonly(writable_dir_readonly_file);
+
+    CHECK(fs.remove(writable_dir_writable_file, VCPKG_LINE_INFO));
+    CHECK(fs.remove(writable_dir_readonly_file, VCPKG_LINE_INFO));
+
+    CHECK(fs.remove(writable_dir, VCPKG_LINE_INFO));
+
+#if defined(_WIN32)
+    // On Win32, FILE_ATTRIBUTE_READONLY on directories should be ignored by remove.
+    // We don't support resolving this problem on POSIX because in all the places where it
+    // would matter, vcpkg doesn't create directories without writable bits (for now).
+    const auto readonly_dir = temp_dir / "readonly_dir";
+    fs.create_directory(readonly_dir, VCPKG_LINE_INFO);
+
+    const auto readonly_dir_writable_file = readonly_dir / "writable_file";
+    fs.write_contents(readonly_dir_writable_file, "content", VCPKG_LINE_INFO);
+
+    const auto readonly_dir_readonly_file = readonly_dir / "readonly_file";
+    fs.write_contents(readonly_dir_readonly_file, "content", VCPKG_LINE_INFO);
+    set_readonly(readonly_dir_readonly_file);
+
+    set_readonly(readonly_dir);
+
+    CHECK(fs.remove(readonly_dir_writable_file, VCPKG_LINE_INFO));
+    CHECK(fs.remove(readonly_dir_readonly_file, VCPKG_LINE_INFO));
+
+    CHECK(fs.remove(readonly_dir, VCPKG_LINE_INFO));
+#endif // ^^^ _WIN32
+
+    CHECK(fs.remove(temp_dir, VCPKG_LINE_INFO));
+    std::error_code ec;
+    REQUIRE_FALSE(fs.exists(temp_dir, ec));
+    CHECK_EC_ON_FILE(temp_dir, ec);
+}
+
 TEST_CASE ("remove all", "[files]")
 {
     urbg_t urbg;
@@ -595,9 +682,7 @@ TEST_CASE ("remove all symlinks", "[files]")
     fs.create_directory_symlink(target_root, symlink_inside_dir / "symlink", ec);
     if (ec)
     {
-        // if we get not supported or permission denied, assume symlinks aren't supported
-        // on this system and the test is a no-op
-        REQUIRE((ec == std::errc::not_supported || ec == std::errc::permission_denied));
+        REQUIRE(is_valid_symlink_failure(ec));
     }
     else
     {
@@ -804,9 +889,7 @@ TEST_CASE ("copy_symlink", "[files]")
     fs.create_symlink("../file", temp_dir / "dir/sym", ec); // note: relative
     if (ec)
     {
-        // if we get not supported or permission denied, assume symlinks aren't supported
-        // on this system and the test is a no-op
-        REQUIRE((ec == std::errc::not_supported || ec == std::errc::permission_denied));
+        REQUIRE(is_valid_symlink_failure(ec));
     }
     else
     {
