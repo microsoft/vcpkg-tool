@@ -422,7 +422,10 @@ namespace
         if (!SetFileAttributesW(file_name, dw_attributes))
         {
             ec.assign(GetLastError(), std::system_category());
+            return;
         }
+
+        ec.clear();
     }
 
     // Custom implementation of stdfs::remove_all intended to be resilient to transient issues
