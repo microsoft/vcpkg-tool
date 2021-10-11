@@ -180,8 +180,6 @@ namespace
         fs.create_symlink(target_file, target_symlink, ec);
         if (ec)
         {
-            // if we get not supported or permission denied, assume symlinks aren't supported
-            // on this system and the test is a no-op
             REQUIRE(is_valid_symlink_failure(ec));
         }
         else
