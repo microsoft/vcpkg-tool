@@ -33,13 +33,16 @@ namespace
 
     std::string get_random_filename(urbg_t& urbg) { return Strings::b32_encode(urbg()); }
 
-#if defined(_WIN32)
     bool is_valid_symlink_failure(const std::error_code& ec) noexcept
     {
+#if defined(_WIN32)
         // on Windows, creating symlinks requires admin rights, so we ignore such failures
         return ec == std::error_code(ERROR_PRIVILEGE_NOT_HELD, std::system_category());
+#else  // ^^^ _WIN32 // !_WIN32
+        (void)ec;
+        return false; // symlinks should always work on non-windows
+#endif // ^^^ !_WIN32
     }
-#endif // ^^^ _WIN32
 
     void create_directory_tree(urbg_t& urbg, Filesystem& fs, const Path& base, std::uint32_t remaining_depth = 5)
     {
