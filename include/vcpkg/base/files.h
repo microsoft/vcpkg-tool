@@ -29,12 +29,8 @@ namespace vcpkg
     enum class CopyOptions
     {
         none = 0,
-
-        existing_mask = 0xF,
         skip_existing = 0x1,
         overwrite_existing = 0x2,
-
-        recursive = 0x10,
     };
 
     struct Path
@@ -297,8 +293,11 @@ namespace vcpkg
         void create_best_link(const Path& to, const Path& from, std::error_code& ec);
         void create_best_link(const Path& to, const Path& from, LineInfo);
 
-        virtual void copy(const Path& source, const Path& destination, CopyOptions options, std::error_code& ec) = 0;
-        void copy(const Path& source, const Path& destination, CopyOptions options, LineInfo);
+        // copies regular files and directories, recursively.
+        // symlinks are followed and copied as if they were regular files or directories
+        //   (like std::filesystem::copy(..., std::filesystem::copy_options::recursive))
+        virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) = 0;
+        void copy_regular_recursive(const Path& source, const Path& destination, LineInfo);
 
         virtual bool copy_file(const Path& source,
                                const Path& destination,
