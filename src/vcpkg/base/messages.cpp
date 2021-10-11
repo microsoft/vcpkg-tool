@@ -195,7 +195,7 @@ namespace vcpkg::msg
         return message_names.size();
     }
 
-    static ::size_t startup_register_message(StringView name, StringView format_string, StringView comment)
+    ::size_t detail::startup_register_message(StringView name, StringView format_string, StringView comment)
     {
         auto res = message_names.size();
         message_names.push_back(name.to_string());
@@ -234,10 +234,6 @@ namespace vcpkg::msg
         return localization_comments[index];
     }
 
-#define REGISTER_MESSAGE(NAME) \
-    const ::size_t NAME ## _t :: index = \
-        startup_register_message(name(), default_format_string(), NAME ## _t::localization_comment())
-
     REGISTER_MESSAGE(VcpkgHasCrashed);
     REGISTER_MESSAGE(AllRequestedPackagesInstalled);
     REGISTER_MESSAGE(NoLocalizationForMessages);
@@ -251,7 +247,5 @@ namespace vcpkg::msg
     REGISTER_MESSAGE(CouldntLoadPort);
     REGISTER_MESSAGE(AddVersionUseOptionAll);
     REGISTER_MESSAGE(AddVersionIgnoringOptionAll);
-
-#undef REGISTER_MESSAGE
 
 }

@@ -45,6 +45,8 @@ namespace vcpkg::msg
             static constexpr void check_format_args(const detail::MessageArgument<Tags, Tys>&...) noexcept { }
         };
 
+        ::size_t startup_register_message(StringView name, StringView format_string, StringView comment);
+
         ::size_t last_message_index();
 
         // REQUIRES: index < last_message_index()
@@ -102,7 +104,8 @@ namespace vcpkg::msg
         write_text_to_stdout(Color::None, "\n");
     }
 
-// these use `constexpr static` in order to work with GCC 6
+// these use `constexpr static` instead of `inline` in order to work with GCC 6;
+// they are trivial and empty, and their address does not matter, so this is not a problem
 #define DECLARE_MSG_ARG(NAME) \
     constexpr static struct NAME ## _t { \
         template <class T> \
@@ -123,24 +126,14 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(option);
 #undef DECLARE_MSG_ARG
 
-#define DEFINE_MESSAGE_NOARGS(NAME, COMMENT, DEFAULT_STR) \
-    constexpr static struct NAME ## _t : detail::MessageCheckFormatArgs<> { \
+#define REGISTER_MESSAGE(NAME) \
+    const ::size_t NAME ## _t :: index = \
+        ::vcpkg::msg::detail::startup_register_message(name(), default_format_string(), NAME ## _t::localization_comment())
+#define DECLARE_SIMPLE_MESSAGE(NAME, COMMENT, DEFAULT_STR) \
+    constexpr struct NAME ## _t : ::vcpkg::msg::detail::MessageCheckFormatArgs<> { \
         static StringView name() { \
             return #NAME; \
         }; \
-        static StringView localization_comment() { \
-            return COMMENT; \
-        }; \
-        static StringView default_format_string() noexcept { \
-            return DEFAULT_STR; \
-        } \
-        static const ::size_t index; \
-    } NAME = {}
-#define DEFINE_MESSAGE(NAME, COMMENT, DEFAULT_STR, ...) \
-    constexpr static struct NAME ## _t : detail::MessageCheckFormatArgs<__VA_ARGS__> { \
-        static StringView name() { \
-            return #NAME; \
-        } \
         static StringView localization_comment() { \
             return COMMENT; \
         }; \
@@ -150,7 +143,28 @@ namespace vcpkg::msg
         static const ::size_t index; \
     } NAME = {}
 
-    DEFINE_MESSAGE(VcpkgHasCrashed, "Don't localize the data blob (the data after the colon)",
+#define DECLARE_AND_REGISTER_SIMPLE_MESSAGE(NAME, COMMENT, DEFAULT_STR) \
+    DECLARE_SIMPLE_MESSAGE(NAME, COMMENT, DEFAULT_STR); \
+    REGISTER_MESSAGE(NAME)
+
+#define DECLARE_MESSAGE(NAME, COMMENT, DEFAULT_STR, ...) \
+    constexpr struct NAME ## _t : detail::MessageCheckFormatArgs<__VA_ARGS__> { \
+        static StringView name() { \
+            return #NAME; \
+        } \
+        static StringView localization_comment() { \
+            return COMMENT; \
+        }; \
+        static StringView default_format_string() noexcept { \
+            return DEFAULT_STR; \
+        } \
+        static const ::size_t index; \
+    } NAME = {}
+#define DECLARE_AND_REGISTER_MESSAGE(NAME, COMMENT, DEFAULT_STR, ...) \
+    DECLARE_MESSAGE(NAME, COMMENT, DEFAULT_STR, __VA_ARGS__); \
+    REGISTER_MESSAGE(NAME)
+
+    DECLARE_MESSAGE(VcpkgHasCrashed, "Don't localize the data blob (the data after the colon)",
 R"(vcpkg.exe has crashed.
 Please send an email to:
     {email}
@@ -162,44 +176,41 @@ CMD=)",
         email_t,
         vcpkg_version_t,
         error_t);
-    DEFINE_MESSAGE(UnreachableCode, "", "Error: Unreachable code was reached\n{line_info}",
+    DECLARE_MESSAGE(UnreachableCode, "", "Error: Unreachable code was reached\n{line_info}",
         line_info_t);
-    DEFINE_MESSAGE(FailedToStoreBinaryCache, "", "Failed to store binary cache {file}: {error}",
+    DECLARE_MESSAGE(FailedToStoreBinaryCache, "", "Failed to store binary cache {file}: {error}",
         file_t,
         error_t);
-    DEFINE_MESSAGE(UsingCommunityTriplet,
+    DECLARE_MESSAGE(UsingCommunityTriplet,
         "Make sure to keep the `--` at the front",
         "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.",
         triplet_t);
 
     // commands.add-version.cpp
-    DEFINE_MESSAGE(VersionAlreadyInBaseline, "", "Version `{version}` is already in `{file}`\n",
+    DECLARE_MESSAGE(VersionAlreadyInBaseline, "", "Version `{version}` is already in `{file}`\n",
         version_t,
         file_t);
-    DEFINE_MESSAGE(VersionAddedToBaseline, "", "Added version `{version}` to `{file}`.\n",
+    DECLARE_MESSAGE(VersionAddedToBaseline, "", "Added version `{version}` to `{file}`.\n",
         version_t,
         file_t);
-    DEFINE_MESSAGE(NoLocalGitShaFoundForPort, "", R"(Warning: No local Git SHA was found for port `{port}`.
+    DECLARE_MESSAGE(NoLocalGitShaFoundForPort, "", R"(Warning: No local Git SHA was found for port `{port}`.
 -- Did you remember to commit your changes?
 ***No files were updated.***)",
         port_t);
-    DEFINE_MESSAGE(PortNotProperlyFormatted, "",
+    DECLARE_MESSAGE(PortNotProperlyFormatted, "",
 R"(Error: The port `{port}` is not properly formatted.
 Run `vcpkg format-manifest ports/{port}/vcpkg.json` to format the file.
 Don't forget to commit the result!)",
                                       port_t);
-    DEFINE_MESSAGE(CouldntLoadPort, "", "Error: Couldn't load port `{port}`.", port_t);
-    DEFINE_MESSAGE(AddVersionUseOptionAll, "",
+    DECLARE_MESSAGE(CouldntLoadPort, "", "Error: Couldn't load port `{port}`.", port_t);
+    DECLARE_MESSAGE(AddVersionUseOptionAll, "",
         "Error: Use option `--{option}` to update version files for all ports at once.",
         option_t);
-    DEFINE_MESSAGE(AddVersionIgnoringOptionAll, "",
+    DECLARE_MESSAGE(AddVersionIgnoringOptionAll, "",
         "Warning: Ignoring option `--{option}` since a port name argument was provided.",
         option_t);
 
-    DEFINE_MESSAGE_NOARGS(AllRequestedPackagesInstalled, "", "All requested packages are currently installed.");
-    DEFINE_MESSAGE_NOARGS(NoLocalizationForMessages, "", "No localization for the following messages:");
-
-#undef DEFINE_MESSAGE
-#undef DEFINE_MESSAGE_NOARGS
+    DECLARE_SIMPLE_MESSAGE(AllRequestedPackagesInstalled, "", "All requested packages are currently installed.");
+    DECLARE_SIMPLE_MESSAGE(NoLocalizationForMessages, "", "No localization for the following messages:");
 
 }
