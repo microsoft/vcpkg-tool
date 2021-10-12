@@ -163,7 +163,7 @@ namespace vcpkg::Build
         if (result.code != BuildResult::SUCCEEDED)
         {
             print2(Color::error, Build::create_error_message(result.code, spec), '\n');
-            print2(Build::create_user_troubleshooting_message(*action), '\n');
+            print2(Build::create_user_troubleshooting_message(*action, paths), '\n');
             return 1;
         }
 
@@ -1315,7 +1315,7 @@ namespace vcpkg::Build
         return Strings::format("Error: Building package %s failed with: %s", spec, Build::to_string(build_result));
     }
 
-    std::string create_user_troubleshooting_message(const InstallPlanAction& action)
+    std::string create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
     {
 #if defined(_WIN32)
         auto vcpkg_update_cmd = ".\\vcpkg";
@@ -1328,16 +1328,19 @@ namespace vcpkg::Build
         {
             Strings::append(package, " -> ", scfl->to_versiont());
         }
-
-        return Strings::format("Please ensure you're using the latest portfiles with `%s update`, then\n"
+        auto description = paths.git_describe_head();
+        return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`, then\n"
                                "submit an issue at https://github.com/Microsoft/vcpkg/issues including:\n"
-                               "  Package: %s\n"
-                               "  Vcpkg version: %s\n"
+                               "  package: %s\n"
+                               "  vcpkg version: %s\n"
+                               "  vcpkg-tool version: %s\n"
                                "\n"
                                "Additionally, attach any relevant sections from the log files above.",
                                vcpkg_update_cmd,
                                package,
-                               Commands::Version::version());
+                               Commands::Version::version(),
+                               description.has_value() ? description.value_or_exit(VCPKG_LINE_INFO)
+                                                       : "Failed to get HEAD: " + description.error());
     }
 
     static BuildInfo inner_create_buildinfo(Parse::Paragraph pgh)
