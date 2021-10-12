@@ -2,7 +2,6 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/system.print.h>
 
 #include <atomic>
 
@@ -10,15 +9,9 @@ namespace vcpkg::Debug
 {
     extern std::atomic<bool> g_debugging;
 
-    inline void println(StringView sv)
-    {
-        if (g_debugging)
-        {
-            msg::write_text_to_stdout(Color::None, "[DEBUG] ");
-            msg::write_text_to_stdout(Color::None, sv);
-            msg::write_text_to_stdout(Color::None, "\n");
-        }
-    }
+    void print(StringView sv);
+    void println(StringView sv);
+
     template<class... Args>
     void println(fmt::format_string<Args...> f, const Args&... args)
     {
@@ -32,7 +25,7 @@ namespace vcpkg::Debug
     template<class... Args>
     void print(const Args&... args)
     {
-        if (g_debugging) print2("[DEBUG] ", args...);
+        if (g_debugging) print(Strings::concat_or_view(args...));
     }
 
     template<class F, class R = std::result_of_t<F && ()>, class = std::enable_if_t<!std::is_void<R>::value>>
@@ -42,7 +35,7 @@ namespace vcpkg::Debug
         {
             auto timer = ElapsedTimer::create_started();
             auto&& result = f();
-            print2("[DEBUG] ", line, " took ", timer, '\n');
+            println("{} took {}", line, timer);
             return static_cast<R&&>(result);
         }
         else
@@ -56,7 +49,7 @@ namespace vcpkg::Debug
         {
             auto timer = ElapsedTimer::create_started();
             f();
-            print2("[DEBUG] ", line, " took ", timer, '\n');
+            println("{} took {}", line, timer);
         }
         else
             f();

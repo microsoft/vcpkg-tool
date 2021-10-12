@@ -56,6 +56,16 @@ namespace
         (msg::triplet),
         "",
         "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        CommunityLoadingTripletConfiguration,
+        (msg::file),
+        "",
+        "-- [COMMUNITY] Loading triplet configuration from: {file}");
+    DECLARE_AND_REGISTER_MESSAGE(
+        OverlayLoadingTripletConfiguration,
+        (msg::file),
+        "",
+        "-- [OVERLAY] Loading triplet configuration from: {file}");
 }
 
 namespace vcpkg::Build
@@ -870,11 +880,11 @@ namespace vcpkg::Build
         if (Strings::starts_with(triplet_file_path, paths.community_triplets))
         {
             msg::println(Color::Warning, msgUsingCommunityTriplet, msg::triplet = triplet);
-            vcpkg::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);
+            msg::println(msgCommunityLoadingTripletConfiguration, msg::file = triplet_file_path);
         }
         else if (!Strings::starts_with(triplet_file_path, paths.triplets))
         {
-            vcpkg::printf("-- [OVERLAY] Loading triplet configuration from: %s\n", triplet_file_path);
+            msg::println(msgOverlayLoadingTripletConfiguration, msg::file = triplet_file_path);
         }
 
         if (!Strings::starts_with(scfl.source_location, paths.builtin_ports_directory()))

@@ -372,4 +372,22 @@ namespace vcpkg
 namespace vcpkg::Debug
 {
     std::atomic<bool> g_debugging(false);
+
+    void println(StringView sv)
+    {
+        if (g_debugging)
+        {
+            msg::write_text_to_stdout(Color::None, "[DEBUG] ");
+            msg::write_text_to_stdout(Color::None, sv);
+            msg::write_text_to_stdout(Color::None, "\n");
+        }
+    }
+    void print(StringView sv)
+    {
+        if (g_debugging)
+        {
+            msg::write_text_to_stdout(Color::None, "[DEBUG] ");
+            msg::write_text_to_stdout(Color::None, sv);
+        }
+    }
 }
