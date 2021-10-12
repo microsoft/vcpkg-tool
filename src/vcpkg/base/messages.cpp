@@ -1,5 +1,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/system.debug.h>
 
 namespace vcpkg::msg
 {
@@ -152,7 +153,7 @@ namespace vcpkg::msg
         Messages& m = messages();
         if (m.initialized)
         {
-            write_text_to_stdout(Color::Error,
+            write_unlocalized_text_to_stdout(Color::Error,
                                  "double-initialized message context; this is a very serious bug in vcpkg\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -173,8 +174,9 @@ namespace vcpkg::msg
             {
                 m.localized_strings[index] = p->string().to_string();
             }
-            else
+            else if (Debug::g_debugging)
             {
+                // we only want to print these in debug
                 names_without_localization.push_back(name);
             }
         }
@@ -184,7 +186,7 @@ namespace vcpkg::msg
             println(Color::Warning, msgNoLocalizationForMessages);
             for (const auto& name : names_without_localization)
             {
-                write_text_to_stdout(Color::Warning, fmt::format("    - {}\n", name));
+                write_unlocalized_text_to_stdout(Color::Warning, fmt::format("    - {}\n", name));
             }
         }
     }
@@ -198,7 +200,7 @@ namespace vcpkg::msg
         auto message_map = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_locale);
         if (!message_map.first.is_object())
         {
-            write_text_to_stdout(
+            write_unlocalized_text_to_stdout(
                 Color::Error,
                 fmt::format("Invalid locale file '{}' - locale file must be an object.\n", path_to_locale));
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -272,10 +274,10 @@ namespace vcpkg::msg
         return m.localization_comments[index];
     }
 
-    std::string detail::internal_vformat(int index, fmt::format_args args)
+    LocalizedString detail::internal_vformat(int index, fmt::format_args args)
     {
         auto fmt_string = get_format_string(index);
-        return fmt::vformat({fmt_string.data(), fmt_string.size()}, args);
+        return LocalizedString::from_string_unchecked(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
     }
 
 }

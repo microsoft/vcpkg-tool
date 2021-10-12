@@ -78,41 +78,9 @@ namespace vcpkg::msg
     // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
 
-    struct LocalizedString
-    {
-        LocalizedString() = default;
-        operator StringView() const
-        {
-            return m_data;
-        }
-        const std::string& data() const
-        {
-            return m_data;
-        }
-
-        static LocalizedString from_string_unchecked(std::string&& s)
-        {
-            LocalizedString res;
-            res.m_data = std::move(s);
-            return res;
-        }
-
-        LocalizedString& append(LocalizedStringView sv) &;
-        LocalizedString& add_newline() &;
-        LocalizedString& append_with_newline(LocalizedStringView sv) &;
-
-        LocalizedString&& append(LocalizedStringView sv) &&;
-        LocalizedString&& add_newline() &&;
-        LocalizedString&& append_with_newline(LocalizedStringView sv) &&;
-
-    private:
-        std::string m_data;
-        friend LocalizedString detail::internal_vformat(int index, fmt::format_args args);
-    };
     struct LocalizedStringView
     {
         LocalizedStringView() = default;
-        LocalizedStringView(const LocalizedString& s) : m_data(s) {}
 
         operator StringView() const
         {
@@ -133,16 +101,42 @@ namespace vcpkg::msg
         StringView m_data;
     };
 
-    inline LocalizedString& LocalizedString::append_with_newline(LocalizedStringView sv) &
+    struct LocalizedString
     {
-        add_newline();
-        append(sv);
-        return *this;
-    }
+        LocalizedString() = default;
+        operator LocalizedStringView() const
+        {
+            return LocalizedStringView::from_stringview_unchecked(m_data);
+        }
+        const std::string& data() const
+        {
+            return m_data;
+        }
 
-    inline LocalizedString&& LocalizedString::append(LocalizedStringView sv) && { return std::move(append(sv)); }
-    inline LocalizedString&& LocalizedString::add_newline() && { return std::move(add_newline()); }
-    inline LocalizedString&& LocalizedString::append_with_newline(LocalizedStringView sv) && { return std::move(append_with_newline(sv)); }
+        static LocalizedString from_string_unchecked(std::string&& s)
+        {
+            LocalizedString res;
+            res.m_data = std::move(s);
+            return res;
+        }
+
+        LocalizedString& append(LocalizedStringView sv) &;
+        LocalizedString& add_newline() &;
+        LocalizedString& appendnl(LocalizedStringView sv) &
+        {
+            append(sv);
+            add_newline();
+            return *this;
+        }
+
+        LocalizedString&& append(LocalizedStringView sv) && { return std::move(append(sv)); }
+        LocalizedString&& add_newline() && { return std::move(add_newline()); }
+        LocalizedString&& appendnl(LocalizedStringView sv) && { return std::move(appendnl(sv)); }
+
+    private:
+        std::string m_data;
+        friend LocalizedString detail::internal_vformat(int index, fmt::format_args args);
+    };
 
     void write_unlocalized_text_to_stdout(Color c, StringView sv);
     inline void write_newline_to_stdout()
@@ -216,8 +210,14 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(port);
     DECLARE_MSG_ARG(option);
     DECLARE_MSG_ARG(sha);
+    DECLARE_MSG_ARG(name);
+    DECLARE_MSG_ARG(value);
     DECLARE_MSG_ARG(old_value);
     DECLARE_MSG_ARG(new_value);
+    DECLARE_MSG_ARG(expected_value);
+    DECLARE_MSG_ARG(found_value);
+    DECLARE_MSG_ARG(exit_code);
+    DECLARE_MSG_ARG(http_code);
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of 
@@ -244,7 +244,7 @@ struct fmt::formatter<vcpkg::msg::LocalizedString> : fmt::formatter<vcpkg::Strin
     template<class FormatContext>
     auto format(const vcpkg::msg::LocalizedString& s, FormatContext& ctx)
     {
-        return fmt::formatter<vcpkg::StringView>::format(s, ctx);
+        return fmt::formatter<vcpkg::StringView>::format(s.data(), ctx);
     }
 };
 template <>

@@ -22,6 +22,10 @@ namespace
         std::string original_source;
     };
 
+    DECLARE_AND_REGISTER_MESSAGE(FormatManifestFailedToParseJson, (msg::file, msg::error), "", "Failed to parse {file} as JSON: {error}");
+    DECLARE_AND_REGISTER_MESSAGE(FormatManifestFileNotAnObject, (msg::file), "", "The file {file} is not an object");
+    DECLARE_AND_REGISTER_MESSAGE(FormatManifestFailedToParseManifest, (msg::file), "", "Failed to parse manifest file: {file}");
+
     Optional<ToWrite> read_manifest(Filesystem& fs, Path&& manifest_path)
     {
         auto path_string = manifest_path.native();
@@ -30,14 +34,14 @@ namespace
         auto parsed_json_opt = Json::parse(contents, manifest_path);
         if (!parsed_json_opt.has_value())
         {
-            vcpkg::printf(Color::Error, "Failed to parse %s: %s\n", path_string, parsed_json_opt.error()->format());
+            msg::println(Color::Error, msgFormatManifestFailedToParseJson, msg::file = path_string, msg::error = parsed_json_opt.error()->format());
             return nullopt;
         }
 
         const auto& parsed_json = parsed_json_opt.value_or_exit(VCPKG_LINE_INFO).first;
         if (!parsed_json.is_object())
         {
-            vcpkg::printf(Color::Error, "The file %s is not an object\n", path_string);
+            msg::println(Color::Error, msgFormatManifestFileNotAnObject, msg::file = path_string);
             return nullopt;
         }
 
@@ -46,7 +50,7 @@ namespace
         auto scf = SourceControlFile::parse_manifest_file(manifest_path, parsed_json_obj);
         if (!scf.has_value())
         {
-            vcpkg::printf(Color::Error, "Failed to parse manifest file: %s\n", path_string);
+            msg::println(Color::Error, msgFormatManifestFailedToParseManifest, msg::file = path_string);
             print_error_message(scf.error());
             return nullopt;
         }
@@ -59,6 +63,13 @@ namespace
         };
     }
 
+    DECLARE_AND_REGISTER_MESSAGE(FormatManifestFailedToReadParagraphs, (msg::file, msg::error), "", "Failed to read paragraphs from {file}: {error}");
+    DECLARE_AND_REGISTER_MESSAGE(FormatManifestFailedToParseControl, (msg::file), "", "Failed to parse control file: {file}");
+    DECLARE_AND_REGISTER_MESSAGE(FormatManifestCorrectnessFailedToParse, (msg::port), "",
+        R"([correctness check] Failed to parse serialized manifest file of {port}
+Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
+Error:)");
+
     Optional<ToWrite> read_control_file(Filesystem& fs, Path&& control_path)
     {
         std::error_code ec;
@@ -70,14 +81,14 @@ namespace
 
         if (!paragraphs)
         {
-            vcpkg::printf(Color::Error, "Failed to read paragraphs from %s: %s\n", control_path, paragraphs.error());
+            msg::println(Color::Error, msgFormatManifestFailedToReadParagraphs, msg::file = control_path, msg::error = paragraphs.error());
             return {};
         }
         auto scf_res =
             SourceControlFile::parse_control_file(control_path, std::move(paragraphs).value_or_exit(VCPKG_LINE_INFO));
         if (!scf_res)
         {
-            vcpkg::printf(Color::Error, "Failed to parse control file: %s\n", control_path);
+            msg::println(Color::Error, msgFormatManifestFailedToParseControl, msg::file = control_path);
             print_error_message(scf_res.error());
             return {};
         }
@@ -96,22 +107,18 @@ namespace
         const auto& file_to_write_string = data.file_to_write.native();
         if (data.file_to_write == data.original_path)
         {
-            Debug::print("Formatting ", file_to_write_string, "\n");
+            Debug::println("Formatting {}", file_to_write_string);
         }
         else
         {
-            Debug::print("Converting ", file_to_write_string, " -> ", original_path_string, "\n");
+            Debug::println("Converting {} -> {}", file_to_write_string, original_path_string);
         }
         auto res = serialize_manifest(data.scf);
 
         auto check = SourceControlFile::parse_manifest_file(Path{}, res);
         if (!check)
         {
-            vcpkg::printf(Color::Error,
-                          R"([correctness check] Failed to parse serialized manifest file of %s
-Please open an issue at https://github.com/microsoft/vcpkg, with the following output:
-Error:)",
-                          data.scf.core_paragraph->name);
+            msg::println(Color::Error, msgFormatManifestCorrectnessFailedToParse, msg::port = data.scf.core_paragraph->name);
             print_error_message(check.error());
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                        R"(

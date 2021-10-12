@@ -489,7 +489,7 @@ namespace vcpkg::Commands::CI
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet, Triplet host_triplet)
     {
-        vcpkg::print2(Color::warning,
+        vcpkg::print2(Color::Warning,
                       "'vcpkg ci' is an internal command which will change incompatibly or be removed at any time.\n");
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);

@@ -373,7 +373,7 @@ namespace
                 }
 
                 auto errors = Downloads::replace_secrets(std::move(maybe_success).error(), m_secrets);
-                print2(Color::Warning, errors);
+                msg::write_text_to_stdout(Color::Warning, errors);
             }
 
             if (!m_put_url_templates.empty())
@@ -1851,11 +1851,11 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
         const auto& cachepath = default_cache_path();
         if (cachepath.has_value())
         {
-            Debug::print("Default binary cache path is: ", cachepath.value_or_exit(VCPKG_LINE_INFO), '\n');
+            Debug::println("Default binary cache path is: {}", cachepath.value_or_exit(VCPKG_LINE_INFO));
         }
         else
         {
-            Debug::print("No binary cache path. Reason: ", cachepath.error(), '\n');
+            Debug::println("No binary cache path. Reason: {}", cachepath.error());
         }
     }
 

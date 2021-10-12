@@ -51,6 +51,28 @@ namespace vcpkg::Commands::CIVerifyVersions
         nullptr,
     };
 
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsParseVersionsError, (msg::port, msg::file, msg::error),
+        "",
+        R"(Error: While attempting to parse versions for port {port} from file: {file}
+       Found the following error(s):
+{error})");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsNoVersions, (msg::port, msg::file),
+        "",
+        R"(Error: While reading versions for port {port} from file: {file}"
+       File contains no versions.)");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsLoadPortError, (msg::port, msg::file, msg::version, msg::sha, msg::error),
+    "",
+    R"(Error: While reading versions for port {port} from file: {file}
+       While validating version: {version}.\n"
+       While trying to load port from: {sha}\n"
+       Found the following error(s):
+{error})");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsDeclaredVersionDoesntMatch, (msg::port, msg::file, msg::expected_value, msg::found_value, msg::sha),
+    "", R"(Error: While reading versions for port {port} from file: {file}
+       While validating version: {expected_value}.
+       The version declared in file does not match checked-out version: {found_value}
+       Checked out Git SHA: {sha})");
+
     static ExpectedS<std::string> verify_version_in_db(const VcpkgPaths& paths,
                                                        const std::map<std::string, VersionT, std::less<>> baseline,
                                                        StringView port_name,
@@ -62,26 +84,14 @@ namespace vcpkg::Commands::CIVerifyVersions
         auto maybe_versions = vcpkg::get_builtin_versions(paths, port_name);
         if (!maybe_versions.has_value())
         {
-            return {
-                Strings::format("Error: While attempting to parse versions for port %s from file: %s\n"
-                                "       Found the following error(s):\n%s",
-                                port_name,
-                                versions_file_path,
-                                maybe_versions.error()),
-                expected_right_tag,
-            };
+            return msg::format(msgCiVerifyVersionsParseVersionsError, msg::port = port_name,
+            msg::file = versions_file_path, msg::error = maybe_versions.error());
         }
 
         const auto& versions = maybe_versions.value_or_exit(VCPKG_LINE_INFO);
         if (versions.empty())
         {
-            return {
-                Strings::format("Error: While reading versions for port %s from file: %s\n"
-                                "       File contains no versions.",
-                                port_name,
-                                versions_file_path),
-                expected_right_tag,
-            };
+            return msg::format(msgCiVerifyVersionsNoVersions, msg::port = port_name, msg::file = versions_file_path);
         }
 
         if (verify_git_trees)
@@ -99,37 +109,24 @@ namespace vcpkg::Commands::CIVerifyVersions
                     auto maybe_scf = Paragraphs::try_load_port_text(file, treeish, control_file == "vcpkg.json");
                     if (!maybe_scf.has_value())
                     {
-                        return {
-                            Strings::format("Error: While reading versions for port %s from file: %s\n"
-                                            "       While validating version: %s.\n"
-                                            "       While trying to load port from: %s\n"
-                                            "       Found the following error(s):\n%s",
-                                            port_name,
-                                            versions_file_path,
-                                            version_entry.first.versiont,
-                                            treeish,
-                                            maybe_scf.error()->error),
-                            expected_right_tag,
-                        };
+                        return msg::format(msgCiVerifyVersionsLoadPortError,
+                            msg::port = port_name,
+                            msg::file = versions_file_path,
+                            msg::version = version_entry.first.versiont,
+                            msg::sha = treeish,
+                            msg::error = maybe_scf.error()->error);
                     }
 
                     const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
                     auto&& git_tree_version = scf.get()->to_schemed_version();
                     if (version_entry.first.versiont != git_tree_version.versiont)
                     {
-                        return {
-                            Strings::format(
-                                "Error: While reading versions for port %s from file: %s\n"
-                                "       While validating version: %s.\n"
-                                "       The version declared in file does not match checked-out version: %s\n"
-                                "       Checked out Git SHA: %s",
-                                port_name,
-                                versions_file_path,
-                                version_entry.first.versiont,
-                                git_tree_version.versiont,
-                                version_entry.second),
-                            expected_right_tag,
-                        };
+                        return msg::format(msgCiVerifyVersionsDeclaredVersionDoesntMatch,
+                            msg::port = port_name,
+                            msg::file = versions_file_path,
+                            msg::expected_value = version_entry.first.versiont,
+                            msg::found_value = git_tree_version.versiont,
+                            msg::sha = version_entry.second);
                     }
                     version_ok = true;
                     break;
@@ -295,7 +292,7 @@ namespace vcpkg::Commands::CIVerifyVersions
         Checks::check_exit(VCPKG_LINE_INFO,
                            maybe_port_git_tree_map.has_value(),
                            "Fatal error: Failed to obtain git SHAs for local ports.\n%s",
-                           maybe_port_git_tree_map.error());
+                           maybe_port_git_tree_map.error().data());
         auto port_git_tree_map = maybe_port_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Baseline is required.

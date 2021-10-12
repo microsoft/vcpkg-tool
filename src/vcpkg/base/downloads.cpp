@@ -168,10 +168,12 @@ namespace vcpkg::Downloads
     };
 #endif
 
+    DECLARE_AND_REGISTER_MESSAGE(UnableToParseUri, (msg::url), "", "Error: unable to parse uri: '{url}'");
+
     ExpectedS<details::SplitURIView> details::split_uri_view(StringView uri)
     {
         auto sep = std::find(uri.begin(), uri.end(), ':');
-        if (sep == uri.end()) return Strings::concat("Error: unable to parse uri: '", uri, "'");
+        if (sep == uri.end()) return msg::format(msgUnableToParseUri, msg::url = uri);
 
         StringView scheme(uri.begin(), sep);
         if (Strings::starts_with({sep + 1, uri.end()}, "//"))
@@ -241,7 +243,7 @@ namespace vcpkg::Downloads
                                            const Optional<std::string>& hash,
                                            StringView sanitized_url,
                                            const Path& download_part_path,
-                                           std::string& errors)
+                                           msg::LocalizedString& errors)
     {
         if (auto p = hash.get())
         {
@@ -307,6 +309,10 @@ namespace vcpkg::Downloads
 
         return input;
     }
+    msg::LocalizedString replace_secrets(msg::LocalizedStringView input, View<std::string> secrets)
+    {
+        return msg::LocalizedString::from_string_unchecked(replace_secrets(input.data().to_string(), secrets));
+    }
 
     static void download_files_inner(Filesystem&, View<std::pair<std::string, Path>> url_pairs, std::vector<int>* out)
     {
@@ -370,6 +376,8 @@ namespace vcpkg::Downloads
         return ret;
     }
 
+    DECLARE_AND_REGISTER_MESSAGE(CurlFailedToPutFileFtp, (msg::url, msg::exit_code), "", "Error: curl failed to put file to {url} with exit code '{exit_code}'");
+    DECLARE_AND_REGISTER_MESSAGE(CurlFailedToPutFileHttp, (msg::url, msg::exit_code, msg::http_code), "", "Error: curl failed to put file to {url} with exit code '{exit_code}' and http code '{http_code}'");
     ExpectedS<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const Path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
@@ -385,8 +393,7 @@ namespace vcpkg::Downloads
             if (res.exit_code != 0)
             {
                 Debug::print(res.output, '\n');
-                return Strings::concat(
-                    "Error: curl failed to put file to ", url, " with exit code: ", res.exit_code, '\n');
+                return msg::format(msgCurlFailedToPutFileFtp, msg::url = url, msg::exit_code = res.exit_code);
             }
             return 0;
         }
@@ -408,8 +415,7 @@ namespace vcpkg::Downloads
         });
         if (res != 0 || (code >= 100 && code < 200) || code >= 300)
         {
-            return Strings::concat(
-                "Error: curl failed to put file to ", url, " with exit code '", res, "' and http code '", code, "'\n");
+            return msg::format(msgCurlFailedToPutFileHttp, msg::url = url, msg::exit_code = res, msg::http_code = code);
         }
         return code;
     }
@@ -425,7 +431,7 @@ namespace vcpkg::Downloads
                                      details::SplitURIView split_uri,
                                      const std::string& url,
                                      const std::vector<std::string>& secrets,
-                                     std::string& errors)
+                                     msg::LocalizedString& errors)
         {
             // `download_winhttp` does not support user or port syntax in authorities
             auto hostname = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
@@ -476,13 +482,14 @@ namespace vcpkg::Downloads
     }
 #endif
 
+    DECLARE_AND_REGISTER_MESSAGE(DownloadBasicErrorWithInfo, (msg::url, msg::error), "{LOCKED}", "{url}: {error}");
     static bool try_download_file(vcpkg::Filesystem& fs,
                                   const std::string& url,
                                   View<std::string> headers,
                                   const Path& download_path,
                                   const Optional<std::string>& sha512,
                                   const std::vector<std::string>& secrets,
-                                  std::string& errors)
+                                  msg::LocalizedString& errors)
     {
         auto download_path_part_path = download_path;
         download_path_part_path += ".";
@@ -532,7 +539,7 @@ namespace vcpkg::Downloads
         const auto sanitized_url = replace_secrets(url, secrets);
         if (out.exit_code != 0)
         {
-            Strings::append(errors, sanitized_url, ": ", out.output, '\n');
+            errors.appendnl(msg::format(msgDownloadBasicErrorWithInfo, msg::url = sanitized_url, msg::error = out.output));
             return false;
         }
 
@@ -550,7 +557,7 @@ namespace vcpkg::Downloads
                                                            const Path& download_path,
                                                            const Optional<std::string>& sha512,
                                                            const std::vector<std::string>& secrets,
-                                                           std::string& errors)
+                                                           msg::LocalizedString& errors)
     {
         for (auto&& url : urls)
         {
@@ -574,13 +581,17 @@ namespace vcpkg::Downloads
         this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512);
     }
 
+    DECLARE_AND_REGISTER_MESSAGE(DownloadFailedToStoreToMirror, (msg::error), "", "Warning: failed to store back to mirror:\n{error}");
+    DECLARE_AND_REGISTER_MESSAGE(DownloadNoUrlsForSha, (msg::sha), "", "Error: No urls specified to download SHA: {sha}");
+    DECLARE_AND_REGISTER_MESSAGE(DownloadNoUrls, (), "", "Error: No urls specified");
+
     std::string DownloadManager::download_file(Filesystem& fs,
                                                View<std::string> urls,
                                                View<std::string> headers,
                                                const Path& download_path,
                                                const Optional<std::string>& sha512) const
     {
-        std::string errors;
+        msg::LocalizedString errors;
         if (auto hash = sha512.get())
         {
             if (auto read_template = m_config.m_read_url_template.get())
@@ -598,11 +609,11 @@ namespace vcpkg::Downloads
             {
                 if (auto hash = sha512.get())
                 {
-                    Strings::append(errors, "Error: No urls specified to download SHA: ", *hash, '\n');
+                    errors.appendnl(msg::format(msgDownloadNoUrlsForSha, msg::sha = *hash));
                 }
                 else
                 {
-                    Strings::append(errors, "Error: No urls specified\n");
+                    errors.appendnl(msg::format(msgDownloadNoUrls));
                 }
             }
             else
@@ -616,7 +627,7 @@ namespace vcpkg::Downloads
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push.has_value())
                         {
-                            print2(Color::Warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
+                            msg::println(Color::Warning, msgDownloadFailedToStoreToMirror, msg::error = maybe_push.error());
                         }
                     }
                     return *url;

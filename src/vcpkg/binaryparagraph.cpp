@@ -290,7 +290,7 @@ Please open an issue at https://github.com/microsoft/vcpkg, with the following o
 === Serialized BinaryParagraph ===
 %s
             )",
-                                       parsed_paragraph.error(),
+                                       parsed_paragraph.error().data(),
                                        my_paragraph);
         }
 

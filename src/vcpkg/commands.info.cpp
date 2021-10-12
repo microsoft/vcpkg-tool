@@ -32,6 +32,12 @@ namespace vcpkg::Commands::Info
         nullptr,
     };
 
+    DECLARE_AND_REGISTER_MESSAGE(InfoExpectedPackageSpec, (), "", "expected a package specifier");
+    DECLARE_AND_REGISTER_MESSAGE(InfoExpectedTriplet, (), "", "expected an explicit triplet");
+    DECLARE_AND_REGISTER_MESSAGE(InfoUnexpectedFeatures, (), "", "unexpected list of features");
+    DECLARE_AND_REGISTER_MESSAGE(InfoUnexpectedQualifier, (), "", "unexpected qualifier");
+    DECLARE_AND_REGISTER_MESSAGE(InfoExpectedPackageIdentifier, (), "", "expected only a package identifier");
+
     void InfoCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
@@ -60,23 +66,24 @@ namespace vcpkg::Commands::Info
                 auto maybe_qpkg = parse_qualified_specifier(parser);
                 if (!parser.at_eof() || !maybe_qpkg)
                 {
-                    parser.add_error("expected a package specifier");
+                    parser.add_error(msg::format(msgInfoExpectedPackageSpec));
                 }
                 else if (!maybe_qpkg.get()->triplet)
                 {
-                    parser.add_error("expected an explicit triplet");
+                    parser.add_error(msg::format(msgInfoExpectedTriplet));
                 }
                 else if (maybe_qpkg.get()->features)
                 {
-                    parser.add_error("unexpected list of features");
+                    parser.add_error(msg::format(msgInfoUnexpectedFeatures));
                 }
                 else if (maybe_qpkg.get()->platform)
                 {
-                    parser.add_error("unexpected qualifier");
+                    parser.add_error(msg::format(msgInfoUnexpectedQualifier));
                 }
                 if (auto err = parser.get_error())
                 {
-                    print2(err->format(), "\n");
+                    msg::write_text_to_stdout(Color::Error, err->format());
+                    msg::write_newline_to_stdout();
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
@@ -120,7 +127,7 @@ namespace vcpkg::Commands::Info
                 auto maybe_pkg = parse_package_name(parser);
                 if (!parser.at_eof() || !maybe_pkg)
                 {
-                    parser.add_error("expected only a package identifier");
+                    parser.add_error(msg::format(msgInfoExpectedPackageIdentifier));
                 }
                 if (auto err = parser.get_error())
                 {

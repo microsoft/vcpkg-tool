@@ -1425,9 +1425,12 @@ namespace vcpkg::Build
     {
         const ExpectedS<Parse::Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
         Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, pghs.get() != nullptr, "Invalid BUILD_INFO file for package: %s", pghs.error());
+            VCPKG_LINE_INFO, pghs.get() != nullptr, "Invalid BUILD_INFO file for package: %s", pghs.error().data());
         return inner_create_buildinfo(*pghs.get());
     }
+
+    DECLARE_AND_REGISTER_MESSAGE(CmakeUnknownSettingForBooleanVariable, (msg::name, msg::value), "",
+        "Error: Unknown boolean setting for {name}: \"{value}\". Valid settings are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.");
 
     static ExpectedS<bool> from_cmake_bool(StringView value, StringView name)
     {
@@ -1443,11 +1446,7 @@ namespace vcpkg::Build
         }
         else
         {
-            return Strings::concat("Error: Unknown boolean setting for ",
-                                   name,
-                                   ": \"",
-                                   value,
-                                   "\". Valid settings are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.");
+            return msg::format(msgCmakeUnknownSettingForBooleanVariable, msg::name = name, msg::value = value);
         }
     }
 
