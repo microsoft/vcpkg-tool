@@ -1,11 +1,14 @@
 #pragma once
 
-#include <string>
-#include <fmt/format.h>
-#include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/lineinfo.h>
-#include <vcpkg/base/stringliteral.h>
+
+//#include <vcpkg/base/stringliteral.h>
+
+//#include <string>
+
+//#include <fmt/format.h>
 
 namespace vcpkg
 {
@@ -32,21 +35,23 @@ namespace vcpkg::msg
 {
     namespace detail
     {
-        template <class Tag, class Type>
+        template<class Tag, class Type>
         struct MessageArgument
         {
             const char* name;
             const Type* parameter; // always valid
         };
 
-        template <class... Tags>
+        template<class... Tags>
         struct MessageCheckFormatArgs
         {
-            template <class... Tys>
-            static constexpr void check_format_args(const detail::MessageArgument<Tags, Tys>&...) noexcept { }
+            template<class... Tys>
+            static constexpr void check_format_args(const detail::MessageArgument<Tags, Tys>&...) noexcept
+            {
+            }
         };
 
-        template <class... Args>
+        template<class... Args>
         MessageCheckFormatArgs<Args...> make_message_check_format_args(const Args&... args);
 
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment);
@@ -72,36 +77,33 @@ namespace vcpkg::msg
     // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
 
-    template <class Message, class... Ts>
+    template<class Message, class... Ts>
     std::string format(Message, Ts... args)
     {
         Message::check_format_args(args...);
         auto fmt_string = detail::get_format_string(Message::index);
-        return fmt::vformat(
-            fmt::string_view(fmt_string.begin(), fmt_string.size()),
-            fmt::make_format_args(fmt::arg(args.name, *args.parameter)...)
-        );
+        return fmt::vformat(fmt::string_view(fmt_string.begin(), fmt_string.size()),
+                            fmt::make_format_args(fmt::arg(args.name, *args.parameter)...));
     }
 
-
-    template <class Message, class... Ts>
+    template<class Message, class... Ts>
     void print(Message m, Ts... args)
     {
         write_text_to_stdout(Color::None, format(m, args...));
     }
-    template <class Message, class... Ts>
+    template<class Message, class... Ts>
     void println(Message m, Ts... args)
     {
         write_text_to_stdout(Color::None, format(m, args...));
         write_text_to_stdout(Color::None, "\n");
     }
 
-    template <class Message, class... Ts>
+    template<class Message, class... Ts>
     void print(Color c, Message m, Ts... args)
     {
         write_text_to_stdout(c, format(m, args...));
     }
-    template <class Message, class... Ts>
+    template<class Message, class... Ts>
     void println(Color c, Message m, Ts... args)
     {
         write_text_to_stdout(c, format(m, args...));
@@ -110,13 +112,14 @@ namespace vcpkg::msg
 
 // these use `constexpr static` instead of `inline` in order to work with GCC 6;
 // they are trivial and empty, and their address does not matter, so this is not a problem
-#define DECLARE_MSG_ARG(NAME) \
-    constexpr static struct NAME ## _t { \
-        template <class T> \
-        detail::MessageArgument<NAME ## _t, T> operator=(const T& t) const noexcept \
-        { \
-            return detail::MessageArgument<NAME ## _t, T>{#NAME, &t}; \
-        } \
+#define DECLARE_MSG_ARG(NAME)                                                                                          \
+    constexpr static struct NAME##_t                                                                                   \
+    {                                                                                                                  \
+        template<class T>                                                                                              \
+        detail::MessageArgument<NAME##_t, T> operator=(const T& t) const noexcept                                      \
+        {                                                                                                              \
+            return detail::MessageArgument<NAME##_t, T>{#NAME, &t};                                                    \
+        }                                                                                                              \
     } NAME = {}
 
     DECLARE_MSG_ARG(email);
@@ -133,45 +136,19 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(new_value);
 #undef DECLARE_MSG_ARG
 
-#define REGISTER_MESSAGE(NAME) \
-    const ::size_t NAME ## _msg_t :: index = \
-        ::vcpkg::msg::detail::startup_register_message( \
-            NAME ## _msg_t::name(), \
-            NAME ## _msg_t::default_format_string(), \
-            NAME ## _msg_t::localization_comment())
-
-#define DECLARE_SIMPLE_MESSAGE(NAME, COMMENT, DEFAULT_STR) \
-    constexpr struct NAME ## _msg_t : ::vcpkg::msg::detail::MessageCheckFormatArgs<> { \
-        static ::vcpkg::StringLiteral name() { \
-            return #NAME; \
-        }; \
-        static ::vcpkg::StringLiteral localization_comment() { \
-            return COMMENT; \
-        }; \
-        static ::vcpkg::StringLiteral default_format_string() noexcept { \
-            return DEFAULT_STR; \
-        } \
-        static const ::size_t index; \
-    } msg ## NAME = {}
-
-#define DECLARE_AND_REGISTER_SIMPLE_MESSAGE(NAME, COMMENT, DEFAULT_STR) \
-    DECLARE_SIMPLE_MESSAGE(NAME, COMMENT, DEFAULT_STR); \
-    REGISTER_MESSAGE(NAME)
-
-#define DECLARE_MESSAGE(NAME, COMMENT, DEFAULT_STR, ...) \
-    constexpr struct NAME ## _msg_t : decltype(::vcpkg::msg::detail::make_message_check_format_args(__VA_ARGS__)) { \
-        static ::vcpkg::StringLiteral name() { \
-            return #NAME; \
-        } \
-        static ::vcpkg::StringLiteral localization_comment() { \
-            return COMMENT; \
-        }; \
-        static ::vcpkg::StringLiteral default_format_string() noexcept { \
-            return DEFAULT_STR; \
-        } \
-        static const ::size_t index; \
-    } msg ## NAME = {}
-#define DECLARE_AND_REGISTER_MESSAGE(NAME, COMMENT, DEFAULT_STR, ...) \
-    DECLARE_MESSAGE(NAME, COMMENT, DEFAULT_STR, __VA_ARGS__); \
+// These are `...` instead of 
+#define DECLARE_MESSAGE(NAME, ARGS, COMMENT, ...)                                                              \
+    constexpr struct NAME ## _msg_t : decltype(::vcpkg::msg::detail::make_message_check_format_args ARGS)             \
+    {                                                                                                                  \
+        static ::vcpkg::StringLiteral name() { return #NAME; }                                                         \
+        static ::vcpkg::StringLiteral localization_comment() { return COMMENT; };                                      \
+        static ::vcpkg::StringLiteral default_format_string() noexcept { return __VA_ARGS__; }                         \
+        static const ::size_t index;                                                                                   \
+    } msg##NAME = {}
+#define REGISTER_MESSAGE(NAME)                                                                                         \
+    const ::size_t NAME##_msg_t ::index = ::vcpkg::msg::detail::startup_register_message(                              \
+        NAME##_msg_t::name(), NAME##_msg_t::default_format_string(), NAME##_msg_t::localization_comment())
+#define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                 \
+    DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
     REGISTER_MESSAGE(NAME)
 }

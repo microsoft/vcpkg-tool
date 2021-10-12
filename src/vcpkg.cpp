@@ -39,19 +39,17 @@ static constexpr int SURVEY_INTERVAL_IN_HOURS = 24 * 30 * 6;
 // Initial survey appears after 10 days. Therefore, subtract 24 hours/day * 10 days
 static constexpr int SURVEY_INITIAL_OFFSET_IN_HOURS = SURVEY_INTERVAL_IN_HOURS - 24 * 10;
 
-
-DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed, "Don't localize the data blob (the text after `data blob:`)",
-R"(vcpkg.exe has crashed.
+DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed,
+                             (msg::email, msg::vcpkg_version, msg::error),
+                             "Don't localize the data blob (the text after `data blob:`)",
+                             R"(vcpkg.exe has crashed.
 Please send an email to:
     {email}
 containing a brief summary of what you were trying to do and the following data blob:
 
 Version={vcpkg_version}
 EXCEPTION='{error}'
-CMD=)",
-    msg::email,
-    msg::vcpkg_version,
-    msg::error);
+CMD=)");
 
 static void invalid_command(const std::string& cmd)
 {
@@ -188,7 +186,8 @@ int main(const int argc, const char* const* const argv)
         }
         else if (locale.has_value() || locale_base.has_value())
         {
-            msg::write_text_to_stdout(Color::Error, "If either VCPKG_LOCALE or VCPKG_LOCALE_BASE is initialized, then both must be.\n");
+            msg::write_text_to_stdout(
+                Color::Error, "If either VCPKG_LOCALE or VCPKG_LOCALE_BASE is initialized, then both must be.\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         else
@@ -230,11 +229,11 @@ int main(const int argc, const char* const* const argv)
         const auto elapsed_us_inner = LockGuardPtr<ElapsedTimer>(GlobalState::timer)->microseconds();
 
         bool debugging = Debug::g_debugging;
-
         LockGuardPtr<Metrics> metrics(g_metrics);
         metrics->track_metric("elapsed_us", elapsed_us_inner);
         Debug::g_debugging = false;
         metrics->flush(get_real_filesystem());
+        Debug::g_debugging = debugging;
 
 #if defined(_WIN32)
         if (GlobalState::g_init_console_initialized)
@@ -244,10 +243,9 @@ int main(const int argc, const char* const* const argv)
         }
 #endif
 
-        if (debugging)
-            vcpkg::printf("[DEBUG] Exiting after %s us (%d us)\n",
-                          LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(),
-                          static_cast<int64_t>(elapsed_us_inner));
+        Debug::println("Exiting after {} us ({} us)",
+                       LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(),
+                       static_cast<int64_t>(elapsed_us_inner));
     });
 
     LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version());
@@ -335,9 +333,9 @@ int main(const int argc, const char* const* const argv)
 
     fflush(stdout);
     msg::println(msgVcpkgHasCrashed,
-        msg::email = Commands::Contact::email(),
-        msg::vcpkg_version = Commands::Version::version(),
-        msg::error = exc_msg);
+                 msg::email = Commands::Contact::email(),
+                 msg::vcpkg_version = Commands::Version::version(),
+                 msg::error = exc_msg);
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)

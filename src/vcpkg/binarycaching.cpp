@@ -26,9 +26,11 @@ namespace
     static constexpr StringLiteral s_binarycaching_doc_url =
         "https://github.com/Microsoft/vcpkg/tree/master/docs/users/binarycaching.md";
 
-    DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBinaryCache, "", "Failed to store binary cache {file}: {error}",
-        msg::file,
-        msg::error);
+    DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBinaryCache,
+                                 (msg::file, msg::error),
+                                 "",
+                                 "Failed to store binary cache {file}: {error}");
+    DECLARE_AND_REGISTER_MESSAGE(StoredBinaryCache, (msg::file), "", "Stored binary cache: {file}");
 
     struct ConfigSegmentsParser : Parse::ParserBase
     {
@@ -398,7 +400,7 @@ namespace
                 }
                 else
                 {
-                    vcpkg::printf("Stored binary cache: %s\n", archive_path);
+                    msg::println(msgStoredBinaryCache, msg::file = archive_path);
                 }
             }
             // In the case of 1 write dir, the file will be moved instead of copied

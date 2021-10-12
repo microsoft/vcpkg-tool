@@ -8,8 +8,10 @@ namespace vcpkg
 {
     static void (*g_shutdown_handler)() = nullptr;
 
-    DECLARE_AND_REGISTER_MESSAGE(UnreachableCode, "", "Error: Unreachable code was reached\n{line_info}",
-        msg::line_info);
+    DECLARE_AND_REGISTER_MESSAGE(UnreachableCode,
+                                 (msg::line_info),
+                                 "",
+                                 "Error: Unreachable code was reached\n{line_info}");
 
     void Checks::register_global_shutdown_handler(void (*func)())
     {

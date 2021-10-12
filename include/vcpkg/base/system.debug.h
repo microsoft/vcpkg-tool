@@ -10,6 +10,25 @@ namespace vcpkg::Debug
 {
     extern std::atomic<bool> g_debugging;
 
+    inline void println(StringView sv)
+    {
+        if (g_debugging)
+        {
+            msg::write_text_to_stdout(Color::None, "[DEBUG] ");
+            msg::write_text_to_stdout(Color::None, sv);
+            msg::write_text_to_stdout(Color::None, "\n");
+        }
+    }
+    template<class... Args>
+    void println(fmt::format_string<Args...> f, const Args&... args)
+    {
+        if (g_debugging)
+        {
+            auto msg = fmt::format(f, args...);
+            Debug::println(msg);
+        }
+    }
+
     template<class... Args>
     void print(const Args&... args)
     {

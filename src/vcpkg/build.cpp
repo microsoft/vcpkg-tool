@@ -51,9 +51,11 @@ namespace
 
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
 
-    DECLARE_AND_REGISTER_MESSAGE(UsingCommunityTriplet, "",
-        "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.",
-        msg::triplet);
+    DECLARE_AND_REGISTER_MESSAGE(
+        UsingCommunityTriplet,
+        (msg::triplet),
+        "",
+        "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
 }
 
 namespace vcpkg::Build

@@ -22,7 +22,10 @@ namespace vcpkg::Dependencies
 
     namespace
     {
-        DECLARE_AND_REGISTER_SIMPLE_MESSAGE(AllRequestedPackagesInstalled, "", "All requested packages are currently installed.");
+        DECLARE_AND_REGISTER_MESSAGE(AllRequestedPackagesInstalled,
+                                     (),
+                                     "",
+                                     "All requested packages are currently installed.");
 
         struct ClusterInstalled
         {

@@ -2,9 +2,9 @@
 
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/format.h>
 
 #include <string>
 
@@ -47,14 +47,14 @@ struct std::hash<vcpkg::Triplet>
 {
     ::size_t operator()(vcpkg::Triplet t) const { return t.hash_code(); }
 };
-template <>
+template<>
 struct fmt::formatter<vcpkg::Triplet>
 {
     constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin())
     {
         return vcpkg::basic_format_parse_impl(ctx);
     }
-    template <class FormatContext>
+    template<class FormatContext>
     auto format(const vcpkg::Triplet& triplet, FormatContext& ctx) -> decltype(ctx.out())
     {
         return format_to(ctx.out(), "{}", triplet.canonical_name());

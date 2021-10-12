@@ -1,7 +1,7 @@
-#include <vcpkg/commands.generate-message-map.h>
-
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
+
+#include <vcpkg/commands.generate-message-map.h>
 
 namespace vcpkg::Commands
 {
@@ -17,10 +17,7 @@ namespace vcpkg::Commands
         };
         struct MessageSorter
         {
-            bool operator()(const Message& lhs, const Message& rhs) const
-            {
-                return lhs.name < rhs.name;
-            }
+            bool operator()(const Message& lhs, const Message& rhs) const { return lhs.name < rhs.name; }
         };
 
         const ::size_t size = detail::number_of_messages();

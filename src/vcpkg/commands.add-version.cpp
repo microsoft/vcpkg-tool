@@ -25,59 +25,56 @@ namespace
 
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
-    DECLARE_AND_REGISTER_MESSAGE(VersionAlreadyInFile, "", "Version `{version}` is already in `{file}`.",
-        msg::version,
-        msg::file);
-    DECLARE_AND_REGISTER_MESSAGE(VersionAddedToFile, "", "Added version `{version}` to `{file}`.",
-        msg::version,
-        msg::file);
+    DECLARE_AND_REGISTER_MESSAGE(VersionAlreadyInFile, (msg::version, msg::file),
+                                 "",
+                                 "Version `{version}` is already in `{file}`.");
+    DECLARE_AND_REGISTER_MESSAGE(VersionAddedToFile, (msg::version, msg::file),
+                                 "",
+                                 "Added version `{version}` to `{file}`.");
 
-    DECLARE_AND_REGISTER_MESSAGE(UseOptionAll, "",
-        "Error: Use option `--{option}` to update version files for all ports at once.",
-        msg::option);
-    DECLARE_AND_REGISTER_MESSAGE(IgnoringOptionAll, "",
-        "Warning: Ignoring option `--{option}` since a port name argument was provided.",
-        msg::option);
+    DECLARE_AND_REGISTER_MESSAGE(UseOptionAll, (msg::option),
+                                 "",
+                                 "Error: Use option `--{option}` to update version files for all ports at once.");
+    DECLARE_AND_REGISTER_MESSAGE(IgnoringOptionAll, (msg::option),
+                                 "",
+                                 "Warning: Ignoring option `--{option}` since a port name argument was provided.");
 
-    DECLARE_AND_REGISTER_MESSAGE(NoLocalGitShaFoundForPort, "",
-R"(Warning: No local Git SHA was found for port `{port}`.
+    DECLARE_AND_REGISTER_MESSAGE(NoLocalGitShaFoundForPort, (msg::port),
+                                 "",
+                                 R"(Warning: No local Git SHA was found for port `{port}`.
 -- Did you remember to commit your changes?
-***No files were updated.***)",
-        msg::port);
-    DECLARE_AND_REGISTER_MESSAGE(LocalPortShaSameAsVersion, "",
-R"(Warning: Local port files SHA is the same as version `{version}` in `{file}`.
+***No files were updated.***)");
+    DECLARE_AND_REGISTER_MESSAGE(LocalPortShaSameAsVersion, (msg::version, msg::file, msg::sha),
+                                 "",
+                                 R"(Warning: Local port files SHA is the same as version `{version}` in `{file}`.
 -- SHA: {sha}
 -- Did you remember to commit your changes?
-***No files were updated.***)",
-                    msg::version,
-                    msg::file,
-                    msg::sha);
-    DECLARE_AND_REGISTER_MESSAGE(NoVersionOrPortVersionChanges, "",
-R"(Error: Local changes detected for {port} but no changes to version or port version.
+***No files were updated.***)");
+    DECLARE_AND_REGISTER_MESSAGE(NoVersionOrPortVersionChanges, (msg::port, msg::version, msg::old_value, msg::new_value),
+                                 "",
+                                 R"(Error: Local changes detected for {port} but no changes to version or port version.
 -- Version: {version}
 -- Old SHA: {old_value}
 -- New SHA: {new_value}
 -- Did you remember to update the version or port version?
 -- Pass `--overwrite-version` to bypass this check.
-***No files were updated.***)",
-        msg::port,
-        msg::version,
-        msg::old_value,
-        msg::new_value);
+***No files were updated.***)");
 
-    DECLARE_AND_REGISTER_MESSAGE(PortNotProperlyFormatted, "",
-R"(Error: The port `{port}` is not properly formatted.
+    DECLARE_AND_REGISTER_MESSAGE(PortNotProperlyFormatted, (msg::port),
+                                 "",
+                                 R"(Error: The port `{port}` is not properly formatted.
 Run `vcpkg format-manifest ports/{port}/vcpkg.json` to format the file.
-Don't forget to commit the result!)",
-                                      msg::port);
+Don't forget to commit the result!)");
 
-    DECLARE_AND_REGISTER_MESSAGE(CouldntLoadPort, "", "Error: Couldn't load port `{port}`.", msg::port);
-    DECLARE_AND_REGISTER_MESSAGE(UnableToParseVersionsFile, "", "Error: Unable to parse versions file {file}.\n{error}",
-        msg::file,
-        msg::error);
-    DECLARE_AND_REGISTER_MESSAGE(CouldntFindRequiredFile, "",
-        "Error: Couldn't find required file `{file}`.", msg::file);
-
+    DECLARE_AND_REGISTER_MESSAGE(CouldntLoadPort, (msg::port), "", "Error: Couldn't load port `{port}`.");
+    DECLARE_AND_REGISTER_MESSAGE(UnableToParseVersionsFile,
+                                 (msg::file, msg::error),
+                                 "",
+                                 "Error: Unable to parse versions file {file}.\n{error}");
+    DECLARE_AND_REGISTER_MESSAGE(CouldntFindRequiredFile,
+                                 (msg::file),
+                                 "",
+                                 "Error: Couldn't find required file `{file}`.");
 
     void insert_version_to_json_object(Json::Object& obj, const VersionT& version, StringLiteral version_field)
     {
@@ -182,7 +179,8 @@ Don't forget to commit the result!)",
             {
                 if (print_success)
                 {
-                    msg::println(Color::Success, msgVersionAlreadyInFile, msg::version = version, msg::file = baseline_path);
+                    msg::println(
+                        Color::Success, msgVersionAlreadyInFile, msg::version = version, msg::file = baseline_path);
                 }
                 return;
             }
@@ -217,9 +215,10 @@ Don't forget to commit the result!)",
             write_versions_file(fs, new_entry, version_db_file_path);
             if (print_success)
             {
-                msg::println(
-                    Color::Success, msgVersionAddedToFile, msg::version = version.versiont,
-                    msg::file = version_db_file_path);
+                msg::println(Color::Success,
+                             msgVersionAddedToFile,
+                             msg::version = version.versiont,
+                             msg::file = version_db_file_path);
             }
             return;
         }
@@ -237,14 +236,18 @@ Don't forget to commit the result!)",
                 {
                     if (print_success)
                     {
-                        msg::println(Color::Success, msgVersionAlreadyInFile, msg::version = version.versiont, msg::file = version_db_file_path);
+                        msg::println(Color::Success,
+                                     msgVersionAlreadyInFile,
+                                     msg::version = version.versiont,
+                                     msg::file = version_db_file_path);
                     }
                     return;
                 }
-                msg::println(Color::Warning, msgLocalPortShaSameAsVersion,
-                    msg::version = found_same_sha->first.versiont,
-                    msg::file = version_db_file_path,
-                    msg::sha = git_tree);
+                msg::println(Color::Warning,
+                             msgLocalPortShaSameAsVersion,
+                             msg::version = found_same_sha->first.versiont,
+                             msg::file = version_db_file_path,
+                             msg::sha = git_tree);
                 if (keep_going) return;
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -257,11 +260,12 @@ Don't forget to commit the result!)",
             {
                 if (!overwrite_version)
                 {
-                    msg::println(Color::Error, msgNoVersionOrPortVersionChanges,
-                        msg::port = port_name,
-                        msg::version = version.versiont,
-                        msg::old_value = it->second,
-                        msg::new_value = git_tree);
+                    msg::println(Color::Error,
+                                 msgNoVersionOrPortVersionChanges,
+                                 msg::port = port_name,
+                                 msg::version = version.versiont,
+                                 msg::old_value = it->second,
+                                 msg::new_value = git_tree);
                     vcpkg::printf(Color::Error,
                                   "Error: Local changes detected for %s but no changes to version or port version.\n"
                                   "-- Version: %s\n"
@@ -289,12 +293,18 @@ Don't forget to commit the result!)",
             write_versions_file(fs, *versions, version_db_file_path);
             if (print_success)
             {
-                msg::println(Color::Success, msgVersionAddedToFile, msg::version = version.versiont, msg::file = version_db_file_path);
+                msg::println(Color::Success,
+                             msgVersionAddedToFile,
+                             msg::version = version.versiont,
+                             msg::file = version_db_file_path);
             }
             return;
         }
 
-        msg::println(Color::Error, msgUnableToParseVersionsFile, msg::file = version_db_file_path, msg::error = maybe_versions.error());
+        msg::println(Color::Error,
+                     msgUnableToParseVersionsFile,
+                     msg::file = version_db_file_path,
+                     msg::error = maybe_versions.error());
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 }

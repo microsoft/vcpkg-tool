@@ -9,7 +9,7 @@
 #include <limits>
 #include <string>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 namespace vcpkg
 {
@@ -58,11 +58,13 @@ namespace vcpkg
     bool operator>=(StringView lhs, StringView rhs) noexcept;
 }
 
-template <>
-struct ::fmt::formatter<vcpkg::StringView>: fmt::formatter<fmt::string_view> {
+template<>
+struct fmt::formatter<vcpkg::StringView> : fmt::formatter<fmt::string_view>
+{
     // parse is inherited from formatter<string_view>.
-    template <typename FormatContext>
-    auto format(vcpkg::StringView sv, FormatContext& ctx) {
-        return ::fmt::formatter<fmt::string_view>::format(fmt::string_view(sv.data(), sv.size()), ctx);
+    template<class FormatContext>
+    auto format(vcpkg::StringView sv, FormatContext& ctx)
+    {
+        return fmt::formatter<fmt::string_view>::format(fmt::string_view(sv.data(), sv.size()), ctx);
     }
 };

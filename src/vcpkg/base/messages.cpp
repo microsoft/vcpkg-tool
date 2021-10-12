@@ -1,10 +1,9 @@
-#include <vcpkg/base/messages.h>
-
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/messages.h>
 
 namespace vcpkg::msg
 {
-    DECLARE_AND_REGISTER_SIMPLE_MESSAGE(NoLocalizationForMessages, "", "No localization for the following messages:");
+    DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
 
     // basic implementation - the write_text_to_stdout
 #if defined(_WIN32)
@@ -20,18 +19,15 @@ namespace vcpkg::msg
     {
         if (!success)
         {
-            ::fwprintf(stderr,
-                L"[DEBUG] Failed to write to stdout: %lu\n",
-                GetLastError()
-            );
+            ::fwprintf(stderr, L"[DEBUG] Failed to write to stdout: %lu\n", GetLastError());
             std::abort();
         }
     }
     static DWORD size_to_write(::size_t size)
     {
         return size > static_cast<DWORD>(-1) // DWORD_MAX
-            ? static_cast<DWORD>(-1)
-            : static_cast<DWORD>(size);
+                   ? static_cast<DWORD>(-1)
+                   : static_cast<DWORD>(size);
     }
 
     void write_text_to_stdout(Color c, StringView sv)
@@ -90,10 +86,7 @@ namespace vcpkg::msg
             auto written = ::write(fd, ptr, to_write);
             if (written == -1)
             {
-                ::fprintf(stderr,
-                    "[DEBUG] Failed to print to stdout: %d\n",
-                    errno
-                );
+                ::fprintf(stderr, "[DEBUG] Failed to print to stdout: %d\n", errno);
                 std::abort();
             }
             ptr += written;
@@ -103,7 +96,7 @@ namespace vcpkg::msg
 
     void write_text_to_stdout(Color c, StringView sv)
     {
-        static constexpr char reset_color_sequence[] = { '\033', '[', '0', 'm' };
+        static constexpr char reset_color_sequence[] = {'\033', '[', '0', 'm'};
 
         if (sv.empty()) return;
 
@@ -112,7 +105,7 @@ namespace vcpkg::msg
         {
             reset_color = true;
 
-            const char set_color_sequence[] = { '\033', '[', '9', static_cast<char>(c), 'm' };
+            const char set_color_sequence[] = {'\033', '[', '9', static_cast<char>(c), 'm'};
             write_all(STDOUT_FILENO, set_color_sequence, sizeof(set_color_sequence));
         }
 
@@ -138,7 +131,7 @@ namespace vcpkg::msg
             // }
             // requires: names.size() == default_strings.size() == localized_strings.size()
             std::vector<StringLiteral> names;
-            std::vector<StringLiteral> default_strings; // const after startup
+            std::vector<StringLiteral> default_strings;       // const after startup
             std::vector<StringLiteral> localization_comments; // const after startup
 
             bool initialized = false;
@@ -159,7 +152,8 @@ namespace vcpkg::msg
         Messages& m = messages();
         if (m.initialized)
         {
-            write_text_to_stdout(Color::Error, "double-initialized message context; this is a very serious bug in vcpkg\n");
+            write_text_to_stdout(Color::Error,
+                                 "double-initialized message context; this is a very serious bug in vcpkg\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         m.localized_strings.resize(m.names.size());
@@ -204,16 +198,15 @@ namespace vcpkg::msg
         auto message_map = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_locale);
         if (!message_map.first.is_object())
         {
-            write_text_to_stdout(Color::Error, fmt::format("Invalid locale file '{}' - locale file must be an object.\n", path_to_locale));
+            write_text_to_stdout(
+                Color::Error,
+                fmt::format("Invalid locale file '{}' - locale file must be an object.\n", path_to_locale));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         threadunsafe_initialize_context(message_map.first.object());
     }
 
-    ::size_t detail::number_of_messages()
-    {
-        return messages().names.size();
-    }
+    ::size_t detail::number_of_messages() { return messages().names.size(); }
 
     ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment)
     {
@@ -231,7 +224,7 @@ namespace vcpkg::msg
         Checks::check_exit(VCPKG_LINE_INFO, m.localized_strings.size() == m.default_strings.size());
         Checks::check_exit(VCPKG_LINE_INFO, index < m.default_strings.size());
         const auto& localized = m.localized_strings[index];
-        if(localized.empty())
+        if (localized.empty())
         {
             return m.default_strings[index];
         }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vcpkg/base/zstringview.h>
 #include <vcpkg/base/format.h>
+#include <vcpkg/base/zstringview.h>
 
 #include <string>
 
@@ -18,7 +18,7 @@ namespace vcpkg
     };
 }
 
-template <>
+template<>
 struct fmt::formatter<vcpkg::StringLiteral> : fmt::formatter<vcpkg::ZStringView>
 {
 };

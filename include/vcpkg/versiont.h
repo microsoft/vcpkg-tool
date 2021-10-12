@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
-
 #include <vcpkg/base/format.h>
+
+#include <string>
 
 namespace vcpkg
 {
@@ -45,14 +45,14 @@ namespace vcpkg
     };
 }
 
-template <>
+template<>
 struct fmt::formatter<vcpkg::VersionT>
 {
     constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin())
     {
         return vcpkg::basic_format_parse_impl(ctx);
     }
-    template <class FormatContext>
+    template<class FormatContext>
     auto format(const vcpkg::VersionT& version, FormatContext& ctx) -> decltype(ctx.out())
     {
         return format_to(ctx.out(), "{}#{}", version.text(), version.port_version());
