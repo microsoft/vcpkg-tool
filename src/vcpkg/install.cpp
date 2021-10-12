@@ -472,7 +472,6 @@ namespace vcpkg::Install
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
 
-        const auto timer = ElapsedTimer::create_started();
         for (auto&& action : action_plan.remove_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
@@ -495,7 +494,7 @@ namespace vcpkg::Install
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
-                print2(Build::create_user_troubleshooting_message(action.spec), '\n');
+                print2(Build::create_user_troubleshooting_message(action), '\n');
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -503,7 +502,7 @@ namespace vcpkg::Install
             this_install.current_summary->build_result = std::move(result);
         }
 
-        return InstallSummary{std::move(results), timer.to_string()};
+        return InstallSummary{std::move(results)};
     }
 
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
@@ -524,8 +523,9 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_MANIFEST_NO_DEFAULT_FEATURES = "x-no-default-features";
     static constexpr StringLiteral OPTION_MANIFEST_FEATURE = "x-feature";
     static constexpr StringLiteral OPTION_PROHIBIT_BACKCOMPAT_FEATURES = "x-prohibit-backcompat-features";
+    static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 14> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 15> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -542,8 +542,9 @@ namespace vcpkg::Install
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES,
          "(experimental) Fail install if a package attempts to use a deprecated feature"},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
-    static constexpr std::array<CommandSwitch, 14> MANIFEST_INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 15> MANIFEST_INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -558,6 +559,7 @@ namespace vcpkg::Install
         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_MANIFEST_NO_DEFAULT_FEATURES, "Don't install the default features from the manifest."},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
@@ -796,6 +798,9 @@ namespace vcpkg::Install
             to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads);
         const bool prohibit_backcompat_features =
             Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES));
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+                                                 ? Dependencies::UnsupportedPortAction::Warn
+                                                 : Dependencies::UnsupportedPortAction::Error;
 
         BinaryCache binary_cache;
         if (!only_downloads)
@@ -945,9 +950,13 @@ namespace vcpkg::Install
                                                                             dependencies,
                                                                             manifest_scf.core_paragraph->overrides,
                                                                             toplevel,
-                                                                            host_triplet)
+                                                                            host_triplet,
+                                                                            unsupported_port_action)
                                     .value_or_exit(VCPKG_LINE_INFO);
-
+            for (const auto& warning : install_plan.warnings)
+            {
+                print2(Color::warning, warning, '\n');
+            }
             for (InstallPlanAction& action : install_plan.install_actions)
             {
                 action.build_options = install_plan_options;
@@ -989,9 +998,13 @@ namespace vcpkg::Install
         StatusParagraphs status_db = database_load_check(paths);
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
-        auto action_plan =
-            Dependencies::create_feature_install_plan(provider, var_provider, specs, status_db, {host_triplet});
+        auto action_plan = Dependencies::create_feature_install_plan(
+            provider, var_provider, specs, status_db, {host_triplet, unsupported_port_action});
 
+        for (const auto& warning : action_plan.warnings)
+        {
+            print2(Color::warning, warning, '\n');
+        }
         for (auto&& action : action_plan.install_actions)
         {
             action.build_options = install_plan_options;
@@ -1072,7 +1085,7 @@ namespace vcpkg::Install
                                                Build::null_build_logs_recorder(),
                                                var_provider);
 
-        print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
+        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {
@@ -1198,8 +1211,9 @@ namespace vcpkg::Install
 
         for (auto&& install_action : plan.install_actions)
         {
-            auto&& version_as_string =
-                install_action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).to_versiont().to_string();
+            auto&& version_as_string = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
+                                           .to_versiont()
+                                           .to_string();
             if (!specs_string.empty()) specs_string.push_back(',');
             specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
                                             ":",

@@ -1,6 +1,7 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
+#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -287,7 +288,7 @@ namespace vcpkg::Commands::CI
     static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
                                       const InstallPlanAction* install_plan)
     {
-        auto&& scfl = install_plan->source_control_file_location.value_or_exit(VCPKG_LINE_INFO);
+        auto&& scfl = install_plan->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         const auto& supports_expression = scfl.source_control_file->core_paragraph->supports_expression;
         PlatformExpression::Context context =
             var_provider.get_tag_vars(install_plan->spec).value_or_exit(VCPKG_LINE_INFO);
@@ -333,7 +334,7 @@ namespace vcpkg::Commands::CI
             }
         }
 
-        var_provider.load_dep_info_vars(packages_with_qualified_deps);
+        var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
         auto action_plan =
             Dependencies::create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
 
@@ -524,7 +525,8 @@ namespace vcpkg::Commands::CI
             return FullPackageSpec{spec, std::move(default_features)};
         });
 
-        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet);
+        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
+                                                                 Dependencies::UnsupportedPortAction::Warn);
 
         struct RandomizerInstance : Graphs::Randomizer
         {
@@ -645,7 +647,7 @@ namespace vcpkg::Commands::CI
         for (auto&& result : results)
         {
             print2("\nTriplet: ", result.triplet, "\n");
-            print2("Total elapsed time: ", result.summary.total_elapsed_time, "\n");
+            print2("Total elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n");
             result.summary.print();
         }
 

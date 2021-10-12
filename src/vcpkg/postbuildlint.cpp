@@ -262,7 +262,8 @@ namespace vcpkg::PostBuildLint
         {
             vcpkg::printf(Color::warning,
                           "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to "
-                          "/share/%s/cmake.\nPlease use the helper function `vcpkg_fixup_cmake_targets()`\n",
+                          "/share/%s/cmake.\nPlease use the helper function `vcpkg_cmake_config_fixup()` "
+                          "from the port vcpkg-cmake-config.`\n",
                           spec.name());
             return LintStatus::ERROR_DETECTED;
         }
@@ -730,6 +731,42 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
+    static LintStatus check_pkgconfig_dir_only_in_lib_dir(const Filesystem& fs, const Path& dir)
+    {
+        std::vector<Path> misplaced_pkgconfig_files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
+        Util::erase_remove_if(misplaced_pkgconfig_files, [&fs](const Path& path) {
+            if (!Strings::ends_with(path, ".pc")) return true;
+            // Always forbid .pc files not in a "pkgconfig" directory:
+            const auto parent_path = Path(path.parent_path());
+            if (parent_path.filename() != "pkgconfig") return false;
+            const auto pkgconfig_parent_name = Path(parent_path.parent_path()).filename().to_string();
+            // Always allow .pc files in "lib/pkgconfig":
+            if (pkgconfig_parent_name == "lib") return true;
+            // Allow .pc in "share/pkgconfig" if and only if it contains no "Libs:" or "Libs.private:" directives:
+            return pkgconfig_parent_name == "share" &&
+                   !Util::any_of(fs.read_lines(path, VCPKG_LINE_INFO),
+                                 [](const auto& line) { return Strings::starts_with(line, "Libs"); });
+        });
+
+        if (!misplaced_pkgconfig_files.empty())
+        {
+            print2(Color::warning, "There should be no pkgconfig directories outside of lib and debug/lib.\n");
+            print2("The following misplaced pkgconfig files were found:\n");
+            print_paths(misplaced_pkgconfig_files);
+            print2(
+                Color::warning,
+                "You can move the pkgconfig files with the following commands:\n"
+                "\n"
+                R"###(    file(INSTALL "${CURRENT_PACKAGES_DIR}/a/path/pkgconfig/name.pc" DESTINATION "${CURRENT_PACKAGES_DIR}/a/path/pkgconfig"))###"
+                "\n"
+                R"###(    file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/a/path/pkgconfig"))###"
+                "\n\n");
+            return LintStatus::ERROR_DETECTED;
+        }
+
+        return LintStatus::SUCCESS;
+    }
+
     struct BuildTypeAndFile
     {
         Path file;
@@ -1027,6 +1064,7 @@ namespace vcpkg::PostBuildLint
         error_count += check_no_empty_folders(fs, package_dir);
         error_count += check_no_files_in_dir(fs, package_dir);
         error_count += check_no_files_in_dir(fs, package_dir / "debug");
+        error_count += check_pkgconfig_dir_only_in_lib_dir(fs, package_dir);
         error_count += check_no_absolute_paths_in(
             fs, package_dir, std::vector<Path>{package_dir.native(), paths.installed.native()});
 

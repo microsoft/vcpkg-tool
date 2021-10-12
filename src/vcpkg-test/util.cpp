@@ -79,11 +79,11 @@ namespace vcpkg::Test
                                         const std::vector<std::pair<const char*, const char*>>& features,
                                         const std::vector<const char*>& default_features)
     {
-        auto scfl = SourceControlFileLocation{make_control_file(name, depends, features, default_features), ""};
+        auto scfl = SourceControlFileAndLocation{make_control_file(name, depends, features, default_features), ""};
         return emplace(std::move(scfl));
     }
 
-    PackageSpec PackageSpecMap::emplace(vcpkg::SourceControlFileLocation&& scfl)
+    PackageSpec PackageSpecMap::emplace(vcpkg::SourceControlFileAndLocation&& scfl)
     {
         const auto& name = scfl.source_control_file->core_paragraph->name;
         REQUIRE(map.find(name) == map.end());

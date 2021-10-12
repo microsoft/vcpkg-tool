@@ -279,8 +279,8 @@ namespace vcpkg::Commands::DependInfo
         {
             const std::vector<const SourceControlFile*> source_control_files =
                 Util::fmap(install_actions, [](const InstallPlanAction* install_action) {
-                    const SourceControlFileLocation& scfl =
-                        install_action->source_control_file_location.value_or_exit(VCPKG_LINE_INFO);
+                    const SourceControlFileAndLocation& scfl =
+                        install_action->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
                     return const_cast<const SourceControlFile*>(scfl.source_control_file.get());
                 });
 

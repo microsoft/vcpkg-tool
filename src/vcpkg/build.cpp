@@ -60,7 +60,7 @@ namespace vcpkg::Build
     void Command::perform_and_exit_ex(const VcpkgCmdArguments& args,
                                       const FullPackageSpec& full_spec,
                                       Triplet host_triplet,
-                                      const SourceControlFileLocation& scfl,
+                                      const SourceControlFileAndLocation& scfl,
                                       const PathsPortFileProvider& provider,
                                       BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
@@ -90,7 +90,7 @@ namespace vcpkg::Build
     int Command::perform_ex(const VcpkgCmdArguments& args,
                             const FullPackageSpec& full_spec,
                             Triplet host_triplet,
-                            const SourceControlFileLocation& scfl,
+                            const SourceControlFileAndLocation& scfl,
                             const PathsPortFileProvider& provider,
                             BinaryCache& binary_cache,
                             const IBuildLogsRecorder& build_logs_recorder,
@@ -98,7 +98,7 @@ namespace vcpkg::Build
     {
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
-        var_provider.load_dep_info_vars({{full_spec.package_spec}});
+        var_provider.load_dep_info_vars({{full_spec.package_spec}}, host_triplet);
 
         StatusParagraphs status_db = database_load_check(paths);
 
@@ -163,7 +163,7 @@ namespace vcpkg::Build
         if (result.code != BuildResult::SUCCEEDED)
         {
             print2(Color::error, Build::create_error_message(result.code, spec), '\n');
-            print2(Build::create_user_troubleshooting_message(spec), '\n');
+            print2(Build::create_user_troubleshooting_message(*action), '\n');
             return 1;
         }
 
@@ -731,7 +731,7 @@ namespace vcpkg::Build
         // bootstrap should have already downloaded ninja, but making sure it is present in case it was deleted.
         (void)(paths.get_tool_exe(Tools::NINJA));
 #endif
-        auto& scfl = action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO);
+        auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto& scf = *scfl.source_control_file;
 
         std::string all_features;
@@ -856,7 +856,7 @@ namespace vcpkg::Build
         const auto& pre_build_info = action.pre_build_info(VCPKG_LINE_INFO);
 
         auto& fs = paths.get_filesystem();
-        auto&& scfl = action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO);
+        auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
 
         Triplet triplet = action.spec.triplet();
         const auto& triplet_file_path = paths.get_triplet_file_path(triplet);
@@ -1065,7 +1065,7 @@ namespace vcpkg::Build
         // just mark the port as no-hash
         const int max_port_file_count = 100;
 
-        auto&& port_dir = action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).source_location;
+        auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
         size_t port_file_count = 0;
         for (auto& port_file : fs.get_regular_files_recursive(port_dir, VCPKG_LINE_INFO))
         {
@@ -1207,7 +1207,7 @@ namespace vcpkg::Build
     {
         auto& filesystem = paths.get_filesystem();
         auto& spec = action.spec;
-        const std::string& name = action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO)
+        const std::string& name = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
                                       .source_control_file->core_paragraph->name;
 
         std::vector<FeatureSpec> missing_fspecs;
@@ -1315,13 +1315,20 @@ namespace vcpkg::Build
         return Strings::format("Error: Building package %s failed with: %s", spec, Build::to_string(build_result));
     }
 
-    std::string create_user_troubleshooting_message(const PackageSpec& spec)
+    std::string create_user_troubleshooting_message(const InstallPlanAction& action)
     {
 #if defined(_WIN32)
         auto vcpkg_update_cmd = ".\\vcpkg";
 #else
         auto vcpkg_update_cmd = "./vcpkg";
 #endif
+
+        std::string package = action.displayname();
+        if (auto scfl = action.source_control_file_and_location.get())
+        {
+            Strings::append(package, " -> ", scfl->to_versiont());
+        }
+
         return Strings::format("Please ensure you're using the latest portfiles with `%s update`, then\n"
                                "submit an issue at https://github.com/Microsoft/vcpkg/issues including:\n"
                                "  Package: %s\n"
@@ -1329,7 +1336,7 @@ namespace vcpkg::Build
                                "\n"
                                "Additionally, attach any relevant sections from the log files above.",
                                vcpkg_update_cmd,
-                               spec,
+                               package,
                                Commands::Version::version());
     }
 

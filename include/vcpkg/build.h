@@ -56,7 +56,7 @@ namespace vcpkg::Build
         int perform_ex(const VcpkgCmdArguments& args,
                        const FullPackageSpec& full_spec,
                        Triplet host_triplet,
-                       const SourceControlFileLocation& scfl,
+                       const SourceControlFileAndLocation& scfl,
                        const PortFileProvider::PathsPortFileProvider& provider,
                        BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
@@ -64,7 +64,7 @@ namespace vcpkg::Build
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
                                  const FullPackageSpec& full_spec,
                                  Triplet host_triplet,
-                                 const SourceControlFileLocation& scfl,
+                                 const SourceControlFileAndLocation& scfl,
                                  const PortFileProvider::PathsPortFileProvider& provider,
                                  BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
@@ -205,7 +205,7 @@ namespace vcpkg::Build
 
     const std::string& to_string(const BuildResult build_result);
     std::string create_error_message(const BuildResult build_result, const PackageSpec& spec);
-    std::string create_user_troubleshooting_message(const PackageSpec& spec);
+    std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action);
 
     /// <summary>
     /// Settings from the triplet file which impact the build environment and post-build checks

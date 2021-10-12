@@ -609,10 +609,11 @@ namespace vcpkg
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral DESCRIPTION = "description";
         constexpr static StringLiteral DEPENDENCIES = "dependencies";
+        constexpr static StringLiteral SUPPORTS = "supports";
 
         virtual Span<const StringView> valid_fields() const override
         {
-            static const StringView t[] = {DESCRIPTION, DEPENDENCIES};
+            static const StringView t[] = {DESCRIPTION, DEPENDENCIES, SUPPORTS};
             return t;
         }
 
@@ -631,6 +632,7 @@ namespace vcpkg
             r.required_object_field(
                 type_name(), obj, DESCRIPTION, feature->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DEPENDENCIES, feature->dependencies, DependencyArrayDeserializer::instance);
+            r.optional_object_field(obj, SUPPORTS, feature->supports_expression, PlatformExprDeserializer::instance);
 
             return std::move(feature); // gcc-7 bug workaround redundant move
         }
@@ -640,6 +642,7 @@ namespace vcpkg
     constexpr StringLiteral FeatureDeserializer::NAME;
     constexpr StringLiteral FeatureDeserializer::DESCRIPTION;
     constexpr StringLiteral FeatureDeserializer::DEPENDENCIES;
+    constexpr StringLiteral FeatureDeserializer::SUPPORTS;
 
     struct FeaturesFieldDeserializer : Json::IDeserializer<std::vector<std::unique_ptr<FeatureParagraph>>>
     {

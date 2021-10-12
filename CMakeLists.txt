@@ -6,6 +6,10 @@ if(NOT CMAKE_MSVC_RUNTIME_LIBRARY)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
+if(WIN32)
+    string(APPEND CMAKE_CXX_FLAGS " /EHsc")
+endif()
+
 # ===============
 # === Options ===
 # ===============
@@ -20,6 +24,7 @@ option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
+set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
 
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
     "BUILD_TESTING" OFF)
@@ -39,6 +44,7 @@ project(vcpkg
     HOMEPAGE_URL "https://github.com/microsoft/vcpkg"
     LANGUAGES ${LANGUAGES}
 )
+
 include(cmake/utilities.cmake)
 
 # =============
@@ -64,8 +70,6 @@ set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
 # ========================
 
 vcpkg_detect_compiler()
-vcpkg_detect_standard_library()
-vcpkg_detect_std_filesystem()
 
 if(VCPKG_EMBED_GIT_SHA)
     find_package(Git REQUIRED)
@@ -133,7 +137,6 @@ target_include_directories(vcpkglib PUBLIC include)
 
 vcpkg_target_add_warning_options(vcpkglib)
 target_compile_definitions(vcpkglib PUBLIC
-    VCPKG_USE_STD_FILESYSTEM=$<BOOL:${VCPKG_USE_STD_FILESYSTEM}>
     VCPKG_VERSION=${VCPKG_VERSION}
     VCPKG_BASE_VERSION=${VCPKG_BASE_VERSION}
 )
@@ -141,10 +144,6 @@ target_compile_definitions(vcpkglib PUBLIC
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(vcpkglib PRIVATE Threads::Threads)
-
-if(VCPKG_CXXFS_LIBRARY)
-    target_link_libraries(vcpkglib PRIVATE ${VCPKG_CXXFS_LIBRARY})
-endif()
 
 if(MSVC)
     get_target_property(_srcs vcpkglib SOURCES)
@@ -186,6 +185,9 @@ if(VCPKG_ADD_SOURCELINK)
         REF "${VCPKG_VERSION}"
     )
 endif()
+if(VCPKG_PDB_SUFFIX)
+    set_property(TARGET vcpkg PROPERTY PDB_NAME "vcpkg${VCPKG_PDB_SUFFIX}")
+endif()
 
 # === Target: vcpkg-test ===
 
@@ -221,7 +223,10 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES})
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
-    target_link_libraries(tls12-download winhttp wintrust)
+    target_link_libraries(tls12-download winhttp wintrust shell32)
+    if(VCPKG_PDB_SUFFIX)
+        set_property(TARGET tls12-download PROPERTY PDB_NAME "tls12-download${VCPKG_PDB_SUFFIX}")
+    endif()
 endif()
 
 
