@@ -5,7 +5,7 @@ namespace vcpkg::msg
 {
     DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
 
-    // basic implementation - the write_text_to_stdout
+    // basic implementation - the write_unlocalized_text_to_stdout
 #if defined(_WIN32)
     static bool is_console(HANDLE h)
     {
@@ -30,7 +30,7 @@ namespace vcpkg::msg
                    : static_cast<DWORD>(size);
     }
 
-    void write_text_to_stdout(Color c, StringView sv)
+    void write_unlocalized_text_to_stdout(Color c, StringView sv)
     {
         if (sv.empty()) return;
 
@@ -94,7 +94,7 @@ namespace vcpkg::msg
         }
     }
 
-    void write_text_to_stdout(Color c, StringView sv)
+    void write_unlocalized_text_to_stdout(Color c, StringView sv)
     {
         static constexpr char reset_color_sequence[] = {'\033', '[', '0', 'm'};
 
@@ -211,6 +211,26 @@ namespace vcpkg::msg
     ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment)
     {
         Messages& m = messages();
+
+        auto name_is_used = std::find(m.names.begin(), m.names.end(), name);
+        if (name_is_used != m.names.end())
+        {
+            write_unlocalized_text_to_stdout(
+                Color::Error,
+                fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n", name));
+            write_unlocalized_text_to_stdout(
+                Color::Error,
+                fmt::format("INTERNAL ERROR: first message:\n"));
+            write_unlocalized_text_to_stdout(Color::None, m.default_strings[name_is_used - m.names.begin()]);
+            write_unlocalized_text_to_stdout(
+                Color::Error,
+                fmt::format("\nINTERNAL ERROR: second message:\n"));
+            write_unlocalized_text_to_stdout(Color::None, format_string);
+            write_unlocalized_text_to_stdout(Color::None, "\n");
+            ::fflush(stdout);
+            ::abort();
+        }
+
         auto res = m.names.size();
         m.names.push_back(name);
         m.default_strings.push_back(format_string);

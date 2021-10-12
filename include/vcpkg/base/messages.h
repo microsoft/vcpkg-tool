@@ -33,17 +33,9 @@ namespace vcpkg
 
 namespace vcpkg::msg
 {
-    // Some notes about this design
-    // the desire is to have as few template instantiations as possible,
-    // and if a template instantiation is necessary, we should have as little code there as possible
-    // in order to remove as much binary space as possible.
-    // Thus, for each message we get an instantiation of format/print/println -
-    // these are necessary and should have as little code as possible,
-    // preferably a single function call.
-    // Then, for each argument list of types we get an instantiation of internal_format;
-    // hopefully this is less than the number of messages. This additionally invokes
-    // fmt::make_format_args, so we have an instantiation of that for each list of arguments.
-    // Then finally the real meat of the formatting happen
+    struct LocalizedString;
+    struct LocalizedStringView;
+
     namespace detail
     {
         template<class Tag, class Type>
@@ -60,7 +52,7 @@ namespace vcpkg::msg
             }
         };
 
-        std::string internal_vformat(int index, fmt::format_args args);
+        LocalizedString internal_vformat(int index, fmt::format_args args);
 
         template<class... Args>
         MessageCheckFormatArgs<Args...> make_message_check_format_args(const Args&... args);
@@ -79,8 +71,6 @@ namespace vcpkg::msg
         StringView get_localization_comment(::size_t index);
     }
 
-    void write_text_to_stdout(Color c, StringView sv);
-
     // load from "locale_base/${language}.json"
     void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base);
     // load from the json object
@@ -88,8 +78,84 @@ namespace vcpkg::msg
     // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
 
+    struct LocalizedString
+    {
+        LocalizedString() = default;
+        operator StringView() const
+        {
+            return m_data;
+        }
+        const std::string& data() const
+        {
+            return m_data;
+        }
+
+        static LocalizedString from_string_unchecked(std::string&& s)
+        {
+            LocalizedString res;
+            res.m_data = std::move(s);
+            return res;
+        }
+
+        LocalizedString& append(LocalizedStringView sv) &;
+        LocalizedString& add_newline() &;
+        LocalizedString& append_with_newline(LocalizedStringView sv) &;
+
+        LocalizedString&& append(LocalizedStringView sv) &&;
+        LocalizedString&& add_newline() &&;
+        LocalizedString&& append_with_newline(LocalizedStringView sv) &&;
+
+    private:
+        std::string m_data;
+        friend LocalizedString detail::internal_vformat(int index, fmt::format_args args);
+    };
+    struct LocalizedStringView
+    {
+        LocalizedStringView() = default;
+        LocalizedStringView(const LocalizedString& s) : m_data(s) {}
+
+        operator StringView() const
+        {
+            return m_data;
+        }
+        StringView data() const
+        {
+            return m_data;
+        }
+
+        static LocalizedStringView from_stringview_unchecked(StringView sv)
+        {
+            LocalizedStringView res;
+            res.m_data = sv;
+            return res;
+        }
+    private:
+        StringView m_data;
+    };
+
+    inline LocalizedString& LocalizedString::append_with_newline(LocalizedStringView sv) &
+    {
+        add_newline();
+        append(sv);
+        return *this;
+    }
+
+    inline LocalizedString&& LocalizedString::append(LocalizedStringView sv) && { return std::move(append(sv)); }
+    inline LocalizedString&& LocalizedString::add_newline() && { return std::move(add_newline()); }
+    inline LocalizedString&& LocalizedString::append_with_newline(LocalizedStringView sv) && { return std::move(append_with_newline(sv)); }
+
+    void write_unlocalized_text_to_stdout(Color c, StringView sv);
+    inline void write_newline_to_stdout()
+    {
+        write_unlocalized_text_to_stdout(Color::None, "\n");
+    }
+    inline void write_text_to_stdout(Color c, LocalizedStringView sv)
+    {
+        write_unlocalized_text_to_stdout(c, sv);
+    }
+
     template<class Message, class... Tags, class... Ts>
-    std::string format(Message, detail::MessageArgument<Tags, Ts>... args)
+    LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
     {
         // avoid generating code, but still typeck
         // (and avoid unused typedef warnings)
@@ -108,7 +174,7 @@ namespace vcpkg::msg
     void println(Message m, Ts... args)
     {
         write_text_to_stdout(Color::None, format(m, args...));
-        write_text_to_stdout(Color::None, "\n");
+        write_newline_to_stdout();
     }
 
     template<class Message, class... Ts>
@@ -120,7 +186,7 @@ namespace vcpkg::msg
     void println(Color c, Message m, Ts... args)
     {
         write_text_to_stdout(c, format(m, args...));
-        write_text_to_stdout(Color::None, "\n");
+        write_newline_to_stdout();
     }
 
 // these use `constexpr static` instead of `inline` in order to work with GCC 6;
@@ -139,6 +205,7 @@ namespace vcpkg::msg
         }                                                                                                              \
     } NAME = {}
 
+    DECLARE_MSG_ARG(url);
     DECLARE_MSG_ARG(email);
     DECLARE_MSG_ARG(vcpkg_version);
     DECLARE_MSG_ARG(error);
@@ -169,3 +236,24 @@ namespace vcpkg::msg
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
     REGISTER_MESSAGE(NAME)
 }
+
+template <>
+struct fmt::formatter<vcpkg::msg::LocalizedString> : fmt::formatter<vcpkg::StringView>
+{
+    // parse is inherited from formatter<StringView>
+    template<class FormatContext>
+    auto format(const vcpkg::msg::LocalizedString& s, FormatContext& ctx)
+    {
+        return fmt::formatter<vcpkg::StringView>::format(s, ctx);
+    }
+};
+template <>
+struct fmt::formatter<vcpkg::msg::LocalizedStringView> : fmt::formatter<vcpkg::StringView>
+{
+    // parse is inherited from formatter<StringView>
+    template<class FormatContext>
+    auto format(vcpkg::msg::LocalizedStringView sv, FormatContext& ctx)
+    {
+        return fmt::formatter<vcpkg::StringView>::format(sv, ctx);
+    }
+};

@@ -32,6 +32,8 @@ namespace
                                  "Failed to store binary cache {file}: {error}");
     DECLARE_AND_REGISTER_MESSAGE(StoredBinaryCache, (msg::file), "", "Stored binary cache: {file}");
 
+    DECLARE_AND_REGISTER_MESSAGE(CachingUnknownReadwriteArgument, (), "", "unexpected argument: expected 'read', readwrite', or 'write'");
+    DECLARE_AND_REGISTER_MESSAGE(CachingUnexpectedEof, (), "", "unexpected eof: trailing unescaped backticks (`) are not allowed");
     struct ConfigSegmentsParser : Parse::ParserBase
     {
         using Parse::ParserBase::ParserBase;
@@ -69,8 +71,7 @@ namespace
             }
             else
             {
-                return add_error("unexpected argument: expected 'read', readwrite', or 'write'",
-                                 segments[segment_idx].first);
+                return add_error(msg::format(msgCachingUnknownReadwriteArgument), segments[segment_idx].first);
             }
         }
     };
@@ -96,7 +97,7 @@ namespace
                     ch = next();
                     if (ch == Unicode::end_of_file)
                     {
-                        return add_error("unexpected eof: trailing unescaped backticks (`) are not allowed");
+                        return add_error(msg::format(msgCachingUnexpectedEof));
                     }
                     else
                     {
@@ -1366,6 +1367,46 @@ namespace vcpkg
 
 namespace
 {
+    DECLARE_AND_REGISTER_MESSAGE(BcPathsMustBeAbsolute, (), "", "expected arguments: path arguments for binary config strings must be absolute");
+    DECLARE_AND_REGISTER_MESSAGE(BcClearRequires0Args, (), "", "unexpected arguments: binary config 'clear' does not take arguments");
+    DECLARE_AND_REGISTER_MESSAGE(BcFileRequires1Arg, (), "", "expected arguments: binary config 'files' requires at least a path argument");
+    DECLARE_AND_REGISTER_MESSAGE(BcFilesRequires1or2Args, (), "", "unexpected arguments: binary config 'files' requires 1 or 2 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(BcInteractiveRequires0Args, (), "", "unexpected arguments: binary config 'interactive' does not accept any arguments");
+    DECLARE_AND_REGISTER_MESSAGE(BcNugetconfigRequiresAtLeast1Arg, (), "", "expected arguments: binary config 'nugetconfig' requires at least a source argument");
+    DECLARE_AND_REGISTER_MESSAGE(BcNugetconfigRequires1or2Args, (), "", "unexpected arguments: binary config 'nugetconfig' requires 1 or 2 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(BcNugetRequiresAtLeast1Arg, (), "", "expected arguments: binary config 'nuget' requires at least a source argument");
+    DECLARE_AND_REGISTER_MESSAGE(BcNugetRequiresNonEmptySource, (), "", "unexpected arguments: binary config 'nuget' requires non-empty source");
+    DECLARE_AND_REGISTER_MESSAGE(BcNugetRequires1or2Args, (), "", "unexpected arguments: binary config 'nuget' requires 1 or 2 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(BcNugettimeoutRequires1Arg, (), "", "expected arguments: binary config 'nugettimeout' expects a single positive integer argument");
+    DECLARE_AND_REGISTER_MESSAGE(BcNugettimeoutRequiresNonempty, (), "", "unexpected arguments: binary config 'nugettimeout' requires non-empty nugettimeout");
+    DECLARE_AND_REGISTER_MESSAGE(BcNugettimeoutRequiresValidInt, (), "", "invalid value: binary config 'nugettimeout' requires a valid integer");
+    DECLARE_AND_REGISTER_MESSAGE(BcNugettimeoutRequiresPositive, (), "", "invalid value: binary config 'nugettimeout' requires integers greater than 0");
+    DECLARE_AND_REGISTER_MESSAGE(BcDefaultRequires0or1Args, (), "", "unexpected arguments: binary config 'default' does not take more than 1 argument");
+    DECLARE_AND_REGISTER_MESSAGE(BcAzblobRequiresAtLeast2Args, (), "", "expected arguments: binary config 'azblob' requires at least a base-url and a SAS token");
+    DECLARE_AND_REGISTER_MESSAGE(BcAzblobRequiresHttpsUrl, (), "", "invalid argument: binary config 'azblob' requires an https base url as the first argument");
+    DECLARE_AND_REGISTER_MESSAGE(BcAzblobRequiresSasToken, (), "", "invalid argument: binary config 'azblob' requires a SAS token without a preceeding '?' as the second argument");
+    DECLARE_AND_REGISTER_MESSAGE(BcAzblobRequires2or3Args, (), "", "unexpected arguments: binary config 'azblob' requires 2 or 3 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(BcGcsRequiresAtLeast1Arg, (), "", "expected arguments: binary config 'gcs' requires at least a prefix");
+    DECLARE_AND_REGISTER_MESSAGE(BcGcsUrlMustBeGs, (), "", "invalid argument: binary config 'gcs' requires a gs:// base url as the first argument");
+    DECLARE_AND_REGISTER_MESSAGE(BcGcsRequires1or2Args, (), "", "unexpected arguments: binary config 'gcs' requires 1 or 2 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(BcUnknownProviderType, (), "", "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files'");
+
+    DECLARE_AND_REGISTER_MESSAGE(AcXblockoriginRequires0Args, (), "", "unexpected arguments: asset config 'x-block-origin' does not accept arguments");
+    DECLARE_AND_REGISTER_MESSAGE(AcClearRequires0Args, (), "", "unexpected arguments: asset config 'clear' does not accept arguments");
+    DECLARE_AND_REGISTER_MESSAGE(AcAzurlRequiresAtLeast1Arg, (), "", "expected arguments: asset config 'azurl' requires at least a base url");
+    DECLARE_AND_REGISTER_MESSAGE(AcAzurlRequiressAtMost4Args, (), "", "unexpected arguments: asset config 'azurl' requires less than 4 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(AcAzurlRequiresBaseUri, (), "", "unexpected arguments: asset config 'azurl' requires a base uri");
+    DECLARE_AND_REGISTER_MESSAGE(AcUnknownProviderType, (), "", "unknown asset provider type: valid source types are 'x-azurl', 'x-block-origin', and 'clear'");
+
+    DECLARE_AND_REGISTER_MESSAGE(AcMoreInfo, (msg::url), "", "For more information, see {url}");
+    DECLARE_AND_REGISTER_MESSAGE(AcMaxOneWriteUrl, (msg::url), "", R"(Error: a maximum of one asset write url can be specified
+For more information, see {url})");
+    DECLARE_AND_REGISTER_MESSAGE(AcMaxOneReadUrl, (msg::url), "", R"(Error: a maximum of one asset read url can be specified
+For more information, see {url})");
+
+    DECLARE_AND_REGISTER_MESSAGE(CacheDefaultPathNotDirectory, (msg::file), "", "Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not a directory: {}");
+    DECLARE_AND_REGISTER_MESSAGE(CacheDefaultPathNotAbsolute, (msg::file), "", "default path was not absolute: {file}");
+
     const ExpectedS<Path>& default_cache_path()
     {
         static auto cachepath = get_platform_cache_home().then([](Path p) -> ExpectedS<Path> {
@@ -1377,29 +1418,24 @@ namespace
                 path.make_preferred();
                 if (!get_real_filesystem().is_directory(path))
                 {
-                    return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not a directory: " +
-                                path.native(),
-                            expected_right_tag};
                 }
 
                 if (!path.is_absolute())
                 {
-                    return {"Value of environment variable VCPKG_DEFAULT_BINARY_CACHE is not absolute: " +
-                                path.native(),
-                            expected_right_tag};
+                    return msg::format(msgCacheDefaultPathNotDirectory, msg::file = path);
                 }
 
-                return {std::move(path), expected_left_tag};
+                return std::move(path);
             }
             p /= "vcpkg/archives";
             p.make_preferred();
             if (p.is_absolute())
             {
-                return {std::move(p), expected_left_tag};
+                return std::move(p);
             }
             else
             {
-                return {"default path was not absolute: " + p.native(), expected_right_tag};
+                return msg::format(msgCacheDefaultPathNotAbsolute, msg::file = p);
             }
         });
         return cachepath;
@@ -1473,8 +1509,7 @@ namespace
             {
                 if (segments.size() != 1)
                 {
-                    return add_error("unexpected arguments: binary config 'clear' does not take arguments",
-                                     segments[1].first);
+                    return add_error(msg::format(msgBcClearRequires0Args), segments[1].first);
                 }
 
                 state->clear();
@@ -1483,30 +1518,26 @@ namespace
             {
                 if (segments.size() < 2)
                 {
-                    return add_error("expected arguments: binary config 'files' requires at least a path argument",
-                                     segments[0].first);
+                    return add_error(msg::format(msgBcFileRequires1Arg), segments[0].first);
                 }
 
                 Path p = segments[1].second;
                 if (!p.is_absolute())
                 {
-                    return add_error("expected arguments: path arguments for binary config strings must be absolute",
-                                     segments[1].first);
+                    return add_error(msg::format(msgBcPathsMustBeAbsolute), segments[1].first);
                 }
 
                 handle_readwrite(state->archives_to_read, state->archives_to_write, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
-                    return add_error("unexpected arguments: binary config 'files' requires 1 or 2 arguments",
-                                     segments[3].first);
+                    return add_error(msg::format(msgBcFilesRequires1or2Args), segments[3].first);
                 }
             }
             else if (segments[0].second == "interactive")
             {
                 if (segments.size() > 1)
                 {
-                    return add_error("unexpected arguments: binary config 'interactive' does not accept any arguments",
-                                     segments[1].first);
+                    return add_error(msg::format(msgBcInteractiveRequires0Args), segments[1].first);
                 }
 
                 state->interactive = true;
@@ -1515,69 +1546,61 @@ namespace
             {
                 if (segments.size() < 2)
                 {
-                    return add_error(
-                        "expected arguments: binary config 'nugetconfig' requires at least a source argument",
-                        segments[0].first);
+                    return add_error(msg::format(msgBcNugetconfigRequiresAtLeast1Arg), segments[0].first);
                 }
 
                 Path p = segments[1].second;
                 if (!p.is_absolute())
                 {
-                    return add_error("expected arguments: path arguments for binary config strings must be absolute",
-                                     segments[1].first);
+                    return add_error(msg::format(msgBcPathsMustBeAbsolute), segments[1].first);
                 }
 
                 handle_readwrite(state->configs_to_read, state->configs_to_write, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
-                    return add_error("unexpected arguments: binary config 'nugetconfig' requires 1 or 2 arguments",
-                                     segments[3].first);
+                    return add_error(msg::format(msgBcNugetconfigRequires1or2Args), segments[3].first);
                 }
             }
             else if (segments[0].second == "nuget")
             {
                 if (segments.size() < 2)
                 {
-                    return add_error("expected arguments: binary config 'nuget' requires at least a source argument",
-                                     segments[0].first);
+                    return add_error(msg::format(msgBcNugetRequiresAtLeast1Arg), segments[0].first);
                 }
 
                 auto&& p = segments[1].second;
                 if (p.empty())
                 {
-                    return add_error("unexpected arguments: binary config 'nuget' requires non-empty source");
+                    return add_error(msg::format(msgBcNugetRequiresNonEmptySource), segments[1].first);
                 }
 
                 handle_readwrite(state->sources_to_read, state->sources_to_write, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
-                    return add_error("unexpected arguments: binary config 'nuget' requires 1 or 2 arguments",
-                                     segments[3].first);
+                    return add_error(msg::format(msgBcNugetRequires1or2Args), segments[3].first);
                 }
             }
             else if (segments[0].second == "nugettimeout")
             {
                 if (segments.size() != 2)
                 {
-                    return add_error(
-                        "expected arguments: binary config 'nugettimeout' expects a single positive integer argument");
+                    return add_error(msg::format(msgBcNugettimeoutRequires1Arg), segments[0].first);
                 }
 
                 auto&& t = segments[1].second;
                 if (t.empty())
                 {
-                    return add_error(
-                        "unexpected arguments: binary config 'nugettimeout' requires non-empty nugettimeout");
+                    return add_error(msg::format(msgBcNugettimeoutRequiresNonempty), segments[1].first);
                 }
                 char* end;
                 long timeout = std::strtol(t.c_str(), &end, 0);
                 if (*end != '\0')
                 {
-                    return add_error("invalid value: binary config 'nugettimeout' requires a valid integer");
+                    return add_error(msg::format(msgBcNugettimeoutRequiresValidInt), segments[1].first);
                 }
                 if (timeout <= 0)
                 {
-                    return add_error("invalid value: binary config 'nugettimeout' requires integers greater than 0");
+                    return add_error(msg::format(msgBcNugettimeoutRequiresPositive), segments[1].first);
                 }
                 state->nugettimeout = std::to_string(timeout);
             }
@@ -1585,8 +1608,7 @@ namespace
             {
                 if (segments.size() > 2)
                 {
-                    return add_error("unexpected arguments: binary config 'default' does not take more than 1 argument",
-                                     segments[0].first);
+                    return add_error(msg::format(msgBcDefaultRequires0or1Args), segments[0].first);
                 }
 
                 const auto& maybe_home = default_cache_path();
@@ -1603,29 +1625,22 @@ namespace
                 // Scheme: x-azblob,<baseurl>,<sas>[,<readwrite>]
                 if (segments.size() < 3)
                 {
-                    return add_error(
-                        "expected arguments: binary config 'azblob' requires at least a base-url and a SAS token",
-                        segments[0].first);
+                    return add_error(msg::format(msgBcAzblobRequiresAtLeast2Args), segments[0].first);
                 }
 
                 if (!Strings::starts_with(segments[1].second, "https://"))
                 {
-                    return add_error(
-                        "invalid argument: binary config 'azblob' requires an https base url as the first argument",
-                        segments[1].first);
+                    return add_error(msg::format(msgBcAzblobRequiresHttpsUrl), segments[1].first);
                 }
 
                 if (Strings::starts_with(segments[2].second, "?"))
                 {
-                    return add_error("invalid argument: binary config 'azblob' requires a SAS token without a "
-                                     "preceeding '?' as the second argument",
-                                     segments[2].first);
+                    return add_error(msg::format(msgBcAzblobRequiresSasToken), segments[2].first);
                 }
 
                 if (segments.size() > 4)
                 {
-                    return add_error("unexpected arguments: binary config 'azblob' requires 2 or 3 arguments",
-                                     segments[4].first);
+                    return add_error(msg::format(msgBcAzblobRequires2or3Args), segments[4].first);
                 }
 
                 auto p = segments[1].second;
@@ -1650,21 +1665,17 @@ namespace
                 // Scheme: x-gcs,<prefix>[,<readwrite>]
                 if (segments.size() < 2)
                 {
-                    return add_error("expected arguments: binary config 'gcs' requires at least a prefix",
-                                     segments[0].first);
+                    return add_error(msg::format(msgBcGcsRequiresAtLeast1Arg), segments[0].first);
                 }
 
                 if (!Strings::starts_with(segments[1].second, "gs://"))
                 {
-                    return add_error(
-                        "invalid argument: binary config 'gcs' requires a gs:// base url as the first argument",
-                        segments[1].first);
+                    return add_error(msg::format(msgBcGcsUrlMustBeGs), segments[1].first);
                 }
 
                 if (segments.size() > 3)
                 {
-                    return add_error("unexpected arguments: binary config 'gcs' requires 1 or 2 arguments",
-                                     segments[3].first);
+                    return add_error(msg::format(msgBcGcsRequires1or2Args), segments[3].first);
                 }
 
                 auto p = segments[1].second;
@@ -1677,10 +1688,7 @@ namespace
             }
             else
             {
-                return add_error(
-                    "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', "
-                    "'interactive', and 'files'",
-                    segments[0].first);
+                return add_error(msg::format(msgBcUnknownProviderType), segments[0].first);
             }
         }
     };
@@ -1730,8 +1738,7 @@ namespace
             {
                 if (segments.size() >= 2)
                 {
-                    return add_error("unexpected arguments: asset config 'x-block-origin' does not accept arguments",
-                                     segments[1].first);
+                    return add_error(msg::format(msgAcXblockoriginRequires0Args), segments[1].first);
                 }
                 state->block_origin = true;
             }
@@ -1739,8 +1746,7 @@ namespace
             {
                 if (segments.size() != 1)
                 {
-                    return add_error("unexpected arguments: asset config 'clear' does not take arguments",
-                                     segments[1].first);
+                    return add_error(msg::format(msgAcClearRequires0Args), segments[1].first);
                 }
 
                 state->clear();
@@ -1750,20 +1756,17 @@ namespace
                 // Scheme: x-azurl,<baseurl>[,<sas>[,<readwrite>]]
                 if (segments.size() < 2)
                 {
-                    return add_error("expected arguments: asset config 'azurl' requires at least a base url",
-                                     segments[0].first);
+                    return add_error(msg::format(msgAcAzurlRequiresAtLeast1Arg), segments[0].first);
                 }
 
                 if (segments.size() > 4)
                 {
-                    return add_error("unexpected arguments: asset config 'azurl' requires less than 4 arguments",
-                                     segments[4].first);
+                    return add_error(msg::format(msgAcAzurlRequiressAtMost4Args), segments[4].first);
                 }
 
                 if (segments[1].second.empty())
                 {
-                    return add_error("unexpected arguments: asset config 'azurl' requires a base uri",
-                                     segments[1].first);
+                    return add_error(msg::format(msgAcAzurlRequiresBaseUri), segments[1].first);
                 }
 
                 auto p = segments[1].second;
@@ -1788,9 +1791,7 @@ namespace
             }
             else
             {
-                return add_error(
-                    "unknown asset provider type: valid source types are 'x-azurl', 'x-block-origin', and 'clear'",
-                    segments[0].first);
+                return add_error(msg::format(msgAcUnknownProviderType), segments[0].first);
             }
         }
     };
@@ -1807,22 +1808,16 @@ ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(
     parser.parse();
     if (auto err = parser.get_error())
     {
-        return Strings::concat(err->format(), "For more information, see ", s_assetcaching_doc_url, "\n");
+        return err->format().append(msg::format(msgAcMoreInfo, msg::url = s_assetcaching_doc_url)).add_newline();
     }
 
     if (s.azblob_templates_to_put.size() > 1)
     {
-        return Strings::concat("Error: a maximum of one asset write url can be specified\n"
-                               "For more information, see ",
-                               s_assetcaching_doc_url,
-                               "\n");
+        return msg::format(msgAcMaxOneWriteUrl, msg::url = s_assetcaching_doc_url);
     }
     if (s.url_templates_to_get.size() > 1)
     {
-        return Strings::concat("Error: a maximum of one asset read url can be specified\n"
-                               "For more information, see ",
-                               s_assetcaching_doc_url,
-                               "\n");
+        return msg::format(msgAcMaxOneReadUrl, msg::url = s_assetcaching_doc_url);
     }
 
     Optional<std::string> get_url;

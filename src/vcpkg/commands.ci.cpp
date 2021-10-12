@@ -31,6 +31,30 @@ namespace
 
     const Path readme_dot_log = "readme.log";
 
+    struct BufferedPrint
+    {
+        BufferedPrint() { stdout_buffer.reserve(alloc_size); }
+        BufferedPrint(const BufferedPrint&) = delete;
+        BufferedPrint& operator=(const BufferedPrint&) = delete;
+        void append(::vcpkg::StringView nextView)
+        {
+            stdout_buffer.append(nextView.data(), nextView.size());
+            if (stdout_buffer.size() > buffer_size_target)
+            {
+                msg::write_unlocalized_text_to_stdout(Color::None, stdout_buffer);
+                stdout_buffer.clear();
+            }
+        }
+
+        ~BufferedPrint() { msg::write_unlocalized_text_to_stdout(Color::None, stdout_buffer); }
+
+    private:
+        ::std::string stdout_buffer;
+        static constexpr ::std::size_t buffer_size_target = 2048;
+        static constexpr ::std::size_t expected_maximum_print = 256;
+        static constexpr ::std::size_t alloc_size = buffer_size_target + expected_maximum_print;
+    };
+
     struct CiBuildLogsRecorder final : IBuildLogsRecorder
     {
         CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }

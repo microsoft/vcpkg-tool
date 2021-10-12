@@ -4,6 +4,7 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
+#include <vcpkg/base/messages.h>
 
 #include <vcpkg/textrowcol.h>
 
@@ -15,13 +16,13 @@ namespace vcpkg::Parse
     struct IParseError
     {
         virtual ~IParseError() = default;
-        virtual std::string format() const = 0;
-        virtual const std::string& get_message() const = 0;
+        virtual msg::LocalizedString format() const = 0;
+        virtual const msg::LocalizedString& get_message() const = 0;
     };
 
     struct ParseError : IParseError
     {
-        ParseError(std::string origin, int row, int column, int caret_col, std::string line, std::string message)
+        ParseError(std::string origin, int row, int column, int caret_col, std::string line, msg::LocalizedString message)
             : origin(std::move(origin))
             , row(row)
             , column(column)
@@ -36,10 +37,10 @@ namespace vcpkg::Parse
         const int column;
         const int caret_col;
         const std::string line;
-        const std::string message;
+        const msg::LocalizedString message;
 
-        virtual std::string format() const override;
-        virtual const std::string& get_message() const override;
+        virtual msg::LocalizedString format() const override;
+        virtual const msg::LocalizedString& get_message() const override;
     };
 
     struct ParserBase
@@ -109,8 +110,8 @@ namespace vcpkg::Parse
         char32_t next();
         bool at_eof() const { return m_it == m_it.end(); }
 
-        void add_error(std::string message) { add_error(std::move(message), cur_loc()); }
-        void add_error(std::string message, const SourceLoc& loc);
+        void add_error(msg::LocalizedString message) { add_error(std::move(message), cur_loc()); }
+        void add_error(msg::LocalizedString message, const SourceLoc& loc);
 
         const Parse::IParseError* get_error() const { return m_err.get(); }
         std::unique_ptr<Parse::IParseError> extract_error() { return std::move(m_err); }

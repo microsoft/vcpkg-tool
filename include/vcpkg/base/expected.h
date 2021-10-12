@@ -240,5 +240,5 @@ namespace vcpkg
     using Expected = ExpectedT<T, std::error_code>;
 
     template<class T>
-    using ExpectedS = ExpectedT<T, std::string>;
+    using ExpectedS = ExpectedT<T, msg::LocalizedString>;
 }
