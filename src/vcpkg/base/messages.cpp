@@ -251,4 +251,11 @@ namespace vcpkg::msg
         Checks::check_exit(VCPKG_LINE_INFO, index < m.localization_comments.size());
         return m.localization_comments[index];
     }
+
+    std::string detail::internal_vformat(int index, fmt::format_args args)
+    {
+        auto fmt_string = get_format_string(index);
+        return fmt::vformat({fmt_string.data(), fmt_string.size()}, args);
+    }
+
 }

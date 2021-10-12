@@ -33,23 +33,34 @@ namespace vcpkg
 
 namespace vcpkg::msg
 {
+    // Some notes about this design
+    // the desire is to have as few template instantiations as possible,
+    // and if a template instantiation is necessary, we should have as little code there as possible
+    // in order to remove as much binary space as possible.
+    // Thus, for each message we get an instantiation of format/print/println -
+    // these are necessary and should have as little code as possible,
+    // preferably a single function call.
+    // Then, for each argument list of types we get an instantiation of internal_format;
+    // hopefully this is less than the number of messages. This additionally invokes
+    // fmt::make_format_args, so we have an instantiation of that for each list of arguments.
+    // Then finally the real meat of the formatting happen
     namespace detail
     {
         template<class Tag, class Type>
         struct MessageArgument
         {
-            const char* name;
             const Type* parameter; // always valid
         };
 
         template<class... Tags>
         struct MessageCheckFormatArgs
         {
-            template<class... Tys>
-            static constexpr void check_format_args(const detail::MessageArgument<Tags, Tys>&...) noexcept
+            static constexpr void check_format_args(const Tags&...) noexcept
             {
             }
         };
+
+        std::string internal_vformat(int index, fmt::format_args args);
 
         template<class... Args>
         MessageCheckFormatArgs<Args...> make_message_check_format_args(const Args&... args);
@@ -77,13 +88,15 @@ namespace vcpkg::msg
     // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
 
-    template<class Message, class... Ts>
-    std::string format(Message, Ts... args)
+    template<class Message, class... Tags, class... Ts>
+    std::string format(Message, detail::MessageArgument<Tags, Ts>... args)
     {
-        Message::check_format_args(args...);
-        auto fmt_string = detail::get_format_string(Message::index);
-        return fmt::vformat(fmt::string_view(fmt_string.begin(), fmt_string.size()),
-                            fmt::make_format_args(fmt::arg(args.name, *args.parameter)...));
+        // avoid generating code, but still typeck
+        // (and avoid unused typedef warnings)
+        static_assert((Message::check_format_args((Tags{})...), true), "");
+        return detail::internal_vformat(
+            Message::index,
+            fmt::make_format_args(fmt::arg(Tags::name(), *args.parameter)...));
     }
 
     template<class Message, class... Ts>
@@ -115,10 +128,14 @@ namespace vcpkg::msg
 #define DECLARE_MSG_ARG(NAME)                                                                                          \
     constexpr static struct NAME##_t                                                                                   \
     {                                                                                                                  \
+        constexpr static const char* name() \
+        {\
+            return #NAME; \
+        } \
         template<class T>                                                                                              \
         detail::MessageArgument<NAME##_t, T> operator=(const T& t) const noexcept                                      \
         {                                                                                                              \
-            return detail::MessageArgument<NAME##_t, T>{#NAME, &t};                                                    \
+            return detail::MessageArgument<NAME##_t, T>{&t};                                                    \
         }                                                                                                              \
     } NAME = {}
 
