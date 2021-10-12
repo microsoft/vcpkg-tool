@@ -5,6 +5,7 @@
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/lineinfo.h>
+#include <vcpkg/base/stringliteral.h>
 
 namespace vcpkg
 {
@@ -48,7 +49,7 @@ namespace vcpkg::msg
         template <class... Args>
         MessageCheckFormatArgs<Args...> make_message_check_format_args(const Args&... args);
 
-        ::size_t startup_register_message(StringView name, StringView format_string, StringView comment);
+        ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment);
 
         ::size_t number_of_messages();
 
@@ -141,13 +142,13 @@ namespace vcpkg::msg
 
 #define DECLARE_SIMPLE_MESSAGE(NAME, COMMENT, DEFAULT_STR) \
     constexpr struct NAME ## _msg_t : ::vcpkg::msg::detail::MessageCheckFormatArgs<> { \
-        static StringView name() { \
+        static ::vcpkg::StringLiteral name() { \
             return #NAME; \
         }; \
-        static StringView localization_comment() { \
+        static ::vcpkg::StringLiteral localization_comment() { \
             return COMMENT; \
         }; \
-        static StringView default_format_string() noexcept { \
+        static ::vcpkg::StringLiteral default_format_string() noexcept { \
             return DEFAULT_STR; \
         } \
         static const ::size_t index; \
@@ -159,13 +160,13 @@ namespace vcpkg::msg
 
 #define DECLARE_MESSAGE(NAME, COMMENT, DEFAULT_STR, ...) \
     constexpr struct NAME ## _msg_t : decltype(::vcpkg::msg::detail::make_message_check_format_args(__VA_ARGS__)) { \
-        static StringView name() { \
+        static ::vcpkg::StringLiteral name() { \
             return #NAME; \
         } \
-        static StringView localization_comment() { \
+        static ::vcpkg::StringLiteral localization_comment() { \
             return COMMENT; \
         }; \
-        static StringView default_format_string() noexcept { \
+        static ::vcpkg::StringLiteral default_format_string() noexcept { \
             return DEFAULT_STR; \
         } \
         static const ::size_t index; \

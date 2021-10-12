@@ -40,7 +40,7 @@ static constexpr int SURVEY_INTERVAL_IN_HOURS = 24 * 30 * 6;
 static constexpr int SURVEY_INITIAL_OFFSET_IN_HOURS = SURVEY_INTERVAL_IN_HOURS - 24 * 10;
 
 
-DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed, "Don't localize the data blob (the data after the colon)",
+DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed, "Don't localize the data blob (the text after `data blob:`)",
 R"(vcpkg.exe has crashed.
 Please send an email to:
     {email}
