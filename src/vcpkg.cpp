@@ -186,7 +186,7 @@ int main(const int argc, const char* const* const argv)
         }
         else if (locale.has_value() || locale_base.has_value())
         {
-            msg::write_text_to_stdout(
+            msg::write_unlocalized_text_to_stdout(
                 Color::Error, "If either VCPKG_LOCALE or VCPKG_LOCALE_BASE is initialized, then both must be.\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }

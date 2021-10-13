@@ -4,11 +4,11 @@
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/lineinfo.h>
 
-//#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringliteral.h>
 
-//#include <string>
+#include <string>
 
-//#include <fmt/format.h>
+#include <fmt/format.h>
 
 namespace vcpkg
 {
@@ -143,10 +143,6 @@ namespace vcpkg::msg
     {
         write_unlocalized_text_to_stdout(Color::None, "\n");
     }
-    inline void write_text_to_stdout(Color c, LocalizedStringView sv)
-    {
-        write_unlocalized_text_to_stdout(c, sv);
-    }
 
     template<class Message, class... Tags, class... Ts>
     LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
@@ -159,29 +155,66 @@ namespace vcpkg::msg
             fmt::make_format_args(fmt::arg(Tags::name(), *args.parameter)...));
     }
 
+    inline void print(Color c, LocalizedStringView sv)
+    {
+        write_unlocalized_text_to_stdout(c, sv);
+    }
+    inline void print(Color c, const LocalizedString& s)
+    {
+        write_unlocalized_text_to_stdout(c, s.data());
+    }
+    inline void println(Color c, LocalizedStringView sv)
+    {
+        write_unlocalized_text_to_stdout(c, sv);
+        write_newline_to_stdout();
+    }
+    inline void println(Color c, const LocalizedString& s)
+    {
+        write_unlocalized_text_to_stdout(c, s.data());
+        write_newline_to_stdout();
+    }
+
+    inline void println(LocalizedStringView sv)
+    {
+        write_unlocalized_text_to_stdout(Color::None, sv);
+        write_newline_to_stdout();
+    }
+    inline void println(const LocalizedString& s)
+    {
+        write_unlocalized_text_to_stdout(Color::None, s.data());
+        write_newline_to_stdout();
+    }
+    inline void print(LocalizedStringView sv)
+    {
+        write_unlocalized_text_to_stdout(Color::None, sv);
+    }
+    inline void print(const LocalizedString& s)
+    {
+        write_unlocalized_text_to_stdout(Color::None, s.data());
+    }
+
     template<class Message, class... Ts>
     void print(Message m, Ts... args)
     {
-        write_text_to_stdout(Color::None, format(m, args...));
+        print(format(m, args...));
     }
     template<class Message, class... Ts>
     void println(Message m, Ts... args)
     {
-        write_text_to_stdout(Color::None, format(m, args...));
-        write_newline_to_stdout();
+        println(format(m, args...));
     }
 
     template<class Message, class... Ts>
     void print(Color c, Message m, Ts... args)
     {
-        write_text_to_stdout(c, format(m, args...));
+        print(c, format(m, args...));
     }
     template<class Message, class... Ts>
     void println(Color c, Message m, Ts... args)
     {
-        write_text_to_stdout(c, format(m, args...));
-        write_newline_to_stdout();
+        print(c, format(m, args...));
     }
+
 
 // these use `constexpr static` instead of `inline` in order to work with GCC 6;
 // they are trivial and empty, and their address does not matter, so this is not a problem
@@ -215,9 +248,13 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(old_value);
     DECLARE_MSG_ARG(new_value);
     DECLARE_MSG_ARG(expected_value);
-    DECLARE_MSG_ARG(found_value);
+    DECLARE_MSG_ARG(actual_value);
     DECLARE_MSG_ARG(exit_code);
     DECLARE_MSG_ARG(http_code);
+    DECLARE_MSG_ARG(line);
+    DECLARE_MSG_ARG(row);
+    DECLARE_MSG_ARG(column);
+    DECLARE_MSG_ARG(spaces);
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of 

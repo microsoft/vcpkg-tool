@@ -1,6 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/messages.h>
 
 #include <stdlib.h>
 
@@ -65,18 +66,24 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_with_message(const LineInfo& line_info, StringView error_message)
     {
-        print2(Color::Error, error_message, '\n');
+        msg::write_unlocalized_text_to_stdout(Color::Error, error_message);
+        msg::write_newline_to_stdout();
         exit_fail(line_info);
+    }
+
+    namespace
+    {
+        DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedNoDetails, (msg::line_info), "",
+    R"(Error: vcpkg has crashed; no additional details are available.
+The source line is {line_info})");
+        DECLARE_AND_REGISTER_MESSAGE(VcpkgRerunBootstrap, (), "", "Note: Updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
     }
 
     void Checks::check_exit(const LineInfo& line_info, bool expression)
     {
         if (!expression)
         {
-            print2(Color::Error,
-                   "Error: vcpkg has crashed; no additional details are available.\nThe source line is ",
-                   Strings::format("%s(%d)\n", line_info.file_name, line_info.line_number),
-                   '\n');
+            msg::println(Color::Error, msgVcpkgHasCrashedNoDetails, msg::line_info = line_info);
             exit_fail(line_info);
         }
     }
@@ -91,7 +98,7 @@ namespace vcpkg
 
     static void display_upgrade_message()
     {
-        print2(Color::Error, "Note: Updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.\n");
+        msg::println(Color::Error, msgVcpkgRerunBootstrap);
     }
 
     [[noreturn]] void Checks::exit_maybe_upgrade(const LineInfo& line_info)
@@ -102,7 +109,8 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_maybe_upgrade(const LineInfo& line_info, StringView error_message)
     {
-        print2(Color::Error, error_message, '\n');
+        msg::write_unlocalized_text_to_stdout(Color::Error, error_message);
+        msg::write_newline_to_stdout();
         display_upgrade_message();
         exit_fail(line_info);
     }

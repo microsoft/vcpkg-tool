@@ -204,8 +204,8 @@ namespace vcpkg::Build
         BuildResult::EXCLUDED};
 
     const std::string& to_string(const BuildResult build_result);
-    std::string create_error_message(const BuildResult build_result, const PackageSpec& spec);
-    std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
+    msg::LocalizedString create_error_message(const BuildResult build_result, const PackageSpec& spec);
+    msg::LocalizedString create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
                                                     const VcpkgPaths& paths);
 
     /// <summary>

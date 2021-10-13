@@ -82,8 +82,7 @@ namespace vcpkg::Commands::Info
                 }
                 if (auto err = parser.get_error())
                 {
-                    msg::write_text_to_stdout(Color::Error, err->format());
-                    msg::write_newline_to_stdout();
+                    msg::println(Color::Error, err->format());
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 

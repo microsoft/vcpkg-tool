@@ -166,25 +166,35 @@ namespace vcpkg
 #endif
     }
 
+    namespace
+    {
+        DECLARE_AND_REGISTER_MESSAGE(SystemHomeEnvNotSet, (msg::name), "", "environment variable {name} has no value");
+        DECLARE_AND_REGISTER_MESSAGE(SystemHomeEnvNotAbsolute, (msg::name), "", "environment variable {name} is not an absolute path");
+#ifdef _WIN32
+        DECLARE_AND_REGISTER_MESSAGE(SystemAppdataEnvNotSet, (), "", "Neither LOCALAPPDATA nor APPDATA environment variables are set");
+        DECLARE_AND_REGISTER_MESSAGE(SystemAppdataEnvNotAbsolute, (), "", "environment variable APPDATA is not an absolute path");
+        DECLARE_AND_REGISTER_MESSAGE(SystemLocalAppdataEnvNotAbsolute, (), "", "environment variable LOCALAPPDATA is not an absolute path");
+#endif
+    }
+
     const ExpectedS<Path>& get_home_dir() noexcept
     {
         static ExpectedS<Path> s_home = []() -> ExpectedS<Path> {
+            static const char home_var[] =
 #ifdef _WIN32
-#define HOMEVAR "%USERPROFILE%"
-            auto maybe_home = get_environment_variable("USERPROFILE");
-            if (!maybe_home.has_value() || maybe_home.get()->empty())
-                return {"unable to read " HOMEVAR, ExpectedRightTag{}};
+                "USERPROFILE"
 #else
-#define HOMEVAR "$HOME"
-            auto maybe_home = get_environment_variable("HOME");
-            if (!maybe_home.has_value() || maybe_home.get()->empty())
-                return {"unable to read " HOMEVAR, ExpectedRightTag{}};
+                "HOME"
 #endif
+            ;
+            auto maybe_home = get_environment_variable(home_var);
+            if (!maybe_home.has_value() || maybe_home.get()->empty())
+                return msg::format(msgSystemHomeEnvNotSet, msg::name = home_var);
 
             Path p = *maybe_home.get();
-            if (!p.is_absolute()) return {HOMEVAR " was not an absolute path", ExpectedRightTag{}};
+            if (!p.is_absolute()) return msg::format(msgSystemHomeEnvNotAbsolute, msg::name = home_var);
 
-            return {std::move(p), ExpectedLeftTag{}};
+            return std::move(p);
         }();
         return s_home;
 #undef HOMEVAR
@@ -202,19 +212,19 @@ namespace vcpkg
                 maybe_home = get_environment_variable("APPDATA");
                 if (!maybe_home.has_value() || maybe_home.get()->empty())
                 {
-                    return {"unable to read %LOCALAPPDATA% or %APPDATA%", ExpectedRightTag{}};
+                    return msg::format(msgSystemAppdataEnvNotSet);
                 }
 
                 auto p = Path(Path(*maybe_home.get()).parent_path());
                 p /= "Local";
-                if (!p.is_absolute()) return {"%APPDATA% was not an absolute path", ExpectedRightTag{}};
+                if (!p.is_absolute()) return msg::format(msgSystemAppdataEnvNotAbsolute);
                 return {std::move(p), ExpectedLeftTag{}};
             }
 
             auto p = Path(*maybe_home.get());
-            if (!p.is_absolute()) return {"%LOCALAPPDATA% was not an absolute path", ExpectedRightTag{}};
+            if (!p.is_absolute()) return msg::format(msgSystemLocalAppdataEnvNotAbsolute);
 
-            return {std::move(p), ExpectedLeftTag{}};
+            return std::move(p);
         }();
         return s_home;
     }
@@ -223,6 +233,7 @@ namespace vcpkg
     {
         static ExpectedS<Path> s_home = [] {
             auto maybe_home = get_environment_variable("XDG_CACHE_HOME");
+            // TODO: this should check if XDG_CACHE_HOME is absolute
             if (auto p = maybe_home.get())
             {
                 return ExpectedS<Path>(Path(*p));
@@ -377,17 +388,17 @@ namespace vcpkg::Debug
     {
         if (g_debugging)
         {
-            msg::write_text_to_stdout(Color::None, "[DEBUG] ");
-            msg::write_text_to_stdout(Color::None, sv);
-            msg::write_text_to_stdout(Color::None, "\n");
+            msg::write_unlocalized_text_to_stdout(Color::None, "[DEBUG] ");
+            msg::write_unlocalized_text_to_stdout(Color::None, sv);
+            msg::write_newline_to_stdout();
         }
     }
     void print(StringView sv)
     {
         if (g_debugging)
         {
-            msg::write_text_to_stdout(Color::None, "[DEBUG] ");
-            msg::write_text_to_stdout(Color::None, sv);
+            msg::write_unlocalized_text_to_stdout(Color::None, "[DEBUG] ");
+            msg::write_unlocalized_text_to_stdout(Color::None, sv);
         }
     }
 }

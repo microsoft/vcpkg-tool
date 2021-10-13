@@ -39,7 +39,7 @@ namespace vcpkg::Commands
                 obj.insert(fmt::format("_{}.comment", msg.name), Json::Value::string(std::move(msg.comment)));
             }
         }
-        write_text_to_stdout(Color::None, Json::stringify(obj, {}));
+        msg::println(Json::stringify(obj, {}));
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

@@ -67,10 +67,10 @@ namespace vcpkg::Commands::CIVerifyVersions
        While trying to load port from: {sha}\n"
        Found the following error(s):
 {error})");
-    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsDeclaredVersionDoesntMatch, (msg::port, msg::file, msg::expected_value, msg::found_value, msg::sha),
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsDeclaredVersionDoesntMatch, (msg::port, msg::file, msg::expected_value, msg::actual_value, msg::sha),
     "", R"(Error: While reading versions for port {port} from file: {file}
        While validating version: {expected_value}.
-       The version declared in file does not match checked-out version: {found_value}
+       The version declared in file does not match checked-out version: {actual_value}
        Checked out Git SHA: {sha})");
 
     static ExpectedS<std::string> verify_version_in_db(const VcpkgPaths& paths,
@@ -125,7 +125,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                             msg::port = port_name,
                             msg::file = versions_file_path,
                             msg::expected_value = version_entry.first.versiont,
-                            msg::found_value = git_tree_version.versiont,
+                            msg::actual_value = git_tree_version.versiont,
                             msg::sha = version_entry.second);
                     }
                     version_ok = true;

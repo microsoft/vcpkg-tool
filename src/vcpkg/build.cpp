@@ -178,8 +178,8 @@ namespace vcpkg::Build
 
         if (result.code != BuildResult::SUCCEEDED)
         {
-            print2(Color::Error, Build::create_error_message(result.code, spec), '\n');
-            print2(Build::create_user_troubleshooting_message(*action, paths), '\n');
+            msg::println(Color::Error, Build::create_error_message(result.code, spec));
+            msg::println(Build::create_user_troubleshooting_message(*action, paths));
             return 1;
         }
 
@@ -1324,12 +1324,28 @@ namespace vcpkg::Build
         }
     }
 
-    std::string create_error_message(const BuildResult build_result, const PackageSpec& spec)
+    namespace
     {
-        return Strings::format("Error: Building package %s failed with: %s", spec, Build::to_string(build_result));
+        DECLARE_AND_REGISTER_MESSAGE(BuildErrorMessage, (msg::port, msg::error), "", "Error: Building package {port} failed with: {error}");
+        DECLARE_AND_REGISTER_MESSAGE(BuildUserTroubleshootingMessage, (msg::name, msg::port, msg::version, msg::vcpkg_version),
+            "Don't change the data blob (the bit between `including:` and `Additionally`), nor the bits in backticks",
+            R"(Please ensure you're using the latest portfiles with `git pull` and `{name} update`, then
+submit an issue at https://github.com/Microsoft/vcpkg/issues including:
+
+  package: {port}
+  vcpkg registry version: {version}
+  vcpkg-tool version: {vcpkg_version}
+
+Additionally, attach any relevant sections from the log files above.)");
+        DECLARE_AND_REGISTER_MESSAGE(BuildRegistryVersionError, (msg::error), "", "failed to get HEAD: {error}");
     }
 
-    std::string create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
+    msg::LocalizedString create_error_message(const BuildResult build_result, const PackageSpec& spec)
+    {
+        return msg::format(msgBuildErrorMessage, msg::port = spec, msg::error = Build::to_string(build_result));
+    }
+
+    msg::LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
     {
 #if defined(_WIN32)
         auto vcpkg_update_cmd = ".\\vcpkg";
@@ -1342,19 +1358,22 @@ namespace vcpkg::Build
         {
             Strings::append(package, " -> ", scfl->to_versiont());
         }
-        auto description = paths.git_describe_head();
-        return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`, then\n"
-                               "submit an issue at https://github.com/Microsoft/vcpkg/issues including:\n"
-                               "  package: %s\n"
-                               "  vcpkg version: %s\n"
-                               "  vcpkg-tool version: %s\n"
-                               "\n"
-                               "Additionally, attach any relevant sections from the log files above.",
-                               vcpkg_update_cmd,
-                               package,
-                               Commands::Version::version(),
-                               description.has_value() ? description.value_or_exit(VCPKG_LINE_INFO)
-                                                       : "Failed to get HEAD: " + description.error());
+        std::string head_description;
+        auto head_description_opt = paths.git_describe_head();
+        if (auto p = head_description_opt.get())
+        {
+            head_description = std::move(*p);
+        }
+        else
+        {
+            head_description = msg::format(msgBuildRegistryVersionError, msg::error = head_description_opt.error()).data();
+        }
+
+        return msg::format(msgBuildUserTroubleshootingMessage,
+            msg::name = vcpkg_update_cmd,
+            msg::port = package,
+            msg::version = head_description,
+            msg::vcpkg_version = Commands::Version::version());
     }
 
     static BuildInfo inner_create_buildinfo(Parse::Paragraph pgh)

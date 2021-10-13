@@ -373,7 +373,7 @@ namespace
                 }
 
                 auto errors = Downloads::replace_secrets(std::move(maybe_success).error(), m_secrets);
-                msg::write_text_to_stdout(Color::Warning, errors);
+                msg::print(Color::Warning, errors);
             }
 
             if (!m_put_url_templates.empty())

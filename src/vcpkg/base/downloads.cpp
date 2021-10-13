@@ -185,23 +185,24 @@ namespace vcpkg::Downloads
         return details::SplitURIView{scheme, {}, {sep + 1, uri.end()}};
     }
 
-    static std::string format_hash_mismatch(StringView url,
-                                            const Path& downloaded_path,
-                                            StringView expected,
-                                            StringView actual)
+    DECLARE_AND_REGISTER_MESSAGE(DownloadHashMismatch, (msg::url, msg::file, msg::expected_value, msg::actual_value),
+        "",
+        R"(File does not have the expected hash:
+             url : [ {url} ]
+       File path : [ {file} ]
+   Expected hash : [ {expected_value} ]
+     Actual hash : [ {actual_value} ])");
+
+    static msg::LocalizedString format_hash_mismatch(StringView url,
+                                                const Path& downloaded_path,
+                                                StringView expected,
+                                                StringView actual)
     {
-        return Strings::format("File does not have the expected hash:\n"
-                               "             url : [ %s ]\n"
-                               "       File path : [ %s ]\n"
-                               "   Expected hash : [ %s ]\n"
-                               "     Actual hash : [ %s ]\n",
-                               url,
-                               downloaded_path,
-                               expected,
-                               actual);
+        return msg::format(msgDownloadHashMismatch, msg::url = url, msg::file = downloaded_path, msg::expected_value = expected, msg::actual_value = actual);
     }
 
-    static Optional<std::string> try_verify_downloaded_file_hash(const Filesystem& fs,
+    // just using NullOpt as a monostate, since Expected<void> doesn't work
+    static Optional<msg::LocalizedString> try_verify_downloaded_file_hash(const Filesystem& fs,
                                                                  StringView sanitized_url,
                                                                  const Path& downloaded_path,
                                                                  StringView sha512)
@@ -233,9 +234,9 @@ namespace vcpkg::Downloads
                                      const std::string& sha512)
     {
         auto maybe_error = try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512);
-        if (auto err = maybe_error.get())
+        if (auto msg = maybe_error.get())
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, *err);
+            Checks::exit_with_message(VCPKG_LINE_INFO, *msg);
         }
     }
 
@@ -248,9 +249,9 @@ namespace vcpkg::Downloads
         if (auto p = hash.get())
         {
             auto maybe_error = try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
-            if (auto err = maybe_error.get())
+            if (auto msg = maybe_error.get())
             {
-                Strings::append(errors, *err, '\n');
+                errors.appendnl(*msg);
                 return false;
             }
         }
@@ -584,6 +585,7 @@ namespace vcpkg::Downloads
     DECLARE_AND_REGISTER_MESSAGE(DownloadFailedToStoreToMirror, (msg::error), "", "Warning: failed to store back to mirror:\n{error}");
     DECLARE_AND_REGISTER_MESSAGE(DownloadNoUrlsForSha, (msg::sha), "", "Error: No urls specified to download SHA: {sha}");
     DECLARE_AND_REGISTER_MESSAGE(DownloadNoUrls, (), "", "Error: No urls specified");
+    DECLARE_AND_REGISTER_MESSAGE(DownloadFailedToDownload, (msg::error), "", "Error: Failed to download from mirror set:\n%s");
 
     std::string DownloadManager::download_file(Filesystem& fs,
                                                View<std::string> urls,
@@ -634,7 +636,7 @@ namespace vcpkg::Downloads
                 }
             }
         }
-        Checks::exit_with_message(VCPKG_LINE_INFO, "Error: Failed to download from mirror set:\n%s", errors);
+        Checks::exit_with_messagef(VCPKG_LINE_INFO, msgDownloadFailedToDownload, msg::error = errors);
     }
 
     ExpectedS<int> DownloadManager::put_file_to_mirror(const Filesystem& fs,

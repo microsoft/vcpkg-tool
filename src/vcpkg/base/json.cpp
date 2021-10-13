@@ -466,6 +466,35 @@ namespace vcpkg::Json
     // auto parse() {
     namespace
     {
+        DECLARE_AND_REGISTER_MESSAGE(JsonStringHasControlCharacter, (), "", "Control character in string");
+        DECLARE_AND_REGISTER_MESSAGE(JsonEscapeEof, (), "", "Unexpected EOF after escape character");
+        DECLARE_AND_REGISTER_MESSAGE(JsonEscapeUnknownSequence, (), "", "Unexpected escape sequence continuation");
+        DECLARE_AND_REGISTER_MESSAGE(JsonEscapeUnicodeEof, (), "", "Unexpected end of file in middle of unicode escape");
+        DECLARE_AND_REGISTER_MESSAGE(JsonEscapeUnicodeInvalidHex, (), "", "Invalid hex digit in unicode escape");
+        DECLARE_AND_REGISTER_MESSAGE(JsonStringEof, (), "", "Unexpected EOF in middle of string");
+        DECLARE_AND_REGISTER_MESSAGE(JsonNumberEofAfterMinus, (), "", "Unexpected EOF after minus sign");
+        DECLARE_AND_REGISTER_MESSAGE(JsonNumberDigitsAfterZero, (), "", "Unexpected digits after a leading zero");
+        DECLARE_AND_REGISTER_MESSAGE(JsonNumberNoDigitsAfterPoint, (), "", "Expected digits after the decimal point");
+        DECLARE_AND_REGISTER_MESSAGE(JsonNumberFloatTooBig, (msg::value), "", "Floating point constant too big: {value}");
+        DECLARE_AND_REGISTER_MESSAGE(JsonNumberFloatInvalid, (msg::value), "", "Invalid floating point constant: {value}");
+        DECLARE_AND_REGISTER_MESSAGE(JsonNumberIntInvalid, (msg::value), "", "Invalid integer constant: {value}");
+        DECLARE_AND_REGISTER_MESSAGE(JsonKeywordEof, (), "", "Unexpected EOF in middle of keyword");
+        DECLARE_AND_REGISTER_MESSAGE(JsonKeywordInvalidChar, (), "", "Unexpected character in middle of keyword");
+        DECLARE_AND_REGISTER_MESSAGE(JsonArrayEof, (), "", "Unexpected EOF in middle of array");
+        DECLARE_AND_REGISTER_MESSAGE(JsonArrayTrailingComma, (), "", "Trailing comma in array");
+        DECLARE_AND_REGISTER_MESSAGE(JsonArrayInvalidCharacter, (), "", "Unexpected character in middle of array");
+        DECLARE_AND_REGISTER_MESSAGE(JsonObjectEofExpectedName, (), "", "Unexpected EOF; expected property name");
+        DECLARE_AND_REGISTER_MESSAGE(JsonObjectInvalidCharExpectedName, (), "", "Unexpected character; expected property name");
+        DECLARE_AND_REGISTER_MESSAGE(JsonObjectEofExpectedColon, (), "", "Unexpected EOF; expected colon");
+        DECLARE_AND_REGISTER_MESSAGE(JsonObjectInvalidCommentExpectedColon, (), "", "Unexpected character; expected colon");
+        DECLARE_AND_REGISTER_MESSAGE(JsonObjectEofExpectedEmptyEnd, (), "", "Unexpected EOF; expected property name or close brace");
+        DECLARE_AND_REGISTER_MESSAGE(JsonObjectTrailingComma, (), "", "Trailing comma in an object");
+        DECLARE_AND_REGISTER_MESSAGE(JsonObjectInvalidCharExpectedEnd, (), "", "Unexpected character; expected comma or close brace");
+        DECLARE_AND_REGISTER_MESSAGE(JsonValueEof, (), "", "Unexpected EOF; expected value");
+        DECLARE_AND_REGISTER_MESSAGE(JsonValueInvalidChar, (), "", "Unexpected character; expected value");
+        DECLARE_AND_REGISTER_MESSAGE(JsonExpectedEof, (), "", "Unexpected character; expected EOF");
+        DECLARE_AND_REGISTER_MESSAGE(JsonNoComments, (), "", "NOTE: vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as comments.");
+
         struct Parser : private Parse::ParserBase
         {
             Parser(StringView text, StringView origin) : Parse::ParserBase(text, origin), style_() { }
@@ -525,7 +554,7 @@ namespace vcpkg::Json
                 }
                 else if (current <= 0x001F)
                 {
-                    add_error("Control character in string");
+                    add_error(msg::format(msgJsonStringHasControlCharacter));
                     next();
                     return Unicode::end_of_file;
                 }
@@ -538,7 +567,7 @@ namespace vcpkg::Json
                 // cur == '\\'
                 if (at_eof())
                 {
-                    add_error("Unexpected EOF after escape character");
+                    add_error(msg::format(msgJsonEscapeEof));
                     return Unicode::end_of_file;
                 }
                 current = next();
@@ -562,7 +591,7 @@ namespace vcpkg::Json
 
                             if (current == Unicode::end_of_file)
                             {
-                                add_error("Unexpected end of file in middle of unicode escape");
+                                add_error(msg::format(msgJsonEscapeUnicodeEof));
                                 return Unicode::end_of_file;
                             }
                             if (is_hex_digit(current))
@@ -572,7 +601,7 @@ namespace vcpkg::Json
                             }
                             else
                             {
-                                add_error("Invalid hex digit in unicode escape");
+                                add_error(msg::format(msgJsonEscapeUnicodeInvalidHex));
                                 return Unicode::end_of_file;
                             }
                         }
@@ -580,7 +609,7 @@ namespace vcpkg::Json
 
                         return code_unit;
                     }
-                    default: add_error("Unexpected escape sequence continuation"); return Unicode::end_of_file;
+                    default: add_error(msg::format(msgJsonEscapeUnknownSequence)); return Unicode::end_of_file;
                 }
             }
 
@@ -626,7 +655,7 @@ namespace vcpkg::Json
                     }
                 }
 
-                add_error("Unexpected EOF in middle of string");
+                add_error(msg::format(msgJsonStringEof));
                 return res;
             }
 
@@ -646,7 +675,7 @@ namespace vcpkg::Json
                     current = next();
                     if (current == Unicode::end_of_file)
                     {
-                        add_error("Unexpected EOF after minus sign");
+                        add_error(msg::format(msgJsonNumberEofAfterMinus));
                         return Value();
                     }
                 }
@@ -662,7 +691,7 @@ namespace vcpkg::Json
                     }
                     else if (is_digit(current))
                     {
-                        add_error("Unexpected digits after a leading zero");
+                        add_error(msg::format(msgJsonNumberDigitsAfterZero));
                         return Value();
                     }
                     else
@@ -690,7 +719,7 @@ namespace vcpkg::Json
                     current = next();
                     if (!is_digit(current))
                     {
-                        add_error("Expected digits after the decimal point");
+                        add_error(msg::format(msgJsonNumberNoDigitsAfterPoint));
                         return Value();
                     }
                     while (is_digit(current))
@@ -711,12 +740,12 @@ namespace vcpkg::Json
                         }
                         else
                         {
-                            add_error(Strings::format("Floating point constant too big: %s", number_to_parse));
+                            add_error(msg::format(msgJsonNumberFloatTooBig, msg::value = number_to_parse));
                         }
                     }
                     else
                     {
-                        add_error(Strings::format("Invalid floating point constant: %s", number_to_parse));
+                        add_error(msg::format(msgJsonNumberFloatInvalid, msg::value = number_to_parse));
                     }
                 }
                 else
@@ -728,16 +757,12 @@ namespace vcpkg::Json
                     }
                     else
                     {
-                        add_error(Strings::format("Invalid integer constant: %s", number_to_parse));
+                        add_error(msg::format(msgJsonNumberIntInvalid, msg::value = number_to_parse));
                     }
                 }
 
                 return Value();
             }
-
-#define VCPKG_JSON_NO_COMMENTS_MSG                                                                                     \
-    "\n   vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "        \
-    "comments."
 
             Value parse_keyword() noexcept
             {
@@ -767,12 +792,12 @@ namespace vcpkg::Json
 
                     if (current == Unicode::end_of_file)
                     {
-                        add_error("Unexpected EOF in middle of keyword");
+                        add_error(msg::format(msgJsonKeywordEof));
                         return Value();
                     }
                     if (current != *rest_it)
                     {
-                        add_error("Unexpected character in middle of keyword");
+                        add_error(msg::format(msgJsonKeywordInvalidChar));
                     }
                 }
                 next();
@@ -794,7 +819,7 @@ namespace vcpkg::Json
                     char32_t current = cur();
                     if (current == Unicode::end_of_file)
                     {
-                        add_error("Unexpected EOF in middle of array");
+                        add_error(msg::format(msgJsonArrayEof));
                         return Value();
                     }
                     if (current == ']')
@@ -815,22 +840,23 @@ namespace vcpkg::Json
                         current = cur();
                         if (current == Unicode::end_of_file)
                         {
-                            add_error("Unexpected EOF in middle of array");
+                            add_error(msg::format(msgJsonArrayEof));
                             return Value();
                         }
                         if (current == ']')
                         {
-                            add_error("Trailing comma in array", comma_loc);
+                            add_error(msg::format(msgJsonArrayTrailingComma), comma_loc);
                             return Value::array(std::move(arr));
                         }
                     }
                     else if (current == '/')
                     {
-                        add_error("Unexpected character in middle of array" VCPKG_JSON_NO_COMMENTS_MSG);
+                        add_error(msg::format(msgJsonArrayInvalidCharacter));
+                        add_error(msg::format(msgJsonNoComments));
                     }
                     else
                     {
-                        add_error("Unexpected character in middle of array");
+                        add_error(msg::format(msgJsonArrayInvalidCharacter));
                         return Value();
                     }
 
@@ -848,12 +874,12 @@ namespace vcpkg::Json
 
                 if (current == Unicode::end_of_file)
                 {
-                    add_error("Unexpected EOF; expected property name");
+                    add_error(msg::format(msgJsonObjectEofExpectedName));
                     return res;
                 }
                 if (current != '"')
                 {
-                    add_error("Unexpected character; expected property name");
+                    add_error(msg::format(msgJsonObjectInvalidCharExpectedName));
                     return res;
                 }
                 res.first = parse_string();
@@ -866,17 +892,18 @@ namespace vcpkg::Json
                 }
                 else if (current == Unicode::end_of_file)
                 {
-                    add_error("Unexpected EOF; expected colon");
+                    add_error(msg::format(msgJsonObjectEofExpectedColon));
                     return res;
                 }
                 else if (current == '/')
                 {
-                    add_error("Unexpected character; expected colon" VCPKG_JSON_NO_COMMENTS_MSG);
+                    add_error(msg::format(msgJsonObjectInvalidCommentExpectedColon));
+                    add_error(msg::format(msgJsonNoComments));
                     return res;
                 }
                 else
                 {
-                    add_error("Unexpected character; expected colon");
+                    add_error(msg::format(msgJsonObjectInvalidCommentExpectedColon));
                     return res;
                 }
 
@@ -900,7 +927,7 @@ namespace vcpkg::Json
                     current = cur();
                     if (current == Unicode::end_of_file)
                     {
-                        add_error("Unexpected EOF; expected property or close brace");
+                        add_error(msg::format(msgJsonObjectEofExpectedEmptyEnd));
                         return Value();
                     }
                     else if (current == '}')
@@ -921,22 +948,23 @@ namespace vcpkg::Json
                         current = cur();
                         if (current == Unicode::end_of_file)
                         {
-                            add_error("Unexpected EOF; expected property");
+                            add_error(msg::format(msgJsonObjectEofExpectedName));
                             return Value();
                         }
                         else if (current == '}')
                         {
-                            add_error("Trailing comma in an object", comma_loc);
+                            add_error(msg::format(msgJsonObjectTrailingComma), comma_loc);
                             return Value();
                         }
                     }
                     else if (current == '/')
                     {
-                        add_error("Unexpected character; expected comma or close brace" VCPKG_JSON_NO_COMMENTS_MSG);
+                        add_error(msg::format(msgJsonObjectInvalidCharExpectedEnd));
+                        add_error(msg::format(msgJsonNoComments));
                     }
                     else
                     {
-                        add_error("Unexpected character; expected comma or close brace");
+                        add_error(msg::format(msgJsonObjectInvalidCharExpectedEnd));
                     }
 
                     auto val = parse_kv_pair();
@@ -950,7 +978,7 @@ namespace vcpkg::Json
                 char32_t current = cur();
                 if (current == Unicode::end_of_file)
                 {
-                    add_error("Unexpected EOF; expected value");
+                    add_error(msg::format(msgJsonValueEof));
                     return Value();
                 }
 
@@ -964,7 +992,8 @@ namespace vcpkg::Json
                     case 'f': return parse_keyword();
                     case '/':
                     {
-                        add_error("Unexpected character; expected value" VCPKG_JSON_NO_COMMENTS_MSG);
+                        add_error(msg::format(msgJsonValueInvalidChar));
+                        add_error(msg::format(msgJsonNoComments));
                         return Value();
                     }
                     default:
@@ -974,7 +1003,7 @@ namespace vcpkg::Json
                         }
                         else
                         {
-                            add_error("Unexpected character; expected value");
+                            add_error(msg::format(msgJsonValueInvalidChar));
                             return Value();
                         }
                 }
@@ -990,7 +1019,7 @@ namespace vcpkg::Json
                 parser.skip_whitespace();
                 if (!parser.at_eof())
                 {
-                    parser.add_error("Unexpected character; expected EOF");
+                    parser.add_error(msg::format(msgJsonExpectedEof));
                     return std::move(parser).extract_error();
                 }
                 else if (parser.get_error())
@@ -1058,19 +1087,22 @@ namespace vcpkg::Json
         return parse(std::move(res), json_file);
     }
 
+    DECLARE_AND_REGISTER_MESSAGE(JsonFailedToReadFile, (msg::file, msg::error), "", "Failed to read {file}: {error}");
+    DECLARE_AND_REGISTER_MESSAGE(JsonFailedToParseFile, (msg::file), "", "Failed to parse {file}:");
+
     std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file) noexcept
     {
         std::error_code ec;
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            print2(Color::Error, "Failed to read ", json_file, ": ", ec.message(), "\n");
+            msg::println(Color::Error, msgJsonFailedToReadFile, msg::file = json_file, msg::error = ec.message());
             Checks::exit_fail(li);
         }
         else if (!ret)
         {
-            print2(Color::Error, "Failed to parse ", json_file, ":\n");
-            print2(ret.error()->format());
+            msg::println(Color::Error, msgJsonFailedToParseFile, msg::file = json_file);
+            msg::print(ret.error()->format());
             Checks::exit_fail(li);
         }
         return ret.value_or_exit(li);
@@ -1266,21 +1298,18 @@ namespace vcpkg::Json
     {
         std::string res;
         Stringifier{style, res}.stringify(value, 0);
-        res.push_back('\n');
         return res;
     }
     std::string stringify(const Object& obj, JsonStyle style)
     {
         std::string res;
         Stringifier{style, res}.stringify_object(obj, 0);
-        res.push_back('\n');
         return res;
     }
     std::string stringify(const Array& arr, JsonStyle style)
     {
         std::string res;
         Stringifier{style, res}.stringify_array(arr, 0);
-        res.push_back('\n');
         return res;
     }
     // } auto stringify()

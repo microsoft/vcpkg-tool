@@ -23,9 +23,19 @@ namespace vcpkg::Parse
         }
     }
 
-    std::string ParseError::format() const
+    namespace
     {
-        auto caret_spacing = std::string(18, ' ');
+        DECLARE_AND_REGISTER_MESSAGE(ParseErrorFormat, (msg::file, msg::row, msg::column, msg::error, msg::line, msg::spaces),
+        "The {spaces} _must_ line up with {line} in the translation; add or remove spaces to line 3 so that this works.",
+        R"({file}:{row}:{column}: error: {error}\n
+    on expression: {line}
+                   {spaces}^
+)");
+    }
+
+    msg::LocalizedString ParseError::format() const
+    {
+        std::string caret_spacing;
         auto decoder = Unicode::Utf8Decoder(line.data(), line.data() + line.size());
         for (int i = 0; i < caret_col; ++i, ++decoder)
         {
@@ -34,22 +44,16 @@ namespace vcpkg::Parse
             caret_spacing.push_back(cp == '\t' ? '\t' : ' ');
         }
 
-        return Strings::concat(origin,
-                               ":",
-                               row,
-                               ":",
-                               column,
-                               ": error: ",
-                               message,
-                               "\n"
-                               "   on expression: ", // 18 columns
-                               line,
-                               "\n",
-                               caret_spacing,
-                               "^\n");
+        return msg::format(msgParseErrorFormat,
+            msg::file = origin,
+            msg::row = row,
+            msg::column = column,
+            msg::error = message,
+            msg::line = line,
+            msg::spaces = caret_spacing);
     }
 
-    const std::string& ParseError::get_message() const { return this->message; }
+    const msg::LocalizedString& ParseError::get_message() const { return this->message; }
 
     ParserBase::ParserBase(StringView text, StringView origin, TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
@@ -84,7 +88,7 @@ namespace vcpkg::Parse
         return cur();
     }
 
-    void ParserBase::add_error(std::string message, const SourceLoc& loc)
+    void ParserBase::add_error(msg::LocalizedString message, const SourceLoc& loc)
     {
         // avoid cascading errors by only saving the first
         if (!m_err)
