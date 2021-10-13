@@ -67,7 +67,7 @@ namespace vcpkg
     [[noreturn]] void Checks::exit_with_message(const LineInfo& line_info, StringView error_message)
     {
         msg::write_unlocalized_text_to_stdout(Color::Error, error_message);
-        msg::write_newline_to_stdout();
+        msg::println();
         exit_fail(line_info);
     }
 
@@ -110,7 +110,7 @@ The source line is {line_info})");
     [[noreturn]] void Checks::exit_maybe_upgrade(const LineInfo& line_info, StringView error_message)
     {
         msg::write_unlocalized_text_to_stdout(Color::Error, error_message);
-        msg::write_newline_to_stdout();
+        msg::println();
         display_upgrade_message();
         exit_fail(line_info);
     }

@@ -2,6 +2,7 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/buildenvironment.h>

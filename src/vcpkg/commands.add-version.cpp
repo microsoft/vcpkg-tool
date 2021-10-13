@@ -3,6 +3,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/configuration.h>

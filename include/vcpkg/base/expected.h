@@ -3,13 +3,15 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringliteral.h>
-#include <vcpkg/base/system.print.h>
+#include <vcpkg/base/messages.h>
 
 #include <system_error>
 #include <type_traits>
 
 namespace vcpkg
 {
+    DECLARE_MESSAGE(ExpectedValueWasError, (), "", "value was error");
+
     template<class Err>
     struct ErrorHolder
     {
@@ -24,7 +26,7 @@ namespace vcpkg
         const Err& error() const { return m_err; }
         Err& error() { return m_err; }
 
-        StringLiteral to_string() const { return "value was error"; }
+        msg::LocalizedString format() const { return msg::format(msgExpectedValueWasError); }
 
     private:
         bool m_is_error;
@@ -32,7 +34,7 @@ namespace vcpkg
     };
 
     template<>
-    struct ErrorHolder<std::string>
+    struct ErrorHolder<msg::LocalizedString>
     {
         ErrorHolder() : m_is_error(false) { }
         template<class U>
@@ -42,14 +44,14 @@ namespace vcpkg
 
         bool has_error() const { return m_is_error; }
 
-        const std::string& error() const { return m_err; }
-        std::string& error() { return m_err; }
+        const msg::LocalizedString& error() const { return m_err; }
+        msg::LocalizedString& error() { return m_err; }
 
-        const std::string& to_string() const { return m_err; }
+        const msg::LocalizedString& format() const { return m_err; }
 
     private:
         bool m_is_error;
-        std::string m_err;
+        msg::LocalizedString m_err;
     };
 
     template<>
@@ -63,7 +65,7 @@ namespace vcpkg
         const std::error_code& error() const { return m_err; }
         std::error_code& error() { return m_err; }
 
-        std::string to_string() const { return m_err.message(); }
+        msg::LocalizedString format() const { return msg::LocalizedString::from_string_unchecked(m_err.message()); }
 
     private:
         std::error_code m_err;
@@ -227,7 +229,7 @@ namespace vcpkg
         {
             if (m_s.has_error())
             {
-                print2(Color::Error, m_s.to_string(), "\n");
+                msg::println(Color::Error, m_s.format());
                 Checks::exit_fail(line_info);
             }
         }

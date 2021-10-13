@@ -138,11 +138,28 @@ namespace vcpkg::msg
         friend LocalizedString detail::internal_vformat(int index, fmt::format_args args);
     };
 
-    void write_unlocalized_text_to_stdout(Color c, StringView sv);
-    inline void write_newline_to_stdout()
+    struct LocalizedStringMapLess
     {
-        write_unlocalized_text_to_stdout(Color::None, "\n");
-    }
+        using is_transparent = void;
+        bool operator()(const LocalizedString& lhs, const LocalizedString& rhs) const
+        {
+            return lhs.data() < rhs.data();
+        }
+        bool operator()(LocalizedStringView lhs, LocalizedStringView rhs) const
+        {
+            return lhs.data() < rhs.data();
+        }
+        bool operator()(const LocalizedString& lhs, LocalizedStringView rhs) const
+        {
+            return lhs.data() < rhs.data();
+        }
+        bool operator()(LocalizedStringView lhs, const LocalizedString& rhs) const
+        {
+            return lhs.data() < rhs.data();
+        }
+    };
+
+    void write_unlocalized_text_to_stdout(Color c, StringView sv);
 
     template<class Message, class... Tags, class... Ts>
     LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
@@ -153,6 +170,11 @@ namespace vcpkg::msg
         return detail::internal_vformat(
             Message::index,
             fmt::make_format_args(fmt::arg(Tags::name(), *args.parameter)...));
+    }
+
+    inline void println()
+    {
+        write_unlocalized_text_to_stdout(Color::None, "\n");
     }
 
     inline void print(Color c, LocalizedStringView sv)
@@ -166,23 +188,23 @@ namespace vcpkg::msg
     inline void println(Color c, LocalizedStringView sv)
     {
         write_unlocalized_text_to_stdout(c, sv);
-        write_newline_to_stdout();
+        println();
     }
     inline void println(Color c, const LocalizedString& s)
     {
         write_unlocalized_text_to_stdout(c, s.data());
-        write_newline_to_stdout();
+        println();
     }
 
     inline void println(LocalizedStringView sv)
     {
         write_unlocalized_text_to_stdout(Color::None, sv);
-        write_newline_to_stdout();
+        println();
     }
     inline void println(const LocalizedString& s)
     {
         write_unlocalized_text_to_stdout(Color::None, s.data());
-        write_newline_to_stdout();
+        println();
     }
     inline void print(LocalizedStringView sv)
     {

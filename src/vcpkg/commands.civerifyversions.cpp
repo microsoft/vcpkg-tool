@@ -72,8 +72,14 @@ namespace vcpkg::Commands::CIVerifyVersions
        While validating version: {expected_value}.
        The version declared in file does not match checked-out version: {actual_value}
        Checked out Git SHA: {sha})");
+    
+    struct ShaAndVersion
+    {
+        std::string sha;
+        VersionT version;
+    };
 
-    static ExpectedS<std::string> verify_version_in_db(const VcpkgPaths& paths,
+    static ExpectedS<ShaAndVersion> verify_version_in_db(const VcpkgPaths& paths,
                                                        const std::map<std::string, VersionT, std::less<>> baseline,
                                                        StringView port_name,
                                                        const Path& port_path,
@@ -266,11 +272,44 @@ namespace vcpkg::Commands::CIVerifyVersions
             };
         }
 
-        return {
-            Strings::format("OK: %s\t%s -> %s\n", entry.second, port_name, entry.first.versiont),
-            expected_left_tag,
-        };
+        return ShaAndVersion{entry.second, entry.first.versiont};
     }
+
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsSkipPort, (msg::port), "{LOCKED}", "SKIP: {port}");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsFailPort, (msg::port), "{LOCKED}", "FAIL: {port}");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsOkPort, (msg::sha, msg::port, msg::version), "{LOCKED}",
+        "OK: {sha}\n{port} -> {version}");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsMissingSha, (msg::port, msg::file), "Don't localize the block between `Run:` and `to commit`",
+    R"(Error: While validating port {port}.
+       Missing Git SHA.
+       Run:
+
+           git add {file}
+           git commit -m "wip"
+           vcpkg x-add-version {port}
+           git add versions
+           git commit --amend -m "[{port}] Add new port"
+
+       to commit the new port and create its version file.)");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsBothControlAndManifest, (msg::port, msg::file), "",
+        R"(Error: While validating port {port}.
+       Both a manifest file and a CONTROL file exist in port directory: {file})");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsNoControlOrManifest, (msg::port, msg::file), "",
+        R"(Error: While validating port {port}.
+       No manifest file or CONTROL file exist in port directory: {file})");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsCreateVersionsFile, (msg::port, msg::file), "Don't localize the block between `Run:` and `to create`",
+    R"(Error: While validating port {port}.
+       Missing expected versions file at: {file}
+       Run:
+
+           vcpkg x-add-version {port}
+
+       to create the versions file.)");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsFoundError, (), "", "Found the following errors:");
+    DECLARE_AND_REGISTER_MESSAGE(CiVerifyVersionsAttemptResolve, (), "Don't localize after `run:`",
+        R"(To attempt to resolve all errors at once, run:
+
+    vcpkg x-add-version --all)");
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
@@ -298,32 +337,20 @@ namespace vcpkg::Commands::CIVerifyVersions
         // Baseline is required.
         auto baseline = get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
         auto& fs = paths.get_filesystem();
-        std::set<std::string> errors;
+        std::set<msg::LocalizedString, msg::LocalizedStringMapLess> errors;
         for (const auto& port_path : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
         {
             auto port_name = port_path.stem();
             if (Util::Sets::contains(exclusion_set, port_name.to_string()))
             {
-                if (verbose) vcpkg::printf("SKIP: %s\n", port_name);
+                if (verbose) msg::println(msgCiVerifyVersionsSkipPort, msg::port = port_name);
                 continue;
             }
             auto git_tree_it = port_git_tree_map.find(port_name);
             if (git_tree_it == port_git_tree_map.end())
             {
-                vcpkg::printf(Color::Error, "FAIL: %s\n", port_name);
-                errors.emplace(Strings::format("Error: While validating port %s.\n"
-                                               "       Missing Git SHA.\n"
-                                               "       Run:\n\n"
-                                               "           git add %s\n"
-                                               "           git commit -m \"wip\"\n"
-                                               "           vcpkg x-add-version %s\n"
-                                               "           git add versions\n"
-                                               "           git commit --amend -m \"[%s] Add new port\"\n\n"
-                                               "       to commit the new port and create its version file.",
-                                               port_name,
-                                               port_path,
-                                               port_name,
-                                               port_name));
+                msg::println(Color::Error, msgCiVerifyVersionsFailPort, msg::port = port_name);
+                errors.emplace(msg::format(msgCiVerifyVersionsMissingSha, msg::port = port_name, msg::file = port_path));
                 continue;
             }
             auto git_tree = git_tree_it->second;
@@ -335,22 +362,17 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             if (manifest_exists && control_exists)
             {
-                vcpkg::printf(Color::Error, "FAIL: %s\n", port_name);
-                errors.emplace(
-                    Strings::format("Error: While validating port %s.\n"
-                                    "       Both a manifest file and a CONTROL file exist in port directory: %s",
-                                    port_name,
-                                    port_path));
+                msg::println(Color::Error, msgCiVerifyVersionsFailPort, msg::port = port_name);
+                errors.emplace(msg::format(msgCiVerifyVersionsBothControlAndManifest, msg::port = port_name, msg::file = port_path));
                 continue;
             }
 
             if (!manifest_exists && !control_exists)
             {
-                vcpkg::printf(Color::Error, "FAIL: %s\n", port_name);
-                errors.emplace(Strings::format("Error: While validating port %s.\n"
-                                               "       No manifest file or CONTROL file exist in port directory: %s",
-                                               port_name,
-                                               port_path));
+                msg::println(Color::Error, msgCiVerifyVersionsFailPort, msg::port = port_name);
+                errors.emplace(msg::format(msgCiVerifyVersionsNoControlOrManifest,
+                                               msg::port = port_name,
+                                               msg::file = port_path));
                 continue;
             }
 
@@ -358,15 +380,10 @@ namespace vcpkg::Commands::CIVerifyVersions
             auto versions_file_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             if (!fs.exists(versions_file_path, IgnoreErrors{}))
             {
-                vcpkg::printf(Color::Error, "FAIL: %s\n", port_name);
-                errors.emplace(Strings::format("Error: While validating port %s.\n"
-                                               "       Missing expected versions file at: %s\n"
-                                               "       Run:\n\n"
-                                               "           vcpkg x-add-version %s\n\n"
-                                               "       to create the versions file.",
-                                               port_name,
-                                               versions_file_path,
-                                               port_name));
+                msg::println(Color::Error, msgCiVerifyVersionsFailPort, msg::port = port_name);
+                errors.emplace(msg::format(msgCiVerifyVersionsCreateVersionsFile,
+                                               msg::port = port_name,
+                                               msg::file =versions_file_path));
                 continue;
             }
 
@@ -375,24 +392,27 @@ namespace vcpkg::Commands::CIVerifyVersions
 
             if (!maybe_ok.has_value())
             {
-                vcpkg::printf(Color::Error, "FAIL: %s\n", port_name);
+                msg::println(Color::Error, msgCiVerifyVersionsFailPort, msg::port = port_name);
                 errors.emplace(maybe_ok.error());
                 continue;
             }
 
-            if (verbose) vcpkg::printf("%s", maybe_ok.value_or_exit(VCPKG_LINE_INFO));
+            if (verbose)
+            {
+                const auto& sha_and_version = maybe_ok.value_or_exit(VCPKG_LINE_INFO);
+                msg::println(msgCiVerifyVersionsOkPort, msg::sha = sha_and_version.sha, msg::port = port_name, msg::version = sha_and_version.version);
+            }
         }
 
         if (!errors.empty())
         {
-            print2(Color::Error, "Found the following errors:\n");
-            for (auto&& error : errors)
+            msg::println(Color::Error, msgCiVerifyVersionsFoundError));
+            for (const auto& error : errors)
             {
-                vcpkg::printf(Color::Error, "%s\n", error);
+                msg::println(Color::Error, error);
             }
-            print2(Color::Error,
-                   "\nTo attempt to resolve all errors at once, run:\n\n"
-                   "    vcpkg x-add-version --all\n\n");
+            msg::println();
+            msg::println(Color::Error, msgCiVerifyVersionsAttemptResolve);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         Checks::exit_success(VCPKG_LINE_INFO);

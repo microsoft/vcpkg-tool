@@ -390,7 +390,7 @@ namespace vcpkg::Debug
         {
             msg::write_unlocalized_text_to_stdout(Color::None, "[DEBUG] ");
             msg::write_unlocalized_text_to_stdout(Color::None, sv);
-            msg::write_newline_to_stdout();
+            msg::println();
         }
     }
     void print(StringView sv)

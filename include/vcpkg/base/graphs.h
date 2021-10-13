@@ -2,7 +2,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/system.print.h>
+#include <vcpkg/base/messages.h>
 
 #include <string>
 #include <unordered_map>
