@@ -1,6 +1,7 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
+#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -91,12 +92,17 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
+    static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
+    static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
-    static constexpr std::array<CommandSetting, 4> CI_SETTINGS = {
+    static constexpr std::array<CommandSetting, 6> CI_SETTINGS = {
         {{OPTION_EXCLUDE, "Comma separated list of ports to skip"},
          {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
          {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
-         {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"}}};
+         {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
+         {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
+         {OPTION_SKIPPED_CASCADE_COUNT,
+          "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
 
     static constexpr std::array<CommandSwitch, 2> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
@@ -271,17 +277,18 @@ namespace vcpkg::Commands::CI
 
     struct UnknownCIPortsResults
     {
-        std::vector<FullPackageSpec> unknown;
         std::map<PackageSpec, Build::BuildResult> known;
         std::map<PackageSpec, std::vector<std::string>> features;
-        Dependencies::ActionPlan plan;
         std::map<PackageSpec, std::string> abi_map;
+        // action_state_string.size() will equal install_actions.size()
+        std::vector<StringLiteral> action_state_string;
+        int cascade_count = 0;
     };
 
     static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
                                       const InstallPlanAction* install_plan)
     {
-        auto&& scfl = install_plan->source_control_file_location.value_or_exit(VCPKG_LINE_INFO);
+        auto&& scfl = install_plan->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         const auto& supports_expression = scfl.source_control_file->core_paragraph->supports_expression;
         PlatformExpression::Context context =
             var_provider.get_tag_vars(install_plan->spec).value_or_exit(VCPKG_LINE_INFO);
@@ -289,21 +296,15 @@ namespace vcpkg::Commands::CI
         return supports_expression.evaluate(context);
     }
 
-    static std::unique_ptr<UnknownCIPortsResults> find_unknown_ports_for_ci(
-        const VcpkgPaths& paths,
-        const std::set<std::string>& exclusions,
-        const std::set<std::string>& host_exclusions,
-        const PortFileProvider::PortFileProvider& provider,
-        const CMakeVars::CMakeVarProvider& var_provider,
-        const std::vector<FullPackageSpec>& specs,
-        BinaryCache& binary_cache,
-        const Dependencies::CreateInstallPlanOptions& serialize_options,
-        Triplet target_triplet,
-        Triplet host_triplet)
+    struct ExclusionPredicate
     {
-        auto ret = std::make_unique<UnknownCIPortsResults>();
+        std::set<std::string> exclusions;
+        std::set<std::string> host_exclusions;
+        Triplet host_triplet;
+        Triplet target_triplet;
 
-        auto is_excluded = [&](const PackageSpec& spec) -> bool {
+        bool operator()(const PackageSpec& spec) const
+        {
             bool excluded = false;
             if (spec.triplet() == host_triplet)
             {
@@ -314,135 +315,128 @@ namespace vcpkg::Commands::CI
                 excluded = excluded || Util::Sets::contains(exclusions, spec.name());
             }
             return excluded;
-        };
+        }
+    };
 
-        std::set<PackageSpec> will_fail;
-
+    static Dependencies::ActionPlan compute_full_plan(const VcpkgPaths& paths,
+                                                      const PortFileProvider::PortFileProvider& provider,
+                                                      const CMakeVars::CMakeVarProvider& var_provider,
+                                                      const std::vector<FullPackageSpec>& specs,
+                                                      const Dependencies::CreateInstallPlanOptions& serialize_options)
+    {
         std::vector<PackageSpec> packages_with_qualified_deps;
-        auto has_qualifier = [](Dependency const& dep) { return !dep.platform.is_empty(); };
         for (auto&& spec : specs)
         {
             auto&& scfl = provider.get_control_file(spec.package_spec.name()).value_or_exit(VCPKG_LINE_INFO);
-            if (Util::any_of(scfl.source_control_file->core_paragraph->dependencies, has_qualifier) ||
-                Util::any_of(scfl.source_control_file->feature_paragraphs,
-                             [&](auto&& pgh) { return Util::any_of(pgh->dependencies, has_qualifier); }))
+            if (scfl.source_control_file->has_qualified_dependencies())
             {
                 packages_with_qualified_deps.push_back(spec.package_spec);
             }
         }
 
-        var_provider.load_dep_info_vars(packages_with_qualified_deps);
+        var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
         auto action_plan =
             Dependencies::create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
 
-        std::vector<FullPackageSpec> install_specs;
-        for (auto&& install_action : action_plan.install_actions)
-        {
-            install_specs.emplace_back(install_action.spec, install_action.feature_list);
-        }
-
-        var_provider.load_tag_vars(install_specs, provider, host_triplet);
-
-        auto timer = ElapsedTimer::create_started();
+        var_provider.load_tag_vars(action_plan, provider, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
         Build::compute_all_abis(paths, action_plan, var_provider, {});
+        return action_plan;
+    }
 
-        const auto precheck_results = binary_cache.precheck(paths, action_plan.install_actions);
+    static std::unique_ptr<UnknownCIPortsResults> compute_action_statuses(
+        const ExclusionPredicate& is_excluded,
+        const CMakeVars::CMakeVarProvider& var_provider,
+        const std::vector<CacheAvailability>& precheck_results,
+        const Dependencies::ActionPlan& action_plan)
+    {
+        auto ret = std::make_unique<UnknownCIPortsResults>();
+
+        std::set<PackageSpec> will_fail;
+
+        ret->action_state_string.reserve(action_plan.install_actions.size());
+        for (size_t action_idx = 0; action_idx < action_plan.install_actions.size(); ++action_idx)
         {
-            vcpkg::BufferedPrint stdout_print;
+            auto&& action = action_plan.install_actions[action_idx];
 
-            for (size_t action_idx = 0; action_idx < action_plan.install_actions.size(); ++action_idx)
+            auto p = &action;
+            ret->abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+            ret->features.emplace(action.spec, action.feature_list);
+
+            if (is_excluded(p->spec))
             {
-                auto&& action = action_plan.install_actions[action_idx];
-                action.build_options = vcpkg::Build::backcompat_prohibiting_package_options;
-
-                auto p = &action;
-                ret->abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
-                ret->features.emplace(action.spec, action.feature_list);
-
-                auto precheck_result = precheck_results[action_idx];
-                bool b_will_build = false;
-
-                std::string state;
-
-                if (is_excluded(p->spec))
-                {
-                    state = "skip";
-                    ret->known.emplace(p->spec, BuildResult::EXCLUDED);
-                    will_fail.emplace(p->spec);
-                    action.plan_type = InstallPlanType::EXCLUDED;
-                }
-                else if (!supported_for_triplet(var_provider, p))
-                {
-                    // This treats unsupported ports as if they are excluded
-                    // which means the ports dependent on it will be cascaded due to missing dependencies
-                    // Should this be changed so instead it is a failure to depend on a unsupported port?
-                    state = "n/a";
-                    ret->known.emplace(p->spec, BuildResult::EXCLUDED);
-                    will_fail.emplace(p->spec);
-                }
-                else if (Util::any_of(p->package_dependencies,
-                                      [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
-                {
-                    state = "cascade";
-                    ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
-                    will_fail.emplace(p->spec);
-                }
-                else if (precheck_result == CacheAvailability::available)
-                {
-                    state = "pass";
-                    ret->known.emplace(p->spec, BuildResult::SUCCEEDED);
-                }
-                else
-                {
-                    ret->unknown.emplace_back(p->spec, p->feature_list);
-                    b_will_build = true;
-                }
-
-                stdout_print.append(Strings::format("%40s: %1s %8s: %s\n",
-                                                    p->spec,
-                                                    (b_will_build ? "*" : " "),
-                                                    state,
-                                                    action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
+                ret->action_state_string.push_back("skip");
+                ret->known.emplace(p->spec, BuildResult::EXCLUDED);
+                will_fail.emplace(p->spec);
             }
-        } // flush stdout_print
+            else if (!supported_for_triplet(var_provider, p))
+            {
+                // This treats unsupported ports as if they are excluded
+                // which means the ports dependent on it will be cascaded due to missing dependencies
+                // Should this be changed so instead it is a failure to depend on a unsupported port?
+                ret->action_state_string.push_back("n/a");
+                ret->known.emplace(p->spec, BuildResult::EXCLUDED);
+                will_fail.emplace(p->spec);
+            }
+            else if (Util::any_of(p->package_dependencies,
+                                  [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
+            {
+                ret->action_state_string.push_back("cascade");
+                ret->cascade_count++;
+                ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
+                will_fail.emplace(p->spec);
+            }
+            else if (precheck_results[action_idx] == CacheAvailability::available)
+            {
+                ret->action_state_string.push_back("pass");
+                ret->known.emplace(p->spec, BuildResult::SUCCEEDED);
+            }
+            else
+            {
+                ret->action_state_string.push_back("*");
+            }
+        }
+        return ret;
+    }
 
-        // This algorithm consumes the previous action plan to build and return a reduced one.
-        std::vector<InstallPlanAction>&& input_install_actions = std::move(action_plan.install_actions);
-        std::vector<InstallPlanAction*> rev_install_actions;
-        rev_install_actions.reserve(input_install_actions.size());
+    // This algorithm reduces an action plan to only unknown actions and their dependencies
+    static void reduce_action_plan(Dependencies::ActionPlan& action_plan,
+                                   const std::map<PackageSpec, Build::BuildResult>& known)
+    {
         std::set<PackageSpec> to_keep;
-        for (auto it = input_install_actions.rbegin(); it != input_install_actions.rend(); ++it)
+        for (auto it = action_plan.install_actions.rbegin(); it != action_plan.install_actions.rend(); ++it)
         {
-            if (!Util::Sets::contains(ret->known, it->spec))
+            auto it_known = known.find(it->spec);
+            if (it_known == known.end())
             {
                 to_keep.insert(it->spec);
             }
 
             if (Util::Sets::contains(to_keep, it->spec))
             {
-                rev_install_actions.push_back(&*it);
+                if (it_known != known.end() && it_known->second == BuildResult::EXCLUDED)
+                {
+                    it->plan_type = InstallPlanType::EXCLUDED;
+                }
+                it->build_options = vcpkg::Build::backcompat_prohibiting_package_options;
                 to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
             }
         }
 
-        for (auto it = rev_install_actions.rbegin(); it != rev_install_actions.rend(); ++it)
-        {
-            ret->plan.install_actions.push_back(std::move(**it));
-        }
-
-        vcpkg::printf("Time to determine pass/fail: %s\n", timer.elapsed());
-        return ret;
+        Util::erase_remove_if(action_plan.install_actions, [&to_keep](const InstallPlanAction& action) {
+            return !Util::Sets::contains(to_keep, action.spec);
+        });
     }
 
-    static std::set<std::string> parse_exclusions(const ParsedArguments& options, StringLiteral opt)
+    static std::set<std::string> parse_exclusions(const std::unordered_map<std::string, std::string>& settings,
+                                                  StringLiteral opt)
     {
         std::set<std::string> exclusions_set;
-        auto it_exclusions = options.settings.find(opt);
-        if (it_exclusions != options.settings.end())
+        auto it_exclusions = settings.find(opt);
+        if (it_exclusions != settings.end())
         {
             auto exclusions = Strings::split(it_exclusions->second, ',');
             exclusions_set.insert(std::make_move_iterator(exclusions.begin()),
@@ -452,20 +446,40 @@ namespace vcpkg::Commands::CI
         return exclusions_set;
     }
 
+    static Optional<int> parse_skipped_cascade_count(const std::unordered_map<std::string, std::string>& settings)
+    {
+        auto opt = settings.find(OPTION_SKIPPED_CASCADE_COUNT);
+        if (opt == settings.end())
+        {
+            return nullopt;
+        }
+
+        auto result = Strings::strto<int>(opt->second);
+        Checks::check_exit(VCPKG_LINE_INFO, result.has_value(), "%s must be an integer", OPTION_SKIPPED_CASCADE_COUNT);
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           result.value_or_exit(VCPKG_LINE_INFO) >= 0,
+                           "%s must be non-negative",
+                           OPTION_SKIPPED_CASCADE_COUNT);
+        return result;
+    }
+
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet, Triplet host_triplet)
     {
-        if (args.command_arguments.size() != 1)
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
-        }
+        vcpkg::print2(Color::warning,
+                      "'vcpkg ci' is an internal command which will change incompatibly or be removed at any time.\n");
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
 
         BinaryCache binary_cache{args};
         Triplet target_triplet = Triplet::from_canonical_name(std::string(args.command_arguments[0]));
-        auto exclusions_set = parse_exclusions(options, OPTION_EXCLUDE);
-        auto host_exclusions_set = parse_exclusions(options, OPTION_HOST_EXCLUDE);
+        ExclusionPredicate is_excluded{
+            parse_exclusions(settings, OPTION_EXCLUDE),
+            parse_exclusions(settings, OPTION_HOST_EXCLUDE),
+            target_triplet,
+            host_triplet,
+        };
+        auto skipped_cascade_count = parse_skipped_cascade_count(settings);
 
         const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
@@ -484,8 +498,6 @@ namespace vcpkg::Commands::CI
 
         const IBuildLogsRecorder& build_logs_recorder =
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
-
-        StatusParagraphs status_db = database_load_check(paths);
 
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -513,7 +525,8 @@ namespace vcpkg::Commands::CI
             return FullPackageSpec{spec, std::move(default_features)};
         });
 
-        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet);
+        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
+                                                                 Dependencies::UnsupportedPortAction::Warn);
 
         struct RandomizerInstance : Graphs::Randomizer
         {
@@ -532,18 +545,53 @@ namespace vcpkg::Commands::CI
             serialize_options.randomizer = &randomizer_instance;
         }
 
-        auto split_specs = find_unknown_ports_for_ci(paths,
-                                                     exclusions_set,
-                                                     host_exclusions_set,
-                                                     provider,
-                                                     var_provider,
-                                                     all_default_full_specs,
-                                                     binary_cache,
-                                                     serialize_options,
-                                                     target_triplet,
-                                                     host_triplet);
+        auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
+        const auto precheck_results = binary_cache.precheck(paths, action_plan.install_actions);
+        auto split_specs = compute_action_statuses(is_excluded, var_provider, precheck_results, action_plan);
 
-        auto& action_plan = split_specs->plan;
+        {
+            std::string msg;
+            for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
+            {
+                auto&& action = action_plan.install_actions[i];
+                msg += Strings::format("%40s: %8s: %s\n",
+                                       action.spec,
+                                       split_specs->action_state_string[i],
+                                       action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+            }
+            vcpkg::print2(msg);
+
+            auto it_output_hashes = settings.find(OPTION_OUTPUT_HASHES);
+            if (it_output_hashes != settings.end())
+            {
+                const Path output_hash_json = paths.original_cwd / it_output_hashes->second;
+                Json::Array arr;
+                for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
+                {
+                    auto&& action = action_plan.install_actions[i];
+                    Json::Object obj;
+                    obj.insert("name", Json::Value::string(action.spec.name()));
+                    obj.insert("triplet", Json::Value::string(action.spec.triplet().canonical_name()));
+                    obj.insert("state", Json::Value::string(split_specs->action_state_string[i]));
+                    obj.insert("abi", Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
+                    arr.push_back(std::move(obj));
+                }
+                filesystem.write_contents(output_hash_json, Json::stringify(arr, Json::JsonStyle{}), VCPKG_LINE_INFO);
+            }
+        }
+
+        reduce_action_plan(action_plan, split_specs->known);
+
+        vcpkg::printf("Time to determine pass/fail: %s\n", timer.elapsed());
+
+        if (auto skipped_cascade_count_ptr = skipped_cascade_count.get())
+        {
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               *skipped_cascade_count_ptr == split_specs->cascade_count,
+                               "Expected %d cascaded failures, but there were %d cascaded failures.",
+                               *skipped_cascade_count_ptr,
+                               split_specs->cascade_count);
+        }
 
         if (is_dry_run)
         {
@@ -551,6 +599,8 @@ namespace vcpkg::Commands::CI
         }
         else
         {
+            StatusParagraphs status_db = database_load_check(paths);
+
             auto collection_timer = ElapsedTimer::create_started();
             auto summary = Install::perform(args,
                                             action_plan,
@@ -597,7 +647,7 @@ namespace vcpkg::Commands::CI
         for (auto&& result : results)
         {
             print2("\nTriplet: ", result.triplet, "\n");
-            print2("Total elapsed time: ", result.summary.total_elapsed_time, "\n");
+            print2("Total elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n");
             result.summary.print();
         }
 

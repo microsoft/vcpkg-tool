@@ -798,7 +798,7 @@ namespace
                 Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
                     // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the
                     // output directory
-                    auto nupkg_path = paths.package_dir(nuget_ref.spec) / nuget_ref.reference.id + ".nupkg";
+                    const auto nupkg_path = paths.packages / nuget_ref.reference.id / nuget_ref.reference.id + ".nupkg";
                     if (fs.exists(nupkg_path, IgnoreErrors{}))
                     {
                         fs.remove(nupkg_path, VCPKG_LINE_INFO);
@@ -806,6 +806,13 @@ namespace
                                            !fs.exists(nupkg_path, IgnoreErrors{}),
                                            "Unable to remove nupkg after restoring: %s",
                                            nupkg_path);
+                        const auto nuget_dir = nuget_ref.spec.dir();
+                        if (nuget_dir != nuget_ref.reference.id)
+                        {
+                            const auto path_from = paths.packages / nuget_ref.reference.id;
+                            const auto path_to = paths.packages / nuget_dir;
+                            fs.rename(path_from, path_to, VCPKG_LINE_INFO);
+                        }
                         cache_status[nuget_ref.result_index]->mark_restored();
                         return true;
                     }
@@ -1998,7 +2005,7 @@ std::string vcpkg::generate_nuspec(const VcpkgPaths& paths,
                                    details::NuGetRepoInfo rinfo)
 {
     auto& spec = action.spec;
-    auto& scf = *action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+    auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
     auto& version = scf.core_paragraph->version;
     const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
     const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
@@ -2075,10 +2082,12 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
              "source changes or disappears.");
     tbl.blank();
     tbl.blank();
-    tbl.text(Strings::concat(
-        "Asset caching can be configured by setting the environment variable ",
-        VcpkgCmdArguments::ASSET_SOURCES_ENV,
-        " to a semicolon-delimited list of source strings. Characters can be escaped using backtick (`)."));
+    tbl.text(Strings::concat("Asset caching can be configured either by setting the environment variable ",
+                             VcpkgCmdArguments::ASSET_SOURCES_ENV,
+                             " to a semicolon-delimited list of source strings or by passing a sequence of `--",
+                             VcpkgCmdArguments::ASSET_SOURCES_ARG,
+                             "=<source>` command line options. Command line sources are interpreted after environment "
+                             "sources. Commas, semicolons, and backticks can be escaped using backtick (`)."));
     tbl.blank();
     tbl.blank();
     tbl.header("Valid source strings");

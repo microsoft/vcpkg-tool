@@ -31,7 +31,7 @@ namespace vcpkg
     inline NugetReference make_nugetref(const Dependencies::InstallPlanAction& action, const std::string& prefix)
     {
         return make_nugetref(action.spec,
-                             action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO)
+                             action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
                                  .source_control_file->core_paragraph->version,
                              action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi,
                              prefix);

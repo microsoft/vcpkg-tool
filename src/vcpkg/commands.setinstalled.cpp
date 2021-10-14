@@ -123,14 +123,15 @@ namespace vcpkg::Commands::SetInstalled
                                               Build::null_build_logs_recorder(),
                                               cmake_vars);
 
-        print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
+        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
 
+        std::set<std::string> printed_usages;
         for (auto&& ur_spec : user_requested_specs)
         {
             auto it = status_db.find_installed(ur_spec);
             if (it != status_db.end())
             {
-                Install::print_usage_information(it->get()->package, paths);
+                Install::print_usage_information(it->get()->package, printed_usages, paths);
             }
         }
 

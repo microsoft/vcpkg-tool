@@ -391,7 +391,7 @@ namespace vcpkg
         downloads =
             process_output_directory(filesystem, root, args.downloads_root_dir.get(), "downloads", VCPKG_LINE_INFO);
         m_pimpl->m_download_manager = Downloads::DownloadManager{
-            parse_download_configuration(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO)};
+            parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
         packages =
             process_output_directory(filesystem, root, args.packages_root_dir.get(), "packages", VCPKG_LINE_INFO);
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);
@@ -659,6 +659,25 @@ namespace vcpkg
         {
             return {std::move(output.output), expected_right_tag};
         }
+    }
+
+    ExpectedS<std::string> VcpkgPaths::git_describe_head() const
+    {
+        // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
+        const auto dot_git_dir = root / ".git";
+        Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir)
+                              .string_arg("show")
+                              .string_arg("--pretty=format:%h %cd (%cr)")
+                              .string_arg("-s")
+                              .string_arg("--date=short")
+                              .string_arg("HEAD");
+
+        auto output = cmd_execute_and_capture_output(showcmd);
+        if (output.exit_code == 0)
+        {
+            return {std::move(output.output), expected_left_tag};
+        }
+        return {std::move(output.output), expected_right_tag};
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const

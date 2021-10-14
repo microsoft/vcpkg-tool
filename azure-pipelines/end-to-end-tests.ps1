@@ -55,7 +55,7 @@ if ([string]::IsNullOrEmpty($VcpkgExe))
     }
 }
 
-$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
+[Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
 if ($Filter -ne $Null) {
     $AllTests = $AllTests | ? { $_.Name -match $Filter }
 }
