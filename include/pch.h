@@ -3,6 +3,7 @@
 #include <vcpkg/base/system_headers.h>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/pragmas.h>
 
 #if defined(_WIN32)

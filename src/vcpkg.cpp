@@ -5,7 +5,6 @@
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/commands.contact.h>
@@ -32,6 +31,31 @@
 
 using namespace vcpkg;
 
+namespace
+{
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::value), "", "invalid command: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgDebugTimeTaken,
+                                 (msg::pretty_value, msg::value),
+                                 "{LOCKED}",
+                                 "[DEBUG] Exiting after %s (%d us)\n");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
+                                 (),
+                                 "",
+                                 "Warning: passed --sendmetrics, but metrics are disabled.");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed,
+                                 (msg::email, msg::version, msg::error),
+                                 "",
+                                 R"(vcpkg.exe has crashed.
+Please send an email to:
+    {email}
+containing a brief summary of what you were trying to do and the following data blob:
+
+Version={vcpkg_version}
+EXCEPTION='{error}'
+CMD=)");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{LOCKED}", "{value}|");
+}
+
 // 24 hours/day * 30 days/month * 6 months
 static constexpr int SURVEY_INTERVAL_IN_HOURS = 24 * 30 * 6;
 
@@ -40,7 +64,7 @@ static constexpr int SURVEY_INITIAL_OFFSET_IN_HOURS = SURVEY_INTERVAL_IN_HOURS -
 
 static void invalid_command(const std::string& cmd)
 {
-    print2(Color::error, "invalid command: ", cmd, '\n');
+    msg::println(Color::error, msgVcpkgInvalidCommand, msg::value = cmd);
     print_usage();
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
@@ -163,6 +187,26 @@ int main(const int argc, const char* const* const argv)
     if (argc == 0) std::abort();
 
     auto& fs = get_real_filesystem();
+    {
+        auto locale = get_environment_variable("VCPKG_LOCALE");
+        auto locale_base = get_environment_variable("VCPKG_LOCALE_BASE");
+
+        if (locale.has_value() && locale_base.has_value())
+        {
+            msg::threadunsafe_initialize_context(fs, *locale.get(), *locale_base.get());
+        }
+        else if (locale.has_value() || locale_base.has_value())
+        {
+            msg::write_unlocalized_text_to_stdout(
+                Color::error, "If either VCPKG_LOCALE or VCPKG_LOCALE_BASE is initialized, then both must be.\n");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+        else
+        {
+            msg::threadunsafe_initialize_context();
+        }
+    }
+
     *(LockGuardPtr<ElapsedTimer>(GlobalState::timer)) = ElapsedTimer::create_started();
 
 #if defined(_WIN32)
@@ -211,9 +255,9 @@ int main(const int argc, const char* const* const argv)
 #endif
 
         if (debugging)
-            vcpkg::printf("[DEBUG] Exiting after %s us (%d us)\n",
-                          LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(),
-                          static_cast<int64_t>(elapsed_us_inner));
+            msg::println(msgVcpkgDebugTimeTaken,
+                         msg::pretty_value = LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(),
+                         msg::value = static_cast<int64_t>(elapsed_us_inner));
     });
 
     LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version());
@@ -269,7 +313,7 @@ int main(const int argc, const char* const* const argv)
 
         if (args.send_metrics.value_or(false) && !metrics->metrics_enabled())
         {
-            print2(Color::warning, "Warning: passed --sendmetrics, but metrics are disabled.\n");
+            msg::println(Color::warning, msgVcpkgSendMetricsButDisabled);
         }
     } // unlock g_metrics
 
@@ -300,24 +344,17 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    vcpkg::printf("vcpkg.exe has crashed.\n"
-                  "Please send an email to:\n"
-                  "    %s\n"
-                  "containing a brief summary of what you were trying to do and the following data blob:\n"
-                  "\n"
-                  "Version=%s\n"
-                  "EXCEPTION='%s'\n"
-                  "CMD=\n",
-                  Commands::Contact::email(),
-                  Commands::Version::version(),
-                  exc_msg);
+    msg::println(msgVcpkgHasCrashed,
+                 msg::email = Commands::Contact::email(),
+                 msg::version = Commands::Version::version(),
+                 msg::error = exc_msg);
     fflush(stdout);
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
-        print2(Strings::to_utf8(argv[x]), "|\n");
+        msg::println(msgVcpkgHasCrashedArgument, msg::value = Strings::to_utf8(argv[x]));
 #else
-        print2(argv[x], "|\n");
+        msg::println(msgVcpkgHasCrashedArgument, msg::value = argv[x]);
 #endif
     }
     fflush(stdout);

@@ -8,6 +8,12 @@ variables:
   TeamName: vcpkg
 jobs:
   - job: windows
+    variables:
+    - group: vcpkg-dependency-source-blobs
+    - name: FMT_TARBALL_URL
+      value: "$(fmt-tarball-url)"
+    - name: FMT_TARBALL_DIRNAME
+      value: "$(fmt-tarball-dirname)"
     displayName: "Windows"
     dependsOn:
     pool:
@@ -15,6 +21,13 @@ jobs:
       demands:
         - CMAKE
     steps:
+    - task: CmdLine@2
+      displayName: "Download fmt library"
+      inputs:
+        failOnStderr: true
+        script: |
+          curl.exe -sSL "%FMT_TARBALL_URL%" --output "$(Build.BinariesDirectory)\fmtlib.tar.gz"
+          tar.exe -C "$(Build.BinariesDirectory)" -xf "$(Build.BinariesDirectory)\fmtlib.tar.gz"
     - task: PoliCheck@1
       inputs:
         inputType: 'Basic'
@@ -27,7 +40,7 @@ jobs:
         failOnStderr: true
         script: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -B "$(Build.BinariesDirectory)\x86"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -B "$(Build.BinariesDirectory)\x86"
           ninja.exe -C "$(Build.BinariesDirectory)\x86"
     - task: CmdLine@2
       displayName: "Build vcpkg arm64 with CMake"
@@ -35,7 +48,7 @@ jobs:
         failOnStderr: true
         script: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=x86
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_PDB_SUFFIX=".arm64" -B "$(Build.BinariesDirectory)\arm64"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_PDB_SUFFIX=".arm64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -B "$(Build.BinariesDirectory)\arm64"
           ninja.exe -C "$(Build.BinariesDirectory)\arm64"
     - task: MicroBuildSigningPlugin@2
       inputs:
@@ -87,15 +100,28 @@ jobs:
     displayName: 'MacOS Build'
     pool:
       vmImage: macOS-10.15
+    variables:
+    - group: vcpkg-dependency-source-blobs
+    - name: FMT_TARBALL_URL
+      value: "$(fmt-tarball-url)"
+    - name: FMT_TARBALL_DIRNAME
+      value: "$(fmt-tarball-dirname)"
     steps:
+    - task: CmdLine@2
+      displayName: "Download fmt library"
+      inputs:
+        failOnStderr: true
+        script: |
+          curl -sSL "$FMT_TARBALL_URL" --output "$(Build.BinariesDirectory)\fmtlib.tar.gz"
+          tar -C "$(Build.BinariesDirectory)" -xf "$(Build.BinariesDirectory)\fmtlib.tar.gz"
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
         failOnStderr: true
         script: |
-          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -B "$(Build.BinariesDirectory)"
-          make -j 8 -C "$(Build.BinariesDirectory)"
-          zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/vcpkg"
+          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -B "$(Build.BinariesDirectory)/build"
+          make -j 8 -C "$(Build.BinariesDirectory)/build"
+          zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/build/vcpkg"
     - task: PublishBuildArtifacts@1
       displayName: "Publish Unsigned MacOS Binary"
       inputs:
