@@ -148,3 +148,23 @@ jobs:
       inputs:
         ArtifactName: 'staging'
         publishLocation: 'Container'
+  - job: muslc_build
+    displayName: 'muslc (Alpine) Build'
+    pool:
+      name: 'vcpkg-ubuntu-20-04-docker'
+    steps:
+    - task: CmdLine@2
+      displayName: "Build vcpkg in Alpine"
+      inputs:
+        failOnStderr: true
+        script: |
+          docker build -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile .
+          docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh
+          docker cp vcpkg-muslc-container:/build/vcpkg-muslc.zip "$(Build.ArtifactStagingDirectory)/vcpkg-muslc.zip"
+          docker container rm vcpkg-muslc-container
+          docker image rm vcpkg-muslc-image
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish Unsigned muslc Binary"
+      inputs:
+        ArtifactName: 'staging'
+        publishLocation: 'Container'
