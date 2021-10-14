@@ -51,12 +51,16 @@ namespace vcpkg
     inline bool operator==(ZStringView l, const char* r) { return strcmp(l.c_str(), r) == 0; }
 }
 
-template<>
-struct fmt::formatter<vcpkg::ZStringView> : fmt::formatter<vcpkg::StringView>
+namespace fmt
 {
-    template<class FormatContext>
-    auto format(const vcpkg::ZStringView& s, FormatContext& ctx) -> decltype(ctx.out())
+    template<>
+    struct formatter<vcpkg::ZStringView> : formatter<vcpkg::StringView>
     {
-        return fmt::formatter<vcpkg::StringView>::format(s, ctx);
-    }
-};
+        template<class FormatContext>
+        auto format(const vcpkg::ZStringView& s, FormatContext& ctx) -> decltype(ctx.out())
+        {
+            return formatter<vcpkg::StringView>::format(s, ctx);
+        }
+    };
+
+}

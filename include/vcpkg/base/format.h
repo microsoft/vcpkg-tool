@@ -1,8 +1,12 @@
 #pragma once
 
 #include <vcpkg/base/lineinfo.h>
+#include <vcpkg/base/pragmas.h>
 
+VCPKG_MSVC_WARNING(push)
+VCPKG_MSVC_WARNING(disable : 6239)
 #include <fmt/format.h>
+VCPKG_MSVC_WARNING(pop)
 
 namespace vcpkg
 {
@@ -17,16 +21,20 @@ namespace vcpkg
     }
 }
 
-template<>
-struct fmt::formatter<vcpkg::LineInfo>
+namespace fmt
 {
-    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin())
+    template<>
+    struct formatter<vcpkg::LineInfo>
     {
-        return vcpkg::basic_format_parse_impl(ctx);
-    }
-    template<class FormatContext>
-    auto format(const vcpkg::LineInfo& li, FormatContext& ctx) -> decltype(ctx.out())
-    {
-        return format_to(ctx.out(), "{}({})", li.file_name, li.line_number);
-    }
-};
+        constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+        {
+            return vcpkg::basic_format_parse_impl(ctx);
+        }
+        template<class FormatContext>
+        auto format(const vcpkg::LineInfo& li, FormatContext& ctx) -> decltype(ctx.out())
+        {
+            return format_to(ctx.out(), "{}({})", li.file_name, li.line_number);
+        }
+    };
+
+}

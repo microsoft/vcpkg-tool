@@ -58,13 +58,17 @@ namespace vcpkg
     bool operator>=(StringView lhs, StringView rhs) noexcept;
 }
 
-template<>
-struct fmt::formatter<vcpkg::StringView> : fmt::formatter<fmt::string_view>
+namespace fmt
 {
-    // parse is inherited from formatter<string_view>.
-    template<class FormatContext>
-    auto format(vcpkg::StringView sv, FormatContext& ctx)
+    template<>
+    struct formatter<vcpkg::StringView> : formatter<string_view>
     {
-        return fmt::formatter<fmt::string_view>::format(fmt::string_view(sv.data(), sv.size()), ctx);
-    }
-};
+        // parse is inherited from formatter<string_view>.
+        template<class FormatContext>
+        auto format(vcpkg::StringView sv, FormatContext& ctx)
+        {
+            return formatter<string_view>::format(string_view(sv.data(), sv.size()), ctx);
+        }
+    };
+
+}

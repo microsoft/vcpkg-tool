@@ -44,9 +44,9 @@ namespace vcpkg::msg
             if (c != Color::none)
             {
                 CONSOLE_SCREEN_BUFFER_INFO console_screen_buffer_info{};
-                ::GetConsoleScreenBufferInfo(handle, &console_screen_buffer_info);
+                ::GetConsoleScreenBufferInfo(stdout_handle, &console_screen_buffer_info);
                 original_color = console_screen_buffer_info.wAttributes;
-                ::SetConsoleTextAttribute(handle, static_cast<WORD>(c) | (original_color & 0xF0));
+                ::SetConsoleTextAttribute(stdout_handle, static_cast<WORD>(c) | (original_color & 0xF0));
             }
 
             auto as_wstr = Strings::to_utf16(sv);
@@ -57,14 +57,14 @@ namespace vcpkg::msg
             while (size != 0)
             {
                 DWORD written = 0;
-                check_write(::WriteConsoleW(handle, pointer, size_to_write(size), &written, nullptr));
+                check_write(::WriteConsoleW(stdout_handle, pointer, size_to_write(size), &written, nullptr));
                 pointer += written;
                 size -= written;
             }
 
             if (c != Color::none)
             {
-                ::SetConsoleTextAttribute(handle, original_color);
+                ::SetConsoleTextAttribute(stdout_handle, original_color);
             }
         }
         else
@@ -75,7 +75,7 @@ namespace vcpkg::msg
             while (size != 0)
             {
                 DWORD written = 0;
-                check_write(::WriteFile(handle, pointer, size_to_write(size), &written, nullptr));
+                check_write(::WriteFile(stdout_handle, pointer, size_to_write(size), &written, nullptr));
                 pointer += written;
                 size -= written;
             }

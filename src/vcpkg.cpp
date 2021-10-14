@@ -187,6 +187,26 @@ int main(const int argc, const char* const* const argv)
     if (argc == 0) std::abort();
 
     auto& fs = get_real_filesystem();
+    {
+        auto locale = get_environment_variable("VCPKG_LOCALE");
+        auto locale_base = get_environment_variable("VCPKG_LOCALE_BASE");
+
+        if (locale.has_value() && locale_base.has_value())
+        {
+            msg::threadunsafe_initialize_context(fs, *locale.get(), *locale_base.get());
+        }
+        else if (locale.has_value() || locale_base.has_value())
+        {
+            msg::write_unlocalized_text_to_stdout(
+                Color::error, "If either VCPKG_LOCALE or VCPKG_LOCALE_BASE is initialized, then both must be.\n");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+        else
+        {
+            msg::threadunsafe_initialize_context();
+        }
+    }
+
     *(LockGuardPtr<ElapsedTimer>(GlobalState::timer)) = ElapsedTimer::create_started();
 
 #if defined(_WIN32)

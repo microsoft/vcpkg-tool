@@ -186,13 +186,17 @@ namespace vcpkg::msg
     REGISTER_MESSAGE(NAME)
 }
 
-template<>
-struct fmt::formatter<vcpkg::msg::LocalizedString> : fmt::formatter<vcpkg::StringView>
+namespace fmt
 {
-    // parse is inherited from formatter<StringView>
-    template<class FormatContext>
-    auto format(const vcpkg::msg::LocalizedString& s, FormatContext& ctx)
+    template<>
+    struct formatter<vcpkg::msg::LocalizedString> : formatter<vcpkg::StringView>
     {
-        return fmt::formatter<vcpkg::StringView>::format(s.data(), ctx);
-    }
-};
+        // parse is inherited from formatter<StringView>
+        template<class FormatContext>
+        auto format(const vcpkg::msg::LocalizedString& s, FormatContext& ctx)
+        {
+            return formatter<vcpkg::StringView>::format(s.data(), ctx);
+        }
+    };
+
+}

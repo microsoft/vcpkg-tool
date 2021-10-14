@@ -17,12 +17,16 @@ namespace vcpkg
     };
 }
 
-template<>
-struct fmt::formatter<vcpkg::StringLiteral> : fmt::formatter<vcpkg::ZStringView>
+namespace fmt
 {
-    template<class FormatContext>
-    auto format(const vcpkg::ZStringView& s, FormatContext& ctx) -> decltype(ctx.out())
+    template<>
+    struct formatter<vcpkg::StringLiteral> : formatter<vcpkg::ZStringView>
     {
-        return fmt::formatter<vcpkg::StringView>::format(s, ctx);
-    }
-};
+        template<class FormatContext>
+        auto format(const vcpkg::ZStringView& s, FormatContext& ctx) -> decltype(ctx.out())
+        {
+            return formatter<vcpkg::StringView>::format(s, ctx);
+        }
+    };
+
+}
