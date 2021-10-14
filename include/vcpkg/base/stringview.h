@@ -2,6 +2,8 @@
 
 #include <vcpkg/base/fwd/stringview.h>
 
+#include <vcpkg/base/format.h>
+
 #include <stddef.h>
 #include <string.h>
 
@@ -55,3 +57,14 @@ namespace vcpkg
     bool operator<=(StringView lhs, StringView rhs) noexcept;
     bool operator>=(StringView lhs, StringView rhs) noexcept;
 }
+
+template<>
+struct fmt::formatter<vcpkg::StringView> : fmt::formatter<fmt::string_view>
+{
+    // parse is inherited from formatter<string_view>.
+    template<class FormatContext>
+    auto format(vcpkg::StringView sv, FormatContext& ctx)
+    {
+        return fmt::formatter<fmt::string_view>::format(fmt::string_view(sv.data(), sv.size()), ctx);
+    }
+};

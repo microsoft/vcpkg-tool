@@ -385,3 +385,17 @@ namespace vcpkg
         }
     };
 }
+
+template<>
+struct fmt::formatter<vcpkg::Path>
+{
+    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin())
+    {
+        return vcpkg::basic_format_parse_impl(ctx);
+    }
+    template<class FormatContext>
+    auto format(const vcpkg::Path& path, FormatContext& ctx) -> decltype(ctx.out())
+    {
+        return format_to(ctx.out(), "{}", path.native());
+    }
+};
