@@ -4,17 +4,106 @@
 
 trigger: none
 
+parameters:
+- name: SignTypeOverride
+  displayName: Signing Type Override
+  type: string
+  default: default
+  values:
+  - default
+  - test
+  - real
+
 variables:
   TeamName: vcpkg
+  # If the user didn't override the signing type, then only real-sign on main.
+  ${{ if ne(parameters.SignTypeOverride, 'default') }}:
+    SignType: ${{ parameters.SignTypeOverride }}
+  ${{ if and(eq(parameters.SignTypeOverride, 'default'), or(eq(variables['Build.SourceBranchName'], 'main'), startsWith(variables['Build.SourceBranch'], 'refs/tags'))) }}:
+    SignType: real
+  ${{ if and(eq(parameters.SignTypeOverride, 'default'), not(or(eq(variables['Build.SourceBranchName'], 'main'), startsWith(variables['Build.SourceBranch'], 'refs/tags')))) }}:
+    SignType: test
+
 jobs:
-  - job: windows
-    displayName: "Windows"
+  - job: macos_build
+    displayName: 'MacOS Build'
+    pool:
+      vmImage: macOS-10.15
+    steps:
+    - task: CmdLine@2
+      displayName: "Build vcpkg with CMake"
+      inputs:
+        failOnStderr: true
+        script: |
+          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B "$(Build.BinariesDirectory)/build"
+          make -j 8 -C "$(Build.BinariesDirectory)/build"
+          zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/build/vcpkg"
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish Unsigned MacOS Binary"
+      inputs:
+        ArtifactName: 'staging'
+        publishLocation: 'Container'
+  - job: rhel_build
+    displayName: 'glibc (RHEL) Build'
+    pool:
+      name: 'vcpkg-rhel-7-5'
+    steps:
+    - task: CmdLine@2
+      displayName: "Build vcpkg with CMake"
+      inputs:
+        failOnStderr: true
+        script: |
+          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" -B "$(Build.BinariesDirectory)/build"'
+          make -j 4 -C "$(Build.BinariesDirectory)/build"
+          mv "$(Build.BinariesDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish Unsigned glibc Binary"
+      inputs:
+        ArtifactName: 'staging'
+        publishLocation: 'Container'
+  - job: muslc_build
+    displayName: 'muslc (Alpine) Build'
+    pool:
+      name: 'vcpkg-ubuntu-20-04-docker'
+    steps:
+    - task: CmdLine@2
+      displayName: "Build vcpkg in Alpine"
+      inputs:
+        failOnStderr: true
+        script: |
+          docker build -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile .
+          docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh
+          docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
+          docker container rm vcpkg-muslc-container
+          docker image rm vcpkg-muslc-image
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish Unsigned muslc Binary"
+      inputs:
+        ArtifactName: 'staging'
+        publishLocation: 'Container'
+  - job: windows_and_sign
+    displayName: 'Build Windows and Sign Other Platforms'
     dependsOn:
+      - macos_build
+      - rhel_build
+      - muslc_build
     pool:
       name: 'VSEngSS-MicroBuild2019-1ES'
       demands:
         - CMAKE
     steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Unsigned POSIX Binaries'
+      inputs:
+        artifactName: staging
+    - task: CmdLine@2
+      displayName: 'Move Linux Binaries to BinariesDirectory'
+      inputs:
+        failOnStderr: true
+        script: |
+          mkdir "$(Build.BinariesDirectory)\build"
+          copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.BinariesDirectory)\vcpkg-glibc"
+          copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.BinariesDirectory)\vcpkg-muslc"
     - task: PoliCheck@1
       inputs:
         inputType: 'Basic'
@@ -39,7 +128,7 @@ jobs:
           ninja.exe -C "$(Build.BinariesDirectory)\arm64"
     - task: MicroBuildSigningPlugin@2
       inputs:
-        signType: 'real'
+        signType: '$(SignType)'
         feedSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
     - task: NuGetToolInstaller@1
       inputs:
@@ -52,7 +141,7 @@ jobs:
         feedsToUse: 'config'
         restoreDirectory: '$(Build.SourcesDirectory)\packages'
     - task: MSBuild@1
-      displayName: 'Sign Binaries'
+      displayName: 'Sign Windows and Linux Binaries'
       inputs:
         solution: 'azure-pipelines\signing.signproj'
         msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
@@ -60,12 +149,31 @@ jobs:
       inputs:
         InputType: 'CommandLine'
         arguments: 'analyze "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.BinariesDirectory)\x86\tls12-download.exe" "$(Build.BinariesDirectory)\arm64\vcpkg.exe" "$(Build.BinariesDirectory)\arm64\tls12-download.exe"'
+    - task: MicroBuildSignMacFiles@1
+      displayName: 'Developer Sign Mac Files'
+      condition: eq(variables.SignType, 'test')
+      inputs:
+        SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
+        SigningCert: 8003
+    - task: MicroBuildSignMacFiles@1
+      displayName: 'Sign and Harden Mac Files'
+      condition: eq(variables.SignType, 'real')
+      inputs:
+        SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
+        SigningCert: 8023
+    - task: MicroBuildSignMacFiles@1
+      condition: eq(variables.SignType, 'real')
+      inputs:
+        SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
+        SigningCert: '8020'
+        MacAppName: 'vcpkg'
     - task: CmdLine@2
       displayName: 'Prepare Drop'
       inputs:
         failOnStderr: true
         script: |
           mkdir "$(Build.ArtifactStagingDirectory)\drop"
+
           move "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
           move "$(Build.BinariesDirectory)\x86\vcpkg.pdb" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.pdb"
           move "$(Build.BinariesDirectory)\x86\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe"
@@ -74,6 +182,22 @@ jobs:
           move "$(Build.BinariesDirectory)\arm64\vcpkg-arm64.pdb" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-arm64.pdb"
           move "$(Build.BinariesDirectory)\arm64\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.exe"
           move "$(Build.BinariesDirectory)\arm64\tls12-download-arm64.pdb" "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.pdb"
+
+          mkdir "$(Build.ArtifactStagingDirectory)\staging\macos"
+          tar.exe -C "$(Build.ArtifactStagingDirectory)\staging\macos" -xf "$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip"
+          move "$(Build.ArtifactStagingDirectory)\staging\macos\vcpkg" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-macos"
+
+          move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
+
+          move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
+    - task: CmdLine@2
+      displayName: 'Add Drop PGP Signatures (real sign only)'
+      condition: eq(variables.SignType, 'real')
+      inputs:
+        failOnStderr: true
+        script: |
+          move "$(Build.BinariesDirectory)\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc.sig"
+          move "$(Build.BinariesDirectory)\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc.sig"
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Drop'
       inputs:
@@ -83,88 +207,3 @@ jobs:
     - task: MicroBuildCleanup@1
       condition: succeededOrFailed()
       displayName: MicroBuild Cleanup
-  - job: macos_build
-    displayName: 'MacOS Build'
-    pool:
-      vmImage: macOS-10.15
-    steps:
-    - task: CmdLine@2
-      displayName: "Build vcpkg with CMake"
-      inputs:
-        failOnStderr: true
-        script: |
-          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B "$(Build.BinariesDirectory)"
-          make -j 8 -C "$(Build.BinariesDirectory)"
-          zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/vcpkg"
-    - task: PublishBuildArtifacts@1
-      displayName: "Publish Unsigned MacOS Binary"
-      inputs:
-        ArtifactName: 'staging'
-        publishLocation: 'Container'
-  - job: macos_sign
-    displayName: 'MacOS Sign'
-    dependsOn: macos_build
-    pool:
-      name: 'VSEngSS-MicroBuild2019-1ES'
-    steps:
-      - checkout: none
-      - task: DownloadBuildArtifacts@0
-        displayName: 'Download Unsigned Binary'
-        inputs:
-          artifactName: staging
-      - task: ms-vseng.MicroBuildTasks.7973a23b-33e3-4b00-a7d9-c06d90f8297f.MicroBuildSignMacFiles@1
-        displayName: 'Sign Mac Files'
-        inputs:
-          SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
-          SigningCert: 8003
-      - task: CmdLine@2
-        displayName: "Repackage signed vcpkg_macos binary"
-        inputs:
-          failOnStderr: true
-          script: |
-            tar.exe -C "$(Build.ArtifactStagingDirectory)" -xf "$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip"
-            move "$(Build.ArtifactStagingDirectory)\vcpkg" "$(Build.ArtifactStagingDirectory)\vcpkg-macos"
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish Signed Binary'
-        inputs:
-          PathtoPublish: '$(Build.ArtifactStagingDirectory)\vcpkg-macos'
-          ArtifactName: 'Drop'
-  - job: rhel_build
-    displayName: 'glibc (RHEL) Build'
-    pool:
-      name: 'vcpkg-rhel-7-5'
-    steps:
-    - task: CmdLine@2
-      displayName: "Build vcpkg with CMake"
-      inputs:
-        failOnStderr: true
-        script: |
-          sudo yum install cmake3 devtoolset-9-toolchain
-          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" -B "$(Build.BinariesDirectory)"'
-          make -j 4 -C "$(Build.BinariesDirectory)"
-          zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-glibc.zip" "$(Build.BinariesDirectory)/vcpkg"
-    - task: PublishBuildArtifacts@1
-      displayName: "Publish Unsigned glibc Binary"
-      inputs:
-        ArtifactName: 'staging'
-        publishLocation: 'Container'
-  - job: muslc_build
-    displayName: 'muslc (Alpine) Build'
-    pool:
-      name: 'vcpkg-ubuntu-20-04-docker'
-    steps:
-    - task: CmdLine@2
-      displayName: "Build vcpkg in Alpine"
-      inputs:
-        failOnStderr: true
-        script: |
-          docker build -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile .
-          docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh
-          docker cp vcpkg-muslc-container:/build/vcpkg-muslc.zip "$(Build.ArtifactStagingDirectory)/vcpkg-muslc.zip"
-          docker container rm vcpkg-muslc-container
-          docker image rm vcpkg-muslc-image
-    - task: PublishBuildArtifacts@1
-      displayName: "Publish Unsigned muslc Binary"
-      inputs:
-        ArtifactName: 'staging'
-        publishLocation: 'Container'
