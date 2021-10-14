@@ -48,7 +48,7 @@ namespace vcpkg::msg
             static constexpr void check_format_args(const Tags&...) noexcept { }
         };
 
-        LocalizedString internal_vformat(int index, fmt::format_args args);
+        LocalizedString internal_vformat(::size_t index, fmt::format_args args);
 
         template<class... Args>
         MessageCheckFormatArgs<Args...> make_message_check_format_args(const Args&... args);
