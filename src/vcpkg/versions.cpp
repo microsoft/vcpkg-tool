@@ -22,6 +22,27 @@ namespace vcpkg::Versions
             }
             return res;
         }
+
+        DECLARE_AND_REGISTER_MESSAGE(
+            VersionsInvalidRelaxedString,
+            (msg::value),
+            "",
+            "Error: String `{value}` must only contain dot-separated numeric values without leading zeroes.");
+        DECLARE_AND_REGISTER_MESSAGE(VersionsInvalidSemverString,
+                                     (msg::value),
+                                     "",
+                                     "Error: String `{value}` is not a valid Semantic Version string; see "
+                                     "https://semver.org for more information");
+        DECLARE_AND_REGISTER_MESSAGE(VersionsNotMajorMinorPatch,
+                                     (msg::value),
+                                     "",
+                                     "Error: String `{value}` does not follow the required MAJOR.MINOR.PATCH format.");
+        DECLARE_AND_REGISTER_MESSAGE(
+            VersionsInvalidDate,
+            (msg::value),
+            "",
+            "Error: String `{value}` is not a valid date version. Dates must follow the format YYYY-MM-DD and "
+            "disambiguators must be dot-separated non-negative integer values without leading zeroes.");
     }
 
     VersionSpec::VersionSpec(const std::string& port_name, const VersionT& version)
@@ -50,14 +71,13 @@ namespace vcpkg::Versions
         return hash<string>()(key.port_name) ^ (hash<string>()(key.version.to_string()) >> 1);
     }
 
-    ExpectedS<RelaxedVersion> RelaxedVersion::from_string(const std::string& str)
+    ExpectedL<RelaxedVersion> RelaxedVersion::from_string(const std::string& str)
     {
         std::regex relaxed_scheme_match("^(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))*");
 
         if (!std::regex_match(str, relaxed_scheme_match))
         {
-            return Strings::format(
-                "Error: String `%s` must only contain dot-separated numeric values without leading zeroes.", str);
+            return msg::format(msgVersionsInvalidRelaxedString, msg::value = str);
         }
 
         return RelaxedVersion{str, Util::fmap(Strings::split(str, '.'), [](auto&& strval) -> uint64_t {
@@ -65,7 +85,7 @@ namespace vcpkg::Versions
                               })};
     }
 
-    ExpectedS<SemanticVersion> SemanticVersion::from_string(const std::string& str)
+    ExpectedL<SemanticVersion> SemanticVersion::from_string(const std::string& str)
     {
         // Suggested regex by semver.org
         std::regex semver_scheme_match("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)"
@@ -75,8 +95,7 @@ namespace vcpkg::Versions
 
         if (!std::regex_match(str, semver_scheme_match))
         {
-            return Strings::format(
-                "Error: String `%s` is not a valid Semantic Version string, consult https://semver.org", str);
+            return msg::format(msgVersionsInvalidSemverString, msg::value = str);
         }
 
         SemanticVersion ret;
@@ -100,8 +119,7 @@ namespace vcpkg::Versions
         std::regex version_match("(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*)){2}");
         if (!std::regex_match(ret.version_string, version_match))
         {
-            return Strings::format("Error: String `%s` does not follow the required MAJOR.MINOR.PATCH format.",
-                                   ret.version_string);
+            return msg::format(msgVersionsNotMajorMinorPatch, msg::value = ret.version_string);
         }
 
         auto parts = Strings::split(ret.version_string, '.');
@@ -111,15 +129,12 @@ namespace vcpkg::Versions
         return ret;
     }
 
-    ExpectedS<DateVersion> DateVersion::from_string(const std::string& str)
+    ExpectedL<DateVersion> DateVersion::from_string(const std::string& str)
     {
         std::regex date_scheme_match("([0-9]{4}-[0-9]{2}-[0-9]{2})(\\.(0|[1-9][0-9]*))*");
         if (!std::regex_match(str, date_scheme_match))
         {
-            return Strings::format("Error: String `%s` is not a valid date version."
-                                   "Date section must follow the format YYYY-MM-DD and disambiguators must be "
-                                   "dot-separated positive integer values without leading zeroes.",
-                                   str);
+            return msg::format(msgVersionsInvalidDate, msg::value = str);
         }
 
         DateVersion ret;

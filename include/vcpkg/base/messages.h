@@ -101,6 +101,11 @@ namespace vcpkg::msg
         }
     };
 
+    inline LocalizedString localized_from_error_code(const std::error_code& ec)
+    {
+        return LocalizedString::from_string_unchecked(ec.message());
+    }
+
     struct LocalizedStringMapLess
     {
         using is_transparent = void;

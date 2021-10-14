@@ -98,6 +98,16 @@ T unwrap(ExpectedS<T> e)
     }
     return std::move(*e.get());
 }
+template<class T>
+T unwrap(ExpectedL<T> e)
+{
+    if (!e.has_value())
+    {
+        INFO(e.error().data());
+        REQUIRE(false);
+    }
+    return std::move(*e.get());
+}
 
 static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
                                    StringLiteral name,

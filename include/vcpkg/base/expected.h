@@ -10,6 +10,8 @@
 
 namespace vcpkg
 {
+    DECLARE_MESSAGE(ExpectedValueWasError, (), "", "value was error");
+
     template<class Err>
     struct ErrorHolder
     {
@@ -24,7 +26,7 @@ namespace vcpkg
         const Err& error() const { return m_err; }
         Err& error() { return m_err; }
 
-        StringLiteral to_string() const { return "value was error"; }
+        msg::LocalizedString format() const { return msg::format(msgExpectedValueWasError); }
 
     private:
         bool m_is_error;
@@ -45,11 +47,31 @@ namespace vcpkg
         const std::string& error() const { return m_err; }
         std::string& error() { return m_err; }
 
-        const std::string& to_string() const { return m_err; }
+        // this is a transitional implementation - this will be removed before final
+        msg::LocalizedString format() const { return msg::LocalizedString::from_string_unchecked(std::string(m_err)); }
 
     private:
         bool m_is_error;
         std::string m_err;
+    };
+
+    template<>
+    struct ErrorHolder<msg::LocalizedString>
+    {
+        ErrorHolder() : m_is_error(false) { }
+        ErrorHolder(const msg::LocalizedString& err) : m_is_error(true), m_err(err) { }
+        ErrorHolder(msg::LocalizedString&& err) : m_is_error(true), m_err(std::move(err)) { }
+
+        bool has_error() const { return m_is_error; }
+
+        const msg::LocalizedString& error() const { return m_err; }
+        msg::LocalizedString& error() { return m_err; }
+
+        msg::LocalizedString format() const { return m_err; }
+
+    private:
+        bool m_is_error;
+        msg::LocalizedString m_err;
     };
 
     template<>
@@ -63,7 +85,7 @@ namespace vcpkg
         const std::error_code& error() const { return m_err; }
         std::error_code& error() { return m_err; }
 
-        std::string to_string() const { return m_err.message(); }
+        msg::LocalizedString format() const { return msg::localized_from_error_code(m_err); }
 
     private:
         std::error_code m_err;
@@ -125,6 +147,37 @@ namespace vcpkg
         ExpectedT(ExpectedT&&) = default;
         ExpectedT& operator=(const ExpectedT&) = default;
         ExpectedT& operator=(ExpectedT&&) = default;
+
+        // TRANSITIONAL: localization
+        // these two functions exist as a stop-gap; they will be removed once ExpectedS is removed.
+        template<class S2>
+        operator ExpectedT<T, S2>() const&
+        {
+            static_assert(std::is_same<S, msg::LocalizedString>::value && std::is_same<S2, std::string>::value,
+                          "This conversion function only exists to convert ExpectedL to ExpectedS");
+            if (has_value())
+            {
+                return {*get(), expected_left_tag};
+            }
+            else
+            {
+                return {error().data(), expected_right_tag};
+            }
+        }
+        template<class S2>
+        operator ExpectedT<T, S2>() &&
+        {
+            static_assert(std::is_same<S, msg::LocalizedString>::value && std::is_same<S2, std::string>::value,
+                          "This conversion function only exists to convert ExpectedL to ExpectedS");
+            if (has_value())
+            {
+                return std::move(*get());
+            }
+            else
+            {
+                return error().data();
+            }
+        }
 
         explicit constexpr operator bool() const noexcept { return !m_s.has_error(); }
         constexpr bool has_value() const noexcept { return !m_s.has_error(); }
@@ -227,7 +280,7 @@ namespace vcpkg
         {
             if (m_s.has_error())
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, Strings::concat(m_s.to_string(), '\n'));
+                msg::print(append_newline(m_s.format()));
                 Checks::exit_fail(line_info);
             }
         }
@@ -239,6 +292,11 @@ namespace vcpkg
     template<class T>
     using Expected = ExpectedT<T, std::error_code>;
 
+    // TRANSITIONAL: localization
+    // this will be slowly removed in favor of ExpectedL
     template<class T>
     using ExpectedS = ExpectedT<T, std::string>;
+
+    template<class T>
+    using ExpectedL = ExpectedT<T, msg::LocalizedString>;
 }

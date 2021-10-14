@@ -49,7 +49,7 @@ namespace vcpkg::Versions
         std::string original_string;
         std::vector<uint64_t> version;
 
-        static ExpectedS<RelaxedVersion> from_string(const std::string& str);
+        static ExpectedL<RelaxedVersion> from_string(const std::string& str);
     };
 
     struct SemanticVersion
@@ -61,7 +61,7 @@ namespace vcpkg::Versions
         std::vector<uint64_t> version;
         std::vector<std::string> identifiers;
 
-        static ExpectedS<SemanticVersion> from_string(const std::string& str);
+        static ExpectedL<SemanticVersion> from_string(const std::string& str);
     };
 
     struct DateVersion
@@ -72,7 +72,7 @@ namespace vcpkg::Versions
 
         std::vector<uint64_t> identifiers;
 
-        static ExpectedS<DateVersion> from_string(const std::string& str);
+        static ExpectedL<DateVersion> from_string(const std::string& str);
     };
 
     VerComp compare(const std::string& a, const std::string& b, Scheme scheme);
