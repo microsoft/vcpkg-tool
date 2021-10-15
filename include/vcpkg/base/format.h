@@ -2,6 +2,9 @@
 
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/stringview.h>
+#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/zstringview.h>
 
 VCPKG_MSVC_WARNING(push)
 // notes:
@@ -41,6 +44,37 @@ namespace fmt
         auto format(const vcpkg::LineInfo& li, FormatContext& ctx) -> decltype(ctx.out())
         {
             return format_to(ctx.out(), "{}({})", li.file_name, li.line_number);
+        }
+    };
+
+    template<>
+    struct formatter<vcpkg::StringView> : formatter<string_view>
+    {
+        // parse is inherited from formatter<string_view>.
+        template<class FormatContext>
+        auto format(vcpkg::StringView sv, FormatContext& ctx)
+        {
+            return formatter<string_view>::format(string_view(sv.data(), sv.size()), ctx);
+        }
+    };
+
+    template<>
+    struct formatter<vcpkg::ZStringView> : formatter<string_view>
+    {
+        template<class FormatContext>
+        auto format(vcpkg::ZStringView s, FormatContext& ctx) -> decltype(ctx.out())
+        {
+            return formatter<string_view>::format(string_view(s.data(), s.size()), ctx);
+        }
+    };
+
+    template<>
+    struct formatter<vcpkg::StringLiteral> : formatter<string_view>
+    {
+        template<class FormatContext>
+        auto format(vcpkg::StringLiteral s, FormatContext& ctx) -> decltype(ctx.out())
+        {
+            return formatter<string_view>::format(string_view(s.data(), s.size()), ctx);
         }
     };
 

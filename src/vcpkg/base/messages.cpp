@@ -16,12 +16,12 @@ namespace vcpkg::msg
         return GetConsoleMode(h, &mode);
     }
 
-    static void check_write(BOOL success)
+    static void check_stdout_operation(BOOL success, const wchar_t* err)
     {
         if (!success)
         {
-            ::fwprintf(stderr, L"[DEBUG] Failed to write to stdout: %lu\n", GetLastError());
-            std::abort();
+            ::fwprintf(stderr, L"[DEBUG] Failed to %ls: %lu\n", err, GetLastError());
+            ::abort();
         }
     }
     static DWORD size_to_write(::size_t size)
@@ -44,9 +44,14 @@ namespace vcpkg::msg
             if (c != Color::none)
             {
                 CONSOLE_SCREEN_BUFFER_INFO console_screen_buffer_info{};
-                ::GetConsoleScreenBufferInfo(stdout_handle, &console_screen_buffer_info);
+                check_stdout_operation(
+                    ::GetConsoleScreenBufferInfo(stdout_handle, &console_screen_buffer_info),
+                    L"get screen buffer info");
                 original_color = console_screen_buffer_info.wAttributes;
-                ::SetConsoleTextAttribute(stdout_handle, static_cast<WORD>(c) | (original_color & 0xF0));
+                
+                check_stdout_operation(
+                    ::SetConsoleTextAttribute(stdout_handle, static_cast<WORD>(c) | (original_color & 0xF0))
+                    L"set text attribute");
             }
 
             auto as_wstr = Strings::to_utf16(sv);
@@ -56,15 +61,19 @@ namespace vcpkg::msg
 
             while (size != 0)
             {
-                DWORD written = 0;
-                check_write(::WriteConsoleW(stdout_handle, pointer, size_to_write(size), &written, nullptr));
+                DWORD written;
+                check_stdout_operation(
+                    ::WriteConsoleW(stdout_handle, pointer, size_to_write(size), &written, nullptr) && written != 0,
+                    L"write to stdout");
                 pointer += written;
                 size -= written;
             }
 
             if (c != Color::none)
             {
-                ::SetConsoleTextAttribute(stdout_handle, original_color);
+                check_stdout_operation(
+                    ::SetConsoleTextAttribute(stdout_handle, original_color)
+                    L"set text attribute back");
             }
         }
         else
@@ -75,7 +84,9 @@ namespace vcpkg::msg
             while (size != 0)
             {
                 DWORD written = 0;
-                check_write(::WriteFile(stdout_handle, pointer, size_to_write(size), &written, nullptr));
+                check_stdout_operation(
+                    ::WriteFile(stdout_handle, pointer, size_to_write(size), &written, nullptr),
+                    L"write to stdout as a file");
                 pointer += written;
                 size -= written;
             }
@@ -271,10 +282,8 @@ namespace vcpkg::msg
         {
             return m.default_strings[index];
         }
-        else
-        {
-            return localized;
-        }
+
+        return localized;
     }
     StringView detail::get_message_name(::size_t index)
     {

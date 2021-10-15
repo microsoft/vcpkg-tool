@@ -95,25 +95,12 @@ namespace vcpkg::msg
         // this allows us to convert to `std::string` in the future without changing All The Code
         friend LocalizedString& append_newline(LocalizedString&);
         friend LocalizedString&& append_newline(LocalizedString&& self) { return std::move(append_newline(self)); }
-        friend LocalizedString& appendnl(LocalizedString& self, const LocalizedString& to_append)
-        {
-            return append_newline(self.append(to_append));
-        }
     };
 
     inline LocalizedString localized_from_error_code(const std::error_code& ec)
     {
         return LocalizedString::from_string_unchecked(ec.message());
     }
-
-    struct LocalizedStringMapLess
-    {
-        using is_transparent = void;
-        bool operator()(const LocalizedString& lhs, const LocalizedString& rhs) const
-        {
-            return lhs.data() < rhs.data();
-        }
-    };
 
     void write_unlocalized_text_to_stdout(Color c, StringView sv);
 
