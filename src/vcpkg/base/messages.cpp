@@ -248,8 +248,19 @@ namespace vcpkg::msg
     StringView detail::get_format_string(::size_t index)
     {
         Messages& m = messages();
-        Checks::check_exit(VCPKG_LINE_INFO, m.localized_strings.size() == m.default_strings.size());
-        Checks::check_exit(VCPKG_LINE_INFO, index < m.default_strings.size());
+        // these use this instead of Checks::check_exit to avoid infinite recursion
+        if (m.localized_strings.size() != m.default_strings.size())
+        {
+            write_unlocalized_text_to_stdout(Color::error, 
+                fmt::format("Internal error: localized_strings.size() ({}) != default_strings.size() ({})\n", m.localized_strings.size(), m.default_strings.size()));
+            std::abort();
+        }
+        if (index >= m.default_strings.size())
+        {
+            write_unlocalized_text_to_stdout(Color::error, 
+                fmt::format("Internal error: index ({}) >= default_strings.size() ({})\n", index, m.default_strings.size()));
+            std::abort();
+        }
         const auto& localized = m.localized_strings[index];
         if (localized.empty())
         {
