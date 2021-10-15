@@ -24,12 +24,7 @@ namespace vcpkg::msg
             std::abort();
         }
     }
-    static DWORD size_to_write(::size_t size)
-    {
-        return size > static_cast<DWORD>(-1) // DWORD_MAX
-                   ? static_cast<DWORD>(-1)
-                   : static_cast<DWORD>(size);
-    }
+    static DWORD size_to_write(::size_t size) { return size > MAXDWORD ? MAXDWORD : static_cast<DWORD>(size); }
 
     void write_unlocalized_text_to_stdout(Color c, StringView sv)
     {
