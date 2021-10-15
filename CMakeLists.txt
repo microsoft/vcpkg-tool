@@ -17,7 +17,6 @@ endif()
 include(CMakeDependentOption)
 
 option(BUILD_TESTING "Option for enabling testing" ON)
-option(VCPKG_ALLOW_APPLE_CLANG "Option for allowing apple clang, even versions that we don't know will work" OFF)
 option(VCPKG_DEVELOPMENT_WARNINGS "Option for turning on all warnings" ON)
 option(VCPKG_WARNINGS_AS_ERRORS "Set warnings to be errors" OFF)
 option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
