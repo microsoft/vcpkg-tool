@@ -890,7 +890,7 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_no_absolute_paths_in(const Filesystem& fs, const Path& dir, Span<Path> absolute_paths)
     {
-        static constexpr std::array<StringLiteral, 11> extensions = {
+        static constexpr StringLiteral extensions[] = {
             "h", "hpp", "hxx", "py", "sh", "cmake", "pc", "la", "yaml", "cfg", "conf"};
         std::vector<std::pair<Path, std::string>> files_and_contents;
         for (auto& path : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
@@ -938,7 +938,7 @@ namespace vcpkg::PostBuildLint
                    "'):",
                    result,
                    "\n"
-                   "There must be no absolute path, only relative ones.\n\n");
+                   "There should be no absolute paths in the installed package, only relative ones.\n\n");
             return LintStatus::ERROR_DETECTED;
         }
         return LintStatus::SUCCESS;
