@@ -143,10 +143,10 @@ namespace vcpkg::Util
     }
 
     template<class Container, class V>
-    auto contains(Container&& cont, V&& v)
+    auto contains(const Container& cont, const V& v)
     {
         using std::end;
-        return find(cont, std::forward<V>(v)) != end(cont);
+        return Utils::find(cont, v) != end(cont);
     }
 
     template<class Container, class Pred>
