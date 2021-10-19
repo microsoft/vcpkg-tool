@@ -557,7 +557,7 @@ namespace vcpkg::PostBuildLint
     {
         std::vector<FileAndArch> binaries_with_invalid_architecture;
 #if defined(_WIN32)
-        const auto checkLib = [&](const Path& file) {
+        const auto check_lib = [&](const Path& file) {
             Checks::check_exit(VCPKG_LINE_INFO,
                                Strings::case_insensitive_ascii_equals(file.extension(), ".lib"),
                                "The file extension was not .lib: %s",
@@ -579,7 +579,7 @@ namespace vcpkg::PostBuildLint
         };
 #elif defined(__APPLE__)
         const auto requested_arch = expected_architecture == "x64" ? "x86_64" : expected_architecture;
-        const auto checkLib = [&](const Path& file) {
+        const auto check_lib = [&](const Path& file) {
             auto cmd_line = Command("lipo").string_arg("-archs").path_arg(file);
             ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
             Checks::check_exit(
@@ -590,10 +590,10 @@ namespace vcpkg::PostBuildLint
             }
         };
 #else
-        const auto checkLib = [&](const Path&) {};
+        const auto chec_lib = [&](const Path&) {};
 #endif
         for (const Path& file : files)
-            checkLib(file);
+            check_lib(file);
 
         if (!binaries_with_invalid_architecture.empty())
         {
@@ -1025,7 +1025,7 @@ namespace vcpkg::PostBuildLint
         const auto debug_bin_dir = package_dir / "debug" / "bin";
         const auto release_bin_dir = package_dir / "bin";
 
-        const auto libFilter = [&pre_build_info]() {
+        const auto lib_filter = [&pre_build_info]() {
             if (pre_build_info.cmake_system_name.empty() || pre_build_info.cmake_system_name == "Windows" ||
                 pre_build_info.cmake_system_name == "WindowsStore")
             {
@@ -1036,9 +1036,9 @@ namespace vcpkg::PostBuildLint
         }();
 
         std::vector<Path> debug_libs = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(debug_libs, libFilter);
+        Util::erase_remove_if(debug_libs, lib_filter);
         std::vector<Path> release_libs = fs.get_regular_files_recursive(release_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(release_libs, libFilter);
+        Util::erase_remove_if(release_libs, lib_filter);
 
         if (!pre_build_info.build_type && !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
             error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs);
