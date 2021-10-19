@@ -27,51 +27,6 @@ jobs:
         arguments: '-Triplet x64-linux -WorkingRoot work -VcpkgRoot $(VCPKG_ROOT)'
         workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
         pwsh: true
-- job: linux_gcc_6
-  displayName: 'Ubuntu 18.04 with GCC 6'
-  pool:
-    name: 'vcpkg-gcc-6'
-  variables:
-    - name: 'VCPKG_ROOT'
-      value: $(Build.SourcesDirectory)/vcpkg-root
-  steps:
-    - bash: |
-        git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT" -n
-        git -C "$VCPKG_ROOT" checkout $VCPKG_REPO_COMMIT_SHA
-      displayName: "Clone vcpkg repo to serve as root"
-    - bash: |
-        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=OFF -DVCPKG_WARNINGS_AS_ERRORS=OFF -DVCPKG_BUILD_FUZZING=ON -DCMAKE_CXX_COMPILER=g++-6 -B build.amd64.debug
-        make -j 2 -C build.amd64.debug
-      displayName: "Build vcpkg with CMake"
-      failOnStderr: true
-    - bash: build.amd64.debug/vcpkg-test
-      displayName: 'Run vcpkg tests'
-- job: linux_gcc_7
-  displayName: 'Ubuntu 18.04 with GCC 7'
-  pool:
-    vmImage: 'ubuntu-18.04'
-  variables:
-    - name: 'VCPKG_ROOT'
-      value: $(Build.SourcesDirectory)/vcpkg-root
-  steps:
-    - bash: |
-        git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT" -n
-        git -C "$VCPKG_ROOT" checkout $VCPKG_REPO_COMMIT_SHA
-      displayName: "Clone vcpkg repo to serve as root"
-    - bash: |
-        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_CXX_COMPILER=g++-7 -B build.amd64.debug
-        make -j 2 -C build.amd64.debug
-      displayName: "Build vcpkg with CMake"
-      failOnStderr: true
-    - bash: build.amd64.debug/vcpkg-test
-      displayName: 'Run vcpkg tests'
-    - task: PowerShell@2
-      displayName: 'Run vcpkg end-to-end tests'
-      inputs:
-        filePath: 'azure-pipelines/end-to-end-tests.ps1'
-        arguments: '-Triplet x64-linux -WorkingRoot work -VcpkgRoot $(VCPKG_ROOT)'
-        workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
-        pwsh: true
 - job: osx
   displayName: 'OSX'
   pool:
@@ -85,7 +40,7 @@ jobs:
         git -C "$VCPKG_ROOT" checkout $VCPKG_REPO_COMMIT_SHA
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
-        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
+        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true

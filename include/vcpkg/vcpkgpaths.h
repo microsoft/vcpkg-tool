@@ -135,6 +135,7 @@ namespace vcpkg
         ExpectedS<Path> git_checkout_baseline(StringView commit_sha) const;
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedS<std::string> git_show(const std::string& treeish, const Path& dot_git_dir) const;
+        ExpectedS<std::string> git_describe_head() const;
 
         const Downloads::DownloadManager& get_download_manager() const;
 
