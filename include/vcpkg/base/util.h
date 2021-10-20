@@ -146,7 +146,7 @@ namespace vcpkg::Util
     auto contains(const Container& cont, const V& v)
     {
         using std::end;
-        return Utils::find(cont, v) != end(cont);
+        return Util::find(cont, v) != end(cont);
     }
 
     template<class Container, class Pred>
