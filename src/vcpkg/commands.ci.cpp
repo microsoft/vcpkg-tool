@@ -300,8 +300,8 @@ namespace vcpkg::Commands::CI
     {
         std::set<std::string> exclusions;
         std::set<std::string> host_exclusions;
-        Triplet host_triplet;
         Triplet target_triplet;
+        Triplet host_triplet;
 
         bool operator()(const PackageSpec& spec) const
         {
