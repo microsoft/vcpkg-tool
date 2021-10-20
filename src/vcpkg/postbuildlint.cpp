@@ -590,7 +590,7 @@ namespace vcpkg::PostBuildLint
             }
         };
 #else
-        const auto chec_lib = [&](const Path&) {};
+        const auto check_lib = [&](const Path&) {};
 #endif
         for (const Path& file : files)
             check_lib(file);
