@@ -786,10 +786,11 @@ namespace
 
     void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point, struct stat& base_lstat)
     {
-        // ensure that the directory is writable
-        if ((base_lstat.st_mode & S_IWUSR) != S_IWUSR)
+        // ensure that the directory is writable and executable
+        // NOTE: the execute bit on directories is needed to allow opening files inside of that directory
+        if ((base_lstat.st_mode & (S_IWUSR | S_IXUSR)) != (S_IWUSR | S_IXUSR))
         {
-            if (::chmod(base.c_str(), base_lstat.st_mode | S_IWUSR) != 0)
+            if (::chmod(base.c_str(), base_lstat.st_mode | S_IWUSR | S_IXUSR) != 0)
             {
                 ec.assign(errno, std::generic_category());
                 mark_recursive_error(base, ec, failure_point);
