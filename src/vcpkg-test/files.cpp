@@ -134,15 +134,15 @@ namespace
             }
 
 #if !defined(_WIN32)
-                if (urbg() & 1u)
+            if (urbg() & 1u)
+            {
+                const auto chmod_result = ::chmod(base.c_str(), 0444);
+                if (chmod_result != 0)
                 {
-                    const auto chmod_result = ::chmod(base.c_str(), 0444);
-                    if (chmod_result != 0)
-                    {
-                        const auto failure_message = std::generic_category().message(errno);
-                        FAIL("chmod failed with " << failure_message);
-                    }
+                    const auto failure_message = std::generic_category().message(errno);
+                    FAIL("chmod failed with " << failure_message);
                 }
+            }
 #endif // ^^^ !_WIN32
         }
 
