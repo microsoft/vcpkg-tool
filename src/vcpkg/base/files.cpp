@@ -724,7 +724,10 @@ namespace
         ec.assign(errno, std::generic_category());
     }
 
-    void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point);
+    void vcpkg_remove_all_directory(const Path& base,
+                                    std::error_code& ec,
+                                    Path& failure_point,
+                                    struct stat& base_lstat);
 
     void vcpkg_remove_all(const Path& base,
                           std::error_code& ec,
@@ -749,13 +752,29 @@ namespace
 
             if (S_ISDIR(s.st_mode))
             {
-                vcpkg_remove_all_directory(base, ec, failure_point);
+                vcpkg_remove_all_directory(base, ec, failure_point, s);
                 return;
             }
         }
         else if (base_dtype == PosixDType::Directory)
         {
-            vcpkg_remove_all_directory(base, ec, failure_point);
+            // establish `base` being writable before calling vcpkg_remove_all_directory
+            if (::lstat(base.c_str(), &s) != 0)
+            {
+                // no ENOENT check here since we were supposed to be visiting a directory
+                mark_recursive_error(base, ec, failure_point);
+                return;
+            }
+
+            if (!S_ISDIR(s.st_mode))
+            {
+                // if it isn't still a directory something is racy
+                ec = std::make_error_code(std::errc::device_or_resource_busy);
+                mark_recursive_error(base, ec, failure_point);
+                return;
+            }
+
+            vcpkg_remove_all_directory(base, ec, failure_point, s);
             return;
         }
 
@@ -765,9 +784,20 @@ namespace
         }
     }
 
-    void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point)
+    void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point, struct stat& base_lstat)
     {
-        // it was a directory, so delete everything inside
+        // ensure that the directory is writable
+        if ((base_lstat.st_mode & S_IWUSR) != S_IWUSR)
+        {
+            if (chmod(base.c_str(), base_lstat.st_mode | S_IWUSR) != 0)
+            {
+                ec.assign(errno, std::generic_category());
+                mark_recursive_error(base, ec, failure_point);
+                return;
+            }
+        }
+
+        // delete everything inside
         ReadDirOp op{base, ec};
         if (ec)
         {
@@ -787,7 +817,7 @@ namespace
                     return;
                 }
 
-                // no more entries left, fall down to remove below
+                // no more entries left, fall down to rmdir below
                 break;
             }
 
@@ -2315,16 +2345,23 @@ namespace vcpkg
 
             return result;
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            if (::remove(target.c_str()) == 0 || errno == ENOENT)
+            if (::remove(target.c_str()) == 0)
             {
                 ec.clear();
                 return true;
             }
+
+            const auto remove_errno = errno;
+            if (remove_errno == ENOENT)
+            {
+                ec.clear();
+            }
             else
             {
-                ec.assign(errno, std::generic_category());
-                return false;
+                ec.assign(remove_errno, std::generic_category());
             }
+
+            return false;
 #endif // _WIN32
         }
         virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) override

@@ -130,6 +130,19 @@ namespace
             CHECK_EC_ON_FILE(base, ec);
             for (int i = 0; i < 5; ++i)
             {
+#if !defined(_WIN32)
+                if (urbg() & 1u)
+                {
+                    const auto chmod_result = ::chmod(base.c_str(), 0744);
+                    if (chmod_result != 0)
+                    {
+                        const auto failure_message = std::generic_category().message(errno);
+                        FAIL("chmod failed with " << failure_message);
+                    }
+                }
+
+#endif // ^^^ !_WIN32
+
                 create_directory_tree(urbg, fs, base / get_random_filename(urbg), remaining_depth - 1);
             }
         }
