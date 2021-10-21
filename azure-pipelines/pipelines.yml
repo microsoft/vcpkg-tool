@@ -37,10 +37,10 @@ jobs:
         cd build.amd64.debug
         gcovr --xml --output "$(Build.SourcesDirectory)/coverage/coverage.xml" \
           --root "$(Build.SourcesDirectory)" \
-          --exclude 'CMakeCXXCompilerId.cpp$' \
-          --exclude 'include/catch2/' \
-          --exclude '/vcpkg-fuzz/' \
-          --exclude '/vcpkg-test/' \
+          --exclude '(.+/)?CMakeCXXCompilerId.cpp$' \
+          --exclude-directory '(.+/)?catch2$' \
+          --exclude-directory '(.+/)?vcpkg-fuzz$' \
+          --exclude-directory '(.+/)?vcpkg-test$' \
           --print-summary \
           .
       displayName: "Analyse test coverage"
