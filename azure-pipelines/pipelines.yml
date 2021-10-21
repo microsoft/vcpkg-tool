@@ -37,12 +37,12 @@ jobs:
         cd build.amd64.debug
         gcovr --xml --output "$(Build.SourcesDirectory)/coverage/coverage.xml" \
           --root "$(Build.SourcesDirectory)" \
-          --exclude '(.+/)?CMakeCXXCompilerId.cpp$' \
           --exclude-directory '(.+/)?catch2$' \
           --exclude-directory '(.+/)?vcpkg-fuzz$' \
           --exclude-directory '(.+/)?vcpkg-test$' \
           --print-summary \
-          .
+          "$(Build.SourcesDirectory)/build.amd64.debug/CMakeFiles/vcpkglib.dir" \
+          "$(Build.SourcesDirectory)/build.amd64.debug/CMakeFiles/vcpkg.dir"
       displayName: "Analyse test coverage"
       failOnStderr: true
     - task: PublishCodeCoverageResults@1
