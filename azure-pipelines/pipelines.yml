@@ -29,7 +29,6 @@ jobs:
         workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
         pwsh: true
     - bash: |
-        sudo apt-get install libxml2-utils python-pip
         sudo pip install gcovr
       displayName: "Install coverage tools"
     - bash: |
