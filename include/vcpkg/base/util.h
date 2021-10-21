@@ -183,6 +183,14 @@ namespace vcpkg::Util
     }
 
     template<class Range>
+    auto mismatch(const Range& rng1, const Range& rng2)
+    {
+        using std::begin;
+        using std::end;
+        return std::mismatch(begin(rng1), end(rng1), begin(rng2), end(rng2));
+    }
+
+    template<class Range>
     Range&& sort_unique_erase(Range&& cont)
     {
         using std::begin;

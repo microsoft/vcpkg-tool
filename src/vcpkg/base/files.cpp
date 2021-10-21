@@ -1684,7 +1684,7 @@ namespace vcpkg
 
         return result;
     }
-    Path Filesystem::relative(LineInfo li, const Path& file, const Path& base) const
+    Path Filesystem::relative(const Path& file, const Path& base, LineInfo li) const
     {
         std::error_code ec;
         const auto result = this->relative(file, base, ec);
@@ -2907,7 +2907,37 @@ namespace vcpkg
 
         virtual Path relative(const Path& file, const Path& base, std::error_code& ec) const override
         {
+#if defined(_WIN32)
             return from_stdfs_path(stdfs::relative(to_stdfs_path(file), to_stdfs_path(base), ec));
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+            Path abs_file = almost_canonical(file, ec);
+            if (ec) return {};
+            Path abs_base = almost_canonical(base, ec);
+            if (ec) return {};
+            if (abs_base.native().back() != '/')
+            {
+                abs_base += "/";
+            }
+            auto mismatch = Util::mismatch(abs_file.native(), abs_base.native());
+            if (mismatch.first == abs_file.native().end() && mismatch.second == abs_base.native().end())
+                return "."; // no mismatch
+
+            // find common base
+            while (*(mismatch.first - 1) != '/' || *(mismatch.second - 1) != '/')
+            {
+                mismatch.first--;
+                mismatch.second--;
+            }
+            Path relative;
+            // from abs_base to common base
+            for (; mismatch.second != abs_base.native().end(); ++mismatch.second)
+            {
+                if (*mismatch.second == '/') relative += "../";
+            }
+            // from common base to abd_file
+            relative += StringView(&*(mismatch.first), &*abs_file.native().end());
+            return relative;
+#endif // ^^^ !_WIN32
         }
 
         virtual Path almost_canonical(const Path& target, std::error_code& ec) const override

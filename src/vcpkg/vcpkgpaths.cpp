@@ -776,7 +776,7 @@ namespace vcpkg
                                              bool amend) const
     {
         for (auto& path : files)
-            path = get_filesystem().relative(VCPKG_LINE_INFO, path, dot_git_dir.parent_path());
+            path = get_filesystem().relative(path, dot_git_dir.parent_path(), VCPKG_LINE_INFO);
         Command add_cmd = git_cmd_builder(dot_git_dir, dot_git_dir.parent_path())
                               .string_arg("add")
                               .string_arg("--force")
