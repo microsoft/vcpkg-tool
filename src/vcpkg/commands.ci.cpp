@@ -63,8 +63,11 @@ namespace
             {
                 for (const Path& p : children)
                 {
-                    filesystem.copy_file(
-                        p, target_path / p.filename(), CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
+                    const auto relative_path = StringView(p.parent_path()).substr(source_path.native().size());
+                    filesystem.copy_file(p,
+                                         target_path / relative_path / p.filename(),
+                                         CopyOptions::overwrite_existing,
+                                         VCPKG_LINE_INFO);
                 }
             }
         }
