@@ -789,7 +789,7 @@ namespace
         // ensure that the directory is writable
         if ((base_lstat.st_mode & S_IWUSR) != S_IWUSR)
         {
-            if (chmod(base.c_str(), base_lstat.st_mode | S_IWUSR) != 0)
+            if (::chmod(base.c_str(), base_lstat.st_mode | S_IWUSR) != 0)
             {
                 ec.assign(errno, std::generic_category());
                 mark_recursive_error(base, ec, failure_point);
