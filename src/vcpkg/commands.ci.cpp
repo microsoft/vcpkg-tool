@@ -46,7 +46,7 @@ namespace
 
             auto& filesystem = paths.get_filesystem();
             const auto source_path = paths.build_dir(spec);
-            auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
+            auto children = filesystem.get_regular_files_recursive(source_path, IgnoreErrors{});
             Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
             const auto target_path = base_path / spec.name();
             (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
