@@ -11,6 +11,10 @@
 
 #include <vcpkg-test/util.h>
 
+#if !defined(_WIN32)
+#include <sys/stat.h>
+#endif // ^^^ !_WIN32
+
 using namespace vcpkg;
 using Test::base_temporary_directory;
 
@@ -29,13 +33,16 @@ namespace
 
     std::string get_random_filename(urbg_t& urbg) { return Strings::b32_encode(urbg()); }
 
-#if defined(_WIN32)
     bool is_valid_symlink_failure(const std::error_code& ec) noexcept
     {
+#if defined(_WIN32)
         // on Windows, creating symlinks requires admin rights, so we ignore such failures
         return ec == std::error_code(ERROR_PRIVILEGE_NOT_HELD, std::system_category());
+#else  // ^^^ _WIN32 // !_WIN32
+        (void)ec;
+        return false; // symlinks should always work on non-windows
+#endif // ^^^ !_WIN32
     }
-#endif // ^^^ _WIN32
 
     void create_directory_tree(urbg_t& urbg, Filesystem& fs, const Path& base, std::uint32_t remaining_depth = 5)
     {
@@ -125,6 +132,18 @@ namespace
             {
                 create_directory_tree(urbg, fs, base / get_random_filename(urbg), remaining_depth - 1);
             }
+
+#if !defined(_WIN32)
+            if (urbg() & 1u)
+            {
+                const auto chmod_result = ::chmod(base.c_str(), 0444);
+                if (chmod_result != 0)
+                {
+                    const auto failure_message = std::generic_category().message(errno);
+                    FAIL("chmod failed with " << failure_message);
+                }
+            }
+#endif // ^^^ !_WIN32
         }
 
         REQUIRE(exists(fs.symlink_status(base, ec)));
@@ -140,6 +159,57 @@ namespace
         CHECK_EC_ON_FILE(base_temporary_directory(), ec);
 
         return fs;
+    }
+
+    template<class Enumerator, class ExpectedGenerator>
+    void do_filesystem_enumeration_test(Enumerator&& enumerator, ExpectedGenerator&& generate_expected)
+    {
+        urbg_t urbg;
+
+        auto& fs = setup();
+
+        auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+        INFO("temp dir is: " << temp_dir.native());
+
+        const auto target_root = temp_dir / "target";
+
+        const auto target_file = target_root / "file.txt";
+        const auto target_symlink = target_root / "symlink-to-file.txt";
+        const auto target_directory = target_root / "some-directory";
+        const auto target_directory_symlink = target_root / "symlink-to-some-directory";
+
+        const auto target_inside_file = target_directory / "file2.txt";
+        const auto target_inside_symlink = target_directory / "symlink-to-file2.txt";
+        const auto target_inside_directory = target_directory / "some-inner-directory";
+        const auto target_inside_directory_symlink = target_directory / "symlink-to-some-inner-directory";
+
+        fs.create_directory(temp_dir, VCPKG_LINE_INFO);
+        fs.create_directory(target_root, VCPKG_LINE_INFO);
+        fs.create_directory(target_directory, VCPKG_LINE_INFO);
+        fs.create_directory(target_inside_directory, VCPKG_LINE_INFO);
+
+        fs.write_contents(target_file, "file", VCPKG_LINE_INFO);
+        fs.write_contents(target_inside_file, "file in directory", VCPKG_LINE_INFO);
+
+        std::error_code ec;
+        fs.create_symlink(target_file, target_symlink, ec);
+        if (ec)
+        {
+            REQUIRE(is_valid_symlink_failure(ec));
+        }
+        else
+        {
+            fs.create_symlink(target_inside_file, target_inside_symlink, VCPKG_LINE_INFO);
+            fs.create_directory_symlink(target_directory, target_directory_symlink, VCPKG_LINE_INFO);
+            fs.create_directory_symlink(target_inside_directory, target_inside_directory_symlink, VCPKG_LINE_INFO);
+
+            auto results = std::forward<Enumerator>(enumerator)(fs, target_root);
+            std::sort(results.begin(), results.end());
+            auto expected = std::forward<ExpectedGenerator>(generate_expected)(target_root);
+            REQUIRE(results == expected);
+        }
+
+        fs.remove_all(temp_dir, VCPKG_LINE_INFO);
     }
 }
 
@@ -499,6 +569,92 @@ TEST_CASE ("Path decomposition", "[filesystem][files]")
     test_path_decomposition("//server/a.ext", true, "a", ".ext");
 }
 
+static void set_readonly(const Path& target)
+{
+#if defined(_WIN32)
+    auto as_unicode = Strings::to_utf16(target.native());
+
+    const DWORD old_attributes = ::GetFileAttributesW(as_unicode.c_str());
+    if (old_attributes == INVALID_FILE_ATTRIBUTES)
+    {
+        throw std::runtime_error("failed to get existing attributes to set readonly");
+    }
+
+    const DWORD new_attributes = old_attributes | FILE_ATTRIBUTE_READONLY;
+    if (::SetFileAttributesW(as_unicode.c_str(), new_attributes) == 0)
+    {
+        throw std::runtime_error("failed to set readonly attributes");
+    }
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+    struct stat s;
+    if (::stat(target.c_str(), &s) != 0)
+    {
+        throw std::runtime_error("failed to get existing attributes to set readonly");
+    }
+
+    const mode_t all_write_bits = 0222;
+    const mode_t all_except_write_bits = ~all_write_bits;
+    const mode_t new_bits = s.st_mode & all_except_write_bits;
+    if (::chmod(target.c_str(), new_bits) != 0)
+    {
+        throw std::runtime_error("failed to set readonly attributes");
+    }
+#endif // ^^^ !_WIN32
+}
+
+TEST_CASE ("remove readonly", "[files]")
+{
+    urbg_t urbg;
+
+    auto& fs = setup();
+
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    INFO("temp dir is: " << temp_dir.native());
+
+    fs.create_directory(temp_dir, VCPKG_LINE_INFO);
+    const auto writable_dir = temp_dir / "writable_dir";
+    fs.create_directory(writable_dir, VCPKG_LINE_INFO);
+
+    const auto writable_dir_writable_file = writable_dir / "writable_file";
+    fs.write_contents(writable_dir_writable_file, "content", VCPKG_LINE_INFO);
+
+    const auto writable_dir_readonly_file = writable_dir / "readonly_file";
+    fs.write_contents(writable_dir_readonly_file, "content", VCPKG_LINE_INFO);
+    set_readonly(writable_dir_readonly_file);
+
+    CHECK(fs.remove(writable_dir_writable_file, VCPKG_LINE_INFO));
+    CHECK(fs.remove(writable_dir_readonly_file, VCPKG_LINE_INFO));
+
+    CHECK(fs.remove(writable_dir, VCPKG_LINE_INFO));
+
+#if defined(_WIN32)
+    // On Win32, FILE_ATTRIBUTE_READONLY on directories should be ignored by remove.
+    // We don't support resolving this problem on POSIX because in all the places where it
+    // would matter, vcpkg doesn't create directories without writable bits (for now).
+    const auto readonly_dir = temp_dir / "readonly_dir";
+    fs.create_directory(readonly_dir, VCPKG_LINE_INFO);
+
+    const auto readonly_dir_writable_file = readonly_dir / "writable_file";
+    fs.write_contents(readonly_dir_writable_file, "content", VCPKG_LINE_INFO);
+
+    const auto readonly_dir_readonly_file = readonly_dir / "readonly_file";
+    fs.write_contents(readonly_dir_readonly_file, "content", VCPKG_LINE_INFO);
+    set_readonly(readonly_dir_readonly_file);
+
+    set_readonly(readonly_dir);
+
+    CHECK(fs.remove(readonly_dir_writable_file, VCPKG_LINE_INFO));
+    CHECK(fs.remove(readonly_dir_readonly_file, VCPKG_LINE_INFO));
+
+    CHECK(fs.remove(readonly_dir, VCPKG_LINE_INFO));
+#endif // ^^^ _WIN32
+
+    CHECK(fs.remove(temp_dir, VCPKG_LINE_INFO));
+    std::error_code ec;
+    REQUIRE_FALSE(fs.exists(temp_dir, ec));
+    CHECK_EC_ON_FILE(temp_dir, ec);
+}
+
 TEST_CASE ("remove all", "[files]")
 {
     urbg_t urbg;
@@ -538,9 +694,7 @@ TEST_CASE ("remove all symlinks", "[files]")
     fs.create_directory_symlink(target_root, symlink_inside_dir / "symlink", ec);
     if (ec)
     {
-        // if we get not supported or permission denied, assume symlinks aren't supported
-        // on this system and the test is a no-op
-        REQUIRE((ec == std::errc::not_supported || ec == std::errc::permission_denied));
+        REQUIRE(is_valid_symlink_failure(ec));
     }
     else
     {
@@ -556,6 +710,204 @@ TEST_CASE ("remove all symlinks", "[files]")
         fs.remove_all(symlink_direct, VCPKG_LINE_INFO);
         REQUIRE(!fs.exists(symlink_direct, VCPKG_LINE_INFO));
         REQUIRE(fs.exists(target_root, VCPKG_LINE_INFO));
+    }
+
+    Path fp;
+    fs.remove_all(temp_dir, ec, fp);
+    CHECK_EC_ON_FILE(fp, ec);
+
+    REQUIRE_FALSE(fs.exists(temp_dir, ec));
+    CHECK_EC_ON_FILE(temp_dir, ec);
+}
+
+TEST_CASE ("get_files_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_files_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "file.txt",
+                root / "some-directory",
+                root / "some-directory" / "file2.txt",
+                root / "some-directory" / "some-inner-directory",
+                root / "some-directory" / "symlink-to-file2.txt",
+                root / "some-directory" / "symlink-to-some-inner-directory",
+                root / "symlink-to-file.txt",
+                root / "symlink-to-some-directory",
+            };
+        });
+}
+
+TEST_CASE ("get_files_non_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_files_non_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "file.txt",
+                root / "some-directory",
+                root / "symlink-to-file.txt",
+                root / "symlink-to-some-directory",
+            };
+        });
+}
+
+TEST_CASE ("get_directories_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_directories_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "some-directory",
+                root / "some-directory" / "some-inner-directory",
+                root / "some-directory" / "symlink-to-some-inner-directory",
+                root / "symlink-to-some-directory",
+            };
+        });
+}
+
+TEST_CASE ("get_directories_non_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_directories_non_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "some-directory",
+                root / "symlink-to-some-directory",
+            };
+        });
+}
+
+TEST_CASE ("get_regular_files_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_regular_files_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "file.txt",
+                root / "some-directory" / "file2.txt",
+                root / "some-directory" / "symlink-to-file2.txt",
+                root / "symlink-to-file.txt",
+            };
+        });
+}
+
+TEST_CASE ("get_regular_files_non_recursive_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) { return fs.get_regular_files_non_recursive(root, VCPKG_LINE_INFO); },
+        [](const Path& root) {
+            return std::vector<Path>{
+                root / "file.txt",
+                root / "symlink-to-file.txt",
+            };
+        });
+}
+
+TEST_CASE ("copy_file", "[files]")
+{
+    urbg_t urbg;
+
+    auto& fs = setup();
+
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    INFO("temp dir is: " << temp_dir.native());
+
+    fs.create_directory(temp_dir, VCPKG_LINE_INFO);
+    const auto existing_from = temp_dir / "a";
+    constexpr StringLiteral existing_from_contents = "hello there";
+    fs.write_contents(existing_from, existing_from_contents, VCPKG_LINE_INFO);
+
+    const auto existing_to = temp_dir / "already_existing";
+    constexpr StringLiteral existing_to_contents = "already existing file";
+    fs.write_contents(existing_to, existing_to_contents, VCPKG_LINE_INFO);
+
+    std::error_code ec;
+
+    // N4861 [fs.op.copy.file]/4.1:
+    // "report an error [...] if ..."
+    //
+    // is_regular_file(from) is false
+    REQUIRE(!fs.copy_file(temp_dir, temp_dir / "b", CopyOptions::overwrite_existing, ec));
+    REQUIRE(ec);
+    REQUIRE(!fs.copy_file(temp_dir / "nonexistent", temp_dir / "b", CopyOptions::overwrite_existing, ec));
+    REQUIRE(ec);
+
+    // exists(to) is true and is_regular_file(to) is false
+    fs.create_directory(temp_dir / "a_directory", VCPKG_LINE_INFO);
+    REQUIRE(!fs.copy_file(existing_from, temp_dir / "a_directory", CopyOptions::overwrite_existing, ec));
+    REQUIRE(ec);
+
+    // exists(to) is true and equivalent(from, true) is true
+    REQUIRE(!fs.copy_file(existing_from, temp_dir / "a/../a", CopyOptions::overwrite_existing, ec));
+    REQUIRE(ec);
+
+    // exists(to) is true and [neither skip_existing nor overwrite_existing]
+    REQUIRE(!fs.copy_file(existing_from, existing_to, CopyOptions::none, ec));
+    REQUIRE(ec);
+
+    // Otherwise, copy the contents and attributes of the file from resolves to to the file
+    // to resolves to, if
+
+    // exists(to) is false
+    REQUIRE(fs.copy_file(existing_from, temp_dir / "b", CopyOptions::none, ec));
+    REQUIRE(!ec);
+    REQUIRE(fs.read_contents(temp_dir / "b", VCPKG_LINE_INFO) == existing_from_contents);
+
+    // [skip_existing]
+    REQUIRE(!fs.copy_file(existing_from, existing_to, CopyOptions::skip_existing, ec));
+    REQUIRE(!ec);
+    REQUIRE(fs.read_contents(existing_to, VCPKG_LINE_INFO) == existing_to_contents);
+
+    // [overwrite_existing]
+    REQUIRE(fs.copy_file(existing_from, existing_to, CopyOptions::overwrite_existing, ec));
+    REQUIRE(!ec);
+    REQUIRE(fs.read_contents(existing_to, VCPKG_LINE_INFO) == existing_from_contents);
+
+#if !defined(_WIN32)
+    // Also check that mode bits are copied
+    REQUIRE(::chmod(existing_from.c_str(), 0555) == 0); // note: not writable
+    const auto attributes_target = temp_dir / "attributes_target";
+    fs.copy_file(existing_from, attributes_target, CopyOptions::none, VCPKG_LINE_INFO);
+    REQUIRE(fs.read_contents(attributes_target, VCPKG_LINE_INFO) == existing_from_contents);
+    struct stat copied_attributes_stat;
+    REQUIRE(::stat(attributes_target.c_str(), &copied_attributes_stat) == 0);
+    const auto actual_mode = copied_attributes_stat.st_mode & 0777;
+    REQUIRE(actual_mode == 0555);
+#endif // ^^^ !_WIN32
+
+    Path fp;
+    fs.remove_all(temp_dir, ec, fp);
+    CHECK_EC_ON_FILE(fp, ec);
+
+    REQUIRE_FALSE(fs.exists(temp_dir, ec));
+    CHECK_EC_ON_FILE(temp_dir, ec);
+}
+
+TEST_CASE ("copy_symlink", "[files]")
+{
+    urbg_t urbg;
+
+    auto& fs = setup();
+
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    INFO("temp dir is: " << temp_dir.native());
+
+    fs.create_directory(temp_dir, VCPKG_LINE_INFO);
+    fs.create_directory(temp_dir / "dir", VCPKG_LINE_INFO);
+    fs.write_contents(temp_dir / "file", "some file contents", VCPKG_LINE_INFO);
+
+    std::error_code ec;
+    fs.create_symlink("../file", temp_dir / "dir/sym", ec); // note: relative
+    if (ec)
+    {
+        REQUIRE(is_valid_symlink_failure(ec));
+    }
+    else
+    {
+        REQUIRE(fs.read_contents(temp_dir / "dir/sym", VCPKG_LINE_INFO) == "some file contents");
+        fs.copy_symlink(temp_dir / "dir/sym", temp_dir / "dir/sym_copy", VCPKG_LINE_INFO);
+        REQUIRE(fs.read_contents(temp_dir / "dir/sym_copy", VCPKG_LINE_INFO) == "some file contents");
     }
 
     Path fp;
