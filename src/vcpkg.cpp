@@ -20,6 +20,8 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <locale.h>
+
 #include <cassert>
 #include <memory>
 #include <random>
