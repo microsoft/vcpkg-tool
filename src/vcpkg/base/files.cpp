@@ -2761,7 +2761,7 @@ namespace vcpkg
                 if (static_cast<size_t>(result) == buffer.size())
                 {
                     // we might not have used a big enough buffer, grow and retry
-                    buffer.append(PATH_MAX, '\0');
+                    buffer.append(buffer.size(), '\0');
                     continue;
                 }
 
