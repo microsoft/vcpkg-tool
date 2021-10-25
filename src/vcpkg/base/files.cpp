@@ -2748,7 +2748,7 @@ namespace vcpkg
             stdfs::copy_symlink(to_stdfs_path(source), to_stdfs_path(destination), ec);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
             std::string buffer;
-            buffer.resize(buffer.capacity());
+            buffer.resize(PATH_MAX);
             for (;;)
             {
                 ssize_t result = ::readlink(source.c_str(), &buffer[0], buffer.size());
@@ -2761,7 +2761,7 @@ namespace vcpkg
                 if (static_cast<size_t>(result) == buffer.size())
                 {
                     // we might not have used a big enough buffer, grow and retry
-                    buffer.append(PATH_MAX, '\0');
+                    buffer.append(buffer.size(), '\0');
                     continue;
                 }
 
