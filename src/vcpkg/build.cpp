@@ -634,6 +634,8 @@ namespace vcpkg::Build
             const Path& git_exe_path = paths.get_tool_exe(Tools::GIT);
             out_vars.push_back({"GIT", git_exe_path});
         }
+        const Path& aria2_exe_path = paths.get_tool_exe(Tools::ARIA2);
+        out_vars.push_back({"ARIA2", aria2_exe_path});
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
