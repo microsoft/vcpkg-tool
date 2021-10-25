@@ -465,7 +465,7 @@ namespace vcpkg::Downloads
                 if (!conn)
                 {
                     Strings::append(errors, sanitized_url, ": ", conn.error(), '\n');
-                    return false;
+                    continue;
                 }
                 auto req = WinHttpRequest::make(
                     conn.get()->m_hConnect.get(), split_uri.path_query_fragment, split_uri.scheme == "https");
