@@ -152,10 +152,11 @@ namespace vcpkg
         virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const Path& exe_path) const = 0;
     };
 
+    template<typename Func>
     static Optional<PathAndVersion> find_first_with_sufficient_version(const VcpkgPaths& paths,
                                                                        const ToolProvider& tool_provider,
                                                                        const std::vector<Path>& candidates,
-                                                                       const std::array<int, 3>& expected_version)
+                                                                       Func&& accept_version)
     {
         const auto& fs = paths.get_filesystem();
         for (auto&& candidate : candidates)
@@ -167,12 +168,7 @@ namespace vcpkg
             const auto parsed_version = parse_version_string(*version);
             if (!parsed_version) continue;
             auto& actual_version = *parsed_version.get();
-            const auto version_acceptable =
-                actual_version[0] > expected_version[0] ||
-                (actual_version[0] == expected_version[0] && actual_version[1] > expected_version[1]) ||
-                (actual_version[0] == expected_version[0] && actual_version[1] == expected_version[1] &&
-                 actual_version[2] >= expected_version[2]);
-            if (!version_acceptable) continue;
+            if (!accept_version(actual_version)) continue;
 
             return PathAndVersion{candidate, *version};
         }
@@ -237,7 +233,7 @@ namespace vcpkg
         return {std::move(downloaded_path), std::move(downloaded_version)};
     }
 
-    static PathAndVersion get_path(const VcpkgPaths& paths, const ToolProvider& tool)
+    static PathAndVersion get_path(const VcpkgPaths& paths, const ToolProvider& tool, bool exact_version = false)
     {
         auto& fs = paths.get_filesystem();
 
@@ -260,7 +256,18 @@ namespace vcpkg
 
         tool.add_special_paths(candidate_paths);
 
-        const auto maybe_path = find_first_with_sufficient_version(paths, tool, candidate_paths, min_version);
+        const auto maybe_path = find_first_with_sufficient_version(
+            paths, tool, candidate_paths, [&min_version, exact_version](const std::array<int, 3>& actual_version) {
+                if (exact_version)
+                {
+                    return actual_version[0] == min_version[0] && actual_version[1] == min_version[1] &&
+                           actual_version[2] == min_version[2];
+                }
+                return actual_version[0] > min_version[0] ||
+                       (actual_version[0] == min_version[0] && actual_version[1] > min_version[1]) ||
+                       (actual_version[0] == min_version[0] && actual_version[1] == min_version[1] &&
+                        actual_version[2] >= min_version[2]);
+            });
         if (const auto p = maybe_path.get())
         {
             return *p;
@@ -555,8 +562,14 @@ gsutil version: 4.58
 
     struct ToolCacheImpl final : ToolCache
     {
+        ToolCache::RequireExactVersionsForAbiRelevantTools abiToolVersionHandling;
         vcpkg::Cache<std::string, Path> path_only_cache;
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
+
+        ToolCacheImpl(ToolCache::RequireExactVersionsForAbiRelevantTools abiToolVersionHandling)
+            : abiToolVersionHandling(abiToolVersionHandling)
+        {
+        }
 
         virtual const Path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const override
         {
@@ -591,7 +604,9 @@ gsutil version: 4.58
                     {
                         return {"cmake", "0"};
                     }
-                    return get_path(paths, CMakeProvider());
+                    return get_path(paths,
+                                    CMakeProvider(),
+                                    abiToolVersionHandling == ToolCache::RequireExactVersionsForAbiRelevantTools::YES);
                 }
                 if (tool == Tools::GIT)
                 {
@@ -615,7 +630,9 @@ gsutil version: 4.58
                     {
                         return {"pwsh", "0"};
                     }
-                    return get_path(paths, PowerShellCoreProvider());
+                    return get_path(paths,
+                                    PowerShellCoreProvider(),
+                                    abiToolVersionHandling == ToolCache::RequireExactVersionsForAbiRelevantTools::YES);
                 }
                 if (tool == Tools::NUGET) return get_path(paths, NuGetProvider());
                 if (tool == Tools::IFW_INSTALLER_BASE) return get_path(paths, IfwInstallerBaseProvider());
@@ -650,5 +667,8 @@ gsutil version: 4.58
         }
     };
 
-    std::unique_ptr<ToolCache> get_tool_cache() { return std::make_unique<ToolCacheImpl>(); }
+    std::unique_ptr<ToolCache> get_tool_cache(ToolCache::RequireExactVersionsForAbiRelevantTools abiToolVersionHandling)
+    {
+        return std::make_unique<ToolCacheImpl>(abiToolVersionHandling);
+    }
 }
