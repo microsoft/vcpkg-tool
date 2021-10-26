@@ -69,8 +69,6 @@ namespace vcpkg::msg
 
     // load from "locale_base/${language}.json"
     void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base);
-    // load from the json object
-    void threadunsafe_initialize_context(const Json::Object& message_map);
     // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
 

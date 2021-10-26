@@ -165,10 +165,8 @@ namespace vcpkg::msg
         m.localized_strings.resize(m.names.size());
         m.initialized = true;
     }
-    void threadunsafe_initialize_context(const Json::Object& message_map)
+    static void load_from_message_map(const Json::Object& message_map)
     {
-        threadunsafe_initialize_context();
-
         Messages& m = messages();
         std::vector<std::string> names_without_localization;
 
@@ -198,6 +196,8 @@ namespace vcpkg::msg
 
     void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base)
     {
+        threadunsafe_initialize_context();
+
         auto path_to_locale = locale_base;
         path_to_locale /= language;
         path_to_locale += ".json";
@@ -210,7 +210,8 @@ namespace vcpkg::msg
                 fmt::format("Invalid locale file '{}' - locale file must be an object.\n", path_to_locale));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        threadunsafe_initialize_context(message_map.first.object());
+
+        load_from_message_map(message_map.first.object());
     }
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }
