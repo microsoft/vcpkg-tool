@@ -22,6 +22,7 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <cassert>
+#include <clocale>
 #include <memory>
 #include <random>
 
