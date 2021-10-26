@@ -23,6 +23,7 @@
 #include <locale.h>
 
 #include <cassert>
+#include <clocale>
 #include <memory>
 #include <random>
 
