@@ -164,6 +164,33 @@ namespace vcpkg::msg
         }
         m.localized_strings.resize(m.names.size());
         m.initialized = true;
+
+        std::set<StringView, std::less<>> names_set(m.names.begin(), m.names.end());
+        if (names_set.size() < m.names.size())
+        {
+            // This will not trigger on any correct code path, so it's fine to use a naive O(n^2)
+            for (size_t i = 0; i < m.names.size() - 1; ++i)
+            {
+                for (size_t j = i + 1; j < m.names.size(); ++j)
+                {
+                    if (m.names[i] == m.names[j])
+                    {
+                        write_unlocalized_text_to_stdout(
+                            Color::error,
+                            fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n",
+                                        m.names[i]));
+                        write_unlocalized_text_to_stdout(Color::error, fmt::format("INTERNAL ERROR: first message:\n"));
+                        write_unlocalized_text_to_stdout(Color::none, m.default_strings[i]);
+                        write_unlocalized_text_to_stdout(Color::error,
+                                                         fmt::format("\nINTERNAL ERROR: second message:\n"));
+                        write_unlocalized_text_to_stdout(Color::none, m.default_strings[j]);
+                        write_unlocalized_text_to_stdout(Color::none, "\n");
+                        ::abort();
+                    }
+                }
+            }
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
     }
     static void load_from_message_map(const Json::Object& message_map)
     {
@@ -219,22 +246,7 @@ namespace vcpkg::msg
     ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment)
     {
         Messages& m = messages();
-
-        auto name_is_used = std::find(m.names.begin(), m.names.end(), name);
-        if (name_is_used != m.names.end())
-        {
-            write_unlocalized_text_to_stdout(
-                Color::error,
-                fmt::format("INTERNAL ERROR: localization message '{}' has been declared multiple times\n", name));
-            write_unlocalized_text_to_stdout(Color::error, fmt::format("INTERNAL ERROR: first message:\n"));
-            write_unlocalized_text_to_stdout(Color::none, m.default_strings[name_is_used - m.names.begin()]);
-            write_unlocalized_text_to_stdout(Color::error, fmt::format("\nINTERNAL ERROR: second message:\n"));
-            write_unlocalized_text_to_stdout(Color::none, format_string);
-            write_unlocalized_text_to_stdout(Color::none, "\n");
-            ::abort();
-        }
-
-        auto res = m.names.size();
+        const auto res = m.names.size();
         m.names.push_back(name);
         m.default_strings.push_back(format_string);
         m.localization_comments.push_back(comment);
@@ -280,5 +292,4 @@ namespace vcpkg::msg
         auto fmt_string = get_format_string(index);
         return LocalizedString::from_string_unchecked(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
     }
-
 }
