@@ -140,6 +140,12 @@ namespace vcpkg::Archives
                 cmd_execute(Command{"unzip"}.string_arg("-qqo").path_arg(archive), InWorkingDirectory{to_path_partial});
             Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", archive);
         }
+        else if (ext == ".bz2")
+        {
+            const auto code =
+                cmd_execute(Command{"tar"}.string_arg("xzvf").path_arg(archive), InWorkingDirectory{to_path_partial});
+            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+        }
         else
         {
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unexpected archive extension: %s", ext);
