@@ -33,6 +33,8 @@ jobs:
     - group: vcpkg-dependency-source-blobs
     - name: FMT_TARBALL_URL
       value: "$(fmt-tarball-url)"
+    - name: FMT_TARBALL_SHA
+      value: "$(fmt-tarball-sha)"
     - name: FMT_TARBALL_DIRNAME
       value: "$(fmt-tarball-dirname)"
     steps:
@@ -40,9 +42,12 @@ jobs:
       displayName: "Download fmt library"
       inputs:
         failOnStderr: true
+        workingDirectory: "$(Build.BinariesDirectory)"
         script: |
-          curl -sSL "$FMT_TARBALL_URL" --output "$(Build.BinariesDirectory)\fmtlib.tar.gz"
-          tar -C "$(Build.BinariesDirectory)" -xf "$(Build.BinariesDirectory)\fmtlib.tar.gz"
+          curl -sSL "$FMT_TARBALL_URL" --output ./fmtlib.tar.gz
+          printf "$FMT_TARBALL_SHA *./fmtlib.tar.gz\n" >checksum
+          shasum -c ./checksum -a 512 || exit 1
+          tar -xf ./fmtlib.tar.gz
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
@@ -64,6 +69,8 @@ jobs:
     - group: vcpkg-dependency-source-blobs
     - name: FMT_TARBALL_URL
       value: "$(fmt-tarball-url)"
+    - name: FMT_TARBALL_SHA
+      value: "$(fmt-tarball-sha)"
     - name: FMT_TARBALL_DIRNAME
       value: "$(fmt-tarball-dirname)"
     steps:
@@ -71,9 +78,13 @@ jobs:
       displayName: "Download fmt library"
       inputs:
         failOnStderr: true
+        workingDirectory: "$(Build.BinariesDirectory)"
         script: |
-          curl -sSL "$FMT_TARBALL_URL" --output "$(Build.BinariesDirectory)\fmtlib.tar.gz"
-          tar -C "$(Build.BinariesDirectory)" -xf "$(Build.BinariesDirectory)\fmtlib.tar.gz"
+          curl -sSL "$FMT_TARBALL_URL" --output "./fmtlib.tar.gz"
+          printf "$FMT_TARBALL_SHA *./fmtlib.tar.gz\n" >checksum
+          # shasum doesn't exist on rhel
+          sha512sum -c ./checksum || exit 1
+          tar -xf ./fmtlib.tar.gz
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
@@ -95,6 +106,8 @@ jobs:
     - group: vcpkg-dependency-source-blobs
     - name: FMT_TARBALL_URL
       value: "$(fmt-tarball-url)"
+    - name: FMT_TARBALL_SHA
+      value: "$(fmt-tarball-sha)"
     - name: FMT_TARBALL_DIRNAME
       value: "$(fmt-tarball-dirname)"
     steps:
@@ -102,9 +115,12 @@ jobs:
       displayName: "Download fmt library"
       inputs:
         failOnStderr: true
+        workingDirectory: "$(Build.BinariesDirectory)"
         script: |
-          curl -sSL "$FMT_TARBALL_URL" --output "$(Build.BinariesDirectory)\fmtlib.tar.gz"
-          tar -C "$(Build.BinariesDirectory)" -xf "$(Build.BinariesDirectory)\fmtlib.tar.gz"
+          curl -sSL "$FMT_TARBALL_URL" --output "./fmtlib.tar.gz"
+          printf "$FMT_TARBALL_SHA *./fmtlib.tar.gz\n" >checksum
+          shasum -c ./checksum -a 512 || exit 1
+          tar -xf ./fmtlib.tar.gz
     - task: CmdLine@2
       displayName: "Build vcpkg in Alpine"
       inputs:
@@ -135,6 +151,8 @@ jobs:
     - group: vcpkg-dependency-source-blobs
     - name: FMT_TARBALL_URL
       value: "$(fmt-tarball-url)"
+    - name: FMT_TARBALL_SHA
+      value: "$(fmt-tarball-sha)"
     - name: FMT_TARBALL_DIRNAME
       value: "$(fmt-tarball-dirname)"
     steps:
@@ -150,13 +168,22 @@ jobs:
           mkdir "$(Build.BinariesDirectory)\build"
           copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.BinariesDirectory)\vcpkg-glibc"
           copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.BinariesDirectory)\vcpkg-muslc"
-    - task: CmdLine@2
+    - task: PowerShell@2
       displayName: "Download fmt library"
       inputs:
+        targetType: 'inline'
+        pwsh: true
         failOnStderr: true
+        workingDirectory: "$(Build.BinariesDirectory)"
         script: |
-          curl.exe -sSL "%FMT_TARBALL_URL%" --output "$(Build.BinariesDirectory)\fmtlib.tar.gz"
-          tar.exe -C "$(Build.BinariesDirectory)" -xf "$(Build.BinariesDirectory)\fmtlib.tar.gz"
+          curl.exe -sSL "$env:FMT_TARBALL_URL" --output ./fmtlib.tar.gz
+          $hash = (Get-FileHash -Algorithm SHA512 -Path ./fmtlib.tar.gz).Hash
+          if ($hash -ne "$env:FMT_TARBALL_SHA") {
+            throw "Unexpected hash for fmtlib download;
+            expected: $env:FMT_TARBALL_SHA
+            found   : $hash"
+          }
+          tar.exe -xf ./fmtlib.tar.gz
     - task: PoliCheck@1
       inputs:
         inputType: 'Basic'
