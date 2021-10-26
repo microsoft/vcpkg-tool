@@ -44,6 +44,7 @@ project(vcpkg
     LANGUAGES ${LANGUAGES}
 )
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(cmake/utilities.cmake)
 
 # =============
@@ -95,7 +96,7 @@ if(NOT DEFINED VCPKG_VERSION OR VCPKG_VERSION STREQUAL "")
     set(VCPKG_VERSION "unknownhash")
 endif()
 
-set(VCPKG_BASE_VERSION "2021-10-21")
+set(VCPKG_BASE_VERSION "2021-10-25")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -120,6 +121,12 @@ endif()
 
 include(GNUInstallDirs)
 
+# ====================
+# === Dependencies ===
+# ====================
+
+find_package(fmt REQUIRED)
+
 # ===============
 # === Targets ===
 # ===============
@@ -142,7 +149,12 @@ target_compile_definitions(vcpkglib PUBLIC
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-target_link_libraries(vcpkglib PRIVATE Threads::Threads)
+target_link_libraries(vcpkglib
+    PUBLIC
+        fmt::fmt
+    PRIVATE
+        Threads::Threads
+)
 
 if(MSVC)
     get_target_property(_srcs vcpkglib SOURCES)
