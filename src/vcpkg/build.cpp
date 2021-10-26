@@ -634,8 +634,6 @@ namespace vcpkg::Build
             const Path& git_exe_path = paths.get_tool_exe(Tools::GIT);
             out_vars.push_back({"GIT", git_exe_path});
         }
-        const Path& aria2_exe_path = paths.get_tool_exe(Tools::ARIA2);
-        out_vars.push_back({"ARIA2", aria2_exe_path});
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
@@ -753,6 +751,11 @@ namespace vcpkg::Build
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
             {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
         };
+
+        if (action.build_options.download_tool == DownloadTool::ARIA2)
+        {
+            variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2)});
+        }
 
         for (auto cmake_arg : args.cmake_args)
         {
