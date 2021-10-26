@@ -29,13 +29,31 @@ jobs:
     displayName: 'MacOS Build'
     pool:
       vmImage: macOS-10.15
+    variables:
+    - group: vcpkg-dependency-source-blobs
+    - name: FMT_TARBALL_URL
+      value: "$(fmt-tarball-url)"
+    - name: FMT_TARBALL_SHA
+      value: "$(fmt-tarball-sha)"
+    - name: FMT_TARBALL_DIRNAME
+      value: "$(fmt-tarball-dirname)"
     steps:
+    - task: CmdLine@2
+      displayName: "Download fmt library"
+      inputs:
+        failOnStderr: true
+        workingDirectory: "$(Build.BinariesDirectory)"
+        script: |
+          curl -sSL "$FMT_TARBALL_URL" --output ./fmtlib.tar.gz
+          printf "$FMT_TARBALL_SHA *./fmtlib.tar.gz\n" >checksum
+          shasum -c ./checksum -a 512 || exit 1
+          tar -xf ./fmtlib.tar.gz
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
         failOnStderr: true
         script: |
-          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -B "$(Build.BinariesDirectory)/build"
+          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -B "$(Build.BinariesDirectory)/build"
           make -j 8 -C "$(Build.BinariesDirectory)/build"
           zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/build/vcpkg"
     - task: PublishBuildArtifacts@1
@@ -47,13 +65,32 @@ jobs:
     displayName: 'glibc (RHEL) Build'
     pool:
       name: 'vcpkg-rhel-7-5'
+    variables:
+    - group: vcpkg-dependency-source-blobs
+    - name: FMT_TARBALL_URL
+      value: "$(fmt-tarball-url)"
+    - name: FMT_TARBALL_SHA
+      value: "$(fmt-tarball-sha)"
+    - name: FMT_TARBALL_DIRNAME
+      value: "$(fmt-tarball-dirname)"
     steps:
+    - task: CmdLine@2
+      displayName: "Download fmt library"
+      inputs:
+        failOnStderr: true
+        workingDirectory: "$(Build.BinariesDirectory)"
+        script: |
+          curl -sSL "$FMT_TARBALL_URL" --output "./fmtlib.tar.gz"
+          printf "$FMT_TARBALL_SHA *./fmtlib.tar.gz\n" >checksum
+          # shasum doesn't exist on rhel
+          sha512sum -c ./checksum || exit 1
+          tar -xf ./fmtlib.tar.gz
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
         failOnStderr: true
         script: |
-          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" -B "$(Build.BinariesDirectory)/build"'
+          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -B "$(Build.BinariesDirectory)/build"'
           make -j 4 -C "$(Build.BinariesDirectory)/build"
           mv "$(Build.BinariesDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
     - task: PublishBuildArtifacts@1
@@ -65,12 +102,31 @@ jobs:
     displayName: 'muslc (Alpine) Build'
     pool:
       name: 'vcpkg-ubuntu-20-04-docker'
+    variables:
+    - group: vcpkg-dependency-source-blobs
+    - name: FMT_TARBALL_URL
+      value: "$(fmt-tarball-url)"
+    - name: FMT_TARBALL_SHA
+      value: "$(fmt-tarball-sha)"
+    - name: FMT_TARBALL_DIRNAME
+      value: "$(fmt-tarball-dirname)"
     steps:
+    - task: CmdLine@2
+      displayName: "Download fmt library"
+      inputs:
+        failOnStderr: true
+        workingDirectory: "$(Build.BinariesDirectory)"
+        script: |
+          curl -sSL "$FMT_TARBALL_URL" --output "./fmtlib.tar.gz"
+          printf "$FMT_TARBALL_SHA *./fmtlib.tar.gz\n" >checksum
+          shasum -c ./checksum -a 512 || exit 1
+          tar -xf ./fmtlib.tar.gz
     - task: CmdLine@2
       displayName: "Build vcpkg in Alpine"
       inputs:
         failOnStderr: true
         script: |
+          mv "$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" external-fmtlib
           docker build -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile .
           docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh
           docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
@@ -91,6 +147,14 @@ jobs:
       name: 'VSEngSS-MicroBuild2019-1ES'
       demands:
         - CMAKE
+    variables:
+    - group: vcpkg-dependency-source-blobs
+    - name: FMT_TARBALL_URL
+      value: "$(fmt-tarball-url)"
+    - name: FMT_TARBALL_SHA
+      value: "$(fmt-tarball-sha)"
+    - name: FMT_TARBALL_DIRNAME
+      value: "$(fmt-tarball-dirname)"
     steps:
     - task: DownloadBuildArtifacts@0
       displayName: 'Download Unsigned POSIX Binaries'
@@ -104,6 +168,22 @@ jobs:
           mkdir "$(Build.BinariesDirectory)\build"
           copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.BinariesDirectory)\vcpkg-glibc"
           copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.BinariesDirectory)\vcpkg-muslc"
+    - task: PowerShell@2
+      displayName: "Download fmt library"
+      inputs:
+        targetType: 'inline'
+        pwsh: true
+        failOnStderr: true
+        workingDirectory: "$(Build.BinariesDirectory)"
+        script: |
+          curl.exe -sSL "$env:FMT_TARBALL_URL" --output ./fmtlib.tar.gz
+          $hash = (Get-FileHash -Algorithm SHA512 -Path ./fmtlib.tar.gz).Hash
+          if ($hash -ne "$env:FMT_TARBALL_SHA") {
+            throw "Unexpected hash for fmtlib download;
+            expected: $env:FMT_TARBALL_SHA
+            found   : $hash"
+          }
+          tar.exe -xf ./fmtlib.tar.gz
     - task: PoliCheck@1
       inputs:
         inputType: 'Basic'
@@ -116,7 +196,7 @@ jobs:
         failOnStderr: true
         script: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -B "$(Build.BinariesDirectory)\x86"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -B "$(Build.BinariesDirectory)\x86"
           ninja.exe -C "$(Build.BinariesDirectory)\x86"
     - task: CmdLine@2
       displayName: "Build vcpkg arm64 with CMake"
@@ -124,7 +204,7 @@ jobs:
         failOnStderr: true
         script: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=x86
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_PDB_SUFFIX="-arm64" -B "$(Build.BinariesDirectory)\arm64"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_PDB_SUFFIX="-arm64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -B "$(Build.BinariesDirectory)\arm64"
           ninja.exe -C "$(Build.BinariesDirectory)\arm64"
     - task: MicroBuildSigningPlugin@2
       inputs:
