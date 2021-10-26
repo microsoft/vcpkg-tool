@@ -24,8 +24,8 @@ namespace
     } icase_eq;
 }
 
-vcpkg::ExpectedS<std::string> vcpkg::Strings::api_stable_format(StringView sv,
-                                                                std::function<void(std::string&, StringView)> append_f)
+vcpkg::ExpectedS<std::string> vcpkg::Strings::details::api_stable_format_impl(
+    StringView sv, void (*cb)(void*, std::string&, StringView), void* user)
 {
     // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
 
@@ -62,7 +62,7 @@ vcpkg::ExpectedS<std::string> vcpkg::Strings::api_stable_format(StringView sv,
                     return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
                 }
                 // p[0] == '}'
-                append_f(out, {seq_start, p});
+                cb(user, out, {seq_start, p});
                 prev = ++p;
             }
         }

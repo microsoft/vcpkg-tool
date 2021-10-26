@@ -79,6 +79,10 @@ namespace vcpkg::Strings::details
     {
         char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
     } tolower_char;
+
+    ExpectedS<std::string> api_stable_format_impl(StringView fmtstr,
+                                                  void (*cb)(void*, std::string&, StringView),
+                                                  void* data);
 }
 
 namespace vcpkg::Strings
@@ -132,7 +136,12 @@ namespace vcpkg::Strings
 
     // This function exists in order to provide an API-stable formatting function similar to `std::format()` that does
     // not depend on the feature set of fmt or the C++ standard library and thus can be contractual for user interfaces.
-    ExpectedS<std::string> api_stable_format(StringView fmtstr, std::function<void(std::string&, StringView)> handler);
+    template<class F, class R = ExpectedS<std::string>>
+    R api_stable_format(StringView fmtstr, F&& handler)
+    {
+        return details::api_stable_format_impl(
+            fmtstr, [](void* f, std::string& s, StringView sv) { (*(F*)(f))(s, sv); }, &handler);
+    }
 
 #if defined(_WIN32)
     std::wstring to_utf16(StringView s);
