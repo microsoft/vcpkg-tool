@@ -1143,23 +1143,20 @@ namespace vcpkg
 
     LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference)
     {
-        auto it = lockdata.find(repo);
-        if (it != lockdata.end() && it->second.reference != reference)
-        {
-            print2("Reference of registry ", repo, " has been changed to ", reference, "...\n");
-            it = lockdata.end();
-        }
+        auto range = lockdata.equal_range(repo);
+        auto it = std::find_if(range.first, range.second, [&reference](const LockDataType::value_type& repo2entry) {
+            return repo2entry.second.reference == reference;
+        });
 
         if (it == lockdata.end())
         {
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
             auto x = paths.git_fetch_from_remote_registry(repo, reference);
-            it = lockdata
-                     .emplace(repo.to_string(),
-                              EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false})
-                     .first;
+            it = lockdata.emplace(repo.to_string(),
+                                  EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
             modified = true;
         }
+
         return {this, it};
     }
     void LockFile::Entry::ensure_up_to_date(const VcpkgPaths& paths) const

@@ -28,10 +28,12 @@ namespace vcpkg
             std::string commit_id;
             bool stale;
         };
+        
+        using LockDataType = std::multimap<std::string, EntryData, std::less<>>;
         struct Entry
         {
             LockFile* lockfile;
-            std::map<std::string, EntryData, std::less<>>::iterator data;
+            LockDataType::iterator data;
 
             const std::string& reference() const { return data->second.reference; }
             const std::string& commit_id() const { return data->second.commit_id; }
@@ -43,7 +45,7 @@ namespace vcpkg
 
         Entry get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference);
 
-        std::map<std::string, EntryData, std::less<>> lockdata;
+        LockDataType lockdata;
         bool modified = false;
     };
 

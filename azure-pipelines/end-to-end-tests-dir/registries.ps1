@@ -64,17 +64,23 @@ try
         '-c', 'core.autocrlf=false'
     )
 
-    $CurrentTest = 'git init .'
-    git @gitConfigOptions init .
+    $gitMainBranch = 'main'
+    $gitSecondaryBranch = 'secondary'
+
+    $CurrentTest = 'git init -b .'
+    git @gitConfigOptions init -b $gitMainBranch .
     Throw-IfFailed
+
+    # Create git registry with vcpkg-internal-e2e-test-port in the main branch
+    
     Copy-Item -Recurse -LiteralPath "$PSScriptRoot/../e2e_ports/vcpkg-internal-e2e-test-port" -Destination .
     New-Item -Path './vcpkg-internal-e2e-test-port/foobar' -Value 'this is just to get a distinct git tree'
 
     $CurrentTest = 'git add -A'
     git @gitConfigOptions add -A
     Throw-IfFailed
-    $CurrentTest = 'git commit'
-    git @gitConfigOptions commit -m 'initial commit'
+    $CurrentTest = 'git commit -m'
+    git @gitConfigOptions commit -m 'add vcpkg-internal-e2e-test-port'
     Throw-IfFailed
 
     $vcpkgInternalE2eTestPortGitTree = git rev-parse 'HEAD:vcpkg-internal-e2e-test-port'
@@ -103,27 +109,65 @@ try
     $CurrentTest = 'git add -A'
     git @gitConfigOptions add -A
     Throw-IfFailed
-    $CurrentTest = 'git commit'
+    $CurrentTest = 'git commit --amend --no-edit'
     git @gitConfigOptions commit --amend --no-edit
     Throw-IfFailed
 
-    $gitBaselineCommit = git rev-parse HEAD
-    $gitRefVersionsObject = git rev-parse HEAD:versions
+    $gitMainBaselineCommit = git rev-parse HEAD
+    $gitMainRefVersionsObject = git rev-parse HEAD:versions
 
-   $gitReference = 'some-branch'
-   $CurrentTest = 'git checkout -b'
-   git @gitConfigOptions checkout -b $gitReference
-   Throw-IfFailed
+    # Create git registry with vcpkg-internal-e2e-test-port2 in the secondary branch
 
-   $CurrentTest = 'git commit --allow-empty'
-   git @gitConfigOptions commit --allow-empty -m "second commit"
-   Throw-IfFailed
+    $CurrentTest = 'git switch --orphan'
+    git @gitConfigOptions switch --orphan $gitSecondaryBranch
+    Throw-IfFailed
 
-   $gitReferenceBaselineCommit = git rev-parse HEAD
+    Copy-Item -Recurse -LiteralPath "$PSScriptRoot/../e2e_ports/vcpkg-internal-e2e-test-port2" -Destination .
+    New-Item -Path './vcpkg-internal-e2e-test-port2/foobaz' -Value 'this is just to get a distinct git tree'
 
-   $CurrentTest = 'git switch -'
-   git @gitConfigOptions switch -
-   Throw-IfFailed
+    $CurrentTest = 'git add -A'
+    git @gitConfigOptions add -A
+    Throw-IfFailed
+    $CurrentTest = 'git commit -m'
+    git @gitConfigOptions commit -m 'add vcpkg-internal-e2e-test-port2'
+    Throw-IfFailed
+
+    $vcpkgInternalE2eTestPort2GitTree = git rev-parse 'HEAD:vcpkg-internal-e2e-test-port2'
+    $vcpkgInternalE2eTestPortVersionsJson = @{
+        "versions" = @(
+            @{
+                "version-string" = "1.0.0";
+                "git-tree" = $vcpkgInternalE2eTestPort2GitTree
+            }
+        )
+    }
+    $vcpkgBaseline = @{
+        "default" = @{
+            "vcpkg-internal-e2e-test-port2" = @{
+                "baseline" = "1.0.0"
+            }
+        }
+    }
+
+    New-Item -Path './versions' -ItemType Directory
+    New-Item -Path './versions/v-' -ItemType Directory
+
+    New-Item -Path './versions/baseline.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgBaseline)
+    New-Item -Path './versions/v-/vcpkg-internal-e2e-test-port2.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgInternalE2eTestPortVersionsJson)
+
+    $CurrentTest = 'git add -A'
+    git @gitConfigOptions add -A
+    Throw-IfFailed
+    $CurrentTest = 'git commit --amend --no-edit'
+    git @gitConfigOptions commit --amend --no-edit
+    Throw-IfFailed
+
+    $gitSecondaryBaselineCommit = git rev-parse HEAD
+    $gitSecondaryRefVersionsObject = git rev-parse HEAD:versions
+
+    $CurrentTest = 'git switch'
+    git @gitConfigOptions switch $gitMainBranch
+    Throw-IfFailed
 }
 finally
 {
@@ -132,6 +176,7 @@ finally
 
 # actually test the registries
 Write-Trace "actually test the registries"
+# test the filesystem registry
 $vcpkgJson = @{
     "name" = "manifest-test";
     "version-string" = "1.0.0";
@@ -145,7 +190,6 @@ $vcpkgJson = @{
     })
 }
 
-# test the filesystem registry
 Write-Trace "test the filesystem registry"
 $manifestDir = "$TestingRoot/filesystem-registry-test-manifest-dir"
 
@@ -155,9 +199,18 @@ $manifestDir = (Get-Item $manifestDir).FullName
 Push-Location $manifestDir
 try
 {
-    New-Item -Path 'vcpkg.json' -ItemType File `
-        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
-
+    $vcpkgJson = @{
+        "name" = "manifest-test";
+        "version-string" = "1.0.0";
+        "dependencies" = @(
+            "vcpkg-internal-e2e-test-port"
+        );
+        # Use versioning features without a builtin-baseline
+        "overrides" = @(@{
+            "name" = "unused";
+            "version" = "0";
+        })
+    }
     $vcpkgConfigurationJson = @{
         "default-registry" = $null;
         "registries" = @(
@@ -168,6 +221,8 @@ try
             }
         )
     }
+    New-Item -Path 'vcpkg.json' -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
     New-Item -Path 'vcpkg-configuration.json' -ItemType File `
         -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson)
 
@@ -189,8 +244,19 @@ $manifestDir = (Get-Item $manifestDir).FullName
 Push-Location $manifestDir
 try
 {
-    New-Item -Path 'vcpkg.json' -ItemType File `
-        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+    $vcpkgJson = @{
+        "name" = "manifest-test";
+        "version-string" = "1.0.0";
+        "dependencies" = @(
+            "vcpkg-internal-e2e-test-port",
+            "vcpkg-internal-e2e-test-port2"
+        );
+        # Use versioning features without a builtin-baseline
+        "overrides" = @(@{
+            "name" = "unused";
+            "version" = "0";
+        })
+    }
 
     $vcpkgConfigurationJson = @{
         "default-registry" = $null;
@@ -198,26 +264,46 @@ try
             @{
                 "kind" = "git";
                 "repository" = $gitRegistryUpstream;
-                "baseline" = $gitBaselineCommit;
-                "packages" = @( "vcpkg-internal-e2e-test-port" )
+                "baseline" = $gitMainBaselineCommit;
+                 "packages" = @( "vcpkg-internal-e2e-test-port" )
+            },
+            @{
+                "kind" = "git";
+                "repository" = $gitRegistryUpstream;
+                "reference" = $gitSecondaryBranch;
+                "baseline" = $gitSecondaryBaselineCommit;
+                 "packages" = @( "vcpkg-internal-e2e-test-port2" )
             }
         )
     }
+
+    New-Item -Path 'vcpkg.json' -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+
     New-Item -Path 'vcpkg-configuration.json' -ItemType File `
         -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson)
 
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests' --dry-run
     Throw-IfFailed
     Require-FileExists $env:X_VCPKG_REGISTRIES_CACHE/git-trees/$vcpkgInternalE2eTestPortGitTree
+    Require-FileExists $env:X_VCPKG_REGISTRIES_CACHE/git-trees/$vcpkgInternalE2eTestPort2GitTree
     # This is both the selected baseline as well as the current HEAD
-    Require-FileExists $env:X_VCPKG_REGISTRIES_CACHE/git-trees/$gitRefVersionsObject
+    Require-FileExists $env:X_VCPKG_REGISTRIES_CACHE/git-trees/$gitMainRefVersionsObject
+    Require-FileExists $env:X_VCPKG_REGISTRIES_CACHE/git-trees/$gitSecondaryRefVersionsObject
     # Dry run does not create a lockfile
     Require-FileNotExists $installRoot/vcpkg/vcpkg-lock.json
 
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
     Throw-IfFailed
 
-    Require-FileEquals $installRoot/vcpkg/vcpkg-lock.json "{`n  $(ConvertTo-Json $gitRegistryUpstream): `{`n    `"HEAD`": `"$gitBaselineCommit`"`n  }`n}`n"
+    $expectedVcpkgLockJson = @{
+        $gitRegistryUpstream = @{
+            "HEAD" = $gitMainBaselineCommit; 
+            $gitSecondaryBranch = $gitSecondaryBaselineCommit  
+        } 
+    }
+
+    Require-JsonFileEquals $installRoot/vcpkg/vcpkg-lock.json $expectedVcpkgLockJson
 
     # Using the lock file means we can reinstall without pulling from the upstream registry
     $vcpkgConfigurationJson = @{
@@ -226,93 +312,36 @@ try
             @{
                 "kind" = "git";
                 "repository" = "/"; # An invalid repository
-                "baseline" = $gitBaselineCommit;
-                "packages" = @( "vcpkg-internal-e2e-test-port" )
-            }
-        )
-    }
-
-    Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
-    Require-FileNotExists $installRoot
-    New-Item -Path $installRoot/vcpkg -ItemType Directory
-    # We pre-seed the install root with a lockfile for the invalid repository, so it isn't actually fetched from
-    New-Item -Path $installRoot/vcpkg/vcpkg-lock.json -ItemType File `
-        -Value "{`n  `"/`": `"$gitBaselineCommit`"`n}`n"
-    Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
-    Throw-IfFailed
-
-    Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
-}
-finally
-{
-    Pop-Location
-}
-
-# test the git registry with reference
-Write-Trace "test the git registry with reference"
-$manifestDir = "$TestingRoot/git-registry-reference-test-manifest-dir"
-
-New-Item -Path $manifestDir -ItemType Directory
-$manifestDir = (Get-Item $manifestDir).FullName
-
-Push-Location $manifestDir
-try
-{
-    New-Item -Path 'vcpkg.json' -ItemType File `
-        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
-
-    $vcpkgConfigurationJson = @{
-        "default-registry" = $null;
-        "registries" = @(
-            @{
-                "kind" = "git";
-                "repository" = $gitRegistryUpstream;
-                "baseline" = $gitReferenceBaselineCommit;
-                "reference" = $gitReference
-                "packages" = @( "vcpkg-internal-e2e-test-port" )
-            }
-        )
-    }
-    New-Item -Path 'vcpkg-configuration.json' -ItemType File `
-        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson)
-
-    Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests' --dry-run
-    Throw-IfFailed
-    Require-FileExists $env:X_VCPKG_REGISTRIES_CACHE/git-trees/$vcpkgInternalE2eTestPortGitTree
-    # This is both the selected baseline as well as the current HEAD
-    Require-FileExists $env:X_VCPKG_REGISTRIES_CACHE/git-trees/$gitRefVersionsObject
-    # Dry run does not create a lockfile
-    Require-FileNotExists $installRoot/vcpkg/vcpkg-lock.json
-
-    Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
-    Throw-IfFailed
-
-    Require-FileEquals $installRoot/vcpkg/vcpkg-lock.json "{`n  $(ConvertTo-Json $gitRegistryUpstream): `{`n    `"$gitReference`": `"$gitReferenceBaselineCommit`"`n  }`n}`n"
-
-    # Using the lock file means we can reinstall without pulling from the upstream registry
-    $vcpkgConfigurationJson = @{
-        "default-registry" = $null;
-        "registries" = @(
+                "baseline" = $gitMainBaselineCommit;
+                 "packages" = @( "vcpkg-internal-e2e-test-port" )
+            },
             @{
                 "kind" = "git";
                 "repository" = "/"; # An invalid repository
-                "baseline" = $gitReferenceBaselineCommit;
-                "reference" = $gitReference
-                "packages" = @( "vcpkg-internal-e2e-test-port" )
+                "reference" = $gitSecondaryBranch;
+                "baseline" = $gitSecondaryBaselineCommit;
+                 "packages" = @( "vcpkg-internal-e2e-test-port2" )
             }
         )
     }
+
+    Set-Content -Path 'vcpkg-configuration.json' `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson)
 
     Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
     Require-FileNotExists $installRoot
     New-Item -Path $installRoot/vcpkg -ItemType Directory
     # We pre-seed the install root with a lockfile for the invalid repository, so it isn't actually fetched from
-    New-Item -Path $installRoot/vcpkg/vcpkg-lock.json -ItemType File `
-        -Value "{`n  `"/`": `"$gitBaselineCommit`"`n}`n"
+    $vcpkgLockJson = @{
+        "/" = @{
+            "HEAD" = $gitMainBaselineCommit; 
+            $gitSecondaryBranch = $gitSecondaryBaselineCommit  
+        } 
+    }
+   New-Item -Path $installRoot/vcpkg/vcpkg-lock.json -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgLockJson)
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
     Throw-IfFailed
-
-    Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
 }
 finally
 {
