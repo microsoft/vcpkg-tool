@@ -857,7 +857,7 @@ namespace vcpkg
         constexpr static StringLiteral SUPPORTS = "supports";
         constexpr static StringLiteral OVERRIDES = "overrides";
         constexpr static StringLiteral BUILTIN_BASELINE = "builtin-baseline";
-        constexpr static StringLiteral VCPKG_CONFIGURATION = "$x-vcpkg-configuration";
+        constexpr static StringLiteral VCPKG_CONFIGURATION = "x-vcpkg-configuration";
 
         virtual Span<const StringView> valid_fields() const override
         {
@@ -933,6 +933,18 @@ namespace vcpkg
 
             r.optional_object_field(
                 obj, FEATURES, control_file->feature_paragraphs, FeaturesFieldDeserializer::instance);
+
+            if (auto configuration = obj.get(VCPKG_CONFIGURATION))
+            {
+                if (!configuration->is_object())
+                {
+                    r.add_generic_error(type_name(), VCPKG_CONFIGURATION, " x-vcpkg-configuration must be an object");
+                }
+                else
+                {
+                    spgh->vcpkg_configuration = make_optional(configuration->object());
+                }
+            }
 
             if (auto maybe_error = canonicalize(*control_file))
             {
@@ -1338,6 +1350,12 @@ namespace vcpkg
         for (const auto& el : scf.core_paragraph->extra_info)
         {
             obj.insert(el.first.to_string(), el.second);
+        }
+
+        // TODO: Actually serialize vcpkg-configuration
+        if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
+        {
+            obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION, *configuration);
         }
 
         obj.insert(ManifestDeserializer::NAME, Json::Value::string(scf.core_paragraph->name));
