@@ -4,6 +4,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -659,6 +660,25 @@ namespace vcpkg
         {
             return {std::move(output.output), expected_right_tag};
         }
+    }
+
+    ExpectedS<std::string> VcpkgPaths::git_describe_head() const
+    {
+        // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
+        const auto dot_git_dir = root / ".git";
+        Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir)
+                              .string_arg("show")
+                              .string_arg("--pretty=format:%h %cd (%cr)")
+                              .string_arg("-s")
+                              .string_arg("--date=short")
+                              .string_arg("HEAD");
+
+        auto output = cmd_execute_and_capture_output(showcmd);
+        if (output.exit_code == 0)
+        {
+            return {std::move(output.output), expected_left_tag};
+        }
+        return {std::move(output.output), expected_right_tag};
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const

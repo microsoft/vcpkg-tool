@@ -19,21 +19,6 @@ On CentOS try the following:
 
             set(COMPILER "gcc")
         elseif(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
-            #[[
-            Note: CMAKE_SYSTEM_VERSION uses darwin versions
-                - Darwin 19.0.0 = macOS 10.15, iOS 13
-                - Darwin 18.0.0 = macOS 10.14, iOS 12
-                - Darwin 17.0.0 = macOS 10.13, iOS 11
-                - Darwin 16.0.0 = macOS 10.12, iOS 10
-            ]]
-            if(CMAKE_SYSTEM_VERSION VERSION_LESS "19.0.0" AND NOT VCPKG_ALLOW_APPLE_CLANG)
-                message(FATAL_ERROR [[
-Building the vcpkg tool requires support for the C++ Filesystem TS.
-macOS versions below 10.15 do not have support for it with Apple Clang.
-Please install gcc6 or newer from homebrew (brew install gcc).
-If you would like to try anyway, pass --allowAppleClang to bootstrap.sh.
-]])
-            endif()
             set(COMPILER "clang")
         elseif(CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang")
             set(COMPILER "clang")

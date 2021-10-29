@@ -41,7 +41,7 @@ namespace vcpkg
 
         const auto updates_dir = paths.vcpkg_dir_updates;
 
-        fs.create_directory(paths.installed, VCPKG_LINE_INFO);
+        fs.create_directories(paths.installed, VCPKG_LINE_INFO);
         fs.create_directory(paths.vcpkg_dir, VCPKG_LINE_INFO);
         fs.create_directory(paths.vcpkg_dir_info, VCPKG_LINE_INFO);
         fs.create_directory(updates_dir, VCPKG_LINE_INFO);
