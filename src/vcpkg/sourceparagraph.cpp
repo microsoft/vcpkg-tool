@@ -1373,6 +1373,8 @@ namespace vcpkg
                 }
 
                 serialize_paragraph(feature_obj, FeatureDeserializer::DESCRIPTION, feature->description, true);
+                serialize_optional_string(
+                    feature_obj, FeatureDeserializer::SUPPORTS, to_string(feature->supports_expression));
 
                 if (!feature->dependencies.empty() || debug)
                 {
