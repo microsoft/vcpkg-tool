@@ -895,7 +895,7 @@ namespace vcpkg::PostBuildLint
         std::vector<std::pair<Path, std::string>> files_and_contents;
         for (auto& path : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
         {
-            if (Util::contains(extensions, path.extension()))
+            if (Util::contains(extensions, path.extension().substr(1 /* ignore dot */)))
             {
                 auto contents = fs.read_contents(path, VCPKG_LINE_INFO);
                 files_and_contents.emplace_back(std::move(path), std::move(contents));
