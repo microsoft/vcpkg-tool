@@ -177,7 +177,7 @@ namespace vcpkg
         if (configuration_from_manifest.has_value())
         {
             print2(Color::error,
-                   "Ambiguous vcpkg configuration provided by manifest and configuration file.\n"
+                   "Ambiguous vcpkg configuration provided by both manifest and configuration file.\n"
                    "-- Delete configuration file \"",
                    path_to_config,
                    "\"\n"
