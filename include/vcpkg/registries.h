@@ -28,7 +28,7 @@ namespace vcpkg
             std::string commit_id;
             bool stale;
         };
-        
+
         using LockDataType = std::multimap<std::string, EntryData, std::less<>>;
         struct Entry
         {
