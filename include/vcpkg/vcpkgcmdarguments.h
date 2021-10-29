@@ -106,6 +106,7 @@ namespace vcpkg
         bool binary_caching;
         bool versions;
         bool manifests;
+        bool config_manifests;
     };
 
     struct VcpkgCmdArguments
@@ -202,6 +203,8 @@ namespace vcpkg
         Optional<bool> registries_feature = nullopt;
         constexpr static StringLiteral VERSIONS_FEATURE = "versions";
         Optional<bool> versions_feature = nullopt;
+        constexpr static StringLiteral CONFIG_MANIFESTS_FEATURE = "configmanifests";
+        Optional<bool> config_manifests_feature = nullopt;
 
         constexpr static StringLiteral RECURSIVE_DATA_ENV = "X_VCPKG_RECURSIVE_DATA";
 
@@ -210,6 +213,7 @@ namespace vcpkg
         bool registries_enabled() const { return registries_feature.value_or(true); }
         bool versions_enabled() const { return versions_feature.value_or(true); }
         bool manifests_enabled() const { return manifest_mode.value_or(true); }
+        bool config_manifests_enabled() const { return config_manifests_feature.value_or(false); }
         FeatureFlagSettings feature_flag_settings() const
         {
             FeatureFlagSettings f;
@@ -218,6 +222,7 @@ namespace vcpkg
             f.registries = registries_enabled();
             f.versions = versions_enabled();
             f.manifests = manifests_enabled();
+            f.config_manifests = config_manifests_enabled();
             return f;
         }
 

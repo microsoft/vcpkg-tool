@@ -857,6 +857,7 @@ namespace vcpkg
         constexpr static StringLiteral SUPPORTS = "supports";
         constexpr static StringLiteral OVERRIDES = "overrides";
         constexpr static StringLiteral BUILTIN_BASELINE = "builtin-baseline";
+        constexpr static StringLiteral VCPKG_CONFIGURATION = "$x-vcpkg-configuration";
 
         virtual Span<const StringView> valid_fields() const override
         {
@@ -874,6 +875,7 @@ namespace vcpkg
                 SUPPORTS,
                 OVERRIDES,
                 BUILTIN_BASELINE,
+                VCPKG_CONFIGURATION,
             };
             static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
 
@@ -957,6 +959,7 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::SUPPORTS;
     constexpr StringLiteral ManifestDeserializer::OVERRIDES;
     constexpr StringLiteral ManifestDeserializer::BUILTIN_BASELINE;
+    constexpr StringLiteral ManifestDeserializer::VCPKG_CONFIGURATION;
 
     SourceControlFile SourceControlFile::clone() const
     {
@@ -998,6 +1001,19 @@ namespace vcpkg
                                                                          bool is_default_builtin_registry) const
     {
         static constexpr StringLiteral s_extended_help = "See `vcpkg help versioning` for more information.";
+        auto format_error_message = [&](StringView manifest_field, StringView feature_flag) {
+            return Strings::format(" was rejected because it uses \"%s\" and the `%s` feature flag is disabled.\n"
+                                   "This can be fixed by removing \"%s\".\n",
+                                   manifest_field,
+                                   feature_flag,
+                                   manifest_field);
+        };
+        if (!flags.config_manifests && core_paragraph->extra_info.contains(ManifestDeserializer::VCPKG_CONFIGURATION))
+        {
+            return Strings::concat(origin,
+                                   format_error_message(ManifestDeserializer::VCPKG_CONFIGURATION,
+                                                        VcpkgCmdArguments::CONFIG_MANIFESTS_FEATURE));
+        }
         if (!flags.versions)
         {
             auto check_deps = [&](View<Dependency> deps) -> Optional<std::string> {
@@ -1027,11 +1043,10 @@ namespace vcpkg
             if (core_paragraph->overrides.size() != 0)
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
-                return Strings::concat(origin,
-                                       " was rejected because it uses overrides and the `",
-                                       VcpkgCmdArguments::VERSIONS_FEATURE,
-                                       "` feature flag is disabled.\nThis can be fixed by removing \"overrides\".\n",
-                                       s_extended_help);
+                return Strings::concat(
+                    origin,
+                    format_error_message(ManifestDeserializer::OVERRIDES, VcpkgCmdArguments::VERSIONS_FEATURE),
+                    s_extended_help);
             }
 
             if (core_paragraph->builtin_baseline.has_value())
@@ -1039,9 +1054,7 @@ namespace vcpkg
                 LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
                 return Strings::concat(
                     origin,
-                    " was rejected because it uses builtin-baseline and the `",
-                    VcpkgCmdArguments::VERSIONS_FEATURE,
-                    "` feature flag is disabled.\nThis can be fixed by removing \"builtin-baseline\".\n",
+                    format_error_message(ManifestDeserializer::BUILTIN_BASELINE, VcpkgCmdArguments::VERSIONS_FEATURE),
                     s_extended_help);
             }
         }

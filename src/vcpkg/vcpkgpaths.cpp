@@ -383,6 +383,14 @@ namespace vcpkg
                 auto manifest_obj = manifest->first;
                 if (auto config_obj = manifest_obj.get("$x-vcpkg-configuration"))
                 {
+                    if (!config_obj->is_object())
+                    {
+                        print2(Color::error,
+                               "Failed to parse ",
+                               m_pimpl->m_manifest_path,
+                               ": $x-vcpkg-configuration must be an object\n");
+                        Checks::exit_fail(VCPKG_LINE_INFO);
+                    }
                     return make_optional(config_obj->object());
                 }
             }
