@@ -17,7 +17,6 @@ endif()
 include(CMakeDependentOption)
 
 option(BUILD_TESTING "Option for enabling testing" ON)
-option(VCPKG_ALLOW_APPLE_CLANG "Option for allowing apple clang, even versions that we don't know will work" OFF)
 option(VCPKG_DEVELOPMENT_WARNINGS "Option for turning on all warnings" ON)
 option(VCPKG_WARNINGS_AS_ERRORS "Set warnings to be errors" OFF)
 option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
@@ -44,6 +43,8 @@ project(vcpkg
     HOMEPAGE_URL "https://github.com/microsoft/vcpkg"
     LANGUAGES ${LANGUAGES}
 )
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(cmake/utilities.cmake)
 
 # =============
@@ -69,8 +70,6 @@ set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
 # ========================
 
 vcpkg_detect_compiler()
-vcpkg_detect_standard_library()
-vcpkg_detect_std_filesystem()
 
 if(VCPKG_EMBED_GIT_SHA)
     find_package(Git REQUIRED)
@@ -97,7 +96,7 @@ if(NOT DEFINED VCPKG_VERSION OR VCPKG_VERSION STREQUAL "")
     set(VCPKG_VERSION "unknownhash")
 endif()
 
-set(VCPKG_BASE_VERSION "2021-09-10")
+set(VCPKG_BASE_VERSION "2021-10-25")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -122,6 +121,12 @@ endif()
 
 include(GNUInstallDirs)
 
+# ====================
+# === Dependencies ===
+# ====================
+
+find_package(fmt REQUIRED)
+
 # ===============
 # === Targets ===
 # ===============
@@ -138,18 +143,18 @@ target_include_directories(vcpkglib PUBLIC include)
 
 vcpkg_target_add_warning_options(vcpkglib)
 target_compile_definitions(vcpkglib PUBLIC
-    VCPKG_USE_STD_FILESYSTEM=$<BOOL:${VCPKG_USE_STD_FILESYSTEM}>
     VCPKG_VERSION=${VCPKG_VERSION}
     VCPKG_BASE_VERSION=${VCPKG_BASE_VERSION}
 )
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-target_link_libraries(vcpkglib PRIVATE Threads::Threads)
-
-if(VCPKG_CXXFS_LIBRARY)
-    target_link_libraries(vcpkglib PRIVATE ${VCPKG_CXXFS_LIBRARY})
-endif()
+target_link_libraries(vcpkglib
+    PUBLIC
+        fmt::fmt
+    PRIVATE
+        Threads::Threads
+)
 
 if(MSVC)
     get_target_property(_srcs vcpkglib SOURCES)

@@ -29,21 +29,10 @@
 #include <string>
 #include <thread>
 
-#if !defined(VCPKG_USE_STD_FILESYSTEM)
-#error The build system must set VCPKG_USE_STD_FILESYSTEM.
-#endif // !defined(VCPKG_USE_STD_FILESYSTEM)
-
-#if VCPKG_USE_STD_FILESYSTEM
+#if defined(_WIN32)
 #include <filesystem>
-#else
-#include <experimental/filesystem>
-#endif
-
-#if VCPKG_USE_STD_FILESYSTEM
 namespace stdfs = std::filesystem;
-#else
-namespace stdfs = std::experimental::filesystem;
-#endif
+#endif // _WIN32
 
 namespace
 {
@@ -82,34 +71,18 @@ namespace
             li, Strings::concat(call_name, "(", Strings::join(", ", args.begin(), args.end()), "): ", ec.message()));
     }
 
+#if defined(_WIN32)
     stdfs::copy_options convert_copy_options(CopyOptions options)
     {
-        stdfs::copy_options result{};
-        const auto unpacked = static_cast<int>(options);
-
-        switch (unpacked & static_cast<int>(CopyOptions::existing_mask))
+        switch (options)
         {
-            case static_cast<int>(CopyOptions::skip_existing): result |= stdfs::copy_options::skip_existing; break;
-            case static_cast<int>(CopyOptions::overwrite_existing):
-                result |= stdfs::copy_options::overwrite_existing;
-                break;
+            case CopyOptions::none: return stdfs::copy_options::none;
+            case CopyOptions::skip_existing: return stdfs::copy_options::skip_existing;
+            case CopyOptions::overwrite_existing: return stdfs::copy_options::overwrite_existing;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
-
-        if (unpacked & static_cast<int>(CopyOptions::recursive))
-        {
-            result |= stdfs::copy_options::recursive;
-        }
-
-        switch (unpacked & static_cast<int>(CopyOptions::symlinks_mask))
-        {
-            case static_cast<int>(CopyOptions::copy_symlinks): result |= stdfs::copy_options::copy_symlinks; break;
-            case static_cast<int>(CopyOptions::skip_symlinks): result |= stdfs::copy_options::skip_symlinks; break;
-        }
-
-        return result;
     }
 
-#if defined(_WIN32)
     FileType convert_file_type(stdfs::file_type type) noexcept
     {
         switch (type)
@@ -128,22 +101,11 @@ namespace
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
-#endif // _WIN32
 
-    stdfs::path to_stdfs_path(const Path& utfpath)
-    {
-#if defined(_WIN32)
-        return stdfs::path(Strings::to_utf16(utfpath.native()));
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-        return stdfs::path(utfpath.native());
-#endif // ^^^ !_WIN32
-    }
+    stdfs::path to_stdfs_path(const Path& utfpath) { return stdfs::path(Strings::to_utf16(utfpath.native())); }
 
-#if defined(_WIN32)
     Path from_stdfs_path(const stdfs::path& stdpath) { return Strings::to_utf8(stdpath.native()); }
-#endif // ^^^ _WIN32
 
-#if defined(_WIN32)
     // The Win32 version of this implementation is effectively forked from
     // https://github.com/microsoft/STL/blob/bd7adb4a932725f60ba096580c415616486ab64c/stl/inc/filesystem#L436
     // converted to speak UTF-8 rather than UTF-16.
@@ -428,7 +390,10 @@ namespace
         if (!SetFileAttributesW(file_name, dw_attributes))
         {
             ec.assign(GetLastError(), std::system_category());
+            return;
         }
+
+        ec.clear();
     }
 
     // Custom implementation of stdfs::remove_all intended to be resilient to transient issues
@@ -616,6 +581,30 @@ namespace
             }
         }
 
+        void ftruncate(off_t length, std::error_code& ec) const noexcept
+        {
+            if (::ftruncate(fd, length) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+        }
+
+        void fchmod(mode_t new_mode, std::error_code& ec) const noexcept
+        {
+            if (::fchmod(fd, new_mode) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+        }
+
         operator bool() const noexcept { return fd >= 0; }
 
         int get() const noexcept { return fd; }
@@ -735,7 +724,10 @@ namespace
         ec.assign(errno, std::generic_category());
     }
 
-    void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point);
+    void vcpkg_remove_all_directory(const Path& base,
+                                    std::error_code& ec,
+                                    Path& failure_point,
+                                    struct stat& base_lstat);
 
     void vcpkg_remove_all(const Path& base,
                           std::error_code& ec,
@@ -760,13 +752,29 @@ namespace
 
             if (S_ISDIR(s.st_mode))
             {
-                vcpkg_remove_all_directory(base, ec, failure_point);
+                vcpkg_remove_all_directory(base, ec, failure_point, s);
                 return;
             }
         }
         else if (base_dtype == PosixDType::Directory)
         {
-            vcpkg_remove_all_directory(base, ec, failure_point);
+            // establish `base` being writable before calling vcpkg_remove_all_directory
+            if (::lstat(base.c_str(), &s) != 0)
+            {
+                // no ENOENT check here since we were supposed to be visiting a directory
+                mark_recursive_error(base, ec, failure_point);
+                return;
+            }
+
+            if (!S_ISDIR(s.st_mode))
+            {
+                // if it isn't still a directory something is racy
+                ec = std::make_error_code(std::errc::device_or_resource_busy);
+                mark_recursive_error(base, ec, failure_point);
+                return;
+            }
+
+            vcpkg_remove_all_directory(base, ec, failure_point, s);
             return;
         }
 
@@ -776,9 +784,21 @@ namespace
         }
     }
 
-    void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point)
+    void vcpkg_remove_all_directory(const Path& base, std::error_code& ec, Path& failure_point, struct stat& base_lstat)
     {
-        // it was a directory, so delete everything inside
+        // ensure that the directory is writable and executable
+        // NOTE: the execute bit on directories is needed to allow opening files inside of that directory
+        if ((base_lstat.st_mode & (S_IWUSR | S_IXUSR)) != (S_IWUSR | S_IXUSR))
+        {
+            if (::chmod(base.c_str(), base_lstat.st_mode | S_IWUSR | S_IXUSR) != 0)
+            {
+                ec.assign(errno, std::generic_category());
+                mark_recursive_error(base, ec, failure_point);
+                return;
+            }
+        }
+
+        // delete everything inside
         ReadDirOp op{base, ec};
         if (ec)
         {
@@ -798,7 +818,7 @@ namespace
                     return;
                 }
 
-                // no more entries left, fall down to remove below
+                // no more entries left, fall down to rmdir below
                 break;
             }
 
@@ -1521,10 +1541,10 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::copy(const Path& source, const Path& destination, CopyOptions options, LineInfo li)
+    void Filesystem::copy_regular_recursive(const Path& source, const Path& destination, LineInfo li)
     {
         std::error_code ec;
-        this->copy(source, destination, options, ec);
+        this->copy_regular_recursive(source, destination, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {source, destination});
@@ -2290,67 +2310,24 @@ namespace vcpkg
 #if !defined(_WIN32)
             if (ec)
             {
-                auto dst = new_path;
-                dst += temp_suffix;
-
-                PosixFd i_fd{old_path.c_str(), O_RDONLY, ec};
-                if (ec) return;
-
-                PosixFd o_fd{dst.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0664, ec};
-                if (ec) return;
-
-#if defined(__linux__)
-                off_t bytes = 0;
-                struct stat info = {0};
-                i_fd.fstat(&info, ec);
-                if (ec) return;
-                auto written_bytes = sendfile(o_fd.get(), i_fd.get(), &bytes, info.st_size);
-#elif defined(__APPLE__)
-                auto written_bytes = fcopyfile(i_fd.get(), o_fd.get(), 0, COPYFILE_ALL);
-#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
-                ssize_t written_bytes = 0;
+                auto dst = new_path + temp_suffix;
+                this->copy_file(old_path, dst, CopyOptions::overwrite_existing, ec);
+                if (ec)
                 {
-                    constexpr std::size_t buffer_length = 4096;
-                    unsigned char buffer[buffer_length];
-                    while (auto read_bytes = i_fd.read(buffer, buffer_length))
-                    {
-                        if (read_bytes == -1)
-                        {
-                            written_bytes = -1;
-                            break;
-                        }
-                        auto remaining = read_bytes;
-                        while (remaining > 0)
-                        {
-                            auto read_result = o_fd.write(buffer, remaining);
-                            if (read_result == -1)
-                            {
-                                written_bytes = -1;
-                                // break two loops
-                                goto copy_failure;
-                            }
-                            remaining -= read_result;
-                        }
-                    }
-
-                copy_failure:;
-                }
-#endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
-                if (written_bytes == -1)
-                {
-                    ec.assign(errno, std::generic_category());
                     return;
                 }
 
-                i_fd.close();
-                o_fd.close();
-
                 this->rename(dst, new_path, ec);
-                if (ec) return;
+                if (ec)
+                {
+                    return;
+                }
+
                 this->remove(old_path, ec);
             }
 #endif // ^^^ !defined(_WIN32)
         }
+
         virtual bool remove(const Path& target, std::error_code& ec) override
         {
 #if defined(_WIN32)
@@ -2369,16 +2346,23 @@ namespace vcpkg
 
             return result;
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            if (::remove(target.c_str()) == 0 || errno == ENOENT)
+            if (::remove(target.c_str()) == 0)
             {
                 ec.clear();
                 return true;
             }
+
+            const auto remove_errno = errno;
+            if (remove_errno == ENOENT)
+            {
+                ec.clear();
+            }
             else
             {
-                ec.assign(errno, std::generic_category());
-                return false;
+                ec.assign(remove_errno, std::generic_category());
             }
+
+            return false;
 #endif // _WIN32
         }
         virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) override
@@ -2593,24 +2577,210 @@ namespace vcpkg
             }
 #endif // _WIN32
         }
-        virtual void copy(const Path& source,
-                          const Path& destination,
-                          CopyOptions options,
-                          std::error_code& ec) override
+
+        virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) override
         {
-            stdfs::copy(to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
+#if defined(_WIN32)
+            stdfs::copy(to_stdfs_path(source), to_stdfs_path(destination), stdfs::copy_options::recursive, ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            ReadDirOp rd{source.c_str(), ec};
+            if (ec)
+            {
+                if (ec == std::errc::not_a_directory)
+                {
+                    this->copy_file(source, destination, CopyOptions::none, ec);
+                }
+
+                return;
+            }
+
+            this->create_directory(destination, ec);
+            Path source_entry_name;
+            Path destination_entry_name;
+            const dirent* entry;
+            // the !ec check is either for the create_directory above on the first iteration, or for the most
+            // recent copy_file or copy_regular_recursive on subsequent iterations
+            while (!ec && (entry = rd.read(ec)))
+            {
+                source_entry_name = source / entry->d_name;
+                destination_entry_name = destination / entry->d_name;
+                if (get_d_type(entry) == PosixDType::Regular)
+                {
+                    this->copy_file(source_entry_name, destination_entry_name, CopyOptions::none, ec);
+                }
+                else
+                {
+                    this->copy_regular_recursive(source_entry_name, destination_entry_name, ec);
+                }
+            }
+#endif // ^^^ !_WIN32
         }
+
         virtual bool copy_file(const Path& source,
                                const Path& destination,
                                CopyOptions options,
                                std::error_code& ec) override
         {
+#if defined(_WIN32)
             return stdfs::copy_file(
                 to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            PosixFd source_fd{source.c_str(), O_RDONLY, ec};
+            if (ec)
+            {
+                return false;
+            }
+
+            struct stat source_stat;
+            source_fd.fstat(&source_stat, ec);
+            if (ec)
+            {
+                return false;
+            }
+
+            if (!S_ISREG(source_stat.st_mode))
+            {
+                // N4861 [fs.op.copy.file]/4: "report an error if"
+                // is_regular_file(from) is false
+                ec = std::make_error_code(std::errc::invalid_argument);
+                return false;
+            }
+
+            int open_options = O_WRONLY | O_CREAT;
+            if (options != CopyOptions::overwrite_existing)
+            {
+                // the standard wording suggests that we should create a file through a broken symlink which would
+                // forbid use of O_EXCL. However, implementations like boost::copy_file don't do this and doing it
+                // would introduce more potential for TOCTOU bugs
+                open_options |= O_EXCL;
+            }
+
+            const mode_t open_mode = source_stat.st_mode | 0222; // ensure the file is created writable
+            PosixFd destination_fd{destination.c_str(), open_options, open_mode, ec};
+            if (ec)
+            {
+                if (options == CopyOptions::skip_existing && ec == std::errc::file_exists)
+                {
+                    ec.clear();
+                }
+
+                return false;
+            }
+
+            struct stat destination_stat;
+            destination_fd.fstat(&destination_stat, ec);
+            if (ec)
+            {
+                return false;
+            }
+            else if (!S_ISREG(destination_stat.st_mode))
+            {
+                ec = std::make_error_code(std::errc::invalid_argument);
+                return false;
+            }
+
+            if (source_stat.st_dev == destination_stat.st_dev && source_stat.st_ino == destination_stat.st_ino)
+            {
+                // /4 exists(to) is true and equivalent(from, to) is true
+                ec = std::make_error_code(std::errc::device_or_resource_busy);
+                return false;
+            }
+
+            if (options == CopyOptions::overwrite_existing)
+            {
+                destination_fd.ftruncate(0, ec);
+                if (ec) return false;
+            }
+
+#if defined(__linux__)
+            off_t bytes = 0;
+            if (sendfile(destination_fd.get(), source_fd.get(), &bytes, source_stat.st_size) == -1)
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+
+            destination_fd.fchmod(source_stat.st_mode, ec);
+            return !ec;
+#elif defined(__APPLE__)
+            if (fcopyfile(source_fd.get(), destination_fd.get(), 0, COPYFILE_ALL) == -1)
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+
+            // fcopyfile copies the mode so no need to fchmod here
+            return true;
+#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
+            constexpr std::size_t buffer_length = 4096;
+            unsigned char buffer[buffer_length];
+            while (auto read_bytes = i_fd.read(buffer, buffer_length))
+            {
+                if (read_bytes == -1)
+                {
+                    ec.assign(errno, std::generic_category());
+                    return false;
+                }
+
+                auto remaining = read_bytes;
+                while (remaining > 0)
+                {
+                    auto write_result = destination_fd.write(buffer, remaining);
+                    if (write_result == -1)
+                    {
+                        ec.assign(errno, std::generic_category());
+                        return false;
+                    }
+
+                    remaining -= write_result;
+                }
+            }
+
+            destination_fd.fchmod(source_stat.st_mode, ec);
+            return !ec;
+#endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
+#endif // ^^^ !_WIN32
         }
+
         virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) override
         {
-            return stdfs::copy_symlink(to_stdfs_path(source), to_stdfs_path(destination), ec);
+#if defined(_WIN32)
+            stdfs::copy_symlink(to_stdfs_path(source), to_stdfs_path(destination), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            std::string buffer;
+            buffer.resize(PATH_MAX);
+            for (;;)
+            {
+                ssize_t result = ::readlink(source.c_str(), &buffer[0], buffer.size());
+                if (result < 0)
+                {
+                    ec.assign(errno, std::generic_category());
+                    return;
+                }
+
+                if (static_cast<size_t>(result) == buffer.size())
+                {
+                    // we might not have used a big enough buffer, grow and retry
+                    buffer.append(buffer.size(), '\0');
+                    continue;
+                }
+
+                buffer.resize(static_cast<size_t>(result));
+                // "Conforming applications should not assume that the returned contents of the
+                // symbolic link are null-terminated." -- but std::string already adds the extra
+                // null we need
+                break;
+            }
+
+            if (::symlink(buffer.c_str(), destination.c_str()) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+#endif // ^^^ !_WIN32
         }
 
         virtual FileType status(const Path& target, std::error_code& ec) const override

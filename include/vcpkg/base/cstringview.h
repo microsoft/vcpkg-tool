@@ -12,6 +12,8 @@ namespace vcpkg
         constexpr CStringView(const CStringView&) = default;
         CStringView(const std::string& str) : cstr(str.c_str()) { }
 
+        CStringView& operator=(const CStringView& cstr) = default;
+
         constexpr const char* c_str() const { return cstr; }
 
         void to_string(std::string& str) const { str.append(cstr); }
