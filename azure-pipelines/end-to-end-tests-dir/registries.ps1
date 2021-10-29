@@ -176,20 +176,8 @@ finally
 
 # actually test the registries
 Write-Trace "actually test the registries"
-# test the filesystem registry
-$vcpkgJson = @{
-    "name" = "manifest-test";
-    "version-string" = "1.0.0";
-    "dependencies" = @(
-        "vcpkg-internal-e2e-test-port"
-    );
-    # Use versioning features without a builtin-baseline
-    "overrides" = @(@{
-        "name" = "unused";
-        "version" = "0";
-    })
-}
 
+# test the filesystem registry
 Write-Trace "test the filesystem registry"
 $manifestDir = "$TestingRoot/filesystem-registry-test-manifest-dir"
 
