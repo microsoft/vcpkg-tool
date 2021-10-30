@@ -558,6 +558,7 @@ namespace vcpkg
             {
                 repo_info.insert(repo_it->second.reference, Json::Value::string(repo_it->second.commit_id));
             }
+            repo_info.sort_keys();
             obj.insert(repo, std::move(repo_info));
             it = repo_info_range.second;
         }
