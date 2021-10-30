@@ -67,12 +67,15 @@ try
     $gitMainBranch = 'main'
     $gitSecondaryBranch = 'secondary'
 
-    $CurrentTest = 'git init -b .'
-    git @gitConfigOptions init -b $gitMainBranch .
+    $CurrentTest = 'git init .'
+    git @gitConfigOptions init .
     Throw-IfFailed
 
     # Create git registry with vcpkg-internal-e2e-test-port in the main branch
-    
+    $CurrentTest = 'git switch --orphan'
+    git @gitConfigOptions switch --orphan $gitMainBranch
+    Throw-IfFailed
+
     Copy-Item -Recurse -LiteralPath "$PSScriptRoot/../e2e_ports/vcpkg-internal-e2e-test-port" -Destination .
     New-Item -Path './vcpkg-internal-e2e-test-port/foobar' -Value 'this is just to get a distinct git tree'
 

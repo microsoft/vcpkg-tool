@@ -50,9 +50,11 @@ function Require-JsonFileEquals {
     )
     Require-FileExists $File
     $ActualJsonObj = Get-Content $File | ConvertFrom-Json
-    if (($ActualJsonObj | ConvertTo-Json -Compress) -ne ($JsonObj | ConvertTo-Json -Compress)) {
+    $ActualJson = $ActualJsonObj | ConvertTo-Json -Compress
+    $ExpectedJson = $JsonObj | ConvertTo-Json -Compress
+    if (ActualJson -ne ExpectedJson) {
         Write-Stack
-        throw "'$Script:CurrentTest' file '$File' did not have the correct contents"
+        throw "'$Script:CurrentTest' file '$File' did not have the correct contents`nExpected: $ExpectedJson`nActual: $ActualJson"
     }
 }
 
