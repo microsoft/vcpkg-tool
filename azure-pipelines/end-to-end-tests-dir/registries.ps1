@@ -287,12 +287,10 @@ try
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
     Throw-IfFailed
 
-    $expectedVcpkgLockJson = @{
-        $gitRegistryUpstream = @{
-            "HEAD" = $gitMainBaselineCommit; 
-            $gitSecondaryBranch = $gitSecondaryBaselineCommit  
-        } 
-    }
+    $expectedVcpkgLockJson = "{$(ConvertTo-Json $gitRegistryUpstream):{
+        `"HEAD`" : `"$gitMainBaselineCommit`",
+        `"$gitSecondaryBranch`" : `"$gitSecondaryBaselineCommit`"
+    }}"
 
     Require-JsonFileEquals $installRoot/vcpkg/vcpkg-lock.json $expectedVcpkgLockJson
 
