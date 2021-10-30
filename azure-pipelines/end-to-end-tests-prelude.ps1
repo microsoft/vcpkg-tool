@@ -52,7 +52,7 @@ function Require-JsonFileEquals {
     $ActualJsonObj = Get-Content $File | ConvertFrom-Json
     $ActualJson = $ActualJsonObj | ConvertTo-Json -Compress
     $ExpectedJson = $JsonObj | ConvertTo-Json -Compress
-    if (ActualJson -ne ExpectedJson) {
+    if ($ActualJson -ne $ExpectedJson) {
         Write-Stack
         throw "'$Script:CurrentTest' file '$File' did not have the correct contents`nExpected: $ExpectedJson`nActual: $ActualJson"
     }
