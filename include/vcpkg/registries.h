@@ -125,7 +125,7 @@ namespace vcpkg
         std::unique_ptr<RegistryImplementation> default_registry_;
         std::vector<Registry> registries_;
     };
-    
+
     Json::Object serialize_registry_set(const RegistrySet& config);
 
     std::unique_ptr<Json::IDeserializer<std::unique_ptr<RegistryImplementation>>>
