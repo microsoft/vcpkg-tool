@@ -377,25 +377,24 @@ namespace vcpkg
             m_pimpl->m_manifest_path = manifest_root_dir / "vcpkg.json";
         }
 
-        auto configuration_from_manifest = [&]() -> vcpkg::Optional<Json::Object> {
-            if (auto manifest = m_pimpl->m_manifest_doc.get())
+        vcpkg::Optional<Json::Object> configuration_from_manifest;
+        if (auto manifest = m_pimpl->m_manifest_doc.get())
+        {
+            auto manifest_obj = manifest->first;
+            if (auto config_obj = manifest_obj.get("x-vcpkg-configuration"))
             {
-                auto manifest_obj = manifest->first;
-                if (auto config_obj = manifest_obj.get("x-vcpkg-configuration"))
+                if (!config_obj->is_object())
                 {
-                    if (!config_obj->is_object())
-                    {
-                        print2(Color::error,
-                               "Failed to parse ",
-                               m_pimpl->m_manifest_path,
-                               ": x-vcpkg-configuration must be an object\n");
-                        Checks::exit_fail(VCPKG_LINE_INFO);
-                    }
-                    return make_optional(config_obj->object());
+                    print2(Color::error,
+                            "Failed to parse ",
+                            m_pimpl->m_manifest_path,
+                            ": x-vcpkg-configuration must be an object\n");
+                    Checks::exit_fail(VCPKG_LINE_INFO);
                 }
+
+                configuration_from_manifest = make_optional(config_obj->object());
             }
-            return nullopt;
-        }();
+        }
         auto config_file = load_configuration(filesystem, args, root, manifest_root_dir, configuration_from_manifest);
 
         // metrics from configuration
