@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/util.h>
+
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.upload-metrics.h>
@@ -7,46 +9,40 @@
 
 #include <stddef.h>
 
+#include <set>
+
 using namespace vcpkg;
 
-namespace
+TEST_CASE ("list of commands is correct", "[commands]")
 {
-    template<class CommandListT, size_t ExpectedCount>
-    void check_all_commands(const CommandListT& actual_commands, const char* const (&expected_commands)[ExpectedCount])
+    using vcpkg::Util::Sets::contains;
+    std::set<std::string> commands;
+    for (auto command : Commands::get_available_basic_commands())
     {
-        CHECK(actual_commands.size() == ExpectedCount); // makes sure this test is updated if we add a command
-        for (const char* expected_command : expected_commands)
-        {
-            CHECK(Commands::find(StringView{expected_command, strlen(expected_command)}, actual_commands) != nullptr);
-        }
-
-        CHECK(Commands::find("x-never-will-exist", actual_commands) == nullptr);
+        CHECK_FALSE(contains(commands, command.name));
+        commands.insert(command.name);
     }
-} // unnamed namespace
+    for (auto command : Commands::get_available_paths_commands())
+    {
+        CHECK_FALSE(contains(commands, command.name));
+        commands.insert(command.name);
+    }
+    for (auto command : Commands::get_available_triplet_commands())
+    {
+        CHECK_FALSE(contains(commands, command.name));
+        commands.insert(command.name);
+    }
 
-// clang-format tries to wrap the following lists inappropriately
-
-// clang-format off
-TEST_CASE ("get_available_basic_commands works", "[commands]")
-{
-    check_all_commands(Commands::get_available_basic_commands(), {
+    // clang-format off
+    std::set<std::string> expected_commands{
         "contact",
+        "search",
         "version",
         "x-download",
         "x-init-registry",
         "x-generate-default-message-map",
-#if defined(_WIN32)
-        "x-upload-metrics",
-#endif // defined(_WIN32)
-        });
-}
-
-TEST_CASE ("get_available_paths_commands works", "[commands]")
-{
-    check_all_commands(Commands::get_available_paths_commands(), {
         "/?",
         "help",
-        "search",
         "list",
         "integrate",
         "owns",
@@ -65,12 +61,6 @@ TEST_CASE ("get_available_paths_commands works", "[commands]")
         "x-vsinstances",
         "x-ci-verify-versions",
         "x-add-version",
-        });
-}
-
-TEST_CASE ("get_available_commands_type_a works", "[commands]")
-{
-    check_all_commands(Commands::get_available_triplet_commands(), {
         "install",
         "x-set-installed",
         "ci",
@@ -81,8 +71,14 @@ TEST_CASE ("get_available_commands_type_a works", "[commands]")
         "build-external",
         "export",
         "depend-info",
+        "x-forward",
         "x-check-support",
-        "z-print-config"
-        });
+		"z-print-config",
+#if defined(_WIN32)
+        "x-upload-metrics",
+#endif // defined(_WIN32)
+        };
+    // clang-format on
+
+    CHECK(commands == expected_commands);
 }
-// clang-format on
