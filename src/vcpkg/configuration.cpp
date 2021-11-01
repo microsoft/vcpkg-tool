@@ -86,7 +86,7 @@ namespace
             for (const auto& reg : reg_view)
             {
                 auto reg_obj = reg.implementation().serialize();
-                reg_obj.insert(REGISTRY_PACKAGES, std::move(serialize_packages_list(reg.packages())));
+                reg_obj.insert(REGISTRY_PACKAGES, serialize_packages_list(reg.packages()));
                 reg_arr.push_back(std::move(reg_obj));
             }
         }
