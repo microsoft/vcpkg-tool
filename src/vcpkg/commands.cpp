@@ -33,6 +33,7 @@
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
+#include <vcpkg/commands.zforward.h>
 #include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
@@ -90,6 +91,7 @@ namespace vcpkg::Commands
         static const FormatManifest::FormatManifestCommand format_manifest{};
         static const CIVerifyVersions::CIVerifyVersionsCommand ci_verify_versions{};
         static const AddVersion::AddVersionCommand add_version{};
+        static const Z_Forward::ForwardCommand test_forward{};
 
         static std::vector<PackageNameAndFunction<const PathsCommand*>> t = {
             {"/?", &help},
@@ -112,6 +114,7 @@ namespace vcpkg::Commands
             {"format-manifest", &format_manifest},
             {"x-ci-verify-versions", &ci_verify_versions},
             {"x-add-version", &add_version},
+            {"z-forward", &test_forward},
         };
         return t;
     }

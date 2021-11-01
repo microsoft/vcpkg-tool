@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/system.process.h>
+
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
@@ -245,6 +247,8 @@ namespace vcpkg
 
         Optional<std::string> asset_sources_template() const;
 
+        void add_forwarded_arguments(Command& cmd) const;
+
     private:
         void imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env);
 
@@ -253,5 +257,7 @@ namespace vcpkg
 
         std::unordered_set<std::string> command_switches;
         std::unordered_map<std::string, std::vector<std::string>> command_options;
+
+        std::vector<std::string> original_arguments;
     };
 }
