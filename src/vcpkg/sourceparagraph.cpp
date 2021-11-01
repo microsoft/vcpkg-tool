@@ -6,6 +6,7 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/configuration.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/platform-expression.h>
@@ -1352,10 +1353,22 @@ namespace vcpkg
             obj.insert(el.first.to_string(), el.second);
         }
 
-        // TODO: Actually serialize vcpkg-configuration
         if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
         {
-            obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION, *configuration);
+            Json::Reader reader;
+            auto maybe_configuration = reader.visit(*configuration, *vcpkg::make_configuration_deserializer(""));
+            if (!reader.errors().empty())
+            {
+                print2(Color::error, "Errors occurred while parsing ", ManifestDeserializer::VCPKG_CONFIGURATION, "\n");
+                for (auto&& msg : reader.errors())
+                    print2("    ", msg, '\n');
+
+                print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for "
+                       "more information.\n");
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+            obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,
+                       serialize_configuration(maybe_configuration.value_or_exit(VCPKG_LINE_INFO)));
         }
 
         obj.insert(ManifestDeserializer::NAME, Json::Value::string(scf.core_paragraph->name));

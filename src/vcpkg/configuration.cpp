@@ -63,6 +63,14 @@ namespace
 
     static Json::Object serialize_configuration_impl(const Configuration& config)
     {
+        constexpr static StringLiteral REGISTRY_PACKAGES = "packages";
+        auto serialize_packages_list = [](vcpkg::View<std::string> packages) {
+            Json::Array ret;
+            for (auto pkg : packages)
+                ret.push_back(Json::Value::string(pkg));
+            return ret;
+        };
+
         Json::Object obj;
 
         if (config.registry_set.default_registry())
@@ -77,7 +85,9 @@ namespace
             auto& reg_arr = obj.insert(ConfigurationDeserializer::REGISTRIES, Json::Array());
             for (const auto& reg : reg_view)
             {
-                reg_arr.push_back(reg.implementation().serialize());
+                auto reg_obj = reg.implementation().serialize();
+                reg_obj.insert(REGISTRY_PACKAGES, std::move(serialize_packages_list(reg.packages())));
+                reg_arr.push_back(std::move(reg_obj));
             }
         }
         return obj;
