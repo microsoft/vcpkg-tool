@@ -560,8 +560,9 @@ namespace vcpkg::PostBuildLint
         for (const Path& file : files)
         {
             Checks::check_exit(VCPKG_LINE_INFO,
-                               Strings::case_insensitive_ascii_equals(file.extension(), ".lib"),
-                               "The file extension was not .lib: %s",
+                               Strings::case_insensitive_ascii_equals(file.extension(), ".lib") |
+                                   Strings::case_insensitive_ascii_equals(file.extension(), ".a"),
+                               "The file extension was not .lib or .a: %s",
                                file);
             const auto machine_types = read_lib_machine_types(fs.open_for_read(file, VCPKG_LINE_INFO));
 
@@ -927,10 +928,20 @@ namespace vcpkg::PostBuildLint
         const auto debug_bin_dir = package_dir / "debug/bin";
         const auto release_bin_dir = package_dir / "bin";
 
-        std::vector<Path> debug_libs = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(debug_libs, NotExtensionCaseInsensitive{".lib"});
-        std::vector<Path> release_libs = fs.get_regular_files_recursive(release_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(release_libs, NotExtensionCaseInsensitive{".lib"});
+        std::vector<Path> debug_lib_files = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
+        std::vector<Path> debug_win_libs = debug_lib_files;
+        std::vector<Path> debug_linux_libs = debug_lib_files;
+        Util::erase_remove_if(debug_win_libs, NotExtensionCaseInsensitive{".lib"});
+        Util::erase_remove_if(debug_linux_libs, NotExtensionCaseInsensitive{".a"});
+        std::vector<Path> debug_libs = debug_win_libs;
+        debug_libs.insert(debug_libs.begin(), debug_linux_libs.begin(), debug_linux_libs.end());
+        std::vector<Path> release_libs_files = fs.get_regular_files_recursive(release_lib_dir, IgnoreErrors{});
+        std::vector<Path> release_win_libs = release_libs_files;
+        std::vector<Path> release_linux_libs = release_libs_files;
+        Util::erase_remove_if(release_win_libs, NotExtensionCaseInsensitive{".lib"});
+        Util::erase_remove_if(release_linux_libs, NotExtensionCaseInsensitive{".a"});
+        std::vector<Path> release_libs = release_win_libs;
+        release_libs.insert(release_libs.begin(), release_linux_libs.begin(), release_linux_libs.end());
 
         if (!pre_build_info.build_type && !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
             error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs);
