@@ -19,7 +19,7 @@ namespace vcpkg::PostBuildLint
     enum class LintStatus
     {
         SUCCESS = 0,
-        ERROR_DETECTED = 1
+        PROBLEM_DETECTED = 1
     };
 
     struct OutdatedDynamicCrt
@@ -89,7 +89,7 @@ namespace vcpkg::PostBuildLint
                 print2(Color::warning,
                        "The folder /include exists in a cmake helper port; this is incorrect, since only cmake "
                        "files should be installed\n");
-                return LintStatus::ERROR_DETECTED;
+                return LintStatus::PROBLEM_DETECTED;
             }
             else
             {
@@ -102,7 +102,7 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning,
                    "The folder /include is empty or not present. This indicates the library was not correctly "
                    "installed.\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -193,7 +193,7 @@ namespace vcpkg::PostBuildLint
             print2("In exceptional circumstances, this policy can be disabled via ",
                    Build::to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS),
                    "\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -213,7 +213,7 @@ namespace vcpkg::PostBuildLint
                    "Include files should not be duplicated into the /debug/include directory. If this cannot "
                    "be disabled in the project cmake, use\n"
                    "    file(REMOVE_RECURSE \"${CURRENT_PACKAGES_DIR}/debug/include\")\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -227,7 +227,7 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning,
                    "/debug/share should not exist. Please reorganize any important files, then use\n"
                    "    file(REMOVE_RECURSE \"${CURRENT_PACKAGES_DIR}/debug/share\")\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -248,7 +248,7 @@ namespace vcpkg::PostBuildLint
                        "The /",
                        relative_path,
                        " file does not exist. This file must exist for CMake helper ports.\n");
-                return LintStatus::ERROR_DETECTED;
+                return LintStatus::PROBLEM_DETECTED;
             }
         }
 
@@ -265,7 +265,7 @@ namespace vcpkg::PostBuildLint
                           "/share/%s/cmake.\nPlease use the helper function `vcpkg_cmake_config_fixup()` "
                           "from the port vcpkg-cmake-config.`\n",
                           spec.name());
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -302,7 +302,7 @@ namespace vcpkg::PostBuildLint
                 spec.name(),
                 spec.name());
             print_paths(misplaced_cmake_files);
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -318,7 +318,7 @@ namespace vcpkg::PostBuildLint
             vcpkg::printf(Color::warning,
                           "The /debug/lib/cmake folder should be merged with /lib/cmake into /share/%s\n",
                           spec.name());
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -335,7 +335,7 @@ namespace vcpkg::PostBuildLint
                    "\nThe following dlls were found in /lib or /debug/lib. Please move them to /bin or "
                    "/debug/bin, respectively.\n");
             print_paths(dlls);
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -391,7 +391,7 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning, "The following files are potential copyright files:\n");
             print_paths(potential_copyright_files);
         }
-        return LintStatus::ERROR_DETECTED;
+        return LintStatus::PROBLEM_DETECTED;
     }
 
     static LintStatus check_for_exes(const Filesystem& fs, const Path& package_dir)
@@ -404,7 +404,7 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning,
                    "The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.\n");
             print_paths(exes);
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -439,7 +439,7 @@ namespace vcpkg::PostBuildLint
                           "If this is intended, add the following line in the portfile:\n"
                           "    SET(%s enabled)\n",
                           to_cmake_variable(BuildPolicy::DLLS_WITHOUT_EXPORTS));
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -473,7 +473,7 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning, "The following DLLs do not have the App Container bit set:\n");
             print_paths(dlls_with_improper_uwp_bit);
             print2(Color::warning, "This bit is required for Windows Store apps.\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -543,7 +543,7 @@ namespace vcpkg::PostBuildLint
         if (!binaries_with_invalid_architecture.empty())
         {
             print_invalid_architecture_files(expected_architecture, binaries_with_invalid_architecture);
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -582,7 +582,7 @@ namespace vcpkg::PostBuildLint
         if (!binaries_with_invalid_architecture.empty())
         {
             print_invalid_architecture_files(expected_architecture, binaries_with_invalid_architecture);
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 #endif
         (void)expected_architecture;
@@ -600,7 +600,7 @@ namespace vcpkg::PostBuildLint
 
         print2(Color::warning, "DLLs should not be present in a static build, but the following DLLs were found:\n");
         print_paths(dlls);
-        return LintStatus::ERROR_DETECTED;
+        return LintStatus::PROBLEM_DETECTED;
     }
 
     static LintStatus check_matching_debug_and_release_binaries(const std::vector<Path>& debug_binaries,
@@ -634,7 +634,7 @@ namespace vcpkg::PostBuildLint
 
         print2("\n");
 
-        return LintStatus::ERROR_DETECTED;
+        return LintStatus::PROBLEM_DETECTED;
     }
 
     static LintStatus check_lib_files_are_available_if_dlls_are_available(const Build::BuildPolicies& policies,
@@ -651,7 +651,7 @@ namespace vcpkg::PostBuildLint
                           "If this is intended, add the following line in the portfile:\n"
                           "    SET(%s enabled)\n",
                           to_cmake_variable(BuildPolicy::DLLS_WITHOUT_LIBS));
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -701,7 +701,7 @@ namespace vcpkg::PostBuildLint
             R"###(    endif())###"
             "\n\n");
 
-        return LintStatus::ERROR_DETECTED;
+        return LintStatus::PROBLEM_DETECTED;
     }
 
     static LintStatus check_no_empty_folders(const Filesystem& fs, const Path& dir)
@@ -725,7 +725,7 @@ namespace vcpkg::PostBuildLint
                 "\n"
                 "\n"
                 "\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -812,7 +812,7 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning,
                    "    vcpkg_fixup_pkgconfig()\n"
                    "    file(REMOVE_RECURSE empty directories left by the above renames)\n\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -866,7 +866,7 @@ namespace vcpkg::PostBuildLint
             print2("\n");
 
             print2(Color::warning, "To inspect the lib files, use:\n    dumpbin.exe /directives mylibfile.lib\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -914,7 +914,7 @@ namespace vcpkg::PostBuildLint
             print2("\n");
 
             print2(Color::warning, "To inspect the dll files, use:\n    dumpbin.exe /dependents mydllfile.dll\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -933,7 +933,7 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning, "The following files are placed in\n", dir, ":\n");
             print_paths(misplaced_files);
             print2(Color::warning, "Files cannot be present in those directories.\n\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -1076,8 +1076,13 @@ namespace vcpkg::PostBuildLint
         if (error_count != 0)
         {
             const auto portfile = port_dir / "portfile.cmake";
-            print2(
-                Color::error, "Found ", error_count, " error(s). Please correct the portfile:\n    ", portfile, "\n");
+            print2(Color::error,
+                   "Found ",
+                   error_count,
+                   " post-build check problem(s). To submit these ports to curated catalogs, please first correct the "
+                   "portfile:\n    ",
+                   portfile,
+                   "\n");
         }
 
         print2("-- Performing post-build validation done\n");
