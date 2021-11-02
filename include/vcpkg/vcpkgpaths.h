@@ -89,14 +89,23 @@ namespace vcpkg
         LockFile& get_installed_lockfile() const;
         void flush_lockfile() const;
 
+        const Path& installed() const;
+        const Path& buildtrees() const;
+        const Path& packages() const;
+
+        Path vcpkg_dir() const;
+        Path vcpkg_dir_status_file() const;
+        Path vcpkg_dir_info() const;
+        Path vcpkg_dir_updates() const;
+
+        Path baselines_output() const;
+        Path versions_output() const;
+
         Path original_cwd;
         Path root;
         Path manifest_root_dir;
         Path config_root_dir;
-        Path buildtrees;
         Path downloads;
-        Path packages;
-        Path installed;
         Path triplets;
         Path community_triplets;
         Path scripts;
@@ -108,19 +117,6 @@ namespace vcpkg
         Path buildsystems;
         Path buildsystems_msbuild_targets;
         Path buildsystems_msbuild_props;
-
-        Path vcpkg_dir;
-        Path vcpkg_dir_status_file;
-        Path vcpkg_dir_info;
-        Path vcpkg_dir_updates;
-
-        Path baselines_dot_git_dir;
-        Path baselines_work_tree;
-        Path baselines_output;
-
-        Path versions_dot_git_dir;
-        Path versions_work_tree;
-        Path versions_output;
 
         Path ports_cmake;
 

@@ -239,7 +239,7 @@ namespace vcpkg::Install
 
         if (!intersection.empty())
         {
-            const auto triplet_install_path = paths.installed / triplet.canonical_name();
+            const auto triplet_install_path = paths.installed() / triplet.canonical_name();
             vcpkg::printf(Color::error,
                           "The following files are already installed in %s and are in conflict with %s\n\n",
                           triplet_install_path.generic_u8string(),
@@ -284,7 +284,7 @@ namespace vcpkg::Install
         }
 
         const InstallDir install_dir = InstallDir::from_destination_root(
-            paths.installed, triplet.to_string(), paths.listfile_path(bcf.core_paragraph));
+            paths.installed(), triplet.to_string(), paths.listfile_path(bcf.core_paragraph));
 
         install_package_and_write_listfile(paths, bcf.core_paragraph.spec, install_dir);
 
@@ -622,7 +622,8 @@ namespace vcpkg::Install
         std::error_code ec;
         auto& fs = paths.get_filesystem();
 
-        auto usage_file = paths.installed / bpgh.spec.triplet().canonical_name() / "share" / bpgh.spec.name() / "usage";
+        auto usage_file =
+            paths.installed() / bpgh.spec.triplet().canonical_name() / "share" / bpgh.spec.name() / "usage";
         if (fs.exists(usage_file, IgnoreErrors{}))
         {
             ret.usage_file = true;
@@ -649,7 +650,7 @@ namespace vcpkg::Install
                 if (Strings::contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
                 {
                     // CMake file is inside the share folder
-                    const auto path = paths.installed / suffix;
+                    const auto path = paths.installed() / suffix;
                     const auto contents = fs.read_contents(path, ec);
                     const auto find_package_name = Path(path.parent_path()).filename().to_string();
                     if (!ec)

@@ -427,7 +427,7 @@ namespace vcpkg::Export::Prefab
 
             utils.create_directories(meta_dir, error_code);
 
-            const auto share_root = paths.packages / Strings::format("%s_%s", name, action.spec.triplet());
+            const auto share_root = paths.packages() / Strings::format("%s_%s", name, action.spec.triplet());
 
             utils.copy_file(share_root / "share" / name / "copyright",
                             meta_dir / "LICENSE",
@@ -508,8 +508,8 @@ namespace vcpkg::Export::Prefab
             for (const auto& triplet : triplets)
             {
                 const auto listfile =
-                    paths.vcpkg_dir_info / Strings::format("%s_%s_%s", name, norm_version, triplet) + ".list";
-                const auto installed_dir = paths.packages / Strings::format("%s_%s", name, triplet);
+                    paths.vcpkg_dir_info() / Strings::format("%s_%s_%s", name, norm_version, triplet) + ".list";
+                const auto installed_dir = paths.packages() / Strings::format("%s_%s", name, triplet);
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    utils.exists(listfile, IgnoreErrors{}),
                                    "Error: Packages not installed %s:%s %s",

@@ -343,7 +343,7 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_for_copyright_file(const Filesystem& fs, const PackageSpec& spec, const VcpkgPaths& paths)
     {
-        const auto packages_dir = paths.packages / spec.dir();
+        const auto packages_dir = paths.packages() / spec.dir();
         const auto copyright_file = packages_dir / "share" / spec.name() / "copyright";
         if (fs.exists(copyright_file, IgnoreErrors{}))
         {
