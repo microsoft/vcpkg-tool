@@ -731,8 +731,9 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_pkgconfig_dir_only_in_lib_dir(const Filesystem& fs, const Path& dir)
+    static LintStatus check_pkgconfig_dir_only_in_lib_dir(const Filesystem& fs, const Path& dir_raw)
     {
+        auto dir = dir_raw.lexically_normal().generic_u8string(); // force /s
         std::vector<Path> misplaced_pkgconfig_files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
         Util::erase_remove_if(misplaced_pkgconfig_files, [&fs](const Path& path) {
             if (!Strings::ends_with(path, ".pc")) return true;
@@ -750,17 +751,56 @@ namespace vcpkg::PostBuildLint
 
         if (!misplaced_pkgconfig_files.empty())
         {
-            print2(Color::warning, "There should be no pkgconfig directories outside of lib and debug/lib.\n");
+            print2(Color::warning, "pkgconfig directories should be lib/pkgconfig or lib/debug/pkgconfig.\n");
             print2("The following misplaced pkgconfig files were found:\n");
             print_paths(misplaced_pkgconfig_files);
+
+            bool contains_release = false;
+            bool contains_debug = false;
+            std::vector<char> misplaced_is_release(misplaced_pkgconfig_files.size()); // vector<bool>ish
+            for (size_t idx = 0; idx < misplaced_pkgconfig_files.size(); ++idx) {
+                bool is_release = misplaced_pkgconfig_files[idx].native().find("debug/") == std::string::npos;
+                misplaced_is_release[idx] = is_release;
+                if (is_release) {
+                    contains_release = true;
+                } else {
+                    contains_debug = true;
+                }
+            }
+
             print2(
                 Color::warning,
-                "You can move the pkgconfig files with the following commands:\n"
-                "\n"
-                R"###(    file(INSTALL "${CURRENT_PACKAGES_DIR}/a/path/pkgconfig/name.pc" DESTINATION "${CURRENT_PACKAGES_DIR}/a/path/pkgconfig"))###"
-                "\n"
-                R"###(    file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/a/path/pkgconfig"))###"
-                "\n\n");
+                "You can move the pkgconfig files with commands similar to:\n"
+                "\n");
+
+            std::string create_directory_line("    file(MAKE_DIRECTORY ");
+            if (contains_release) {
+                create_directory_line += R"###( "${CURRENT_PACKAGES_DIR}/lib/pkgconfig")###";
+            }
+
+            if (contains_debug) {
+                create_directory_line += R"###( "${CURRENT_PACKAGES_DIR}/lib/debug/pkgconfig")###";
+            }
+
+            create_directory_line.append(")\n");
+
+            print2(Color::warning, create_directory_line);
+
+            for (size_t idx = 0; idx < misplaced_pkgconfig_files.size(); ++idx) {
+                const auto& misplaced = misplaced_pkgconfig_files[idx];
+                auto relative = misplaced.native().substr(dir.size());
+                std::string rename_line(R"###(    file(RENAME "${CURRENT_PACKAGES_DIR})###");
+                rename_line.append(relative);
+                rename_line.append(R"###(" "${CURRENT_PACKAGES_DIR}/)###");
+                if (!misplaced_is_release[idx]) {
+                    rename_line.append("debug/");
+                }
+
+                rename_line.append(R"###(lib/pkgconfig"))###" "\n");
+                print2(Color::warning, rename_line);
+            }
+
+            print2(Color::warning, "    vcpkg_fixup_pkgconfig()\n\n");
             return LintStatus::ERROR_DETECTED;
         }
 
