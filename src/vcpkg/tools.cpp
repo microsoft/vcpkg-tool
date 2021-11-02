@@ -392,7 +392,7 @@ Type 'NuGet help <command>' for help on a specific command.
         virtual const std::string& tool_data_name() const override { return m_name; }
         std::string m_exe = "aria2c";
         virtual const std::string& exe_stem() const override { return m_exe; }
-        virtual std::array<int, 3> default_min_version() const override { return {1, 35, 0}; }
+        virtual std::array<int, 3> default_min_version() const override { return {1, 33, 1}; }
         virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
         {
             auto cmd = Command(exe_path).string_arg("--version");
