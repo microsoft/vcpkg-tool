@@ -386,7 +386,8 @@ Type 'NuGet help <command>' for help on a specific command.
         }
     };
 
-    struct Aria2Provider : ToolProvider {
+    struct Aria2Provider : ToolProvider
+    {
         std::string m_name = "aria2";
         virtual const std::string& tool_data_name() const override { return m_name; }
         std::string m_exe = "aria2c";
