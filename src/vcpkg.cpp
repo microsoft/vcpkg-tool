@@ -238,6 +238,7 @@ int main(const int argc, const char* const* const argv)
     }
 #endif
     set_environment_variable("VCPKG_COMMAND", get_exe_path_of_current_process().generic_u8string());
+    set_environment_variable("CLICOLOR_FORCE", {});
 
     Checks::register_global_shutdown_handler([]() {
         const auto elapsed_us_inner = LockGuardPtr<ElapsedTimer>(GlobalState::timer)->microseconds();
