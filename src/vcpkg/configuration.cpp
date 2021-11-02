@@ -34,6 +34,15 @@ namespace
 
     Optional<Configuration> ConfigurationDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
     {
+        Json::Object extra_info;
+        for (const auto& el : obj)
+        {
+            if (Strings::starts_with(el.first, "$"))
+            {
+                extra_info.insert_or_replace(el.first.to_string(), el.second);
+            }
+        }
+
         RegistrySet registries;
 
         auto impl_des = get_registry_implementation_deserializer(configuration_directory);
@@ -53,7 +62,7 @@ namespace
             registries.add_registry(std::move(reg));
         }
 
-        return Configuration{std::move(registries)};
+        return Configuration{std::move(registries), extra_info};
     }
 
     ConfigurationDeserializer::ConfigurationDeserializer(const Path& configuration_directory)
@@ -64,6 +73,7 @@ namespace
     static Json::Object serialize_configuration_impl(const Configuration& config)
     {
         constexpr static StringLiteral REGISTRY_PACKAGES = "packages";
+
         auto serialize_packages_list = [](vcpkg::View<std::string> packages) {
             Json::Array ret;
             for (auto pkg : packages)
@@ -72,6 +82,11 @@ namespace
         };
 
         Json::Object obj;
+
+        for (const auto& el : config.extra_info)
+        {
+            obj.insert(el.first.to_string(), el.second);
+        }
 
         if (config.registry_set.default_registry())
         {
@@ -90,6 +105,7 @@ namespace
                 reg_arr.push_back(std::move(reg_obj));
             }
         }
+
         return obj;
     }
 

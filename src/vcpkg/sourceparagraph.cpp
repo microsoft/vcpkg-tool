@@ -858,7 +858,7 @@ namespace vcpkg
         constexpr static StringLiteral SUPPORTS = "supports";
         constexpr static StringLiteral OVERRIDES = "overrides";
         constexpr static StringLiteral BUILTIN_BASELINE = "builtin-baseline";
-        constexpr static StringLiteral VCPKG_CONFIGURATION = "x-vcpkg-configuration";
+        constexpr static StringLiteral VCPKG_CONFIGURATION = "vcpkg-configuration";
 
         virtual Span<const StringView> valid_fields() const override
         {
@@ -939,7 +939,7 @@ namespace vcpkg
             {
                 if (!configuration->is_object())
                 {
-                    r.add_generic_error(type_name(), VCPKG_CONFIGURATION, " x-vcpkg-configuration must be an object");
+                    r.add_generic_error(type_name(), VCPKG_CONFIGURATION, " must be an object");
                 }
                 else
                 {
