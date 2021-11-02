@@ -751,7 +751,9 @@ namespace vcpkg::PostBuildLint
 
         if (!misplaced_pkgconfig_files.empty())
         {
-            print2(Color::warning, "pkgconfig directories should be lib/pkgconfig or lib/debug/pkgconfig.\n");
+            print2(Color::warning,
+                   "pkgconfig directories should be one of share/pkgconfig (for header only libraries only), "
+                   "lib/pkgconfig, or lib/debug/pkgconfig.\n");
             print2("The following misplaced pkgconfig files were found:\n");
             print_paths(misplaced_pkgconfig_files);
 
