@@ -754,12 +754,7 @@ namespace vcpkg::Build
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
-#if defined(_WIN32) | defined(__APPLE__)
             variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2)});
-#else
-            // Use aria2 inside the system in Linux since aria2 doesn't provide the prebuild binaries in Linux
-            variables.push_back({"ARIA2", "aria2c"});
-#endif
         }
 
         for (auto cmake_arg : args.cmake_args)
