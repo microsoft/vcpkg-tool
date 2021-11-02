@@ -52,7 +52,6 @@ namespace vcpkg
             {VcpkgCmdArguments::COMPILER_TRACKING_FEATURE, args.compiler_tracking},
             {VcpkgCmdArguments::REGISTRIES_FEATURE, args.registries_feature},
             {VcpkgCmdArguments::VERSIONS_FEATURE, args.versions_feature},
-            {VcpkgCmdArguments::CONFIG_MANIFESTS_FEATURE, args.config_manifests_feature},
         };
 
         for (const auto& desc : flag_descriptions)
@@ -814,9 +813,6 @@ namespace vcpkg
         } possible_inconsistencies[] = {
             {BINARY_CACHING_FEATURE, BINARY_SOURCES_ARG, !binary_sources.empty() && !binary_caching.value_or(true)},
             {MANIFEST_MODE_FEATURE, MANIFEST_ROOT_DIR_ARG, manifest_root_dir && !manifest_mode.value_or(true)},
-            {MANIFEST_MODE_FEATURE,
-             CONFIG_MANIFESTS_FEATURE,
-             config_manifests_feature.value_or(false) && !manifest_mode.value_or(true)},
         };
         for (const auto& el : possible_inconsistencies)
         {
@@ -845,7 +841,6 @@ namespace vcpkg
             {COMPILER_TRACKING_FEATURE, compiler_tracking},
             {REGISTRIES_FEATURE, registries_feature},
             {VERSIONS_FEATURE, versions_feature},
-            {CONFIG_MANIFESTS_FEATURE, config_manifests_feature},
         };
 
         for (const auto& flag : flags)
@@ -1037,7 +1032,6 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::REGISTRIES_FEATURE;
     constexpr StringLiteral VcpkgCmdArguments::RECURSIVE_DATA_ENV;
     constexpr StringLiteral VcpkgCmdArguments::VERSIONS_FEATURE;
-    constexpr StringLiteral VcpkgCmdArguments::CONFIG_MANIFESTS_FEATURE;
 
     constexpr StringLiteral VcpkgCmdArguments::CMAKE_SCRIPT_ARG;
 }

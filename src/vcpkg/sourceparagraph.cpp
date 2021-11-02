@@ -1021,12 +1021,7 @@ namespace vcpkg
                                    feature_flag,
                                    manifest_field);
         };
-        if (!flags.config_manifests && core_paragraph->extra_info.contains(ManifestDeserializer::VCPKG_CONFIGURATION))
-        {
-            return Strings::concat(origin,
-                                   format_error_message(ManifestDeserializer::VCPKG_CONFIGURATION,
-                                                        VcpkgCmdArguments::CONFIG_MANIFESTS_FEATURE));
-        }
+
         if (!flags.versions)
         {
             auto check_deps = [&](View<Dependency> deps) -> Optional<std::string> {
