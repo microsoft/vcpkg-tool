@@ -13,6 +13,15 @@ foreach ($backcompatFeaturePort in $backcompatFeaturePorts) {
         throw $CurrentTest
     }
 
+    $failArgs = $succeedArgs + @('--enforce-port-checks')
+    $CurrentTest = "Should fail: ./vcpkg $($failArgs -join ' ')"
+    Run-Vcpkg @failArgs
+    if ($LastExitCode -ne 0) {
+        Write-Host "... failed (this is good!)."
+    } else {
+        throw $CurrentTest
+    }
+
     # Install failed when prohibiting backcompat features, so it should succeed if we allow them
     $CurrentTest = "Should succeeed: ./vcpkg $($succeedArgs -join ' ')"
     Run-Vcpkg @succeedArgs

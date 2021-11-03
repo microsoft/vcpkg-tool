@@ -956,10 +956,11 @@ namespace vcpkg::Build
                                                                             action.public_abi(),
                                                                             std::move(find_itr->second));
 
-        if (error_count != 0)
+        if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
         {
             return BuildResult::POST_BUILD_CHECKS_FAILED;
         }
+
         for (auto&& feature : action.feature_list)
         {
             for (auto&& f_pgh : scfl.source_control_file->feature_paragraphs)
