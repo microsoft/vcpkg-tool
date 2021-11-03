@@ -181,7 +181,7 @@ namespace vcpkg
                    "-- Delete configuration file \"",
                    path_to_config,
                    "\"\n"
-                   "-- Or remove \"$x-vcpkg-configuration\" from manifest file \"",
+                   "-- Or remove \"vcpkg-configuration\" from the manifest file \"",
                    manifest_dir / "vcpkg.json",
                    "\".");
             Checks::exit_fail(VCPKG_LINE_INFO);
