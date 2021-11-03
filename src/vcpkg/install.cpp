@@ -526,7 +526,7 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 15> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 16> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -543,9 +543,10 @@ namespace vcpkg::Install
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_ENFORCE_PORT_CHECKS,
          "Fail install if a port has detected problems or attempts to use a deprecated feature"},
+        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
-    static constexpr std::array<CommandSwitch, 15> MANIFEST_INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 17> MANIFEST_INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -560,6 +561,9 @@ namespace vcpkg::Install
         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_MANIFEST_NO_DEFAULT_FEATURES, "Don't install the default features from the manifest."},
+        {OPTION_ENFORCE_PORT_CHECKS,
+         "Fail install if a port has detected problems or attempts to use a deprecated feature"},
+        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
 
