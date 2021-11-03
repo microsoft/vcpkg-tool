@@ -11,7 +11,7 @@ namespace
 
     struct DictionaryDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "an artifact-reference object"; }
+        virtual StringView type_name() const override { return "an `string: string` dictionary object"; }
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
@@ -19,9 +19,9 @@ namespace
     };
     DictionaryDeserializer DictionaryDeserializer::instance;
 
-    struct CeConfigurationDeserializer final : Json::IDeserializer<Json::Object>
+    struct CeMetadataDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "a ce configuration object"; }
+        virtual StringView type_name() const override { return "an object containing ce metadata"; }
 
         constexpr static StringLiteral CE_ERROR = "error";
         constexpr static StringLiteral CE_WARNING = "warning";
@@ -34,21 +34,21 @@ namespace
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
-        static CeConfigurationDeserializer instance;
+        static CeMetadataDeserializer instance;
     };
-    CeConfigurationDeserializer CeConfigurationDeserializer::instance;
-    constexpr StringLiteral CeConfigurationDeserializer::CE_ERROR;
-    constexpr StringLiteral CeConfigurationDeserializer::CE_WARNING;
-    constexpr StringLiteral CeConfigurationDeserializer::CE_MESSAGE;
-    constexpr StringLiteral CeConfigurationDeserializer::CE_APPLY;
-    constexpr StringLiteral CeConfigurationDeserializer::CE_SETTINGS;
-    constexpr StringLiteral CeConfigurationDeserializer::CE_REQUIRES;
-    constexpr StringLiteral CeConfigurationDeserializer::CE_SEE_ALSO;
-    constexpr StringLiteral CeConfigurationDeserializer::CE_DEMANDS;
+    CeMetadataDeserializer CeMetadataDeserializer::instance;
+    constexpr StringLiteral CeMetadataDeserializer::CE_ERROR;
+    constexpr StringLiteral CeMetadataDeserializer::CE_WARNING;
+    constexpr StringLiteral CeMetadataDeserializer::CE_MESSAGE;
+    constexpr StringLiteral CeMetadataDeserializer::CE_APPLY;
+    constexpr StringLiteral CeMetadataDeserializer::CE_SETTINGS;
+    constexpr StringLiteral CeMetadataDeserializer::CE_REQUIRES;
+    constexpr StringLiteral CeMetadataDeserializer::CE_SEE_ALSO;
+    constexpr StringLiteral CeMetadataDeserializer::CE_DEMANDS;
 
     struct DemandsDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "a ce demand object"; }
+        virtual StringView type_name() const override { return "a ce.demands object"; }
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
@@ -92,7 +92,7 @@ namespace
         return ret;
     }
 
-    Optional<Json::Object> CeConfigurationDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
+    Optional<Json::Object> CeMetadataDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
     {
         auto extract_string = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
             static Json::StringDeserializer string_deserializer{"a string"};
@@ -144,10 +144,12 @@ namespace
         for (const auto& el : obj)
         {
             auto filter = el.first.to_string();
-            // if (Strings::starts_with(filter, "$"))
-            //{
-            //    continue;
-            //}
+            if (Strings::starts_with(filter, "$"))
+            {
+                // Put comments back without attempting to parse.
+                ret.insert_or_replace(filter, el.second);
+                continue;
+            }
 
             if (!el.second.is_object())
             {
@@ -155,7 +157,7 @@ namespace
                 continue;
             }
 
-            auto maybe_demand = r.visit(el.second, CeConfigurationDeserializer::instance);
+            auto maybe_demand = r.visit(el.second, CeMetadataDeserializer::instance);
             if (maybe_demand.has_value())
             {
                 ret.insert_or_replace(filter, maybe_demand.value_or_exit(VCPKG_LINE_INFO));
@@ -169,14 +171,14 @@ namespace
         static constexpr StringView known_fields[]{
             ConfigurationDeserializer::DEFAULT_REGISTRY,
             ConfigurationDeserializer::REGISTRIES,
-            CeConfigurationDeserializer::CE_APPLY,
-            CeConfigurationDeserializer::CE_DEMANDS,
-            CeConfigurationDeserializer::CE_ERROR,
-            CeConfigurationDeserializer::CE_MESSAGE,
-            CeConfigurationDeserializer::CE_REQUIRES,
-            CeConfigurationDeserializer::CE_SEE_ALSO,
-            CeConfigurationDeserializer::CE_SETTINGS,
-            CeConfigurationDeserializer::CE_WARNING,
+            CeMetadataDeserializer::CE_APPLY,
+            CeMetadataDeserializer::CE_DEMANDS,
+            CeMetadataDeserializer::CE_ERROR,
+            CeMetadataDeserializer::CE_MESSAGE,
+            CeMetadataDeserializer::CE_REQUIRES,
+            CeMetadataDeserializer::CE_SEE_ALSO,
+            CeMetadataDeserializer::CE_SETTINGS,
+            CeMetadataDeserializer::CE_WARNING,
         };
 
         static Json::StringDeserializer string_deserializer{"a string"};
@@ -210,7 +212,7 @@ namespace
         }
 
         Json::Object ce_config_obj;
-        auto maybe_ce_config = r.visit(obj, CeConfigurationDeserializer::instance);
+        auto maybe_ce_config = r.visit(obj, CeMetadataDeserializer::instance);
         if (auto ce_config = maybe_ce_config.get())
         {
             ce_config_obj = *ce_config;
@@ -260,7 +262,7 @@ namespace
             }
         }
 
-        for (const auto& el : config.ce_configuration)
+        for (const auto& el : config.ce_metadata)
         {
             obj.insert(el.first.to_string(), el.second);
         }

@@ -16,7 +16,7 @@ namespace vcpkg
         // `registries` and `default_registry`. The fall back logic is
         // taken care of in RegistrySet.
         RegistrySet registry_set;
-        Json::Object ce_configuration;
+        Json::Object ce_metadata;
         Json::Object extra_info;
 
         void validate_feature_flags(const FeatureFlagSettings& flags);

@@ -35,7 +35,33 @@ static Configuration test_parse_configuration(StringView text, bool expect_fail 
     return std::move(parsed_config_opt).value_or_exit(VCPKG_LINE_INFO);
 }
 
-TEST_CASE ("ce config parse", "[configuration]")
+TEST_CASE ("no config", "[ce-configuration]")
+{
+    std::string raw_config = R"json({
+    "default-registry": {
+        "kind": "builtin",
+        "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f"
+    },
+    "registries": [
+        {
+            "kind": "git",
+            "baseline": "dacf4de488094a384ca2c202b923ccc097956e0c",
+            "repository": "https://github.com/northwindtraders/vcpkg-registry",
+            "packages": [ "beicode", "beison" ]
+        }
+    ]
+})json";
+
+    auto config = test_parse_configuration(raw_config);
+    auto config_obj = serialize_configuration(config);
+    auto raw_config_obj = parse_json_object(raw_config);
+
+    CHECK(config.ce_metadata.is_empty());
+    REQUIRE(Json::stringify(config_obj, Json::JsonStyle::with_spaces(4)) ==
+            Json::stringify(raw_config_obj, Json::JsonStyle::with_spaces(4)));
+}
+
+TEST_CASE ("parse config", "[ce-configuration]")
 {
     std::string ce_config_section = R"json(
     "error": "this is an error",
@@ -95,7 +121,7 @@ TEST_CASE ("ce config parse", "[configuration]")
     auto config = test_parse_configuration(raw_config);
     auto config_obj = serialize_configuration(config);
     auto raw_config_obj = parse_json_object(raw_config);
-    const auto& parsed_ce_config = config.ce_configuration;
+    const auto& parsed_ce_config = config.ce_metadata;
 
     CHECK(!parsed_ce_config.is_empty());
     REQUIRE(Json::stringify(config_obj, Json::JsonStyle::with_spaces(4)) ==
