@@ -1344,9 +1344,9 @@ namespace vcpkg::Build
                                "Additionally, attach any relevant sections from the log files above.",
                                vcpkg_update_cmd,
                                package,
-                               Commands::Version::version(),
                                description.has_value() ? description.value_or_exit(VCPKG_LINE_INFO)
-                                                       : "Failed to get HEAD: " + description.error());
+                                                       : "Failed to get HEAD: " + description.error(),
+                               Commands::Version::version());
     }
 
     static BuildInfo inner_create_buildinfo(Parse::Paragraph pgh)
