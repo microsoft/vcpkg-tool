@@ -28,7 +28,7 @@ jobs:
   - job: macos_build
     displayName: 'MacOS Build'
     pool:
-      vmImage: macOS-10.15
+      vmImage: macOS-11
     variables:
     - group: vcpkg-dependency-source-blobs
     - name: FMT_TARBALL_URL
