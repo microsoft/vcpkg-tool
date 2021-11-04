@@ -71,7 +71,7 @@ TEST_CASE ("list of commands is correct", "[commands]")
         "build-external",
         "export",
         "depend-info",
-        "x-forward",
+        "z-forward",
         "x-check-support",
 #if defined(_WIN32)
         "x-upload-metrics",
