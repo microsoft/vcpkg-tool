@@ -112,6 +112,15 @@ namespace
         };
 
         Json::Object ret;
+        for (const auto& el : obj)
+        {
+            auto&& key = el.first;
+            if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
+            {
+                ret.insert_or_replace(key.to_string(), el.second);
+            }
+        }
+
         extract_string(obj, CE_ERROR, ret);
         extract_string(obj, CE_WARNING, ret);
         extract_string(obj, CE_MESSAGE, ret);
@@ -135,6 +144,7 @@ namespace
         {
             ret.insert_or_replace(CE_DEMANDS, demands);
         }
+
         return ret;
     }
 
@@ -169,11 +179,15 @@ namespace
     Optional<Configuration> ConfigurationDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
     {
         Json::Object extra_info;
+
+        std::vector<std::string> comment_keys;
         for (const auto& el : obj)
         {
             if (Strings::starts_with(el.first, "$"))
             {
-                extra_info.insert_or_replace(el.first.to_string(), el.second);
+                auto key = el.first.to_string();
+                extra_info.insert_or_replace(key, el.second);
+                comment_keys.push_back(key);
             }
         }
 
@@ -203,12 +217,75 @@ namespace
             ce_config_obj = *ce_config;
         }
 
+        // This makes it so that comments at the top-level are put into extra_info
+        // but at nested levels are left in place as-is.
+        for (auto&& comment_key : comment_keys)
+        {
+            ce_config_obj.remove(comment_key);
+        }
+
         return Configuration{std::move(registries), ce_config_obj, extra_info};
     }
 
     ConfigurationDeserializer::ConfigurationDeserializer(const Path& configuration_directory)
         : configuration_directory(configuration_directory)
     {
+    }
+
+    static void serialize_ce_metadata(const Json::Object& ce_metadata, Json::Object& put_into)
+    {
+        auto extract_object = [](const Json::Object& obj, StringView key, Json::Object& put_into) {
+            if (auto value = obj.get(key))
+            {
+                put_into.insert_or_replace(key.to_string(), *value);
+            }
+        };
+
+        auto serialize_demands = [](const Json::Object& obj, Json::Object& put_into) {
+            if (auto demands = obj.get(CeMetadataDeserializer::CE_DEMANDS))
+            {
+                if (!demands->is_object())
+                {
+                    return;
+                }
+
+                Json::Object serialized_demands;
+                for (const auto& el : demands->object())
+                {
+                    auto key = el.first.to_string();
+                    if (Strings::starts_with(key, "$"))
+                    {
+                        serialized_demands.insert_or_replace(key, el.second);
+                        continue;
+                    }
+
+                    if (el.second.is_object())
+                    {
+                        auto& inserted = serialized_demands.insert_or_replace(key, Json::Object{});
+                        serialize_ce_metadata(el.second.object(), inserted);
+                    }
+                }
+                put_into.insert_or_replace(CeMetadataDeserializer::CE_DEMANDS, serialized_demands);
+            }
+        };
+
+        // Unknown fields are left as-is
+        for (const auto& el : ce_metadata)
+        {
+            if (Util::find(Configuration::known_fields(), el.first) == std::end(Configuration::known_fields()))
+            {
+                put_into.insert_or_replace(el.first.to_string(), el.second);
+            }
+        }
+
+        extract_object(ce_metadata, CeMetadataDeserializer::CE_MESSAGE, put_into);
+        extract_object(ce_metadata, CeMetadataDeserializer::CE_WARNING, put_into);
+        extract_object(ce_metadata, CeMetadataDeserializer::CE_ERROR, put_into);
+        extract_object(ce_metadata, CeMetadataDeserializer::CE_SETTINGS, put_into);
+        extract_object(ce_metadata, CeMetadataDeserializer::CE_APPLY, put_into);
+        extract_object(ce_metadata, CeMetadataDeserializer::CE_REQUIRES, put_into);
+        extract_object(ce_metadata, CeMetadataDeserializer::CE_SEE_ALSO, put_into);
+        serialize_demands(ce_metadata, put_into);
     }
 
     static Json::Object serialize_configuration_impl(const Configuration& config)
@@ -222,10 +299,20 @@ namespace
             obj.insert(el.first.to_string(), el.second);
         }
 
-        if (config.registry_set.default_registry())
+        if (auto default_registry = config.registry_set.default_registry())
         {
-            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY,
-                       config.registry_set.default_registry()->serialize());
+            auto&& serialized = default_registry->serialize();
+
+            // The `baseline` field can only be an empty string when the original
+            // vcpkg-configuration doesn't override `default-registry`
+            if (!serialized.get("baseline")->string().empty())
+            {
+                obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, serialized);
+            }
+        }
+        else
+        {
+            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, Json::Value::null(nullptr));
         }
 
         auto reg_view = config.registry_set.registries();
@@ -242,28 +329,34 @@ namespace
             }
         }
 
-        for (const auto& el : config.ce_metadata)
+        if (!config.ce_metadata.is_empty())
         {
-            obj.insert(el.first.to_string(), el.second);
+            serialize_ce_metadata(config.ce_metadata, obj);
         }
 
         return obj;
     }
-
-}
-
-std::unique_ptr<Json::IDeserializer<Configuration>> vcpkg::make_configuration_deserializer(const Path& config_directory)
-{
-    return std::make_unique<ConfigurationDeserializer>(config_directory);
-}
-
-Json::Object vcpkg::serialize_configuration(const Configuration& config)
-{
-    return serialize_configuration_impl(config);
 }
 
 namespace vcpkg
 {
+    View<StringView> Configuration::known_fields()
+    {
+        static constexpr StringView known_fields[]{
+            ConfigurationDeserializer::DEFAULT_REGISTRY,
+            ConfigurationDeserializer::REGISTRIES,
+            CeMetadataDeserializer::CE_APPLY,
+            CeMetadataDeserializer::CE_DEMANDS,
+            CeMetadataDeserializer::CE_ERROR,
+            CeMetadataDeserializer::CE_MESSAGE,
+            CeMetadataDeserializer::CE_REQUIRES,
+            CeMetadataDeserializer::CE_SEE_ALSO,
+            CeMetadataDeserializer::CE_SETTINGS,
+            CeMetadataDeserializer::CE_WARNING,
+        };
+        return known_fields;
+    }
+
     void Configuration::validate_feature_flags(const FeatureFlagSettings& flags)
     {
         if (!flags.registries && registry_set.has_modifications())
@@ -275,6 +368,64 @@ namespace vcpkg
                           "the %s feature flag was not enabled.\n",
                           VcpkgCmdArguments::REGISTRIES_FEATURE);
             registry_set = RegistrySet();
+        }
+
+        std::vector<std::string> unknown_fields;
+        find_unknown_fields(ce_metadata, unknown_fields, "$");
+        if (!unknown_fields.empty())
+        {
+            vcpkg::print2(
+                Color::warning,
+                "Warning: configuration contains the following unrecognized fields:\n\n",
+                Strings::join("\n", unknown_fields),
+                "\n\nIf these are documented fields that should be recognized try updating the vcpkg tool.\n");
+        }
+    }
+
+    std::unique_ptr<Json::IDeserializer<Configuration>> make_configuration_deserializer(const Path& config_directory)
+    {
+        return std::make_unique<ConfigurationDeserializer>(config_directory);
+    }
+
+    Json::Object serialize_configuration(const Configuration& config) { return serialize_configuration_impl(config); }
+
+    void find_unknown_fields(const Json::Object& obj, std::vector<std::string>& out, StringView path)
+    {
+        std::vector<StringView> ret;
+        for (const auto& el : obj)
+        {
+            auto key = el.first.to_string();
+            if (Strings::starts_with(key, "$"))
+            {
+                continue;
+            }
+
+            if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
+            {
+                if (Strings::contains(key, " "))
+                {
+                    key = Strings::concat("[\"", key, "\"]");
+                }
+                out.push_back(Strings::concat(path, ".", key));
+            }
+
+            if (el.first == CeMetadataDeserializer::CE_DEMANDS)
+            {
+                if (!el.second.is_object())
+                {
+                    continue;
+                }
+
+                for (const auto& demand : el.second.object())
+                {
+                    if (Strings::starts_with(demand.first, "$") || !demand.second.is_object())
+                    {
+                        continue;
+                    }
+
+                    find_unknown_fields(demand.second.object(), out, Strings::concat(path, ".demands.", demand.first));
+                }
+            }
         }
     }
 }
