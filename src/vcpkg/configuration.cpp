@@ -74,13 +74,6 @@ namespace
     {
         constexpr static StringLiteral REGISTRY_PACKAGES = "packages";
 
-        auto serialize_packages_list = [](vcpkg::View<std::string> packages) {
-            Json::Array ret;
-            for (auto pkg : packages)
-                ret.push_back(Json::Value::string(pkg));
-            return ret;
-        };
-
         Json::Object obj;
 
         for (const auto& el : config.extra_info)
@@ -101,7 +94,9 @@ namespace
             for (const auto& reg : reg_view)
             {
                 auto reg_obj = reg.implementation().serialize();
-                reg_obj.insert(REGISTRY_PACKAGES, serialize_packages_list(reg.packages()));
+                auto& packages = reg_obj.insert(REGISTRY_PACKAGES, Json::Array{});
+                for (const auto& pkg : reg.packages())
+                    packages.push_back(Json::Value::string(pkg));
                 reg_arr.push_back(std::move(reg_obj));
             }
         }
