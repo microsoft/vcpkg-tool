@@ -1149,7 +1149,7 @@ namespace vcpkg
             return repo2entry.second.reference == reference;
         });
 
-        if (it == lockdata.end())
+        if (it == range.second)
         {
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
             auto x = paths.git_fetch_from_remote_registry(repo, reference);
