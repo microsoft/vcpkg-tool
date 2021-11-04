@@ -97,7 +97,9 @@ namespace
             case stdfs::file_type::fifo: return FileType::fifo;
             case stdfs::file_type::socket: return FileType::socket;
             case stdfs::file_type::unknown: return FileType::unknown;
+#if !defined(__MINGW32__)
             case stdfs::file_type::junction: return FileType::junction;
+#endif
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
