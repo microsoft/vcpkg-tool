@@ -67,6 +67,8 @@ namespace vcpkg
 
         virtual Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const = 0;
 
+        virtual Json::Object serialize() const;
+
         virtual ~RegistryImplementation() = default;
     };
 
@@ -123,6 +125,8 @@ namespace vcpkg
         std::unique_ptr<RegistryImplementation> default_registry_;
         std::vector<Registry> registries_;
     };
+
+    Json::Object serialize_registry_set(const RegistrySet& config);
 
     std::unique_ptr<Json::IDeserializer<std::unique_ptr<RegistryImplementation>>>
     get_registry_implementation_deserializer(const Path& configuration_directory);
