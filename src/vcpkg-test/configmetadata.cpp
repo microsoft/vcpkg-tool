@@ -45,8 +45,8 @@ TEST_CASE ("no ce metadata", "[ce-configuration]")
     "registries": [
         {
             "kind": "git",
-            "baseline": "dacf4de488094a384ca2c202b923ccc097956e0c",
             "repository": "https://github.com/northwindtraders/vcpkg-registry",
+            "baseline": "dacf4de488094a384ca2c202b923ccc097956e0c",
             "packages": [ "beicode", "beison" ]
         }
     ]
@@ -115,8 +115,8 @@ TEST_CASE ("parse config with ce metadata", "[ce-configuration]")
     "registries": [
         {
             "kind": "git",
-            "baseline": "dacf4de488094a384ca2c202b923ccc097956e0c",
             "repository": "https://github.com/northwindtraders/vcpkg-registry",
+            "baseline": "dacf4de488094a384ca2c202b923ccc097956e0c",
             "packages": [ "beicode", "beison" ]
         }
     ],
