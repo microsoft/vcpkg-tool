@@ -25,6 +25,18 @@ static constexpr StringLiteral CE_REQUIRES = "requires";
 static constexpr StringLiteral CE_SEE_ALSO = "see-also";
 static constexpr StringLiteral CE_DEMANDS = "demands";
 
+static void CHECK_LINES(const std::string& a, const std::string& b)
+{
+    auto as = Strings::split(a, '\n');
+    auto bs = Strings::split(b, '\n');
+    for (size_t i = 0; i < as.size() && i < bs.size(); ++i)
+    {
+        INFO(i);
+        CHECK(as[i] == bs[i]);
+    }
+    CHECK(as.size() == bs.size());
+}
+
 static Json::Object parse_json_object(StringView sv)
 {
     auto json = Json::parse(sv);
@@ -39,14 +51,14 @@ static Json::Object parse_json_object(StringView sv)
     }
 }
 
-static Configuration parse_test_configuration(StringView text, bool expect_fail = false)
+static Configuration parse_test_configuration(StringView text)
 {
     auto object = parse_json_object(text);
 
     Json::Reader reader;
     auto deserializer = make_configuration_deserializer("test");
     auto parsed_config_opt = reader.visit(object, *deserializer);
-    REQUIRE((!expect_fail && reader.errors().empty()));
+    REQUIRE(reader.errors().empty());
 
     return std::move(parsed_config_opt).value_or_exit(VCPKG_LINE_INFO);
 }
@@ -159,6 +171,46 @@ TEST_CASE ("config without registries", "[ce-metadata]")
     auto raw_obj = parse_json_object(raw_config);
     auto serialized_obj = serialize_configuration(config);
     compare_json_objects(raw_obj, serialized_obj);
+}
+
+TEST_CASE ("metadata strings", "[ce-metadata]")
+{
+    SECTION ("valid json")
+    {
+        std::string valid_raw = R"json({
+    "message": "this is a valid message",
+    "warning": "this is a valid warning",
+    "error": "this is a valid error"
+})json";
+
+        auto valid_config = parse_test_configuration(valid_raw);
+        CHECK(valid_config.ce_metadata.size() == 3);
+        check_string(valid_config.ce_metadata, CE_MESSAGE, "this is a valid message");
+        check_string(valid_config.ce_metadata, CE_WARNING, "this is a valid warning");
+        check_string(valid_config.ce_metadata, CE_ERROR, "this is a valid error");
+    }
+
+    SECTION ("invalid json")
+    {
+        std::string invalid_raw = R"json({
+    "message": { "$comment": "this is not a valid message" },
+    "warning": 0,
+    "error": null
+})json";
+
+        auto object = parse_json_object(invalid_raw);
+
+        Json::Reader reader;
+        auto deserializer = make_configuration_deserializer("test");
+        auto parsed_config_opt = reader.visit(object, *deserializer);
+        auto config = parsed_config_opt.get();
+        CHECK(config->ce_metadata.size() == 0);
+        CHECK_LINES(Strings::join("\n", reader.errors()), R"json(
+$.error: mismatched type: expected a string
+$.warning: mismatched type: expected a string
+$.message: mismatched type: expected a string
+)json");
+    }
 }
 
 TEST_CASE ("config with ce metadata full example", "[ce-metadata]")

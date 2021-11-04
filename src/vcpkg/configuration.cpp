@@ -98,15 +98,19 @@ namespace
             static Json::StringDeserializer string_deserializer{"a string"};
 
             std::string value;
+            const auto errors_count = r.errors();
             if (r.optional_object_field(obj, key, value, string_deserializer))
             {
+                if (errors_count != r.errors()) return;
                 put_into.insert_or_replace(key.to_string(), Json::Value::string(value));
             }
         };
         auto extract_dictionary = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
             Json::Object value;
+            const auto errors_count = r.errors();
             if (r.optional_object_field(obj, key, value, DictionaryDeserializer::instance))
             {
+                if (errors_count != r.errors()) return;
                 put_into.insert_or_replace(key.to_string(), value);
             }
         };
