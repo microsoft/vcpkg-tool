@@ -35,7 +35,7 @@ static Configuration test_parse_configuration(StringView text, bool expect_fail 
     return std::move(parsed_config_opt).value_or_exit(VCPKG_LINE_INFO);
 }
 
-TEST_CASE ("no config", "[ce-configuration]")
+TEST_CASE ("no ce metadata", "[ce-configuration]")
 {
     std::string raw_config = R"json({
     "default-registry": {
@@ -61,7 +61,7 @@ TEST_CASE ("no config", "[ce-configuration]")
             Json::stringify(raw_config_obj, Json::JsonStyle::with_spaces(4)));
 }
 
-TEST_CASE ("parse config", "[ce-configuration]")
+TEST_CASE ("parse config with ce metadata", "[ce-configuration]")
 {
     std::string ce_config_section = R"json(
     "error": "this is an error",
@@ -97,6 +97,12 @@ TEST_CASE ("parse config", "[ce-configuration]")
             "error": "this is a nested error",
             "warning": "this is a nested warning",
             "message": "this is a nested message"
+        },
+        "$with-errors": {
+            "error": { "this would have caused a parser error": null },
+            "message": "this is ok",
+            "requires": null,
+            "what-is-this": null
         }
     }
 )json";
