@@ -380,15 +380,15 @@ namespace vcpkg
         vcpkg::Optional<Json::Object> configuration_from_manifest;
         if (auto manifest = m_pimpl->m_manifest_doc.get())
         {
-            print2(Color::warning,
-                   "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.\n"
-                   "Loading configuration from: ",
-                   m_pimpl->m_manifest_path,
-                   "\n");
-
             auto manifest_obj = manifest->first;
             if (auto config_obj = manifest_obj.get("vcpkg-configuration"))
             {
+                print2(Color::warning,
+                       "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.\n"
+                       "Loading configuration from: ",
+                       m_pimpl->m_manifest_path,
+                       "\n");
+
                 if (!config_obj->is_object())
                 {
                     print2(Color::error,
