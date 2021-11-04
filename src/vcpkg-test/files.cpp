@@ -950,6 +950,36 @@ TEST_CASE ("LinesCollector", "[files]")
     CHECK(lc.extract() == std::vector<std::string>{"", "abc", ""});
 }
 
+TEST_CASE ("find_file_recursively_up", "[files]")
+{
+    auto& fs = setup();
+    auto test_root = base_temporary_directory() / "find_file_recursively_up_test";
+    fs.create_directory(test_root, VCPKG_LINE_INFO);
+    auto one = test_root / "one";
+    auto two = one / "two";
+    fs.create_directory(one, VCPKG_LINE_INFO);
+    fs.create_directory(two, VCPKG_LINE_INFO);
+    auto one_marker = one / ".one-marker";
+    fs.write_contents(one_marker, "", VCPKG_LINE_INFO);
+
+    std::error_code ec;
+    auto result = fs.find_file_recursively_up(test_root, ".one-marker", ec);
+    REQUIRE(result.empty());
+    REQUIRE(!ec);
+
+    result = fs.find_file_recursively_up(one, ".one-marker", ec);
+    REQUIRE(result == one);
+    REQUIRE(!ec);
+    result = fs.find_file_recursively_up(one_marker, ".one-marker", ec);
+    REQUIRE(result == one);
+    REQUIRE(!ec);
+    result = fs.find_file_recursively_up(two, ".one-marker", ec);
+    REQUIRE(result == one);
+    REQUIRE(!ec);
+
+    fs.remove_all(test_root, VCPKG_LINE_INFO);
+}
+
 #if defined(_WIN32)
 TEST_CASE ("win32_fix_path_case", "[files]")
 {

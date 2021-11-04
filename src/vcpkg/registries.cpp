@@ -1038,16 +1038,16 @@ Json::Object BuiltinRegistry::serialize() const
 Json::Object GitRegistry::serialize() const
 {
     Json::Object obj{RegistryImplementation::serialize()};
-    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
     obj.insert(RegistryImplDeserializer::REPO, Json::Value::string(m_repo));
+    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
     return obj;
 }
 
 Json::Object FilesystemRegistry::serialize() const
 {
     Json::Object obj{RegistryImplementation::serialize()};
-    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
     obj.insert(RegistryImplDeserializer::PATH, Json::Value::string(m_path.generic_u8string()));
+    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
     return obj;
 }
 

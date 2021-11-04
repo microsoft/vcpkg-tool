@@ -623,12 +623,22 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
         "registries": [
             {
                 "kind": "filesystem",
-                "baseline": "default",
                 "path": "a/b/c",
+                "baseline": "default",
                 "packages": [
                     "a",
                     "b",
                     "c"
+                ]
+            },
+            {
+                "kind": "git",
+                "repository": "https://github.com/microsoft/vcpkg-ports",
+                "baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
+                "packages": [ 
+                    "zlib",
+                    "rapidjson",
+                    "fmt"
                 ]
             }
         ]

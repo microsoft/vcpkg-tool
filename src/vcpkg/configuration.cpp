@@ -168,21 +168,6 @@ namespace
 
     Optional<Configuration> ConfigurationDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
     {
-        static constexpr StringView known_fields[]{
-            ConfigurationDeserializer::DEFAULT_REGISTRY,
-            ConfigurationDeserializer::REGISTRIES,
-            CeMetadataDeserializer::CE_APPLY,
-            CeMetadataDeserializer::CE_DEMANDS,
-            CeMetadataDeserializer::CE_ERROR,
-            CeMetadataDeserializer::CE_MESSAGE,
-            CeMetadataDeserializer::CE_REQUIRES,
-            CeMetadataDeserializer::CE_SEE_ALSO,
-            CeMetadataDeserializer::CE_SETTINGS,
-            CeMetadataDeserializer::CE_WARNING,
-        };
-
-        static Json::StringDeserializer string_deserializer{"a string"};
-
         Json::Object extra_info;
         for (const auto& el : obj)
         {
@@ -230,13 +215,6 @@ namespace
     {
         constexpr static StringLiteral REGISTRY_PACKAGES = "packages";
 
-        auto serialize_packages_list = [](vcpkg::View<std::string> packages) {
-            Json::Array ret;
-            for (auto pkg : packages)
-                ret.push_back(Json::Value::string(pkg));
-            return ret;
-        };
-
         Json::Object obj;
 
         for (const auto& el : config.extra_info)
@@ -257,7 +235,9 @@ namespace
             for (const auto& reg : reg_view)
             {
                 auto reg_obj = reg.implementation().serialize();
-                reg_obj.insert(REGISTRY_PACKAGES, serialize_packages_list(reg.packages()));
+                auto& packages = reg_obj.insert(REGISTRY_PACKAGES, Json::Array{});
+                for (const auto& pkg : reg.packages())
+                    packages.push_back(Json::Value::string(pkg));
                 reg_arr.push_back(std::move(reg_obj));
             }
         }
