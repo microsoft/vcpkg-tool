@@ -14,12 +14,12 @@ $manifestdir = Join-Path $TestingRoot "manifest"
 New-Item -ItemType Directory -Force $bundle | Out-Null
 New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 
-$a = Run-Vcpkg x-print-config `
+$a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
     --x-scripts-dir=$env:VCPKG_ROOT/scripts
-Throw-IfFailed
 $a
+Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 $b = @{
     buildtrees = Join-Path $bundle "buildtrees"
@@ -44,12 +44,12 @@ New-Item -ItemType Directory -Force $bundle | Out-Null
     readonly = $True
 } | ConvertTo-JSON | out-file -enc ascii $bundle/.vcpkg-root | Out-Null
 
-$a = Run-Vcpkg x-print-config `
+$a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
     --x-scripts-dir=$env:VCPKG_ROOT/scripts
-Throw-IfFailed
 $a
+Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 
 $b = @{
@@ -80,13 +80,13 @@ New-Item -ItemType Directory -Force $bundle | Out-Null
     version = "0"
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir/vcpkg.json | Out-Null
 
-$a = Run-Vcpkg x-print-config `
+$a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
     --x-scripts-dir=$env:VCPKG_ROOT/scripts
-Throw-IfFailed
 $a
+Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 
 $b = @{
@@ -120,7 +120,7 @@ New-Item -ItemType Directory -Force $bundle | Out-Null
     version = "0"
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir/vcpkg.json | Out-Null
 
-$a = Run-Vcpkg x-print-config `
+$a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
@@ -128,8 +128,8 @@ $a = Run-Vcpkg x-print-config `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot `
     --x-scripts-dir=$env:VCPKG_ROOT/scripts
-Throw-IfFailed
 $a
+Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
 
 $b = @{
