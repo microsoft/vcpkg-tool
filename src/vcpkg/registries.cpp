@@ -2,6 +2,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
@@ -61,6 +62,8 @@ namespace
         void get_all_port_names(std::vector<std::string>&, const VcpkgPaths&) const override;
 
         Optional<VersionT> get_baseline_version(const VcpkgPaths&, StringView) const override;
+
+        Json::Object serialize() const override;
 
     private:
         friend struct GitRegistryEntry;
@@ -217,6 +220,8 @@ namespace
 
         Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const override;
 
+        Json::Object serialize() const override;
+
         ~BuiltinRegistry() = default;
 
         std::string m_baseline_identifier;
@@ -237,6 +242,8 @@ namespace
         void get_all_port_names(std::vector<std::string>&, const VcpkgPaths&) const override;
 
         Optional<VersionT> get_baseline_version(const VcpkgPaths&, StringView) const override;
+
+        Json::Object serialize() const override;
 
     private:
         Path m_path;
@@ -1010,6 +1017,38 @@ namespace
 
         return parse_baseline_versions(std::move(contents), baseline, baseline_path);
     }
+}
+
+// serializers
+
+Json::Object RegistryImplementation::serialize() const
+{
+    Json::Object obj;
+    obj.insert(RegistryImplDeserializer::KIND, Json::Value::string(kind()));
+    return obj;
+}
+
+Json::Object BuiltinRegistry::serialize() const
+{
+    Json::Object obj{RegistryImplementation::serialize()};
+    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
+    return obj;
+}
+
+Json::Object GitRegistry::serialize() const
+{
+    Json::Object obj{RegistryImplementation::serialize()};
+    obj.insert(RegistryImplDeserializer::REPO, Json::Value::string(m_repo));
+    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
+    return obj;
+}
+
+Json::Object FilesystemRegistry::serialize() const
+{
+    Json::Object obj{RegistryImplementation::serialize()};
+    obj.insert(RegistryImplDeserializer::PATH, Json::Value::string(m_path.generic_u8string()));
+    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
+    return obj;
 }
 
 namespace vcpkg

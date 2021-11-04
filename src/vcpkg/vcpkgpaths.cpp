@@ -4,6 +4,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -145,7 +146,8 @@ namespace vcpkg
     static ConfigAndPath load_configuration(const Filesystem& fs,
                                             const VcpkgCmdArguments& args,
                                             const Path& vcpkg_root,
-                                            const Path& manifest_dir)
+                                            const Path& manifest_dir,
+                                            const Optional<Json::Object>& configuration_from_manifest)
     {
         Path config_dir;
         if (manifest_dir.empty())
@@ -162,7 +164,27 @@ namespace vcpkg
         auto path_to_config = config_dir / "vcpkg-configuration.json";
         if (!fs.exists(path_to_config, IgnoreErrors{}))
         {
-            return {};
+            if (!configuration_from_manifest.has_value())
+            {
+                return {};
+            }
+
+            return {std::move(config_dir),
+                    deserialize_configuration(
+                        configuration_from_manifest.value_or_exit(VCPKG_LINE_INFO), args, manifest_dir / "vcpkg.json")};
+        }
+
+        if (configuration_from_manifest.has_value())
+        {
+            print2(Color::error,
+                   "Ambiguous vcpkg configuration provided by both manifest and configuration file.\n"
+                   "-- Delete configuration file \"",
+                   path_to_config,
+                   "\"\n"
+                   "-- Or remove \"vcpkg-configuration\" from the manifest file \"",
+                   manifest_dir / "vcpkg.json",
+                   "\".");
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         auto parsed_config = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_config);
@@ -355,7 +377,31 @@ namespace vcpkg
             m_pimpl->m_manifest_path = manifest_root_dir / "vcpkg.json";
         }
 
-        auto config_file = load_configuration(filesystem, args, root, manifest_root_dir);
+        vcpkg::Optional<Json::Object> configuration_from_manifest;
+        if (auto manifest = m_pimpl->m_manifest_doc.get())
+        {
+            print2(Color::warning,
+                   "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.\n"
+                   "Loading configuration from: ",
+                   m_pimpl->m_manifest_path,
+                   "\n");
+
+            auto manifest_obj = manifest->first;
+            if (auto config_obj = manifest_obj.get("vcpkg-configuration"))
+            {
+                if (!config_obj->is_object())
+                {
+                    print2(Color::error,
+                           "Failed to parse ",
+                           m_pimpl->m_manifest_path,
+                           ": vcpkg-configuration must be an object\n");
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+
+                configuration_from_manifest = make_optional(config_obj->object());
+            }
+        }
+        auto config_file = load_configuration(filesystem, args, root, manifest_root_dir, configuration_from_manifest);
 
         // metrics from configuration
         {

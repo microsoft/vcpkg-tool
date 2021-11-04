@@ -598,15 +598,24 @@ namespace vcpkg
         table.header("Options");
         for (auto&& option : command_structure.options.switches)
         {
-            table.format(Strings::format("--%s", option.name), option.short_help_text);
+            if (option.short_help_text.size() != 0)
+            {
+                table.format(Strings::format("--%s", option.name), option.short_help_text);
+            }
         }
         for (auto&& option : command_structure.options.settings)
         {
-            table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+            if (option.short_help_text.size() != 0)
+            {
+                table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+            }
         }
         for (auto&& option : command_structure.options.multisettings)
         {
-            table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+            if (option.short_help_text.size() != 0)
+            {
+                table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+            }
         }
 
         VcpkgCmdArguments::append_common_options(table);

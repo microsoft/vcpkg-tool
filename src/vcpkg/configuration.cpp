@@ -34,6 +34,15 @@ namespace
 
     Optional<Configuration> ConfigurationDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
     {
+        Json::Object extra_info;
+        for (const auto& el : obj)
+        {
+            if (Strings::starts_with(el.first, "$"))
+            {
+                extra_info.insert_or_replace(el.first.to_string(), el.second);
+            }
+        }
+
         RegistrySet registries;
 
         auto impl_des = get_registry_implementation_deserializer(configuration_directory);
@@ -53,7 +62,7 @@ namespace
             registries.add_registry(std::move(reg));
         }
 
-        return Configuration{std::move(registries)};
+        return Configuration{std::move(registries), extra_info};
     }
 
     ConfigurationDeserializer::ConfigurationDeserializer(const Path& configuration_directory)
@@ -61,11 +70,50 @@ namespace
     {
     }
 
+    static Json::Object serialize_configuration_impl(const Configuration& config)
+    {
+        constexpr static StringLiteral REGISTRY_PACKAGES = "packages";
+
+        Json::Object obj;
+
+        for (const auto& el : config.extra_info)
+        {
+            obj.insert(el.first.to_string(), el.second);
+        }
+
+        if (config.registry_set.default_registry())
+        {
+            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY,
+                       config.registry_set.default_registry()->serialize());
+        }
+
+        auto reg_view = config.registry_set.registries();
+        if (reg_view.size() > 0)
+        {
+            auto& reg_arr = obj.insert(ConfigurationDeserializer::REGISTRIES, Json::Array());
+            for (const auto& reg : reg_view)
+            {
+                auto reg_obj = reg.implementation().serialize();
+                auto& packages = reg_obj.insert(REGISTRY_PACKAGES, Json::Array{});
+                for (const auto& pkg : reg.packages())
+                    packages.push_back(Json::Value::string(pkg));
+                reg_arr.push_back(std::move(reg_obj));
+            }
+        }
+
+        return obj;
+    }
+
 }
 
 std::unique_ptr<Json::IDeserializer<Configuration>> vcpkg::make_configuration_deserializer(const Path& config_directory)
 {
     return std::make_unique<ConfigurationDeserializer>(config_directory);
+}
+
+Json::Object vcpkg::serialize_configuration(const Configuration& config)
+{
+    return serialize_configuration_impl(config);
 }
 
 namespace vcpkg

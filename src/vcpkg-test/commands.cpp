@@ -34,6 +34,7 @@ TEST_CASE ("get_available_basic_commands works", "[commands]")
         "version",
         "x-download",
         "x-init-registry",
+        "x-generate-default-message-map",
 #if defined(_WIN32)
         "x-upload-metrics",
 #endif // defined(_WIN32)

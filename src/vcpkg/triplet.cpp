@@ -82,11 +82,10 @@ namespace vcpkg
         StringLiteral operating_system = "freebsd";
 #elif defined(__OpenBSD__)
         StringLiteral operating_system = "openbsd";
-#elif defined(__GLIBC__)
-        StringLiteral operating_system = "linux";
 #else
-        StringLiteral operating_system = "linux-musl";
+        StringLiteral operating_system = "linux";
 #endif
+
         auto host_proc = get_host_processor();
         auto canonical_name = Strings::format("%s-%s", to_zstring_view(host_proc), operating_system);
         return Triplet::from_canonical_name(std::move(canonical_name));
