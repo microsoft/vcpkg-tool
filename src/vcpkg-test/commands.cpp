@@ -81,7 +81,8 @@ TEST_CASE ("get_available_commands_type_a works", "[commands]")
         "build-external",
         "export",
         "depend-info",
-        "x-check-support"
+        "x-check-support",
+        "z-print-config"
         });
 }
 // clang-format on

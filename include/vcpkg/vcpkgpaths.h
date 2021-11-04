@@ -89,6 +89,10 @@ namespace vcpkg
         LockFile& get_installed_lockfile() const;
         void flush_lockfile() const;
 
+        const Optional<Path>& maybe_installed() const;
+        const Optional<Path>& maybe_buildtrees() const;
+        const Optional<Path>& maybe_packages() const;
+
         const Path& installed() const;
         const Path& buildtrees() const;
         const Path& packages() const;

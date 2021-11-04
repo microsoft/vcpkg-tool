@@ -341,6 +341,10 @@ namespace vcpkg
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
+    const Optional<Path>& VcpkgPaths::maybe_installed() const { return m_pimpl->installed; }
+    const Optional<Path>& VcpkgPaths::maybe_buildtrees() const { return m_pimpl->buildtrees; }
+    const Optional<Path>& VcpkgPaths::maybe_packages() const { return m_pimpl->packages; }
+
     static Path lockfile_path(const VcpkgPaths& p) { return p.vcpkg_dir() / "vcpkg-lock.json"; }
 
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
@@ -383,9 +387,8 @@ namespace vcpkg
             }
             else
             {
-                print2(Color::error, "Error: Invalid bundle definition.\n");
-                maybe_bundle_doc.value_or_exit(VCPKG_LINE_INFO);
-                Checks::unreachable(VCPKG_LINE_INFO);
+                print2(Color::error, "Error: Invalid bundle definition.\n", maybe_bundle_doc.error()->format());
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
 
