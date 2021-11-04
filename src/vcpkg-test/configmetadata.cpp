@@ -204,7 +204,6 @@ TEST_CASE ("metadata strings", "[ce-metadata]")
         auto deserializer = make_configuration_deserializer("test");
         auto parsed_config_opt = reader.visit(object, *deserializer);
         auto config = parsed_config_opt.get();
-        CHECK(config->ce_metadata.size() == 0);
         CHECK_LINES(Strings::join("\n", reader.errors()), R"json(
 $.error: mismatched type: expected a string
 $.warning: mismatched type: expected a string
