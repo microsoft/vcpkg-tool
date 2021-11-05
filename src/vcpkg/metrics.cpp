@@ -8,6 +8,7 @@
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/metrics.h>
+#include <vcpkg/userconfig.h>
 
 #if defined(_WIN32)
 #pragma comment(lib, "version")
@@ -247,11 +248,11 @@ namespace vcpkg
 #endif
         ;
     static bool g_should_print_metrics = false;
-    static bool g_metrics_disabled = false;
+    static bool g_metrics_disabled = true;
 
-    std::string get_MAC_user()
-    {
 #if defined(_WIN32)
+    static std::string get_MAC_user()
+    {
         if (!LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
         {
             return "{}";
@@ -276,66 +277,74 @@ namespace vcpkg
         }
 
         return "0";
-#else
-        return "{}";
+    }
 #endif
-    }
 
-    void Metrics::set_user_information(const std::string& user_id, const std::string& first_use_time)
+    static void load_config(Metrics& m, vcpkg::Filesystem& fs)
     {
-        g_metricmessage.user_id = user_id;
-        g_metricmessage.user_timestamp = first_use_time;
-    }
+        (void)m;
+        auto config = UserConfig::try_read_data(fs);
 
-    void Metrics::init_user_information(std::string& user_id, std::string& first_use_time)
-    {
-        user_id = generate_random_UUID();
-        first_use_time = get_current_date_time_string();
+        bool write_config = false;
+
+        // config file not found, could not be read, or invalid
+        if (config.user_id.empty() || config.user_time.empty())
+        {
+            config.user_id = generate_random_UUID();
+            config.user_time = get_current_date_time_string();
+            write_config = true;
+        }
+
+#if defined(_WIN32)
+        if (config.user_mac.empty())
+        {
+            config.user_mac = get_MAC_user();
+            write_config = true;
+        }
+#endif
+
+        g_metricmessage.user_id = config.user_id;
+        g_metricmessage.user_timestamp = config.user_time;
+
+#if defined(_WIN32)
+        m.track_property("user_mac", config.user_mac);
+#endif
+
+        if (write_config)
+        {
+            config.try_write_data(fs);
+        }
     }
 
     void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }
 
     void Metrics::set_print_metrics(bool should_print_metrics) { g_should_print_metrics = should_print_metrics; }
 
-    void Metrics::set_disabled(bool disabled) { g_metrics_disabled = disabled; }
+    void Metrics::enable()
+    {
+        if (g_metrics_disabled)
+        {
+            // Ensure load_config() is called exactly once
+            load_config(*this, get_real_filesystem());
+        }
+        g_metrics_disabled = false;
+    }
 
     bool Metrics::metrics_enabled() { return !g_metrics_disabled; }
 
-    void Metrics::track_metric(const std::string& name, double value)
-    {
-        if (!metrics_enabled())
-        {
-            return;
-        }
-        g_metricmessage.track_metric(name, value);
-    }
+    void Metrics::track_metric(const std::string& name, double value) { g_metricmessage.track_metric(name, value); }
 
     void Metrics::track_buildtime(const std::string& name, double value)
     {
-        if (!metrics_enabled())
-        {
-            return;
-        }
         g_metricmessage.track_buildtime(name, value);
     }
 
     void Metrics::track_property(const std::string& name, const std::string& value)
     {
-        if (!metrics_enabled())
-        {
-            return;
-        }
         g_metricmessage.track_property(name, value);
     }
 
-    void Metrics::track_feature(const std::string& name, bool value)
-    {
-        if (!metrics_enabled())
-        {
-            return;
-        }
-        g_metricmessage.track_feature(name, value);
-    }
+    void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
 
     void Metrics::upload(const std::string& payload)
     {
@@ -432,7 +441,7 @@ namespace vcpkg
         if (request) WinHttpCloseHandle(request);
         if (connect) WinHttpCloseHandle(connect);
         if (session) WinHttpCloseHandle(session);
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
         (void)payload;
 #endif // ^^^ !_WIN32
     }
