@@ -10,7 +10,6 @@
 
 using namespace vcpkg;
 
-static constexpr StringLiteral DEFAULT_REGISTRY = "default-registry";
 static constexpr StringLiteral KIND = "kind";
 static constexpr StringLiteral REPOSITORY = "repository";
 static constexpr StringLiteral PATH = "path";
