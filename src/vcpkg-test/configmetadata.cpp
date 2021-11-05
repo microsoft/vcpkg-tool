@@ -322,50 +322,43 @@ $.demands.see-also (a `string: string` dictionary): value of ["vegetables/b/broc
 
 TEST_CASE ("metadata demands", "[ce-metadata]")
 {
-    SECTION ("nested demands")
+    SECTION ("simple demands")
     {
-        std::string nested_raw = R"json({
+        std::string simple_raw = R"json({
     "demands": {
          "level0": {
-            "message": "this is level 0",
-            "demands": {
-                "level1": {
-                    "message": "this is level 1",
-                    "warning": "this is the deepest level"
-                }
-            }
-         }
+            "message": "this is level 0"
+         },
+        "level1": {
+            "message": "this is level 1"
+        }
     }
 })json";
 
-        auto config = parse_test_configuration(nested_raw);
+        auto config = parse_test_configuration(simple_raw);
         REQUIRE(!config.ce_metadata.is_empty());
         CHECK(config.ce_metadata.size() == 1);
         auto demands_val = config.ce_metadata.get(CE_DEMANDS);
         REQUIRE(demands_val);
         REQUIRE(demands_val->is_object());
         const auto& demands = demands_val->object();
-        CHECK(demands.size() == 1);
+        CHECK(demands.size() == 2);
+
         auto level0_val = demands.get("level0");
         REQUIRE(level0_val);
         REQUIRE(level0_val->is_object());
         const auto& level0 = level0_val->object();
-        CHECK(level0.size() == 2);
+        CHECK(level0.size() == 1);
         check_string(level0, CE_MESSAGE, "this is level 0");
-        auto level0_demands_val = level0.get(CE_DEMANDS);
-        REQUIRE(level0_demands_val);
-        REQUIRE(level0_demands_val->is_object());
-        auto level0_demands = level0_demands_val->object();
-        CHECK(level0_demands.size() == 1);
-        auto level1_val = level0_demands.get("level1");
+
+        auto level1_val = demands.get("level1");
         REQUIRE(level1_val);
         REQUIRE(level1_val->is_object());
         const auto& level1 = level1_val->object();
-        CHECK(level1.size() == 2);
+        CHECK(level1.size() == 1);
         check_string(level1, CE_MESSAGE, "this is level 1");
-        check_string(level1, CE_WARNING, "this is the deepest level");
 
-        auto raw_obj = parse_json_object(nested_raw);
+        auto raw_obj = parse_json_object(simple_raw);
         compare_json_objects(raw_obj, serialize_configuration(config));
     }
 
@@ -395,12 +388,12 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
         auto deserializer = make_configuration_deserializer("test");
         auto parsed_config_opt = reader.visit(object, *deserializer);
         CHECK_LINES(Strings::join("\n", reader.errors()), R"(
-$.demands (a configuration object): value of ["a"] must be an object
-$.demands (a configuration object): value of ["b"] must be an object
-$.demands (a configuration object): value of ["c"] must be an object
-$.demands (a configuration object): value of ["d"] must be an object
-$.demands (a configuration object): value of ["e"] must be an object
-$.demands.demands.message: mismatched type: expected a string
+$.demands (a demand object): value of ["a"] must be an object
+$.demands (a demand object): value of ["b"] must be an object
+$.demands (a demand object): value of ["c"] must be an object
+$.demands (a demand object): value of ["d"] must be an object
+$.demands (a demand object): value of ["e"] must be an object
+$.demands (a demand object): $.demands.["f"] contains a `demands` object (nested `demands` have no effect)
 )");
     }
 }
@@ -631,20 +624,6 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
             "requires": null,
             "what-is-this": null,
             "$comment": "this fields won't be reordered at all"
-        },
-        "recurse0": {
-            "message": "this is level 0",
-            "demands": {
-                "recurse1": {
-                    "message": "this is level 1",
-                    "demands": {
-                        "recurse2": {
-                            "$comment": "this is the final level",
-                            "message": "this is level 2"
-                        }
-                    }
-                }
-            }
         }
     }
 )json";
@@ -782,7 +761,7 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     auto demands_val = ce_metadata.get(CE_DEMANDS);
     REQUIRE(demands_val->is_object());
     const auto& demands = demands_val->object();
-    REQUIRE(demands.size() == 3);
+    REQUIRE(demands.size() == 2);
 
     REQUIRE(demands.contains("windows and target:arm"));
     auto demand1_val = demands.get("windows and target:arm");
@@ -830,53 +809,6 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     REQUIRE(demand2.get("what-is-this")->is_null());
     REQUIRE(demand2.contains("$comment"));
     check_string(demand2, "$comment", "this fields won't be reordered at all");
-
-    /*
-      "recurse0": {
-        "message": "this is level 0",
-        "demands": {
-          "recurse1": {
-            "message": "this is level 1",
-            "demands": {
-              "recurse2": {
-                "$comment": "this is the final level",
-                "message": "this is level 2"
-              }
-            }
-          }
-        }
-      }
-    }
-    */
-    REQUIRE(demands.contains("recurse0"));
-    auto recurse0_val = demands.get("recurse0");
-    REQUIRE(recurse0_val->is_object());
-    const auto& recurse0 = recurse0_val->object();
-    REQUIRE(recurse0.size() == 2);
-    check_string(recurse0, CE_MESSAGE, "this is level 0");
-    REQUIRE(recurse0.contains(CE_DEMANDS));
-    auto recurse0_demands_val = recurse0.get(CE_DEMANDS);
-    REQUIRE(recurse0_demands_val->is_object());
-    const auto& recurse0_demands = recurse0_demands_val->object();
-
-    REQUIRE(recurse0_demands.contains("recurse1"));
-    auto recurse1_val = recurse0_demands.get("recurse1");
-    REQUIRE(recurse1_val->is_object());
-    const auto& recurse1 = recurse1_val->object();
-    REQUIRE(recurse1.size() == 2);
-    check_string(recurse1, CE_MESSAGE, "this is level 1");
-    REQUIRE(recurse1.contains(CE_DEMANDS));
-    auto recurse1_demands_val = recurse1.get(CE_DEMANDS);
-    REQUIRE(recurse1_demands_val->is_object());
-    const auto& recurse1_demands = recurse1_demands_val->object();
-
-    REQUIRE(recurse1_demands.contains("recurse2"));
-    auto recurse2_val = recurse1_demands.get("recurse2");
-    REQUIRE(recurse2_val->is_object());
-    const auto& recurse2 = recurse2_val->object();
-    REQUIRE(recurse2.size() == 2);
-    check_string(recurse2, "$comment", "this is the final level");
-    check_string(recurse2, CE_MESSAGE, "this is level 2");
 
     // finally test serialization is OK
     auto raw_obj = parse_json_object(raw_config);

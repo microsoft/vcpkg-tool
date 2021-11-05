@@ -30,7 +30,6 @@ namespace
         constexpr static StringLiteral CE_SETTINGS = "settings";
         constexpr static StringLiteral CE_REQUIRES = "requires";
         constexpr static StringLiteral CE_SEE_ALSO = "see-also";
-        constexpr static StringLiteral CE_DEMANDS = "demands";
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
@@ -44,17 +43,19 @@ namespace
     constexpr StringLiteral CeMetadataDeserializer::CE_SETTINGS;
     constexpr StringLiteral CeMetadataDeserializer::CE_REQUIRES;
     constexpr StringLiteral CeMetadataDeserializer::CE_SEE_ALSO;
-    constexpr StringLiteral CeMetadataDeserializer::CE_DEMANDS;
 
     struct DemandsDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "a configuration object"; }
+        virtual StringView type_name() const override { return "a demand object"; }
+
+        constexpr static StringLiteral CE_DEMANDS = "demands";
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
         static DemandsDeserializer instance;
     };
     DemandsDeserializer DemandsDeserializer::instance;
+    constexpr StringLiteral DemandsDeserializer::CE_DEMANDS;
 
     struct ConfigurationDeserializer final : Json::IDeserializer<Configuration>
     {
@@ -141,13 +142,6 @@ namespace
         extract_dictionary(obj, CE_SETTINGS, ret);
         extract_dictionary(obj, CE_REQUIRES, ret);
         extract_dictionary(obj, CE_SEE_ALSO, ret);
-
-        Json::Object demands;
-        if (r.optional_object_field(obj, CE_DEMANDS, demands, DemandsDeserializer::instance))
-        {
-            ret.insert_or_replace(CE_DEMANDS, demands);
-        }
-
         return ret;
     }
 
@@ -156,24 +150,33 @@ namespace
         Json::Object ret;
         for (const auto& el : obj)
         {
-            auto filter = el.first.to_string();
-            if (Strings::starts_with(filter, "$"))
+            auto key = el.first.to_string();
+            if (Strings::starts_with(key, "$"))
             {
                 // Put comments back without attempting to parse.
-                ret.insert_or_replace(filter, el.second);
+                ret.insert_or_replace(key, el.second);
                 continue;
             }
 
             if (!el.second.is_object())
             {
-                r.add_generic_error(type_name(), "value of [\"", filter, "\"] must be an object");
+                r.add_generic_error(type_name(), "value of [\"", key, "\"] must be an object");
                 continue;
             }
 
-            auto maybe_demand = r.visit(el.second, CeMetadataDeserializer::instance);
+            const auto& demand_obj = el.second.object();
+            if (demand_obj.contains(CE_DEMANDS))
+            {
+                r.add_generic_error(type_name(),
+                                    "$.demands.[\"",
+                                    key,
+                                    "\"] contains a `demands` object (nested `demands` have no effect)");
+            }
+
+            auto maybe_demand = r.visit(demand_obj, CeMetadataDeserializer::instance);
             if (maybe_demand.has_value())
             {
-                ret.insert_or_replace(filter, maybe_demand.value_or_exit(VCPKG_LINE_INFO));
+                ret.insert_or_replace(key, maybe_demand.value_or_exit(VCPKG_LINE_INFO));
             }
         }
         return ret;
@@ -213,21 +216,26 @@ namespace
             registries.add_registry(std::move(reg));
         }
 
-        Json::Object ce_config_obj;
-        auto maybe_ce_config = r.visit(obj, CeMetadataDeserializer::instance);
-        if (auto ce_config = maybe_ce_config.get())
+        Json::Object ce_metadata_obj;
+        auto maybe_ce_metadata = r.visit(obj, CeMetadataDeserializer::instance);
+        if (maybe_ce_metadata.has_value())
         {
-            ce_config_obj = *ce_config;
+            ce_metadata_obj = maybe_ce_metadata.value_or_exit(VCPKG_LINE_INFO);
         }
 
-        // This makes it so that comments at the top-level are put into extra_info
-        // but at nested levels are left in place as-is.
+        Json::Object demands_obj;
+        if (r.optional_object_field(obj, DemandsDeserializer::CE_DEMANDS, demands_obj, DemandsDeserializer::instance))
+        {
+            ce_metadata_obj.insert_or_replace(DemandsDeserializer::CE_DEMANDS, demands_obj);
+        }
+
+        // Remove comments duplicated in ce_metadata
         for (auto&& comment_key : comment_keys)
         {
-            ce_config_obj.remove(comment_key);
+            ce_metadata_obj.remove(comment_key);
         }
 
-        return Configuration{std::move(registries), ce_config_obj, extra_info};
+        return Configuration{std::move(registries), ce_metadata_obj, extra_info};
     }
 
     ConfigurationDeserializer::ConfigurationDeserializer(const Path& configuration_directory)
@@ -245,7 +253,7 @@ namespace
         };
 
         auto serialize_demands = [](const Json::Object& obj, Json::Object& put_into) {
-            if (auto demands = obj.get(CeMetadataDeserializer::CE_DEMANDS))
+            if (auto demands = obj.get(DemandsDeserializer::CE_DEMANDS))
             {
                 if (!demands->is_object())
                 {
@@ -268,7 +276,7 @@ namespace
                         serialize_ce_metadata(el.second.object(), inserted);
                     }
                 }
-                put_into.insert_or_replace(CeMetadataDeserializer::CE_DEMANDS, serialized_demands);
+                put_into.insert_or_replace(DemandsDeserializer::CE_DEMANDS, serialized_demands);
             }
         };
 
@@ -348,14 +356,14 @@ namespace vcpkg
         static constexpr StringView known_fields[]{
             ConfigurationDeserializer::DEFAULT_REGISTRY,
             ConfigurationDeserializer::REGISTRIES,
-            CeMetadataDeserializer::CE_APPLY,
-            CeMetadataDeserializer::CE_DEMANDS,
-            CeMetadataDeserializer::CE_ERROR,
             CeMetadataDeserializer::CE_MESSAGE,
+            CeMetadataDeserializer::CE_WARNING,
+            CeMetadataDeserializer::CE_ERROR,
+            CeMetadataDeserializer::CE_SETTINGS,
+            CeMetadataDeserializer::CE_APPLY,
             CeMetadataDeserializer::CE_REQUIRES,
             CeMetadataDeserializer::CE_SEE_ALSO,
-            CeMetadataDeserializer::CE_SETTINGS,
-            CeMetadataDeserializer::CE_WARNING,
+            DemandsDeserializer::CE_DEMANDS,
         };
         return known_fields;
     }
@@ -412,7 +420,7 @@ namespace vcpkg
                 out.push_back(Strings::concat(path, ".", key));
             }
 
-            if (el.first == CeMetadataDeserializer::CE_DEMANDS)
+            if (el.first == DemandsDeserializer::CE_DEMANDS)
             {
                 if (!el.second.is_object())
                 {
