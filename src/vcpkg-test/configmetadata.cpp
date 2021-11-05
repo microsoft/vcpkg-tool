@@ -99,13 +99,13 @@ TEST_CASE ("config without ce metadata", "[ce-metadata]")
     REQUIRE(config.extra_info.is_empty());
     REQUIRE(config.registry_set.default_registry() != nullptr);
 
-    auto default_registry = std::move(config.registry_set.default_registry()->serialize());
+    auto default_registry = config.registry_set.default_registry()->serialize();
     check_string(default_registry, KIND, "builtin");
     check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
 
     REQUIRE(config.registry_set.registries().size() == 1);
     const auto& registry = *config.registry_set.registries().begin();
-    auto serialized_registry = std::move(registry.implementation().serialize());
+    auto serialized_registry = registry.implementation().serialize();
     check_string(serialized_registry, KIND, "git");
     check_string(serialized_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
     check_string(serialized_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
@@ -353,7 +353,7 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
         check_string(level1, CE_MESSAGE, "this is level 1");
         check_string(level1, CE_WARNING, "this is the deepest level");
 
-        auto raw_obj = std::move(parse_json_object(nested_raw));
+        auto raw_obj = parse_json_object(nested_raw);
         compare_json_objects(raw_obj, serialize_configuration(config));
     }
 
@@ -659,13 +659,13 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     auto config = parse_test_configuration(raw_config);
     REQUIRE(config.registry_set.default_registry() != nullptr);
 
-    auto default_registry = std::move(config.registry_set.default_registry()->serialize());
+    auto default_registry = config.registry_set.default_registry()->serialize();
     check_string(default_registry, KIND, "builtin");
     check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
 
     REQUIRE(config.registry_set.registries().size() == 1);
     const auto& registry = *config.registry_set.registries().begin();
-    auto serialized_registry = std::move(registry.implementation().serialize());
+    auto serialized_registry = registry.implementation().serialize();
     check_string(serialized_registry, KIND, "git");
     check_string(serialized_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
     check_string(serialized_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
