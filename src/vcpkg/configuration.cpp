@@ -78,7 +78,6 @@ namespace
         Json::Object ret;
         for (const auto& el : obj)
         {
-            auto key = el.first;
             auto value = el.second;
 
             if (!value.is_string())
