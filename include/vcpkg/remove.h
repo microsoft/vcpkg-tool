@@ -8,7 +8,7 @@
 
 namespace vcpkg::Remove
 {
-    enum class Purge: bool
+    enum class Purge : bool
     {
         NO = 0,
         YES
