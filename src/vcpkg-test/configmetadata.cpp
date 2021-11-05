@@ -11,7 +11,6 @@
 using namespace vcpkg;
 
 static constexpr StringLiteral DEFAULT_REGISTRY = "default-registry";
-static constexpr StringLiteral REGISTRIES = "registries";
 static constexpr StringLiteral KIND = "kind";
 static constexpr StringLiteral REPOSITORY = "repository";
 static constexpr StringLiteral PATH = "path";
@@ -56,7 +55,7 @@ static Configuration parse_test_configuration(StringView text)
     auto object = parse_json_object(text);
 
     Json::Reader reader;
-    auto deserializer = make_configuration_deserializer("test");
+    auto deserializer = make_configuration_deserializer("");
     auto parsed_config_opt = reader.visit(object, *deserializer);
     REQUIRE(reader.errors().empty());
 
@@ -90,6 +89,11 @@ TEST_CASE ("config without ce metadata", "[ce-metadata]")
             "repository": "https://github.com/northwindtraders/vcpkg-registry",
             "baseline": "dacf4de488094a384ca2c202b923ccc097956e0c",
             "packages": [ "beicode", "beison" ]
+        },
+        {
+            "kind": "filesystem",
+            "path": "path/to/registry",
+            "packages": [ "zlib" ]
         }
     ]
 })json";
@@ -103,15 +107,23 @@ TEST_CASE ("config without ce metadata", "[ce-metadata]")
     check_string(default_registry, KIND, "builtin");
     check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
 
-    REQUIRE(config.registry_set.registries().size() == 1);
-    const auto& registry = *config.registry_set.registries().begin();
-    auto serialized_registry = registry.implementation().serialize();
-    check_string(serialized_registry, KIND, "git");
-    check_string(serialized_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
-    check_string(serialized_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
-    REQUIRE(registry.packages().size() == 2);
-    REQUIRE(registry.packages()[0] == "beicode");
-    REQUIRE(registry.packages()[1] == "beison");
+    REQUIRE(config.registry_set.registries().size() == 2);
+
+    const auto& git_registry = config.registry_set.registries()[0];
+    auto serialized_git_registry = git_registry.implementation().serialize();
+    check_string(serialized_git_registry, KIND, "git");
+    check_string(serialized_git_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
+    check_string(serialized_git_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
+    REQUIRE(git_registry.packages().size() == 2);
+    REQUIRE(git_registry.packages()[0] == "beicode");
+    REQUIRE(git_registry.packages()[1] == "beison");
+
+    const auto& fs_registry = config.registry_set.registries()[1];
+    auto serialized_fs_registry = fs_registry.implementation().serialize();
+    check_string(serialized_fs_registry, KIND, "filesystem");
+    check_string(serialized_fs_registry, PATH, "path/to/registry");
+    REQUIRE(fs_registry.packages().size() == 1);
+    REQUIRE(fs_registry.packages()[0] == "zlib");
 
     auto raw_obj = parse_json_object(raw_config);
     auto serialized_obj = serialize_configuration(config);

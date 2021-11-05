@@ -1047,7 +1047,10 @@ Json::Object FilesystemRegistry::serialize() const
 {
     Json::Object obj{RegistryImplementation::serialize()};
     obj.insert(RegistryImplDeserializer::PATH, Json::Value::string(m_path.generic_u8string()));
-    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
+    if (!m_baseline_identifier.empty())
+    {
+        obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
+    }
     return obj;
 }
 
