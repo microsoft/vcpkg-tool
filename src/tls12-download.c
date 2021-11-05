@@ -161,7 +161,7 @@ static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, 
 
 #ifndef NDEBUG
 int main()
-#else // ^^^ debug // !debug vvv
+#else  // ^^^ debug // !debug vvv
 int __stdcall entry()
 #endif // ^^^ !debug
 {

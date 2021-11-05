@@ -186,6 +186,23 @@ TEST_CASE ("registry_parsing", "[registries]")
 {
     "kind": "git",
     "repository": "abc",
+    "baseline": "123",
+    "reference": "abc/def"
+}
+    )json");
+    {
+        Json::Reader r;
+        auto registry_impl = r.visit(test_json, *registry_impl_des);
+        REQUIRE(registry_impl);
+        CHECK(*registry_impl.get());
+        INFO(Strings::join("\n", r.errors()));
+        CHECK(r.errors().empty());
+    }
+
+    test_json = parse_json(R"json(
+{
+    "kind": "git",
+    "repository": "abc",
     "baseline": "123"
 }
     )json");
@@ -260,11 +277,11 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
         auto results_opt = r.visit(test_json, filesystem_version_db);
         auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
         CHECK(results[0].version == VersionT{"puppies", 0});
-        CHECK(results[0].p == "a/b" VCPKG_PREFERED_SEPARATOR "c/d");
+        CHECK(results[0].p == "a/b" VCPKG_PREFERRED_SEPARATOR "c/d");
         CHECK(results[1].version == VersionT{"doggies", 0});
-        CHECK(results[1].p == "a/b" VCPKG_PREFERED_SEPARATOR "e/d");
+        CHECK(results[1].p == "a/b" VCPKG_PREFERRED_SEPARATOR "e/d");
         CHECK(results[2].version == VersionT{"1.2.3", 0});
-        CHECK(results[2].p == "a/b" VCPKG_PREFERED_SEPARATOR "semvers/here");
+        CHECK(results[2].p == "a/b" VCPKG_PREFERRED_SEPARATOR "semvers/here");
         CHECK(r.errors().empty());
     }
 

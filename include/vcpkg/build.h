@@ -56,7 +56,7 @@ namespace vcpkg::Build
         int perform_ex(const VcpkgCmdArguments& args,
                        const FullPackageSpec& full_spec,
                        Triplet host_triplet,
-                       const SourceControlFileLocation& scfl,
+                       const SourceControlFileAndLocation& scfl,
                        const PortFileProvider::PathsPortFileProvider& provider,
                        BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
@@ -64,7 +64,7 @@ namespace vcpkg::Build
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
                                  const FullPackageSpec& full_spec,
                                  Triplet host_triplet,
-                                 const SourceControlFileLocation& scfl,
+                                 const SourceControlFileAndLocation& scfl,
                                  const PortFileProvider::PathsPortFileProvider& provider,
                                  BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
@@ -205,7 +205,8 @@ namespace vcpkg::Build
 
     const std::string& to_string(const BuildResult build_result);
     std::string create_error_message(const BuildResult build_result, const PackageSpec& spec);
-    std::string create_user_troubleshooting_message(const PackageSpec& spec);
+    std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
+                                                    const VcpkgPaths& paths);
 
     /// <summary>
     /// Settings from the triplet file which impact the build environment and post-build checks
@@ -221,6 +222,7 @@ namespace vcpkg::Build
 
         Triplet triplet;
         bool load_vcvars_env = false;
+        bool disable_compiler_tracking = false;
         std::string target_architecture;
         std::string cmake_system_name;
         std::string cmake_system_version;
@@ -239,9 +241,7 @@ namespace vcpkg::Build
         const VcpkgPaths& m_paths;
     };
 
-    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
-                                      const Toolset& toolset,
-                                      View<Toolset> all_toolsets);
+    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset, const VcpkgPaths&);
 
     struct ExtendedBuildResult
     {
@@ -369,11 +369,14 @@ namespace vcpkg::Build
         struct TripletMapEntry
         {
             std::string hash;
-            Cache<std::string, std::string> compiler_hashes;
+            Cache<std::string, std::string> triplet_infos;
+            Cache<std::string, std::string> triplet_infos_without_compiler;
             Cache<std::string, CompilerInfo> compiler_info;
         };
         Cache<Path, TripletMapEntry> m_triplet_cache;
         Cache<Path, std::string> m_toolchain_cache;
+
+        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p);
 
 #if defined(_WIN32)
         struct EnvMapEntry

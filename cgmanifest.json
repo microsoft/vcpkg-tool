@@ -1,0 +1,26 @@
+{
+  "Registrations": [
+    {
+      "Component": {
+        "Type": "git",
+        "git": {
+          "RepositoryUrl": "https://github.com/catchorg/Catch2",
+          "CommitHash": "2f631bb8087a0355d2b23a75a28d936ce237659d"
+        }
+      },
+      "DevelopmentDependency": true,
+      "DependencyRoots": []
+    },
+    {
+      "Component": {
+        "Type": "git",
+        "git": {
+          "RepositoryUrl": "https://github.com/fmtlib/fmt",
+          "CommitHash": "d141cdbeb0fb422a3fb7173b285fd38e0d1772dc"
+        }
+      },
+      "DevelopmentDependency": false,
+      "DependencyRoots": []
+    }
+  ]
+}

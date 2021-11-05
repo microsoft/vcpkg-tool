@@ -4,6 +4,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -145,7 +146,8 @@ namespace vcpkg
     static ConfigAndPath load_configuration(const Filesystem& fs,
                                             const VcpkgCmdArguments& args,
                                             const Path& vcpkg_root,
-                                            const Path& manifest_dir)
+                                            const Path& manifest_dir,
+                                            const Optional<Json::Object>& configuration_from_manifest)
     {
         Path config_dir;
         if (manifest_dir.empty())
@@ -162,7 +164,27 @@ namespace vcpkg
         auto path_to_config = config_dir / "vcpkg-configuration.json";
         if (!fs.exists(path_to_config, IgnoreErrors{}))
         {
-            return {};
+            if (!configuration_from_manifest.has_value())
+            {
+                return {};
+            }
+
+            return {std::move(config_dir),
+                    deserialize_configuration(
+                        configuration_from_manifest.value_or_exit(VCPKG_LINE_INFO), args, manifest_dir / "vcpkg.json")};
+        }
+
+        if (configuration_from_manifest.has_value())
+        {
+            print2(Color::error,
+                   "Ambiguous vcpkg configuration provided by both manifest and configuration file.\n"
+                   "-- Delete configuration file \"",
+                   path_to_config,
+                   "\"\n"
+                   "-- Or remove \"vcpkg-configuration\" from the manifest file \"",
+                   manifest_dir / "vcpkg.json",
+                   "\".");
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         auto parsed_config = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_config);
@@ -355,7 +377,31 @@ namespace vcpkg
             m_pimpl->m_manifest_path = manifest_root_dir / "vcpkg.json";
         }
 
-        auto config_file = load_configuration(filesystem, args, root, manifest_root_dir);
+        vcpkg::Optional<Json::Object> configuration_from_manifest;
+        if (auto manifest = m_pimpl->m_manifest_doc.get())
+        {
+            auto manifest_obj = manifest->first;
+            if (auto config_obj = manifest_obj.get("vcpkg-configuration"))
+            {
+                print2(Color::warning,
+                       "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.\n"
+                       "Loading configuration from: ",
+                       m_pimpl->m_manifest_path,
+                       "\n");
+
+                if (!config_obj->is_object())
+                {
+                    print2(Color::error,
+                           "Failed to parse ",
+                           m_pimpl->m_manifest_path,
+                           ": vcpkg-configuration must be an object\n");
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+
+                configuration_from_manifest = make_optional(config_obj->object());
+            }
+        }
+        auto config_file = load_configuration(filesystem, args, root, manifest_root_dir, configuration_from_manifest);
 
         // metrics from configuration
         {
@@ -391,7 +437,7 @@ namespace vcpkg
         downloads =
             process_output_directory(filesystem, root, args.downloads_root_dir.get(), "downloads", VCPKG_LINE_INFO);
         m_pimpl->m_download_manager = Downloads::DownloadManager{
-            parse_download_configuration(args.asset_sources_template).value_or_exit(VCPKG_LINE_INFO)};
+            parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
         packages =
             process_output_directory(filesystem, root, args.packages_root_dir.get(), "packages", VCPKG_LINE_INFO);
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);
@@ -508,6 +554,63 @@ namespace vcpkg
         });
     }
 
+    static LockFile::LockDataType lockdata_from_json_object(const Json::Object& obj)
+    {
+        LockFile::LockDataType ret;
+        for (auto&& repo_to_ref_info_value : obj)
+        {
+            auto repo = repo_to_ref_info_value.first;
+            const auto& ref_info_value = repo_to_ref_info_value.second;
+
+            if (!ref_info_value.is_object())
+            {
+                Debug::print("Lockfile value for key '", repo, "' was not an object\n");
+                return ret;
+            }
+
+            for (auto&& reference_to_commit : ref_info_value.object())
+            {
+                auto reference = reference_to_commit.first;
+                const auto& commit = reference_to_commit.second;
+
+                if (!commit.is_string())
+                {
+                    Debug::print("Lockfile value for key '", reference, "' was not a string\n");
+                    return ret;
+                }
+                auto sv = commit.string();
+                if (!is_git_commit_sha(sv))
+                {
+                    Debug::print("Lockfile value for key '", reference, "' was not a git commit sha\n");
+                    return ret;
+                }
+                ret.emplace(repo.to_string(), LockFile::EntryData{reference.to_string(), sv.to_string(), true});
+            }
+        }
+        return ret;
+    }
+
+    static Json::Object lockdata_to_json_object(const LockFile::LockDataType& lockdata)
+    {
+        Json::Object obj;
+        for (auto it = lockdata.begin(); it != lockdata.end();)
+        {
+            const auto& repo = it->first;
+            auto repo_info_range = lockdata.equal_range(repo);
+
+            Json::Object repo_info;
+            for (auto repo_it = repo_info_range.first; repo_it != repo_info_range.second; ++repo_it)
+            {
+                repo_info.insert(repo_it->second.reference, Json::Value::string(repo_it->second.commit_id));
+            }
+            repo_info.sort_keys();
+            obj.insert(repo, std::move(repo_info));
+            it = repo_info_range.second;
+        }
+
+        return obj;
+    }
+
     static LockFile load_lockfile(const Filesystem& fs, const Path& p)
     {
         LockFile ret;
@@ -521,26 +624,14 @@ namespace vcpkg
         else if (auto lock_contents = maybe_lock_contents.get())
         {
             auto& doc = lock_contents->first;
-            if (doc.is_object())
+            if (!doc.is_object())
             {
-                for (auto&& x : doc.object())
-                {
-                    if (!x.second.is_string())
-                    {
-                        Debug::print("Lockfile value for key '", x.first, "' was not a string\n");
-                        return ret;
-                    }
-                    auto sv = x.second.string();
-                    if (!is_git_commit_sha(sv))
-                    {
-                        Debug::print("Lockfile value for key '", x.first, "' was not a git commit sha\n");
-                        return ret;
-                    }
-                    ret.lockdata.emplace(x.first.to_string(), LockFile::EntryData{sv.to_string(), true});
-                }
+                Debug::print("Lockfile was not an object\n");
                 return ret;
             }
-            Debug::print("Lockfile was not an object\n");
+
+            ret.lockdata = lockdata_from_json_object(doc.object());
+
             return ret;
         }
         else
@@ -558,6 +649,7 @@ namespace vcpkg
         }
         return *m_pimpl->m_installed_lock.get();
     }
+
     void VcpkgPaths::flush_lockfile() const
     {
         // If the lock file was not loaded, no need to flush it.
@@ -565,11 +657,9 @@ namespace vcpkg
         // lockfile was not modified, no need to write anything to disk.
         const auto& lockfile = *m_pimpl->m_installed_lock.get();
         if (!lockfile.modified) return;
-        Json::Object obj;
-        for (auto&& data : lockfile.lockdata)
-        {
-            obj.insert(data.first, Json::Value::string(data.second.value));
-        }
+
+        auto obj = lockdata_to_json_object(lockfile.lockdata);
+
         get_filesystem().write_rename_contents(
             lockfile_path(*this), "vcpkg-lock.json.tmp", Json::stringify(obj, {}), VCPKG_LINE_INFO);
     }
@@ -659,6 +749,25 @@ namespace vcpkg
         {
             return {std::move(output.output), expected_right_tag};
         }
+    }
+
+    ExpectedS<std::string> VcpkgPaths::git_describe_head() const
+    {
+        // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
+        const auto dot_git_dir = root / ".git";
+        Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir)
+                              .string_arg("show")
+                              .string_arg("--pretty=format:%h %cd (%cr)")
+                              .string_arg("-s")
+                              .string_arg("--date=short")
+                              .string_arg("HEAD");
+
+        auto output = cmd_execute_and_capture_output(showcmd);
+        if (output.exit_code == 0)
+        {
+            return {std::move(output.output), expected_left_tag};
+        }
+        return {std::move(output.output), expected_right_tag};
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const

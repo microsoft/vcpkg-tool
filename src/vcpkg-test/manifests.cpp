@@ -612,6 +612,95 @@ TEST_CASE ("manifest overrides", "[manifests]")
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
 }
 
+TEST_CASE ("manifest embed configuration", "[manifests]")
+{
+    std::string raw_config = R"json({
+        "$extra-info": null,
+        "default-registry": {
+            "kind": "builtin",
+            "baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4"
+        },
+        "registries": [
+            {
+                "kind": "filesystem",
+                "path": "a/b/c",
+                "baseline": "default",
+                "packages": [
+                    "a",
+                    "b",
+                    "c"
+                ]
+            },
+            {
+                "kind": "git",
+                "repository": "https://github.com/microsoft/vcpkg-ports",
+                "baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
+                "packages": [ 
+                    "zlib",
+                    "rapidjson",
+                    "fmt"
+                ]
+            }
+        ]
+    })json";
+
+    std::string raw = Strings::concat(R"json({
+    "vcpkg-configuration": )json",
+                                      raw_config,
+                                      R"json(,
+    "name": "zlib",
+    "version": "1.0.0",
+    "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
+    "dependencies": [
+        "a",
+        {
+            "$extra": null,
+            "name": "b"
+        },
+        {
+            "name": "c",
+            "version>=": "2018-09-01"
+        }
+    ]
+})json");
+    auto m_pgh = test_parse_manifest(raw);
+
+    REQUIRE(m_pgh.has_value());
+    auto& pgh = **m_pgh.get();
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+
+    auto maybe_as_json = Json::parse(raw);
+    REQUIRE(maybe_as_json.has_value());
+    auto as_json = *maybe_as_json.get();
+    REQUIRE(as_json.first.is_object());
+    auto as_json_obj = as_json.first.object();
+    REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
+            Json::stringify(as_json_obj, Json::JsonStyle::with_spaces(4)));
+
+    REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
+    REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
+    REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint ==
+            DependencyConstraint{Versions::Constraint::Type::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[1].name == "b");
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint ==
+            DependencyConstraint{Versions::Constraint::Type::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[2].name == "c");
+    REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
+            DependencyConstraint{Versions::Constraint::Type::Minimum, "2018-09-01", 0});
+
+    auto maybe_config = Json::parse(raw_config, "<test config>");
+    REQUIRE(maybe_config.has_value());
+    auto config = *maybe_config.get();
+    REQUIRE(config.first.is_object());
+    auto config_obj = config.first.object();
+    REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
+    auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
+    REQUIRE(Json::stringify(parsed_config_obj, Json::JsonStyle::with_spaces(4)) ==
+            Json::stringify(config_obj, Json::JsonStyle::with_spaces(4)));
+}
+
 TEST_CASE ("manifest construct maximum", "[manifests]")
 {
     auto m_pgh = test_parse_manifest(R"json({
@@ -621,9 +710,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         "description": "d",
         "dependencies": ["bd"],
         "default-features": ["df"],
-        "features": [
-            {
-                "name": "iroh",
+        "features": {
+            "iroh" : {
                 "description": "zuko's uncle",
                 "dependencies": [
                     "firebending",
@@ -637,11 +725,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                     }
                 ]
             },
-            {
-                "name": "zuko",
-                "description": ["son of the fire lord", "firebending 師父"]
+            "zuko": {
+                "description": ["son of the fire lord", "firebending 師父"],
+                "supports": "!(windows & arm)"
             }
-        ]
+        }
     })json");
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
@@ -656,6 +744,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "bd");
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
     REQUIRE(pgh.core_paragraph->default_features[0] == "df");
+    REQUIRE(pgh.core_paragraph->supports_expression.is_empty());
 
     REQUIRE(pgh.feature_paragraphs.size() == 2);
 
@@ -681,6 +770,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[1]->description.size() == 2);
     REQUIRE(pgh.feature_paragraphs[1]->description[0] == "son of the fire lord");
     REQUIRE(pgh.feature_paragraphs[1]->description[1] == "firebending 師父");
+    REQUIRE(!pgh.feature_paragraphs[1]->supports_expression.is_empty());
+    REQUIRE_FALSE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
+        {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
+        {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
 
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
 }

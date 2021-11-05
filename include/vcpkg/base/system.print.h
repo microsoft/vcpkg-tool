@@ -1,17 +1,11 @@
 #pragma once
 
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/view.h>
 
 namespace vcpkg
 {
-    enum class Color
-    {
-        success = 10,
-        error = 12,
-        warning = 14,
-    };
-
     namespace details
     {
         void print(StringView message);

@@ -36,16 +36,16 @@ struct MockBaselineProvider : PortFileProvider::IBaselineProvider
 
 struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvider
 {
-    mutable std::map<std::string, std::map<Versions::Version, SourceControlFileLocation, VersionTMapLess>> v;
+    mutable std::map<std::string, std::map<Versions::Version, SourceControlFileAndLocation, VersionTMapLess>> v;
 
-    ExpectedS<const SourceControlFileLocation&> get_control_file(
+    ExpectedS<const SourceControlFileAndLocation&> get_control_file(
         const vcpkg::Versions::VersionSpec& versionspec) const override
     {
         return get_control_file(versionspec.port_name, versionspec.version);
     }
 
-    ExpectedS<const SourceControlFileLocation&> get_control_file(const std::string& name,
-                                                                 const vcpkg::Versions::Version& version) const
+    ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& name,
+                                                                    const vcpkg::Versions::Version& version) const
     {
         auto it = v.find(name);
         if (it == v.end()) return std::string("Unknown port name");
@@ -56,13 +56,13 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
 
     virtual View<vcpkg::VersionT> get_port_versions(StringView) const override { Checks::unreachable(VCPKG_LINE_INFO); }
 
-    SourceControlFileLocation& emplace(std::string&& name,
-                                       Versions::Version&& version,
-                                       Versions::Scheme scheme = Versions::Scheme::String)
+    SourceControlFileAndLocation& emplace(std::string&& name,
+                                          Versions::Version&& version,
+                                          Versions::Scheme scheme = Versions::Scheme::String)
     {
         auto it = v.find(name);
         if (it == v.end())
-            it = v.emplace(name, std::map<Versions::Version, SourceControlFileLocation, VersionTMapLess>{}).first;
+            it = v.emplace(name, std::map<Versions::Version, SourceControlFileAndLocation, VersionTMapLess>{}).first;
 
         auto it2 = it->second.find(version);
         if (it2 == it->second.end())
@@ -74,12 +74,12 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
             core->port_version = version.port_version();
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
-            it2 = it->second.emplace(version, SourceControlFileLocation{std::move(scf), name}).first;
+            it2 = it->second.emplace(version, SourceControlFileAndLocation{std::move(scf), name}).first;
         }
         return it2->second;
     }
 
-    virtual void load_all_control_files(std::map<std::string, const SourceControlFileLocation*>&) const override
+    virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>&) const override
     {
         Checks::unreachable(VCPKG_LINE_INFO);
     }
@@ -105,7 +105,7 @@ static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
                                    std::initializer_list<StringLiteral> features = {})
 {
     CHECK(ipa.spec.name() == name);
-    CHECK(ipa.source_control_file_location.has_value());
+    CHECK(ipa.source_control_file_and_location.has_value());
     CHECK(ipa.feature_list.size() == features.size() + 1);
     {
         INFO("ipa.feature_list = [" << Strings::join(", ", ipa.feature_list) << "]");
@@ -116,7 +116,7 @@ static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
         }
         CHECK(Util::find(ipa.feature_list, "core") != ipa.feature_list.end());
     }
-    if (auto scfl = ipa.source_control_file_location.get())
+    if (auto scfl = ipa.source_control_file_and_location.get())
     {
         CHECK(scfl->source_control_file->core_paragraph->version == v.text());
         CHECK(scfl->source_control_file->core_paragraph->port_version == v.port_version());
@@ -171,7 +171,7 @@ struct MockOverlayProvider : PortFileProvider::IOverlayProvider
     MockOverlayProvider(const MockOverlayProvider&) = delete;
     MockOverlayProvider& operator=(const MockOverlayProvider&) = delete;
 
-    virtual Optional<const SourceControlFileLocation&> get_control_file(StringView name) const override
+    virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView name) const override
     {
         auto it = mappings.find(name);
         if (it == mappings.end())
@@ -182,9 +182,9 @@ struct MockOverlayProvider : PortFileProvider::IOverlayProvider
         return it->second;
     }
 
-    SourceControlFileLocation& emplace(const std::string& name,
-                                       Versions::Version&& version,
-                                       Versions::Scheme scheme = Versions::Scheme::String)
+    SourceControlFileAndLocation& emplace(const std::string& name,
+                                          Versions::Version&& version,
+                                          Versions::Scheme scheme = Versions::Scheme::String)
     {
         auto it = mappings.find(name);
         if (it == mappings.end())
@@ -196,18 +196,18 @@ struct MockOverlayProvider : PortFileProvider::IOverlayProvider
             core->port_version = version.port_version();
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
-            it = mappings.emplace(name, SourceControlFileLocation{std::move(scf), name}).first;
+            it = mappings.emplace(name, SourceControlFileAndLocation{std::move(scf), name}).first;
         }
         return it->second;
     }
 
-    virtual void load_all_control_files(std::map<std::string, const SourceControlFileLocation*>&) const override
+    virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>&) const override
     {
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
 private:
-    std::map<std::string, SourceControlFileLocation, std::less<>> mappings;
+    std::map<std::string, SourceControlFileAndLocation, std::less<>> mappings;
 };
 
 static const MockOverlayProvider s_empty_mock_overlay;
@@ -220,8 +220,15 @@ static ExpectedS<Dependencies::ActionPlan> create_versioned_install_plan(
     const std::vector<DependencyOverride>& overrides,
     const PackageSpec& toplevel)
 {
-    return Dependencies::create_versioned_install_plan(
-        provider, bprovider, s_empty_mock_overlay, var_provider, deps, overrides, toplevel, Test::ARM_UWP);
+    return Dependencies::create_versioned_install_plan(provider,
+                                                       bprovider,
+                                                       s_empty_mock_overlay,
+                                                       var_provider,
+                                                       deps,
+                                                       overrides,
+                                                       toplevel,
+                                                       Test::ARM_UWP,
+                                                       Dependencies::UnsupportedPortAction::Error);
 }
 
 namespace vcpkg::Dependencies
@@ -235,8 +242,15 @@ namespace vcpkg::Dependencies
         const std::vector<DependencyOverride>& overrides,
         const PackageSpec& toplevel)
     {
-        return vcpkg::Dependencies::create_versioned_install_plan(
-            provider, bprovider, oprovider, var_provider, deps, overrides, toplevel, Test::ARM_UWP);
+        return vcpkg::Dependencies::create_versioned_install_plan(provider,
+                                                                  bprovider,
+                                                                  oprovider,
+                                                                  var_provider,
+                                                                  deps,
+                                                                  overrides,
+                                                                  toplevel,
+                                                                  Test::ARM_UWP,
+                                                                  Dependencies::UnsupportedPortAction::Error);
     }
 }
 
@@ -1716,11 +1730,18 @@ TEST_CASE ("version install self features", "[versionplan]")
 
 static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
                                           MockBaselineProvider& bp,
+                                          std::vector<Dependency> deps,
+                                          MockCMakeVarProvider& var_provider)
+{
+    return create_versioned_install_plan(vp, bp, var_provider, deps, {}, toplevel_spec());
+}
+
+static auto create_versioned_install_plan(MockVersionedPortfileProvider& vp,
+                                          MockBaselineProvider& bp,
                                           std::vector<Dependency> deps)
 {
     MockCMakeVarProvider var_provider;
-
-    return create_versioned_install_plan(vp, bp, var_provider, deps, {}, toplevel_spec());
+    return create_versioned_install_plan(vp, bp, deps, var_provider);
 }
 
 TEST_CASE ("version install nonexisting features", "[versionplan]")
@@ -1963,7 +1984,7 @@ TEST_CASE ("version overlay ports", "[versionplan]")
                 Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1", 1}},
             },
             {
-                DependencyOverride{"a", {"2", 0}},
+                DependencyOverride{"a", "2", 0},
             },
             toplevel_spec()));
 
@@ -1980,11 +2001,92 @@ TEST_CASE ("version overlay ports", "[versionplan]")
                                                                                    Dependency{"a"},
                                                                                },
                                                                                {
-                                                                                   DependencyOverride{"a", {"2", 0}},
+                                                                                   DependencyOverride{"a", "2", 0},
                                                                                },
                                                                                toplevel_spec()));
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
+    }
+}
+
+TEST_CASE ("respect supports expression", "[versionplan]")
+{
+    using namespace PlatformExpression;
+    const auto supports_expression =
+        parse_platform_expression("windows", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO);
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    vp.emplace("a", {"1", 0}).source_control_file->core_paragraph->supports_expression = supports_expression;
+    vp.emplace("a", {"1", 1});
+    MockCMakeVarProvider var_provider;
+    var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "";
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}}, var_provider);
+    CHECK(install_plan.has_value());
+    var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
+    install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}}, var_provider);
+    CHECK_FALSE(install_plan.has_value());
+    SECTION ("override")
+    {
+        // override from non supported to supported version
+        MockOverlayProvider oprovider;
+        install_plan = Dependencies::create_versioned_install_plan(
+            vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 1}}, toplevel_spec());
+        CHECK(install_plan.has_value());
+        // override from supported to non supported version
+        bp.v["a"] = {"1", 1};
+        install_plan = Dependencies::create_versioned_install_plan(
+            vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 0}}, toplevel_spec());
+        CHECK_FALSE(install_plan.has_value());
+    }
+}
+
+TEST_CASE ("respect supports expressions of features", "[versionplan]")
+{
+    using namespace PlatformExpression;
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    auto a_x = std::make_unique<FeatureParagraph>();
+    a_x->name = "x";
+    a_x->supports_expression =
+        parse_platform_expression("windows", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO);
+    vp.emplace("a", {"1", 0}).source_control_file->feature_paragraphs.push_back(std::move(a_x));
+    a_x = std::make_unique<FeatureParagraph>();
+    a_x->name = "x";
+    vp.emplace("a", {"1", 1}).source_control_file->feature_paragraphs.push_back(std::move(a_x));
+
+    MockCMakeVarProvider var_provider;
+    var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "";
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {"x"}}}, var_provider);
+    CHECK(install_plan.has_value());
+    var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
+    install_plan = create_versioned_install_plan(vp, bp, {{"a", {"x"}}}, var_provider);
+    CHECK_FALSE(install_plan.has_value());
+    SECTION ("override")
+    {
+        // override from non supported to supported version
+        MockOverlayProvider oprovider;
+        install_plan = Dependencies::create_versioned_install_plan(vp,
+                                                                   bp,
+                                                                   oprovider,
+                                                                   var_provider,
+                                                                   {Dependency{"a", {"x"}}},
+                                                                   {DependencyOverride{"a", "1", 1}},
+                                                                   toplevel_spec());
+        CHECK(install_plan.has_value());
+        // override from supported to non supported version
+        bp.v["a"] = {"1", 1};
+        install_plan = Dependencies::create_versioned_install_plan(vp,
+                                                                   bp,
+                                                                   oprovider,
+                                                                   var_provider,
+                                                                   {Dependency{"a", {"x"}}},
+                                                                   {DependencyOverride{"a", "1", 0}},
+                                                                   toplevel_spec());
+        CHECK_FALSE(install_plan.has_value());
     }
 }

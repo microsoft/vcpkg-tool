@@ -41,21 +41,21 @@ namespace
 
 namespace vcpkg::PortFileProvider
 {
-    MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileLocation>& map)
+    MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)
         : ports(map)
     {
     }
 
-    ExpectedS<const SourceControlFileLocation&> MapPortFileProvider::get_control_file(const std::string& spec) const
+    ExpectedS<const SourceControlFileAndLocation&> MapPortFileProvider::get_control_file(const std::string& spec) const
     {
         auto scf = ports.find(spec);
         if (scf == ports.end()) return std::string("does not exist in map");
         return scf->second;
     }
 
-    std::vector<const SourceControlFileLocation*> MapPortFileProvider::load_all_control_files() const
+    std::vector<const SourceControlFileAndLocation*> MapPortFileProvider::load_all_control_files() const
     {
-        return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileLocation* { return &kvpair.second; });
+        return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
 
     PathsPortFileProvider::PathsPortFileProvider(const VcpkgPaths& paths, const std::vector<std::string>& overlay_ports)
@@ -65,7 +65,8 @@ namespace vcpkg::PortFileProvider
     {
     }
 
-    ExpectedS<const SourceControlFileLocation&> PathsPortFileProvider::get_control_file(const std::string& spec) const
+    ExpectedS<const SourceControlFileAndLocation&> PathsPortFileProvider::get_control_file(
+        const std::string& spec) const
     {
         auto maybe_scfl = m_overlay->get_control_file(spec);
         if (auto scfl = maybe_scfl.get())
@@ -83,9 +84,9 @@ namespace vcpkg::PortFileProvider
         }
     }
 
-    std::vector<const SourceControlFileLocation*> PathsPortFileProvider::load_all_control_files() const
+    std::vector<const SourceControlFileAndLocation*> PathsPortFileProvider::load_all_control_files() const
     {
-        std::map<std::string, const SourceControlFileLocation*> m;
+        std::map<std::string, const SourceControlFileAndLocation*> m;
         m_overlay->load_all_control_files(m);
         m_versioned->load_all_control_files(m);
         return Util::fmap(m, [](const auto& p) { return p.second; });
@@ -161,7 +162,7 @@ namespace vcpkg::PortFileProvider
                 return entry(port_name).value_or_exit(VCPKG_LINE_INFO)->get_port_versions();
             }
 
-            ExpectedS<std::unique_ptr<SourceControlFileLocation>> load_control_file(
+            ExpectedS<std::unique_ptr<SourceControlFileAndLocation>> load_control_file(
                 const VersionSpec& version_spec) const
             {
                 const auto& maybe_ent = entry(version_spec.port_name);
@@ -175,8 +176,8 @@ namespace vcpkg::PortFileProvider
                         {
                             if (scf->get()->core_paragraph->name == version_spec.port_name)
                             {
-                                return std::unique_ptr<SourceControlFileLocation>(
-                                    new SourceControlFileLocation{std::move(*scf), std::move(*path)});
+                                return std::unique_ptr<SourceControlFileAndLocation>(
+                                    new SourceControlFileAndLocation{std::move(*scf), std::move(*path)});
                             }
                             else
                             {
@@ -206,7 +207,7 @@ namespace vcpkg::PortFileProvider
                 return maybe_ent.error();
             }
 
-            virtual ExpectedS<const SourceControlFileLocation&> get_control_file(
+            virtual ExpectedS<const SourceControlFileAndLocation&> get_control_file(
                 const VersionSpec& version_spec) const override
             {
                 auto it = m_control_cache.find(version_spec);
@@ -214,11 +215,11 @@ namespace vcpkg::PortFileProvider
                 {
                     it = m_control_cache.emplace(version_spec, load_control_file(version_spec)).first;
                 }
-                return it->second.map([](const auto& x) -> const SourceControlFileLocation& { return *x.get(); });
+                return it->second.map([](const auto& x) -> const SourceControlFileAndLocation& { return *x.get(); });
             }
 
             virtual void load_all_control_files(
-                std::map<std::string, const SourceControlFileLocation*>& out) const override
+                std::map<std::string, const SourceControlFileAndLocation*>& out) const override
             {
                 auto all_ports = Paragraphs::load_all_registry_ports(paths);
                 for (auto&& scfl : all_ports)
@@ -227,7 +228,7 @@ namespace vcpkg::PortFileProvider
                     auto version = scfl.source_control_file->core_paragraph->to_versiont();
                     auto it = m_control_cache
                                   .emplace(VersionSpec{std::move(port_name), std::move(version)},
-                                           std::make_unique<SourceControlFileLocation>(std::move(scfl)))
+                                           std::make_unique<SourceControlFileAndLocation>(std::move(scfl)))
                                   .first;
                     Checks::check_exit(VCPKG_LINE_INFO, it->second.has_value());
                     out.emplace(it->first.port_name, it->second.get()->get());
@@ -237,7 +238,7 @@ namespace vcpkg::PortFileProvider
         private:
             const VcpkgPaths& paths; // TODO: remove this data member
             mutable std::
-                unordered_map<VersionSpec, ExpectedS<std::unique_ptr<SourceControlFileLocation>>, VersionSpecHasher>
+                unordered_map<VersionSpec, ExpectedS<std::unique_ptr<SourceControlFileAndLocation>>, VersionSpecHasher>
                     m_control_cache;
             mutable std::map<std::string, ExpectedS<std::unique_ptr<RegistryEntry>>, std::less<>> m_entry_cache;
         };
@@ -263,7 +264,7 @@ namespace vcpkg::PortFileProvider
             OverlayProviderImpl(const OverlayProviderImpl&) = delete;
             OverlayProviderImpl& operator=(const OverlayProviderImpl&) = delete;
 
-            Optional<SourceControlFileLocation> load_port(StringView port_name) const
+            Optional<SourceControlFileAndLocation> load_port(StringView port_name) const
             {
                 auto s_port_name = port_name.to_string();
 
@@ -278,7 +279,7 @@ namespace vcpkg::PortFileProvider
                             auto& scf = *scfp;
                             if (scf->core_paragraph->name == port_name)
                             {
-                                return SourceControlFileLocation{std::move(scf), ports_dir};
+                                return SourceControlFileAndLocation{std::move(scf), ports_dir};
                             }
                         }
                         else
@@ -300,7 +301,7 @@ namespace vcpkg::PortFileProvider
                             auto& scf = *scfp;
                             if (scf->core_paragraph->name == port_name)
                             {
-                                return SourceControlFileLocation{std::move(scf), std::move(ports_spec)};
+                                return SourceControlFileAndLocation{std::move(scf), std::move(ports_spec)};
                             }
                             Checks::exit_maybe_upgrade(
                                 VCPKG_LINE_INFO,
@@ -320,7 +321,7 @@ namespace vcpkg::PortFileProvider
                 return nullopt;
             }
 
-            virtual Optional<const SourceControlFileLocation&> get_control_file(StringView port_name) const override
+            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
             {
                 auto it = m_overlay_cache.find(port_name);
                 if (it == m_overlay_cache.end())
@@ -331,7 +332,7 @@ namespace vcpkg::PortFileProvider
             }
 
             virtual void load_all_control_files(
-                std::map<std::string, const SourceControlFileLocation*>& out) const override
+                std::map<std::string, const SourceControlFileAndLocation*>& out) const override
             {
                 for (auto&& ports_dir : m_overlay_ports)
                 {
@@ -341,7 +342,7 @@ namespace vcpkg::PortFileProvider
                         auto maybe_scf = Paragraphs::try_load_port(m_fs, ports_dir);
                         if (auto scfp = maybe_scf.get())
                         {
-                            SourceControlFileLocation scfl{std::move(*scfp), ports_dir};
+                            SourceControlFileAndLocation scfl{std::move(*scfp), ports_dir};
                             auto name = scfl.source_control_file->core_paragraph->name;
                             auto it = m_overlay_cache.emplace(std::move(name), std::move(scfl)).first;
                             Checks::check_exit(VCPKG_LINE_INFO, it->second.get());
@@ -372,7 +373,7 @@ namespace vcpkg::PortFileProvider
         private:
             const Filesystem& m_fs;
             const std::vector<Path> m_overlay_ports;
-            mutable std::map<std::string, Optional<SourceControlFileLocation>, std::less<>> m_overlay_cache;
+            mutable std::map<std::string, Optional<SourceControlFileAndLocation>, std::less<>> m_overlay_cache;
         };
     }
 
