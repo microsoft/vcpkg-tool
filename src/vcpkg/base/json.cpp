@@ -7,8 +7,6 @@
 
 #include <inttypes.h>
 
-#include <regex>
-
 namespace vcpkg::Json
 {
     static std::atomic<uint64_t> g_json_parsing_stats(0);
@@ -1030,26 +1028,42 @@ namespace vcpkg::Json
     PackageNameDeserializer PackageNameDeserializer::instance;
     PathDeserializer PathDeserializer::instance;
 
+    static constexpr bool is_lower_digit(char ch)
+    {
+        return Parse::ParserBase::is_lower_alpha(ch) || Parse::ParserBase::is_ascii_digit(ch);
+    }
+
     bool IdentifierDeserializer::is_ident(StringView sv)
     {
-        static const std::regex BASIC_IDENTIFIER = std::regex(R"([a-z0-9]+(-[a-z0-9]+)*)");
-
-        // we only check for lowercase in RESERVED since we already remove all
-        // strings with uppercase letters from the basic check
-        static const std::regex RESERVED = std::regex(R"(prn|aux|nul|con|(lpt|com)[1-9]|core|default)");
-
         // back-compat
         if (sv == "all_modules")
         {
             return true;
         }
 
-        if (!std::regex_match(sv.begin(), sv.end(), BASIC_IDENTIFIER))
+        // [a-z0-9]+(-[a-z0-9]+)*
+        auto cur = sv.begin();
+        const auto last = sv.end();
+        for (;;)
         {
-            return false; // we're not even in the shape of an identifier
+            if (cur == last || !is_lower_digit(*cur)) return false;
+            ++cur;
+            while (cur != last && is_lower_digit(*cur))
+                ++cur;
+
+            if (cur == last) break;
+            if (*cur != '-') return false;
+            ++cur;
         }
 
-        if (std::regex_match(sv.begin(), sv.end(), RESERVED))
+        // we only check for lowercase in RESERVED since we already remove all
+        // strings with uppercase letters from the basic check
+        if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == "core" || sv == "default")
+        {
+            return false; // we're a reserved identifier
+        }
+        if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
+            sv.byte_at_index(3) >= '1' && sv.byte_at_index(3) <= '9')
         {
             return false; // we're a reserved identifier
         }
