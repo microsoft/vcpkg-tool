@@ -375,7 +375,7 @@ namespace vcpkg
         Debug::print("Using vcpkg-root: ", root, '\n');
         const auto vcpkg_root_file = root / ".vcpkg-root";
         auto bundle_file = filesystem.read_contents(vcpkg_root_file, VCPKG_LINE_INFO);
-        if (!bundle_file.empty())
+        if (!std::all_of(bundle_file.begin(), bundle_file.end(), Parse::ParserBase::is_whitespace))
         {
             auto maybe_bundle_doc = Json::parse(bundle_file, vcpkg_root_file.native());
             if (auto bundle_doc = maybe_bundle_doc.get())
