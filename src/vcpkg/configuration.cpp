@@ -11,7 +11,7 @@ namespace
 
     struct DictionaryDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "an `string: string` dictionary object"; }
+        virtual StringView type_name() const override { return "a `string: string` dictionary"; }
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
@@ -48,7 +48,7 @@ namespace
 
     struct DemandsDeserializer final : Json::IDeserializer<Json::Object>
     {
-        virtual StringView type_name() const override { return "a ce.demands object"; }
+        virtual StringView type_name() const override { return "a configuration object"; }
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
@@ -83,7 +83,7 @@ namespace
 
             if (!value.is_string())
             {
-                r.add_generic_error(type_name(), "All elements must be key/value pairs");
+                r.add_generic_error(type_name(), "value of [\"", el.first, "\"] must be a string");
                 continue;
             }
 
@@ -167,7 +167,7 @@ namespace
 
             if (!el.second.is_object())
             {
-                r.add_generic_error(type_name(), filter, " must be an object");
+                r.add_generic_error(type_name(), "value of [\"", filter, "\"] must be an object");
                 continue;
             }
 

@@ -188,6 +188,9 @@ TEST_CASE ("metadata strings", "[ce-metadata]")
         check_string(valid_config.ce_metadata, CE_MESSAGE, "this is a valid message");
         check_string(valid_config.ce_metadata, CE_WARNING, "this is a valid warning");
         check_string(valid_config.ce_metadata, CE_ERROR, "this is a valid error");
+
+        auto raw_obj = parse_json_object(valid_raw);
+        compare_json_objects(raw_obj, serialize_configuration(valid_config));
     }
 
     SECTION ("invalid json")
@@ -203,12 +206,376 @@ TEST_CASE ("metadata strings", "[ce-metadata]")
         Json::Reader reader;
         auto deserializer = make_configuration_deserializer("test");
         auto parsed_config_opt = reader.visit(object, *deserializer);
-        auto config = parsed_config_opt.get();
-        CHECK_LINES(Strings::join("\n", reader.errors()), R"json(
+        CHECK_LINES(Strings::join("\n", reader.errors()), R"(
 $.error: mismatched type: expected a string
 $.warning: mismatched type: expected a string
 $.message: mismatched type: expected a string
-)json");
+)");
+    }
+}
+
+TEST_CASE ("metadata dictionaries", "[ce-metadata]")
+{
+    SECTION ("valid json")
+    {
+        std::string valid_raw = R"json({
+    "settings": {
+        "SETTING_1": "value1",
+        "SETTING_2": "value2"
+    },
+    "requires": {
+        "fruits/a/apple": "1.0.0",
+        "fruits/a/avocado": "2.0.0"
+    },
+    "see-also": {
+        "vegetables/b/beet": "3.0.0",
+        "vegetables/b/broccoli": "4.0.0"
+    }
+})json";
+
+        auto valid_config = parse_test_configuration(valid_raw);
+        CHECK(valid_config.ce_metadata.size() == 3);
+
+        auto requires_val = valid_config.ce_metadata.get(CE_REQUIRES);
+        REQUIRE(requires_val);
+        REQUIRE(requires_val->is_object());
+        const auto& requires_ = requires_val->object();
+        check_string(requires_, "fruits/a/apple", "1.0.0");
+        check_string(requires_, "fruits/a/avocado", "2.0.0");
+
+        auto see_also_val = valid_config.ce_metadata.get(CE_SEE_ALSO);
+        REQUIRE(see_also_val);
+        REQUIRE(see_also_val->is_object());
+        const auto& see_also = see_also_val->object();
+        check_string(see_also, "vegetables/b/beet", "3.0.0");
+        check_string(see_also, "vegetables/b/broccoli", "4.0.0");
+
+        auto settings_val = valid_config.ce_metadata.get(CE_SETTINGS);
+        REQUIRE(settings_val);
+        REQUIRE(settings_val->is_object());
+        const auto& settings = settings_val->object();
+        check_string(settings, "SETTING_1", "value1");
+        check_string(settings, "SETTING_2", "value2");
+
+        auto raw_obj = parse_json_object(valid_raw);
+        compare_json_objects(raw_obj, serialize_configuration(valid_config));
+    }
+
+    SECTION ("invalid json")
+    {
+        std::string invalid_raw = R"json({
+    "settings": [],
+    "requires": {
+        "fruits/a/apple": null,
+        "fruits/a/avocado": 1
+    },
+    "see-also": {
+        "vegetables/b/beet": { "version": "3.0.0" },
+        "vegetables/b/broccoli": []
+    },
+    "demands": {
+        "nested": {
+            "settings": [],
+            "requires": {
+                "fruits/a/apple": null,
+                "fruits/a/avocado": 1
+            },
+            "see-also": {
+                "vegetables/b/beet": { "version": "3.0.0" },
+                "vegetables/b/broccoli": []
+            }
+        }
+    }
+})json";
+
+        auto object = parse_json_object(invalid_raw);
+
+        Json::Reader reader;
+        auto deserializer = make_configuration_deserializer("test");
+        auto parsed_config_opt = reader.visit(object, *deserializer);
+        CHECK_LINES(Strings::join("\n", reader.errors()), R"(
+$.settings: mismatched type: expected a `string: string` dictionary
+$.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
+$.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
+$.see-also (a `string: string` dictionary): value of ["vegetables/b/beet"] must be a string
+$.see-also (a `string: string` dictionary): value of ["vegetables/b/broccoli"] must be a string
+$.demands.settings: mismatched type: expected a `string: string` dictionary
+$.demands.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
+$.demands.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
+$.demands.see-also (a `string: string` dictionary): value of ["vegetables/b/beet"] must be a string
+$.demands.see-also (a `string: string` dictionary): value of ["vegetables/b/broccoli"] must be a string
+)");
+    }
+}
+
+TEST_CASE ("metadata demands", "[ce-metadata]")
+{
+    SECTION ("nested demands")
+    {
+        std::string nested_raw = R"json({
+    "demands": {
+         "level0": {
+            "message": "this is level 0",
+            "demands": {
+                "level1": {
+                    "message": "this is level 1",
+                    "warning": "this is the deepest level"
+                }
+            }
+         }
+    }
+})json";
+
+        auto config = parse_test_configuration(nested_raw);
+        REQUIRE(!config.ce_metadata.is_empty());
+        CHECK(config.ce_metadata.size() == 1);
+        auto demands_val = config.ce_metadata.get(CE_DEMANDS);
+        REQUIRE(demands_val);
+        REQUIRE(demands_val->is_object());
+        const auto& demands = demands_val->object();
+        CHECK(demands.size() == 1);
+        auto level0_val = demands.get("level0");
+        REQUIRE(level0_val);
+        REQUIRE(level0_val->is_object());
+        const auto& level0 = level0_val->object();
+        CHECK(level0.size() == 2);
+        check_string(level0, CE_MESSAGE, "this is level 0");
+        auto level0_demands_val = level0.get(CE_DEMANDS);
+        REQUIRE(level0_demands_val);
+        REQUIRE(level0_demands_val->is_object());
+        auto level0_demands = level0_demands_val->object();
+        CHECK(level0_demands.size() == 1);
+        auto level1_val = level0_demands.get("level1");
+        REQUIRE(level1_val);
+        REQUIRE(level1_val->is_object());
+        const auto& level1 = level1_val->object();
+        CHECK(level1.size() == 2);
+        check_string(level1, CE_MESSAGE, "this is level 1");
+        check_string(level1, CE_WARNING, "this is the deepest level");
+
+        auto raw_obj = std::move(parse_json_object(nested_raw));
+        compare_json_objects(raw_obj, serialize_configuration(config));
+    }
+
+    SECTION ("invalid json")
+    {
+        std::string invalid_raw = R"json({
+    "demands": {
+         "a": null,
+         "b": [],
+         "c": "string",
+         "d": 12345,
+         "e": false,
+         "f": { 
+            "demands": { 
+                "f.1": { 
+                    "message": { 
+                        "causes-error": true 
+                    } 
+                } 
+            } 
+        }
+    }
+})json";
+        auto object = parse_json_object(invalid_raw);
+
+        Json::Reader reader;
+        auto deserializer = make_configuration_deserializer("test");
+        auto parsed_config_opt = reader.visit(object, *deserializer);
+        CHECK_LINES(Strings::join("\n", reader.errors()), R"(
+$.demands (a configuration object): value of ["a"] must be an object
+$.demands (a configuration object): value of ["b"] must be an object
+$.demands (a configuration object): value of ["c"] must be an object
+$.demands (a configuration object): value of ["d"] must be an object
+$.demands (a configuration object): value of ["e"] must be an object
+$.demands.demands.message: mismatched type: expected a string
+)");
+    }
+}
+
+TEST_CASE ("serialize configuration", "[ce-metadata]")
+{
+    SECTION ("null default registry")
+    {
+        std::string raw = R"json({
+    "default-registry": null,
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "https://github.com/microsoft/vcpkg",
+            "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
+            "packages": [ "zlib" ]
+        }
+    ]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        compare_json_objects(parse_json_object(raw), serialize_configuration(config));
+    }
+
+    SECTION ("overriden default registry and registries")
+    {
+        std::string raw = R"json({
+    "default-registry": {
+        "kind": "builtin",
+        "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f"
+    },
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "https://github.com/microsoft/vcpkg",
+            "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
+            "packages": [ "zlib" ]
+        }
+    ]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        compare_json_objects(parse_json_object(raw), serialize_configuration(config));
+    }
+
+    SECTION ("only registries")
+    {
+        std::string raw = R"json({
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "https://github.com/microsoft/vcpkg",
+            "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
+            "packages": [ "zlib" ]
+        }
+    ]
+})json";
+        // parsing of configuration is tested elsewhere
+        auto config = parse_test_configuration(raw);
+        compare_json_objects(parse_json_object(raw), serialize_configuration(config));
+    }
+
+    SECTION ("preserve comments and unexpected fields")
+    {
+        std::string raw = R"json({
+    "$comment1": "aaaaah",
+    "$comment2": "aaaaaaaaaah",
+    "$comment3": "aaaaaaaaaaaaaaaaaaah",
+    "unexpected": true,
+    "unexpected-too": "yes",
+    "demands": {
+        "$comment object": [],
+        "comments": {
+           "$comment4": "aaaaaaaaaaaaaaaaaaaaaaaaaaaah",
+           "hello": "world",
+           "hola": "mundo"
+        },
+        "$another comment object": {
+            "ignored-unknown": "because is inside a comment"
+        }
+    }
+})json";
+
+        auto config = parse_test_configuration(raw);
+        compare_json_objects(parse_json_object(raw), serialize_configuration(config));
+
+        std::vector<std::string> extra_fields;
+        find_unknown_fields(config.ce_metadata, extra_fields, "$");
+        CHECK(extra_fields.size() == 4);
+        REQUIRE(extra_fields[0] == "$.unexpected");
+        REQUIRE(extra_fields[1] == "$.unexpected-too");
+        REQUIRE(extra_fields[2] == "$.demands.comments.hello");
+        REQUIRE(extra_fields[3] == "$.demands.comments.hola");
+    }
+
+    SECTION ("sorted fields")
+    {
+        std::string raw = R"json({
+    "registries": [
+        {
+            "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
+            "repository": "https://github.com/microsoft/vcpkg",
+            "kind": "git",
+            "packages": [ "zlib" ]
+        }
+    ], 
+    "default-registry": null,
+    "error": "this is an error",
+    "message": "this is a message",
+    "warning": "this is a warning",
+    "$comment": "this is a comment",
+    "unexpected": "this is an unexpected field",
+    "$comment2": "this is another comment",
+    "demands": {
+        "a": {
+            "error": "nested error",
+            "$comment": "nested comment",
+            "message": "nested message",
+            "unexpected": "nested unexpected"
+        }
+    },
+    "apply": {},
+    "requires": { 
+        "b": "banana" 
+    },
+    "see-also": { 
+        "c": "cantaloupe" 
+    },
+    "settings": {
+        "a": "apple"
+    }
+})json";
+
+        std::string formatted = R"json({
+    "$comment": "this is a comment",
+    "$comment2": "this is another comment",
+    "default-registry": null,
+    "registries": [
+        {
+            "kind": "git",
+            "repository": "https://github.com/microsoft/vcpkg",
+            "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f",
+            "packages": [ 
+                "zlib" 
+            ]
+        }
+    ], 
+    "unexpected": "this is an unexpected field",
+    "message": "this is a message",
+    "warning": "this is a warning",
+    "error": "this is an error",
+    "settings": {
+        "a": "apple"
+    },
+    "apply": {},
+    "requires": { 
+        "b": "banana" 
+    },
+    "see-also": { 
+        "c": "cantaloupe" 
+    },
+    "demands": {
+        "a": {
+            "$comment": "nested comment",
+            "unexpected": "nested unexpected",
+            "message": "nested message",
+            "error": "nested error"
+        }
+    }
+})json";
+
+        // This test ensures the following order after serialization:
+        //   comments,
+        //   default-registry,
+        //   registries,
+        //   unexpected fields,
+        //   message,
+        //   warninng,
+        //   error,
+        //   settings,
+        //   apply,
+        //   requires,
+        //   see-also,
+        //   demands
+        // Object values in `demands` are also sorted recursively.
+        auto config = parse_test_configuration(raw);
+        compare_json_objects(parse_json_object(formatted), serialize_configuration(config));
     }
 }
 
@@ -503,37 +870,4 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     auto raw_obj = parse_json_object(raw_config);
     auto serialized_obj = serialize_configuration(config);
     compare_json_objects(raw_obj, serialized_obj);
-}
-
-TEST_CASE ("recursive demands", "[ce-metadata]")
-{
-    std::string raw = R"json({
-    "demands": {
-        "nested0": {
-            "message": "this is level 0",
-            "demands": {
-                "nested1": {
-                    "message": "this is level 1",
-                    "demands": {
-                        "nested2": {
-                            "message": "this is level 2",
-                            "demands": {
-                                "nested3": {
-                                    "message": "this is level 3, this is the last level"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-})json";
-
-    auto config = parse_test_configuration(raw);
-    auto serialized_config = serialize_configuration(config);
-    auto raw_obj = parse_json_object(raw);
-    REQUIRE(!config.ce_metadata.is_empty());
-    REQUIRE(Json::stringify(serialized_config, Json::JsonStyle::with_spaces(4)) ==
-            Json::stringify(raw_obj, Json::JsonStyle::with_spaces(4)));
 }
