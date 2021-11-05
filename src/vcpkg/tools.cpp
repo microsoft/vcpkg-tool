@@ -562,11 +562,11 @@ gsutil version: 4.58
 
     struct ToolCacheImpl final : ToolCache
     {
-        ToolCache::RequireExactVersionsForAbiRelevantTools abiToolVersionHandling;
+        ToolCache::RequireExactVersions abiToolVersionHandling;
         vcpkg::Cache<std::string, Path> path_only_cache;
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
 
-        ToolCacheImpl(ToolCache::RequireExactVersionsForAbiRelevantTools abiToolVersionHandling)
+        ToolCacheImpl(ToolCache::RequireExactVersions abiToolVersionHandling)
             : abiToolVersionHandling(abiToolVersionHandling)
         {
         }
@@ -606,7 +606,7 @@ gsutil version: 4.58
                     }
                     return get_path(paths,
                                     CMakeProvider(),
-                                    abiToolVersionHandling == ToolCache::RequireExactVersionsForAbiRelevantTools::YES);
+                                    abiToolVersionHandling == ToolCache::RequireExactVersions::YES);
                 }
                 if (tool == Tools::GIT)
                 {
@@ -632,7 +632,7 @@ gsutil version: 4.58
                     }
                     return get_path(paths,
                                     PowerShellCoreProvider(),
-                                    abiToolVersionHandling == ToolCache::RequireExactVersionsForAbiRelevantTools::YES);
+                                    abiToolVersionHandling == ToolCache::RequireExactVersions::YES);
                 }
                 if (tool == Tools::NUGET) return get_path(paths, NuGetProvider());
                 if (tool == Tools::IFW_INSTALLER_BASE) return get_path(paths, IfwInstallerBaseProvider());
@@ -667,7 +667,7 @@ gsutil version: 4.58
         }
     };
 
-    std::unique_ptr<ToolCache> get_tool_cache(ToolCache::RequireExactVersionsForAbiRelevantTools abiToolVersionHandling)
+    std::unique_ptr<ToolCache> get_tool_cache(ToolCache::RequireExactVersions abiToolVersionHandling)
     {
         return std::make_unique<ToolCacheImpl>(abiToolVersionHandling);
     }

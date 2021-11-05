@@ -28,7 +28,7 @@ namespace vcpkg
 
     struct ToolCache
     {
-        enum class RequireExactVersionsForAbiRelevantTools
+        enum class RequireExactVersions
         {
             YES,
             NO,
@@ -40,6 +40,5 @@ namespace vcpkg
         virtual const std::string& get_tool_version(const VcpkgPaths& paths, const std::string& tool) const = 0;
     };
 
-    std::unique_ptr<ToolCache> get_tool_cache(
-        ToolCache::RequireExactVersionsForAbiRelevantTools abiToolVersionHandling);
+    std::unique_ptr<ToolCache> get_tool_cache(ToolCache::RequireExactVersions abiToolVersionHandling);
 }
