@@ -24,24 +24,28 @@ namespace vcpkg
     {
         struct EntryData
         {
-            std::string value;
+            std::string reference;
+            std::string commit_id;
             bool stale;
         };
+
+        using LockDataType = std::multimap<std::string, EntryData, std::less<>>;
         struct Entry
         {
             LockFile* lockfile;
-            std::map<std::string, EntryData, std::less<>>::iterator data;
+            LockDataType::iterator data;
 
-            const std::string& value() const { return data->second.value; }
+            const std::string& reference() const { return data->second.reference; }
+            const std::string& commit_id() const { return data->second.commit_id; }
             bool stale() const { return data->second.stale; }
             const std::string& uri() const { return data->first; }
 
             void ensure_up_to_date(const VcpkgPaths& paths) const;
         };
 
-        Entry get_or_fetch(const VcpkgPaths& paths, StringView key);
+        Entry get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference);
 
-        std::map<std::string, EntryData, std::less<>> lockdata;
+        LockDataType lockdata;
         bool modified = false;
     };
 
