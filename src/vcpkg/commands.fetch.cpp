@@ -7,7 +7,7 @@
 namespace vcpkg::Commands::Fetch
 {
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("The argument should be tool name\n%s", create_example_string("fetch cmake")),
+        Strings::format("The argument should be a tool name\n%s", create_example_string("fetch cmake")),
         1,
         1,
         {},

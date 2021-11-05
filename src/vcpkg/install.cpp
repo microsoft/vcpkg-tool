@@ -568,7 +568,7 @@ namespace vcpkg::Install
     }};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
-        {OPTION_XUNIT, "File to output results in XUnit format (Internal use)"},
+        {OPTION_XUNIT, ""}, // internal use
         {OPTION_WRITE_PACKAGES_CONFIG,
          "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
          "binarycaching` for more information."},

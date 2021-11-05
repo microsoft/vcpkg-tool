@@ -645,15 +645,7 @@ namespace vcpkg
         table.format("", "(default: " + format_environment_variable("VCPKG_DOWNLOADS") + ')');
         table.format(opt(VCPKG_ROOT_DIR_ARG, "=", "<path>"), "Specify the vcpkg root directory");
         table.format("", "(default: " + format_environment_variable("VCPKG_ROOT") + ')');
-        table.format(opt(BUILDTREES_ROOT_DIR_ARG, "=", "<path>"),
-                     "(Experimental) Specify the buildtrees root directory");
         table.format(opt(INSTALL_ROOT_DIR_ARG, "=", "<path>"), "(Experimental) Specify the install root directory");
-        table.format(opt(PACKAGES_ROOT_DIR_ARG, "=", "<path>"), "(Experimental) Specify the packages root directory");
-        table.format(opt(SCRIPTS_ROOT_DIR_ARG, "=", "<path>"), "(Experimental) Specify the scripts root directory");
-        table.format(opt(BUILTIN_PORTS_ROOT_DIR_ARG, "=", "<path>"),
-                     "(Experimental) Specify the packages root directory");
-        table.format(opt(BUILTIN_REGISTRY_VERSIONS_DIR_ARG, "=", "<path>"),
-                     "(Experimental) Specify the versions root directory");
         table.format(opt(JSON_SWITCH, "", ""), "(Experimental) Request JSON output");
     }
 
