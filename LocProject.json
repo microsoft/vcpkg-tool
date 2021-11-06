@@ -1,1 +1,14 @@
-{}
+{ 
+  "Projects": [
+    {
+      "LanguageSet": "",
+      "LocItems": [
+        {
+          "SourceFile": "locales/en.json",
+          "CopyOption": "LangIDOnName",
+          "OutputPath": "locales"
+        }
+      ]
+    }
+  ]
+}
