@@ -2639,7 +2639,27 @@ namespace vcpkg
                                CopyOptions options,
                                std::error_code& ec) override
         {
-#if defined(_WIN32)
+#if defined(__MINGW32__)
+            // mingw doesn't properly handle existing files.
+            auto ret =
+                stdfs::copy_file(to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
+            if (!ret && ec == std::errc::file_exists)
+            {
+                std::error_code unused_ec;
+                if (options == CopyOptions::overwrite_existing &&
+                    !stdfs::equivalent(to_stdfs_path(source), to_stdfs_path(destination), unused_ec))
+                {
+                    remove(destination, unused_ec);
+                    ret = stdfs::copy_file(
+                        to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
+                }
+                else if (options == CopyOptions::skip_existing)
+                {
+                    ec.clear();
+                }
+            }
+            return ret;
+#elif defined(_WIN32)
             return stdfs::copy_file(
                 to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
 #else // ^^^ _WIN32 // !_WIN32 vvv
