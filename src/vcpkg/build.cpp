@@ -752,6 +752,11 @@ namespace vcpkg::Build
             {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
         };
 
+        if (action.build_options.download_tool == DownloadTool::ARIA2)
+        {
+            variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2)});
+        }
+
         for (auto cmake_arg : args.cmake_args)
         {
             variables.push_back(CMakeVariable{cmake_arg});
@@ -951,10 +956,11 @@ namespace vcpkg::Build
                                                                             action.public_abi(),
                                                                             std::move(find_itr->second));
 
-        if (error_count != 0)
+        if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
         {
             return BuildResult::POST_BUILD_CHECKS_FAILED;
         }
+
         for (auto&& feature : action.feature_list)
         {
             for (auto&& f_pgh : scfl.source_control_file->feature_paragraphs)
@@ -1215,7 +1221,7 @@ namespace vcpkg::Build
         {
             for (const FeatureSpec& fspec : kv.second)
             {
-                if (!(status_db.is_installed(fspec) || fspec.port() == name))
+                if (!status_db.is_installed(fspec) && !(fspec.port() == name && fspec.triplet() == spec.triplet()))
                 {
                     missing_fspecs.emplace_back(fspec);
                 }
@@ -1338,9 +1344,9 @@ namespace vcpkg::Build
                                "Additionally, attach any relevant sections from the log files above.",
                                vcpkg_update_cmd,
                                package,
-                               Commands::Version::version(),
                                description.has_value() ? description.value_or_exit(VCPKG_LINE_INFO)
-                                                       : "Failed to get HEAD: " + description.error());
+                                                       : "Failed to get HEAD: " + description.error(),
+                               Commands::Version::version());
     }
 
     static BuildInfo inner_create_buildinfo(Parse::Paragraph pgh)

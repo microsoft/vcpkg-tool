@@ -235,7 +235,11 @@ TEST_CASE ("generate_nuspec", "[generate_nuspec]")
             {{VcpkgCmdArguments::VCPKG_ROOT_DIR_ENV.to_string(), root.value_or_exit(VCPKG_LINE_INFO)}});
     }
     args.packages_root_dir = std::make_unique<std::string>("/");
-    auto pkgPath = fsWrapper.absolute("/zlib2_x64-windows", VCPKG_LINE_INFO) / "**";
+    auto pkgPath = fsWrapper.absolute("/zlib2_x64-windows", VCPKG_LINE_INFO);
+#if defined(_WIN32)
+    pkgPath = vcpkg::win32_fix_path_case(pkgPath);
+#endif // ^^^ _WIN32
+    pkgPath = pkgPath / "**";
     pkgPath.make_preferred();
     const auto pkgPathStr = pkgPath.native();
     VcpkgPaths paths(fsWrapper, args);

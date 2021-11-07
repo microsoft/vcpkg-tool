@@ -740,7 +740,7 @@ namespace
             // We have to check that `base` isn't a symbolic link
             if (::lstat(base.c_str(), &s) != 0)
             {
-                if (errno != ENOENT)
+                if (errno != ENOENT && errno != ENOTDIR)
                 {
                     mark_recursive_error(base, ec, failure_point);
                     return;
@@ -2105,10 +2105,18 @@ namespace vcpkg
 
                         case PosixDType::Unknown:
                         default:
-                            if (::lstat(full.c_str(), &ls) != 0 && errno != ENOENT)
+                            if (::lstat(full.c_str(), &ls) != 0)
                             {
-                                ec.assign(errno, std::generic_category());
-                                result.clear();
+                                if (errno == ENOENT || errno == ENOTDIR)
+                                {
+                                    ec.clear();
+                                }
+                                else
+                                {
+                                    result.clear();
+                                    ec.assign(errno, std::generic_category());
+                                }
+
                                 return;
                             }
 
@@ -2121,10 +2129,18 @@ namespace vcpkg
                                 }
                                 else
                                 {
-                                    if (::stat(full.c_str(), &s) != 0 && errno != ENOENT)
+                                    if (::stat(full.c_str(), &s) != 0)
                                     {
-                                        ec.assign(errno, std::generic_category());
-                                        result.clear();
+                                        if (errno == ENOENT || errno == ENOTDIR)
+                                        {
+                                            ec.clear();
+                                        }
+                                        else
+                                        {
+                                            result.clear();
+                                            ec.assign(errno, std::generic_category());
+                                        }
+
                                         return;
                                     }
 
@@ -2353,7 +2369,7 @@ namespace vcpkg
             }
 
             const auto remove_errno = errno;
-            if (remove_errno == ENOENT)
+            if (remove_errno == ENOENT || remove_errno == ENOTDIR)
             {
                 ec.clear();
             }
@@ -2748,7 +2764,7 @@ namespace vcpkg
             stdfs::copy_symlink(to_stdfs_path(source), to_stdfs_path(destination), ec);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
             std::string buffer;
-            buffer.resize(buffer.capacity());
+            buffer.resize(PATH_MAX);
             for (;;)
             {
                 ssize_t result = ::readlink(source.c_str(), &buffer[0], buffer.size());
@@ -2761,7 +2777,7 @@ namespace vcpkg
                 if (static_cast<size_t>(result) == buffer.size())
                 {
                     // we might not have used a big enough buffer, grow and retry
-                    buffer.append(PATH_MAX, '\0');
+                    buffer.append(buffer.size(), '\0');
                     continue;
                 }
 
@@ -2797,7 +2813,7 @@ namespace vcpkg
                 return posix_translate_stat_mode_to_file_type(s.st_mode);
             }
 
-            if (errno == ENOENT)
+            if (errno == ENOENT || errno == ENOTDIR)
             {
                 ec.clear();
                 return FileType::not_found;
@@ -2821,7 +2837,7 @@ namespace vcpkg
                 return posix_translate_stat_mode_to_file_type(s.st_mode);
             }
 
-            if (errno == ENOENT)
+            if (errno == ENOENT || errno == ENOTDIR)
             {
                 ec.clear();
                 return FileType::not_found;
