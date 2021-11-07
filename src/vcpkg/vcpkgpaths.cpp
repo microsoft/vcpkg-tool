@@ -283,8 +283,7 @@ namespace vcpkg
         : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(
               filesystem,
               args.feature_flag_settings(),
-              Util::Enum::to_enum<ToolCache::RequireExactVersions>(
-                  args.exact_abi_tools_versions.value_or(false))))
+              Util::Enum::to_enum<ToolCache::RequireExactVersions>(args.exact_abi_tools_versions.value_or(false))))
     {
         original_cwd = filesystem.current_path(VCPKG_LINE_INFO);
 #if defined(_WIN32)

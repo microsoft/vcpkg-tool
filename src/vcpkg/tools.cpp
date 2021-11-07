@@ -604,9 +604,8 @@ gsutil version: 4.58
                     {
                         return {"cmake", "0"};
                     }
-                    return get_path(paths,
-                                    CMakeProvider(),
-                                    abiToolVersionHandling == ToolCache::RequireExactVersions::YES);
+                    return get_path(
+                        paths, CMakeProvider(), abiToolVersionHandling == ToolCache::RequireExactVersions::YES);
                 }
                 if (tool == Tools::GIT)
                 {
