@@ -547,7 +547,7 @@ namespace vcpkg::Export::Prefab
                     auto module_meta_path = module_dir / "module.json";
                     utils.write_contents(module_meta_path, meta.to_json(), VCPKG_LINE_INFO);
 
-                    utils.copy(installed_headers_dir, exported_headers_dir, CopyOptions::recursive, VCPKG_LINE_INFO);
+                    utils.copy_regular_recursive(installed_headers_dir, exported_headers_dir, VCPKG_LINE_INFO);
                     break;
                 }
                 else
@@ -607,11 +607,9 @@ namespace vcpkg::Export::Prefab
                                                    exported_headers_dir));
                         }
 
-                        utils.copy(
-                            installed_headers_dir, exported_headers_dir, CopyOptions::recursive, VCPKG_LINE_INFO);
+                        utils.copy_regular_recursive(installed_headers_dir, exported_headers_dir, VCPKG_LINE_INFO);
 
                         ModuleMetadata meta;
-
                         auto module_meta_path = module_dir / "module.json";
                         if (prefab_options.enable_debug)
                         {

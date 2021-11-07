@@ -3,6 +3,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.info.h>
 #include <vcpkg/input.h>

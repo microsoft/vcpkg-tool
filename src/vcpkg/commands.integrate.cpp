@@ -539,9 +539,26 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
             fish_completions_path = home_path / ".config";
         }
 
-        fish_completions_path = fish_completions_path / "fish/completions/vcpkg.fish";
+        fish_completions_path = fish_completions_path / "fish/completions";
 
         auto& fs = paths.get_filesystem();
+
+        std::error_code ec;
+        fs.create_directories(fish_completions_path, ec);
+
+        if (ec)
+        {
+            print2(Color::error,
+                   "Error: Failed to create fish completions directory: ",
+                   fish_completions_path,
+                   ": ",
+                   ec.message(),
+                   "\n");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        fish_completions_path = fish_completions_path / "vcpkg.fish";
+
         if (fs.exists(fish_completions_path, IgnoreErrors{}))
         {
             vcpkg::printf("vcpkg fish completion is already added at %s.\n", fish_completions_path);

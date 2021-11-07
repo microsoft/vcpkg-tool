@@ -36,16 +36,16 @@ struct MockBaselineProvider : PortFileProvider::IBaselineProvider
 
 struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvider
 {
-    mutable std::map<std::string, std::map<Versions::Version, SourceControlFileLocation, VersionTMapLess>> v;
+    mutable std::map<std::string, std::map<Versions::Version, SourceControlFileAndLocation, VersionTMapLess>> v;
 
-    ExpectedS<const SourceControlFileLocation&> get_control_file(
+    ExpectedS<const SourceControlFileAndLocation&> get_control_file(
         const vcpkg::Versions::VersionSpec& versionspec) const override
     {
         return get_control_file(versionspec.port_name, versionspec.version);
     }
 
-    ExpectedS<const SourceControlFileLocation&> get_control_file(const std::string& name,
-                                                                 const vcpkg::Versions::Version& version) const
+    ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& name,
+                                                                    const vcpkg::Versions::Version& version) const
     {
         auto it = v.find(name);
         if (it == v.end()) return std::string("Unknown port name");
@@ -56,13 +56,13 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
 
     virtual View<vcpkg::VersionT> get_port_versions(StringView) const override { Checks::unreachable(VCPKG_LINE_INFO); }
 
-    SourceControlFileLocation& emplace(std::string&& name,
-                                       Versions::Version&& version,
-                                       Versions::Scheme scheme = Versions::Scheme::String)
+    SourceControlFileAndLocation& emplace(std::string&& name,
+                                          Versions::Version&& version,
+                                          Versions::Scheme scheme = Versions::Scheme::String)
     {
         auto it = v.find(name);
         if (it == v.end())
-            it = v.emplace(name, std::map<Versions::Version, SourceControlFileLocation, VersionTMapLess>{}).first;
+            it = v.emplace(name, std::map<Versions::Version, SourceControlFileAndLocation, VersionTMapLess>{}).first;
 
         auto it2 = it->second.find(version);
         if (it2 == it->second.end())
@@ -74,12 +74,12 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
             core->port_version = version.port_version();
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
-            it2 = it->second.emplace(version, SourceControlFileLocation{std::move(scf), name}).first;
+            it2 = it->second.emplace(version, SourceControlFileAndLocation{std::move(scf), name}).first;
         }
         return it2->second;
     }
 
-    virtual void load_all_control_files(std::map<std::string, const SourceControlFileLocation*>&) const override
+    virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>&) const override
     {
         Checks::unreachable(VCPKG_LINE_INFO);
     }
@@ -105,7 +105,7 @@ static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
                                    std::initializer_list<StringLiteral> features = {})
 {
     CHECK(ipa.spec.name() == name);
-    CHECK(ipa.source_control_file_location.has_value());
+    CHECK(ipa.source_control_file_and_location.has_value());
     CHECK(ipa.feature_list.size() == features.size() + 1);
     {
         INFO("ipa.feature_list = [" << Strings::join(", ", ipa.feature_list) << "]");
@@ -116,7 +116,7 @@ static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
         }
         CHECK(Util::find(ipa.feature_list, "core") != ipa.feature_list.end());
     }
-    if (auto scfl = ipa.source_control_file_location.get())
+    if (auto scfl = ipa.source_control_file_and_location.get())
     {
         CHECK(scfl->source_control_file->core_paragraph->version == v.text());
         CHECK(scfl->source_control_file->core_paragraph->port_version == v.port_version());
@@ -171,7 +171,7 @@ struct MockOverlayProvider : PortFileProvider::IOverlayProvider
     MockOverlayProvider(const MockOverlayProvider&) = delete;
     MockOverlayProvider& operator=(const MockOverlayProvider&) = delete;
 
-    virtual Optional<const SourceControlFileLocation&> get_control_file(StringView name) const override
+    virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView name) const override
     {
         auto it = mappings.find(name);
         if (it == mappings.end())
@@ -182,9 +182,9 @@ struct MockOverlayProvider : PortFileProvider::IOverlayProvider
         return it->second;
     }
 
-    SourceControlFileLocation& emplace(const std::string& name,
-                                       Versions::Version&& version,
-                                       Versions::Scheme scheme = Versions::Scheme::String)
+    SourceControlFileAndLocation& emplace(const std::string& name,
+                                          Versions::Version&& version,
+                                          Versions::Scheme scheme = Versions::Scheme::String)
     {
         auto it = mappings.find(name);
         if (it == mappings.end())
@@ -196,18 +196,18 @@ struct MockOverlayProvider : PortFileProvider::IOverlayProvider
             core->port_version = version.port_version();
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
-            it = mappings.emplace(name, SourceControlFileLocation{std::move(scf), name}).first;
+            it = mappings.emplace(name, SourceControlFileAndLocation{std::move(scf), name}).first;
         }
         return it->second;
     }
 
-    virtual void load_all_control_files(std::map<std::string, const SourceControlFileLocation*>&) const override
+    virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>&) const override
     {
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
 private:
-    std::map<std::string, SourceControlFileLocation, std::less<>> mappings;
+    std::map<std::string, SourceControlFileAndLocation, std::less<>> mappings;
 };
 
 static const MockOverlayProvider s_empty_mock_overlay;

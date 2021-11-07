@@ -472,7 +472,6 @@ namespace vcpkg::Install
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
 
-        const auto timer = ElapsedTimer::create_started();
         for (auto&& action : action_plan.remove_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
@@ -495,7 +494,7 @@ namespace vcpkg::Install
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
-                print2(Build::create_user_troubleshooting_message(action.spec), '\n');
+                print2(Build::create_user_troubleshooting_message(action, paths), '\n');
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -503,7 +502,7 @@ namespace vcpkg::Install
             this_install.current_summary->build_result = std::move(result);
         }
 
-        return InstallSummary{std::move(results), timer.to_string()};
+        return InstallSummary{std::move(results)};
     }
 
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
@@ -524,10 +523,11 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_MANIFEST_NO_DEFAULT_FEATURES = "x-no-default-features";
     static constexpr StringLiteral OPTION_MANIFEST_FEATURE = "x-feature";
     static constexpr StringLiteral OPTION_PROHIBIT_BACKCOMPAT_FEATURES = "x-prohibit-backcompat-features";
+    static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
     static constexpr StringLiteral OPTION_AUTO_UPDATE_SHA512_HASHES = "x-auto-update-sha512-hashes";
 
-    static constexpr std::array<CommandSwitch, 16> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 17> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -542,12 +542,13 @@ namespace vcpkg::Install
         {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
-        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES,
-         "(experimental) Fail install if a package attempts to use a deprecated feature"},
+        {OPTION_ENFORCE_PORT_CHECKS,
+         "Fail install if a port has detected problems or attempts to use a deprecated feature"},
+        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
         {OPTION_AUTO_UPDATE_SHA512_HASHES, "(experimental) Auto updates wrong sha512 file hashes in the portfiles"},
     }};
-    static constexpr std::array<CommandSwitch, 16> MANIFEST_INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 18> MANIFEST_INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
@@ -562,6 +563,9 @@ namespace vcpkg::Install
         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
         {OPTION_MANIFEST_NO_DEFAULT_FEATURES, "Don't install the default features from the manifest."},
+        {OPTION_ENFORCE_PORT_CHECKS,
+         "Fail install if a port has detected problems or attempts to use a deprecated feature"},
+        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
         {OPTION_AUTO_UPDATE_SHA512_HASHES, "(experimental) Auto updates wrong sha512 file hashes in the portfiles"},
     }};
@@ -801,7 +805,8 @@ namespace vcpkg::Install
         const KeepGoing keep_going =
             to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads);
         const bool prohibit_backcompat_features =
-            Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES));
+            Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES)) ||
+            Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? Dependencies::UnsupportedPortAction::Warn
                                                  : Dependencies::UnsupportedPortAction::Error;
@@ -1091,7 +1096,7 @@ namespace vcpkg::Install
                                                Build::null_build_logs_recorder(),
                                                var_provider);
 
-        print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
+        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {
@@ -1217,8 +1222,9 @@ namespace vcpkg::Install
 
         for (auto&& install_action : plan.install_actions)
         {
-            auto&& version_as_string =
-                install_action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO).to_versiont().to_string();
+            auto&& version_as_string = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
+                                           .to_versiont()
+                                           .to_string();
             if (!specs_string.empty()) specs_string.push_back(',');
             specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
                                             ":",

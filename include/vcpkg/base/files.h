@@ -11,9 +11,9 @@
 #include <system_error>
 
 #if defined(_WIN32)
-#define VCPKG_PREFERED_SEPARATOR "\\"
+#define VCPKG_PREFERRED_SEPARATOR "\\"
 #else // ^^^ _WIN32 / !_WIN32 vvv
-#define VCPKG_PREFERED_SEPARATOR "/"
+#define VCPKG_PREFERRED_SEPARATOR "/"
 #endif // _WIN32
 
 namespace vcpkg
@@ -29,17 +29,8 @@ namespace vcpkg
     enum class CopyOptions
     {
         none = 0,
-
-        existing_mask = 0xF,
         skip_existing = 0x1,
         overwrite_existing = 0x2,
-        update_existing = 0x4,
-
-        recursive = 0x10,
-
-        symlinks_mask = 0xF00,
-        copy_symlinks = 0x100,
-        skip_symlinks = 0x200,
     };
 
     struct Path
@@ -271,7 +262,7 @@ namespace vcpkg
         void remove_all(const Path& base, std::error_code& ec);
         void remove_all(const Path& base, LineInfo li);
 
-        virtual void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) = 0;
+        void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point);
         void remove_all_inside(const Path& base, std::error_code& ec);
         void remove_all_inside(const Path& base, LineInfo li);
 
@@ -302,8 +293,11 @@ namespace vcpkg
         void create_best_link(const Path& to, const Path& from, std::error_code& ec);
         void create_best_link(const Path& to, const Path& from, LineInfo);
 
-        virtual void copy(const Path& source, const Path& destination, CopyOptions options, std::error_code& ec) = 0;
-        void copy(const Path& source, const Path& destination, CopyOptions options, LineInfo);
+        // copies regular files and directories, recursively.
+        // symlinks are followed and copied as if they were regular files or directories
+        //   (like std::filesystem::copy(..., std::filesystem::copy_options::recursive))
+        virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) = 0;
+        void copy_regular_recursive(const Path& source, const Path& destination, LineInfo);
 
         virtual bool copy_file(const Path& source,
                                const Path& destination,
@@ -370,11 +364,7 @@ namespace vcpkg
 
     void print_paths(const std::vector<Path>& paths);
 
-#if defined(_WIN32)
-    constexpr char preferred_separator = '\\';
-#else
-    constexpr char preferred_separator = '/';
-#endif // _WIN32
+    constexpr char preferred_separator = VCPKG_PREFERRED_SEPARATOR[0];
 
 #if defined(_WIN32)
     Path win32_fix_path_case(const Path& source);
@@ -394,4 +384,22 @@ namespace vcpkg
             return !Strings::case_insensitive_ascii_equals(target.extension(), ext);
         }
     };
+}
+
+namespace fmt
+{
+    template<>
+    struct formatter<vcpkg::Path>
+    {
+        constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+        {
+            return vcpkg::basic_format_parse_impl(ctx);
+        }
+        template<class FormatContext>
+        auto format(const vcpkg::Path& path, FormatContext& ctx) -> decltype(ctx.out())
+        {
+            return format_to(ctx.out(), "{}", path.native());
+        }
+    };
+
 }

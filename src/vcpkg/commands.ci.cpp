@@ -1,6 +1,7 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
+#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -92,14 +93,17 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
+    static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
     static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
-    static constexpr std::array<CommandSetting, 6> CI_SETTINGS = {
+    static constexpr std::array<CommandSetting, 7> CI_SETTINGS = {
         {{OPTION_EXCLUDE, "Comma separated list of ports to skip"},
          {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
          {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
          {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
          {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
+         {OPTION_PARENT_HASHES,
+          "File to read package hashes for a parent CI state, to reduce the set of changed packages"},
          {OPTION_SKIPPED_CASCADE_COUNT,
           "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
 
@@ -287,7 +291,7 @@ namespace vcpkg::Commands::CI
     static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
                                       const InstallPlanAction* install_plan)
     {
-        auto&& scfl = install_plan->source_control_file_location.value_or_exit(VCPKG_LINE_INFO);
+        auto&& scfl = install_plan->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         const auto& supports_expression = scfl.source_control_file->core_paragraph->supports_expression;
         PlatformExpression::Context context =
             var_provider.get_tag_vars(install_plan->spec).value_or_exit(VCPKG_LINE_INFO);
@@ -299,8 +303,8 @@ namespace vcpkg::Commands::CI
     {
         std::set<std::string> exclusions;
         std::set<std::string> host_exclusions;
-        Triplet host_triplet;
         Triplet target_triplet;
+        Triplet host_triplet;
 
         bool operator()(const PackageSpec& spec) const
         {
@@ -333,7 +337,7 @@ namespace vcpkg::Commands::CI
             }
         }
 
-        var_provider.load_dep_info_vars(packages_with_qualified_deps);
+        var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
         auto action_plan =
             Dependencies::create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
 
@@ -403,13 +407,16 @@ namespace vcpkg::Commands::CI
 
     // This algorithm reduces an action plan to only unknown actions and their dependencies
     static void reduce_action_plan(Dependencies::ActionPlan& action_plan,
-                                   const std::map<PackageSpec, Build::BuildResult>& known)
+                                   const std::map<PackageSpec, Build::BuildResult>& known,
+                                   View<std::string> parent_hashes)
     {
         std::set<PackageSpec> to_keep;
         for (auto it = action_plan.install_actions.rbegin(); it != action_plan.install_actions.rend(); ++it)
         {
             auto it_known = known.find(it->spec);
-            if (it_known == known.end())
+            const auto& abi = it->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
+            auto it_parent = std::find(parent_hashes.begin(), parent_hashes.end(), abi);
+            if (it_known == known.end() && it_parent == parent_hashes.end())
             {
                 to_keep.insert(it->spec);
             }
@@ -420,8 +427,11 @@ namespace vcpkg::Commands::CI
                 {
                     it->plan_type = InstallPlanType::EXCLUDED;
                 }
-                it->build_options = vcpkg::Build::backcompat_prohibiting_package_options;
-                to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
+                else
+                {
+                    it->build_options = vcpkg::Build::backcompat_prohibiting_package_options;
+                    to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
+                }
             }
         }
 
@@ -524,7 +534,8 @@ namespace vcpkg::Commands::CI
             return FullPackageSpec{spec, std::move(default_features)};
         });
 
-        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet);
+        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
+                                                                 Dependencies::UnsupportedPortAction::Warn);
 
         struct RandomizerInstance : Graphs::Randomizer
         {
@@ -578,7 +589,24 @@ namespace vcpkg::Commands::CI
             }
         }
 
-        reduce_action_plan(action_plan, split_specs->known);
+        std::vector<std::string> parent_hashes;
+
+        auto it_parent_hashes = settings.find(OPTION_PARENT_HASHES);
+        if (it_parent_hashes != settings.end())
+        {
+            const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
+            auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, filesystem, parent_hashes_path);
+            parent_hashes = Util::fmap(parsed_json.first.array(), [](const auto& json_object) {
+                auto abi = json_object.object().get("abi");
+                Checks::check_exit(VCPKG_LINE_INFO, abi);
+#ifdef _MSC_VER
+                _Analysis_assume_(abi);
+#endif
+                return abi->string().to_string();
+            });
+        }
+
+        reduce_action_plan(action_plan, split_specs->known, parent_hashes);
 
         vcpkg::printf("Time to determine pass/fail: %s\n", timer.elapsed());
 
@@ -645,7 +673,7 @@ namespace vcpkg::Commands::CI
         for (auto&& result : results)
         {
             print2("\nTriplet: ", result.triplet, "\n");
-            print2("Total elapsed time: ", result.summary.total_elapsed_time, "\n");
+            print2("Total elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n");
             result.summary.print();
         }
 
