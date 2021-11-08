@@ -305,12 +305,12 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
         auto deserializer = make_configuration_deserializer("test");
         auto parsed_config_opt = reader.visit(object, *deserializer);
         CHECK_LINES(Strings::join("\n", reader.errors()), R"(
-$.settings: mismatched type: expected a `string: string` dictionary
+$ (settings): expected an object
 $.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
 $.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
 $.see-also (a `string: string` dictionary): value of ["vegetables/b/beet"] must be a string
 $.see-also (a `string: string` dictionary): value of ["vegetables/b/broccoli"] must be a string
-$.demands.settings: mismatched type: expected a `string: string` dictionary
+$.demands (settings): expected an object
 $.demands.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
 $.demands.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
 $.demands.see-also (a `string: string` dictionary): value of ["vegetables/b/beet"] must be a string
@@ -479,8 +479,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
         auto config = parse_test_configuration(raw);
         compare_json_objects(parse_json_object(raw), serialize_configuration(config));
 
-        std::vector<std::string> extra_fields;
-        find_unknown_fields(config.ce_metadata, extra_fields, "$");
+        auto extra_fields = find_unknown_fields(config);
         CHECK(extra_fields.size() == 4);
         REQUIRE(extra_fields[0] == "$.unexpected");
         REQUIRE(extra_fields[1] == "$.unexpected-too");

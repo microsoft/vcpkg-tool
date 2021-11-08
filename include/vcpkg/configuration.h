@@ -26,5 +26,5 @@ namespace vcpkg
 
     std::unique_ptr<Json::IDeserializer<Configuration>> make_configuration_deserializer(const Path& config_directory);
     Json::Object serialize_configuration(const Configuration& config);
-    void find_unknown_fields(const Json::Object& obj, std::vector<std::string>& out, StringView path);
+    std::vector<std::string> find_unknown_fields(const Configuration& config);
 }

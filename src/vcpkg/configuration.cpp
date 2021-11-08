@@ -105,6 +105,19 @@ namespace
                 put_into.insert_or_replace(key.to_string(), Json::Value::string(value));
             }
         };
+        auto extract_object = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
+            if (auto value = obj.get(key))
+            {
+                if (!value->is_object())
+                {
+                    r.add_generic_error(key, "expected an object");
+                }
+                else
+                {
+                    put_into.insert_or_replace(key.to_string(), *value);
+                }
+            }
+        };
         auto extract_dictionary = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
             Json::Object value;
             const auto errors_count = r.errors();
@@ -124,22 +137,11 @@ namespace
                 ret.insert_or_replace(key.to_string(), el.second);
             }
         }
-
         extract_string(obj, CE_ERROR, ret);
         extract_string(obj, CE_WARNING, ret);
         extract_string(obj, CE_MESSAGE, ret);
-        if (auto ce_apply = obj.get(CE_APPLY))
-        {
-            if (!ce_apply->is_object())
-            {
-                r.add_generic_error(type_name(), CE_APPLY, " must be an object");
-            }
-            else
-            {
-                ret.insert_or_replace(CE_APPLY, *ce_apply);
-            }
-        }
-        extract_dictionary(obj, CE_SETTINGS, ret);
+        extract_object(obj, CE_APPLY, ret);
+        extract_object(obj, CE_SETTINGS, ret);
         extract_dictionary(obj, CE_REQUIRES, ret);
         extract_dictionary(obj, CE_SEE_ALSO, ret);
         return ret;
@@ -347,6 +349,49 @@ namespace
 
         return obj;
     }
+
+    static void find_unknown_fields_impl(const Json::Object& obj, std::vector<std::string>& out, StringView path)
+    {
+        std::vector<StringView> ret;
+        for (const auto& el : obj)
+        {
+            auto key = el.first.to_string();
+            if (Strings::starts_with(key, "$"))
+            {
+                continue;
+            }
+
+            if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
+            {
+                if (Strings::contains(key, " "))
+                {
+                    key = Strings::concat("[\"", key, "\"]");
+                }
+                out.push_back(Strings::concat(path, ".", key));
+            }
+
+            if (el.first == DemandsDeserializer::CE_DEMANDS)
+            {
+                if (!el.second.is_object())
+                {
+                    continue;
+                }
+
+                for (const auto& demand : el.second.object())
+                {
+                    if (Strings::starts_with(demand.first, "$"))
+                    {
+                        continue;
+                    }
+
+                    find_unknown_fields_impl(
+                        demand.second.object(),
+                        out,
+                        Strings::concat(path, ".", DemandsDeserializer::CE_DEMANDS, ".", demand.first));
+                }
+            }
+        }
+    }
 }
 
 namespace vcpkg
@@ -381,15 +426,17 @@ namespace vcpkg
             registry_set = RegistrySet();
         }
 
-        std::vector<std::string> unknown_fields;
-        find_unknown_fields(ce_metadata, unknown_fields, "$");
-        if (!unknown_fields.empty())
+        if (!ce_metadata.is_empty())
         {
-            vcpkg::print2(
-                Color::warning,
-                "Warning: configuration contains the following unrecognized fields:\n\n",
-                Strings::join("\n", unknown_fields),
-                "\n\nIf these are documented fields that should be recognized try updating the vcpkg tool.\n");
+            auto unknown_fields = find_unknown_fields(*this);
+            if (!unknown_fields.empty())
+            {
+                vcpkg::print2(
+                    Color::warning,
+                    "Warning: configuration contains the following unrecognized fields:\n\n",
+                    Strings::join("\n", unknown_fields),
+                    "\n\nIf these are documented fields that should be recognized try updating the vcpkg tool.\n");
+            }
         }
     }
 
@@ -400,43 +447,10 @@ namespace vcpkg
 
     Json::Object serialize_configuration(const Configuration& config) { return serialize_configuration_impl(config); }
 
-    void find_unknown_fields(const Json::Object& obj, std::vector<std::string>& out, StringView path)
+    std::vector<std::string> find_unknown_fields(const Configuration& config)
     {
-        std::vector<StringView> ret;
-        for (const auto& el : obj)
-        {
-            auto key = el.first.to_string();
-            if (Strings::starts_with(key, "$"))
-            {
-                continue;
-            }
-
-            if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
-            {
-                if (Strings::contains(key, " "))
-                {
-                    key = Strings::concat("[\"", key, "\"]");
-                }
-                out.push_back(Strings::concat(path, ".", key));
-            }
-
-            if (el.first == DemandsDeserializer::CE_DEMANDS)
-            {
-                if (!el.second.is_object())
-                {
-                    continue;
-                }
-
-                for (const auto& demand : el.second.object())
-                {
-                    if (Strings::starts_with(demand.first, "$") || !demand.second.is_object())
-                    {
-                        continue;
-                    }
-
-                    find_unknown_fields(demand.second.object(), out, Strings::concat(path, ".demands.", demand.first));
-                }
-            }
-        }
+        std::vector<std::string> out;
+        find_unknown_fields_impl(config.ce_metadata, out, "$");
+        return out;
     }
 }
