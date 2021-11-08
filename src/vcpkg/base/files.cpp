@@ -432,7 +432,6 @@ namespace
         else
         {
             stdfs::remove(current_entry.path(), ec);
-            if (err.check_ec(ec, current_entry)) return;
         }
 
         err.check_ec(ec, current_entry);
@@ -463,7 +462,20 @@ namespace
 
     void vcpkg_remove_all(const Path& base, std::error_code& ec, Path& failure_point)
     {
-        stdfs::directory_entry entry(to_stdfs_path(base), ec);
+        std::wstring wide_path;
+        const auto& native_base = base.native();
+        // Attempt to handle paths that are too long in recursive delete by prefixing absolute ones with \\?\
+        // See https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+        // We are conservative and only accept paths that begin with a drive letter prefix because other forms
+        // may have more Win32 path normalization that we do not replicate herein.
+        if (has_drive_letter_prefix(native_base.data(), native_base.data() + native_base.size()))
+        {
+            wide_path = L"\\\\?\\";
+        }
+
+        wide_path.append(Strings::to_utf16(native_base));
+
+        stdfs::directory_entry entry(wide_path, ec);
         translate_not_found_to_success(ec);
         if (ec)
         {
