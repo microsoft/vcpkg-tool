@@ -464,10 +464,13 @@ namespace
     {
         std::wstring wide_path;
         const auto& native_base = base.native();
-        // Attempt to handle paths that are too long in recursive delete by prefixing absolute ones with \\?\
+        // Attempt to handle paths that are too long in recursive delete by prefixing absolute ones with
+        // backslash backslash question backslash
         // See https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
         // We are conservative and only accept paths that begin with a drive letter prefix because other forms
         // may have more Win32 path normalization that we do not replicate herein.
+        // (There are still edge cases we don't handle, such as trailing whitespace or nulls, but
+        // for purposes of remove_all, we never supported such trailing bits)
         if (has_drive_letter_prefix(native_base.data(), native_base.data() + native_base.size()))
         {
             wide_path = L"\\\\?\\";
