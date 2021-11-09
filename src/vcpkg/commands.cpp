@@ -1,6 +1,7 @@
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/build.h>
+#include <vcpkg/commands.activate.h>
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.buildexternal.h>
@@ -33,7 +34,6 @@
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
-#include <vcpkg/commands.zforward.h>
 #include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
@@ -70,27 +70,27 @@ namespace vcpkg::Commands
 
     Span<const PackageNameAndFunction<const PathsCommand*>> get_available_paths_commands()
     {
+        static const Activate::ActivateCommand activate{};
+        static const AddVersion::AddVersionCommand add_version{};
+        static const Autocomplete::AutocompleteCommand autocomplete{};
+        static const Cache::CacheCommand cache{};
+        static const CIClean::CICleanCommand ciclean{};
+        static const CIVerifyVersions::CIVerifyVersionsCommand ci_verify_versions{};
+        static const Create::CreateCommand create{};
+        static const Edit::EditCommand edit{};
+        static const Fetch::FetchCommand fetch{};
+        static const FormatManifest::FormatManifestCommand format_manifest{};
+        static const Hash::HashCommand hash{};
         static const Help::HelpCommand help{};
-        static const Search::SearchCommand search{};
-        static const List::ListCommand list{};
         static const Info::InfoCommand info{};
         static const Integrate::IntegrateCommand integrate{};
+        static const List::ListCommand list{};
         static const Owns::OwnsCommand owns{};
-        static const Update::UpdateCommand update{};
-        static const Edit::EditCommand edit{};
-        static const Create::CreateCommand create{};
-        static const Cache::CacheCommand cache{};
-        static const PortsDiff::PortsDiffCommand portsdiff{};
-        static const Autocomplete::AutocompleteCommand autocomplete{};
-        static const Hash::HashCommand hash{};
-        static const Fetch::FetchCommand fetch{};
-        static const CIClean::CICleanCommand ciclean{};
         static const PortHistory::PortHistoryCommand porthistory{};
+        static const PortsDiff::PortsDiffCommand portsdiff{};
+        static const Search::SearchCommand search{};
+        static const Update::UpdateCommand update{};
         static const X_VSInstances::VSInstancesCommand vsinstances{};
-        static const FormatManifest::FormatManifestCommand format_manifest{};
-        static const CIVerifyVersions::CIVerifyVersionsCommand ci_verify_versions{};
-        static const AddVersion::AddVersionCommand add_version{};
-        static const Z_Forward::ForwardCommand test_forward{};
 
         static std::vector<PackageNameAndFunction<const PathsCommand*>> t = {
             {"/?", &help},
@@ -114,7 +114,7 @@ namespace vcpkg::Commands
             {"format-manifest", &format_manifest},
             {"x-ci-verify-versions", &ci_verify_versions},
             {"x-add-version", &add_version},
-            {"z-forward", &test_forward},
+            {"activate", &activate},
         };
         return t;
     }
