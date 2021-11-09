@@ -992,7 +992,7 @@ namespace vcpkg::PostBuildLint
                    result,
                    "\n"
                    "There should be no absolute paths in the installed package, only relative ones.\n\n");
-            return LintStatus::ERROR_DETECTED;
+            return LintStatus::PROBLEM_DETECTED;
         }
         return LintStatus::SUCCESS;
     }
