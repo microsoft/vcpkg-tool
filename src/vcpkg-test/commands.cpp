@@ -71,7 +71,7 @@ TEST_CASE ("list of commands is correct", "[commands]")
         "build-external",
         "export",
         "depend-info",
-        "z-forward",
+        "activate",
         "x-check-support",
 		"z-print-config",
 #if defined(_WIN32)
