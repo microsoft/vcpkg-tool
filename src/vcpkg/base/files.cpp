@@ -2745,7 +2745,7 @@ namespace vcpkg
 #else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
             constexpr std::size_t buffer_length = 4096;
             unsigned char buffer[buffer_length];
-            while (auto read_bytes = i_fd.read(buffer, buffer_length))
+            while (auto read_bytes = source_fd.read(buffer, buffer_length))
             {
                 if (read_bytes == -1)
                 {
