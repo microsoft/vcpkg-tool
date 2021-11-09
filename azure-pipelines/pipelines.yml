@@ -30,7 +30,7 @@ jobs:
 - job: osx
   displayName: 'OSX'
   pool:
-    vmImage: 'macos-latest'
+    vmImage: 'macOS-11'
   variables:
     - name: 'VCPKG_ROOT'
       value: $(Build.SourcesDirectory)/vcpkg-root
