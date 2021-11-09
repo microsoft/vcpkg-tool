@@ -2701,38 +2701,33 @@ namespace vcpkg
                                std::error_code& ec) override
         {
 #if defined(_WIN32)
+            DWORD last_error;
             auto wide_source = Strings::to_utf16(source.native());
             auto wide_destination = Strings::to_utf16(destination.native());
-            if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), TRUE))
+            if (options != CopyOptions::overwrite_existing)
             {
-                ec.clear();
-                return true;
-            }
+                if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), TRUE))
+                {
+                    ec.clear();
+                    return true;
+                }
 
-            DWORD last_error = GetLastError();
-            if (last_error != ERROR_FILE_EXISTS || options == CopyOptions::none)
-            {
-                ec.assign(static_cast<int>(last_error), std::system_category());
-                return false;
-            }
+                last_error = GetLastError();
+                if (last_error != ERROR_FILE_EXISTS || options == CopyOptions::none)
+                {
+                    ec.assign(static_cast<int>(last_error), std::system_category());
+                    return false;
+                }
 
-            { // open handles to both files in exclusive mode to implement the equivalent() check
+                // open handles to both files in exclusive mode to implement the equivalent() check
                 FileHandle source_handle(wide_source.c_str(), FILE_READ_DATA, 0, OPEN_EXISTING, 0, ec);
                 if (ec)
                 {
                     return false;
                 }
                 FileHandle destination_handle(wide_destination.c_str(), FILE_WRITE_DATA, 0, OPEN_EXISTING, 0, ec);
-                if (ec)
-                {
-                    return false;
-                }
-
-                if (options == CopyOptions::skip_existing)
-                {
-                    return false;
-                }
-            } // close handles
+                return false;
+            }
 
             if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), FALSE))
             {
