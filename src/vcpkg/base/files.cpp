@@ -358,6 +358,50 @@ namespace
     }
 
 #if defined(_WIN32)
+    struct FileHandle
+    {
+        HANDLE h_file;
+        FileHandle() = delete;
+        FileHandle(const FileHandle&) = delete;
+        FileHandle& operator=(const FileHandle&) = delete;
+
+        FileHandle(const wchar_t* file_name,
+                   DWORD desired_access,
+                   DWORD share_mode,
+                   DWORD creation_disposition,
+                   DWORD flags_and_attributes,
+                   std::error_code& ec) noexcept
+            : h_file(::CreateFileW(
+                  file_name, desired_access, share_mode, nullptr, creation_disposition, flags_and_attributes, 0))
+        {
+            if (h_file == INVALID_HANDLE_VALUE)
+            {
+                const auto last_error = static_cast<int>(GetLastError());
+                ec.assign(last_error, std::system_category());
+            }
+            else
+            {
+                ec.clear();
+            }
+        }
+
+        // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 6001)
+#endif // ^^^ _MSC_VER
+        ~FileHandle()
+        {
+            if (h_file != INVALID_HANDLE_VALUE)
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, ::CloseHandle(h_file));
+            }
+        }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif // ^^^ _MSC_VER
+    };
+
     struct RemoveAllErrorInfo
     {
         std::error_code ec;
@@ -1568,14 +1612,16 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li)
+    bool Filesystem::copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li)
     {
         std::error_code ec;
-        this->copy_file(source, destination, options, ec);
+        const bool result = this->copy_file(source, destination, options, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {source, destination});
         }
+
+        return result;
     }
 
     void Filesystem::copy_symlink(const Path& source, const Path& destination, LineInfo li)
@@ -2654,29 +2700,49 @@ namespace vcpkg
                                CopyOptions options,
                                std::error_code& ec) override
         {
-#if defined(__MINGW32__)
-            // mingw doesn't properly handle existing files.
-            auto ret =
-                stdfs::copy_file(to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
-            if (!ret && ec == std::errc::file_exists)
+#if defined(_WIN32)
+            auto wide_source = Strings::to_utf16(source.native());
+            auto wide_destination = Strings::to_utf16(destination.native());
+            if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), TRUE))
             {
-                std::error_code unused_ec;
-                if (options == CopyOptions::overwrite_existing &&
-                    !stdfs::equivalent(to_stdfs_path(source), to_stdfs_path(destination), unused_ec))
-                {
-                    remove(destination, unused_ec);
-                    ret = stdfs::copy_file(
-                        to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
-                }
-                else if (options == CopyOptions::skip_existing)
-                {
-                    ec.clear();
-                }
+                ec.clear();
+                return true;
             }
-            return ret;
-#elif defined(_WIN32)
-            return stdfs::copy_file(
-                to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
+
+            DWORD last_error = GetLastError();
+            if (last_error != ERROR_FILE_EXISTS || options == CopyOptions::none)
+            {
+                ec.assign(static_cast<int>(last_error), std::system_category());
+                return false;
+            }
+
+            { // open handles to both files in exclusive mode to implement the equivalent() check
+                FileHandle source_handle(wide_source.c_str(), FILE_READ_DATA, 0, OPEN_EXISTING, 0, ec);
+                if (ec)
+                {
+                    return false;
+                }
+                FileHandle destination_handle(wide_destination.c_str(), FILE_WRITE_DATA, 0, OPEN_EXISTING, 0, ec);
+                if (ec)
+                {
+                    return false;
+                }
+
+                if (options == CopyOptions::skip_existing)
+                {
+                    return false;
+                }
+            } // close handles
+
+            if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), FALSE))
+            {
+                // ec is already cleared here by opening destination_handle
+                return true;
+            }
+
+            last_error = GetLastError();
+            ec.assign(static_cast<int>(last_error), std::system_category());
+            return false;
 #else // ^^^ _WIN32 // !_WIN32 vvv
             PosixFd source_fd{source.c_str(), O_RDONLY, ec};
             if (ec)

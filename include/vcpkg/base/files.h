@@ -303,7 +303,7 @@ namespace vcpkg
                                const Path& destination,
                                CopyOptions options,
                                std::error_code& ec) = 0;
-        void copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li);
+        bool copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li);
 
         virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) = 0;
         void copy_symlink(const Path& source, const Path& destination, LineInfo li);
