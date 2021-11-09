@@ -42,16 +42,21 @@ function Require-FileExists {
     }
 }
 
-function Require-FileEquals {
+function Require-JsonFileEquals {
     [CmdletBinding()]
     Param(
         [string]$File,
-        [string]$Content
+        [string]$Json
     )
     Require-FileExists $File
-    if ((Get-Content $File -Raw) -ne $Content) {
+    $ExpectedJson = $Json | ConvertFrom-Json | ConvertTo-Json -Compress
+    $ActualJson = Get-Content $File | ConvertFrom-Json | ConvertTo-Json -Compress
+
+    if ($ActualJson -ne $ExpectedJson) {
         Write-Stack
-        throw "'$Script:CurrentTest' file '$File' did not have the correct contents"
+        throw "'$Script:CurrentTest' file '$File' did not have the correct contents`n
+                Expected: $ExpectedJson`n
+                Actual:   $ActualJson"
     }
 }
 

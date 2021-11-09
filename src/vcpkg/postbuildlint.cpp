@@ -201,7 +201,7 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_for_files_in_debug_include_directory(const Filesystem& fs, const Path& package_dir)
     {
-        const auto debug_include_dir = package_dir / "debug/include";
+        const auto debug_include_dir = package_dir / "debug" / "include";
 
         std::vector<Path> files_found = fs.get_regular_files_recursive(debug_include_dir, IgnoreErrors{});
 
@@ -221,7 +221,7 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_for_files_in_debug_share_directory(const Filesystem& fs, const Path& package_dir)
     {
-        const auto debug_share = package_dir / "debug/share";
+        const auto debug_share = package_dir / "debug" / "share";
         if (fs.exists(debug_share, IgnoreErrors{}))
         {
             print2(Color::warning,
@@ -257,7 +257,7 @@ namespace vcpkg::PostBuildLint
 
     static LintStatus check_folder_lib_cmake(const Filesystem& fs, const Path& package_dir, const PackageSpec& spec)
     {
-        const auto lib_cmake = package_dir / "lib/cmake";
+        const auto lib_cmake = package_dir / "lib" / "cmake";
         if (fs.exists(lib_cmake, IgnoreErrors{}))
         {
             vcpkg::printf(Color::warning,
@@ -277,9 +277,9 @@ namespace vcpkg::PostBuildLint
     {
         std::vector<Path> dirs = {
             package_dir / "cmake",
-            package_dir / "debug/cmake",
-            package_dir / "lib/cmake",
-            package_dir / "debug/lib/cmake",
+            package_dir / "debug" / "cmake",
+            package_dir / "lib" / "cmake",
+            package_dir / "debug" / "lib" / "cmake",
         };
 
         std::vector<Path> misplaced_cmake_files;
@@ -664,7 +664,7 @@ namespace vcpkg::PostBuildLint
         if (policies.is_enabled(BuildPolicy::DLLS_IN_STATIC_LIBRARY)) return LintStatus::SUCCESS;
 
         const auto bin = package_dir / "bin";
-        const auto debug_bin = package_dir / "debug/bin";
+        const auto debug_bin = package_dir / "debug" / "bin";
 
         const bool bin_exists = fs.exists(bin, IgnoreErrors{});
         const bool debug_bin_exists = fs.exists(debug_bin, IgnoreErrors{});
@@ -715,15 +715,21 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning, "There should be no empty directories in ", dir, "\n");
             print2("The following empty directories were found:\n");
             print_paths(empty_directories);
+
+            std::string dirs = "    file(REMOVE_RECURSE";
+            for (auto&& empty_dir : empty_directories)
+            {
+                Strings::append(
+                    dirs, " \"${CURRENT_PACKAGES_DIR}", empty_dir.native().substr(dir.native().size()), '"');
+            }
+            dirs += ")\n";
             print2(
                 Color::warning,
                 "If a directory should be populated but is not, this might indicate an error in the portfile.\n"
                 "If the directories are not needed and their creation cannot be disabled, use something like this in "
                 "the portfile to remove them:\n"
-                "\n"
-                R"###(    file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/a/dir" "${CURRENT_PACKAGES_DIR}/some/other/dir"))###"
-                "\n"
-                "\n"
+                "\n",
+                dirs,
                 "\n");
             return LintStatus::PROBLEM_DETECTED;
         }
@@ -975,9 +981,9 @@ namespace vcpkg::PostBuildLint
         error_count += check_for_exes(fs, package_dir);
         error_count += check_for_exes(fs, package_dir / "debug");
 
-        const auto debug_lib_dir = package_dir / "debug/lib";
+        const auto debug_lib_dir = package_dir / "debug" / "lib";
         const auto release_lib_dir = package_dir / "lib";
-        const auto debug_bin_dir = package_dir / "debug/bin";
+        const auto debug_bin_dir = package_dir / "debug" / "bin";
         const auto release_bin_dir = package_dir / "bin";
 
         std::vector<Path> debug_libs = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
