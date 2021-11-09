@@ -715,15 +715,21 @@ namespace vcpkg::PostBuildLint
             print2(Color::warning, "There should be no empty directories in ", dir, "\n");
             print2("The following empty directories were found:\n");
             print_paths(empty_directories);
+
+            std::string dirs = "    file(REMOVE_RECURSE";
+            for (auto&& empty_dir : empty_directories)
+            {
+                Strings::append(
+                    dirs, " \"${CURRENT_PACKAGES_DIR}", empty_dir.native().substr(dir.native().size()), '"');
+            }
+            dirs += ")\n";
             print2(
                 Color::warning,
                 "If a directory should be populated but is not, this might indicate an error in the portfile.\n"
                 "If the directories are not needed and their creation cannot be disabled, use something like this in "
                 "the portfile to remove them:\n"
-                "\n"
-                R"###(    file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/a/dir" "${CURRENT_PACKAGES_DIR}/some/other/dir"))###"
-                "\n"
-                "\n"
+                "\n",
+                dirs,
                 "\n");
             return LintStatus::PROBLEM_DETECTED;
         }
