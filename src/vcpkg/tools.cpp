@@ -386,6 +386,82 @@ Type 'NuGet help <command>' for help on a specific command.
         }
     };
 
+    struct Aria2Provider : ToolProvider
+    {
+        std::string m_name = "aria2";
+        virtual const std::string& tool_data_name() const override { return m_name; }
+        std::string m_exe = "aria2c";
+        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual std::array<int, 3> default_min_version() const override { return {1, 33, 1}; }
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
+        {
+            auto cmd = Command(exe_path).string_arg("--version");
+            auto rc = cmd_execute_and_capture_output(cmd);
+            if (rc.exit_code != 0)
+            {
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
+                        expected_right_tag};
+            }
+
+            /* Sample output:
+aria2 version 1.35.0
+Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa
+[...]
+                */
+            const auto idx = rc.output.find("aria2 version ");
+            Checks::check_exit(
+                VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of aria2 version string: %s", rc.output);
+            auto start = rc.output.begin() + idx;
+            char newlines[] = "\r\n";
+            auto end = std::find_first_of(start, rc.output.end(), &newlines[0], &newlines[2]);
+            return {std::string(start, end), expected_left_tag};
+        }
+    };
+
+    struct NodeProvider : ToolProvider
+    {
+        virtual const std::string& tool_data_name() const override { return Tools::NODE; }
+        virtual const std::string& exe_stem() const override { return Tools::NODE; }
+        virtual std::array<int, 3> default_min_version() const override { return {16, 12, 0}; }
+
+        virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const override
+        {
+#if defined(_WIN32)
+            const auto& program_files = get_program_files_platform_bitness();
+            if (const auto pf = program_files.get()) out_candidate_paths.push_back(*pf / "nodejs" / "node.exe");
+            const auto& program_files_32_bit = get_program_files_32_bit();
+            if (const auto pf = program_files_32_bit.get()) out_candidate_paths.push_back(*pf / "nodejs" / "node.exe");
+#else
+            // TODO: figure out if this should do anything on non-windows
+            (void)out_candidate_paths;
+#endif
+        }
+
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
+        {
+            auto cmd = Command(exe_path).string_arg("--version");
+            auto rc = cmd_execute_and_capture_output(cmd);
+            if (rc.exit_code != 0)
+            {
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", Tools::NODE, "\n"),
+                        expected_right_tag};
+            }
+
+            // Sample output: v16.12.0
+            auto start = rc.output.begin();
+            if (start == rc.output.end() || *start != 'v')
+            {
+                return {Strings::concat(std::move(rc.output), "\n\nUnexpected output of ", Tools::NODE, " --version\n"),
+                        expected_right_tag};
+            }
+
+            ++start;
+            char newlines[] = "\r\n";
+            auto end = std::find_first_of(start, rc.output.end(), &newlines[0], &newlines[2]);
+            return {std::string(start, end), expected_left_tag};
+        }
+    };
+
     struct GitProvider : ToolProvider
     {
         std::string m_exe = "git";
@@ -618,6 +694,8 @@ gsutil version: 4.58
                     return get_path(paths, PowerShellCoreProvider());
                 }
                 if (tool == Tools::NUGET) return get_path(paths, NuGetProvider());
+                if (tool == Tools::ARIA2) return get_path(paths, Aria2Provider());
+                if (tool == Tools::NODE) return get_path(paths, NodeProvider());
                 if (tool == Tools::IFW_INSTALLER_BASE) return get_path(paths, IfwInstallerBaseProvider());
                 if (tool == Tools::MONO) return get_path(paths, MonoProvider());
                 if (tool == Tools::GSUTIL)

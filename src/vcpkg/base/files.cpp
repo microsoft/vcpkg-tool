@@ -432,7 +432,6 @@ namespace
         else
         {
             stdfs::remove(current_entry.path(), ec);
-            if (err.check_ec(ec, current_entry)) return;
         }
 
         err.check_ec(ec, current_entry);
@@ -463,7 +462,23 @@ namespace
 
     void vcpkg_remove_all(const Path& base, std::error_code& ec, Path& failure_point)
     {
-        stdfs::directory_entry entry(to_stdfs_path(base), ec);
+        std::wstring wide_path;
+        const auto& native_base = base.native();
+        // Attempt to handle paths that are too long in recursive delete by prefixing absolute ones with
+        // backslash backslash question backslash
+        // See https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+        // We are conservative and only accept paths that begin with a drive letter prefix because other forms
+        // may have more Win32 path normalization that we do not replicate herein.
+        // (There are still edge cases we don't handle, such as trailing whitespace or nulls, but
+        // for purposes of remove_all, we never supported such trailing bits)
+        if (has_drive_letter_prefix(native_base.data(), native_base.data() + native_base.size()))
+        {
+            wide_path = L"\\\\?\\";
+        }
+
+        wide_path.append(Strings::to_utf16(native_base));
+
+        stdfs::directory_entry entry(wide_path, ec);
         translate_not_found_to_success(ec);
         if (ec)
         {
@@ -740,7 +755,7 @@ namespace
             // We have to check that `base` isn't a symbolic link
             if (::lstat(base.c_str(), &s) != 0)
             {
-                if (errno != ENOENT)
+                if (errno != ENOENT && errno != ENOTDIR)
                 {
                     mark_recursive_error(base, ec, failure_point);
                     return;
@@ -2105,10 +2120,18 @@ namespace vcpkg
 
                         case PosixDType::Unknown:
                         default:
-                            if (::lstat(full.c_str(), &ls) != 0 && errno != ENOENT)
+                            if (::lstat(full.c_str(), &ls) != 0)
                             {
-                                ec.assign(errno, std::generic_category());
-                                result.clear();
+                                if (errno == ENOENT || errno == ENOTDIR)
+                                {
+                                    ec.clear();
+                                }
+                                else
+                                {
+                                    result.clear();
+                                    ec.assign(errno, std::generic_category());
+                                }
+
                                 return;
                             }
 
@@ -2121,10 +2144,18 @@ namespace vcpkg
                                 }
                                 else
                                 {
-                                    if (::stat(full.c_str(), &s) != 0 && errno != ENOENT)
+                                    if (::stat(full.c_str(), &s) != 0)
                                     {
-                                        ec.assign(errno, std::generic_category());
-                                        result.clear();
+                                        if (errno == ENOENT || errno == ENOTDIR)
+                                        {
+                                            ec.clear();
+                                        }
+                                        else
+                                        {
+                                            result.clear();
+                                            ec.assign(errno, std::generic_category());
+                                        }
+
                                         return;
                                     }
 
@@ -2353,7 +2384,7 @@ namespace vcpkg
             }
 
             const auto remove_errno = errno;
-            if (remove_errno == ENOENT)
+            if (remove_errno == ENOENT || remove_errno == ENOTDIR)
             {
                 ec.clear();
             }
@@ -2714,7 +2745,7 @@ namespace vcpkg
 #else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
             constexpr std::size_t buffer_length = 4096;
             unsigned char buffer[buffer_length];
-            while (auto read_bytes = i_fd.read(buffer, buffer_length))
+            while (auto read_bytes = source_fd.read(buffer, buffer_length))
             {
                 if (read_bytes == -1)
                 {
@@ -2797,7 +2828,7 @@ namespace vcpkg
                 return posix_translate_stat_mode_to_file_type(s.st_mode);
             }
 
-            if (errno == ENOENT)
+            if (errno == ENOENT || errno == ENOTDIR)
             {
                 ec.clear();
                 return FileType::not_found;
@@ -2821,7 +2852,7 @@ namespace vcpkg
                 return posix_translate_stat_mode_to_file_type(s.st_mode);
             }
 
-            if (errno == ENOENT)
+            if (errno == ENOENT || errno == ENOTDIR)
             {
                 ec.clear();
                 return FileType::not_found;

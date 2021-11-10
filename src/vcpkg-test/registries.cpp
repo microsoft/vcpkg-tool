@@ -186,6 +186,23 @@ TEST_CASE ("registry_parsing", "[registries]")
 {
     "kind": "git",
     "repository": "abc",
+    "baseline": "123",
+    "reference": "abc/def"
+}
+    )json");
+    {
+        Json::Reader r;
+        auto registry_impl = r.visit(test_json, *registry_impl_des);
+        REQUIRE(registry_impl);
+        CHECK(*registry_impl.get());
+        INFO(Strings::join("\n", r.errors()));
+        CHECK(r.errors().empty());
+    }
+
+    test_json = parse_json(R"json(
+{
+    "kind": "git",
+    "repository": "abc",
     "baseline": "123"
 }
     )json");
