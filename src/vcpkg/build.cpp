@@ -1087,12 +1087,6 @@ namespace vcpkg::Build
             }
         }
 
-        abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE));
-
-#if defined(_WIN32)
-        abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core"));
-#endif
-
         auto& helpers = paths.get_cmake_script_hashes();
         auto portfile_contents = fs.read_contents(port_dir / "portfile.cmake", VCPKG_LINE_INFO);
         for (auto&& helper : helpers)
