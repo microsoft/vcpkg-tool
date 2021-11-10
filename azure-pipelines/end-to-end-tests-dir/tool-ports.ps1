@@ -31,7 +31,8 @@ Remove-Item env:CLICOLOR_FORCE
 
 Refresh-TestRoot
 
-# Test cross installation
+# Test cross installation and isolation from CLICOLOR=1
+$env:CLICOLOR = 1
 Run-Vcpkg ($commonArgs + @("install", "tool-libb:$targetTriplet"))
 Throw-IfFailed
 @("tool-control", "tool-manifest", "tool-liba") | % {
@@ -42,6 +43,7 @@ Throw-IfFailed
     Require-FileExists $installRoot/$targetTriplet/share/$_
     Require-FileNotExists $installRoot/$hostTriplet/share/$_
 }
+Remove-Item env:CLICOLOR
 
 # Test removal of packages in cross installation
 Run-Vcpkg ($commonArgs + @("remove", "tool-manifest", "--recurse"))
