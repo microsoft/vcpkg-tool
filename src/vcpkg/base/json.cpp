@@ -940,7 +940,13 @@ namespace vcpkg::Json
                         add_error("Unexpected character; expected comma or close brace");
                     }
 
+                    auto keyPairLoc = cur_loc();
                     auto val = parse_kv_pair();
+                    if (obj.contains(val.first))
+                    {
+                        add_error(Strings::format("Duplicated key \"%s\" in an object", val.first), keyPairLoc);
+                        return Value();
+                    }
                     obj.insert(std::move(val.first), std::move(val.second));
                 }
             }
