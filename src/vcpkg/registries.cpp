@@ -847,7 +847,7 @@ namespace
             RegistryImplDeserializer::LOCATION,
         };
         return t;
-    };
+    }
 
     Optional<std::unique_ptr<RegistryImplementation>> RegistryImplDeserializer::visit_null(Json::Reader&)
     {
