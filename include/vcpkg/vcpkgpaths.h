@@ -156,6 +156,7 @@ namespace vcpkg
         Optional<const Json::Object&> get_manifest() const;
         Optional<const Path&> get_manifest_path() const;
         const Configuration& get_configuration() const;
+        void set_builtin_baseline(const std::string& baseline) const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo
         const Toolset& get_toolset(const Build::PreBuildInfo& prebuildinfo) const;
