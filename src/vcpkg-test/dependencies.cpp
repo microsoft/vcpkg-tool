@@ -150,12 +150,10 @@ static void check_relaxed_version(const ExpectedS<Versions::RelaxedVersion>& may
 
 static void check_date_version(const ExpectedS<Versions::DateVersion>& maybe_version,
                                const std::string& version_string,
-                               const std::string& identifiers_string,
                                const std::vector<uint64_t>& identifiers)
 {
     auto actual_version = unwrap(maybe_version);
     CHECK(actual_version.version_string == version_string);
-    CHECK(actual_version.identifiers_string == identifiers_string);
     CHECK(actual_version.identifiers == identifiers);
 }
 
@@ -707,10 +705,10 @@ TEST_CASE ("version parse relaxed", "[versionplan]")
 TEST_CASE ("version parse date", "[versionplan]")
 {
     auto version_basic = Versions::DateVersion::from_string("2020-12-25");
-    check_date_version(version_basic, "2020-12-25", "", {});
+    check_date_version(version_basic, "2020-12-25", {});
 
     auto version_identifiers = Versions::DateVersion::from_string("2020-12-25.1.2.3");
-    check_date_version(version_identifiers, "2020-12-25", "1.2.3", {1, 2, 3});
+    check_date_version(version_identifiers, "2020-12-25", {1, 2, 3});
 
     auto version_invalid_date = Versions::DateVersion::from_string("2020-1-1");
     CHECK(!version_invalid_date.has_value());

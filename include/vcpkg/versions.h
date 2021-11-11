@@ -68,8 +68,6 @@ namespace vcpkg::Versions
     {
         std::string original_string;
         std::string version_string;
-        std::string identifiers_string;
-
         std::vector<uint64_t> identifiers;
 
         static ExpectedS<DateVersion> from_string(const std::string& str);

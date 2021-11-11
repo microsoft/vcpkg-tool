@@ -348,12 +348,12 @@ namespace vcpkg::Versions
     {
         if (a.version_string == b.version_string)
         {
-            if (a.identifiers_string == b.identifiers_string) return VerComp::eq;
-            if (a.identifiers_string.empty() && !b.identifiers_string.empty()) return VerComp::lt;
-            if (!a.identifiers_string.empty() && b.identifiers_string.empty()) return VerComp::gt;
+            if (a.identifiers == b.identifiers) return VerComp::eq;
+            if (a.identifiers.empty() && !b.identifiers.empty()) return VerComp::lt;
+            if (!a.identifiers.empty() && b.identifiers.empty()) return VerComp::gt;
         }
 
-        // The date parts in our scheme is lexicographically sortable.
+        // The date parts in our scheme are lexicographically sortable.
         if (a.version_string < b.version_string) return VerComp::lt;
         if (a.version_string > b.version_string) return VerComp::gt;
         if (a.identifiers < b.identifiers) return VerComp::lt;
