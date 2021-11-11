@@ -60,9 +60,12 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(pgh.core_paragraph->name == "zlib");
     REQUIRE(pgh.core_paragraph->version == "1.2.8");
     REQUIRE(pgh.core_paragraph->maintainers.empty());
+    REQUIRE(pgh.core_paragraph->contacts.is_empty());
+    REQUIRE(pgh.core_paragraph->summary.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.empty());
     REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
+    REQUIRE(!pgh.core_paragraph->vcpkg_configuration.has_value());
 
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
 }
@@ -640,6 +643,11 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
                     "rapidjson",
                     "fmt"
                 ]
+            },
+            {
+                "kind": "artifact",
+                "name": "vcpkg-artifacts",
+                "location": "https://github.com/microsoft/vcpkg-artifacts"
             }
         ]
     })json";
@@ -707,6 +715,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         "name": "s",
         "version-string": "v",
         "maintainers": ["m"],
+        "contacts": { "a": { "aa": "aa" } },
+        "summary": "d",
         "description": "d",
         "dependencies": ["bd"],
         "default-features": ["df"],
@@ -738,6 +748,16 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->version == "v");
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
+    REQUIRE(pgh.core_paragraph->contacts.size() == 1);
+    auto contact_a = pgh.core_paragraph->contacts.get("a");
+    REQUIRE(contact_a);
+    REQUIRE(contact_a->is_object());
+    auto contact_a_aa = contact_a->object().get("aa");
+    REQUIRE(contact_a_aa);
+    REQUIRE(contact_a_aa->is_string());
+    REQUIRE(contact_a_aa->string() == "aa");
+    REQUIRE(pgh.core_paragraph->summary.size() == 1);
+    REQUIRE(pgh.core_paragraph->summary[0] == "d");
     REQUIRE(pgh.core_paragraph->description.size() == 1);
     REQUIRE(pgh.core_paragraph->description[0] == "d");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
