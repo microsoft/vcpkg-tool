@@ -4,7 +4,7 @@
 
 namespace vcpkg
 {
-    LockGuarded<ElapsedTimer> GlobalState::timer;
+    ElapsedTimer GlobalState::timer;
     LockGuarded<std::string> GlobalState::g_surveydate;
 
     std::atomic<int> GlobalState::g_init_console_cp(0);

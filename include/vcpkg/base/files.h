@@ -204,6 +204,8 @@ namespace vcpkg
         virtual ~IExclusiveFileLock() = default;
     };
 
+    uint64_t get_filesystem_stats();
+
     struct Filesystem
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;

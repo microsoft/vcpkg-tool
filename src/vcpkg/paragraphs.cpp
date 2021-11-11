@@ -14,6 +14,8 @@
 using namespace vcpkg::Parse;
 using namespace vcpkg;
 
+static std::atomic<uint64_t> g_load_ports_stats(0);
+
 namespace vcpkg::Parse
 {
     static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, const std::string& fieldname)
@@ -316,6 +318,8 @@ namespace vcpkg::Paragraphs
 
     ParseExpected<SourceControlFile> try_load_port_text(const std::string& text, StringView origin, bool is_manifest)
     {
+        StatsTimer timer(g_load_ports_stats);
+
         if (is_manifest)
         {
             return try_load_manifest_text(text, origin);
@@ -334,6 +338,8 @@ namespace vcpkg::Paragraphs
 
     ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const Path& port_directory)
     {
+        StatsTimer timer(g_load_ports_stats);
+
         const auto manifest_path = port_directory / "vcpkg.json";
         const auto control_path = port_directory / "CONTROL";
         const auto port_name = port_directory.filename().to_string();
@@ -387,6 +393,8 @@ namespace vcpkg::Paragraphs
 
     ExpectedS<BinaryControlFile> try_load_cached_package(const VcpkgPaths& paths, const PackageSpec& spec)
     {
+        StatsTimer timer(g_load_ports_stats);
+
         ExpectedS<std::vector<Paragraph>> pghs =
             get_paragraphs(paths.get_filesystem(), paths.package_dir(spec) / "CONTROL");
 
@@ -527,4 +535,6 @@ namespace vcpkg::Paragraphs
         load_results_print_error(ret);
         return std::move(ret.paragraphs);
     }
+
+    uint64_t get_load_ports_stats() { return g_load_ports_stats.load(); }
 }

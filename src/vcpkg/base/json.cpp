@@ -11,6 +11,8 @@
 
 namespace vcpkg::Json
 {
+    static std::atomic<uint64_t> g_json_parsing_stats(0);
+
     using VK = ValueKind;
 
     // struct Value {
@@ -991,6 +993,8 @@ namespace vcpkg::Json
             static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(
                 StringView json, StringView origin) noexcept
             {
+                StatsTimer t(g_json_parsing_stats);
+
                 auto parser = Parser(json, origin);
 
                 auto val = parser.parse_value();
@@ -1317,6 +1321,12 @@ namespace vcpkg::Json
         return res;
     }
 
+    static std::atomic<uint64_t> g_json_reader_stats(0);
+
+    Reader::Reader() : m_stat_timer(g_json_reader_stats) { }
+
+    uint64_t Reader::get_reader_stats() { return g_json_reader_stats.load(); }
+
     void Reader::add_missing_field_error(StringView type, StringView key, StringView key_type)
     {
         add_generic_error(type, "missing required field '", key, "' (", key_type, ")");
@@ -1422,6 +1432,8 @@ namespace vcpkg::Json
 
         return true;
     }
+
+    uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
 
     Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader&, StringView sv)
     {

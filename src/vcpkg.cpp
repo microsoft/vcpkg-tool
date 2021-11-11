@@ -36,10 +36,6 @@ using namespace vcpkg;
 namespace
 {
     DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::value), "", "invalid command: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgDebugTimeTaken,
-                                 (msg::pretty_value, msg::value),
-                                 "{LOCKED}",
-                                 "[DEBUG] Exiting after {pretty_value} ({value} us)\n");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
                                  (),
                                  "",
@@ -161,7 +157,7 @@ int main(const int argc, const char* const* const argv)
         }
     }
 
-    *(LockGuardPtr<ElapsedTimer>(GlobalState::timer)) = ElapsedTimer::create_started();
+    GlobalState::timer = ElapsedTimer::create_started();
 
 #if defined(_WIN32)
     GlobalState::g_init_console_cp = GetConsoleCP();
@@ -192,7 +188,7 @@ int main(const int argc, const char* const* const argv)
     set_environment_variable("CLICOLOR_FORCE", {});
 
     Checks::register_global_shutdown_handler([]() {
-        const auto elapsed_us_inner = LockGuardPtr<ElapsedTimer>(GlobalState::timer)->microseconds();
+        const auto elapsed_us_inner = GlobalState::timer.microseconds();
 
         bool debugging = Debug::g_debugging;
 
@@ -210,9 +206,29 @@ int main(const int argc, const char* const* const argv)
 #endif
 
         if (debugging)
-            msg::println(msgVcpkgDebugTimeTaken,
-                         msg::pretty_value = LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(),
-                         msg::value = static_cast<int64_t>(elapsed_us_inner));
+        {
+            msg::write_unlocalized_text_to_stdout(Color::none,
+                                                  Strings::concat("[DEBUG] Time in subprocesses: ",
+                                                                  get_subproccess_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in parsing JSON: ",
+                                                                  Json::get_json_parsing_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in JSON reader: ",
+                                                                  Json::Reader::get_reader_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in filesystem: ",
+                                                                  get_filesystem_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in loading ports: ",
+                                                                  Paragraphs::get_load_ports_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Exiting after ",
+                                                                  GlobalState::timer.to_string(),
+                                                                  " (",
+                                                                  static_cast<int64_t>(elapsed_us_inner),
+                                                                  " us)\n"));
+        }
     });
 
     LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version());
