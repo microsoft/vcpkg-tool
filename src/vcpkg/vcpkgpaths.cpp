@@ -503,7 +503,7 @@ namespace vcpkg
         m_pimpl->m_config = std::move(config_file.config);
 
         m_pimpl->buildtrees = maybe_get_tmp_path(args.buildtrees_root_dir.get(), "buildtrees", "blds", VCPKG_LINE_INFO);
-        m_pimpl->packages = maybe_get_tmp_path(args.buildtrees_root_dir.get(), "packages", "pkgs", VCPKG_LINE_INFO);
+        m_pimpl->packages = maybe_get_tmp_path(args.packages_root_dir.get(), "packages", "pkgs", VCPKG_LINE_INFO);
 
         if (args.downloads_root_dir)
         {
