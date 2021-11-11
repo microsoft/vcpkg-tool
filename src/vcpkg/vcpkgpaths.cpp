@@ -26,12 +26,11 @@
 namespace
 {
     using namespace vcpkg;
-    Path process_input_directory_impl(
+    static Path process_input_directory_impl(
         Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
     {
         if (option)
         {
-            // input directories must exist, so we use canonical
             return filesystem.almost_canonical(*option, li);
         }
         else
@@ -40,7 +39,7 @@ namespace
         }
     }
 
-    Path process_input_directory(
+    static Path process_input_directory(
         Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
     {
         auto result = process_input_directory_impl(filesystem, root, option, name, li);
@@ -48,54 +47,10 @@ namespace
         return result;
     }
 
-    Path process_output_directory(const VcpkgPaths& paths,
-                                  const std::unique_ptr<std::string>& option,
-                                  Path (*default_path)(const VcpkgPaths& paths))
+    static Path process_output_directory(Filesystem& fs, const std::string* option, const Path& default_path)
     {
-        Path ret;
-        if (option)
-        {
-            ret = *option;
-        }
-        else
-        {
-            ret = default_path(paths);
-        }
-        // output directories might not exist, so we use merely absolute
-        ret = paths.get_filesystem().absolute(ret, VCPKG_LINE_INFO);
-#if defined(_WIN32)
-        ret = vcpkg::win32_fix_path_case(ret);
-#endif // _WIN32
-        return ret;
+        return fs.almost_canonical(option ? Path(*option) : default_path, VCPKG_LINE_INFO);
     }
-
-    Optional<Path> process_output_directory(const VcpkgPaths& paths,
-                                            const std::unique_ptr<std::string>& option,
-                                            Optional<Path> (*default_path)(const VcpkgPaths& paths))
-    {
-        Optional<Path> ret;
-        if (option)
-        {
-            ret = *option;
-        }
-        else
-        {
-            ret = default_path(paths);
-        }
-
-        if (auto r = ret.get())
-        {
-            // output directories might not exist, so we use merely absolute
-            auto p = paths.get_filesystem().absolute(*r, VCPKG_LINE_INFO);
-#if defined(_WIN32)
-            p = vcpkg::win32_fix_path_case(p);
-#endif // _WIN32
-            return p;
-        }
-        else
-            return nullopt;
-    }
-
 } // unnamed namespace
 
 namespace vcpkg
@@ -366,6 +321,32 @@ namespace vcpkg
     const Optional<Path>& VcpkgPaths::maybe_buildtrees() const { return m_pimpl->buildtrees; }
     const Optional<Path>& VcpkgPaths::maybe_packages() const { return m_pimpl->packages; }
 
+    Optional<Path> VcpkgPaths::maybe_get_tmp_path(const std::string* arg_path,
+                                                  StringLiteral root_subpath,
+                                                  StringLiteral readonly_subpath,
+                                                  LineInfo li) const
+    {
+        if (arg_path)
+        {
+            return get_filesystem().almost_canonical(*arg_path, li);
+        }
+        else if (m_pimpl->m_readonly)
+        {
+            if (m_pimpl->installed)
+            {
+                return get_filesystem().almost_canonical(vcpkg_dir() / readonly_subpath, li);
+            }
+            else
+            {
+                return nullopt;
+            }
+        }
+        else
+        {
+            return get_filesystem().almost_canonical(root / root_subpath, li);
+        }
+    }
+
     static Path lockfile_path(const VcpkgPaths& p) { return p.vcpkg_dir() / "vcpkg-lock.json"; }
 
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
@@ -430,17 +411,16 @@ namespace vcpkg
         {
             if (!m_pimpl->m_readonly)
             {
-                m_pimpl->installed = process_output_directory(
-                    *this, args.install_root_dir, [](const VcpkgPaths& p) { return p.root / "installed"; });
+                m_pimpl->installed =
+                    process_output_directory(filesystem, args.install_root_dir.get(), root / "installed");
             }
         }
         else
         {
             Debug::print("Using manifest-root: ", manifest_root_dir, '\n');
 
-            m_pimpl->installed = process_output_directory(*this, args.install_root_dir, [](const VcpkgPaths& p) {
-                return p.manifest_root_dir / "vcpkg_installed";
-            });
+            m_pimpl->installed = process_output_directory(
+                filesystem, args.install_root_dir.get(), manifest_root_dir / "vcpkg_installed");
 
             if (args.wait_for_lock.value_or(false))
             {
@@ -522,56 +502,26 @@ namespace vcpkg
         config_root_dir = std::move(config_file.config_directory);
         m_pimpl->m_config = std::move(config_file.config);
 
-        m_pimpl->buildtrees =
-            process_output_directory(*this, args.buildtrees_root_dir, [](const VcpkgPaths& p) -> Optional<Path> {
-                if (p.m_pimpl->m_readonly)
-                {
-                    if (p.m_pimpl->installed)
-                    {
-                        return p.vcpkg_dir() / "blds";
-                    }
-                    else
-                    {
-                        return nullopt;
-                    }
-                }
-                else
-                {
-                    return p.root / "buildtrees";
-                }
-            });
-        m_pimpl->packages =
-            process_output_directory(*this, args.packages_root_dir, [](const VcpkgPaths& p) -> Optional<Path> {
-                if (p.m_pimpl->m_readonly)
-                {
-                    if (p.m_pimpl->installed)
-                    {
-                        return p.vcpkg_dir() / "pkgs";
-                    }
-                    else
-                    {
-                        return nullopt;
-                    }
-                }
-                else
-                {
-                    return p.root / "packages";
-                }
-            });
-        downloads = process_output_directory(*this, args.downloads_root_dir, [](const VcpkgPaths& p) {
-            if (p.m_pimpl->m_readonly)
-            {
-                return get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "downloads";
-            }
-            else
-            {
-                return p.root / "downloads";
-            }
-        });
-        builtin_ports = process_output_directory(
-            *this, args.builtin_ports_root_dir, [](const VcpkgPaths& p) { return p.root / "ports"; });
-        builtin_registry_versions = process_output_directory(
-            *this, args.builtin_registry_versions_dir, [](const VcpkgPaths& p) { return p.root / "versions"; });
+        m_pimpl->buildtrees = maybe_get_tmp_path(args.buildtrees_root_dir.get(), "buildtrees", "blds", VCPKG_LINE_INFO);
+        m_pimpl->packages = maybe_get_tmp_path(args.buildtrees_root_dir.get(), "packages", "pkgs", VCPKG_LINE_INFO);
+
+        if (args.downloads_root_dir)
+        {
+            downloads = *args.downloads_root_dir;
+        }
+        else if (m_pimpl->m_readonly)
+        {
+            downloads = get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "downloads";
+        }
+        else
+        {
+            downloads = root / "downloads";
+        }
+        downloads = filesystem.almost_canonical(downloads, VCPKG_LINE_INFO);
+
+        builtin_ports = process_output_directory(filesystem, args.builtin_ports_root_dir.get(), root / "ports");
+        builtin_registry_versions =
+            process_output_directory(filesystem, args.builtin_registry_versions_dir.get(), root / "versions");
 
         m_pimpl->m_download_manager = Downloads::DownloadManager{
             parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};

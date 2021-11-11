@@ -179,6 +179,10 @@ namespace vcpkg
         Path builtin_ports_directory() const { return this->builtin_ports; }
 
     private:
+        Optional<Path> maybe_get_tmp_path(const std::string* arg_path,
+                                          StringLiteral root_subpath,
+                                          StringLiteral readonly_subpath,
+                                          LineInfo li) const;
         std::unique_ptr<details::VcpkgPathsImpl> m_pimpl;
     };
 }
