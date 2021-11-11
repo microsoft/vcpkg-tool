@@ -77,9 +77,23 @@ static void compare_json_objects(const Json::Object& expected, const Json::Objec
             Json::stringify(actual, Json::JsonStyle::with_spaces(4)));
 }
 
-TEST_CASE ("config without ce metadata", "[ce-metadata]")
+static void check_errors(const std::string& config_text, const std::string& expected_errors)
 {
-    std::string raw_config = R"json({
+    auto object = parse_json_object(config_text);
+
+    Json::Reader reader;
+    auto deserializer = make_configuration_deserializer("");
+    auto parsed_config_opt = reader.visit(object, *deserializer);
+    REQUIRE(!reader.errors().empty());
+
+    CHECK_LINES(Strings::join("\n", reader.errors()), expected_errors);
+}
+
+TEST_CASE ("config registries only", "[ce-metadata]")
+{
+    SECTION ("valid json")
+    {
+        std::string raw_config = R"json({
     "default-registry": {
         "kind": "builtin",
         "baseline": "843e0ba0d8f9c9c572e45564263eedfc7745e74f"
@@ -104,45 +118,137 @@ TEST_CASE ("config without ce metadata", "[ce-metadata]")
     ]
 })json";
 
-    auto config = parse_test_configuration(raw_config);
-    REQUIRE(config.ce_metadata.is_empty());
-    REQUIRE(config.extra_info.is_empty());
-    REQUIRE(config.registry_set.default_registry() != nullptr);
+        auto config = parse_test_configuration(raw_config);
+        REQUIRE(config.ce_metadata.is_empty());
+        REQUIRE(config.extra_info.is_empty());
+        REQUIRE(config.registry_set.default_registry() != nullptr);
 
-    auto default_registry = config.registry_set.default_registry()->serialize();
-    check_string(default_registry, KIND, "builtin");
-    check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
+        auto default_registry = config.registry_set.default_registry()->serialize();
+        check_string(default_registry, KIND, "builtin");
+        check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
 
-    REQUIRE(config.registry_set.registries().size() == 3);
+        REQUIRE(config.registry_set.registries().size() == 3);
 
-    const auto& git_registry = config.registry_set.registries()[0];
-    auto serialized_git_registry = git_registry.implementation().serialize();
-    check_string(serialized_git_registry, KIND, "git");
-    check_string(serialized_git_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
-    check_string(serialized_git_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
-    REQUIRE(git_registry.packages().size() == 2);
-    REQUIRE(git_registry.packages()[0] == "beicode");
-    REQUIRE(git_registry.packages()[1] == "beison");
+        const auto& git_registry = config.registry_set.registries()[0];
+        auto serialized_git_registry = git_registry.implementation().serialize();
+        check_string(serialized_git_registry, KIND, "git");
+        check_string(serialized_git_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
+        check_string(serialized_git_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
+        REQUIRE(git_registry.packages().size() == 2);
+        REQUIRE(git_registry.packages()[0] == "beicode");
+        REQUIRE(git_registry.packages()[1] == "beison");
 
-    const auto& fs_registry = config.registry_set.registries()[1];
-    auto serialized_fs_registry = fs_registry.implementation().serialize();
-    check_string(serialized_fs_registry, KIND, "filesystem");
-    check_string(serialized_fs_registry, PATH, "path/to/registry");
-    REQUIRE(fs_registry.packages().size() == 1);
-    REQUIRE(fs_registry.packages()[0] == "zlib");
+        const auto& fs_registry = config.registry_set.registries()[1];
+        auto serialized_fs_registry = fs_registry.implementation().serialize();
+        check_string(serialized_fs_registry, KIND, "filesystem");
+        check_string(serialized_fs_registry, PATH, "path/to/registry");
+        REQUIRE(fs_registry.packages().size() == 1);
+        REQUIRE(fs_registry.packages()[0] == "zlib");
 
-    const auto& artifact_registry = config.registry_set.registries()[2];
-    auto serialized_art_registry = artifact_registry.implementation().serialize();
-    check_string(serialized_art_registry, KIND, "artifact");
-    check_string(serialized_art_registry, NAME, "vcpkg-artifacts");
-    check_string(serialized_art_registry, LOCATION, "https://github.com/microsoft/vcpkg-artifacts");
+        const auto& artifact_registry = config.registry_set.registries()[2];
+        auto serialized_art_registry = artifact_registry.implementation().serialize();
+        check_string(serialized_art_registry, KIND, "artifact");
+        check_string(serialized_art_registry, NAME, "vcpkg-artifacts");
+        check_string(serialized_art_registry, LOCATION, "https://github.com/microsoft/vcpkg-artifacts");
 
-    auto raw_obj = parse_json_object(raw_config);
-    auto serialized_obj = serialize_configuration(config);
-    compare_json_objects(raw_obj, serialized_obj);
+        auto raw_obj = parse_json_object(raw_config);
+        auto serialized_obj = serialize_configuration(config);
+        compare_json_objects(raw_obj, serialized_obj);
+    }
+
+    SECTION ("default invalid json")
+    {
+        std::string raw_no_baseline = R"json({
+    "default-registry": {
+        "kind": "builtin"
+    }
+})json";
+        check_errors(raw_no_baseline, R"(
+$.default-registry (a builtin registry): missing required field 'baseline' (a baseline)
+$.default-registry (a builtin registry): The baseline field of builtin registries must be a git commit SHA (40 lowercase hex characters)
+)");
+
+        std::string raw_with_packages = R"json({
+    "default-registry": {
+        "kind": "builtin",
+        "baseline": "aaaaabbbbbcccccdddddeeeeefffff0000011111",
+        "packages": [ "zlib", "boost" ]
+    }
+})json";
+        check_errors(raw_with_packages, R"(
+$.default-registry (a registry): unexpected field 'packages', did you mean 'path'?
+)");
+
+        std::string raw_default_artifact = R"json({
+    "default-registry": {
+        "kind": "artifact",
+        "name": "default-artifacts",
+        "location": "https://github.com/microsoft/vcpkg-artifacts"
+    }
+})json";
+        check_errors(raw_default_artifact, R"(
+$ (a configuration object): default-registry cannot be of "artifact" kind
+)");
+        std::string raw_bad_kind = R"json({
+    "registries": [{
+        "kind": "custom"
+    }]
+})json";
+        check_errors(raw_bad_kind, R"(
+$.registries[0] (a registry): Field "kind" did not have an expected value (expected one of: "builtin", "filesystem", "git", "artifact"; found "custom")
+$.registries[0]: mismatched type: expected a registry
+)");
+
+        std::string raw_bad_fs_registry = R"json({
+    "registries": [{
+        "kind": "filesystem",
+        "path": "D:/microsoft/vcpkg",
+        "baseline": "default",
+        "reference": "main"
+    }]
+})json";
+        check_errors(raw_bad_fs_registry, R"(
+$.registries[0] (a filesystem registry): unexpected field 'reference', did you mean 'baseline'?
+$.registries[0] (a registry): missing required field 'packages' (an array of package names)
+)");
+
+        std::string raw_bad_git_registry = R"json({
+    "registries": [{
+        "kind": "git",
+        "no-repository": "https://github.com/microsoft/vcpkg",
+        "baseline": "abcdef",
+        "reference": {},
+        "packages": {}
+    }]
+})json";
+        check_errors(raw_bad_git_registry, R"(
+$.registries[0] (a registry): unexpected field 'no-repository', did you mean 'repository'?
+$.registries[0] (a git registry): unexpected field 'no-repository', did you mean 'repository'?
+$.registries[0] (a git registry): missing required field 'repository' (a git repository URL)
+$.registries[0].reference: mismatched type: expected a git reference (for example, a branch)
+$.registries[0].packages: mismatched type: expected an array of package names
+)");
+
+        std::string raw_bad_artifact_registry = R"json({
+    "registries": [{
+        "kind": "artifact",
+        "no-location": "https://github.com/microsoft/vcpkg",
+        "baseline": "1234567812345678123456781234567812345678",
+        "packages": [ "zlib" ]
+    }]
+})json";
+        check_errors(raw_bad_artifact_registry, R"(
+$.registries[0] (a registry): unexpected field 'no-location', did you mean 'location'?
+$.registries[0] (an artifacts registry): unexpected field 'no-location', did you mean 'location'?
+$.registries[0] (an artifacts registry): unexpected field 'baseline', did you mean 'kind'?
+$.registries[0] (an artifacts registry): unexpected field 'packages', did you mean 'name'?
+$.registries[0] (an artifact registry): missing required field 'name' (an identifier)
+$.registries[0] (an artifacts registry): missing required field 'location' (an artifacts git repository URL)
+)");
+    }
 }
 
-TEST_CASE ("config without registries", "[ce-metadata]")
+TEST_CASE ("config ce metadata only", "[ce-metadata]")
 {
     std::string raw_config = R"json({
     "$comment": "this is a comment",
@@ -225,12 +331,7 @@ TEST_CASE ("metadata strings", "[ce-metadata]")
     "error": null
 })json";
 
-        auto object = parse_json_object(invalid_raw);
-
-        Json::Reader reader;
-        auto deserializer = make_configuration_deserializer("test");
-        auto parsed_config_opt = reader.visit(object, *deserializer);
-        CHECK_LINES(Strings::join("\n", reader.errors()), R"(
+        check_errors(invalid_raw, R"(
 $.error: mismatched type: expected a string
 $.warning: mismatched type: expected a string
 $.message: mismatched type: expected a string
@@ -311,13 +412,7 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
         }
     }
 })json";
-
-        auto object = parse_json_object(invalid_raw);
-
-        Json::Reader reader;
-        auto deserializer = make_configuration_deserializer("test");
-        auto parsed_config_opt = reader.visit(object, *deserializer);
-        CHECK_LINES(Strings::join("\n", reader.errors()), R"(
+        check_errors(invalid_raw, R"(
 $ (settings): expected an object
 $.requires (a `string: string` dictionary): value of ["fruits/a/apple"] must be a string
 $.requires (a `string: string` dictionary): value of ["fruits/a/avocado"] must be a string
@@ -394,12 +489,7 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
         }
     }
 })json";
-        auto object = parse_json_object(invalid_raw);
-
-        Json::Reader reader;
-        auto deserializer = make_configuration_deserializer("test");
-        auto parsed_config_opt = reader.visit(object, *deserializer);
-        CHECK_LINES(Strings::join("\n", reader.errors()), R"(
+        check_errors(invalid_raw, R"(
 $.demands (a demand object): value of ["a"] must be an object
 $.demands (a demand object): value of ["b"] must be an object
 $.demands (a demand object): value of ["c"] must be an object

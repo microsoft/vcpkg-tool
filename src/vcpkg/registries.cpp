@@ -806,7 +806,7 @@ namespace
 
     View<StringView> RegistryImplDeserializer::valid_fields() const
     {
-        static const StringView t[] = {KIND, BASELINE, PATH, REPO, REFERENCE};
+        static const StringView t[] = {KIND, BASELINE, PATH, REPO, REFERENCE, NAME, LOCATION};
         return t;
     }
     View<StringView> valid_builtin_fields()
@@ -928,9 +928,9 @@ namespace
             r.add_generic_error(type_name(),
                                 "Field \"kind\" did not have an expected value (expected one of: \"",
                                 Strings::join("\", \"", valid_kinds),
-                                "\", found \"",
+                                "\"; found \"",
                                 kind,
-                                "\").");
+                                "\")");
             return nullopt;
         }
 

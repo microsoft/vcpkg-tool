@@ -186,6 +186,8 @@ namespace
 
     Optional<Configuration> ConfigurationDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
     {
+        static const StringView ARTIFACT = "artifact";
+
         Json::Object extra_info;
 
         std::vector<std::string> comment_keys;
@@ -206,6 +208,10 @@ namespace
         std::unique_ptr<RegistryImplementation> default_registry;
         if (r.optional_object_field(obj, DEFAULT_REGISTRY, default_registry, *impl_des))
         {
+            if (default_registry && default_registry->kind() == ARTIFACT)
+            {
+                r.add_generic_error(type_name(), DEFAULT_REGISTRY, " cannot be of \"", ARTIFACT, "\" kind");
+            }
             registries.set_default_registry(std::move(default_registry));
         }
 
