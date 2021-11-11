@@ -254,7 +254,10 @@ namespace
 
     struct ArtifactRegistry final : RegistryImplementation
     {
-        ArtifactRegistry(std::string&& location) : m_location(std::move(location)) { }
+        ArtifactRegistry(std::string&& name, std::string&& location)
+            : m_name(std::move(name)), m_location(std::move(location))
+        {
+        }
 
         StringLiteral kind() const override { return "artifact"; }
 
@@ -278,6 +281,7 @@ namespace
         ~ArtifactRegistry() = default;
 
     private:
+        std::string m_name;
         std::string m_location;
     };
 
@@ -754,6 +758,7 @@ namespace
         constexpr static StringLiteral PATH = "path";
         constexpr static StringLiteral REPO = "repository";
         constexpr static StringLiteral REFERENCE = "reference";
+        constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral LOCATION = "location";
 
         constexpr static StringLiteral KIND_BUILTIN = "builtin";
@@ -777,6 +782,7 @@ namespace
     constexpr StringLiteral RegistryImplDeserializer::PATH;
     constexpr StringLiteral RegistryImplDeserializer::REPO;
     constexpr StringLiteral RegistryImplDeserializer::REFERENCE;
+    constexpr StringLiteral RegistryImplDeserializer::NAME;
     constexpr StringLiteral RegistryImplDeserializer::LOCATION;
     constexpr StringLiteral RegistryImplDeserializer::KIND_BUILTIN;
     constexpr StringLiteral RegistryImplDeserializer::KIND_FILESYSTEM;
@@ -837,6 +843,7 @@ namespace
     {
         static const StringView t[] = {
             RegistryImplDeserializer::KIND,
+            RegistryImplDeserializer::NAME,
             RegistryImplDeserializer::LOCATION,
         };
         return t;
@@ -906,11 +913,14 @@ namespace
         {
             r.check_for_unexpected_fields(obj, valid_artifact_fields(), "an artifacts registry");
 
+            std::string name;
+            r.required_object_field("an artifact registry", obj, NAME, name, Json::IdentifierDeserializer::instance);
+
             std::string location;
             Json::StringDeserializer location_des{"an artifacts git repository URL"};
             r.required_object_field("an artifacts registry", obj, LOCATION, location, location_des);
 
-            res = std::make_unique<ArtifactRegistry>(std::move(location));
+            res = std::make_unique<ArtifactRegistry>(std::move(name), std::move(location));
         }
         else
         {
@@ -935,6 +945,7 @@ namespace
             RegistryImplDeserializer::PATH,
             RegistryImplDeserializer::REPO,
             RegistryImplDeserializer::REFERENCE,
+            RegistryImplDeserializer::NAME,
             RegistryImplDeserializer::LOCATION,
             PACKAGES,
         };
@@ -1124,6 +1135,7 @@ Json::Object FilesystemRegistry::serialize() const
 Json::Object ArtifactRegistry::serialize() const
 {
     Json::Object obj{RegistryImplementation::serialize()};
+    obj.insert(RegistryImplDeserializer::NAME, Json::Value::string(m_name));
     obj.insert(RegistryImplDeserializer::LOCATION, Json::Value::string(m_location));
     return obj;
 }

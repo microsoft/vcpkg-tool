@@ -14,6 +14,7 @@ static constexpr StringLiteral KIND = "kind";
 static constexpr StringLiteral REPOSITORY = "repository";
 static constexpr StringLiteral PATH = "path";
 static constexpr StringLiteral BASELINE = "baseline";
+static constexpr StringLiteral NAME = "name";
 static constexpr StringLiteral LOCATION = "location";
 static constexpr StringLiteral CE_MESSAGE = "message";
 static constexpr StringLiteral CE_WARNING = "warning";
@@ -97,6 +98,7 @@ TEST_CASE ("config without ce metadata", "[ce-metadata]")
         },
         {
             "kind": "artifact",
+            "name": "vcpkg-artifacts",
             "location": "https://github.com/microsoft/vcpkg-artifacts"
         }
     ]
@@ -132,6 +134,7 @@ TEST_CASE ("config without ce metadata", "[ce-metadata]")
     const auto& artifact_registry = config.registry_set.registries()[2];
     auto serialized_art_registry = artifact_registry.implementation().serialize();
     check_string(serialized_art_registry, KIND, "artifact");
+    check_string(serialized_art_registry, NAME, "vcpkg-artifacts");
     check_string(serialized_art_registry, LOCATION, "https://github.com/microsoft/vcpkg-artifacts");
 
     auto raw_obj = parse_json_object(raw_config);

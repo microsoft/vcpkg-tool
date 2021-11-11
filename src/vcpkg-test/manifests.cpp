@@ -646,6 +646,7 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
             },
             {
                 "kind": "artifact",
+                "name": "vcpkg-artifacts",
                 "location": "https://github.com/microsoft/vcpkg-artifacts"
             }
         ]
