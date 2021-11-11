@@ -1,3 +1,4 @@
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/versions.h>
@@ -50,93 +51,185 @@ namespace vcpkg::Versions
         return hash<string>()(key.port_name) ^ (hash<string>()(key.version.to_string()) >> 1);
     }
 
+    // 0|[1-9][0-9]*
+    static const char* parse_skip_number(const char* const s, uint64_t* const n)
+    {
+        const char ch = *s;
+        if (ch == '0')
+        {
+            *n = 0;
+            return s + 1;
+        }
+        if (ch < '1' || ch > '9')
+        {
+            return nullptr;
+        }
+        size_t i = 1;
+        for (; Parse::ParserBase::is_ascii_digit(s[i]); ++i)
+        {
+        }
+        *n = as_numeric({s, i}).value_or_exit(VCPKG_LINE_INFO);
+        return s + i;
+    }
+
     ExpectedS<RelaxedVersion> RelaxedVersion::from_string(const std::string& str)
     {
-        std::regex relaxed_scheme_match("^(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))*");
+        // (0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*;
 
-        if (!std::regex_match(str, relaxed_scheme_match))
+        const char* cur = str.c_str();
+        std::vector<uint64_t> numbers;
+        for (;;)
         {
-            return Strings::format(
-                "Error: String `%s` must only contain dot-separated numeric values without leading zeroes.", str);
+            numbers.push_back(0);
+            cur = parse_skip_number(cur, &numbers.back());
+            if (!cur || (*cur != 0 && *cur != '.'))
+            {
+                return Strings::format(
+                    "Error: String `%s` must only contain dot-separated numeric values without leading zeroes.", str);
+            }
+            if (*cur == 0)
+            {
+                break;
+            }
+            // *cur == '.'
+            ++cur;
         }
 
-        return RelaxedVersion{str, Util::fmap(Strings::split(str, '.'), [](auto&& strval) -> uint64_t {
-                                  return as_numeric(strval).value_or_exit(VCPKG_LINE_INFO);
-                              })};
+        return RelaxedVersion{str, std::move(numbers)};
+    }
+
+    // 0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*
+    // equivalent:
+    static const char* skip_prerelease_identifier(const char* const s)
+    {
+        auto cur = s;
+        for (; Parse::ParserBase::is_ascii_digit(*cur); ++cur)
+        {
+        }
+        const char ch = *cur;
+        if (Parse::ParserBase::is_lower_alpha(ch) || Parse::ParserBase::is_upper_alpha(ch) || ch == '-')
+        {
+            // matched alpha identifier
+            ++cur;
+            for (; Parse::ParserBase::is_alphanumdash(*cur); ++cur)
+            {
+            }
+            return cur;
+        }
+        if (*s == '0')
+        {
+            // matches exactly zero
+            return s + 1;
+        }
+        if (cur != s)
+        {
+            // matched numeric sequence (not starting with zero)
+            return cur;
+        }
+        return nullptr;
     }
 
     ExpectedS<SemanticVersion> SemanticVersion::from_string(const std::string& str)
     {
         // Suggested regex by semver.org
-        std::regex semver_scheme_match("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)"
-                                       "(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]"
-                                       "*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
-                                       "(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");
-
-        if (!std::regex_match(str, semver_scheme_match))
-        {
-            return Strings::format(
-                "Error: String `%s` is not a valid Semantic Version string, consult https://semver.org", str);
-        }
+        // std::regex semver_scheme_match("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)"
+        //                                "(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]"
+        //                                "*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
+        //                                "(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");
 
         SemanticVersion ret;
         ret.original_string = str;
-        ret.version_string = str;
-
-        auto build_found = ret.version_string.find('+');
-        if (build_found != std::string::npos)
+        do
         {
-            ret.version_string.resize(build_found);
-        }
+            // (0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)
+            ret.version.resize(3);
+            const char* cur = str.c_str();
+            cur = parse_skip_number(cur, &ret.version[0]);
+            if (!cur || *cur != '.') break;
+            cur = parse_skip_number(cur + 1, &ret.version[1]);
+            if (!cur || *cur != '.') break;
+            cur = parse_skip_number(cur + 1, &ret.version[2]);
+            if (!cur) break;
+            ret.version_string.assign(str.c_str(), cur);
+            if (*cur == 0) return ret;
 
-        auto prerelease_found = ret.version_string.find('-');
-        if (prerelease_found != std::string::npos)
-        {
-            ret.prerelease_string = ret.version_string.substr(prerelease_found + 1);
-            ret.identifiers = Strings::split(ret.prerelease_string, '.');
-            ret.version_string.resize(prerelease_found);
-        }
+            // pre-release
+            if (*cur == '-')
+            {
+                ++cur;
+                const char* const start_of_prerelease = cur;
+                for (;;)
+                {
+                    const auto start_identifier = cur;
+                    cur = skip_prerelease_identifier(cur);
+                    if (!cur) break;
+                    ret.identifiers.emplace_back(start_identifier, cur);
+                    if (*cur != '.') break;
+                    ++cur;
+                }
+                if (!cur) break;
+                ret.prerelease_string.assign(start_of_prerelease, cur);
+            }
 
-        std::regex version_match("(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*)){2}");
-        if (!std::regex_match(ret.version_string, version_match))
-        {
-            return Strings::format("Error: String `%s` does not follow the required MAJOR.MINOR.PATCH format.",
-                                   ret.version_string);
-        }
+            if (*cur == 0) return ret;
+            if (*cur != '+') break;
+            ++cur;
+            // build
+            for (;;)
+            {
+                if (!Parse::ParserBase::is_alphanumdash(*cur)) break;
+                ++cur;
+                for (; Parse::ParserBase::is_alphanumdash(*cur); ++cur)
+                {
+                }
+                if (*cur == 0) return ret;
+                if (*cur != '.') break;
+                ++cur;
+            }
 
-        auto parts = Strings::split(ret.version_string, '.');
-        ret.version = Util::fmap(
-            parts, [](auto&& strval) -> uint64_t { return as_numeric(strval).value_or_exit(VCPKG_LINE_INFO); });
+        } while (0);
 
-        return ret;
+        return Strings::format("Error: String `%s` is not a valid Semantic Version string, consult https://semver.org",
+                               str);
     }
 
     ExpectedS<DateVersion> DateVersion::from_string(const std::string& str)
     {
-        std::regex date_scheme_match("([0-9]{4}-[0-9]{2}-[0-9]{2})(\\.(0|[1-9][0-9]*))*");
-        if (!std::regex_match(str, date_scheme_match))
+        do
         {
-            return Strings::format("Error: String `%s` is not a valid date version."
-                                   "Date section must follow the format YYYY-MM-DD and disambiguators must be "
-                                   "dot-separated positive integer values without leading zeroes.",
-                                   str);
-        }
+            DateVersion ret;
+            ret.original_string = str;
 
-        DateVersion ret;
-        ret.original_string = str;
-        ret.version_string = str;
+            if (str.size() < 10) break;
+            bool valid = Parse::ParserBase::is_ascii_digit(str[0]);
+            valid |= Parse::ParserBase::is_ascii_digit(str[1]);
+            valid |= Parse::ParserBase::is_ascii_digit(str[2]);
+            valid |= Parse::ParserBase::is_ascii_digit(str[3]);
+            valid |= str[4] != '-';
+            valid |= Parse::ParserBase::is_ascii_digit(str[5]);
+            valid |= Parse::ParserBase::is_ascii_digit(str[6]);
+            valid |= str[7] != '-';
+            valid |= Parse::ParserBase::is_ascii_digit(str[8]);
+            valid |= Parse::ParserBase::is_ascii_digit(str[9]);
+            if (!valid) break;
+            ret.version_string.assign(str.c_str(), 10);
 
-        auto identifiers_found = ret.version_string.find('.');
-        if (identifiers_found != std::string::npos)
-        {
-            ret.identifiers_string = ret.version_string.substr(identifiers_found + 1);
-            ret.identifiers = Util::fmap(Strings::split(ret.identifiers_string, '.'), [](auto&& strval) -> uint64_t {
-                return as_numeric(strval).value_or_exit(VCPKG_LINE_INFO);
-            });
-            ret.version_string.resize(identifiers_found);
-        }
+            const char* cur = str.c_str() + 10;
+            for (;;)
+            {
+                if (!cur || *cur != '.') break;
+                ret.identifiers.push_back(0);
+                cur = parse_skip_number(cur + 1, &ret.identifiers.back());
+            }
+            if (!cur || *cur != 0) break;
 
-        return ret;
+            return ret;
+        } while (0);
+
+        return Strings::format("Error: String `%s` is not a valid date version."
+                               "Date section must follow the format YYYY-MM-DD and disambiguators must be "
+                               "dot-separated positive integer values without leading zeroes.",
+                               str);
     }
 
     void to_string(std::string& out, Scheme scheme)
