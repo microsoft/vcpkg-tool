@@ -336,9 +336,7 @@ namespace vcpkg::Json
     // struct Object {
     Value& Object::insert(std::string key, std::string value)
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
-        underlying_.push_back({std::move(key), Value::string(std::move(value))});
-        return underlying_.back().second;
+        return insert(key, Value::string(std::move(value)));
     }
     Value& Object::insert(std::string key, Value&& value)
     {
