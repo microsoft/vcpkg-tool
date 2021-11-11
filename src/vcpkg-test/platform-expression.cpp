@@ -294,6 +294,41 @@ TEST_CASE ("platform-expression-low-precedence-or", "[platform-expression]")
     CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
 }
 
+TEST_CASE ("mixing &/'and' and , is allowed", "[platform-expression]")
+{
+    auto m_expr = parse_expr("windows & x86 , linux and x64 , arm64 & osx");
+    CHECK(m_expr);
+    auto& expr = *m_expr.get();
+
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_TARGET_ARCHITECTURE", ""}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
+
+    m_expr = parse_expr("windows , !arm and linux & (x86 | x64)");
+    CHECK(m_expr);
+    expr = *m_expr.get();
+
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_TARGET_ARCHITECTURE", ""}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
+}
+
 TEST_CASE ("weird platform-expressions whitespace", "[platform-expression]")
 {
     auto m_expr = parse_expr(" ! \t  windows \n| arm \r");
@@ -305,13 +340,52 @@ TEST_CASE ("weird platform-expressions whitespace", "[platform-expression]")
     CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
 }
 
-TEST_CASE ("no mixing &, | in platform expressions", "[platform-expression]")
+TEST_CASE ("invalid logic expression, unexpected character", "[platform-expression]")
+{
+    auto m_expr = parse_expr("windows arm");
+    CHECK_FALSE(m_expr);
+}
+
+TEST_CASE ("unexpected character in logic expression", "[platform-expression]")
+{
+    auto m_expr = parse_expr("windows aND arm");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("windows a&d arm");
+    CHECK_FALSE(m_expr);
+}
+
+TEST_CASE ("unexpected identifier in logic expression", "[platform-expression]")
+{
+    auto m_expr = parse_expr("windows amd arm");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("windows andsynonym arm");
+    CHECK_FALSE(m_expr);
+}
+
+TEST_CASE ("missing closing )", "[platform-expression]")
+{
+    auto m_expr = parse_expr("(windows & arm | linux");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("( (windows & arm) | (osx & arm64) | linux");
+    CHECK_FALSE(m_expr);
+}
+
+TEST_CASE ("missing or invalid identifier", "[platform-expression]")
+{
+    auto m_expr = parse_expr("!");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("w!ndows");
+    CHECK_FALSE(m_expr);
+}
+
+TEST_CASE ("mixing & and | is not allowed", "[platform-expression]")
 {
     auto m_expr = parse_expr("windows & arm | linux");
     CHECK_FALSE(m_expr);
     m_expr = parse_expr("windows | !arm & linux");
     CHECK_FALSE(m_expr);
 }
+
 
 TEST_CASE ("invalid expression, no binary operator", "[platform-expression]")
 {

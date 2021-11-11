@@ -174,7 +174,7 @@ namespace vcpkg::PlatformExpression
                     case ExprKind::op_empty: return result;
 
                     default:
-                        // TODO: op_identifier and op_invalid both indicate a syntax error, which should have
+                        // op_identifier and op_invalid both indicate a syntax error, which should have
                         // already been flagged by expr_operator.
                         return result;
                 }
@@ -222,7 +222,6 @@ namespace vcpkg::PlatformExpression
                         // { ",", optional-whitespace, platform-expression-not }
                         // "," is a near-synonym of "|", with the differences that it can be combined with "&"/"and",
                         // but has lower precedence
-                        // TODO: handle precedence
                         next();
                         return ExprKind::op_low_precedence_or;
                     }
