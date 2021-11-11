@@ -228,6 +228,18 @@ namespace
 
         Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const override;
 
+        Optional<Path> get_path_to_baseline_version(const VcpkgPaths& paths, StringView port_name) const override
+        {
+            if (m_baseline_identifier.empty())
+            {
+                return paths.builtin_ports_directory() / port_name;
+            }
+            else
+            {
+                return RegistryImplementation::get_path_to_baseline_version(paths, port_name);
+            }
+        }
+
         Json::Object serialize() const override;
 
         ~BuiltinRegistry() = default;
@@ -1146,6 +1158,23 @@ namespace
 
         return parse_baseline_versions(std::move(contents), baseline, baseline_path);
     }
+}
+
+Optional<Path> RegistryImplementation::get_path_to_baseline_version(const VcpkgPaths& paths, StringView port_name) const
+{
+    const auto baseline_version = this->get_baseline_version(paths, port_name);
+    if (auto b = baseline_version.get())
+    {
+        const auto port_entry = this->get_port_entry(paths, port_name);
+        if (auto p = port_entry.get())
+        {
+            if (auto port_path = p->get_path_to_version(paths, *b))
+            {
+                return std::move(*port_path.get());
+            }
+        }
+    }
+    return nullopt;
 }
 
 // serializers

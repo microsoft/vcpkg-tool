@@ -71,6 +71,8 @@ namespace vcpkg
 
         virtual Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const = 0;
 
+        virtual Optional<Path> get_path_to_baseline_version(const VcpkgPaths& paths, StringView port_name) const;
+
         virtual Json::Object serialize() const;
 
         virtual ~RegistryImplementation() = default;

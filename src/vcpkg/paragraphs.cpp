@@ -455,16 +455,12 @@ namespace vcpkg::Paragraphs
                 continue;
             }
 
-            auto port_entry = impl->get_port_entry(paths, port_name);
-            auto baseline_version = impl->get_baseline_version(paths, port_name);
-            if (port_entry && baseline_version)
+            if (auto p = impl->get_path_to_baseline_version(paths, port_name))
             {
-                auto port_path =
-                    port_entry->get_path_to_version(paths, *baseline_version.get()).value_or_exit(VCPKG_LINE_INFO);
-                auto maybe_spgh = try_load_port(fs, port_path);
+                auto maybe_spgh = try_load_port(fs, *p.get());
                 if (const auto spgh = maybe_spgh.get())
                 {
-                    ret.paragraphs.push_back({std::move(*spgh), std::move(port_path)});
+                    ret.paragraphs.push_back({std::move(*spgh), std::move(*p.get())});
                 }
                 else
                 {
@@ -476,7 +472,6 @@ namespace vcpkg::Paragraphs
                 // the registry that owns the name of this port does not actually contain the port
                 // this can happen if R1 contains the port definition for <abc>, but doesn't
                 // declare it owns <abc>.
-                continue;
             }
         }
 
