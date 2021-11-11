@@ -610,7 +610,7 @@ namespace vcpkg::Build
         {
             start += "\n" + Strings::serialize(feature);
         }
-        const auto binary_control_file = paths.packages / bcf.core_paragraph.dir() / "CONTROL";
+        const auto binary_control_file = paths.packages() / bcf.core_paragraph.dir() / "CONTROL";
         paths.get_filesystem().write_contents(binary_control_file, start, VCPKG_LINE_INFO);
     }
 
@@ -640,7 +640,7 @@ namespace vcpkg::Build
     {
         auto triplet = abi_info.pre_build_info->triplet;
         print2("Detecting compiler hash for triplet ", triplet, "...\n");
-        auto buildpath = paths.buildtrees / "detect_compiler";
+        auto buildpath = paths.buildtrees() / "detect_compiler";
 
 #if !defined(_WIN32)
         // TODO: remove when vcpkg.exe is in charge for acquiring tools. Change introduced in vcpkg v0.0.107.
@@ -650,7 +650,7 @@ namespace vcpkg::Build
         std::vector<CMakeVariable> cmake_args{
             {"CURRENT_PORT_DIR", paths.scripts / "detect_compiler"},
             {"CURRENT_BUILDTREES_DIR", buildpath},
-            {"CURRENT_PACKAGES_DIR", paths.packages / ("detect_compiler_" + triplet.canonical_name())},
+            {"CURRENT_PACKAGES_DIR", paths.packages() / ("detect_compiler_" + triplet.canonical_name())},
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {"_HOST_TRIPLET", triplet.canonical_name()},
         };
@@ -783,7 +783,7 @@ namespace vcpkg::Build
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
         {
-            const Path port_config_path = paths.installed / dependency.triplet().canonical_name() / "share" /
+            const Path port_config_path = paths.installed() / dependency.triplet().canonical_name() / "share" /
                                           dependency.name() / "vcpkg-port-config.cmake";
 
             if (fs.is_regular_file(port_config_path))
@@ -889,7 +889,7 @@ namespace vcpkg::Build
 
         const auto& env = paths.get_action_env(action.abi_info.value_or_exit(VCPKG_LINE_INFO));
 
-        auto buildpath = paths.buildtrees / action.spec.name();
+        auto buildpath = paths.buildtrees() / action.spec.name();
         if (!fs.exists(buildpath, IgnoreErrors{}))
         {
             std::error_code err;

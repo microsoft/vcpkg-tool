@@ -185,7 +185,7 @@ endfunction()
                             "\")\n");
         }
 
-        auto tags_path = paths.buildtrees / Strings::concat(tag_extract_id++, ".vcpkg_tags.cmake");
+        auto tags_path = paths.buildtrees() / Strings::concat(tag_extract_id++, ".vcpkg_tags.cmake");
         fs.write_contents_and_dirs(tags_path, extraction_file, VCPKG_LINE_INFO);
         return tags_path;
     }
@@ -233,7 +233,7 @@ endfunction()
                 extraction_file, "vcpkg_get_dep_info(", spec.name(), " ", emitted_triplets[spec.triplet()], ")\n");
         }
 
-        auto dep_info_path = paths.buildtrees / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
+        auto dep_info_path = paths.buildtrees() / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
         fs.write_contents_and_dirs(dep_info_path, extraction_file, VCPKG_LINE_INFO);
         return dep_info_path;
     }

@@ -544,11 +544,11 @@ namespace vcpkg::Export
                 if (suffix.empty()) continue;
                 if (suffix.back() == '/') suffix.pop_back();
                 if (suffix == action.spec.triplet().to_string()) continue;
-                files.push_back(paths.installed / suffix);
+                files.push_back(paths.installed() / suffix);
             }
 
             Install::install_files_and_write_listfile(
-                fs, paths.installed / action.spec.triplet().to_string(), files, dirs);
+                fs, paths.installed() / action.spec.triplet().to_string(), files, dirs);
         }
 
         // Copy files needed for integration

@@ -40,7 +40,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(VcpkgDebugTimeTaken,
                                  (msg::pretty_value, msg::value),
                                  "{LOCKED}",
-                                 "[DEBUG] Exiting after %s (%d us)\n");
+                                 "[DEBUG] Exiting after {pretty_value} ({value} us)\n");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
                                  (),
                                  "",
