@@ -253,6 +253,47 @@ TEST_CASE ("platform-expression-mixed-with-parens", "[platform-expression]")
     CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
 }
 
+TEST_CASE ("platform-expression-low-precedence-or", "[platform-expression]")
+{
+    auto m_expr = parse_expr("(x64 & windows) , (linux & arm)");
+    REQUIRE(m_expr);
+    auto& expr = *m_expr.get();
+
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_TARGET_ARCHITECTURE", ""}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
+
+    m_expr = parse_expr("x64 & windows , linux & arm");
+    REQUIRE(m_expr);
+    expr = *m_expr.get();
+
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_TARGET_ARCHITECTURE", ""}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
+}
+
 TEST_CASE ("weird platform-expressions whitespace", "[platform-expression]")
 {
     auto m_expr = parse_expr(" ! \t  windows \n| arm \r");

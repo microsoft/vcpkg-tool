@@ -166,9 +166,8 @@ namespace vcpkg::PlatformExpression
 
                     case ExprKind::op_low_precedence_or:
                         // { ",", optional-whitespace, platform-expression-not }
-                        // "," is a near-synonym of "|", with the differences that it can be combined with "&", but has
-                        // lower precedence
-                        // TODO: this is in a separate case-stmt while we determine how to handle precedence
+                        // "," is a near-synonym of "|", with the difference that it can be combined with "&", but has
+                        // lower precedence Precedence is handled in expr_binary().
                         return expr_binary<ExprKind::op_low_precedence_or, ExprKind::op_invalid>(
                             std::make_unique<ExprImpl>(oper, std::move(result)));
 
@@ -334,13 +333,22 @@ namespace vcpkg::PlatformExpression
             {
                 // gather consecutive instances of the same operation into a single expr node
                 // e.g., parsing 'A & B & C' yields {&, vector<A,B,C>}
-                ExprKind next_oper;
+                ExprKind next_oper = ExprKind::op_invalid;
                 do
                 {
                     // optional-whitespace,
                     skip_whitespace();
-                    // platform-expression-not, (go back to start of repetition)
-                    seed->exprs.push_back(expr_not());
+
+                    if constexpr (oper == ExprKind::op_low_precedence_or)
+                    {
+                        // platform-expression, (go back to start of repetition)
+                        seed->exprs.push_back(expr());
+                    }
+                    else
+                    {
+                        // platform-expression-not, (go back to start of repetition)
+                        seed->exprs.push_back(expr_not());
+                    }
                     next_oper = expr_operator();
                 } while (next_oper == oper);
 
@@ -351,7 +359,21 @@ namespace vcpkg::PlatformExpression
                         add_error("mixing & and | is not allowed; use () to specify order of operations");
                     }
                 }
-                return std::move(seed);
+
+                if (next_oper == ExprKind::op_low_precedence_or)
+                {
+                    // platform-expression, (go back to start of repetition)
+                    // To handle a lower-precedence, treat the remainder of the string as a platform expression.
+                    // E.g., "A & B , C | D" will be treated as "(A & B) , (C | D)", which preserves intended precedence
+                    // In this case, see is the LHS at the point in which we see the ",".
+
+                    return expr_binary<ExprKind::op_low_precedence_or, ExprKind::op_invalid>(
+                        std::make_unique<ExprImpl>(next_oper, std::move(seed)));
+                }
+                else
+                {
+                    return std::move(seed);
+                }
             }
         };
     }
