@@ -97,7 +97,7 @@ namespace vcpkg::Unicode
 
         constexpr inline bool is_eof() const noexcept { return current_ == end_of_file; }
 
-        void next(std::error_code& ec);
+        [[nodiscard]] utf8_errc next();
 
         Utf8Decoder& operator=(sentinel) noexcept;
 

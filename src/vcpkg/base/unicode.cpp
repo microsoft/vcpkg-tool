@@ -94,11 +94,11 @@ namespace vcpkg::Unicode
 
     bool utf8_is_valid_string(const char* first, const char* last) noexcept
     {
-        std::error_code ec;
-        for (auto dec = Utf8Decoder(first, last); dec != dec.end(); dec.next(ec))
+        utf8_errc err = utf8_errc::NoError;
+        for (auto dec = Utf8Decoder(first, last); dec != dec.end(); err = dec.next())
         {
         }
-        return !ec;
+        return err == utf8_errc::NoError;
     }
 
     char32_t utf16_surrogates_to_code_point(char32_t leading, char32_t trailing)
@@ -166,7 +166,7 @@ namespace vcpkg::Unicode
         return next_ - count;
     }
 
-    void Utf8Decoder::next(std::error_code& ec)
+    utf8_errc Utf8Decoder::next()
     {
         if (is_eof())
         {
@@ -176,24 +176,21 @@ namespace vcpkg::Unicode
         if (next_ == last_)
         {
             current_ = end_of_file;
-            return;
+            return utf8_errc::NoError;
         }
-
-        auto set_error = [&ec, this](utf8_errc err) {
-            ec = err;
-            *this = sentinel();
-        };
 
         unsigned char code_unit = static_cast<unsigned char>(*next_++);
 
         auto kind = utf8_code_unit_kind(code_unit);
         if (kind == Utf8CodeUnitKind::Invalid)
         {
-            return set_error(utf8_errc::InvalidCodeUnit);
+            *this = sentinel();
+            return utf8_errc::InvalidCodeUnit;
         }
         else if (kind == Utf8CodeUnitKind::Continue)
         {
-            return set_error(utf8_errc::UnexpectedContinue);
+            *this = sentinel();
+            return utf8_errc::UnexpectedContinue;
         }
 
         const int count = utf8_code_unit_count(kind);
@@ -215,18 +212,21 @@ namespace vcpkg::Unicode
             {
                 if (next_ == last_)
                 {
-                    return set_error(utf8_errc::UnexpectedContinue);
+                    *this = sentinel();
+                    return utf8_errc::UnexpectedContinue;
                 }
                 code_unit = static_cast<unsigned char>(*next_++);
 
                 kind = utf8_code_unit_kind(code_unit);
                 if (kind == Utf8CodeUnitKind::Invalid)
                 {
-                    return set_error(utf8_errc::InvalidCodeUnit);
+                    *this = sentinel();
+                    return utf8_errc::InvalidCodeUnit;
                 }
                 else if (kind != Utf8CodeUnitKind::Continue)
                 {
-                    return set_error(utf8_errc::UnexpectedStart);
+                    *this = sentinel();
+                    return utf8_errc::UnexpectedStart;
                 }
 
                 const int shift = 6 * (count - byte - 1);
@@ -235,27 +235,29 @@ namespace vcpkg::Unicode
 
             if (code_point > 0x10'FFFF)
             {
-                return set_error(utf8_errc::InvalidCodePoint);
+                *this = sentinel();
+                return utf8_errc::InvalidCodePoint;
             }
             else if (utf16_is_trailing_surrogate_code_point(code_point) &&
                      utf16_is_leading_surrogate_code_point(current_))
             {
-                return set_error(utf8_errc::PairedSurrogates);
+                *this = sentinel();
+                return utf8_errc::PairedSurrogates;
             }
             else
             {
                 current_ = code_point;
             }
         }
+        return utf8_errc::NoError;
     }
 
     Utf8Decoder& Utf8Decoder::operator++() noexcept
     {
-        std::error_code ec;
-        next(ec);
-        if (ec)
+        const auto err = next();
+        if (err != utf8_errc::NoError)
         {
-            vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "utf-8 error: %s", ec.message());
+            vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "utf-8 error: %s", std::error_code(err).message());
         }
 
         return *this;
