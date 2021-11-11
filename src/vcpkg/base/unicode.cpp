@@ -166,20 +166,8 @@ namespace vcpkg::Unicode
         return next_ - count;
     }
 
-    bool Utf8Decoder::is_eof() const noexcept { return current_ == end_of_file; }
-    char32_t Utf8Decoder::operator*() const noexcept
-    {
-        if (is_eof())
-        {
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Dereferenced Utf8Decoder on the end of a string");
-        }
-        return current_;
-    }
-
     void Utf8Decoder::next(std::error_code& ec)
     {
-        ec.clear();
-
         if (is_eof())
         {
             vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "Incremented Utf8Decoder at the end of the string");
