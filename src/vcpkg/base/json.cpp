@@ -334,10 +334,7 @@ namespace vcpkg::Json
     bool operator==(const Array& lhs, const Array& rhs) { return lhs.underlying_ == rhs.underlying_; }
     // } struct Array
     // struct Object {
-    Value& Object::insert(std::string key, std::string value)
-    {
-        return insert(key, Value::string(std::move(value)));
-    }
+    Value& Object::insert(std::string key, std::string value) { return insert(key, Value::string(std::move(value))); }
     Value& Object::insert(std::string key, Value&& value)
     {
         vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
