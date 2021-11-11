@@ -64,6 +64,7 @@ namespace vcpkg
         std::string version;
         int port_version = 0;
         std::vector<std::string> description;
+        std::vector<std::string> summary;
         std::vector<std::string> maintainers;
         std::string homepage;
         std::string documentation;
@@ -73,6 +74,8 @@ namespace vcpkg
         std::string license; // SPDX license expression
         Optional<std::string> builtin_baseline;
         Optional<Json::Object> vcpkg_configuration;
+        // Currently contacts is only a Json::Object but it will eventually be unified with maintainers
+        Json::Object contacts;
 
         Type type = {Type::PORT};
         PlatformExpression::Expr supports_expression;

@@ -335,9 +335,14 @@ namespace
             for (const auto& reg : reg_view)
             {
                 auto reg_obj = reg.implementation().serialize();
-                auto& packages = reg_obj.insert(REGISTRY_PACKAGES, Json::Array{});
-                for (const auto& pkg : reg.packages())
-                    packages.push_back(Json::Value::string(pkg));
+                if (reg.packages().size())
+                {
+                    auto& packages = reg_obj.insert(REGISTRY_PACKAGES, Json::Array{});
+                    for (const auto& pkg : reg.packages())
+                    {
+                        packages.push_back(Json::Value::string(pkg));
+                    }
+                }
                 reg_arr.push_back(std::move(reg_obj));
             }
         }

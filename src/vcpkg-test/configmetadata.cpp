@@ -14,6 +14,7 @@ static constexpr StringLiteral KIND = "kind";
 static constexpr StringLiteral REPOSITORY = "repository";
 static constexpr StringLiteral PATH = "path";
 static constexpr StringLiteral BASELINE = "baseline";
+static constexpr StringLiteral LOCATION = "location";
 static constexpr StringLiteral CE_MESSAGE = "message";
 static constexpr StringLiteral CE_WARNING = "warning";
 static constexpr StringLiteral CE_ERROR = "error";
@@ -93,6 +94,10 @@ TEST_CASE ("config without ce metadata", "[ce-metadata]")
             "kind": "filesystem",
             "path": "path/to/registry",
             "packages": [ "zlib" ]
+        },
+        {
+            "kind": "artifact",
+            "location": "https://github.com/microsoft/vcpkg-artifacts"
         }
     ]
 })json";
@@ -106,7 +111,7 @@ TEST_CASE ("config without ce metadata", "[ce-metadata]")
     check_string(default_registry, KIND, "builtin");
     check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
 
-    REQUIRE(config.registry_set.registries().size() == 2);
+    REQUIRE(config.registry_set.registries().size() == 3);
 
     const auto& git_registry = config.registry_set.registries()[0];
     auto serialized_git_registry = git_registry.implementation().serialize();
@@ -123,6 +128,11 @@ TEST_CASE ("config without ce metadata", "[ce-metadata]")
     check_string(serialized_fs_registry, PATH, "path/to/registry");
     REQUIRE(fs_registry.packages().size() == 1);
     REQUIRE(fs_registry.packages()[0] == "zlib");
+
+    const auto& artifact_registry = config.registry_set.registries()[2];
+    auto serialized_art_registry = artifact_registry.implementation().serialize();
+    check_string(serialized_art_registry, KIND, "artifact");
+    check_string(serialized_art_registry, LOCATION, "https://github.com/microsoft/vcpkg-artifacts");
 
     auto raw_obj = parse_json_object(raw_config);
     auto serialized_obj = serialize_configuration(config);
