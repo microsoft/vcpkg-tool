@@ -250,6 +250,9 @@ namespace
         }
 
         DelayedInit<std::unique_ptr<GitRegistry>> m_git_registry;
+
+        const Parse::ParseExpected<SourceControlFile>& get_scf(const Filesystem& fs, const Path& path) const;
+        Cache<Path, Parse::ParseExpected<SourceControlFile>> m_scfs;
     };
 
     struct FilesystemRegistry final : RegistryImplementation
@@ -388,7 +391,7 @@ namespace
         auto port_directory = paths.builtin_ports_directory() / port_name;
         if (fs.exists(port_directory, IgnoreErrors{}))
         {
-            auto found_scf = Paragraphs::try_load_port(fs, port_directory);
+            const auto& found_scf = get_scf(fs, port_directory);
             if (auto scfp = found_scf.get())
             {
                 auto& scf = *scfp;
@@ -407,6 +410,12 @@ namespace
         }
 
         return nullptr;
+    }
+
+    const Parse::ParseExpected<SourceControlFile>& BuiltinRegistry::get_scf(const Filesystem& fs,
+                                                                            const Path& path) const
+    {
+        return m_scfs.get_lazy(path, [&fs, &path]() { return Paragraphs::try_load_port(fs, path); });
     }
 
     Optional<VersionT> BuiltinRegistry::get_baseline_version(const VcpkgPaths& paths, StringView port_name) const
@@ -445,11 +454,10 @@ namespace
 
         // if a baseline is not specified, use the ports directory version
         auto port_path = paths.builtin_ports_directory() / port_name;
-        auto maybe_scf = Paragraphs::try_load_port(paths.get_filesystem(), port_path);
+        const auto& maybe_scf = get_scf(paths.get_filesystem(), port_path);
         if (auto pscf = maybe_scf.get())
         {
-            auto& scf = *pscf;
-            return scf->to_versiont();
+            return (*pscf)->to_versiont();
         }
         print_error_message(maybe_scf.error());
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: failed to load port from %s", port_path);
@@ -1383,16 +1391,17 @@ namespace vcpkg
 
     bool RegistrySet::is_default_builtin_registry() const
     {
-        if (auto default_builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
+        if (default_registry_->kind() == "builtin")
         {
-            return default_builtin_registry->m_baseline_identifier.empty();
+            return static_cast<BuiltinRegistry*>(default_registry_.get())->m_baseline_identifier.empty();
         }
         return false;
     }
     void RegistrySet::set_default_builtin_registry_baseline(StringView baseline) const
     {
-        if (auto default_builtin_registry = dynamic_cast<BuiltinRegistry*>(default_registry_.get()))
+        if (default_registry_->kind() == "builtin")
         {
+            auto default_builtin_registry = static_cast<BuiltinRegistry*>(default_registry_.get());
             if (default_builtin_registry->m_baseline_identifier.empty())
             {
                 default_builtin_registry->m_baseline_identifier.assign(baseline.begin(), baseline.end());
@@ -1425,16 +1434,7 @@ namespace vcpkg
         {
             return true;
         }
-        if (auto builtin_reg = dynamic_cast<const BuiltinRegistry*>(default_registry_.get()))
-        {
-            if (builtin_reg->m_baseline_identifier.empty())
-            {
-                return false;
-            }
-            return true;
-        }
-        // default_registry_ is not a BuiltinRegistry
-        return true;
+        return !is_default_builtin_registry();
     }
 
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
