@@ -628,6 +628,7 @@ namespace vcpkg::Build
                                   {"VCPKG_BASE_VERSION", Commands::Version::base_version()},
                                   {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
                                   {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
+                                  {"VCPKG_GENERATOR_TOOLSET", toolset.vs_version.c_str()},
                               });
         if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
         {

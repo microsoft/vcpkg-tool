@@ -32,6 +32,7 @@ namespace vcpkg
         std::vector<std::string> vcvarsall_options;
         CStringView version;
         std::vector<ToolsetArchOption> supported_architectures;
+        CStringView vs_version;
     };
 
     namespace Downloads

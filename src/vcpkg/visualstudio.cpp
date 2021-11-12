@@ -240,6 +240,14 @@ namespace vcpkg::VisualStudio
                           msvc_subdirectories.end(),
                           [](const Path& left, const Path& right) { return left.filename() > right.filename(); });
 
+                CStringView vs_version;
+                if (major_version == "15")
+                    vs_version = V_141;
+                else if (major_version == "16")
+                    vs_version = V_142;
+                else if (major_version == "17")
+                    vs_version = V_143;
+
                 for (const Path& subdir : msvc_subdirectories)
                 {
                     auto toolset_version_full = subdir.filename();
@@ -281,7 +289,8 @@ namespace vcpkg::VisualStudio
                                         vcvarsall_bat,
                                         {vcvars_option},
                                         toolset_version,
-                                        supported_architectures};
+                                        supported_architectures,
+                                        vs_version};
 
                         const auto english_language_pack = dumpbin_dir / "1033";
                         if (!fs.exists(english_language_pack, IgnoreErrors{}))
@@ -298,7 +307,8 @@ namespace vcpkg::VisualStudio
                                                       vcvarsall_bat,
                                                       {"-vcvars_ver=14.0"},
                                                       V_140,
-                                                      supported_architectures});
+                                                      supported_architectures,
+                                                      V_140});
                         }
 
                         continue;
@@ -341,7 +351,8 @@ namespace vcpkg::VisualStudio
                                                  vcvarsall_bat,
                                                  {},
                                                  major_version == "14" ? V_140 : V_120,
-                                                 supported_architectures};
+                                                 supported_architectures,
+                                                 major_version == "14" ? V_140 : V_120};
 
                         const auto english_language_pack = vs_dumpbin_dir / "1033";
                         if (!fs.exists(english_language_pack, IgnoreErrors{}))
