@@ -24,6 +24,7 @@
 #include <vcpkg/commands.init-registry.h>
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/commands.list.h>
+#include <vcpkg/commands.new.h>
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/commands.porthistory.h>
 #include <vcpkg/commands.portsdiff.h>
@@ -85,6 +86,7 @@ namespace vcpkg::Commands
         static const Info::InfoCommand info{};
         static const Integrate::IntegrateCommand integrate{};
         static const List::ListCommand list{};
+        static const New::NewCommand new_{};
         static const Owns::OwnsCommand owns{};
         static const PortHistory::PortHistoryCommand porthistory{};
         static const PortsDiff::PortsDiffCommand portsdiff{};
@@ -95,6 +97,7 @@ namespace vcpkg::Commands
         static std::vector<PackageNameAndFunction<const PathsCommand*>> t = {
             {"/?", &help},
             {"help", &help},
+            {"new", &new_},
             {"search", &search},
             {"list", &list},
             {"integrate", &integrate},

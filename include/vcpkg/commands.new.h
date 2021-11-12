@@ -2,9 +2,9 @@
 
 #include <vcpkg/commands.interface.h>
 
-namespace vcpkg::Commands::Activate
+namespace vcpkg::Commands::New
 {
-    struct ActivateCommand : PathsCommand
+    struct NewCommand : PathsCommand
     {
         void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;
     };

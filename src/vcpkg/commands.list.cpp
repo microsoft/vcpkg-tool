@@ -2,9 +2,12 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.list.h>
+#include <vcpkg/configuration.h>
+#include <vcpkg/configure-environment.h>
 #include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versiont.h>
 
 namespace vcpkg::Commands::List
@@ -87,16 +90,14 @@ namespace vcpkg::Commands::List
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void list_classic_mode(const VcpkgPaths& paths, std::string query, bool output_json, bool enable_fulldesc)
     {
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-
         const StatusParagraphs status_paragraphs = database_load_check(paths);
         auto installed_ipv = get_installed_ports(status_paragraphs);
 
         if (installed_ipv.empty())
         {
-            if (args.output_json())
+            if (output_json)
                 print2(Json::stringify(Json::Object(), {}));
             else
                 print2("No packages are installed. Did you mean `search`?\n");
@@ -114,18 +115,15 @@ namespace vcpkg::Commands::List
                       return lhs->package.displayname() < rhs->package.displayname();
                   });
 
-        const auto enable_fulldesc = Util::Sets::contains(options.switches, OPTION_FULLDESC.to_string());
-
-        if (!args.command_arguments.empty())
+        if (!query.empty())
         {
-            auto& query = args.command_arguments[0];
             auto pghs = Util::filter(installed_packages, [query](const StatusParagraph* status_paragraph) {
                 return Strings::case_insensitive_ascii_contains(status_paragraph->package.displayname(), query);
             });
             installed_packages = pghs;
         }
 
-        if (args.output_json())
+        if (output_json)
         {
             do_print_json(installed_packages);
         }
@@ -135,6 +133,70 @@ namespace vcpkg::Commands::List
             {
                 do_print(*status_paragraph, enable_fulldesc);
             }
+        }
+    }
+
+    void list_manifest_mode(const VcpkgPaths& paths, const Json::Object* manifest)
+    {
+        const auto& manifest_path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO);
+        const auto& configuration = paths.get_configuration();
+        auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest_path, *manifest);
+        if (!maybe_manifest_scf)
+        {
+            print_error_message(maybe_manifest_scf.error());
+            print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/manifests.md for "
+                   "more information.\n");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
+        if (configuration.requests_configure_environment())
+        {
+            if (run_configure_environment_command(paths, "list"))
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
+        for (auto&& dependency : manifest_scf.core_paragraph->dependencies)
+        {
+            print2(dependency.name, "\n");
+        }
+    }
+
+    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    {
+        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        std::string query;
+        if (!args.command_arguments.empty())
+        {
+            query = args.command_arguments[0];
+        }
+
+        const auto output_json = args.output_json();
+        const auto enable_fulldesc = Util::Sets::contains(options.switches, OPTION_FULLDESC.to_string());
+        if (auto manifest = paths.get_manifest().get())
+        {
+            if (!query.empty())
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO, "list in manifest mode does not support queries");
+            }
+
+            if (output_json)
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO, "list in manifest mode does not support JSON output");
+            }
+
+            if (enable_fulldesc)
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO, "list in manifest mode does not print descriptions");
+            }
+
+            list_manifest_mode(paths, manifest);
+        }
+        else
+        {
+            list_classic_mode(paths, query, output_json, enable_fulldesc);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

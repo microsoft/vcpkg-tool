@@ -247,7 +247,7 @@ namespace vcpkg
 
         Optional<std::string> asset_sources_template() const;
 
-        void add_forwarded_arguments(Command& cmd) const;
+        const std::vector<std::string>& get_forwardable_arguments() const noexcept;
 
     private:
         void imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env);
@@ -258,6 +258,6 @@ namespace vcpkg
         std::unordered_set<std::string> command_switches;
         std::unordered_map<std::string, std::vector<std::string>> command_options;
 
-        std::vector<std::string> original_arguments;
+        std::vector<std::string> forwardable_arguments;
     };
 }

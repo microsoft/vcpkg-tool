@@ -847,7 +847,7 @@ namespace vcpkg::Install
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             const auto& manifest_path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO);
-            auto maybe_manifest_scf = SourceControlFile::parse_manifest_file(manifest_path, *manifest);
+            auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest_path, *manifest);
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());

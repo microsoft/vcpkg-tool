@@ -98,9 +98,6 @@ namespace vcpkg
         static Parse::ParseExpected<SourceControlFile> parse_manifest_object(StringView origin,
                                                                              const Json::Object& object);
 
-        static Parse::ParseExpected<SourceControlFile> parse_manifest_file(const Path& manifest_path,
-                                                                           const Json::Object& object);
-
         static Parse::ParseExpected<SourceControlFile> parse_control_file(
             StringView origin, std::vector<Parse::Paragraph>&& control_paragraphs);
 

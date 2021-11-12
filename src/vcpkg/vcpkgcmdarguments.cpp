@@ -236,7 +236,7 @@ namespace vcpkg
         VcpkgCmdArguments args;
         std::vector<std::string> feature_flags;
 
-        args.original_arguments.assign(arg_first, arg_last);
+        args.forwardable_arguments.assign(arg_first, arg_last);
 
         if (arg_first != arg_last && arg_first + 1 == arg_last && *arg_first == "--version")
         {
@@ -551,12 +551,9 @@ namespace vcpkg
         return output;
     }
 
-    void VcpkgCmdArguments::add_forwarded_arguments(Command& cmd) const
+    const std::vector<std::string>& VcpkgCmdArguments::get_forwardable_arguments() const noexcept
     {
-        for (auto&& arg : original_arguments)
-        {
-            cmd.string_arg(arg);
-        }
+        return forwardable_arguments;
     }
 
     void print_usage()

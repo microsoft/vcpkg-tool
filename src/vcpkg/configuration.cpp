@@ -447,6 +447,11 @@ namespace vcpkg
         }
     }
 
+    bool Configuration::requests_configure_environment() const
+    {
+        return registry_set.contains_artifact_registries() || !ce_metadata.is_empty();
+    }
+
     std::unique_ptr<Json::IDeserializer<Configuration>> make_configuration_deserializer(const Path& config_directory)
     {
         return std::make_unique<ConfigurationDeserializer>(config_directory);

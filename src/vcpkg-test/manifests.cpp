@@ -35,7 +35,7 @@ static Json::Object parse_json_object(StringView sv)
 static Parse::ParseExpected<SourceControlFile> test_parse_manifest(StringView sv, bool expect_fail = false)
 {
     auto object = parse_json_object(sv);
-    auto res = SourceControlFile::parse_manifest_file("<test manifest>", object);
+    auto res = SourceControlFile::parse_manifest_object("<test manifest>", object);
     if (!res.has_value() && !expect_fail)
     {
         print_error_message(res.error());
@@ -997,8 +997,8 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
             REQUIRE_FALSE(ec);
             REQUIRE(contents);
 
-            auto scf = SourceControlFile::parse_manifest_file(manifest,
-                                                              contents.value_or_exit(VCPKG_LINE_INFO).first.object());
+            auto scf = SourceControlFile::parse_manifest_object(manifest,
+                                                                contents.value_or_exit(VCPKG_LINE_INFO).first.object());
             REQUIRE(scf);
 
             scfs.push_back(std::move(*scf.value_or_exit(VCPKG_LINE_INFO)));
@@ -1008,7 +1008,7 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
     for (auto& scf : scfs)
     {
         auto serialized = serialize_manifest(scf);
-        auto serialized_scf = SourceControlFile::parse_manifest_file({}, serialized).value_or_exit(VCPKG_LINE_INFO);
+        auto serialized_scf = SourceControlFile::parse_manifest_object({}, serialized).value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(*serialized_scf == scf);
     }

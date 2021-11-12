@@ -39,9 +39,20 @@ namespace vcpkg
             return *this;
         }
 
+        Command& forwarded_args(View<std::string> args) &
+        {
+            for (auto&& arg : args)
+            {
+                string_arg(arg);
+            }
+
+            return *this;
+        }
+
         Command&& path_arg(const Path& p) && { return std::move(path_arg(p)); }
         Command&& string_arg(StringView s) && { return std::move(string_arg(s)); };
         Command&& raw_arg(StringView s) && { return std::move(raw_arg(s)); }
+        Command&& forwarded_args(View<std::string> args) && { return std::move(forwarded_args(args)); }
 
         std::string&& extract() && { return std::move(buf); }
         StringView command_line() const { return buf; }
@@ -82,7 +93,7 @@ namespace vcpkg
 
     const Environment& get_clean_environment();
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
-                                               const std::string& prepend_to_path = {});
+                                               StringView prepend_to_path = {});
 
     struct InWorkingDirectory
     {
@@ -102,7 +113,7 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
-    Environment cmd_execute_modify_env(const Command& cmd_line, const Environment& env = {});
+    Environment cmd_execute_and_capture_environment(const Command& cmd_line, const Environment& env = {});
 
     void cmd_execute_background(const Command& cmd_line);
 #endif

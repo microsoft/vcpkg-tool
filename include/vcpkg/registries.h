@@ -127,6 +127,8 @@ namespace vcpkg
         // for checking against the registry feature flag.
         bool has_modifications() const;
 
+        bool contains_artifact_registries() const;
+
     private:
         std::unique_ptr<RegistryImplementation> default_registry_;
         std::vector<Registry> registries_;

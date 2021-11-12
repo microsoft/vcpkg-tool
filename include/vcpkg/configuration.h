@@ -21,6 +21,8 @@ namespace vcpkg
 
         void validate_feature_flags(const FeatureFlagSettings& flags);
 
+        bool requests_configure_environment() const;
+
         static View<StringView> known_fields();
     };
 
