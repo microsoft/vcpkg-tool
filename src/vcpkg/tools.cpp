@@ -722,6 +722,24 @@ gsutil version: 4.58
                     }
                     return get_path(paths, GsutilProvider());
                 }
+                if (tool == Tools::TAR)
+                {
+                    auto tars = paths.get_filesystem().find_from_PATH("tar");
+                    if (tars.empty())
+                    {
+                        Checks::exit_with_message(VCPKG_LINE_INFO,
+#if defined(_WIN32)
+                                                  "Could not find tar; the action you tried to take assumes Windows 10 "
+                                                  "or later which are bundled with tar.exe."
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+                                                  "Could not find tar; please install it from your system package manager."
+#endif // ^^^ !_WIN32
+
+                        );
+                    }
+
+                    return {tars[0], {}};
+                }
 
                 // For other tools, we simply always auto-download them.
                 auto maybe_tool_data = parse_tool_data_from_xml(paths, tool);

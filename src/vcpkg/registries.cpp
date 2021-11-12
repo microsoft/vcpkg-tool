@@ -1202,6 +1202,19 @@ namespace vcpkg
     }
     bool RegistrySet::has_modifications() const { return !registries_.empty() || !is_default_builtin_registry(); }
 
+    bool RegistrySet::contains_artifact_registries() const
+    {
+        for (auto&& registry : registries_)
+        {
+            if (registry.implementation_->kind() == "artifact")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name)
     {
