@@ -386,7 +386,6 @@ TEST_CASE ("mixing & and | is not allowed", "[platform-expression]")
     CHECK_FALSE(m_expr);
 }
 
-
 TEST_CASE ("invalid expression, no binary operator", "[platform-expression]")
 {
     auto m_expr = parse_expr("windows linux");

@@ -167,7 +167,7 @@ namespace vcpkg::PlatformExpression
                     case ExprKind::op_low_precedence_or:
                         // { ",", optional-whitespace, platform-expression-not }
                         // "," is a near-synonym of "|", with the difference that it can be combined with "&", but has
-                        // lower precedence Precedence is handled in expr_binary().
+                        // lower precedence (which is handled in expr_binary()).
                         return expr_binary<ExprKind::op_low_precedence_or, ExprKind::op_invalid>(
                             std::make_unique<ExprImpl>(oper, std::move(result)));
 
