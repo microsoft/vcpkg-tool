@@ -571,6 +571,11 @@ namespace vcpkg
         }
     }
 
+    bool Configuration::requests_configure_environment() const
+    {
+        return registry_set.contains_artifact_registries() || !ce_metadata.is_empty();
+    }
+
     Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }
 
     static std::unique_ptr<RegistryImplementation> instantiate_rconfig(const VcpkgPaths& paths,

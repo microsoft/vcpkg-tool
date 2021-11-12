@@ -250,13 +250,19 @@ namespace vcpkg
 
 #if defined(_WIN32)
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
-                                               const std::string& prepend_to_path)
+                                               StringView prepend_to_path)
     {
+        auto prepend_path_component = prepend_to_path.to_string();
+        if (prepend_path_component.empty())
+        {
+            prepend_path_component.push_back(';');
+        }
+
         static const std::string system_root_env =
             get_environment_variable("SystemRoot").value_or_exit(VCPKG_LINE_INFO);
         static const std::string system32_env = system_root_env + R"(\system32)";
         std::string new_path = Strings::format(R"(Path=%s%s;%s;%s\Wbem;%s\WindowsPowerShell\v1.0\)",
-                                               prepend_to_path,
+                                               prepend_path_component,
                                                system32_env,
                                                system_root_env,
                                                system32_env,
@@ -384,7 +390,7 @@ namespace vcpkg
         return {env_cstr};
     }
 #else
-    Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>&, const std::string&)
+    Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>&, StringView)
     {
         return {};
     }
@@ -634,7 +640,7 @@ namespace vcpkg
         Debug::print("cmd_execute_background() took ", static_cast<int>(timer.microseconds()), " us\n");
     }
 
-    Environment cmd_execute_modify_env(const Command& cmd_line, const Environment& env)
+    Environment cmd_execute_and_capture_environment(const Command& cmd_line, const Environment& env)
     {
         static StringLiteral magic_string = "cdARN4xjKueKScMy9C6H";
 

@@ -149,15 +149,6 @@ namespace vcpkg
 
     struct Dependency
     {
-        // Remove when support for MSVC v140 is dropped.
-        Dependency(std::string n = {},
-                   std::vector<std::string> f = {},
-                   PlatformExpression::Expr expr = {},
-                   DependencyConstraint dc = {},
-                   bool h = false)
-            : name(std::move(n)), features(std::move(f)), platform(std::move(expr)), constraint(std::move(dc)), host(h)
-        {
-        }
         std::string name;
         std::vector<std::string> features;
         PlatformExpression::Expr platform;
@@ -212,12 +203,6 @@ namespace std
     };
 
     template<>
-    struct equal_to<vcpkg::PackageSpec>
-    {
-        bool operator()(const vcpkg::PackageSpec& left, const vcpkg::PackageSpec& right) const { return left == right; }
-    };
-
-    template<>
     struct hash<vcpkg::FeatureSpec>
     {
         size_t operator()(const vcpkg::FeatureSpec& value) const
@@ -226,11 +211,5 @@ namespace std
             hash = hash * 31 + std::hash<std::string>()(value.feature());
             return hash;
         }
-    };
-
-    template<>
-    struct equal_to<vcpkg::FeatureSpec>
-    {
-        bool operator()(const vcpkg::FeatureSpec& left, const vcpkg::FeatureSpec& right) const { return left == right; }
     };
 }
