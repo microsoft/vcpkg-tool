@@ -5,9 +5,9 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
@@ -46,6 +46,7 @@ namespace vcpkg
         std::string name;
         std::vector<std::string> description;
         std::vector<Dependency> dependencies;
+        PlatformExpression::Expr supports_expression;
 
         Json::Object extra_info;
 
@@ -63,6 +64,7 @@ namespace vcpkg
         std::string version;
         int port_version = 0;
         std::vector<std::string> description;
+        std::vector<std::string> summary;
         std::vector<std::string> maintainers;
         std::string homepage;
         std::string documentation;
@@ -71,6 +73,9 @@ namespace vcpkg
         std::vector<std::string> default_features;
         std::string license; // SPDX license expression
         Optional<std::string> builtin_baseline;
+        Optional<Json::Object> vcpkg_configuration;
+        // Currently contacts is only a Json::Object but it will eventually be unified with maintainers
+        Json::Object contacts;
 
         Type type = {Type::PORT};
         PlatformExpression::Expr supports_expression;
@@ -90,14 +95,14 @@ namespace vcpkg
     {
         SourceControlFile clone() const;
 
-        static Parse::ParseExpected<SourceControlFile> parse_manifest_object(const std::string& origin,
+        static Parse::ParseExpected<SourceControlFile> parse_manifest_object(StringView origin,
                                                                              const Json::Object& object);
 
-        static Parse::ParseExpected<SourceControlFile> parse_manifest_file(const fs::path& path_to_manifest,
+        static Parse::ParseExpected<SourceControlFile> parse_manifest_file(const Path& manifest_path,
                                                                            const Json::Object& object);
 
         static Parse::ParseExpected<SourceControlFile> parse_control_file(
-            const std::string& origin, std::vector<Parse::Paragraph>&& control_paragraphs);
+            StringView origin, std::vector<Parse::Paragraph>&& control_paragraphs);
 
         // Always non-null in non-error cases
         std::unique_ptr<SourceParagraph> core_paragraph;
@@ -105,8 +110,9 @@ namespace vcpkg
 
         Optional<const FeatureParagraph&> find_feature(const std::string& featurename) const;
         Optional<const std::vector<Dependency>&> find_dependencies_for_feature(const std::string& featurename) const;
+        bool has_qualified_dependencies() const;
 
-        Optional<std::string> check_against_feature_flags(const fs::path& origin,
+        Optional<std::string> check_against_feature_flags(const Path& origin,
                                                           const FeatureFlagSettings& flags,
                                                           bool is_default_builtin_registry = true) const;
 
@@ -124,30 +130,14 @@ namespace vcpkg
     Json::Object serialize_debug_manifest(const SourceControlFile& scf);
 
     /// <summary>
-    /// Full metadata of a package: core and other features,
-    /// as well as the port directory the SourceControlFile was loaded from
+    /// Named pair of a SourceControlFile and the location of this file
     /// </summary>
-    struct SourceControlFileLocation
+    struct SourceControlFileAndLocation
     {
-        SourceControlFileLocation(std::unique_ptr<SourceControlFile>&& scf, fs::path&& source)
-            : source_control_file(std::move(scf)), source_location(std::move(source))
-        {
-        }
-
-        SourceControlFileLocation(std::unique_ptr<SourceControlFile>&& scf, const fs::path& source)
-            : source_control_file(std::move(scf)), source_location(source)
-        {
-        }
-
-        SourceControlFileLocation clone() const
-        {
-            return {std::make_unique<SourceControlFile>(source_control_file->clone()), source_location};
-        }
-
         VersionT to_versiont() const { return source_control_file->to_versiont(); }
 
         std::unique_ptr<SourceControlFile> source_control_file;
-        fs::path source_location;
+        Path source_location;
     };
 
     void print_error_message(Span<const std::unique_ptr<Parse::ParseControlErrorInfo>> error_info_list);

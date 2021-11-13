@@ -87,7 +87,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
     SECTION ("parsed specifier wildcard feature")
     {
         auto maybe_spec = vcpkg::parse_qualified_specifier("zlib[*]");
-        System::print2(maybe_spec.error());
+        print2(maybe_spec.error());
         REQUIRE(maybe_spec);
 
         auto& spec = *maybe_spec.get();

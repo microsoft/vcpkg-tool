@@ -1,6 +1,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -27,6 +28,18 @@ namespace vcpkg::CMakeVars
         load_tag_vars(install_package_specs, port_provider, host_triplet);
     }
 
+    const std::unordered_map<std::string, std::string>& CMakeVarProvider::get_or_load_dep_info_vars(
+        const PackageSpec& spec, Triplet host_triplet) const
+    {
+        auto maybe_vars = get_dep_info_vars(spec);
+        if (!maybe_vars.has_value())
+        {
+            load_dep_info_vars({&spec, 1}, host_triplet);
+            maybe_vars = get_dep_info_vars(spec);
+        }
+        return maybe_vars.value_or_exit(VCPKG_LINE_INFO);
+    }
+
     namespace
     {
         struct TripletCMakeVarProvider : CMakeVarProvider
@@ -37,7 +50,7 @@ namespace vcpkg::CMakeVars
 
             void load_generic_triplet_vars(Triplet triplet) const override;
 
-            void load_dep_info_vars(View<PackageSpec> specs) const override;
+            void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const override;
 
             void load_tag_vars(View<FullPackageSpec> specs,
                                const PortFileProvider::PortFileProvider& port_provider,
@@ -53,17 +66,15 @@ namespace vcpkg::CMakeVars
                 const PackageSpec& spec) const override;
 
         public:
-            fs::path create_tag_extraction_file(
+            Path create_tag_extraction_file(
                 const View<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings) const;
 
-            fs::path create_dep_info_extraction_file(const View<PackageSpec> specs) const;
+            Path create_dep_info_extraction_file(const View<PackageSpec> specs) const;
 
-            void launch_and_split(const fs::path& script_path,
+            void launch_and_split(const Path& script_path,
                                   std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const;
 
             const VcpkgPaths& paths;
-            const fs::path get_tags_path = paths.scripts / "vcpkg_get_tags.cmake";
-            const fs::path get_dep_info_path = paths.scripts / "vcpkg_get_dep_info.cmake";
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> dep_resolution_vars;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> tag_vars;
             mutable std::unordered_map<Triplet, std::unordered_map<std::string, std::string>> generic_triplet_vars;
@@ -91,7 +102,7 @@ namespace vcpkg::CMakeVars
             auto path_to_triplet = paths.get_triplet_file_path(p.first);
             Strings::append(extraction_file, "if(VCPKG_TRIPLET_ID EQUAL ", p.second, ")\n");
             Strings::append(
-                extraction_file, "set(CMAKE_CURRENT_LIST_FILE \"", fs::generic_u8string(path_to_triplet), "\")\n");
+                extraction_file, "set(CMAKE_CURRENT_LIST_FILE \"", path_to_triplet.generic_u8string(), "\")\n");
             Strings::append(
                 extraction_file,
                 "get_filename_component(CMAKE_CURRENT_LIST_DIR \"${CMAKE_CURRENT_LIST_FILE}\" DIRECTORY)\n");
@@ -107,10 +118,10 @@ endmacro()
         return extraction_file;
     }
 
-    fs::path TripletCMakeVarProvider::create_tag_extraction_file(
+    Path TripletCMakeVarProvider::create_tag_extraction_file(
         const View<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings) const
     {
-        Files::Filesystem& fs = paths.get_filesystem();
+        Filesystem& fs = paths.get_filesystem();
         static int tag_extract_id = 0;
 
         std::map<Triplet, int> emitted_triplets;
@@ -121,7 +132,42 @@ endmacro()
         }
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
-        Strings::append(extraction_file, "\ninclude(\"" + fs::generic_u8string(get_tags_path) + "\")\n\n");
+        Strings::append(extraction_file, R"(
+
+function(vcpkg_get_tags PORT FEATURES VCPKG_TRIPLET_ID VCPKG_ABI_SETTINGS_FILE)
+    message("d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af")
+    vcpkg_triplet_file(${VCPKG_TRIPLET_ID})
+
+    # GUID used as a flag - "cut here line"
+    message("c35112b6-d1ba-415b-aa5d-81de856ef8eb
+VCPKG_TARGET_ARCHITECTURE=${VCPKG_TARGET_ARCHITECTURE}
+VCPKG_CMAKE_SYSTEM_NAME=${VCPKG_CMAKE_SYSTEM_NAME}
+VCPKG_CMAKE_SYSTEM_VERSION=${VCPKG_CMAKE_SYSTEM_VERSION}
+VCPKG_PLATFORM_TOOLSET=${VCPKG_PLATFORM_TOOLSET}
+VCPKG_VISUAL_STUDIO_PATH=${VCPKG_VISUAL_STUDIO_PATH}
+VCPKG_CHAINLOAD_TOOLCHAIN_FILE=${VCPKG_CHAINLOAD_TOOLCHAIN_FILE}
+VCPKG_BUILD_TYPE=${VCPKG_BUILD_TYPE}
+VCPKG_LIBRARY_LINKAGE=${VCPKG_LIBRARY_LINKAGE}
+VCPKG_CRT_LINKAGE=${VCPKG_CRT_LINKAGE}
+e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f")
+
+    # Just to enforce the user didn't set it in the triplet file
+    if (DEFINED VCPKG_PUBLIC_ABI_OVERRIDE)
+        set(VCPKG_PUBLIC_ABI_OVERRIDE)
+        message(WARNING "VCPKG_PUBLIC_ABI_OVERRIDE set in the triplet will be ignored.")
+    endif()
+    include("${VCPKG_ABI_SETTINGS_FILE}" OPTIONAL)
+
+    message("c35112b6-d1ba-415b-aa5d-81de856ef8eb
+VCPKG_PUBLIC_ABI_OVERRIDE=${VCPKG_PUBLIC_ABI_OVERRIDE}
+VCPKG_ENV_PASSTHROUGH=${VCPKG_ENV_PASSTHROUGH}
+VCPKG_ENV_PASSTHROUGH_UNTRACKED=${VCPKG_ENV_PASSTHROUGH_UNTRACKED}
+VCPKG_LOAD_VCVARS_ENV=${VCPKG_LOAD_VCVARS_ENV}
+VCPKG_DISABLE_COMPILER_TRACKING=${VCPKG_DISABLE_COMPILER_TRACKING}
+e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
+8c504940-be29-4cba-9f8f-6cd83e9d87b7")
+endfunction()
+)");
 
         for (const auto& spec_abi_setting : spec_abi_settings)
         {
@@ -139,15 +185,15 @@ endmacro()
                             "\")\n");
         }
 
-        fs::path path = paths.buildtrees / Strings::concat(tag_extract_id++, ".vcpkg_tags.cmake");
-        fs.write_contents_and_dirs(path, extraction_file, VCPKG_LINE_INFO);
-        return path;
+        auto tags_path = paths.buildtrees() / Strings::concat(tag_extract_id++, ".vcpkg_tags.cmake");
+        fs.write_contents_and_dirs(tags_path, extraction_file, VCPKG_LINE_INFO);
+        return tags_path;
     }
 
-    fs::path TripletCMakeVarProvider::create_dep_info_extraction_file(const View<PackageSpec> specs) const
+    Path TripletCMakeVarProvider::create_dep_info_extraction_file(const View<PackageSpec> specs) const
     {
         static int dep_info_id = 0;
-        Files::Filesystem& fs = paths.get_filesystem();
+        Filesystem& fs = paths.get_filesystem();
 
         std::map<Triplet, int> emitted_triplets;
         int emitted_triplet_id = 0;
@@ -158,7 +204,28 @@ endmacro()
 
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
-        Strings::append(extraction_file, "\ninclude(\"" + fs::generic_u8string(get_dep_info_path) + "\")\n\n");
+        Strings::append(extraction_file, R"(
+
+function(vcpkg_get_dep_info PORT VCPKG_TRIPLET_ID)
+    message("d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af")
+    vcpkg_triplet_file(${VCPKG_TRIPLET_ID})
+
+    # GUID used as a flag - "cut here line"
+    message("c35112b6-d1ba-415b-aa5d-81de856ef8eb
+VCPKG_TARGET_ARCHITECTURE=${VCPKG_TARGET_ARCHITECTURE}
+VCPKG_CMAKE_SYSTEM_NAME=${VCPKG_CMAKE_SYSTEM_NAME}
+VCPKG_CMAKE_SYSTEM_VERSION=${VCPKG_CMAKE_SYSTEM_VERSION}
+VCPKG_LIBRARY_LINKAGE=${VCPKG_LIBRARY_LINKAGE}
+VCPKG_CRT_LINKAGE=${VCPKG_CRT_LINKAGE}
+VCPKG_DEP_INFO_OVERRIDE_VARS=${VCPKG_DEP_INFO_OVERRIDE_VARS}
+CMAKE_HOST_SYSTEM_NAME=${CMAKE_HOST_SYSTEM_NAME}
+CMAKE_HOST_SYSTEM_PROCESSOR=${CMAKE_HOST_SYSTEM_PROCESSOR}
+CMAKE_HOST_SYSTEM_VERSION=${CMAKE_HOST_SYSTEM_VERSION}
+CMAKE_HOST_SYSTEM=${CMAKE_HOST_SYSTEM}
+e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
+8c504940-be29-4cba-9f8f-6cd83e9d87b7")
+endfunction()
+)");
 
         for (const PackageSpec& spec : specs)
         {
@@ -166,13 +233,13 @@ endmacro()
                 extraction_file, "vcpkg_get_dep_info(", spec.name(), " ", emitted_triplets[spec.triplet()], ")\n");
         }
 
-        fs::path path = paths.buildtrees / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
-        fs.write_contents_and_dirs(path, extraction_file, VCPKG_LINE_INFO);
-        return path;
+        auto dep_info_path = paths.buildtrees() / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
+        fs.write_contents_and_dirs(dep_info_path, extraction_file, VCPKG_LINE_INFO);
+        return dep_info_path;
     }
 
     void TripletCMakeVarProvider::launch_and_split(
-        const fs::path& script_path, std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const
+        const Path& script_path, std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const
     {
         static constexpr CStringView PORT_START_GUID = "d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af";
         static constexpr CStringView PORT_END_GUID = "8c504940-be29-4cba-9f8f-6cd83e9d87b7";
@@ -180,19 +247,27 @@ endmacro()
         static constexpr CStringView BLOCK_END_GUID = "e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f";
 
         const auto cmd_launch_cmake = vcpkg::make_cmake_cmd(paths, script_path, {});
-        const auto ec_data = System::cmd_execute_and_capture_output(cmd_launch_cmake);
-        Checks::check_exit(VCPKG_LINE_INFO, ec_data.exit_code == 0, ec_data.output);
 
-        const std::vector<std::string> lines = Strings::split(ec_data.output, '\n');
+        std::vector<std::string> lines;
+        auto const exit_code = cmd_execute_and_stream_lines(
+            cmd_launch_cmake, [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); });
+
+        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, exit_code == 0 ? "" : Strings::join("\n", lines));
 
         const auto end = lines.cend();
 
         auto port_start = std::find(lines.cbegin(), end, PORT_START_GUID);
         auto port_end = std::find(port_start, end, PORT_END_GUID);
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           port_start != end && port_end != end,
+                           "Failed to parse CMake console output to locate port start/end markers");
 
         for (auto var_itr = vars.begin(); port_start != end && var_itr != vars.end(); ++var_itr)
         {
             auto block_start = std::find(port_start, port_end, BLOCK_START_GUID);
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               block_start != port_end,
+                               "Failed to parse CMake console output to locate block start marker");
             auto block_end = std::find(++block_start, port_end, BLOCK_END_GUID);
 
             while (block_start != port_end)
@@ -226,9 +301,8 @@ endmacro()
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(1);
         // Hack: PackageSpecs should never have .name==""
         FullPackageSpec full_spec({"", triplet});
-        const fs::path file_path =
-            create_tag_extraction_file(std::array<std::pair<const FullPackageSpec*, std::string>, 1>{
-                std::pair<const FullPackageSpec*, std::string>{&full_spec, ""}});
+        const auto file_path = create_tag_extraction_file(std::array<std::pair<const FullPackageSpec*, std::string>, 1>{
+            std::pair<const FullPackageSpec*, std::string>{&full_spec, ""}});
         launch_and_split(file_path, vars);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);
 
@@ -236,14 +310,14 @@ endmacro()
                                              std::make_move_iterator(vars.front().end()));
     }
 
-    void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> specs) const
+    void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const
     {
         if (specs.size() == 0) return;
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(specs.size());
-        const fs::path file_path = create_dep_info_extraction_file(specs);
+        const auto file_path = create_dep_info_extraction_file(specs);
         if (specs.size() > 100)
         {
-            System::print2("Loading dependency information for ", specs.size(), " packages...\n");
+            print2("Loading dependency information for ", specs.size(), " packages...\n");
         }
         launch_and_split(file_path, vars);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);
@@ -251,11 +325,13 @@ endmacro()
         auto var_list_itr = vars.begin();
         for (const PackageSpec& spec : specs)
         {
-            dep_resolution_vars.emplace(std::piecewise_construct,
-                                        std::forward_as_tuple(spec),
-                                        std::forward_as_tuple(std::make_move_iterator(var_list_itr->begin()),
-                                                              std::make_move_iterator(var_list_itr->end())));
+            PlatformExpression::Context ctxt{std::make_move_iterator(var_list_itr->begin()),
+                                             std::make_move_iterator(var_list_itr->end())};
             ++var_list_itr;
+
+            ctxt.emplace("Z_VCPKG_IS_NATIVE", host_triplet == spec.triplet() ? "1" : "0");
+
+            dep_resolution_vars.emplace(spec, std::move(ctxt));
         }
     }
 
@@ -270,12 +346,12 @@ endmacro()
         for (const FullPackageSpec& spec : specs)
         {
             auto& scfl = port_provider.get_control_file(spec.package_spec.name()).value_or_exit(VCPKG_LINE_INFO);
-            const fs::path override_path = scfl.source_location / "vcpkg-abi-settings.cmake";
-            spec_abi_settings.emplace_back(&spec, fs::generic_u8string(override_path));
+            const auto override_path = scfl.source_location / "vcpkg-abi-settings.cmake";
+            spec_abi_settings.emplace_back(&spec, override_path.generic_u8string());
         }
 
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(spec_abi_settings.size());
-        const fs::path file_path = create_tag_extraction_file(spec_abi_settings);
+        const auto file_path = create_tag_extraction_file(spec_abi_settings);
         launch_and_split(file_path, vars);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);
 

@@ -274,13 +274,13 @@ namespace vcpkg::Commands::DependInfo
         {
             const std::vector<const SourceControlFile*> source_control_files =
                 Util::fmap(install_actions, [](const InstallPlanAction* install_action) {
-                    const SourceControlFileLocation& scfl =
-                        install_action->source_control_file_location.value_or_exit(VCPKG_LINE_INFO);
+                    const SourceControlFileAndLocation& scfl =
+                        install_action->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
                     return const_cast<const SourceControlFile*>(scfl.source_control_file.get());
                 });
 
             const std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
-            System::print2(graph_as_string, '\n');
+            print2(graph_as_string, '\n');
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -299,9 +299,7 @@ namespace vcpkg::Commands::DependInfo
         {
             case SortMode::Lexicographical: std::sort(std::begin(depend_info), std::end(depend_info), lex); break;
             case SortMode::ReverseTopological:
-            case SortMode::Treelogical:
-                std::sort(std::begin(depend_info), std::end(depend_info), reverse);
-                break;
+            case SortMode::Treelogical: std::sort(std::begin(depend_info), std::end(depend_info), reverse); break;
             case SortMode::Topological: std::sort(std::begin(depend_info), std::end(depend_info), topo); break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -313,16 +311,16 @@ namespace vcpkg::Commands::DependInfo
 
             if (show_depth)
             {
-                System::print2(System::Color::error, "(", first->depth, ") ");
+                print2(Color::error, "(", first->depth, ") ");
             }
-            System::print2(System::Color::success, first->package);
+            print2(Color::success, first->package);
             if (!features.empty())
             {
-                System::print2("[");
-                System::print2(System::Color::warning, features);
-                System::print2("]");
+                print2("[");
+                print2(Color::warning, features);
+                print2("]");
             }
-            System::print2("\n");
+            print2("\n");
             RecurseFindDependencies(0, first->package, false, depend_info);
         }
         else
@@ -331,34 +329,38 @@ namespace vcpkg::Commands::DependInfo
             {
                 if (info.depth >= 0)
                 {
-                    std::string features = Strings::join(", ", info.features);
+                    const std::string features = Strings::join(", ", info.features);
                     const std::string dependencies = Strings::join(", ", info.dependencies);
 
                     if (show_depth)
                     {
-                        System::print2(System::Color::error, "(", info.depth, ") ");
+                        print2(Color::error, "(", info.depth, ") ");
                     }
-                    System::print2(System::Color::success, info.package);
+                    print2(Color::success, info.package);
                     if (!features.empty())
                     {
-                        System::print2("[");
-                        System::print2(System::Color::warning, features);
-                        System::print2("]");
+                        print2("[");
+                        print2(Color::warning, features);
+                        print2("]");
                     }
-                    System::print2(": ", dependencies, "\n");
+                    print2(": ", dependencies, "\n");
                 }
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void RecurseFindDependencies(int levelFrom, const std::string& currDepend, bool isEnd, const std::vector<PackageDependInfo>& allDepends)
+    void RecurseFindDependencies(int levelFrom,
+                                 const std::string& currDepend,
+                                 bool isEnd,
+                                 const std::vector<PackageDependInfo>& allDepends)
     {
         if (levelFrom == 100)
         {
             Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
         }
-        auto currPos = std::find_if(allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
+        auto currPos = std::find_if(
+            allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
         Checks::check_exit(VCPKG_LINE_INFO, currPos != allDepends.end(), "internal vcpkg error");
 
         for (auto i = currPos->dependencies.begin(); i != currPos->dependencies.end(); i++)
@@ -368,17 +370,17 @@ namespace vcpkg::Commands::DependInfo
             {
                 for (auto j = 0; j < levelFrom - 1; j++)
                 {
-                    System::print2("|   ");
+                    print2("|   ");
                 }
 
                 if (!isEnd)
-                    System::print2("|   ");
+                    print2("|   ");
                 else
-                    System::print2("    ");
+                    print2("    ");
             }
 
             // Handle the current level
-            System::print2("+-- ", i->c_str(), "\n");
+            print2("+-- ", i->c_str(), "\n");
             // The last element doesn't need additional connecting lines
             auto j = i;
             RecurseFindDependencies(levelFrom + 1, i->c_str(), ++j == currPos->dependencies.end(), allDepends);

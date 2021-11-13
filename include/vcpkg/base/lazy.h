@@ -2,10 +2,9 @@
 
 namespace vcpkg
 {
-    template<typename T>
-    class Lazy
+    template<class T>
+    struct Lazy
     {
-    public:
         Lazy() : value(T()), initialized(false) { }
 
         template<class F>

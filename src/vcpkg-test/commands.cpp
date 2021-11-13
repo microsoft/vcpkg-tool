@@ -32,6 +32,9 @@ TEST_CASE ("get_available_basic_commands works", "[commands]")
     check_all_commands(Commands::get_available_basic_commands(), {
         "contact",
         "version",
+        "x-download",
+        "x-init-registry",
+        "x-generate-default-message-map",
 #if defined(_WIN32)
         "x-upload-metrics",
 #endif // defined(_WIN32)
@@ -57,7 +60,6 @@ TEST_CASE ("get_available_paths_commands works", "[commands]")
         "fetch",
         "format-manifest",
         "x-ci-clean",
-        "x-download",
         "x-history",
         "x-package-info",
         "x-vsinstances",
@@ -79,7 +81,8 @@ TEST_CASE ("get_available_commands_type_a works", "[commands]")
         "build-external",
         "export",
         "depend-info",
-        "x-check-support"
+        "x-check-support",
+        "z-print-config"
         });
 }
 // clang-format on

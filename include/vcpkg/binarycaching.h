@@ -9,17 +9,56 @@
 
 #include <vcpkg/packagespec.h>
 
+#include <iterator>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace vcpkg
 {
-    struct MergeBinaryProviders;
-
     enum class RestoreResult
     {
-        missing,
-        success,
-        build_failed,
+        unavailable,
+        restored,
+    };
+
+    enum class CacheAvailability
+    {
+        unavailable,
+        available,
+    };
+
+    enum class CacheStatusState
+    {
+        unknown,   // the cache status of the indicated package ABI is unknown
+        available, // the cache is known to contain the package ABI, but it has not been restored
+        restored,  // the cache contains the ABI and it has been restored to the packages tree
+    };
+
+    struct IBinaryProvider;
+
+    struct CacheStatus
+    {
+        bool should_attempt_precheck(const IBinaryProvider* sender) const noexcept;
+        bool should_attempt_restore(const IBinaryProvider* sender) const noexcept;
+
+        bool is_unavailable(size_t total_providers) const noexcept;
+        const IBinaryProvider* get_available_provider() const noexcept;
+        bool is_restored() const noexcept;
+
+        void mark_unavailable(const IBinaryProvider* sender);
+        void mark_available(const IBinaryProvider* sender) noexcept;
+        void mark_restored() noexcept;
+
+    private:
+        CacheStatusState m_status = CacheStatusState::unknown;
+
+        // The set of providers who know they do not have the associated cache entry.
+        // Flat vector set because N is tiny.
+        std::vector<const IBinaryProvider*> m_known_unavailable_providers; // meaningful iff m_status == unknown
+
+        // The provider who affirmatively has the associated cache entry.
+        const IBinaryProvider* m_available_provider = nullptr; // meaningful iff m_status == available
     };
 
     struct IBinaryProvider
@@ -27,37 +66,65 @@ namespace vcpkg
         virtual ~IBinaryProvider() = default;
 
         /// Attempts to restore the package referenced by `action` into the packages directory.
-        virtual RestoreResult try_restore(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) = 0;
+        /// Prerequisite: action has a package_abi()
+        virtual RestoreResult try_restore(const VcpkgPaths& paths,
+                                          const Dependencies::InstallPlanAction& action) const = 0;
 
-        /// Called upon a successful build of `action`
-        virtual void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) = 0;
+        /// Called upon a successful build of `action` to store those contents in the binary cache.
+        /// Prerequisite: action has a package_abi()
+        virtual void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const = 0;
 
-        /// <summary>Gives the BinaryProvider an opportunity to batch any downloading or server communication for
-        /// executing `plan`.</summary>
-        /// <remarks>Must only be called once for a given binary provider instance</remarks>
-        /// <param name="actions">InOut vector of actions to be prefetched</param>
+        /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
+        /// executing `actions`.
+        /// `cache_status` is a vector with the same number of entries of actions, where each index corresponds
+        /// to the action at the same index in `actions`. The provider must mark the cache status as appropriate.
         virtual void prefetch(const VcpkgPaths& paths,
-                              std::vector<const Dependencies::InstallPlanAction*>& actions) = 0;
+                              View<Dependencies::InstallPlanAction> actions,
+                              View<CacheStatus*> cache_status) const = 0;
 
-        /// <summary>Requests the result of <c>try_restore()</c> without actually downloading the package. Used by CI to
-        /// determine missing packages.</summary>
-        /// <param name="results_map">InOut map to track the restored packages. Should be initialized to
-        /// <c>{&amp;action, RestoreResult::missing}</c> for all install actions</param>
-        virtual void precheck(
-            const VcpkgPaths& paths,
-            std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult>& results_map) = 0;
+        /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
+        /// missing packages.
+        /// `cache_status` is a view with the same number of entries of actions, where each index corresponds
+        /// to the action at the same index in `actions`. The provider must mark the cache status as appropriate.
+        virtual void precheck(const VcpkgPaths& paths,
+                              View<Dependencies::InstallPlanAction> actions,
+                              View<CacheStatus*> cache_status) const = 0;
     };
 
-    std::unordered_map<const Dependencies::InstallPlanAction*, RestoreResult> binary_provider_precheck(
-        const VcpkgPaths& paths, const Dependencies::ActionPlan& plan, IBinaryProvider& provider);
+    ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs(
+        View<std::string> args);
+    ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs_pure(
+        const std::string& env_string, View<std::string> args);
 
-    IBinaryProvider& null_binary_provider();
+    struct BinaryCache
+    {
+        BinaryCache() = default;
+        explicit BinaryCache(const VcpkgCmdArguments& args);
 
-    ExpectedS<std::unique_ptr<IBinaryProvider>> create_binary_provider_from_configs(View<std::string> args);
-    ExpectedS<std::unique_ptr<IBinaryProvider>> create_binary_provider_from_configs_pure(const std::string& env_string,
-                                                                                         View<std::string> args);
+        void install_providers(std::vector<std::unique_ptr<IBinaryProvider>>&& providers);
+        void install_providers_for(const VcpkgCmdArguments& args);
 
-    ExpectedS<Downloads::DownloadManager> create_download_manager(const Optional<std::string>& arg);
+        /// Attempts to restore the package referenced by `action` into the packages directory.
+        RestoreResult try_restore(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action);
+
+        /// Called upon a successful build of `action` to store those contents in the binary cache.
+        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action);
+
+        /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
+        /// executing `actions`.
+        void prefetch(const VcpkgPaths& paths, View<Dependencies::InstallPlanAction> actions);
+
+        /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
+        /// missing packages.
+        /// Returns a vector where each index corresponds to the matching index in `actions`.
+        std::vector<CacheAvailability> precheck(const VcpkgPaths& paths, View<Dependencies::InstallPlanAction> actions);
+
+    private:
+        std::unordered_map<std::string, CacheStatus> m_status;
+        std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
+    };
+
+    ExpectedS<Downloads::DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const Dependencies::ActionPlan& action);
 

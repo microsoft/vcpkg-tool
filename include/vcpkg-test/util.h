@@ -81,7 +81,7 @@ namespace vcpkg::Test
     /// </summary>
     struct PackageSpecMap
     {
-        std::unordered_map<std::string, SourceControlFileLocation> map;
+        std::unordered_map<std::string, SourceControlFileAndLocation> map;
         Triplet triplet;
         PackageSpecMap(Triplet t = X86_WINDOWS) noexcept : triplet(t) { }
 
@@ -90,7 +90,7 @@ namespace vcpkg::Test
                             const std::vector<std::pair<const char*, const char*>>& features = {},
                             const std::vector<const char*>& default_features = {});
 
-        PackageSpec emplace(vcpkg::SourceControlFileLocation&& scfl);
+        PackageSpec emplace(vcpkg::SourceControlFileAndLocation&& scfl);
     };
 
     template<class T, class S>
@@ -107,26 +107,19 @@ namespace vcpkg::Test
         return std::move(*opt.get());
     }
 
-    struct AllowSymlinks
+    template<class R1, class R2>
+    void check_ranges(const R1& r1, const R2& r2)
     {
-        enum Tag : bool
+        CHECK(r1.size() == r2.size());
+        auto it1 = r1.begin();
+        auto e1 = r1.end();
+        auto it2 = r2.begin();
+        auto e2 = r2.end();
+        for (; it1 != e1 && it2 != e2; ++it1, ++it2)
         {
-            No = false,
-            Yes = true,
-        } tag;
+            CHECK(*it1 == *it2);
+        }
+    }
 
-        constexpr AllowSymlinks(Tag tag) noexcept : tag(tag) { }
-
-        constexpr explicit AllowSymlinks(bool b) noexcept : tag(b ? Yes : No) { }
-
-        constexpr operator bool() const noexcept { return tag == Yes; }
-    };
-
-    AllowSymlinks can_create_symlinks() noexcept;
-
-    const fs::path& base_temporary_directory() noexcept;
-
-    void create_symlink(const fs::path& file, const fs::path& target, std::error_code& ec);
-
-    void create_directory_symlink(const fs::path& file, const fs::path& target, std::error_code& ec);
+    const Path& base_temporary_directory() noexcept;
 }

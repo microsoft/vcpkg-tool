@@ -17,7 +17,7 @@ namespace vcpkg::Commands::Autocomplete
                                                             std::vector<std::string>&& results)
     {
         const SortedVector<std::string> sorted_results(results);
-        System::print2(Strings::join("\n", sorted_results), '\n');
+        print2(Strings::join("\n", sorted_results), '\n');
 
         Checks::exit_success(line_info);
     }
@@ -31,7 +31,7 @@ namespace vcpkg::Commands::Autocomplete
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        Metrics::g_metrics.lock()->set_send_metrics(false);
+        LockGuardPtr<Metrics>(g_metrics)->set_send_metrics(false);
         const std::string to_autocomplete = Strings::join(" ", args.command_arguments);
         const std::vector<std::string> tokens = Strings::split(to_autocomplete, ' ');
 
@@ -137,7 +137,7 @@ namespace vcpkg::Commands::Autocomplete
                 const auto prefix = match[2].str();
                 std::vector<std::string> results;
 
-                const bool is_option = Strings::case_insensitive_ascii_starts_with(prefix, "-");
+                const bool is_option = Strings::starts_with(prefix, "-");
                 if (is_option)
                 {
                     results = Util::fmap(command.structure.options.switches, [](const CommandSwitch& s) -> std::string {

@@ -8,6 +8,7 @@
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringliteral.h>
 
+#include <map>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -109,7 +110,7 @@ namespace vcpkg
 
     struct VcpkgCmdArguments
     {
-        static VcpkgCmdArguments create_from_command_line(const Files::Filesystem& fs,
+        static VcpkgCmdArguments create_from_command_line(const Filesystem& fs,
                                                           const int argc,
                                                           const CommandLineCharType* const* const argv);
         static VcpkgCmdArguments create_from_arg_sequence(const std::string* arg_begin, const std::string* arg_end);
@@ -182,7 +183,7 @@ namespace vcpkg
         Optional<bool> json = nullopt;
 
         constexpr static StringLiteral ASSET_SOURCES_ENV = "X_VCPKG_ASSET_SOURCES";
-        Optional<std::string> asset_sources_template;
+        constexpr static StringLiteral ASSET_SOURCES_ARG = "x-asset-sources";
 
         // feature flags
         constexpr static StringLiteral FEATURE_FLAGS_ENV = "VCPKG_FEATURE_FLAGS";
@@ -228,6 +229,7 @@ namespace vcpkg
         ParsedArguments parse_arguments(const CommandStructure& command_structure) const;
 
         void imbue_from_environment();
+        void imbue_from_fake_environment(const std::map<std::string, std::string, std::less<>>& env);
 
         // Applies recursive settings from the environment or sets a global environment variable
         // to be consumed by subprocesses; may only be called once per process.
@@ -238,7 +240,14 @@ namespace vcpkg
         void debug_print_feature_flags() const;
         void track_feature_flag_metrics() const;
 
+        Optional<std::string> asset_sources_template() const;
+
     private:
+        void imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env);
+
+        Optional<std::string> asset_sources_template_env;        // for ASSET_SOURCES_ENV
+        std::unique_ptr<std::string> asset_sources_template_arg; // for ASSET_SOURCES_ARG
+
         std::unordered_set<std::string> command_switches;
         std::unordered_map<std::string, std::vector<std::string>> command_options;
     };

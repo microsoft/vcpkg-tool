@@ -7,8 +7,6 @@ IndentWidth: 4
 ColumnLimit: 120
 PointerAlignment: Left
 
-BreakBeforeBraces: Allman
-
 AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: All
@@ -34,6 +32,27 @@ SpaceBeforeCpp11BracedList: false
 DeriveLineEnding: false
 UseCRLF: false
 
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel:  true
+  AfterClass:      true
+  AfterControlStatement: Always
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterNamespace:  true
+  AfterObjCDeclaration: true
+  AfterStruct:     true
+  AfterUnion:      true
+  AfterExternBlock: true
+  BeforeCatch:     true
+  BeforeElse:      true
+  BeforeLambdaBody: false
+  BeforeWhile:     false
+  IndentBraces:    false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
 IncludeBlocks: Regroup
 IncludeCategories:
   - Regex: '^(<vcpkg/base/system_headers\.h>|"pch\.h")$'
@@ -48,6 +67,8 @@ IncludeCategories:
     Priority: 4
   - Regex: '^<vcpkg/.*\.h>$'
     Priority: 5
+  - Regex: '^(<Softpub\.h>)$'
+    Priority: 8
   - Regex: '^<[a-z0-9_]*\.h>$'
     Priority: 6
   - Regex: '^<[a-z0-9_]*>$' # C++ standard library

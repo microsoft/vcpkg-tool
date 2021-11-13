@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace vcpkg::Metrics
+namespace vcpkg
 {
     struct Metrics
     {
@@ -28,10 +28,10 @@ namespace vcpkg::Metrics
         bool metrics_enabled();
 
         void upload(const std::string& payload);
-        void flush(Files::Filesystem& fs);
+        void flush(Filesystem& fs);
     };
 
-    extern Util::LockGuarded<Metrics> g_metrics;
+    extern LockGuarded<Metrics> g_metrics;
 
     std::string get_MAC_user();
 }

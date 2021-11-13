@@ -2,7 +2,6 @@ $TestingRoot = Join-Path $WorkingRoot 'testing'
 $buildtreesRoot = Join-Path $TestingRoot 'buildtrees'
 $installRoot = Join-Path $TestingRoot 'installed'
 $packagesRoot = Join-Path $TestingRoot 'packages'
-$downloadsRoot = Join-Path $TestingRoot 'downloads'
 $NuGetRoot = Join-Path $TestingRoot 'nuget'
 $NuGetRoot2 = Join-Path $TestingRoot 'nuget2'
 $ArchiveRoot = Join-Path $TestingRoot 'archives'
@@ -13,7 +12,6 @@ $commonArgs = @(
     "--x-buildtrees-root=$buildtreesRoot",
     "--x-install-root=$installRoot",
     "--x-packages-root=$packagesRoot",
-    "--downloads-root=$downloadsRoot",
     "--overlay-ports=$PSScriptRoot/e2e_ports/overlays",
     "--overlay-triplets=$PSScriptRoot/e2e_ports/triplets"
 )
@@ -22,9 +20,9 @@ $env:X_VCPKG_REGISTRIES_CACHE = Join-Path $TestingRoot 'registries'
 
 function Refresh-TestRoot {
     Remove-Item -Recurse -Force $TestingRoot -ErrorAction SilentlyContinue
-    mkdir $TestingRoot | Out-Null
-    mkdir $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
-    mkdir $NuGetRoot | Out-Null
+    New-Item -ItemType Directory -Force $TestingRoot | Out-Null
+    New-Item -ItemType Directory -Force $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
+    New-Item -ItemType Directory -Force $NuGetRoot | Out-Null
 }
 
 function Write-Stack {
@@ -44,16 +42,21 @@ function Require-FileExists {
     }
 }
 
-function Require-FileEquals {
+function Require-JsonFileEquals {
     [CmdletBinding()]
     Param(
         [string]$File,
-        [string]$Content
+        [string]$Json
     )
     Require-FileExists $File
-    if ((Get-Content $File -Raw) -ne $Content) {
+    $ExpectedJson = $Json | ConvertFrom-Json | ConvertTo-Json -Compress
+    $ActualJson = Get-Content $File | ConvertFrom-Json | ConvertTo-Json -Compress
+
+    if ($ActualJson -ne $ExpectedJson) {
         Write-Stack
-        throw "'$Script:CurrentTest' file '$File' did not have the correct contents"
+        throw "'$Script:CurrentTest' file '$File' did not have the correct contents`n
+                Expected: $ExpectedJson`n
+                Actual:   $ActualJson"
     }
 }
 

@@ -22,40 +22,40 @@ namespace
 
     struct OverlayRegistryEntry final : RegistryEntry
     {
-        OverlayRegistryEntry(fs::path&& p, VersionT&& v) : path(p), version(v) { }
+        OverlayRegistryEntry(Path&& p, VersionT&& v) : root(p), version(v) { }
 
         View<VersionT> get_port_versions() const override { return {&version, 1}; }
-        ExpectedS<fs::path> get_path_to_version(const VcpkgPaths&, const VersionT& v) const override
+        ExpectedS<Path> get_path_to_version(const VcpkgPaths&, const VersionT& v) const override
         {
             if (v == version)
             {
-                return path;
+                return root;
             }
             return Strings::format("Version %s not found; only %s is available.", v.to_string(), version.to_string());
         }
 
-        fs::path path;
+        Path root;
         VersionT version;
     };
 }
 
 namespace vcpkg::PortFileProvider
 {
-    MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileLocation>& map)
+    MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)
         : ports(map)
     {
     }
 
-    ExpectedS<const SourceControlFileLocation&> MapPortFileProvider::get_control_file(const std::string& spec) const
+    ExpectedS<const SourceControlFileAndLocation&> MapPortFileProvider::get_control_file(const std::string& spec) const
     {
         auto scf = ports.find(spec);
         if (scf == ports.end()) return std::string("does not exist in map");
         return scf->second;
     }
 
-    std::vector<const SourceControlFileLocation*> MapPortFileProvider::load_all_control_files() const
+    std::vector<const SourceControlFileAndLocation*> MapPortFileProvider::load_all_control_files() const
     {
-        return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileLocation* { return &kvpair.second; });
+        return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
 
     PathsPortFileProvider::PathsPortFileProvider(const VcpkgPaths& paths, const std::vector<std::string>& overlay_ports)
@@ -65,7 +65,8 @@ namespace vcpkg::PortFileProvider
     {
     }
 
-    ExpectedS<const SourceControlFileLocation&> PathsPortFileProvider::get_control_file(const std::string& spec) const
+    ExpectedS<const SourceControlFileAndLocation&> PathsPortFileProvider::get_control_file(
+        const std::string& spec) const
     {
         auto maybe_scfl = m_overlay->get_control_file(spec);
         if (auto scfl = maybe_scfl.get())
@@ -83,9 +84,9 @@ namespace vcpkg::PortFileProvider
         }
     }
 
-    std::vector<const SourceControlFileLocation*> PathsPortFileProvider::load_all_control_files() const
+    std::vector<const SourceControlFileAndLocation*> PathsPortFileProvider::load_all_control_files() const
     {
-        std::map<std::string, const SourceControlFileLocation*> m;
+        std::map<std::string, const SourceControlFileAndLocation*> m;
         m_overlay->load_all_control_files(m);
         m_versioned->load_all_control_files(m);
         return Util::fmap(m, [](const auto& p) { return p.second; });
@@ -161,7 +162,7 @@ namespace vcpkg::PortFileProvider
                 return entry(port_name).value_or_exit(VCPKG_LINE_INFO)->get_port_versions();
             }
 
-            ExpectedS<std::unique_ptr<SourceControlFileLocation>> load_control_file(
+            ExpectedS<std::unique_ptr<SourceControlFileAndLocation>> load_control_file(
                 const VersionSpec& version_spec) const
             {
                 const auto& maybe_ent = entry(version_spec.port_name);
@@ -175,13 +176,14 @@ namespace vcpkg::PortFileProvider
                         {
                             if (scf->get()->core_paragraph->name == version_spec.port_name)
                             {
-                                return std::make_unique<SourceControlFileLocation>(std::move(*scf), std::move(*path));
+                                return std::unique_ptr<SourceControlFileAndLocation>(
+                                    new SourceControlFileAndLocation{std::move(*scf), std::move(*path)});
                             }
                             else
                             {
                                 return Strings::format("Error: Failed to load port from %s: names did "
                                                        "not match: '%s' != '%s'",
-                                                       fs::u8string(*path),
+                                                       *path,
                                                        version_spec.port_name,
                                                        scf->get()->core_paragraph->name);
                             }
@@ -193,19 +195,19 @@ namespace vcpkg::PortFileProvider
                             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                        "Error: Failed to load port %s from %s",
                                                        version_spec.port_name,
-                                                       fs::u8string(*path));
+                                                       *path);
                         }
                     }
                     else
                     {
-                        Metrics::g_metrics.lock()->track_property("versioning-error-version", "defined");
+                        LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-version", "defined");
                         return maybe_path.error();
                     }
                 }
                 return maybe_ent.error();
             }
 
-            virtual ExpectedS<const SourceControlFileLocation&> get_control_file(
+            virtual ExpectedS<const SourceControlFileAndLocation&> get_control_file(
                 const VersionSpec& version_spec) const override
             {
                 auto it = m_control_cache.find(version_spec);
@@ -213,11 +215,11 @@ namespace vcpkg::PortFileProvider
                 {
                     it = m_control_cache.emplace(version_spec, load_control_file(version_spec)).first;
                 }
-                return it->second.map([](const auto& x) -> const SourceControlFileLocation& { return *x.get(); });
+                return it->second.map([](const auto& x) -> const SourceControlFileAndLocation& { return *x.get(); });
             }
 
             virtual void load_all_control_files(
-                std::map<std::string, const SourceControlFileLocation*>& out) const override
+                std::map<std::string, const SourceControlFileAndLocation*>& out) const override
             {
                 auto all_ports = Paragraphs::load_all_registry_ports(paths);
                 for (auto&& scfl : all_ports)
@@ -226,7 +228,7 @@ namespace vcpkg::PortFileProvider
                     auto version = scfl.source_control_file->core_paragraph->to_versiont();
                     auto it = m_control_cache
                                   .emplace(VersionSpec{std::move(port_name), std::move(version)},
-                                           std::make_unique<SourceControlFileLocation>(std::move(scfl)))
+                                           std::make_unique<SourceControlFileAndLocation>(std::move(scfl)))
                                   .first;
                     Checks::check_exit(VCPKG_LINE_INFO, it->second.has_value());
                     out.emplace(it->first.port_name, it->second.get()->get());
@@ -236,7 +238,7 @@ namespace vcpkg::PortFileProvider
         private:
             const VcpkgPaths& paths; // TODO: remove this data member
             mutable std::
-                unordered_map<VersionSpec, ExpectedS<std::unique_ptr<SourceControlFileLocation>>, VersionSpecHasher>
+                unordered_map<VersionSpec, ExpectedS<std::unique_ptr<SourceControlFileAndLocation>>, VersionSpecHasher>
                     m_control_cache;
             mutable std::map<std::string, ExpectedS<std::unique_ptr<RegistryEntry>>, std::less<>> m_entry_cache;
         };
@@ -245,26 +247,24 @@ namespace vcpkg::PortFileProvider
         {
             OverlayProviderImpl(const VcpkgPaths& paths, View<std::string> overlay_ports)
                 : m_fs(paths.get_filesystem())
-                , m_overlay_ports(Util::fmap(overlay_ports, [&paths](const std::string& s) -> fs::path {
-                    return Files::combine(paths.original_cwd, fs::u8path(s));
-                }))
+                , m_overlay_ports(Util::fmap(overlay_ports,
+                                             [&paths](const std::string& s) -> Path { return paths.original_cwd / s; }))
             {
                 for (auto&& overlay : m_overlay_ports)
                 {
-                    auto s_overlay = fs::u8string(overlay);
-                    Debug::print("Using overlay: ", s_overlay, "\n");
+                    Debug::print("Using overlay: ", overlay, "\n");
 
                     Checks::check_exit(VCPKG_LINE_INFO,
-                                       fs::is_directory(m_fs.status(VCPKG_LINE_INFO, overlay)),
+                                       vcpkg::is_directory(m_fs.status(overlay, VCPKG_LINE_INFO)),
                                        "Error: Overlay path \"%s\" must exist and must be a directory",
-                                       s_overlay);
+                                       overlay);
                 }
             }
 
             OverlayProviderImpl(const OverlayProviderImpl&) = delete;
             OverlayProviderImpl& operator=(const OverlayProviderImpl&) = delete;
 
-            Optional<SourceControlFileLocation> load_port(StringView port_name) const
+            Optional<SourceControlFileAndLocation> load_port(StringView port_name) const
             {
                 auto s_port_name = port_name.to_string();
 
@@ -279,22 +279,20 @@ namespace vcpkg::PortFileProvider
                             auto& scf = *scfp;
                             if (scf->core_paragraph->name == port_name)
                             {
-                                return SourceControlFileLocation{std::move(scf), fs::path(ports_dir)};
+                                return SourceControlFileAndLocation{std::move(scf), ports_dir};
                             }
                         }
                         else
                         {
                             print_error_message(maybe_scf.error());
-                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                       "Error: Failed to load port %s from %s",
-                                                       port_name,
-                                                       fs::u8string(ports_dir));
+                            Checks::exit_maybe_upgrade(
+                                VCPKG_LINE_INFO, "Error: Failed to load port %s from %s", port_name, ports_dir);
                         }
 
                         continue;
                     }
 
-                    auto ports_spec = ports_dir / fs::u8path(port_name);
+                    auto ports_spec = ports_dir / port_name;
                     if (Paragraphs::is_port_directory(m_fs, ports_spec))
                     {
                         auto found_scf = Paragraphs::try_load_port(m_fs, ports_spec);
@@ -303,29 +301,27 @@ namespace vcpkg::PortFileProvider
                             auto& scf = *scfp;
                             if (scf->core_paragraph->name == port_name)
                             {
-                                return SourceControlFileLocation{std::move(scf), std::move(ports_spec)};
+                                return SourceControlFileAndLocation{std::move(scf), std::move(ports_spec)};
                             }
                             Checks::exit_maybe_upgrade(
                                 VCPKG_LINE_INFO,
                                 "Error: Failed to load port from %s: names did not match: '%s' != '%s'",
-                                fs::u8string(ports_spec),
+                                ports_spec,
                                 port_name,
                                 scf->core_paragraph->name);
                         }
                         else
                         {
                             print_error_message(found_scf.error());
-                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                       "Error: Failed to load port %s from %s",
-                                                       port_name,
-                                                       fs::u8string(ports_dir));
+                            Checks::exit_maybe_upgrade(
+                                VCPKG_LINE_INFO, "Error: Failed to load port %s from %s", port_name, ports_dir);
                         }
                     }
                 }
                 return nullopt;
             }
 
-            virtual Optional<const SourceControlFileLocation&> get_control_file(StringView port_name) const override
+            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
             {
                 auto it = m_overlay_cache.find(port_name);
                 if (it == m_overlay_cache.end())
@@ -336,7 +332,7 @@ namespace vcpkg::PortFileProvider
             }
 
             virtual void load_all_control_files(
-                std::map<std::string, const SourceControlFileLocation*>& out) const override
+                std::map<std::string, const SourceControlFileAndLocation*>& out) const override
             {
                 for (auto&& ports_dir : m_overlay_ports)
                 {
@@ -346,7 +342,7 @@ namespace vcpkg::PortFileProvider
                         auto maybe_scf = Paragraphs::try_load_port(m_fs, ports_dir);
                         if (auto scfp = maybe_scf.get())
                         {
-                            SourceControlFileLocation scfl{std::move(*scfp), fs::path(ports_dir)};
+                            SourceControlFileAndLocation scfl{std::move(*scfp), ports_dir};
                             auto name = scfl.source_control_file->core_paragraph->name;
                             auto it = m_overlay_cache.emplace(std::move(name), std::move(scfl)).first;
                             Checks::check_exit(VCPKG_LINE_INFO, it->second.get());
@@ -356,7 +352,7 @@ namespace vcpkg::PortFileProvider
                         {
                             print_error_message(maybe_scf.error());
                             Checks::exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, "Error: Failed to load port from %s", fs::u8string(ports_dir));
+                                VCPKG_LINE_INFO, "Error: Failed to load port from %s", ports_dir);
                         }
 
                         continue;
@@ -375,9 +371,9 @@ namespace vcpkg::PortFileProvider
             }
 
         private:
-            const Files::Filesystem& m_fs;
-            const std::vector<fs::path> m_overlay_ports;
-            mutable std::map<std::string, Optional<SourceControlFileLocation>, std::less<>> m_overlay_cache;
+            const Filesystem& m_fs;
+            const std::vector<Path> m_overlay_ports;
+            mutable std::map<std::string, Optional<SourceControlFileAndLocation>, std::less<>> m_overlay_cache;
         };
     }
 

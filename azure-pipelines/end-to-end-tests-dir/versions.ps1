@@ -2,6 +2,14 @@
 
 $versionFilesPath = "$PSScriptRoot/../e2e_ports/version-files"
 
+# Ensure transitive packages can be used even if they add version constraints
+$CurrentTest = "transitive constraints without baseline"
+Run-Vcpkg install @commonArgs --dry-run `
+    "--x-builtin-ports-root=$versionFilesPath/transitive-constraints/ports" `
+    "--x-manifest-root=$versionFilesPath/transitive-constraints" --debug
+Throw-IfFailed
+Refresh-TestRoot
+
 # Test verify versions
 mkdir $VersionFilesRoot | Out-Null
 Copy-Item -Recurse "$versionFilesPath/versions_incomplete" $VersionFilesRoot
@@ -75,13 +83,13 @@ foreach ($opt_registries in @("",",registries"))
     Write-Trace "testing baselines: $opt_registries"
     Refresh-TestRoot
     $CurrentTest = "without default baseline 2 -- enabling versions should not change behavior"
-    Remove-Item -Recurse $buildtreesRoot/versioning -ErrorAction SilentlyContinue
+    Remove-Item -Recurse $buildtreesRoot/versioning_ -ErrorAction SilentlyContinue
     Run-Vcpkg @commonArgs "--feature-flags=versions$opt_registries" install `
         "--dry-run" `
         "--x-manifest-root=$versionFilesPath/without-default-baseline-2" `
         "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"
     Throw-IfFailed
-    Require-FileNotExists $buildtreesRoot/versioning
+    Require-FileNotExists $buildtreesRoot/versioning_
 
     $CurrentTest = "default baseline 2"
     Run-Vcpkg @commonArgs "--feature-flags=versions$opt_registries" install `
@@ -89,7 +97,7 @@ foreach ($opt_registries in @("",",registries"))
         "--x-manifest-root=$versionFilesPath/default-baseline-2" `
         "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"
     Throw-IfFailed
-    Require-FileExists $buildtreesRoot/versioning
+    Require-FileExists $buildtreesRoot/versioning_
 
     $CurrentTest = "using version features fails without flag"
     Run-Vcpkg @commonArgs "--feature-flags=-versions$opt_registries" install `

@@ -6,6 +6,7 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/configuration.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/platform-expression.h>
@@ -247,7 +248,7 @@ namespace vcpkg
         } canonicalize{};
     }
 
-    static ParseExpected<SourceParagraph> parse_source_paragraph(const std::string& origin, Paragraph&& fields)
+    static ParseExpected<SourceParagraph> parse_source_paragraph(StringView origin, Paragraph&& fields)
     {
         ParagraphParser parser(std::move(fields));
 
@@ -289,7 +290,7 @@ namespace vcpkg
         else
         {
             auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = origin;
+            error_info->name = origin.to_string();
             error_info->error = maybe_dependencies.error();
             return error_info;
         }
@@ -305,7 +306,7 @@ namespace vcpkg
         else
         {
             auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = origin;
+            error_info->name = origin.to_string();
             error_info->error = maybe_default_features.error();
             return error_info;
         }
@@ -333,7 +334,7 @@ namespace vcpkg
             return spgh;
     }
 
-    static ParseExpected<FeatureParagraph> parse_feature_paragraph(const std::string& origin, Paragraph&& fields)
+    static ParseExpected<FeatureParagraph> parse_feature_paragraph(StringView origin, Paragraph&& fields)
     {
         ParagraphParser parser(std::move(fields));
 
@@ -352,7 +353,7 @@ namespace vcpkg
         else
         {
             auto error_info = std::make_unique<ParseControlErrorInfo>();
-            error_info->name = origin;
+            error_info->name = origin.to_string();
             error_info->error = maybe_dependencies.error();
             return error_info;
         }
@@ -365,12 +366,12 @@ namespace vcpkg
     }
 
     ParseExpected<SourceControlFile> SourceControlFile::parse_control_file(
-        const std::string& origin, std::vector<Parse::Paragraph>&& control_paragraphs)
+        StringView origin, std::vector<Parse::Paragraph>&& control_paragraphs)
     {
         if (control_paragraphs.size() == 0)
         {
             auto ret = std::make_unique<Parse::ParseControlErrorInfo>();
-            ret->name = origin;
+            ret->name = origin.to_string();
             return ret;
         }
 
@@ -395,8 +396,9 @@ namespace vcpkg
 
         if (auto maybe_error = canonicalize(*control_file))
         {
-            return std::move(maybe_error);
+            return maybe_error;
         }
+
         return control_file;
     }
 
@@ -538,6 +540,7 @@ namespace vcpkg
     DependencyArrayDeserializer DependencyArrayDeserializer::instance;
 
     constexpr StringLiteral DependencyDeserializer::NAME;
+    constexpr StringLiteral DependencyDeserializer::HOST;
     constexpr StringLiteral DependencyDeserializer::FEATURES;
     constexpr StringLiteral DependencyDeserializer::DEFAULT_FEATURES;
     constexpr StringLiteral DependencyDeserializer::PLATFORM;
@@ -566,7 +569,7 @@ namespace vcpkg
         {
             r.required_object_field(type_name, obj, NAME, name, Json::IdentifierDeserializer::instance);
 
-            auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj);
+            auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj, true);
             version = schemed_version.versiont.text();
             version_scheme = schemed_version.scheme;
             port_version = schemed_version.versiont.port_version();
@@ -607,10 +610,11 @@ namespace vcpkg
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral DESCRIPTION = "description";
         constexpr static StringLiteral DEPENDENCIES = "dependencies";
+        constexpr static StringLiteral SUPPORTS = "supports";
 
         virtual Span<const StringView> valid_fields() const override
         {
-            static const StringView t[] = {DESCRIPTION, DEPENDENCIES};
+            static const StringView t[] = {DESCRIPTION, DEPENDENCIES, SUPPORTS};
             return t;
         }
 
@@ -629,8 +633,9 @@ namespace vcpkg
             r.required_object_field(
                 type_name(), obj, DESCRIPTION, feature->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DEPENDENCIES, feature->dependencies, DependencyArrayDeserializer::instance);
+            r.optional_object_field(obj, SUPPORTS, feature->supports_expression, PlatformExprDeserializer::instance);
 
-            return std::move(feature);
+            return std::move(feature); // gcc-7 bug workaround redundant move
         }
         static FeatureDeserializer instance;
     };
@@ -638,51 +643,13 @@ namespace vcpkg
     constexpr StringLiteral FeatureDeserializer::NAME;
     constexpr StringLiteral FeatureDeserializer::DESCRIPTION;
     constexpr StringLiteral FeatureDeserializer::DEPENDENCIES;
-
-    struct ArrayFeatureDeserializer : Json::IDeserializer<std::unique_ptr<FeatureParagraph>>
-    {
-        virtual StringView type_name() const override { return "a feature"; }
-
-        virtual Span<const StringView> valid_fields() const override
-        {
-            static const StringView t[] = {
-                FeatureDeserializer::NAME,
-                FeatureDeserializer::DESCRIPTION,
-                FeatureDeserializer::DEPENDENCIES,
-            };
-            return t;
-        }
-
-        virtual Optional<std::unique_ptr<FeatureParagraph>> visit_object(Json::Reader& r,
-                                                                         const Json::Object& obj) override
-        {
-            std::string name;
-            r.required_object_field(
-                type_name(), obj, FeatureDeserializer::NAME, name, Json::IdentifierDeserializer::instance);
-            auto opt = FeatureDeserializer::instance.visit_object(r, obj);
-            if (auto p = opt.get())
-            {
-                p->get()->name = std::move(name);
-            }
-            return opt;
-        }
-
-        static Json::ArrayDeserializer<ArrayFeatureDeserializer> array_instance;
-    };
-    Json::ArrayDeserializer<ArrayFeatureDeserializer> ArrayFeatureDeserializer::array_instance{
-        "an array of feature objects"};
+    constexpr StringLiteral FeatureDeserializer::SUPPORTS;
 
     struct FeaturesFieldDeserializer : Json::IDeserializer<std::vector<std::unique_ptr<FeatureParagraph>>>
     {
         virtual StringView type_name() const override { return "a set of features"; }
 
         virtual Span<const StringView> valid_fields() const override { return {}; }
-
-        virtual Optional<std::vector<std::unique_ptr<FeatureParagraph>>> visit_array(Json::Reader& r,
-                                                                                     const Json::Array& arr) override
-        {
-            return ArrayFeatureDeserializer::array_instance.visit_array(r, arr);
-        }
 
         virtual Optional<std::vector<std::unique_ptr<FeatureParagraph>>> visit_object(Json::Reader& r,
                                                                                       const Json::Object& obj) override
@@ -709,22 +676,36 @@ namespace vcpkg
                 }
             }
 
-            return std::move(res);
+            return std::move(res); // gcc-7 bug workaround redundant move
         }
 
         static FeaturesFieldDeserializer instance;
     };
     FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
 
-    static constexpr StringView EXPRESSION_WORDS[] = {
+    struct ContactsDeserializer final : Json::IDeserializer<Json::Object>
+    {
+        virtual StringView type_name() const override { return "a dictionary of contacts"; }
+
+        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            (void)r;
+            return obj;
+        }
+
+        static ContactsDeserializer instance;
+    };
+    ContactsDeserializer ContactsDeserializer::instance;
+
+    static constexpr StringLiteral EXPRESSION_WORDS[] = {
         "WITH",
         "AND",
         "OR",
     };
-    static constexpr StringView VALID_LICENSES[] =
+    static constexpr StringLiteral VALID_LICENSES[] =
 #include "spdx-licenses.inc"
         ;
-    static constexpr StringView VALID_EXCEPTIONS[] =
+    static constexpr StringLiteral VALID_EXCEPTIONS[] =
 #include "spdx-licenses.inc"
         ;
 
@@ -753,7 +734,7 @@ namespace vcpkg
                     return true;
                 }
 
-                Span<const StringView> valid_ids;
+                Span<const StringLiteral> valid_ids;
                 bool case_sensitive = false;
                 switch (mode)
                 {
@@ -880,6 +861,8 @@ namespace vcpkg
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral MAINTAINERS = "maintainers";
+        constexpr static StringLiteral CONTACTS = "contacts";
+        constexpr static StringLiteral SUMMARY = "summary";
         constexpr static StringLiteral DESCRIPTION = "description";
         constexpr static StringLiteral HOMEPAGE = "homepage";
         constexpr static StringLiteral DOCUMENTATION = "documentation";
@@ -891,12 +874,15 @@ namespace vcpkg
         constexpr static StringLiteral SUPPORTS = "supports";
         constexpr static StringLiteral OVERRIDES = "overrides";
         constexpr static StringLiteral BUILTIN_BASELINE = "builtin-baseline";
+        constexpr static StringLiteral VCPKG_CONFIGURATION = "vcpkg-configuration";
 
         virtual Span<const StringView> valid_fields() const override
         {
             static const StringView u[] = {
                 NAME,
                 MAINTAINERS,
+                CONTACTS,
+                SUMMARY,
                 DESCRIPTION,
                 HOMEPAGE,
                 DOCUMENTATION,
@@ -908,6 +894,7 @@ namespace vcpkg
                 SUPPORTS,
                 OVERRIDES,
                 BUILTIN_BASELINE,
+                VCPKG_CONFIGURATION,
             };
             static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
 
@@ -931,12 +918,15 @@ namespace vcpkg
             }
 
             static Json::StringDeserializer url_deserializer{"a url"};
-
-            constexpr static StringView inner_type_name = "vcpkg.json";
-            DependencyOverrideDeserializer::visit_impl(
-                inner_type_name, r, obj, spgh->name, spgh->version, spgh->version_scheme, spgh->port_version);
+            r.required_object_field(type_name(), obj, NAME, spgh->name, Json::IdentifierDeserializer::instance);
+            auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
+            spgh->version = schemed_version.versiont.text();
+            spgh->version_scheme = schemed_version.scheme;
+            spgh->port_version = schemed_version.versiont.port_version();
 
             r.optional_object_field(obj, MAINTAINERS, spgh->maintainers, Json::ParagraphDeserializer::instance);
+            r.optional_object_field(obj, CONTACTS, spgh->contacts, ContactsDeserializer::instance);
+            r.optional_object_field(obj, SUMMARY, spgh->summary, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DESCRIPTION, spgh->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, HOMEPAGE, spgh->homepage, url_deserializer);
             r.optional_object_field(obj, DOCUMENTATION, spgh->documentation, url_deserializer);
@@ -964,11 +954,24 @@ namespace vcpkg
             r.optional_object_field(
                 obj, FEATURES, control_file->feature_paragraphs, FeaturesFieldDeserializer::instance);
 
+            if (auto configuration = obj.get(VCPKG_CONFIGURATION))
+            {
+                if (!configuration->is_object())
+                {
+                    r.add_generic_error(type_name(), VCPKG_CONFIGURATION, " must be an object");
+                }
+                else
+                {
+                    spgh->vcpkg_configuration = make_optional(configuration->object());
+                }
+            }
+
             if (auto maybe_error = canonicalize(*control_file))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
             }
-            return std::move(control_file);
+
+            return std::move(control_file); // gcc-7 bug workaround redundant move
         }
 
         static ManifestDeserializer instance;
@@ -987,6 +990,8 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::DEFAULT_FEATURES;
     constexpr StringLiteral ManifestDeserializer::SUPPORTS;
     constexpr StringLiteral ManifestDeserializer::OVERRIDES;
+    constexpr StringLiteral ManifestDeserializer::BUILTIN_BASELINE;
+    constexpr StringLiteral ManifestDeserializer::VCPKG_CONFIGURATION;
 
     SourceControlFile SourceControlFile::clone() const
     {
@@ -999,7 +1004,7 @@ namespace vcpkg
         return ret;
     }
 
-    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_object(const std::string& origin,
+    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_object(StringView origin,
                                                                                      const Json::Object& manifest)
     {
         Json::Reader reader;
@@ -1009,9 +1014,9 @@ namespace vcpkg
         if (!reader.errors().empty())
         {
             auto err = std::make_unique<ParseControlErrorInfo>();
-            err->name = origin;
+            err->name = origin.to_string();
             err->other_errors = std::move(reader.errors());
-            return std::move(err);
+            return err;
         }
         else if (auto p = res.get())
         {
@@ -1023,11 +1028,19 @@ namespace vcpkg
         }
     }
 
-    Optional<std::string> SourceControlFile::check_against_feature_flags(const fs::path& origin,
+    Optional<std::string> SourceControlFile::check_against_feature_flags(const Path& origin,
                                                                          const FeatureFlagSettings& flags,
                                                                          bool is_default_builtin_registry) const
     {
         static constexpr StringLiteral s_extended_help = "See `vcpkg help versioning` for more information.";
+        auto format_error_message = [&](StringView manifest_field, StringView feature_flag) {
+            return Strings::format(" was rejected because it uses \"%s\" and the `%s` feature flag is disabled.\n"
+                                   "This can be fixed by removing \"%s\".\n",
+                                   manifest_field,
+                                   feature_flag,
+                                   manifest_field);
+        };
+
         if (!flags.versions)
         {
             auto check_deps = [&](View<Dependency> deps) -> Optional<std::string> {
@@ -1035,9 +1048,9 @@ namespace vcpkg
                 {
                     if (dep.constraint.type != Versions::Constraint::Type::None)
                     {
-                        Metrics::g_metrics.lock()->track_property("error-versioning-disabled", "defined");
+                        LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
                         return Strings::concat(
-                            fs::u8string(origin),
+                            origin,
                             " was rejected because it uses constraints and the `",
                             VcpkgCmdArguments::VERSIONS_FEATURE,
                             "` feature flag is disabled.\nThis can be fixed by removing uses of \"version>=\".\n",
@@ -1056,22 +1069,19 @@ namespace vcpkg
 
             if (core_paragraph->overrides.size() != 0)
             {
-                Metrics::g_metrics.lock()->track_property("error-versioning-disabled", "defined");
-                return Strings::concat(fs::u8string(origin),
-                                       " was rejected because it uses overrides and the `",
-                                       VcpkgCmdArguments::VERSIONS_FEATURE,
-                                       "` feature flag is disabled.\nThis can be fixed by removing \"overrides\".\n",
-                                       s_extended_help);
+                LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
+                return Strings::concat(
+                    origin,
+                    format_error_message(ManifestDeserializer::OVERRIDES, VcpkgCmdArguments::VERSIONS_FEATURE),
+                    s_extended_help);
             }
 
             if (core_paragraph->builtin_baseline.has_value())
             {
-                Metrics::g_metrics.lock()->track_property("error-versioning-disabled", "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
                 return Strings::concat(
-                    fs::u8string(origin),
-                    " was rejected because it uses builtin-baseline and the `",
-                    VcpkgCmdArguments::VERSIONS_FEATURE,
-                    "` feature flag is disabled.\nThis can be fixed by removing \"builtin-baseline\".\n",
+                    origin,
+                    format_error_message(ManifestDeserializer::BUILTIN_BASELINE, VcpkgCmdArguments::VERSIONS_FEATURE),
                     s_extended_help);
             }
         }
@@ -1085,19 +1095,19 @@ namespace vcpkg
                                     return dependency.constraint.type != Versions::Constraint::Type::None;
                                 }))
                 {
-                    Metrics::g_metrics.lock()->track_property("error-versioning-no-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-no-baseline", "defined");
                     return Strings::concat(
-                        fs::u8string(origin),
-                        " was rejected because it uses \"version>=\" without setting a \"builtin-baseline\".\n",
+                        origin,
+                        " was rejected because it uses \"version>=\" and does not have a \"builtin-baseline\".\n",
                         s_extended_help);
                 }
 
                 if (!core_paragraph->overrides.empty())
                 {
-                    Metrics::g_metrics.lock()->track_property("error-versioning-no-baseline", "defined");
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-no-baseline", "defined");
                     return Strings::concat(
-                        fs::u8string(origin),
-                        " was rejected because it uses \"overrides\" without setting a \"builtin-baseline\".\n",
+                        origin,
+                        " was rejected because it uses \"overrides\" and does not have a \"builtin-baseline\".\n",
                         s_extended_help);
                 }
             }
@@ -1105,10 +1115,10 @@ namespace vcpkg
         return nullopt;
     }
 
-    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_file(const fs::path& path_to_manifest,
+    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_file(const Path& manifest_path,
                                                                                    const Json::Object& manifest)
     {
-        return parse_manifest_object(fs::u8string(path_to_manifest), manifest);
+        return parse_manifest_object(manifest_path, manifest);
     }
 
     void print_error_message(Span<const std::unique_ptr<Parse::ParseControlErrorInfo>> error_info_list)
@@ -1120,15 +1130,14 @@ namespace vcpkg
             Checks::check_exit(VCPKG_LINE_INFO, error_info != nullptr);
             if (!error_info->error.empty())
             {
-                System::print2(
-                    System::Color::error, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
+                print2(Color::error, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
             }
 
             if (!error_info->other_errors.empty())
             {
-                System::print2(System::Color::error, "Errors occurred while parsing ", error_info->name, "\n");
+                print2(Color::error, "Errors occurred while parsing ", error_info->name, "\n");
                 for (auto&& msg : error_info->other_errors)
-                    System::print2("    ", msg, '\n');
+                    print2("    ", msg, '\n');
             }
         }
 
@@ -1137,15 +1146,15 @@ namespace vcpkg
         {
             if (!error_info->extra_fields.empty())
             {
-                System::print2(System::Color::error,
-                               "Error: There are invalid fields in the control or manifest file of ",
-                               error_info->name,
-                               '\n');
-                System::print2("The following fields were not expected:\n");
+                print2(Color::error,
+                       "Error: There are invalid fields in the control or manifest file of ",
+                       error_info->name,
+                       '\n');
+                print2("The following fields were not expected:\n");
 
                 for (const auto& pr : error_info->extra_fields)
                 {
-                    System::print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
+                    print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
                 }
                 have_remaining_fields = true;
             }
@@ -1153,29 +1162,26 @@ namespace vcpkg
 
         if (have_remaining_fields)
         {
-            System::print2("This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
-                           Strings::join("\n    ", get_list_of_valid_fields()),
-                           "\n\n");
+            print2("This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
+                   Strings::join("\n    ", get_list_of_valid_fields()),
+                   "\n\n");
 #if defined(_WIN32)
             auto bootstrap = ".\\bootstrap-vcpkg.bat";
 #else
             auto bootstrap = "./bootstrap-vcpkg.sh";
 #endif
-            System::printf("You may need to update the vcpkg binary; try running %s to update.\n\n", bootstrap);
+            vcpkg::printf("You may need to update the vcpkg binary; try running %s to update.\n\n", bootstrap);
         }
 
         for (auto&& error_info : error_info_list)
         {
             if (!error_info->missing_fields.empty())
             {
-                System::print2(System::Color::error,
-                               "Error: There are missing fields in the control file of ",
-                               error_info->name,
-                               '\n');
-                System::print2("The following fields were missing:\n");
+                print2(Color::error, "Error: There are missing fields in the control file of ", error_info->name, '\n');
+                print2("The following fields were missing:\n");
                 for (const auto& pr : error_info->missing_fields)
                 {
-                    System::print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
+                    print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
                 }
             }
         }
@@ -1184,17 +1190,17 @@ namespace vcpkg
         {
             if (!error_info->expected_types.empty())
             {
-                System::print2(System::Color::error,
-                               "Error: There are invalid field types in the CONTROL or manifest file of ",
-                               error_info->name,
-                               '\n');
-                System::print2("The following fields had the wrong types:\n\n");
+                print2(Color::error,
+                       "Error: There are invalid field types in the CONTROL or manifest file of ",
+                       error_info->name,
+                       '\n');
+                print2("The following fields had the wrong types:\n\n");
 
                 for (const auto& pr : error_info->expected_types)
                 {
-                    System::printf("    %s was expected to be %s\n", pr.first, pr.second);
+                    vcpkg::printf("    %s was expected to be %s\n", pr.first, pr.second);
                 }
-                System::print2("\n");
+                print2("\n");
             }
         }
     }
@@ -1208,6 +1214,23 @@ namespace vcpkg
         else
             return nullopt;
     }
+
+    bool SourceControlFile::has_qualified_dependencies() const
+    {
+        for (auto&& dep : core_paragraph->dependencies)
+        {
+            if (!dep.platform.is_empty()) return true;
+        }
+        for (auto&& fpgh : feature_paragraphs)
+        {
+            for (auto&& dep : fpgh->dependencies)
+            {
+                if (!dep.platform.is_empty()) return true;
+            }
+        }
+        return false;
+    }
+
     Optional<const std::vector<Dependency>&> SourceControlFile::find_dependencies_for_feature(
         const std::string& featurename) const
     {
@@ -1344,6 +1367,24 @@ namespace vcpkg
             obj.insert(el.first.to_string(), el.second);
         }
 
+        if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
+        {
+            Json::Reader reader;
+            auto maybe_configuration = reader.visit(*configuration, *vcpkg::make_configuration_deserializer(""));
+            if (!reader.errors().empty())
+            {
+                print2(Color::error, "Errors occurred while parsing ", ManifestDeserializer::VCPKG_CONFIGURATION, "\n");
+                for (auto&& msg : reader.errors())
+                    print2("    ", msg, '\n');
+
+                print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for "
+                       "more information.\n");
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+            obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,
+                       serialize_configuration(maybe_configuration.value_or_exit(VCPKG_LINE_INFO)));
+        }
+
         obj.insert(ManifestDeserializer::NAME, Json::Value::string(scf.core_paragraph->name));
 
         serialize_schemed_version(obj,
@@ -1390,6 +1431,8 @@ namespace vcpkg
                 }
 
                 serialize_paragraph(feature_obj, FeatureDeserializer::DESCRIPTION, feature->description, true);
+                serialize_optional_string(
+                    feature_obj, FeatureDeserializer::SUPPORTS, to_string(feature->supports_expression));
 
                 if (!feature->dependencies.empty() || debug)
                 {

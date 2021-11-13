@@ -6,6 +6,7 @@
 /cmake-build-*
 /.vs
 /CMakeSettings.json
+/out
 .DS_Store
 # Qt Creator CMake project files
 CMakeLists.txt.user

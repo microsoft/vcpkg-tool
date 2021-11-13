@@ -19,6 +19,7 @@ namespace vcpkg::PlatformExpression
         x86,
         x64,
         arm,
+        arm32,
         arm64,
         wasm32,
 
@@ -43,6 +44,7 @@ namespace vcpkg::PlatformExpression
             {"x86", Identifier::x86},
             {"x64", Identifier::x64},
             {"arm", Identifier::arm},
+            {"arm32", Identifier::arm32},
             {"arm64", Identifier::arm64},
             {"wasm32", Identifier::wasm32},
             {"windows", Identifier::windows},
@@ -100,9 +102,8 @@ namespace vcpkg::PlatformExpression
             }
         };
 
-        class ExpressionParser : public Parse::ParserBase
+        struct ExpressionParser : Parse::ParserBase
         {
-        public:
             ExpressionParser(StringView str, MultipleBinaryOperators multiple_binary_operators)
                 : Parse::ParserBase(str, "CONTROL"), multiple_binary_operators(multiple_binary_operators)
             {
@@ -375,8 +376,8 @@ namespace vcpkg::PlatformExpression
                             // Point out in the diagnostic that they should add to the override list because that is
                             // what most users should do, however it is also valid to update the built in identifiers to
                             // recognize the name.
-                            System::printf(
-                                System::Color::error,
+                            vcpkg::printf(
+                                Color::error,
                                 "Error: Unrecognized identifer name %s. Add to override list in triplet file.\n",
                                 expr.identifier);
                             return false;
@@ -387,10 +388,12 @@ namespace vcpkg::PlatformExpression
                             // This is because it previously was only checking for a substring.
                             return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm") ||
                                    true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
+                        case Identifier::arm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm");
                         case Identifier::arm64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
                         case Identifier::windows:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "") ||
-                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore") ||
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "MinGW");
                         case Identifier::mingw: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "MinGW");
                         case Identifier::linux: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");

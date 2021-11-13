@@ -2,6 +2,8 @@
 #include <process.h>
 #include <winhttp.h>
 
+#include <Softpub.h>
+
 /*
  * This program must be as small as possible, because it is committed in binary form to the
  * vcpkg github repo to enable downloading the main vcpkg program on Windows 7, where TLS 1.2 is
@@ -147,9 +149,19 @@ static void __declspec(noreturn) abort_api_failure(const HANDLE std_out, const w
     win32_abort();
 }
 
+static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, BOOL setting)
+{
+    FILE_DISPOSITION_INFO fdi = {0};
+    fdi.DeleteFile = setting;
+    if (SetFileInformationByHandle(target, FileDispositionInfo, &fdi, sizeof(fdi)) == 0)
+    {
+        abort_api_failure(std_out, L"SetFileInformationByHandle");
+    }
+}
+
 #ifndef NDEBUG
 int main()
-#else // ^^^ debug // !debug vvv
+#else  // ^^^ debug // !debug vvv
 int __stdcall entry()
 #endif // ^^^ !debug
 {
@@ -209,11 +221,22 @@ int __stdcall entry()
         abort_api_failure(std_out, L"GetEnvironmentVariableW");
     }
 
-    const HANDLE out_file = CreateFileW(out_file_path, FILE_WRITE_DATA, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+    const HANDLE out_file = CreateFileW(out_file_path,                             // lpFileName
+                                        FILE_WRITE_DATA | FILE_READ_DATA | DELETE, // dwDesiredAccess
+                                        0,                                         // dwShareMode
+                                        0,                                         // lpSecurityAttributes
+                                        CREATE_ALWAYS,                             // dwCreationDisposition
+                                        FILE_ATTRIBUTE_NORMAL,                     // dwFlagsAndAttributes
+                                        0                                          // hTemplateFile
+    );
+
     if (out_file == INVALID_HANDLE_VALUE)
     {
         abort_api_failure(std_out, L"CreateFileW");
     }
+
+    // Setting delete on close before we do anything means the file will get deleted for us if we crash
+    set_delete_on_close_flag(std_out, out_file, TRUE);
 
     BOOL results = FALSE;
     const HINTERNET session = WinHttpOpen(L"tls12-download/1.0", access_type, proxy_setting, proxy_bypass_setting, 0);
@@ -245,7 +268,7 @@ int __stdcall entry()
         }
     }
 
-    write_message(std_out, L"\r\n");
+    write_message(std_out, L"...");
 
     unsigned long secure_protocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
     if (!WinHttpSetOption(session, WINHTTP_OPTION_SECURE_PROTOCOLS, &secure_protocols, sizeof(DWORD)))
@@ -326,10 +349,51 @@ int __stdcall entry()
     WinHttpCloseHandle(request);
     WinHttpCloseHandle(connect);
     WinHttpCloseHandle(session);
-    CloseHandle(out_file);
 
-    write_message(std_out, L"Done.\r\n");
+    write_message(std_out, L" done.\r\nValidating signature...");
+
+    if (SetFilePointer(out_file, 0, 0, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+    {
+        abort_api_failure(std_out, L"SetFilePointer");
+    }
+
+    DWORD exit_code = 0;
+
+    WINTRUST_FILE_INFO wtfi = {0};
+    wtfi.cbStruct = sizeof(wtfi);
+    wtfi.pcwszFilePath = out_file_path;
+    wtfi.hFile = out_file;
+    wtfi.pgKnownSubject = 0;
+
+    WINTRUST_DATA wtd = {0};
+    wtd.cbStruct = sizeof(wtd);
+    wtd.dwUIChoice = WTD_UI_NONE;
+    wtd.fdwRevocationChecks = WTD_REVOKE_WHOLECHAIN;
+    wtd.dwUnionChoice = WTD_CHOICE_FILE;
+    wtd.pFile = &wtfi;
+    wtd.dwStateAction = WTD_STATEACTION_VERIFY;
+    wtd.dwProvFlags = WTD_REVOCATION_CHECK_CHAIN;
+
+    GUID wt_policy_guid = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+
+    LONG trust_validation_result = WinVerifyTrust(INVALID_HANDLE_VALUE, &wt_policy_guid, &wtd);
+    wtd.dwStateAction = WTD_STATEACTION_CLOSE;
+    (void)WinVerifyTrust(INVALID_HANDLE_VALUE, &wt_policy_guid, &wtd);
+    if (trust_validation_result == 0)
+    {
+        set_delete_on_close_flag(std_out, out_file, FALSE);
+        write_message(std_out, L" done.\r\n");
+    }
+    else
+    {
+        exit_code = 1;
+        write_message(std_out, L" failed! ");
+        write_hex(std_out, (DWORD)trust_validation_result);
+        write_message(std_out, L" Deleted!\r\n");
+    }
+
+    CloseHandle(out_file);
     FlushFileBuffers(std_out);
-    TerminateProcess(GetCurrentProcess(), 0);
-    return 0;
+    TerminateProcess(GetCurrentProcess(), exit_code);
+    return (int)exit_code;
 }

@@ -32,10 +32,7 @@ namespace vcpkg::Help
         print_usage(S);
     }
 
-    static void integrate_topic_fn(const VcpkgPaths&)
-    {
-        System::print2("Commands:\n", Commands::Integrate::get_helpstring());
-    }
+    static void integrate_topic_fn(const VcpkgPaths&) { print2("Commands:\n", Commands::Integrate::get_helpstring()); }
 
     static void help_topics(const VcpkgPaths&);
 
@@ -52,9 +49,6 @@ namespace vcpkg::Help
         HelpTableFormatter tbl;
         tbl.text("Versioning allows you to deterministically control the precise revisions of dependencies used by "
                  "your project from within your manifest file.");
-        tbl.blank();
-        tbl.blank();
-        tbl.text("** This feature is experimental and requires `--feature-flags=versions` **");
         tbl.blank();
         tbl.blank();
         tbl.header("Versions in vcpkg come in four primary flavors");
@@ -74,9 +68,9 @@ namespace vcpkg::Help
         tbl.header("Manifests can place three kinds of constraints upon the versions used");
         tbl.format("builtin-baseline",
                    "The baseline references a commit within the vcpkg repository that establishes a minimum version on "
-                   "every dependency in the graph. If no other constraints are specified (directly or transitively), "
-                   "then the version from the baseline of the top level manifest will be used. Baselines of transitive "
-                   "dependencies are ignored.");
+                   "every dependency in the graph. For example, if no other constraints are specified (directly or "
+                   "transitively), then the version will resolve to the baseline of the top level manifest. Baselines "
+                   "of transitive dependencies are ignored.");
         tbl.blank();
         tbl.format("version>=",
                    "Within the \"dependencies\" field, each dependency can have a minimum constraint listed. These "
@@ -118,9 +112,9 @@ namespace vcpkg::Help
         { "name": "rapidjson", "version": "2020-09-14" }
     ]
 })");
-        System::print2(tbl.m_str,
-                       "\nExtended documentation is available at "
-                       "https://github.com/Microsoft/vcpkg/tree/master/docs/users/versioning.md\n");
+        print2(tbl.m_str,
+               "\nExtended documentation is available at "
+               "https://github.com/Microsoft/vcpkg/tree/master/docs/users/versioning.md\n");
     }
 
     static constexpr std::array<Topic, 17> topics = {{
@@ -145,42 +139,40 @@ namespace vcpkg::Help
 
     static void help_topics(const VcpkgPaths&)
     {
-        System::print2("Available help topics:",
-                       Strings::join("", topics, [](const Topic& topic) { return std::string("\n  ") + topic.name; }),
-                       "\n");
+        print2("Available help topics:",
+               Strings::join("", topics, [](const Topic& topic) { return std::string("\n  ") + topic.name; }),
+               "\n");
     }
 
     void help_topic_valid_triplet(const VcpkgPaths& paths)
     {
-        std::map<std::string, std::vector<const VcpkgPaths::TripletFile*>> triplets_per_location;
-        vcpkg::Util::group_by(paths.get_available_triplets(),
-                              &triplets_per_location,
-                              [](const VcpkgPaths::TripletFile& triplet_file) -> std::string {
-                                  return fs::u8string(triplet_file.location);
-                              });
+        std::map<StringView, std::vector<const VcpkgPaths::TripletFile*>> triplets_per_location;
+        vcpkg::Util::group_by(
+            paths.get_available_triplets(),
+            &triplets_per_location,
+            [](const VcpkgPaths::TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
-        System::print2("Available architecture triplets\n");
-
-        System::print2("VCPKG built-in triplets:\n");
-        for (auto* triplet : triplets_per_location[fs::u8string(paths.triplets)])
+        print2("Available architecture triplets\n");
+        print2("VCPKG built-in triplets:\n");
+        for (auto* triplet : triplets_per_location[paths.triplets])
         {
-            System::print2("  ", triplet->name, '\n');
+            print2("  ", triplet->name, '\n');
         }
-        triplets_per_location.erase(fs::u8string(paths.triplets));
 
-        System::print2("\nVCPKG community triplets:\n");
-        for (auto* triplet : triplets_per_location[fs::u8string(paths.community_triplets)])
+        triplets_per_location.erase(paths.triplets);
+        print2("\nVCPKG community triplets:\n");
+        for (auto* triplet : triplets_per_location[paths.community_triplets])
         {
-            System::print2("  ", triplet->name, '\n');
+            print2("  ", triplet->name, '\n');
         }
-        triplets_per_location.erase(fs::u8string(paths.community_triplets));
 
+        triplets_per_location.erase(paths.community_triplets);
         for (auto&& kv_pair : triplets_per_location)
         {
-            System::print2("\nOverlay triplets from ", kv_pair.first, ":\n");
+            print2("\nOverlay triplets from ", kv_pair.first, ":\n");
             for (auto* triplet : kv_pair.second)
             {
-                System::print2("  ", triplet->name, '\n');
+                print2("  ", triplet->name, '\n');
             }
         }
     }
@@ -208,7 +200,7 @@ namespace vcpkg::Help
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        System::print2(System::Color::error, "Error: unknown topic ", topic, '\n');
+        print2(Color::error, "Error: unknown topic ", topic, '\n');
         help_topics(paths);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }

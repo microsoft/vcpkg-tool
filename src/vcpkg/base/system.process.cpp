@@ -1,11 +1,14 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <ctime>
+#include <future>
 
 #if defined(__APPLE__)
 #include <mach-o/dyld.h>
@@ -18,8 +21,6 @@
 #if defined(_WIN32)
 #pragma comment(lib, "Advapi32")
 #endif
-
-using namespace vcpkg::System;
 
 namespace vcpkg
 {
@@ -43,7 +44,7 @@ namespace vcpkg
                         while (true)
                         {
                             std::this_thread::sleep_for(std::chrono::seconds(10));
-                            System::print2("Waiting for child processes to exit...\n");
+                            print2("Waiting for child processes to exit...\n");
                         }
                     }
                 }
@@ -66,7 +67,7 @@ namespace vcpkg
                     while (true)
                     {
                         std::this_thread::sleep_for(std::chrono::seconds(10));
-                        System::print2("Waiting for child processes to exit...\n");
+                        print2("Waiting for child processes to exit...\n");
                     }
                 }
             }
@@ -127,18 +128,18 @@ namespace vcpkg
         static CtrlCStateMachine g_ctrl_c_state;
     }
 
-    void System::initialize_global_job_object() { g_ctrl_c_state.initialize_job(); }
-    void System::enter_interactive_subprocess() { g_ctrl_c_state.enter_interactive(); }
-    void System::exit_interactive_subprocess() { g_ctrl_c_state.exit_interactive(); }
+    void initialize_global_job_object() { g_ctrl_c_state.initialize_job(); }
+    void enter_interactive_subprocess() { g_ctrl_c_state.enter_interactive(); }
+    void exit_interactive_subprocess() { g_ctrl_c_state.exit_interactive(); }
 #endif
 
-    fs::path System::get_exe_path_of_current_process()
+    Path get_exe_path_of_current_process()
     {
 #if defined(_WIN32)
         wchar_t buf[_MAX_PATH];
         const int bytes = GetModuleFileNameW(nullptr, buf, _MAX_PATH);
         if (bytes == 0) std::abort();
-        return fs::path(buf, buf + bytes);
+        return Strings::to_utf8(buf, bytes);
 #elif defined(__APPLE__)
         static constexpr const uint32_t buff_size = 1024 * 32;
         uint32_t size = buff_size;
@@ -147,7 +148,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
         std::unique_ptr<char> canonicalPath(realpath(buf, NULL));
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
-        return fs::path(std::string(canonicalPath.get()));
+        return canonicalPath.get();
 #elif defined(__FreeBSD__)
         int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
         char exePath[2048];
@@ -155,40 +156,40 @@ namespace vcpkg
         auto rcode = sysctl(mib, 4, exePath, &len, NULL, 0);
         Checks::check_exit(VCPKG_LINE_INFO, rcode == 0, "Could not determine current executable path.");
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
-        return fs::path(exePath, exePath + len - 1);
+        return Path(exePath, exePath + len - 1);
 #elif defined(__OpenBSD__)
         const char* progname = getprogname();
         char resolved_path[PATH_MAX];
         auto ret = realpath(progname, resolved_path);
         Checks::check_exit(VCPKG_LINE_INFO, ret != nullptr, "Could not determine current executable path.");
-        return fs::u8path(resolved_path);
+        return resolved_path;
 #else /* LINUX */
         std::array<char, 1024 * 4> buf;
         auto written = readlink("/proc/self/exe", buf.data(), buf.size());
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
-        return fs::path(buf.data(), buf.data() + written);
+        return Path(buf.data(), buf.data() + written);
 #endif
     }
 
-    System::CMakeVariable::CMakeVariable(const StringView varname, const char* varvalue)
+    CMakeVariable::CMakeVariable(const StringView varname, const char* varvalue)
         : s(Strings::format("-D%s=%s", varname, varvalue))
     {
     }
-    System::CMakeVariable::CMakeVariable(const StringView varname, const std::string& varvalue)
+    CMakeVariable::CMakeVariable(const StringView varname, const std::string& varvalue)
         : CMakeVariable(varname, varvalue.c_str())
     {
     }
-    System::CMakeVariable::CMakeVariable(const StringView varname, const fs::path& path)
-        : CMakeVariable(varname, fs::generic_u8string(path))
+    CMakeVariable::CMakeVariable(const StringView varname, const Path& varvalue)
+        : CMakeVariable(varname, varvalue.generic_u8string())
     {
     }
-    System::CMakeVariable::CMakeVariable(std::string var) : s(std::move(var)) { }
+    CMakeVariable::CMakeVariable(std::string var) : s(std::move(var)) { }
 
-    System::Command System::make_basic_cmake_cmd(const fs::path& cmake_tool_path,
-                                                 const fs::path& cmake_script,
-                                                 const std::vector<CMakeVariable>& pass_variables)
+    Command make_basic_cmake_cmd(const Path& cmake_tool_path,
+                                 const Path& cmake_script,
+                                 const std::vector<CMakeVariable>& pass_variables)
     {
-        System::Command cmd{cmake_tool_path};
+        Command cmd{cmake_tool_path};
         for (auto&& var : pass_variables)
         {
             cmd.string_arg(var.s);
@@ -197,7 +198,7 @@ namespace vcpkg
         return cmd;
     }
 
-    System::Command& System::Command::string_arg(StringView s) &
+    Command& Command::string_arg(StringView s) &
     {
         if (!buf.empty()) buf.push_back(' ');
         if (Strings::find_first_of(s, " \t\n\r\"\\,;&`^|'") != s.end())
@@ -246,8 +247,8 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
-    Environment System::get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
-                                                       const std::string& prepend_to_path)
+    Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
+                                               const std::string& prepend_to_path)
     {
         static const std::string system_root_env =
             get_environment_variable("SystemRoot").value_or_exit(VCPKG_LINE_INFO);
@@ -316,16 +317,24 @@ namespace vcpkg
             L"CUDA_PATH_V11_1",
             L"CUDA_PATH_V11_2",
             L"CUDA_TOOLKIT_ROOT_DIR",
-            // Environmental variable generated automatically by CUDA after installation
+            // Environment variable generated automatically by CUDA after installation
             L"NVCUDASAMPLES_ROOT",
             L"NVTOOLSEXT_PATH",
-            // Enables find_package(Vulkan) in CMake. Environmental variable generated by Vulkan SDK installer
+            // Enables find_package(Vulkan) in CMake. Environment variable generated by Vulkan SDK installer
             L"VULKAN_SDK",
             // Enable targeted Android NDK
             L"ANDROID_NDK_HOME",
+            // Environment variables generated automatically by Intel oneAPI after installation
+            L"ONEAPI_ROOT",
+            L"IFORT_COMPILER19",
+            L"IFORT_COMPILER20",
+            L"IFORT_COMPILER21",
+            // Environment variables used by wrapper scripts to allow us to set environment variables in parent shells
+            L"Z_VCPKG_POSTSCRIPT",
+            L"Z_VCPKG_UNDO",
         };
 
-        const Optional<std::string> keep_vars = System::get_environment_variable("VCPKG_KEEP_ENV_VARS");
+        const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");
         const auto k = keep_vars.get();
 
         if (k && !k->empty())
@@ -342,7 +351,7 @@ namespace vcpkg
 
         for (auto&& env_wstring : env_wstrings)
         {
-            const Optional<std::string> value = System::get_environment_variable(Strings::to_utf8(env_wstring.c_str()));
+            const Optional<std::string> value = get_environment_variable(Strings::to_utf8(env_wstring.c_str()));
             const auto v = value.get();
             if (!v || v->empty()) continue;
 
@@ -373,19 +382,60 @@ namespace vcpkg
         return {env_cstr};
     }
 #else
-    Environment System::get_modified_clean_environment(const std::unordered_map<std::string, std::string>&,
-                                                       const std::string&)
+    Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>&, const std::string&)
     {
         return {};
     }
 #endif
-    const Environment& System::get_clean_environment()
+    const Environment& get_clean_environment()
     {
         static const Environment clean_env = get_modified_clean_environment({});
         return clean_env;
     }
 
-    int System::cmd_execute_clean(const Command& cmd_line, InWorkingDirectory wd)
+    std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
+                                                                           InWorkingDirectory wd,
+                                                                           const Environment& env)
+    {
+        if (cmd_lines.size() == 0)
+        {
+            return {};
+        }
+        if (cmd_lines.size() == 1)
+        {
+            return {cmd_execute_and_capture_output(cmd_lines[0], wd, env)};
+        }
+        std::vector<ExitCodeAndOutput> res(cmd_lines.size());
+        std::atomic<size_t> work_item{0};
+
+        const auto num_threads =
+            static_cast<size_t>(std::max(1, std::min(get_concurrency(), static_cast<int>(cmd_lines.size()))));
+
+        auto work = [&cmd_lines, &res, &work_item, &wd, &env]() {
+            for (size_t item = work_item.fetch_add(1); item < cmd_lines.size(); item = work_item.fetch_add(1))
+            {
+                res[item] = cmd_execute_and_capture_output(cmd_lines[item], wd, env);
+            }
+        };
+
+        std::vector<std::future<void>> workers;
+        for (size_t x = 0; x < num_threads - 1; ++x)
+        {
+            workers.emplace_back(std::async(std::launch::async | std::launch::deferred, work));
+            if (work_item >= cmd_lines.size())
+            {
+                break;
+            }
+        }
+        work();
+        for (auto&& w : workers)
+        {
+            w.get();
+        }
+        return res;
+    }
+
+    int cmd_execute_clean(const Command& cmd_line, InWorkingDirectory wd)
     {
         return cmd_execute(cmd_line, wd, get_clean_environment());
     }
@@ -456,7 +506,8 @@ namespace vcpkg
         {
             // this only fails if we can't get the current working directory of vcpkg, and we assume that we have that,
             // so it's fine anyways
-            working_directory = Files::get_real_filesystem().absolute(VCPKG_LINE_INFO, wd.working_directory).native();
+            working_directory =
+                Strings::to_utf16(get_real_filesystem().absolute(wd.working_directory, VCPKG_LINE_INFO));
         }
 
         VCPKG_MSVC_WARNING(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
@@ -556,23 +607,21 @@ namespace vcpkg
         if (auto proc_info = maybe_proc_info.get())
         {
             ret.proc_info = std::move(*proc_info);
-            return std::move(ret);
+            return ret;
         }
-        else
-        {
-            return maybe_proc_info.error();
-        }
+
+        return maybe_proc_info.error();
     }
 #endif
 
 #if defined(_WIN32)
-    void System::cmd_execute_background(const Command& cmd_line)
+    void cmd_execute_background(const Command& cmd_line)
     {
-        auto timer = Chrono::ElapsedTimer::create_started();
+        auto timer = ElapsedTimer::create_started();
 
         auto process_info =
             windows_create_windowless_process(cmd_line.command_line(),
-                                              InWorkingDirectory{fs::path()},
+                                              InWorkingDirectory{Path()},
                                               {},
                                               CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
         if (!process_info.get())
@@ -583,7 +632,7 @@ namespace vcpkg
         Debug::print("cmd_execute_background() took ", static_cast<int>(timer.microseconds()), " us\n");
     }
 
-    Environment System::cmd_execute_modify_env(const Command& cmd_line, const Environment& env)
+    Environment cmd_execute_modify_env(const Command& cmd_line, const Environment& env)
     {
         static StringLiteral magic_string = "cdARN4xjKueKScMy9C6H";
 
@@ -628,9 +677,9 @@ namespace vcpkg
     }
 #endif
 
-    int System::cmd_execute(const Command& cmd_line, System::InWorkingDirectory wd, const Environment& env)
+    int cmd_execute(const Command& cmd_line, InWorkingDirectory wd, const Environment& env)
     {
-        auto timer = Chrono::ElapsedTimer::create_started();
+        auto timer = ElapsedTimer::create_started();
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
         g_ctrl_c_state.transition_to_spawn_process();
@@ -656,11 +705,8 @@ namespace vcpkg
         }
         else
         {
-            real_command_line = System::Command("cd")
-                                    .path_arg(wd.working_directory)
-                                    .raw_arg("&&")
-                                    .raw_arg(cmd_line.command_line())
-                                    .extract();
+            real_command_line =
+                Command("cd").path_arg(wd.working_directory).raw_arg("&&").raw_arg(cmd_line.command_line()).extract();
         }
         Debug::print("system(", real_command_line, ")\n");
         fflush(nullptr);
@@ -672,41 +718,26 @@ namespace vcpkg
         return exit_code;
     }
 
-    int System::cmd_execute_and_stream_lines(const Command& cmd_line,
-                                             System::InWorkingDirectory wd,
-                                             std::function<void(StringView)> per_line_cb,
-                                             const Environment& env)
+    int cmd_execute_and_stream_lines(const Command& cmd_line,
+                                     InWorkingDirectory wd,
+                                     std::function<void(StringView)> per_line_cb,
+                                     const Environment& env)
     {
-        std::string buf;
+        Strings::LinesStream lines;
 
         auto rc = cmd_execute_and_stream_data(
-            cmd_line,
-            wd,
-            [&](StringView sv) {
-                auto prev_size = buf.size();
-                Strings::append(buf, sv);
+            cmd_line, wd, [&](const StringView sv) { lines.on_data(sv, per_line_cb); }, env);
 
-                auto it = std::find(buf.begin() + prev_size, buf.end(), '\n');
-                while (it != buf.end())
-                {
-                    std::string s(buf.begin(), it);
-                    per_line_cb(s);
-                    buf.erase(buf.begin(), it + 1);
-                    it = std::find(buf.begin(), buf.end(), '\n');
-                }
-            },
-            env);
-
-        per_line_cb(buf);
+        lines.on_end(per_line_cb);
         return rc;
     }
 
-    int System::cmd_execute_and_stream_data(const Command& cmd_line,
-                                            System::InWorkingDirectory wd,
-                                            std::function<void(StringView)> data_cb,
-                                            const Environment& env)
+    int cmd_execute_and_stream_data(const Command& cmd_line,
+                                    InWorkingDirectory wd,
+                                    std::function<void(StringView)> data_cb,
+                                    const Environment& env)
     {
-        auto timer = Chrono::ElapsedTimer::create_started();
+        auto timer = ElapsedTimer::create_started();
 
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
@@ -729,7 +760,7 @@ namespace vcpkg
         }
         else
         {
-            actual_cmd_line = System::Command("cd")
+            actual_cmd_line = Command("cd")
                                   .path_arg(wd.working_directory)
                                   .raw_arg("&&")
                                   .raw_arg(cmd_line.command_line())
@@ -768,9 +799,9 @@ namespace vcpkg
         return exit_code;
     }
 
-    ExitCodeAndOutput System::cmd_execute_and_capture_output(const Command& cmd_line,
-                                                             System::InWorkingDirectory wd,
-                                                             const Environment& env)
+    ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
+                                                     InWorkingDirectory wd,
+                                                     const Environment& env)
     {
         std::string output;
         auto rc = cmd_execute_and_stream_data(
@@ -788,11 +819,11 @@ namespace vcpkg
         }
     }
 
-    void System::register_console_ctrl_handler()
+    void register_console_ctrl_handler()
     {
         SetConsoleCtrlHandler(reinterpret_cast<PHANDLER_ROUTINE>(ctrl_handler), TRUE);
     }
 #else
-    void System::register_console_ctrl_handler() { }
+    void register_console_ctrl_handler() { }
 #endif
 }

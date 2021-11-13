@@ -25,6 +25,12 @@ namespace vcpkg
 
 namespace vcpkg::Dependencies
 {
+    enum class UnsupportedPortAction : bool
+    {
+        Warn,
+        Error,
+    };
+
     enum class RequestType
     {
         UNKNOWN,
@@ -58,7 +64,7 @@ namespace vcpkg::Dependencies
         InstallPlanAction(InstalledPackageView&& spghs, const RequestType& request_type);
 
         InstallPlanAction(const PackageSpec& spec,
-                          const SourceControlFileLocation& scfl,
+                          const SourceControlFileAndLocation& scfl,
                           const RequestType& request_type,
                           Triplet host_triplet,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies);
@@ -67,11 +73,11 @@ namespace vcpkg::Dependencies
         const std::string& public_abi() const;
         bool has_package_abi() const;
         Optional<const std::string&> package_abi() const;
-        const Build::PreBuildInfo& pre_build_info(LineInfo linfo) const;
+        const Build::PreBuildInfo& pre_build_info(LineInfo li) const;
 
         PackageSpec spec;
 
-        Optional<const SourceControlFileLocation&> source_control_file_location;
+        Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
         Optional<InstalledPackageView> installed_package;
 
         InstallPlanType plan_type;
@@ -118,6 +124,7 @@ namespace vcpkg::Dependencies
         std::vector<RemovePlanAction> remove_actions;
         std::vector<InstallPlanAction> already_installed;
         std::vector<InstallPlanAction> install_actions;
+        std::vector<std::string> warnings;
     };
 
     enum class ExportPlanType
@@ -159,10 +166,14 @@ namespace vcpkg::Dependencies
     struct CreateInstallPlanOptions
     {
         CreateInstallPlanOptions(Graphs::Randomizer* r, Triplet t) : randomizer(r), host_triplet(t) { }
-        CreateInstallPlanOptions(Triplet t) : host_triplet(t) { }
+        CreateInstallPlanOptions(Triplet t, UnsupportedPortAction action = UnsupportedPortAction::Error)
+            : host_triplet(t), unsupported_port_action(action)
+        {
+        }
 
         Graphs::Randomizer* randomizer = nullptr;
         Triplet host_triplet;
+        UnsupportedPortAction unsupported_port_action;
     };
 
     std::vector<RemovePlanAction> create_remove_plan(const std::vector<PackageSpec>& specs,
@@ -201,9 +212,8 @@ namespace vcpkg::Dependencies
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
-                                                        Triplet host_triplet);
+                                                        Triplet host_triplet,
+                                                        UnsupportedPortAction unsupported_port_action);
 
-    void print_plan(const ActionPlan& action_plan,
-                    const bool is_recursive = true,
-                    const fs::path& builtin_ports_dir = {});
+    void print_plan(const ActionPlan& action_plan, const bool is_recursive = true, const Path& builtin_ports_dir = {});
 }

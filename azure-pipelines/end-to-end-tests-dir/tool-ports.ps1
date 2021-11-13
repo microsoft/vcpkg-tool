@@ -19,13 +19,15 @@ else
 
 $env:VCPKG_FEATURE_FLAGS="-compilertracking"
 
-# Test native installation
+# Test native installation and isolation from CLICOLOR_FORCE=1
+$env:CLICOLOR_FORCE = 1
 Run-Vcpkg ($commonArgs + @("install", "tool-libb"))
 Throw-IfFailed
 @("tool-control", "tool-manifest", "tool-liba", "tool-libb") | % {
     Require-FileNotExists $installRoot/$targetTriplet/share/$_
     Require-FileExists $installRoot/$hostTriplet/share/$_
 }
+Remove-Item env:CLICOLOR_FORCE
 
 Refresh-TestRoot
 

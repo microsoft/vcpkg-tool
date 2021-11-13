@@ -1,10 +1,10 @@
 variables:
-  VCPKG_REPO_COMMIT_SHA: '28c588e6afa75298ec3d3703db9f05e88da2b2b4'
+  VCPKG_REPO_COMMIT_SHA: '261c458af6e3eed5d099144aff95d2b5035f656b'
 jobs:
-- job: linux
-  displayName: 'Linux'
+- job: linux_gcc_9
+  displayName: 'Ubuntu 20.04 with GCC 9'
   pool:
-    vmImage: 'ubuntu-latest'
+    vmImage: 'ubuntu-20.04'
   variables:
     - name: 'VCPKG_ROOT'
       value: $(Build.SourcesDirectory)/vcpkg-root
@@ -14,6 +14,7 @@ jobs:
         git -C "$VCPKG_ROOT" checkout $VCPKG_REPO_COMMIT_SHA
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
+        export CXXFLAGS="-fprofile-arcs -ftest-coverage -fPIC -O0"
         cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
@@ -27,10 +28,31 @@ jobs:
         arguments: '-Triplet x64-linux -WorkingRoot work -VcpkgRoot $(VCPKG_ROOT)'
         workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
         pwsh: true
+    - bash: |
+        sudo pip install gcovr
+      displayName: "Install coverage tools"
+    - bash: |
+        mkdir -p "$(Build.SourcesDirectory)/coverage"
+        cd build.amd64.debug
+        gcovr --xml --output "$(Build.SourcesDirectory)/coverage/coverage.xml" \
+          --root "$(Build.SourcesDirectory)" \
+          --exclude '(.+/)?CMakeFiles/' \
+          --exclude '(.+/)?catch2/' \
+          --exclude '(.+/)?vcpkg-fuzz/' \
+          --exclude '(.+/)?vcpkg-test/' \
+          --print-summary \
+          .
+      displayName: "Analyse test coverage"
+      failOnStderr: true
+    - task: PublishCodeCoverageResults@1
+      inputs:
+        codeCoverageTool: 'Cobertura'
+        summaryFileLocation: '$(Build.SourcesDirectory)/coverage/coverage.xml'
+      displayName: 'Publish test coverage results'
 - job: osx
   displayName: 'OSX'
   pool:
-    vmImage: 'macos-latest'
+    vmImage: 'macOS-11'
   variables:
     - name: 'VCPKG_ROOT'
       value: $(Build.SourcesDirectory)/vcpkg-root
@@ -40,7 +62,7 @@ jobs:
         git -C "$VCPKG_ROOT" checkout $VCPKG_REPO_COMMIT_SHA
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
-        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
+        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true

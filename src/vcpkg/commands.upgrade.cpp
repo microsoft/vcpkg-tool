@@ -1,3 +1,4 @@
+#include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
@@ -22,10 +23,12 @@ namespace vcpkg::Commands::Upgrade
 
     static constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
     static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
+    static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 2> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 3> INSTALL_SWITCHES = {{
         {OPTION_NO_DRY_RUN, "Actually upgrade"},
         {OPTION_KEEP_GOING, "Continue installing packages on failure"},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -52,9 +55,11 @@ namespace vcpkg::Commands::Upgrade
 
         const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
         const KeepGoing keep_going = to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING));
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+                                                 ? Dependencies::UnsupportedPortAction::Warn
+                                                 : Dependencies::UnsupportedPortAction::Error;
 
-        auto binaryprovider = create_binary_provider_from_configs(args.binary_sources).value_or_exit(VCPKG_LINE_INFO);
-
+        BinaryCache binary_cache{args};
         StatusParagraphs status_db = database_load_check(paths);
 
         // Load ports from ports dirs
@@ -80,7 +85,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (outdated_packages.empty())
             {
-                System::print2("All installed packages are up-to-date with the local portfiles.\n");
+                print2("All installed packages are up-to-date with the local portfiles.\n");
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
 
@@ -89,7 +94,7 @@ namespace vcpkg::Commands::Upgrade
                 var_provider,
                 Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
                 status_db,
-                {host_triplet});
+                {host_triplet, unsupported_port_action});
         }
         else
         {
@@ -139,42 +144,42 @@ namespace vcpkg::Commands::Upgrade
 
             if (!up_to_date.empty())
             {
-                System::print2(System::Color::success, "The following packages are up-to-date:\n");
-                System::print2(Strings::join("",
-                                             up_to_date,
-                                             [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                               '\n');
+                print2(Color::success, "The following packages are up-to-date:\n");
+                print2(Strings::join(
+                           "", up_to_date, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
+                       '\n');
             }
 
             if (!not_installed.empty())
             {
-                System::print2(System::Color::error, "The following packages are not installed:\n");
-                System::print2(Strings::join("",
-                                             not_installed,
-                                             [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                               '\n');
+                print2(Color::error, "The following packages are not installed:\n");
+                print2(Strings::join(
+                           "", not_installed, [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
+                       '\n');
             }
 
             if (!no_control_file.empty())
             {
-                System::print2(System::Color::error,
-                               "The following packages do not have a valid CONTROL or vcpkg.json:\n");
-                System::print2(Strings::join("",
-                                             no_control_file,
-                                             [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
-                               '\n');
+                print2(Color::error, "The following packages do not have a valid CONTROL or vcpkg.json:\n");
+                print2(Strings::join("",
+                                     no_control_file,
+                                     [](const PackageSpec& spec) { return "    " + spec.to_string() + "\n"; }),
+                       '\n');
             }
 
             Checks::check_exit(VCPKG_LINE_INFO, not_installed.empty() && no_control_file.empty());
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
-            action_plan =
-                Dependencies::create_upgrade_plan(provider, var_provider, to_upgrade, status_db, {host_triplet});
+            action_plan = Dependencies::create_upgrade_plan(
+                provider, var_provider, to_upgrade, status_db, {host_triplet, unsupported_port_action});
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
-
+        for (const auto& warning : action_plan.warnings)
+        {
+            print2(Color::warning, warning, '\n');
+        }
         // Set build settings for all install actions
         for (auto&& action : action_plan.install_actions)
         {
@@ -185,25 +190,24 @@ namespace vcpkg::Commands::Upgrade
 
         if (!no_dry_run)
         {
-            System::print2(System::Color::warning,
-                           "If you are sure you want to rebuild the above packages, run this command with the "
-                           "--no-dry-run option.\n");
+            print2(Color::warning,
+                   "If you are sure you want to rebuild the above packages, run this command with the "
+                   "--no-dry-run option.\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
-        const Install::InstallSummary summary =
-            Install::perform(args,
-                             action_plan,
-                             keep_going,
-                             paths,
-                             status_db,
-                             args.binary_caching_enabled() ? *binaryprovider : null_binary_provider(),
-                             Build::null_build_logs_recorder(),
-                             var_provider);
+        const Install::InstallSummary summary = Install::perform(args,
+                                                                 action_plan,
+                                                                 keep_going,
+                                                                 paths,
+                                                                 status_db,
+                                                                 binary_cache,
+                                                                 Build::null_build_logs_recorder(),
+                                                                 var_provider);
 
-        System::print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
+        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {

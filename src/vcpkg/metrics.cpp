@@ -14,13 +14,13 @@
 #pragma comment(lib, "winhttp")
 #endif
 
-namespace vcpkg::Metrics
+namespace vcpkg
 {
-    Util::LockGuarded<Metrics> g_metrics;
+    LockGuarded<Metrics> g_metrics;
 
-    static std::string get_current_date_time()
+    static std::string get_current_date_time_string()
     {
-        auto maybe_time = Chrono::CTime::get_current_date_time();
+        auto maybe_time = CTime::get_current_date_time();
         if (auto ptime = maybe_time.get())
         {
             return ptime->to_string();
@@ -147,7 +147,7 @@ namespace vcpkg::Metrics
     {
         std::string user_id = generate_random_UUID();
         std::string user_timestamp;
-        std::string timestamp = get_current_date_time();
+        std::string timestamp = get_current_date_time_string();
 
         Json::Object properties;
         Json::Object measurements;
@@ -252,12 +252,12 @@ namespace vcpkg::Metrics
     std::string get_MAC_user()
     {
 #if defined(_WIN32)
-        if (!g_metrics.lock()->metrics_enabled())
+        if (!LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
         {
             return "{}";
         }
 
-        auto getmac = System::cmd_execute_and_capture_output(System::Command("getmac"));
+        auto getmac = cmd_execute_and_capture_output(Command("getmac"));
 
         if (getmac.exit_code != 0) return "0";
 
@@ -290,7 +290,7 @@ namespace vcpkg::Metrics
     void Metrics::init_user_information(std::string& user_id, std::string& first_use_time)
     {
         user_id = generate_random_UUID();
-        first_use_time = get_current_date_time();
+        first_use_time = get_current_date_time_string();
     }
 
     void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }
@@ -425,19 +425,19 @@ namespace vcpkg::Metrics
 #ifndef NDEBUG
             __debugbreak();
             auto err = GetLastError();
-            std::cerr << "[DEBUG] failed to connect to server: " << err << "\n";
+            fprintf(stderr, "[DEBUG] failed to connect to server: %08lu\n", err);
 #endif // NDEBUG
         }
 
         if (request) WinHttpCloseHandle(request);
         if (connect) WinHttpCloseHandle(connect);
         if (session) WinHttpCloseHandle(session);
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
         (void)payload;
 #endif // ^^^ !_WIN32
     }
 
-    void Metrics::flush(Files::Filesystem& fs)
+    void Metrics::flush(Filesystem& fs)
     {
         if (!metrics_enabled())
         {
@@ -445,15 +445,22 @@ namespace vcpkg::Metrics
         }
 
         const std::string payload = g_metricmessage.format_event_data_template();
-        if (g_should_print_metrics) std::cerr << payload << "\n";
-        if (!g_should_send_metrics) return;
+        if (g_should_print_metrics)
+        {
+            fprintf(stderr, "%s\n", payload.c_str());
+        }
+
+        if (!g_should_send_metrics)
+        {
+            return;
+        }
 
 #if defined(_WIN32)
         wchar_t temp_folder[MAX_PATH];
         GetTempPathW(MAX_PATH, temp_folder);
 
-        const fs::path temp_folder_path = fs::path(temp_folder) / "vcpkg";
-        const fs::path temp_folder_path_exe =
+        const Path temp_folder_path = Path(Strings::to_utf8(temp_folder)) / "vcpkg";
+        const Path temp_folder_path_exe =
             temp_folder_path / Strings::format("vcpkg-%s.exe", Commands::Version::base_version());
 #endif
 
@@ -461,27 +468,26 @@ namespace vcpkg::Metrics
 #if defined(_WIN32)
         fs.create_directories(temp_folder_path, ec);
         if (ec) return;
-        fs.copy_file(
-            System::get_exe_path_of_current_process(), temp_folder_path_exe, fs::copy_options::skip_existing, ec);
+        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
         if (ec) return;
 #else
-        if (!fs.exists("/tmp")) return;
-        const fs::path temp_folder_path = "/tmp/vcpkg";
-        fs.create_directory(temp_folder_path, ignore_errors);
+        if (!fs.exists("/tmp", IgnoreErrors{})) return;
+        const Path temp_folder_path = "/tmp/vcpkg";
+        fs.create_directory(temp_folder_path, IgnoreErrors{});
 #endif
-        const fs::path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
+        const Path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
         fs.write_contents(vcpkg_metrics_txt_path, payload, ec);
         if (ec) return;
 
 #if defined(_WIN32)
-        System::Command builder;
+        Command builder;
         builder.path_arg(temp_folder_path_exe);
         builder.string_arg("x-upload-metrics");
         builder.path_arg(vcpkg_metrics_txt_path);
-        System::cmd_execute_background(builder);
+        cmd_execute_background(builder);
 #else
         // TODO: convert to cmd_execute_background or something.
-        auto curl = System::Command("curl")
+        auto curl = Command("curl")
                         .string_arg("https://dc.services.visualstudio.com/v2/track")
                         .string_arg("--max-time")
                         .string_arg("3")
@@ -491,13 +497,13 @@ namespace vcpkg::Metrics
                         .string_arg("POST")
                         .string_arg("--tlsv1.2")
                         .string_arg("--data")
-                        .string_arg(Strings::concat("@", fs::u8string(vcpkg_metrics_txt_path)))
+                        .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
                         .raw_arg(">/dev/null")
                         .raw_arg("2>&1");
-        auto remove = System::Command("rm").path_arg(vcpkg_metrics_txt_path);
-        System::Command cmd_line;
+        auto remove = Command("rm").path_arg(vcpkg_metrics_txt_path);
+        Command cmd_line;
         cmd_line.raw_arg("(").raw_arg(curl.command_line()).raw_arg(";").raw_arg(remove.command_line()).raw_arg(") &");
-        System::cmd_execute_clean(cmd_line);
+        cmd_execute_clean(cmd_line);
 #endif
     }
 }

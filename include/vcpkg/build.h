@@ -23,11 +23,7 @@
 
 namespace vcpkg
 {
-    struct IBinaryProvider;
-}
-
-namespace vcpkg::System
-{
+    struct BinaryCache;
     struct Environment;
 }
 
@@ -60,17 +56,17 @@ namespace vcpkg::Build
         int perform_ex(const VcpkgCmdArguments& args,
                        const FullPackageSpec& full_spec,
                        Triplet host_triplet,
-                       const SourceControlFileLocation& scfl,
+                       const SourceControlFileAndLocation& scfl,
                        const PortFileProvider::PathsPortFileProvider& provider,
-                       IBinaryProvider& binaryprovider,
+                       BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
                        const VcpkgPaths& paths);
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
                                  const FullPackageSpec& full_spec,
                                  Triplet host_triplet,
-                                 const SourceControlFileLocation& scfl,
+                                 const SourceControlFileAndLocation& scfl,
                                  const PortFileProvider::PathsPortFileProvider& provider,
-                                 IBinaryProvider& binaryprovider,
+                                 BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
                                  const VcpkgPaths& paths);
 
@@ -209,7 +205,8 @@ namespace vcpkg::Build
 
     const std::string& to_string(const BuildResult build_result);
     std::string create_error_message(const BuildResult build_result, const PackageSpec& spec);
-    std::string create_user_troubleshooting_message(const PackageSpec& spec);
+    std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
+                                                    const VcpkgPaths& paths);
 
     /// <summary>
     /// Settings from the triplet file which impact the build environment and post-build checks
@@ -225,27 +222,26 @@ namespace vcpkg::Build
 
         Triplet triplet;
         bool load_vcvars_env = false;
+        bool disable_compiler_tracking = false;
         std::string target_architecture;
         std::string cmake_system_name;
         std::string cmake_system_version;
         Optional<std::string> platform_toolset;
-        Optional<fs::path> visual_studio_path;
+        Optional<Path> visual_studio_path;
         Optional<std::string> external_toolchain_file;
         Optional<ConfigurationType> build_type;
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
 
-        fs::path toolchain_file() const;
+        Path toolchain_file() const;
         bool using_vcvars() const;
 
     private:
         const VcpkgPaths& m_paths;
     };
 
-    System::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
-                                       const Toolset& toolset,
-                                       View<Toolset> all_toolsets);
+    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset, const VcpkgPaths&);
 
     struct ExtendedBuildResult
     {
@@ -261,7 +257,7 @@ namespace vcpkg::Build
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
                                       const Dependencies::InstallPlanAction& config,
-                                      IBinaryProvider& binaries_provider,
+                                      BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db);
 
@@ -323,7 +319,7 @@ namespace vcpkg::Build
         BuildPolicies policies;
     };
 
-    BuildInfo read_build_info(const Files::Filesystem& fs, const fs::path& filepath);
+    BuildInfo read_build_info(const Filesystem& fs, const Path& filepath);
 
     struct AbiEntry
     {
@@ -331,7 +327,7 @@ namespace vcpkg::Build
         std::string value;
 
         AbiEntry() = default;
-        AbiEntry(const std::string& key, const std::string& value) : key(key), value(value) { }
+        AbiEntry(StringView key, StringView value) : key(key.to_string()), value(value.to_string()) { }
 
         bool operator<(const AbiEntry& other) const
         {
@@ -352,7 +348,7 @@ namespace vcpkg::Build
         Optional<const Toolset&> toolset;
         Optional<const std::string&> triplet_abi;
         std::string package_abi;
-        Optional<fs::path> abi_tag_file;
+        Optional<Path> abi_tag_file;
         Optional<const CompilerInfo&> compiler_info;
     };
 
@@ -365,7 +361,7 @@ namespace vcpkg::Build
     {
         explicit EnvCache(bool compiler_tracking) : m_compiler_tracking(compiler_tracking) { }
 
-        const System::Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
+        const Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
         const std::string& get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
         const CompilerInfo& get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
 
@@ -373,17 +369,20 @@ namespace vcpkg::Build
         struct TripletMapEntry
         {
             std::string hash;
-            Cache<std::string, std::string> compiler_hashes;
+            Cache<std::string, std::string> triplet_infos;
+            Cache<std::string, std::string> triplet_infos_without_compiler;
             Cache<std::string, CompilerInfo> compiler_info;
         };
-        Cache<fs::path, TripletMapEntry> m_triplet_cache;
-        Cache<fs::path, std::string> m_toolchain_cache;
+        Cache<Path, TripletMapEntry> m_triplet_cache;
+        Cache<Path, std::string> m_toolchain_cache;
+
+        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p);
 
 #if defined(_WIN32)
         struct EnvMapEntry
         {
             std::unordered_map<std::string, std::string> env_map;
-            Cache<System::Command, System::Environment, System::CommandLess> cmd_cache;
+            Cache<vcpkg::Command, Environment, CommandLess> cmd_cache;
         };
 
         Cache<std::vector<std::string>, EnvMapEntry> envs;

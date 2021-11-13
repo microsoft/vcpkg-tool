@@ -30,13 +30,13 @@ namespace vcpkg::Commands::Contact
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs)
+    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         const ParsedArguments parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
         if (Util::Sets::contains(parsed_args.switches, SWITCHES[0].name))
         {
-            auto maybe_now = Chrono::CTime::get_current_date_time();
+            auto maybe_now = CTime::get_current_date_time();
             if (const auto p_now = maybe_now.get())
             {
                 auto config = UserConfig::try_read_data(fs);
@@ -45,21 +45,21 @@ namespace vcpkg::Commands::Contact
             }
 
 #if defined(_WIN32)
-            System::cmd_execute(System::Command("start").string_arg("https://aka.ms/NPS_vcpkg"));
-            System::print2("Default browser launched to https://aka.ms/NPS_vcpkg; thank you for your feedback!\n");
+            cmd_execute(Command("start").string_arg("https://aka.ms/NPS_vcpkg"));
+            print2("Default browser launched to https://aka.ms/NPS_vcpkg; thank you for your feedback!\n");
 #else
-            System::print2("Please navigate to https://aka.ms/NPS_vcpkg in your preferred browser. Thank you for your "
-                           "feedback!\n");
+            print2("Please navigate to https://aka.ms/NPS_vcpkg in your preferred browser. Thank you for your "
+                   "feedback!\n");
 #endif
         }
         else
         {
-            System::print2("Send an email to ", email(), " with any feedback.\n");
+            print2("Send an email to ", email(), " with any feedback.\n");
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void ContactCommand::perform_and_exit(const VcpkgCmdArguments& args, Files::Filesystem& fs) const
+    void ContactCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         Contact::perform_and_exit(args, fs);
     }

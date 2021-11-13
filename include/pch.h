@@ -3,6 +3,7 @@
 #include <vcpkg/base/system_headers.h>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/pragmas.h>
 
 #if defined(_WIN32)
@@ -11,6 +12,7 @@
 #include <winhttp.h>
 #endif
 
+#include <locale.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -23,11 +25,7 @@
 #include <cassert>
 #include <cctype>
 #include <chrono>
-#include <codecvt>
-#include <fstream>
 #include <functional>
-#include <iomanip>
-#include <iostream>
 #include <iterator>
 #include <limits>
 #include <map>

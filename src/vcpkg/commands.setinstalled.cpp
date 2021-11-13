@@ -37,11 +37,11 @@ namespace vcpkg::Commands::SetInstalled
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
                              const PortFileProvider::PathsPortFileProvider& provider,
-                             IBinaryProvider& binary_provider,
+                             BinaryCache& binary_cache,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              Dependencies::ActionPlan action_plan,
                              DryRun dry_run,
-                             const Optional<fs::path>& maybe_pkgsconfig,
+                             const Optional<Path>& maybe_pkgsconfig,
                              Triplet host_triplet)
     {
         cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
@@ -49,9 +49,15 @@ namespace vcpkg::Commands::SetInstalled
 
         std::set<std::string> all_abis;
 
+        std::vector<PackageSpec> user_requested_specs;
         for (const auto& action : action_plan.install_actions)
         {
             all_abis.insert(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+            if (action.request_type == Dependencies::RequestType::USER_REQUESTED)
+            {
+                // save for reporting usage later
+                user_requested_specs.push_back(action.spec);
+            }
         }
 
         // currently (or once) installed specifications
@@ -93,10 +99,10 @@ namespace vcpkg::Commands::SetInstalled
         {
             Build::compute_all_abis(paths, action_plan, cmake_vars, status_db);
             auto& fs = paths.get_filesystem();
-            auto pkgsconfig_path = Files::combine(paths.original_cwd, *p_pkgsconfig);
+            auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
-            System::print2("Wrote NuGet packages config information to ", fs::u8string(pkgsconfig_path), "\n");
+            print2("Wrote NuGet packages config information to ", pkgsconfig_path, "\n");
         }
 
         if (dry_run == DryRun::Yes)
@@ -113,11 +119,21 @@ namespace vcpkg::Commands::SetInstalled
                                               Install::KeepGoing::NO,
                                               paths,
                                               status_db,
-                                              args.binary_caching_enabled() ? binary_provider : null_binary_provider(),
+                                              binary_cache,
                                               Build::null_build_logs_recorder(),
                                               cmake_vars);
 
-        System::print2("\nTotal elapsed time: ", summary.total_elapsed_time, "\n\n");
+        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
+
+        std::set<std::string> printed_usages;
+        for (auto&& ur_spec : user_requested_specs)
+        {
+            auto it = status_db.find_installed(ur_spec);
+            if (it != status_db.end())
+            {
+                Install::print_usage_information(it->get()->package, printed_usages, paths);
+            }
+        }
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
@@ -140,18 +156,18 @@ namespace vcpkg::Commands::SetInstalled
             Input::check_triplet(spec.package_spec.triplet(), paths);
         }
 
-        auto binary_provider = create_binary_provider_from_configs(args.binary_sources).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache{args};
 
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
-        Optional<fs::path> pkgsconfig;
+        Optional<Path> pkgsconfig;
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
-            Metrics::g_metrics.lock()->track_property("x-write-nuget-packages-config", "defined");
+            LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
             pkgsconfig = it_pkgsconfig->second;
         }
 
@@ -168,7 +184,7 @@ namespace vcpkg::Commands::SetInstalled
         perform_and_exit_ex(args,
                             paths,
                             provider,
-                            *binary_provider,
+                            binary_cache,
                             *cmake_vars,
                             std::move(action_plan),
                             dry_run ? DryRun::Yes : DryRun::No,

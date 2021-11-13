@@ -2,8 +2,8 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/stringliteral.h>
-#include <vcpkg/base/system.print.h>
 
 #include <system_error>
 #include <type_traits>
@@ -103,9 +103,8 @@ namespace vcpkg
     };
 
     template<class T, class S>
-    class ExpectedT
+    struct ExpectedT
     {
-    public:
         constexpr ExpectedT() = default;
 
         // Constructors are intentionally implicit
@@ -228,7 +227,7 @@ namespace vcpkg
         {
             if (m_s.has_error())
             {
-                System::print2(System::Color::error, m_s.to_string(), "\n");
+                msg::write_unlocalized_text_to_stdout(Color::error, Strings::concat(m_s.to_string(), '\n'));
                 Checks::exit_fail(line_info);
             }
         }

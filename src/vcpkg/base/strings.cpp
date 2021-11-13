@@ -7,9 +7,20 @@
 #include <stdio.h>
 
 #include <algorithm>
-#include <locale>
 #include <string>
 #include <vector>
+
+namespace
+{
+    constexpr struct
+    {
+        bool operator()(char a, char b) const noexcept
+        {
+            using vcpkg::Strings::details::tolower_char;
+            return tolower_char(a) == tolower_char(b);
+        }
+    } icase_eq;
+}
 
 namespace vcpkg::Strings::details
 {
@@ -18,8 +29,6 @@ namespace vcpkg::Strings::details
 
     // Avoids C4244 warnings because of char<->int conversion that occur when using std::tolower()
     static char toupper_char(const char c) { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
-
-    static bool icase_eq(char a, char b) { return tolower_char{}(a) == tolower_char{}(b); }
 
 #if defined(_WIN32)
     static _locale_t& c_locale()
@@ -71,13 +80,31 @@ std::wstring Strings::to_utf16(StringView s)
 #endif
 
 #if defined(_WIN32)
-std::string Strings::to_utf8(const wchar_t* w)
+std::string Strings::to_utf8(const wchar_t* w) { return Strings::to_utf8(w, wcslen(w)); }
+
+std::string Strings::to_utf8(const wchar_t* w, size_t s)
 {
     std::string output;
-    const size_t size = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
-    if (size == 0) return output;
-    output.resize(size - 1);
-    WideCharToMultiByte(CP_UTF8, 0, w, -1, output.data(), static_cast<int>(size) - 1, nullptr, nullptr);
+    if (s != 0)
+    {
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, s <= INT_MAX);
+        const int size = WideCharToMultiByte(CP_UTF8, 0, w, static_cast<int>(s), nullptr, 0, nullptr, nullptr);
+        if (size <= 0)
+        {
+            unsigned long last_error = ::GetLastError();
+            Checks::exit_with_message(VCPKG_LINE_INFO,
+                                      "Failed to convert to UTF-8. %08lX %s",
+                                      last_error,
+                                      std::system_category().message(static_cast<int>(last_error)));
+        }
+
+        output.resize(size);
+        vcpkg::Checks::check_exit(
+            VCPKG_LINE_INFO,
+            size == WideCharToMultiByte(
+                        CP_UTF8, 0, w, static_cast<int>(s), output.data(), static_cast<int>(size), nullptr, nullptr));
+    }
+
     return output;
 }
 #endif
@@ -93,7 +120,7 @@ std::string Strings::escape_string(std::string&& s, char char_to_escape, char es
 
 static const char* case_insensitive_ascii_find(StringView s, StringView pattern)
 {
-    return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), &Strings::details::icase_eq);
+    return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
 bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
@@ -103,7 +130,7 @@ bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
 
 bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
 {
-    return std::equal(left.begin(), left.end(), right.begin(), right.end(), &details::icase_eq);
+    return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }
 
 std::string Strings::ascii_to_lowercase(std::string&& s)
@@ -121,7 +148,13 @@ std::string Strings::ascii_to_uppercase(std::string&& s)
 bool Strings::case_insensitive_ascii_starts_with(StringView s, StringView pattern)
 {
     if (s.size() < pattern.size()) return false;
-    return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end(), &details::icase_eq);
+    return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end(), icase_eq);
+}
+
+bool Strings::case_insensitive_ascii_ends_with(StringView s, StringView pattern)
+{
+    if (s.size() < pattern.size()) return false;
+    return std::equal(s.end() - pattern.size(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
 bool Strings::ends_with(StringView s, StringView pattern)
@@ -133,6 +166,16 @@ bool Strings::starts_with(StringView s, StringView pattern)
 {
     if (s.size() < pattern.size()) return false;
     return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end());
+}
+
+std::string Strings::replace_all(const char* s, StringView search, StringView rep)
+{
+    return Strings::replace_all(std::string(s), search, rep);
+}
+
+std::string Strings::replace_all(StringView s, StringView search, StringView rep)
+{
+    return Strings::replace_all(s.to_string(), search, rep);
 }
 
 std::string Strings::replace_all(std::string&& s, StringView search, StringView rep)
@@ -291,6 +334,11 @@ bool Strings::contains(StringView haystack, StringView needle)
     return Strings::search(haystack, needle) != haystack.end();
 }
 
+bool Strings::contains(StringView haystack, char needle)
+{
+    return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
+}
+
 size_t Strings::byte_edit_distance(StringView a, StringView b)
 {
     static constexpr size_t max_string_size = 100;
@@ -342,40 +390,41 @@ size_t Strings::byte_edit_distance(StringView a, StringView b)
 
 namespace vcpkg::Strings
 {
-    namespace
+    std::string b32_encode(std::uint64_t value) noexcept
     {
-        template<class Integral>
-        std::string b32_encode_implementation(Integral x)
+        // 32 values, plus the implicit \0
+        constexpr static char map[33] = "ABCDEFGHIJKLMNOP"
+                                        "QRSTUVWXYZ234567";
+
+        // log2(32)
+        constexpr static int shift = 5;
+        // 32 - 1
+        constexpr static auto mask = 31;
+
+        // ceiling(bitsize(Integral) / log2(32))
+        constexpr static auto result_size = (sizeof(value) * CHAR_BIT + shift - 1) / shift;
+
+        std::string result;
+        for (std::size_t i = 0; i < result_size; ++i)
         {
-            static_assert(std::is_integral<Integral>::value, "b64url_encode must take an integer type");
-            using Unsigned = std::make_unsigned_t<Integral>;
-            auto value = static_cast<Unsigned>(x);
-
-            // 32 values, plus the implicit \0
-            constexpr static char map[33] = "ABCDEFGHIJKLMNOP"
-                                            "QRSTUVWXYZ234567";
-
-            // log2(32)
-            constexpr static int shift = 5;
-            // 32 - 1
-            constexpr static auto mask = 31;
-
-            // ceiling(bitsize(Integral) / log2(32))
-            constexpr static auto result_size = (sizeof(value) * 8 + shift - 1) / shift;
-
-            std::string result;
-            result.reserve(result_size);
-
-            for (std::size_t i = 0; i < result_size; ++i)
-            {
-                result.push_back(map[value & mask]);
-                value >>= shift;
-            }
-
-            return result;
+            result.push_back(map[value & mask]);
+            value >>= shift;
         }
+
+        return result;
     }
 
-    std::string b32_encode(std::uint64_t x) noexcept { return b32_encode_implementation(x); }
+    struct LinesCollector::CB
+    {
+        LinesCollector* parent;
 
+        void operator()(const StringView sv) const { parent->lines.push_back(sv.to_string()); }
+    };
+
+    void LinesCollector::on_data(StringView sv) { stream.on_data(sv, CB{this}); }
+    std::vector<std::string> LinesCollector::extract()
+    {
+        stream.on_end(CB{this});
+        return std::move(this->lines);
+    }
 }

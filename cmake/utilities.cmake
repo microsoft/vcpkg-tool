@@ -19,21 +19,6 @@ On CentOS try the following:
 
             set(COMPILER "gcc")
         elseif(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
-            #[[
-            Note: CMAKE_SYSTEM_VERSION uses darwin versions
-                - Darwin 19.0.0 = macOS 10.15, iOS 13
-                - Darwin 18.0.0 = macOS 10.14, iOS 12
-                - Darwin 17.0.0 = macOS 10.13, iOS 11
-                - Darwin 16.0.0 = macOS 10.12, iOS 10
-            ]]
-            if(CMAKE_SYSTEM_VERSION VERSION_LESS "19.0.0" AND NOT VCPKG_ALLOW_APPLE_CLANG)
-                message(FATAL_ERROR [[
-Building the vcpkg tool requires support for the C++ Filesystem TS.
-macOS versions below 10.15 do not have support for it with Apple Clang.
-Please install gcc6 or newer from homebrew (brew install gcc).
-If you would like to try anyway, pass --allowAppleClang to bootstrap.sh.
-]])
-            endif()
             set(COMPILER "clang")
         elseif(CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang")
             set(COMPILER "clang")
@@ -50,172 +35,21 @@ If you would like to try anyway, pass --allowAppleClang to bootstrap.sh.
     endif()
 endfunction()
 
-# Outputs to Cache: VCPKG_STANDARD_LIBRARY
-function(vcpkg_detect_standard_library)
-    if(NOT DEFINED CACHE{VCPKG_STANDARD_LIBRARY})
-        include(CheckCXXSourceCompiles)
-
-        message(STATUS "Detecting the C++ standard library")
-
-        # note: since <ciso646> is the smallest header, generally it's used to get the standard library version
-        set(CMAKE_REQUIRED_QUIET ON)
-        check_cxx_source_compiles([[
-#include <ciso646>
-#if !defined(__GLIBCXX__)
-#error "not libstdc++"
-#endif
-int main() {}
-]]
-            _VCPKG_STANDARD_LIBRARY_LIBSTDCXX)
-        check_cxx_source_compiles([[
-#include <ciso646>
-#if !defined(_LIBCPP_VERSION)
-#error "not libc++"
-#endif
-int main() {}
-]]
-            _VCPKG_STANDARD_LIBRARY_LIBCXX)
-        check_cxx_source_compiles([[
-#include <ciso646>
-#if !defined(_MSVC_STL_VERSION) && !(defined(_MSC_VER) && _MSC_VER <= 1900)
-#error "not MSVC stl"
-#endif
-int main() {}
-]]
-            _VCPKG_STANDARD_LIBRARY_MSVC_STL)
-        if(_VCPKG_STANDARD_LIBRARY_LIBSTDCXX)
-            set(STANDARD_LIBRARY "libstdc++")
-        elseif(_VCPKG_STANDARD_LIBRARY_LIBCXX)
-            set(STANDARD_LIBRARY "libc++")
-        elseif(_VCPKG_STANDARD_LIBRARY_MSVC_STL)
-            set(STANDARD_LIBRARY "msvc-stl")
-        else()
-            message(FATAL_ERROR "Can't find which C++ runtime is in use")
-        endif()
-
-        set(VCPKG_STANDARD_LIBRARY ${STANDARD_LIBRARY}
-            CACHE STRING
-            "The C++ standard library in use; one of libstdc++, libc++, msvc-stl")
-
-        message(STATUS "Detecting the C++ standard library - ${VCPKG_STANDARD_LIBRARY}")
-    endif()
-endfunction()
-
-# Outputs to Cache: VCPKG_USE_STD_FILESYSTEM, VCPKG_CXXFS_LIBRARY
-function(vcpkg_detect_std_filesystem)
-    vcpkg_detect_standard_library()
-
-    if(NOT DEFINED CACHE{VCPKG_USE_STD_FILESYSTEM})
-        include(CheckCXXSourceCompiles)
-
-        message(STATUS "Detecting how to use the C++ filesystem library")
-
-        set(CMAKE_REQUIRED_QUIET ON)
-        if(VCPKG_STANDARD_LIBRARY STREQUAL "libstdc++")
-            check_cxx_source_compiles([[
-#include <ciso646>
-#if defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE >= 9
-#error "libstdc++ after version 9 does not require -lstdc++fs"
-#endif
-int main() {}
-]]
-                _VCPKG_REQUIRE_LINK_CXXFS)
-
-            check_cxx_source_compiles([[
-#include <ciso646>
-#if !defined(_GLIBCXX_RELEASE) || _GLIBCXX_RELEASE < 8
-#error "libstdc++ before version 8 does not support <filesystem>"
-#endif
-int main() {}
-]]
-                _VCPKG_USE_STD_FILESYSTEM)
-
-            if(_VCPKG_REQUIRE_LINK_CXXFS)
-                set(_VCPKG_CXXFS_LIBRARY "stdc++fs")
-            endif()
-        elseif(VCPKG_STANDARD_LIBRARY STREQUAL "libc++")
-            if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
-                # AppleClang never requires (or allows) -lc++fs, even with libc++ version 8.0.0
-                set(_VCPKG_CXXFS_LIBRARY OFF)
-            elseif(CMAKE_SYSTEM_NAME STREQUAL "OpenBSD")
-                # As above, not required on this platform (tested at least on 6.8)
-                set(_VCPKG_CXXFS_LIBRARY OFF)
-            else()
-                check_cxx_source_compiles([[
-#include <ciso646>
-#if _LIBCPP_VERSION >= 9000
-#error "libc++ after version 9 does not require -lc++fs"
-#endif
-int main() {}
-]]
-                    _VCPKG_REQUIRE_LINK_CXXFS)
-
-                if(_VCPKG_REQUIRE_LINK_CXXFS)
-                    set(_VCPKG_CXXFS_LIBRARY "c++fs")
-                endif()
-            endif()
-
-            # We don't support versions of libc++ < 7.0.0, and libc++ 7.0.0 has <filesystem>
-            set(_VCPKG_USE_STD_FILESYSTEM ON)
-        elseif(VCPKG_STANDARD_LIBRARY STREQUAL "msvc-stl")
-            check_cxx_source_compiles(
-                "#include <ciso646>
-                #if !defined(_MSVC_STL_UPDATE) || _MSVC_STL_UPDATE < 201803
-                #error \"MSVC STL before 15.7 does not support <filesystem>\"
-                #endif
-                int main() {}"
-                _VCPKG_USE_STD_FILESYSTEM)
-
-            set(_VCPKG_CXXFS_LIBRARY OFF)
-        endif()
-
-        set(VCPKG_USE_STD_FILESYSTEM ${_VCPKG_USE_STD_FILESYSTEM}
-            CACHE BOOL
-            "Whether to use <filesystem>, as opposed to <experimental/filesystem>"
-            FORCE)
-        set(VCPKG_CXXFS_LIBRARY ${_VCPKG_CXXFS_LIBRARY}
-            CACHE STRING
-            "Library to link (if any) in order to use <filesystem>"
-            FORCE)
-
-        if(VCPKG_USE_STD_FILESYSTEM)
-            set(msg "<filesystem>")
-        else()
-            set(msg "<experimental/filesystem>")
-        endif()
-        if(VCPKG_CXXFS_LIBRARY)
-            set(msg "${msg} with -l${VCPKG_CXXFS_LIBRARY}")
-        endif()
-
-        message(STATUS "Detecting how to use the C++ filesystem library - ${msg}")
-    endif()
-endfunction()
-
 function(vcpkg_target_add_warning_options TARGET)
     if(MSVC)
         # either MSVC, or clang-cl
-        target_compile_options(${TARGET} PRIVATE -FC)
-
-        if (MSVC_VERSION GREATER 1900)
-            # Visual Studio 2017 or later
-            target_compile_options(${TARGET} PRIVATE -permissive- -utf-8)
-        endif()
+        target_compile_options(${TARGET} PRIVATE -FC -permissive- -utf-8)
 
         if(VCPKG_DEVELOPMENT_WARNINGS)
             target_compile_options(${TARGET} PRIVATE -W4)
             if(VCPKG_COMPILER STREQUAL "clang")
-                # -Wno-range-loop-analysis is due to an LLVM bug which will be fixed in a
-                # future version of clang https://reviews.llvm.org/D73007
                 target_compile_options(${TARGET} PRIVATE
                     -Wmissing-prototypes
                     -Wno-missing-field-initializers
-                    -Wno-range-loop-analysis
                     )
             else()
-                target_compile_options(${TARGET} PRIVATE -analyze)
+                target_compile_options(${TARGET} PRIVATE -analyze -analyze:stacksize 39000)
             endif()
-        else()
-            target_compile_options(${TARGET} PRIVATE -W3)
         endif()
 
         if(VCPKG_WARNINGS_AS_ERRORS)
@@ -246,5 +80,34 @@ function(vcpkg_target_add_warning_options TARGET)
         if(VCPKG_WARNINGS_AS_ERRORS)
             target_compile_options(${TARGET} PRIVATE -Werror)
         endif()
+    endif()
+endfunction()
+
+function(vcpkg_target_add_sourcelink target)
+    cmake_parse_arguments(PARSE_ARGV 1 "arg" "" "REPO;REF" "")
+    if(DEFINED arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "vcpkg_cmake_buildsystem_build was passed extra arguments: ${arg_UNPARSED_ARGUMENTS}")
+    endif()
+    foreach(required_arg IN ITEMS REPO REF)
+        if(NOT DEFINED arg_${required_arg})
+            message(FATAL_ERROR "${required_arg} must be set")
+        endif()
+    endforeach()
+
+    if(MSVC)
+        set(base_url "https://raw.githubusercontent.com/${REPO}/${REF}/*")
+        file(TO_NATIVE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/*" local_base)
+        string(REPLACE [[\]] [[\\]] local_base "${local_base}")
+        set(output_json_filename "${CMAKE_CURRENT_BINARY_DIR}/vcpkgsourcelink.json")
+        # string(JSON was added in CMake 3.19, so just create the json from scratch
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/vcpkgsourcelink.json"
+"{
+  \"documents\": {
+    \"${local_base}\": \"${base_url}\"
+  }
+}"
+        )
+        file(TO_NATIVE_PATH "${output_json_filename}" native_json_filename)
+        target_link_options("${target}" PRIVATE "/SOURCELINK:${native_json_filename}")
     endif()
 endfunction()

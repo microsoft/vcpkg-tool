@@ -46,7 +46,7 @@ namespace vcpkg::Commands::List
             }
         }
 
-        System::print2(Json::stringify(obj, Json::JsonStyle{}));
+        print2(Json::stringify(obj, Json::JsonStyle{}));
     }
 
     static void do_print(const StatusParagraph& pgh, const bool full_desc)
@@ -54,10 +54,10 @@ namespace vcpkg::Commands::List
         auto full_version = VersionT(pgh.package.version, pgh.package.port_version).to_string();
         if (full_desc)
         {
-            System::printf("%-50s %-16s %s\n",
-                           pgh.package.displayname(),
-                           full_version,
-                           Strings::join("\n    ", pgh.package.description));
+            vcpkg::printf("%-50s %-16s %s\n",
+                          pgh.package.displayname(),
+                          full_version,
+                          Strings::join("\n    ", pgh.package.description));
         }
         else
         {
@@ -66,10 +66,10 @@ namespace vcpkg::Commands::List
             {
                 description = pgh.package.description[0];
             }
-            System::printf("%-50s %-16s %s\n",
-                           vcpkg::shorten_text(pgh.package.displayname(), 50),
-                           vcpkg::shorten_text(full_version, 16),
-                           vcpkg::shorten_text(description, 51));
+            vcpkg::printf("%-50s %-16s %s\n",
+                          vcpkg::shorten_text(pgh.package.displayname(), 50),
+                          vcpkg::shorten_text(full_version, 16),
+                          vcpkg::shorten_text(description, 51));
         }
     }
 
@@ -97,9 +97,9 @@ namespace vcpkg::Commands::List
         if (installed_ipv.empty())
         {
             if (args.output_json())
-                System::print2(Json::stringify(Json::Object(), {}));
+                print2(Json::stringify(Json::Object(), {}));
             else
-                System::print2("No packages are installed. Did you mean `search`?\n");
+                print2("No packages are installed. Did you mean `search`?\n");
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 

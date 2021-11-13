@@ -2,6 +2,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/unicode.h>
 
 #include <inttypes.h>
@@ -333,6 +334,7 @@ namespace vcpkg::Json
     bool operator==(const Array& lhs, const Array& rhs) { return lhs.underlying_ == rhs.underlying_; }
     // } struct Array
     // struct Object {
+    Value& Object::insert(std::string key, std::string value) { return insert(key, Value::string(std::move(value))); }
     Value& Object::insert(std::string key, Value&& value)
     {
         vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
@@ -735,6 +737,10 @@ namespace vcpkg::Json
                 return Value();
             }
 
+#define VCPKG_JSON_NO_COMMENTS_MSG                                                                                     \
+    "\n   vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "        \
+    "comments."
+
             Value parse_keyword() noexcept
             {
                 char32_t current = cur();
@@ -820,6 +826,10 @@ namespace vcpkg::Json
                             return Value::array(std::move(arr));
                         }
                     }
+                    else if (current == '/')
+                    {
+                        add_error("Unexpected character in middle of array" VCPKG_JSON_NO_COMMENTS_MSG);
+                    }
                     else
                     {
                         add_error("Unexpected character in middle of array");
@@ -859,6 +869,11 @@ namespace vcpkg::Json
                 else if (current == Unicode::end_of_file)
                 {
                     add_error("Unexpected EOF; expected colon");
+                    return res;
+                }
+                else if (current == '/')
+                {
+                    add_error("Unexpected character; expected colon" VCPKG_JSON_NO_COMMENTS_MSG);
                     return res;
                 }
                 else
@@ -917,12 +932,22 @@ namespace vcpkg::Json
                             return Value();
                         }
                     }
+                    else if (current == '/')
+                    {
+                        add_error("Unexpected character; expected comma or close brace" VCPKG_JSON_NO_COMMENTS_MSG);
+                    }
                     else
                     {
                         add_error("Unexpected character; expected comma or close brace");
                     }
 
+                    auto keyPairLoc = cur_loc();
                     auto val = parse_kv_pair();
+                    if (obj.contains(val.first))
+                    {
+                        add_error(Strings::format("Duplicated key \"%s\" in an object", val.first), keyPairLoc);
+                        return Value();
+                    }
                     obj.insert(std::move(val.first), std::move(val.second));
                 }
             }
@@ -945,6 +970,11 @@ namespace vcpkg::Json
                     case 'n':
                     case 't':
                     case 'f': return parse_keyword();
+                    case '/':
+                    {
+                        add_error("Unexpected character; expected value" VCPKG_JSON_NO_COMMENTS_MSG);
+                        return Value();
+                    }
                     default:
                         if (is_number_start(current))
                         {
@@ -1023,47 +1053,37 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Files::Filesystem& fs,
-                                                                                           const fs::path& path,
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Filesystem& fs,
+                                                                                           const Path& json_file,
                                                                                            std::error_code& ec) noexcept
     {
-        auto res = fs.read_contents(path);
-        if (auto buf = res.get())
-        {
-            return parse(*buf, path);
-        }
-        else
-        {
-            ec = res.error();
-            return std::unique_ptr<Parse::IParseError>();
-        }
-    }
-
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo linfo,
-                                           const Files::Filesystem& fs,
-                                           const fs::path& path) noexcept
-    {
-        std::error_code ec;
-        auto ret = parse_file(fs, path, ec);
+        auto res = fs.read_contents(json_file, ec);
         if (ec)
         {
-            System::print2(System::Color::error, "Failed to read ", fs::u8string(path), ": ", ec.message(), "\n");
-            Checks::exit_fail(linfo);
+            return std::unique_ptr<Parse::IParseError>();
+        }
+
+        return parse(std::move(res), json_file);
+    }
+
+    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file) noexcept
+    {
+        std::error_code ec;
+        auto ret = parse_file(fs, json_file, ec);
+        if (ec)
+        {
+            print2(Color::error, "Failed to read ", json_file, ": ", ec.message(), "\n");
+            Checks::exit_fail(li);
         }
         else if (!ret)
         {
-            System::print2(System::Color::error, "Failed to parse ", fs::u8string(path), ":\n");
-            System::print2(ret.error()->format());
-            Checks::exit_fail(linfo);
+            print2(Color::error, "Failed to parse ", json_file, ":\n");
+            print2(ret.error()->format());
+            Checks::exit_fail(li);
         }
-        return ret.value_or_exit(linfo);
+        return ret.value_or_exit(li);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
-                                                                                      const fs::path& filepath) noexcept
-    {
-        return Parser::parse(json, fs::u8string(filepath));
-    }
     ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
                                                                                       StringView origin) noexcept
     {

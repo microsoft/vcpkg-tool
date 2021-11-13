@@ -64,7 +64,7 @@ namespace vcpkg::Update
         }
 
         (void)args.parse_arguments(COMMAND_STRUCTURE);
-        System::print2("Using local portfile versions. To update the local portfiles, use `git pull`.\n");
+        print2("Using local portfile versions. To update the local portfiles, use `git pull`.\n");
 
         const StatusParagraphs status_db = database_load_check(paths);
 
@@ -75,14 +75,14 @@ namespace vcpkg::Update
 
         if (outdated_packages.empty())
         {
-            System::print2("No packages need updating.\n");
+            print2("No packages need updating.\n");
         }
         else
         {
-            System::print2("The following packages differ from their port versions:\n");
+            print2("The following packages differ from their port versions:\n");
             for (auto&& package : outdated_packages)
             {
-                System::printf("    %-32s %s\n", package.spec, package.version_diff.to_string());
+                vcpkg::printf("    %-32s %s\n", package.spec, package.version_diff.to_string());
             }
 
 #if defined(_WIN32)
@@ -90,15 +90,15 @@ namespace vcpkg::Update
 #else
             auto vcpkg_cmd = "./vcpkg";
 #endif
-            System::printf("\n"
-                           "To update these packages and all dependencies, run\n"
-                           "    %s upgrade\n"
-                           "\n"
-                           "To only remove outdated packages, run\n"
-                           "    %s remove --outdated\n"
-                           "\n",
-                           vcpkg_cmd,
-                           vcpkg_cmd);
+            vcpkg::printf("\n"
+                          "To update these packages and all dependencies, run\n"
+                          "    %s upgrade\n"
+                          "\n"
+                          "To only remove outdated packages, run\n"
+                          "    %s remove --outdated\n"
+                          "\n",
+                          vcpkg_cmd,
+                          vcpkg_cmd);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

@@ -2,6 +2,7 @@
 
 #include <vcpkg/vcpkgcmdarguments.h>
 
+#include <map>
 #include <vector>
 
 using vcpkg::CommandSetting;
@@ -132,4 +133,23 @@ TEST_CASE ("vcpkg_root parse with equal separator", "[arguments]")
     auto& vcpkg_root_dir = v.vcpkg_root_dir;
     REQUIRE(vcpkg_root_dir);
     REQUIRE(*vcpkg_root_dir == "C:\\vcpkg");
+}
+
+TEST_CASE ("Combine asset cache params", "[arguments]")
+{
+    std::vector<std::string> t = {vcpkg::Strings::concat("--", VcpkgCmdArguments::ASSET_SOURCES_ARG, "=x-azurl,value")};
+    auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    REQUIRE(!v.asset_sources_template().has_value());
+    v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
+    REQUIRE(v.asset_sources_template() == "x-azurl,value");
+
+    std::map<std::string, std::string, std::less<>> envmap = {
+        {VcpkgCmdArguments::ASSET_SOURCES_ENV.to_string(), "x-azurl,value1"},
+    };
+    v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    v.imbue_from_fake_environment(envmap);
+    REQUIRE(v.asset_sources_template() == "x-azurl,value1");
+    v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
+    v.imbue_from_fake_environment(envmap);
+    REQUIRE(v.asset_sources_template() == "x-azurl,value1;x-azurl,value");
 }

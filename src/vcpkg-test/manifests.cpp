@@ -35,7 +35,7 @@ static Json::Object parse_json_object(StringView sv)
 static Parse::ParseExpected<SourceControlFile> test_parse_manifest(StringView sv, bool expect_fail = false)
 {
     auto object = parse_json_object(sv);
-    auto res = SourceControlFile::parse_manifest_file(fs::u8path("<test manifest>"), object);
+    auto res = SourceControlFile::parse_manifest_file("<test manifest>", object);
     if (!res.has_value() && !expect_fail)
     {
         print_error_message(res.error());
@@ -60,9 +60,12 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(pgh.core_paragraph->name == "zlib");
     REQUIRE(pgh.core_paragraph->version == "1.2.8");
     REQUIRE(pgh.core_paragraph->maintainers.empty());
+    REQUIRE(pgh.core_paragraph->contacts.is_empty());
+    REQUIRE(pgh.core_paragraph->summary.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.empty());
     REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
+    REQUIRE(!pgh.core_paragraph->vcpkg_configuration.has_value());
 
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
 }
@@ -99,15 +102,15 @@ TEST_CASE ("manifest versioning", "[manifests]")
          Versions::Scheme::Semver,
          "1.2.3-rc3"},
     };
-    for (auto v : data)
+    for (auto&& v : data)
     {
         auto m_pgh = test_parse_manifest(std::get<0>(v));
-
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
-        REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
-        REQUIRE(pgh.core_paragraph->version_scheme == std::get<1>(v));
-        REQUIRE(pgh.core_paragraph->version == std::get<2>(v));
+        CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
+        CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
+        CHECK(pgh.core_paragraph->version == std::get<2>(v));
+        CHECK(pgh.core_paragraph->port_version == 0);
     }
 
     test_parse_manifest(R"json({
@@ -211,9 +214,58 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
                         true);
 }
 
-TEST_CASE ("manifest overrides error hash", "[manifests]")
+TEST_CASE ("manifest overrides embedded port version", "[manifests]")
 {
     test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version-string": "abcd#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+    test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version-date": "2018-01-01#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+    test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version": "1.2#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+    test_parse_manifest(R"json({
+    "name": "zlib",
+    "version-string": "abcd",
+    "overrides": [
+        {
+            "name": "d",
+            "version-semver": "1.2.0#1",
+            "port-version": 1
+        }
+    ]
+})json",
+                        true);
+
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -223,8 +275,10 @@ TEST_CASE ("manifest overrides error hash", "[manifests]")
         }
     ]
 })json",
-                        true);
-    test_parse_manifest(R"json({
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -234,8 +288,10 @@ TEST_CASE ("manifest overrides error hash", "[manifests]")
         }
     ]
 })json",
-                        true);
-    test_parse_manifest(R"json({
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -245,18 +301,22 @@ TEST_CASE ("manifest overrides error hash", "[manifests]")
         }
     ]
 })json",
-                        true);
-    test_parse_manifest(R"json({
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
+    CHECK(unwrap(test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
         {
             "name": "d",
-            "version-semver": "1.2#1"
+            "version-semver": "1.2.0#1"
         }
     ]
 })json",
-                        true);
+                                     false))
+              ->core_paragraph->overrides.at(0)
+              .port_version == 1);
 }
 
 TEST_CASE ("manifest constraints", "[manifests]")
@@ -483,7 +543,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
          Versions::Scheme::Semver,
          "1.2.3-rc3"},
     };
-    for (auto v : data)
+    for (auto&& v : data)
     {
         auto m_pgh = test_parse_manifest(std::get<0>(v));
 
@@ -555,18 +615,113 @@ TEST_CASE ("manifest overrides", "[manifests]")
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
 }
 
+TEST_CASE ("manifest embed configuration", "[manifests]")
+{
+    std::string raw_config = R"json({
+        "$extra-info": null,
+        "default-registry": {
+            "kind": "builtin",
+            "baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4"
+        },
+        "registries": [
+            {
+                "kind": "filesystem",
+                "path": "a/b/c",
+                "baseline": "default",
+                "packages": [
+                    "a",
+                    "b",
+                    "c"
+                ]
+            },
+            {
+                "kind": "git",
+                "repository": "https://github.com/microsoft/vcpkg-ports",
+                "baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
+                "packages": [ 
+                    "zlib",
+                    "rapidjson",
+                    "fmt"
+                ]
+            },
+            {
+                "kind": "artifact",
+                "name": "vcpkg-artifacts",
+                "location": "https://github.com/microsoft/vcpkg-artifacts"
+            }
+        ]
+    })json";
+
+    std::string raw = Strings::concat(R"json({
+    "vcpkg-configuration": )json",
+                                      raw_config,
+                                      R"json(,
+    "name": "zlib",
+    "version": "1.0.0",
+    "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
+    "dependencies": [
+        "a",
+        {
+            "$extra": null,
+            "name": "b"
+        },
+        {
+            "name": "c",
+            "version>=": "2018-09-01"
+        }
+    ]
+})json");
+    auto m_pgh = test_parse_manifest(raw);
+
+    REQUIRE(m_pgh.has_value());
+    auto& pgh = **m_pgh.get();
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+
+    auto maybe_as_json = Json::parse(raw);
+    REQUIRE(maybe_as_json.has_value());
+    auto as_json = *maybe_as_json.get();
+    REQUIRE(as_json.first.is_object());
+    auto as_json_obj = as_json.first.object();
+    REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
+            Json::stringify(as_json_obj, Json::JsonStyle::with_spaces(4)));
+
+    REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
+    REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
+    REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint ==
+            DependencyConstraint{Versions::Constraint::Type::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[1].name == "b");
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint ==
+            DependencyConstraint{Versions::Constraint::Type::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[2].name == "c");
+    REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
+            DependencyConstraint{Versions::Constraint::Type::Minimum, "2018-09-01", 0});
+
+    auto maybe_config = Json::parse(raw_config, "<test config>");
+    REQUIRE(maybe_config.has_value());
+    auto config = *maybe_config.get();
+    REQUIRE(config.first.is_object());
+    auto config_obj = config.first.object();
+    REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
+    auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
+    REQUIRE(Json::stringify(parsed_config_obj, Json::JsonStyle::with_spaces(4)) ==
+            Json::stringify(config_obj, Json::JsonStyle::with_spaces(4)));
+}
+
 TEST_CASE ("manifest construct maximum", "[manifests]")
 {
     auto m_pgh = test_parse_manifest(R"json({
         "name": "s",
         "version-string": "v",
         "maintainers": ["m"],
+        "contacts": { "a": { "aa": "aa" } },
+        "summary": "d",
         "description": "d",
         "dependencies": ["bd"],
         "default-features": ["df"],
-        "features": [
-            {
-                "name": "iroh",
+        "features": {
+            "iroh" : {
                 "description": "zuko's uncle",
                 "dependencies": [
                     "firebending",
@@ -580,11 +735,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                     }
                 ]
             },
-            {
-                "name": "zuko",
-                "description": ["son of the fire lord", "firebending 師父"]
+            "zuko": {
+                "description": ["son of the fire lord", "firebending 師父"],
+                "supports": "!(windows & arm)"
             }
-        ]
+        }
     })json");
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
@@ -593,12 +748,23 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->version == "v");
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
+    REQUIRE(pgh.core_paragraph->contacts.size() == 1);
+    auto contact_a = pgh.core_paragraph->contacts.get("a");
+    REQUIRE(contact_a);
+    REQUIRE(contact_a->is_object());
+    auto contact_a_aa = contact_a->object().get("aa");
+    REQUIRE(contact_a_aa);
+    REQUIRE(contact_a_aa->is_string());
+    REQUIRE(contact_a_aa->string() == "aa");
+    REQUIRE(pgh.core_paragraph->summary.size() == 1);
+    REQUIRE(pgh.core_paragraph->summary[0] == "d");
     REQUIRE(pgh.core_paragraph->description.size() == 1);
     REQUIRE(pgh.core_paragraph->description[0] == "d");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "bd");
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
     REQUIRE(pgh.core_paragraph->default_features[0] == "df");
+    REQUIRE(pgh.core_paragraph->supports_expression.is_empty());
 
     REQUIRE(pgh.feature_paragraphs.size() == 2);
 
@@ -624,6 +790,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[1]->description.size() == 2);
     REQUIRE(pgh.feature_paragraphs[1]->description[0] == "son of the fire lord");
     REQUIRE(pgh.feature_paragraphs[1]->description[1] == "firebending 師父");
+    REQUIRE(!pgh.feature_paragraphs[1]->supports_expression.is_empty());
+    REQUIRE_FALSE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
+        {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
+        {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
 
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
 }
@@ -791,26 +962,25 @@ TEST_CASE ("SourceParagraph manifest non-string supports", "[manifests]")
 TEST_CASE ("Serialize all the ports", "[manifests]")
 {
     std::vector<std::string> args_list = {"format-manifest"};
-    auto& fs = Files::get_real_filesystem();
+    auto& fs = get_real_filesystem();
     auto args = VcpkgCmdArguments::create_from_arg_sequence(args_list.data(), args_list.data() + args_list.size());
     args.imbue_from_environment();
     VcpkgPaths paths{fs, args};
 
     std::vector<SourceControlFile> scfs;
 
-    for (auto dir : fs::directory_iterator(paths.builtin_ports_directory()))
+    for (auto&& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
     {
-        const auto control = dir / fs::u8path("CONTROL");
-        const auto manifest = dir / fs::u8path("vcpkg.json");
-        if (fs.exists(control))
+        const auto control = dir / "CONTROL";
+        const auto manifest = dir / "vcpkg.json";
+        if (fs.exists(control, IgnoreErrors{}))
         {
-            INFO(fs::u8string(control));
+            INFO(control.native());
             auto contents = fs.read_contents(control, VCPKG_LINE_INFO);
-            auto pghs = Paragraphs::parse_paragraphs(contents, fs::u8string(control));
+            auto pghs = Paragraphs::parse_paragraphs(contents, control);
             REQUIRE(pghs);
 
-            auto scf = SourceControlFile::parse_control_file(fs::u8string(control),
-                                                             std::move(pghs).value_or_exit(VCPKG_LINE_INFO));
+            auto scf = SourceControlFile::parse_control_file(control, std::move(pghs).value_or_exit(VCPKG_LINE_INFO));
             if (!scf)
             {
                 INFO(scf.error()->name);
@@ -820,7 +990,7 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
 
             scfs.push_back(std::move(*scf.value_or_exit(VCPKG_LINE_INFO)));
         }
-        else if (fs.exists(manifest))
+        else if (fs.exists(manifest, IgnoreErrors{}))
         {
             std::error_code ec;
             auto contents = Json::parse_file(fs, manifest, ec);

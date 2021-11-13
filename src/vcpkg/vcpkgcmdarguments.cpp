@@ -26,9 +26,9 @@ namespace vcpkg
             {
                 if (place.has_value())
                 {
-                    System::printf(
-                        System::Color::error, "Error: both %s and -%s were specified as feature flags\n", flag, flag);
-                    Metrics::g_metrics.lock()->track_property("error", "error feature flag +-" + flag.to_string());
+                    vcpkg::printf(Color::error, "Error: both %s and -%s were specified as feature flags\n", flag, flag);
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("error",
+                                                                     "error feature flag +-" + flag.to_string());
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
@@ -66,8 +66,8 @@ namespace vcpkg
     {
         if (nullptr != option_field)
         {
-            System::printf(System::Color::error, "Error: --%s specified multiple times\n", option_name);
-            Metrics::g_metrics.lock()->track_property("error", "error option specified multiple times");
+            vcpkg::printf(Color::error, "Error: --%s specified multiple times\n", option_name);
+            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option specified multiple times");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -79,8 +79,8 @@ namespace vcpkg
     {
         if (option_field && option_field != new_setting)
         {
-            System::print2(System::Color::error, "Error: conflicting values specified for --", option_name, '\n');
-            Metrics::g_metrics.lock()->track_property("error", "error conflicting switches");
+            print2(Color::error, "Error: conflicting values specified for --", option_name, '\n');
+            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error conflicting switches");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -93,8 +93,8 @@ namespace vcpkg
     {
         if (new_value.size() == 0)
         {
-            System::print2(System::Color::error, "Error: expected value after ", option_name, '\n');
-            Metrics::g_metrics.lock()->track_property("error", "error option name");
+            print2(Color::error, "Error: expected value after ", option_name, '\n');
+            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -108,8 +108,8 @@ namespace vcpkg
     {
         if (new_value.size() == 0)
         {
-            System::print2(System::Color::error, "Error: expected value after ", option_name, '\n');
-            Metrics::g_metrics.lock()->track_property("error", "error option name");
+            print2(Color::error, "Error: expected value after ", option_name, '\n');
+            LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
             print_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -120,7 +120,7 @@ namespace vcpkg
         }
     }
 
-    VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const Files::Filesystem& fs,
+    VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const Filesystem& fs,
                                                                   const int argc,
                                                                   const CommandLineCharType* const* const argv)
     {
@@ -137,13 +137,15 @@ namespace vcpkg
             if (arg.size() > 0 && arg[0] == '@')
             {
                 arg.erase(arg.begin());
-                auto lines = fs.read_lines(fs::u8path(arg));
-                if (!lines.has_value())
+                std::error_code ec;
+                auto lines = fs.read_lines(arg, ec);
+                if (ec)
                 {
-                    System::print2(System::Color::error, "Error: Could not open response file ", arg, '\n');
+                    print2(Color::error, "Error: Could not open response file ", arg, '\n');
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
-                std::copy(lines.get()->begin(), lines.get()->end(), std::back_inserter(v));
+
+                v.insert(v.end(), std::make_move_iterator(lines.begin()), std::make_move_iterator(lines.end()));
             }
             else
             {
@@ -180,8 +182,8 @@ namespace vcpkg
                     return TryParseArgumentResult::FoundAndConsumedLookahead;
                 }
 
-                System::print2(System::Color::error, "Error: expected value after ", option, '\n');
-                Metrics::g_metrics.lock()->track_property("error", "error option name");
+                print2(Color::error, "Error: expected value after ", option, '\n');
+                LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error option name");
                 print_usage();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -250,7 +252,7 @@ namespace vcpkg
 
             if (basic_arg.size() >= 2 && basic_arg[0] == '-' && basic_arg[1] != '-')
             {
-                Metrics::g_metrics.lock()->track_property("error", "error short options are not supported");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("error", "error short options are not supported");
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: short options are not supported: %s", basic_arg);
             }
 
@@ -285,6 +287,7 @@ namespace vcpkg
                     {SCRIPTS_ROOT_DIR_ARG, &VcpkgCmdArguments::scripts_root_dir},
                     {BUILTIN_PORTS_ROOT_DIR_ARG, &VcpkgCmdArguments::builtin_ports_root_dir},
                     {BUILTIN_REGISTRY_VERSIONS_DIR_ARG, &VcpkgCmdArguments::builtin_registry_versions_dir},
+                    {ASSET_SOURCES_ARG, &VcpkgCmdArguments::asset_sources_template_arg},
                 };
 
             constexpr static std::pair<StringView, std::vector<std::string> VcpkgCmdArguments::*>
@@ -388,11 +391,11 @@ namespace vcpkg
         {
             if (actual_arg_count != command_structure.minimum_arity)
             {
-                System::printf(System::Color::error,
-                               "Error: '%s' requires %u arguments, but %u were provided.\n",
-                               this->command,
-                               command_structure.minimum_arity,
-                               actual_arg_count);
+                vcpkg::printf(Color::error,
+                              "Error: '%s' requires %u arguments, but %u were provided.\n",
+                              this->command,
+                              command_structure.minimum_arity,
+                              actual_arg_count);
                 failed = true;
             }
         }
@@ -400,20 +403,20 @@ namespace vcpkg
         {
             if (actual_arg_count < command_structure.minimum_arity)
             {
-                System::printf(System::Color::error,
-                               "Error: '%s' requires at least %u arguments, but %u were provided\n",
-                               this->command,
-                               command_structure.minimum_arity,
-                               actual_arg_count);
+                vcpkg::printf(Color::error,
+                              "Error: '%s' requires at least %u arguments, but %u were provided\n",
+                              this->command,
+                              command_structure.minimum_arity,
+                              actual_arg_count);
                 failed = true;
             }
             if (actual_arg_count > command_structure.maximum_arity)
             {
-                System::printf(System::Color::error,
-                               "Error: '%s' requires at most %u arguments, but %u were provided\n",
-                               this->command,
-                               command_structure.maximum_arity,
-                               actual_arg_count);
+                vcpkg::printf(Color::error,
+                              "Error: '%s' requires at most %u arguments, but %u were provided\n",
+                              this->command,
+                              command_structure.maximum_arity,
+                              actual_arg_count);
                 failed = true;
             }
         }
@@ -443,8 +446,7 @@ namespace vcpkg
             if (option_it != options_copy.end())
             {
                 // This means that the switch was passed like '--a=xyz'
-                System::printf(
-                    System::Color::error, "Error: The option '--%s' does not accept an argument.\n", switch_.name);
+                vcpkg::printf(Color::error, "Error: The option '--%s' does not accept an argument.\n", switch_.name);
                 options_copy.erase(option_it);
                 failed = true;
             }
@@ -463,16 +465,14 @@ namespace vcpkg
 
                 if (value.size() > 1)
                 {
-                    System::printf(
-                        System::Color::error, "Error: The option '%s' can only be passed once.\n", option.name);
+                    vcpkg::printf(Color::error, "Error: The option '%s' can only be passed once.\n", option.name);
                     failed = true;
                 }
                 else if (value.front().empty())
                 {
                     // Fail when not given a value, e.g.: "vcpkg install sqlite3 --additional-ports="
-                    System::printf(System::Color::error,
-                                   "Error: The option '--%s' must be passed a non-empty argument.\n",
-                                   option.name);
+                    vcpkg::printf(
+                        Color::error, "Error: The option '--%s' must be passed a non-empty argument.\n", option.name);
                     failed = true;
                 }
                 else
@@ -485,8 +485,7 @@ namespace vcpkg
             if (switch_it != switches_copy.end())
             {
                 // This means that the option was passed like '--a'
-                System::printf(
-                    System::Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
+                vcpkg::printf(Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
                 switches_copy.erase(switch_it);
                 failed = true;
             }
@@ -502,9 +501,9 @@ namespace vcpkg
                 {
                     if (v.empty())
                     {
-                        System::printf(System::Color::error,
-                                       "Error: The option '--%s' must be passed non-empty arguments.\n",
-                                       option.name);
+                        vcpkg::printf(Color::error,
+                                      "Error: The option '--%s' must be passed non-empty arguments.\n",
+                                      option.name);
                         failed = true;
                     }
                     else
@@ -518,8 +517,7 @@ namespace vcpkg
             if (switch_it != switches_copy.end())
             {
                 // This means that the option was passed like '--a'
-                System::printf(
-                    System::Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
+                vcpkg::printf(Color::error, "Error: The option '--%s' must be passed an argument.\n", option.name);
                 switches_copy.erase(switch_it);
                 failed = true;
             }
@@ -527,16 +525,16 @@ namespace vcpkg
 
         if (!switches_copy.empty() || !options_copy.empty())
         {
-            System::printf(System::Color::error, "Unknown option(s) for command '%s':\n", this->command);
+            vcpkg::printf(Color::error, "Unknown option(s) for command '%s':\n", this->command);
             for (auto&& switch_ : switches_copy)
             {
-                System::print2("    '--", switch_, "'\n");
+                print2("    '--", switch_, "'\n");
             }
             for (auto&& option : options_copy)
             {
-                System::print2("    '--", option.first, "'\n");
+                print2("    '--", option.first, "'\n");
             }
-            System::print2("\n");
+            print2("\n");
             failed = true;
         }
 
@@ -571,6 +569,9 @@ namespace vcpkg
         table.format("vcpkg edit <pkg>",
                      "Open up a port for editing (uses " + format_environment_variable("EDITOR") + ", default 'code')");
         table.format("vcpkg create <pkg> <url> [archivename]", "Create a new package");
+        table.format("vcpkg x-init-registry <path>", "Initializes a registry in the directory <path>");
+        table.format("vcpkg format-manifest --all",
+                     "Formats all vcpkg.json files. Run this before committing to vcpkg.");
         table.format("vcpkg owns <pat>", "Search for files in installed packages");
         table.format("vcpkg depend-info <pkg>...", "Display a list of dependencies for packages");
         table.format("vcpkg env", "Creates a clean shell environment for development or compiling");
@@ -583,7 +584,7 @@ namespace vcpkg
         table.format("@response_file", "Specify a response file to provide additional parameters");
         table.blank();
         table.example("For more help (including examples) see the accompanying README.md and docs folder.");
-        System::print2(table.m_str);
+        print2(table.m_str);
     }
 
     void print_usage(const CommandStructure& command_structure)
@@ -597,19 +598,28 @@ namespace vcpkg
         table.header("Options");
         for (auto&& option : command_structure.options.switches)
         {
-            table.format(Strings::format("--%s", option.name), option.short_help_text);
+            if (option.short_help_text.size() != 0)
+            {
+                table.format(Strings::format("--%s", option.name), option.short_help_text);
+            }
         }
         for (auto&& option : command_structure.options.settings)
         {
-            table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+            if (option.short_help_text.size() != 0)
+            {
+                table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+            }
         }
         for (auto&& option : command_structure.options.multisettings)
         {
-            table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+            if (option.short_help_text.size() != 0)
+            {
+                table.format(Strings::format("--%s=...", option.name), option.short_help_text);
+            }
         }
 
         VcpkgCmdArguments::append_common_options(table);
-        System::print2(table.m_str);
+        print2(table.m_str);
     }
 
     void VcpkgCmdArguments::append_common_options(HelpTableFormatter& table)
@@ -629,6 +639,8 @@ namespace vcpkg
         table.format("", "(also: " + format_environment_variable("VCPKG_OVERLAY_TRIPLETS") + ')');
         table.format(opt(BINARY_SOURCES_ARG, "=", "<path>"),
                      "Add sources for binary caching. See 'vcpkg help binarycaching'");
+        table.format(opt(ASSET_SOURCES_ARG, "=", "<path>"),
+                     "Add sources for asset caching. See 'vcpkg help assetcaching'");
         table.format(opt(DOWNLOADS_ROOT_DIR_ARG, "=", "<path>"), "Specify the downloads root directory");
         table.format("", "(default: " + format_environment_variable("VCPKG_DOWNLOADS") + ')');
         table.format(opt(VCPKG_ROOT_DIR_ARG, "=", "<path>"), "Specify the vcpkg root directory");
@@ -645,43 +657,62 @@ namespace vcpkg
         table.format(opt(JSON_SWITCH, "", ""), "(Experimental) Request JSON output");
     }
 
-    static void from_env(ZStringView var, std::unique_ptr<std::string>& dst)
+    static void from_env(const std::function<Optional<std::string>(ZStringView)>& f,
+                         ZStringView var,
+                         std::unique_ptr<std::string>& dst)
     {
         if (dst) return;
 
-        auto maybe_val = System::get_environment_variable(var);
+        auto maybe_val = f(var);
         if (auto val = maybe_val.get())
         {
             dst = std::make_unique<std::string>(std::move(*val));
         }
     }
-    static void from_env(ZStringView var, Optional<std::string>& dst)
+    static void from_env(const std::function<Optional<std::string>(ZStringView)>& f,
+                         ZStringView var,
+                         Optional<std::string>& dst)
     {
         if (dst) return;
 
-        dst = System::get_environment_variable(var);
+        dst = f(var);
     }
 
-    void VcpkgCmdArguments::imbue_from_environment()
+    void VcpkgCmdArguments::imbue_from_environment() { imbue_from_environment_impl(&vcpkg::get_environment_variable); }
+    void VcpkgCmdArguments::imbue_from_fake_environment(const std::map<std::string, std::string, std::less<>>& env)
+    {
+        imbue_from_environment_impl([&env](ZStringView var) -> Optional<std::string> {
+            auto it = env.find(var);
+            if (it == env.end())
+            {
+                return nullopt;
+            }
+            else
+            {
+                return it->second;
+            }
+        });
+    }
+    void VcpkgCmdArguments::imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env)
     {
         if (!disable_metrics)
         {
-            const auto vcpkg_disable_metrics_env = System::get_environment_variable(DISABLE_METRICS_ENV);
+            const auto vcpkg_disable_metrics_env = get_env(DISABLE_METRICS_ENV);
             if (vcpkg_disable_metrics_env.has_value())
             {
                 disable_metrics = true;
             }
         }
 
-        from_env(TRIPLET_ENV, triplet);
-        from_env(HOST_TRIPLET_ENV, host_triplet);
-        from_env(VCPKG_ROOT_DIR_ENV, vcpkg_root_dir);
-        from_env(DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
-        from_env(DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
-        from_env(ASSET_SOURCES_ENV, asset_sources_template);
+        from_env(get_env, TRIPLET_ENV, triplet);
+        from_env(get_env, HOST_TRIPLET_ENV, host_triplet);
+        from_env(get_env, VCPKG_ROOT_DIR_ENV, vcpkg_root_dir);
+        from_env(get_env, DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
+        from_env(get_env, DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
+        from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
 
         {
-            const auto vcpkg_disable_lock = System::get_environment_variable(IGNORE_LOCK_FAILURES_ENV);
+            const auto vcpkg_disable_lock = get_env(IGNORE_LOCK_FAILURES_ENV);
             if (vcpkg_disable_lock.has_value() && !ignore_lock_failures.has_value())
             {
                 ignore_lock_failures = true;
@@ -689,7 +720,7 @@ namespace vcpkg
         }
 
         {
-            const auto vcpkg_overlay_ports_env = System::get_environment_variable(OVERLAY_PORTS_ENV);
+            const auto vcpkg_overlay_ports_env = get_env(OVERLAY_PORTS_ENV);
             if (const auto unpacked = vcpkg_overlay_ports_env.get())
             {
                 auto overlays = Strings::split_paths(*unpacked);
@@ -697,7 +728,7 @@ namespace vcpkg
             }
         }
         {
-            const auto vcpkg_overlay_triplets_env = System::get_environment_variable(OVERLAY_TRIPLETS_ENV);
+            const auto vcpkg_overlay_triplets_env = get_env(OVERLAY_TRIPLETS_ENV);
             if (const auto unpacked = vcpkg_overlay_triplets_env.get())
             {
                 auto triplets = Strings::split_paths(*unpacked);
@@ -705,7 +736,7 @@ namespace vcpkg
             }
         }
         {
-            const auto vcpkg_feature_flags_env = System::get_environment_variable(FEATURE_FLAGS_ENV);
+            const auto vcpkg_feature_flags_env = get_env(FEATURE_FLAGS_ENV);
             if (const auto v = vcpkg_feature_flags_env.get())
             {
                 auto flags = Strings::split(*v, ',');
@@ -724,11 +755,16 @@ namespace vcpkg
             "called once per process.");
         s_reentrancy_guard = true;
 
-        auto maybe_vcpkg_recursive_data = System::get_environment_variable(RECURSIVE_DATA_ENV);
+        auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
             auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).first;
             const auto& obj = rec_doc.object();
+
+            if (auto entry = obj.get(VCPKG_ROOT_DIR_ENV))
+            {
+                args.vcpkg_root_dir = std::make_unique<std::string>(entry->string().to_string());
+            }
 
             if (auto entry = obj.get(DOWNLOADS_ROOT_DIR_ENV))
             {
@@ -737,7 +773,7 @@ namespace vcpkg
 
             if (auto entry = obj.get(ASSET_SOURCES_ENV))
             {
-                args.asset_sources_template = entry->string().to_string();
+                args.asset_sources_template_env = entry->string().to_string();
             }
 
             if (obj.get(DISABLE_METRICS_ENV))
@@ -747,19 +783,24 @@ namespace vcpkg
 
             // Setting the recursive data to 'poison' prevents more than one level of recursion because
             // Json::parse() will fail.
-            System::set_environment_variable(RECURSIVE_DATA_ENV, "poison");
+            set_environment_variable(RECURSIVE_DATA_ENV, "poison");
         }
         else
         {
             Json::Object obj;
+            if (args.vcpkg_root_dir)
+            {
+                obj.insert(VCPKG_ROOT_DIR_ENV, Json::Value::string(*args.vcpkg_root_dir.get()));
+            }
+
             if (args.downloads_root_dir)
             {
                 obj.insert(DOWNLOADS_ROOT_DIR_ENV, Json::Value::string(*args.downloads_root_dir.get()));
             }
 
-            if (args.asset_sources_template)
+            if (auto value = args.asset_sources_template())
             {
-                obj.insert(ASSET_SOURCES_ENV, Json::Value::string(*args.asset_sources_template.get()));
+                obj.insert(ASSET_SOURCES_ENV, Json::Value::string(value.value_or_exit(VCPKG_LINE_INFO)));
             }
 
             if (args.disable_metrics)
@@ -767,7 +808,7 @@ namespace vcpkg
                 obj.insert(DISABLE_METRICS_ENV, Json::Value::boolean(true));
             }
 
-            System::set_environment_variable(RECURSIVE_DATA_ENV, Json::stringify(obj, Json::JsonStyle::with_spaces(0)));
+            set_environment_variable(RECURSIVE_DATA_ENV, Json::stringify(obj, Json::JsonStyle::with_spaces(0)));
         }
     }
 
@@ -786,12 +827,12 @@ namespace vcpkg
         {
             if (el.is_inconsistent)
             {
-                System::printf(System::Color::warning,
-                               "Warning: %s feature specifically turned off, but --%s was specified.\n",
-                               el.flag,
-                               el.option);
-                System::printf(System::Color::warning, "Warning: Defaulting to %s being on.\n", el.flag);
-                Metrics::g_metrics.lock()->track_property(
+                vcpkg::printf(Color::warning,
+                              "Warning: %s feature specifically turned off, but --%s was specified.\n",
+                              el.flag,
+                              el.option);
+                vcpkg::printf(Color::warning, "Warning: Defaulting to %s being on.\n", el.flag);
+                LockGuardPtr<Metrics>(g_metrics)->track_property(
                     "warning", Strings::format("warning %s alongside %s", el.flag, el.option));
             }
         }
@@ -839,8 +880,20 @@ namespace vcpkg
 
         for (const auto& flag : flags)
         {
-            Metrics::g_metrics.lock()->track_feature(flag.flag.to_string(), flag.enabled);
+            LockGuardPtr<Metrics>(g_metrics)->track_feature(flag.flag.to_string(), flag.enabled);
         }
+    }
+
+    Optional<std::string> VcpkgCmdArguments::asset_sources_template() const
+    {
+        std::string asset_sources_template = asset_sources_template_env.value_or("");
+        if (asset_sources_template_arg)
+        {
+            if (!asset_sources_template.empty()) asset_sources_template += ";";
+            asset_sources_template += *asset_sources_template_arg;
+        }
+        if (asset_sources_template.empty()) return nullopt;
+        return Optional<std::string>(std::move(asset_sources_template));
     }
 
     std::string format_environment_variable(StringLiteral lit)
@@ -975,6 +1028,7 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::JSON_SWITCH;
 
     constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ARG;
 
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ENV;
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ARG;

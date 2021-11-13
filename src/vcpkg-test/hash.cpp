@@ -58,27 +58,6 @@ using vcpkg::StringView;
         REQUIRE(hasher->get_hash() == real_hash);                                                                      \
     } while (0)
 
-TEST_CASE ("SHA1: basic tests", "[hash][sha1]")
-{
-    const auto algorithm = Hash::Algorithm::Sha1;
-
-    CHECK_HASH_STRING("", "da39a3ee5e6b4b0d3255bfef95601890afd80709");
-    CHECK_HASH_STRING(";", "2d14ab97cc3dc294c51c0d6814f4ea45f4b4e312");
-    CHECK_HASH_STRING("asdifasdfnas", "b77eb8a1b4c2ef6716d7d302647e4511b1a638a6");
-    CHECK_HASH_STRING("asdfanvoinaoifawenflawenfiwnofvnasfjvnaslkdfjlkasjdfanm,"
-                      "werflawoienfowanevoinwai32910u2740918741o;j;wejfqwioaher9283hrpf;asd",
-                      "c69bcd30c196c7050906d212722dd7a7659aad04");
-}
-
-TEST_CASE ("SHA1: NIST test cases (small)", "[hash][sha1]")
-{
-    const auto algorithm = Hash::Algorithm::Sha1;
-
-    CHECK_HASH_STRING("abc", "a9993e364706816aba3e25717850c26c9cd0d89d");
-    CHECK_HASH_STRING("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
-                      "84983e441c3bd26ebaae4aa1f95129e5e54670f1");
-}
-
 TEST_CASE ("SHA256: basic tests", "[hash][sha256]")
 {
     const auto algorithm = Hash::Algorithm::Sha256;
@@ -202,30 +181,6 @@ void benchmark_hasher(Chronometer& meter, Hash::Hasher& hasher, std::uint64_t si
         }
         hasher.get_hash();
     });
-}
-
-TEST_CASE ("SHA1: benchmark", "[.][hash][sha256][!benchmark]")
-{
-    using Catch::Benchmark::Chronometer;
-
-    auto hasher = Hash::get_hasher_for(Hash::Algorithm::Sha1);
-
-    BENCHMARK_ADVANCED("0 x 1'000'000")(Catch::Benchmark::Chronometer meter)
-    {
-        benchmark_hasher(meter, *hasher, 1'000'000, 0);
-    };
-    BENCHMARK_ADVANCED("'Z' x 0x2000'0000")(Catch::Benchmark::Chronometer meter)
-    {
-        benchmark_hasher(meter, *hasher, 0x2000'0000, 'Z');
-    };
-    BENCHMARK_ADVANCED("0 x 0x4100'0000")(Catch::Benchmark::Chronometer meter)
-    {
-        benchmark_hasher(meter, *hasher, 0x4100'0000, 0);
-    };
-    BENCHMARK_ADVANCED("'B' x 0x6000'003E")(Catch::Benchmark::Chronometer meter)
-    {
-        benchmark_hasher(meter, *hasher, 0x6000'003E, 'B');
-    };
 }
 
 TEST_CASE ("SHA256: benchmark", "[.][hash][sha256][!benchmark]")

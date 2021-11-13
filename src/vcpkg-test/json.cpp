@@ -1,5 +1,6 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/unicode.h>
 
@@ -231,11 +232,22 @@ TEST_CASE ("JSON parse full file", "[json]")
 
 TEST_CASE ("JSON track newlines", "[json]")
 {
-    auto res = Json::parse("{\n,", fs::u8path("filename"));
+    auto res = Json::parse("{\n,", "filename");
     REQUIRE(!res);
     REQUIRE(res.error()->format() ==
             R"(filename:2:1: error: Unexpected character; expected property name
    on expression: ,
                   ^
+)");
+}
+
+TEST_CASE ("JSON duplicated object keys", "[json]")
+{
+    auto res = Json::parse("{\"name\": 1, \"name\": 2}", "filename");
+    REQUIRE(!res);
+    REQUIRE(res.error()->format() ==
+            R"(filename:1:13: error: Duplicated key "name" in an object
+   on expression: {"name": 1, "name": 2}
+                              ^
 )");
 }

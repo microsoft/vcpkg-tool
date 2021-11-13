@@ -82,7 +82,7 @@ namespace vcpkg
                 }
                 else if (m_is_present && !o.m_is_present)
                 {
-                    clear();
+                    destroy();
                 }
                 return *this;
             }
@@ -100,7 +100,7 @@ namespace vcpkg
                 }
                 else if (m_is_present && !o.m_is_present)
                 {
-                    clear();
+                    destroy();
                 }
                 return *this;
             }
@@ -110,14 +110,14 @@ namespace vcpkg
             const T& value() const { return this->m_t; }
             T& value() { return this->m_t; }
 
-        private:
-            void clear()
+            void destroy()
             {
                 m_is_present = false;
                 m_t.~T();
                 m_inactive = '\0';
             }
 
+        private:
             bool m_is_present;
             union
             {
@@ -160,7 +160,7 @@ namespace vcpkg
                 }
                 else if (m_is_present && !o.m_is_present)
                 {
-                    clear();
+                    destroy();
                 }
                 return *this;
             }
@@ -170,14 +170,14 @@ namespace vcpkg
             const T& value() const { return this->m_t; }
             T& value() { return this->m_t; }
 
-        private:
-            void clear()
+            void destroy()
             {
                 m_is_present = false;
                 m_t.~T();
                 m_inactive = '\0';
             }
 
+        private:
             bool m_is_present;
             union
             {
@@ -290,7 +290,7 @@ namespace vcpkg
         template<class F, class U = map_t<F>>
         Optional<U> map(F f) const&
         {
-            if (has_value())
+            if (this->m_base.has_value())
             {
                 return f(this->m_base.value());
             }
@@ -300,7 +300,7 @@ namespace vcpkg
         template<class F, class U = map_t<F>>
         U then(F f) const&
         {
-            if (has_value())
+            if (this->m_base.has_value())
             {
                 return f(this->m_base.value());
             }
@@ -313,7 +313,7 @@ namespace vcpkg
         template<class F, class U = move_map_t<F>>
         Optional<U> map(F f) &&
         {
-            if (has_value())
+            if (this->m_base.has_value())
             {
                 return f(std::move(this->m_base.value()));
             }
@@ -323,11 +323,19 @@ namespace vcpkg
         template<class F, class U = move_map_t<F>>
         U then(F f) &&
         {
-            if (has_value())
+            if (this->m_base.has_value())
             {
                 return f(std::move(this->m_base.value()));
             }
             return nullopt;
+        }
+
+        void clear()
+        {
+            if (this->m_base.has_value())
+            {
+                this->m_base.destroy();
+            }
         }
 
         friend bool operator==(const Optional& lhs, const Optional& rhs)

@@ -66,11 +66,11 @@ namespace vcpkg::Commands
                 if (is_top_level_supported)
                 {
                     // supported!
-                    System::printf("port %s is supported\n", full_port_name(p));
+                    vcpkg::printf("port %s is supported\n", full_port_name(p));
                 }
                 else
                 {
-                    System::printf("port %s is not supported (supports: \"%s\")\n", full_port_name(p), p.supports_expr);
+                    vcpkg::printf("port %s is not supported (supports: \"%s\")\n", full_port_name(p), p.supports_expr);
                 }
 
                 return;
@@ -78,11 +78,11 @@ namespace vcpkg::Commands
 
             if (is_top_level_supported)
             {
-                System::printf("port %s is not supported due to the following dependencies:\n", full_port_name(p));
+                vcpkg::printf("port %s is not supported due to the following dependencies:\n", full_port_name(p));
             }
             else
             {
-                System::printf(
+                vcpkg::printf(
                     "port %s is not supported (supports: \"%s\"), and has the following unsupported dependencies:\n",
                     full_port_name(p),
                     p.supports_expr);
@@ -90,9 +90,9 @@ namespace vcpkg::Commands
 
             for (const Port& reason : reasons)
             {
-                System::printf("  - dependency %s is not supported (supports: \"%s\")\n",
-                               full_port_name(reason),
-                               reason.supports_expr);
+                vcpkg::printf("  - dependency %s is not supported (supports: \"%s\")\n",
+                              full_port_name(reason),
+                              reason.supports_expr);
             }
         }
     }
@@ -136,7 +136,7 @@ namespace vcpkg::Commands
             for (const auto& action : action_plan.install_actions)
             {
                 const auto& spec = action.spec;
-                const auto& supports_expression = action.source_control_file_location.value_or_exit(VCPKG_LINE_INFO)
+                const auto& supports_expression = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
                                                       .source_control_file->core_paragraph->supports_expression;
 
                 PlatformExpression::Context context = cmake_vars->get_tag_vars(spec).value_or_exit(VCPKG_LINE_INFO);
@@ -189,7 +189,7 @@ namespace vcpkg::Commands
 
         if (use_json)
         {
-            System::print2(Json::stringify(json_to_print, {}));
+            print2(Json::stringify(json_to_print, {}));
         }
     }
 
