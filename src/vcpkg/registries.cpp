@@ -215,7 +215,9 @@ namespace
 
     struct BuiltinFilesRegistry final : RegistryImplementation
     {
-        StringLiteral kind() const override { return "builtinfiles"; }
+        static constexpr StringLiteral s_kind = "builtin-files";
+
+        StringLiteral kind() const override { return s_kind; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths& paths, StringView port_name) const override;
 
@@ -244,15 +246,18 @@ namespace
         const Parse::ParseExpected<SourceControlFile>& get_scf(const Filesystem& fs, const Path& path) const;
         Cache<Path, Parse::ParseExpected<SourceControlFile>> m_scfs;
     };
+    constexpr StringLiteral BuiltinFilesRegistry::s_kind;
 
     struct BuiltinGitRegistry final : RegistryImplementation
     {
+        static constexpr StringLiteral s_kind = "builtin-git";
+
         BuiltinGitRegistry(std::string&& baseline) : m_baseline_identifier(std::move(baseline))
         {
             Checks::check_exit(VCPKG_LINE_INFO, !m_baseline_identifier.empty());
         }
 
-        StringLiteral kind() const override { return "git-builtin"; }
+        StringLiteral kind() const override { return s_kind; }
 
         std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths& paths, StringView port_name) const override;
 
@@ -280,6 +285,7 @@ namespace
 
         std::unique_ptr<BuiltinFilesRegistry> m_files_impl;
     };
+    constexpr StringLiteral BuiltinGitRegistry::s_kind;
 
     struct FilesystemRegistry final : RegistryImplementation
     {
@@ -1471,18 +1477,18 @@ namespace vcpkg
 
     bool RegistrySet::is_default_builtin_registry() const
     {
-        return default_registry_ && default_registry_->kind() == "files-builtin";
+        return default_registry_ && default_registry_->kind() == BuiltinFilesRegistry::s_kind;
     }
     void RegistrySet::set_default_builtin_registry_baseline(StringView baseline)
     {
         if (auto default_registry = default_registry_.get())
         {
             const auto k = default_registry->kind();
-            if (k == "files-builtin")
+            if (k == BuiltinFilesRegistry::s_kind)
             {
                 default_registry_ = std::make_unique<BuiltinGitRegistry>(baseline.to_string());
             }
-            else if (k == "git-builtin")
+            else if (k == BuiltinGitRegistry::s_kind)
             {
                 print2(Color::warning,
                        R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
@@ -1505,14 +1511,7 @@ namespace vcpkg
         }
     }
 
-    bool RegistrySet::has_modifications() const
-    {
-        if (!registries_.empty())
-        {
-            return true;
-        }
-        return !is_default_builtin_registry();
-    }
+    bool RegistrySet::has_modifications() const { return !registries_.empty() || !is_default_builtin_registry(); }
 
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name)
