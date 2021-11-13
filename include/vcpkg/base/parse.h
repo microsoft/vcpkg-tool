@@ -61,7 +61,7 @@ namespace vcpkg::Parse
         static constexpr bool is_ascii_digit(char32_t ch) { return ch >= '0' && ch <= '9'; }
         static constexpr bool is_lineend(char32_t ch) { return ch == '\r' || ch == '\n' || ch == Unicode::end_of_file; }
         static constexpr bool is_alphanum(char32_t ch) { return is_icase_alpha(ch) || is_ascii_digit(ch); }
-        static constexpr bool is_alphadash(char32_t ch) { return is_icase_alpha(ch) || '-'; }
+        static constexpr bool is_alphadash(char32_t ch) { return is_icase_alpha(ch) || ch == '-'; }
         static constexpr bool is_alphanumdash(char32_t ch) { return is_alphanum(ch) || ch == '-'; }
 
         StringView skip_whitespace() { return match_zero_or_more(is_whitespace); }
