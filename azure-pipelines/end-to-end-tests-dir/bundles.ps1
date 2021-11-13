@@ -17,7 +17,7 @@ New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --x-scripts-dir=$env:VCPKG_ROOT/scripts
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -47,7 +47,7 @@ New-Item -ItemType Directory -Force $bundle | Out-Null
 $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --x-scripts-dir=$env:VCPKG_ROOT/scripts
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -84,7 +84,7 @@ $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `
-    --x-scripts-dir=$env:VCPKG_ROOT/scripts
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -118,6 +118,7 @@ New-Item -ItemType Directory -Force $bundle | Out-Null
 @{
     name = "manifest"
     version = "0"
+    dependencies = @("rapidjson")
 } | ConvertTo-JSON | out-file -enc ascii $manifestdir/vcpkg.json | Out-Null
 
 $a = Run-Vcpkg z-print-config `
@@ -127,7 +128,7 @@ $a = Run-Vcpkg z-print-config `
     --x-buildtrees-root=$buildtreesRoot `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot `
-    --x-scripts-dir=$env:VCPKG_ROOT/scripts
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
 $a
 Throw-IfFailed
 $a = $($a | ConvertFrom-JSON -AsHashtable)
@@ -147,3 +148,57 @@ foreach ($k in $b.keys) {
         throw "Expected key '$k' with value '$($a[$k])' to be '$($b[$k])'"
     }
 }
+
+Run-Vcpkg install zlib --dry-run --vcpkg-root=$bundle `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --x-buildtrees-root=$buildtreesRoot `
+    --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
+    --x-install-root=$installRoot `
+    --x-packages-root=$packagesRoot `
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
+Throw-IfNotFailed
+
+# Testing "usegitregistry"
+$CurrentTest = "Testing bundle.usegitregistry"
+@{
+    readonly = $True
+    usegitregistry = $True
+} | ConvertTo-JSON | out-file -enc ascii $bundle/.vcpkg-root | Out-Null
+Run-Vcpkg install --dry-run --vcpkg-root=$bundle `
+    --x-manifest-root=$manifestdir `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --x-buildtrees-root=$buildtreesRoot `
+    --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
+    --x-install-root=$installRoot `
+    --x-packages-root=$packagesRoot `
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
+Throw-IfNotFailed
+
+$manifestdir2 = Join-Path $TestingRoot "manifest2"
+New-Item -ItemType Directory -Force $manifestdir2 | Out-Null
+@{
+    name = "manifest"
+    version = "0"
+    dependencies = @("rapidjson")
+    "builtin-baseline" = "897ff9372f15c032f1e6cd1b97a59b57d66ee5b2"
+} | ConvertTo-JSON | out-file -enc ascii $manifestdir2/vcpkg.json | Out-Null
+
+Run-Vcpkg install --vcpkg-root=$bundle `
+    --x-manifest-root=$manifestdir2 `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --x-buildtrees-root=$buildtreesRoot `
+    --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
+    --x-install-root=$installRoot `
+    --x-packages-root=$packagesRoot `
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
+Throw-IfFailed
+
+Run-Vcpkg search zlib --vcpkg-root=$bundle `
+    --x-manifest-root=$manifestdir2 `
+    --overlay-triplets=$env:VCPKG_ROOT/triplets `
+    --x-buildtrees-root=$buildtreesRoot `
+    --x-builtin-ports-root=$env:VCPKG_ROOT/ports `
+    --x-install-root=$installRoot `
+    --x-packages-root=$packagesRoot `
+    --x-scripts-root=$env:VCPKG_ROOT/scripts
+Throw-IfFailed

@@ -921,22 +921,6 @@ namespace vcpkg::Install
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_overrides", "defined");
             }
 
-            if (auto p_baseline = manifest_scf.core_paragraph->builtin_baseline.get())
-            {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_baseline", "defined");
-                if (!is_git_commit_sha(*p_baseline))
-                {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
-                    Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                               "Error: the top-level builtin-baseline (%s) was not a valid commit sha: "
-                                               "expected 40 lowercase hexadecimal characters.\n%s\n",
-                                               *p_baseline,
-                                               paths.get_current_git_sha_baseline_message());
-                }
-
-                paths.get_configuration().registry_set.set_default_builtin_registry_baseline(*p_baseline);
-            }
-
             auto verprovider = PortFileProvider::make_versioned_portfile_provider(paths);
             auto baseprovider = PortFileProvider::make_baseline_provider(paths);
 
@@ -944,7 +928,8 @@ namespace vcpkg::Install
             extended_overlay_ports.reserve(args.overlay_ports.size() + 2);
             extended_overlay_ports.push_back(manifest_path.parent_path().to_string());
             Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
-            if (paths.get_configuration().registry_set.is_default_builtin_registry())
+            if (paths.get_configuration().registry_set.is_default_builtin_registry() &&
+                !paths.use_git_default_registry())
             {
                 extended_overlay_ports.push_back(paths.builtin_ports_directory().native());
             }

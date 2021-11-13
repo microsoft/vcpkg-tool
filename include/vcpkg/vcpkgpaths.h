@@ -178,6 +178,8 @@ namespace vcpkg
         // this should be used only for helper commands, not core commands like `install`.
         Path builtin_ports_directory() const { return this->builtin_ports; }
 
+        bool use_git_default_registry() const;
+
     private:
         Optional<Path> maybe_get_tmp_path(const std::string* arg_path,
                                           StringLiteral root_subpath,
