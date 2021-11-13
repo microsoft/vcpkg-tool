@@ -58,12 +58,6 @@ CMD=)");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{LOCKED}", "{value}|");
 }
 
-// 24 hours/day * 30 days/month * 6 months
-static constexpr int SURVEY_INTERVAL_IN_HOURS = 24 * 30 * 6;
-
-// Initial survey appears after 10 days. Therefore, subtract 24 hours/day * 10 days
-static constexpr int SURVEY_INITIAL_OFFSET_IN_HOURS = SURVEY_INTERVAL_IN_HOURS - 24 * 10;
-
 static void invalid_command(const std::string& cmd)
 {
     msg::println(Color::error, msgVcpkgInvalidCommand, msg::value = cmd);
@@ -243,11 +237,6 @@ int main(const int argc, const char* const* const argv)
     args.check_feature_flag_consistency();
 
     bool to_enable_metrics = true;
-    if (const auto p = args.disable_metrics.get())
-    {
-        to_enable_metrics = false;
-    }
-
     auto disable_metrics_tag_file_path = get_exe_path_of_current_process();
     disable_metrics_tag_file_path.replace_filename("vcpkg.disable-metrics");
 
@@ -255,6 +244,11 @@ int main(const int argc, const char* const* const argv)
     if (fs.exists(disable_metrics_tag_file_path, ec) || ec)
     {
         to_enable_metrics = false;
+    }
+
+    if (auto p = args.disable_metrics.get())
+    {
+        to_enable_metrics = !*p;
     }
 
     {
