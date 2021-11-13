@@ -65,8 +65,9 @@ namespace vcpkg::Versions
             return nullptr;
         }
         size_t i = 1;
-        for (; Parse::ParserBase::is_ascii_digit(s[i]); ++i)
+        while (Parse::ParserBase::is_ascii_digit(s[i]))
         {
+            ++i;
         }
         *n = as_numeric({s, i}).value_or_exit(VCPKG_LINE_INFO);
         return s + i;
@@ -74,51 +75,52 @@ namespace vcpkg::Versions
 
     ExpectedS<RelaxedVersion> RelaxedVersion::from_string(const std::string& str)
     {
-        // (0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*;
-
+        // (0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*
         const char* cur = str.c_str();
         std::vector<uint64_t> numbers;
         for (;;)
         {
             numbers.push_back(0);
             cur = parse_skip_number(cur, &numbers.back());
-            if (!cur || (*cur != 0 && *cur != '.'))
+            if (cur)
             {
-                return Strings::format(
-                    "Error: String `%s` must only contain dot-separated numeric values without leading zeroes.", str);
+                // (\.(0|[1-9][0-9]*))*
+                if (*cur == 0)
+                {
+                    return RelaxedVersion{str, std::move(numbers)};
+                }
+                else if (*cur == '.')
+                {
+                    ++cur;
+                    continue;
+                }
             }
-            if (*cur == 0)
-            {
-                break;
-            }
-            // *cur == '.'
-            ++cur;
+            return Strings::format(
+                "Error: String `%s` must only contain dot-separated numeric values without leading zeroes.", str);
         }
-
-        return RelaxedVersion{str, std::move(numbers)};
     }
 
     // 0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*
-    // equivalent:
     static const char* skip_prerelease_identifier(const char* const s)
     {
         auto cur = s;
-        for (; Parse::ParserBase::is_ascii_digit(*cur); ++cur)
+        while (Parse::ParserBase::is_ascii_digit(*cur))
         {
+            ++cur;
         }
         const char ch = *cur;
-        if (Parse::ParserBase::is_lower_alpha(ch) || Parse::ParserBase::is_upper_alpha(ch) || ch == '-')
+        if (Parse::ParserBase::is_alphadash(ch))
         {
             // matched alpha identifier
-            ++cur;
-            for (; Parse::ParserBase::is_alphanumdash(*cur); ++cur)
+            do
             {
-            }
+                ++cur;
+            } while (Parse::ParserBase::is_alphanumdash(*cur));
             return cur;
         }
         if (*s == '0')
         {
-            // matches exactly zero
+            // matched exactly zero
             return s + 1;
         }
         if (cur != s)
@@ -132,75 +134,81 @@ namespace vcpkg::Versions
     ExpectedS<SemanticVersion> SemanticVersion::from_string(const std::string& str)
     {
         // Suggested regex by semver.org
-        // std::regex semver_scheme_match("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)"
-        //                                "(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]"
-        //                                "*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
-        //                                "(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");
+        // ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
+        // (?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]
+        // *[a-zA-Z-][0-9a-zA-Z-]*))*))?
+        // (?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
 
         SemanticVersion ret;
         ret.original_string = str;
-        do
+        // (0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
+        ret.version.resize(3);
+        const char* cur = str.c_str();
+        cur = parse_skip_number(cur, &ret.version[0]);
+        if (!cur || *cur != '.') goto invalid_semver;
+        cur = parse_skip_number(cur + 1, &ret.version[1]);
+        if (!cur || *cur != '.') goto invalid_semver;
+        cur = parse_skip_number(cur + 1, &ret.version[2]);
+        if (!cur) goto invalid_semver;
+        ret.version_string.assign(str.c_str(), cur);
+        if (*cur == 0) return ret;
+
+        // pre-release
+        if (*cur == '-')
         {
-            // (0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)
-            ret.version.resize(3);
-            const char* cur = str.c_str();
-            cur = parse_skip_number(cur, &ret.version[0]);
-            if (!cur || *cur != '.') break;
-            cur = parse_skip_number(cur + 1, &ret.version[1]);
-            if (!cur || *cur != '.') break;
-            cur = parse_skip_number(cur + 1, &ret.version[2]);
-            if (!cur) break;
-            ret.version_string.assign(str.c_str(), cur);
-            if (*cur == 0) return ret;
-
-            // pre-release
-            if (*cur == '-')
-            {
-                ++cur;
-                const char* const start_of_prerelease = cur;
-                for (;;)
-                {
-                    const auto start_identifier = cur;
-                    cur = skip_prerelease_identifier(cur);
-                    if (!cur) break;
-                    ret.identifiers.emplace_back(start_identifier, cur);
-                    if (*cur != '.') break;
-                    ++cur;
-                }
-                if (!cur) break;
-                ret.prerelease_string.assign(start_of_prerelease, cur);
-            }
-
-            if (*cur == 0) return ret;
-            if (*cur != '+') break;
             ++cur;
-            // build
+            const char* const start_of_prerelease = cur;
             for (;;)
             {
-                if (!Parse::ParserBase::is_alphanumdash(*cur)) break;
-                ++cur;
-                for (; Parse::ParserBase::is_alphanumdash(*cur); ++cur)
+                const auto start_identifier = cur;
+                cur = skip_prerelease_identifier(cur);
+                if (!cur)
                 {
+                    goto invalid_semver;
                 }
-                if (*cur == 0) return ret;
+                ret.identifiers.emplace_back(start_identifier, cur);
                 if (*cur != '.') break;
                 ++cur;
             }
+            ret.prerelease_string.assign(start_of_prerelease, cur);
+        }
+        if (*cur == 0) return ret;
 
-        } while (0);
+        // build
+        if (*cur != '+') goto invalid_semver;
+        ++cur;
+        for (;;)
+        {
+            // Require non-empty identifier element
+            if (!Parse::ParserBase::is_alphanumdash(*cur)) goto invalid_semver;
+            ++cur;
+            while (Parse::ParserBase::is_alphanumdash(*cur))
+            {
+                ++cur;
+            }
+            if (*cur == 0) return ret;
+            if (*cur == '.')
+            {
+                ++cur;
+            }
+            else
+            {
+                goto invalid_semver;
+            }
+        }
 
+    invalid_semver:
         return Strings::format("Error: String `%s` is not a valid Semantic Version string, consult https://semver.org",
                                str);
     }
 
     ExpectedS<DateVersion> DateVersion::from_string(const std::string& str)
     {
-        do
-        {
-            DateVersion ret;
-            ret.original_string = str;
+        DateVersion ret;
+        ret.original_string = str;
 
-            if (str.size() < 10) break;
+        {
+            if (str.size() < 10) goto invalid_date;
             bool valid = Parse::ParserBase::is_ascii_digit(str[0]);
             valid |= Parse::ParserBase::is_ascii_digit(str[1]);
             valid |= Parse::ParserBase::is_ascii_digit(str[2]);
@@ -211,20 +219,23 @@ namespace vcpkg::Versions
             valid |= str[7] != '-';
             valid |= Parse::ParserBase::is_ascii_digit(str[8]);
             valid |= Parse::ParserBase::is_ascii_digit(str[9]);
-            if (!valid) break;
+            if (!valid) goto invalid_date;
             ret.version_string.assign(str.c_str(), 10);
 
             const char* cur = str.c_str() + 10;
-            for (;;)
+            // (\.(0|[1-9][0-9]*))*
+            while (*cur == '.')
             {
-                if (!cur || *cur != '.') break;
                 ret.identifiers.push_back(0);
                 cur = parse_skip_number(cur + 1, &ret.identifiers.back());
+                if (!cur) goto invalid_date;
             }
-            if (!cur || *cur != 0) break;
+            if (*cur != 0) goto invalid_date;
 
             return ret;
-        } while (0);
+        }
+
+    invalid_date:
 
         return Strings::format("Error: String `%s` is not a valid date version."
                                "Date section must follow the format YYYY-MM-DD and disambiguators must be "
