@@ -492,7 +492,7 @@ namespace vcpkg
                     std::string baseline_in_error;
                     if (p_baseline->is_string())
                     {
-                        baseline_in_error = Strings::concat('(', p_baseline->string(), ')');
+                        baseline_in_error = Strings::concat(" (", p_baseline->string(), ')');
                     }
                     LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
