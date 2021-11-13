@@ -22,6 +22,70 @@ namespace vcpkg::Commands::DependInfo
 {
     namespace
     {
+        struct PackageDependInfo
+        {
+            std::string package;
+            int depth;
+            std::unordered_set<std::string> features;
+            std::vector<std::string> dependencies;
+        };
+
+        // invariant: prefix_buf is equivalent on exitv (but may have been reallocated)
+        void print_dep_tree(std::string& prefix_buf,
+                            const std::string& currDepend,
+                            const std::vector<PackageDependInfo>& allDepends,
+                            std::set<std::string>& printed)
+        {
+            if (prefix_buf.size() > 400)
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
+            }
+            auto currPos = std::find_if(
+                allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
+            Checks::check_exit(VCPKG_LINE_INFO, currPos != allDepends.end(), "internal vcpkg error");
+            if (currPos->dependencies.empty())
+            {
+                return;
+            }
+
+            const size_t original_size = prefix_buf.size();
+
+            if (Util::Sets::contains(printed, currDepend))
+            {
+                // If we've already printed the set of dependencies, print an elipsis instead
+                Strings::append(prefix_buf, "+- ...\n");
+                print2(prefix_buf);
+                prefix_buf.resize(original_size);
+            }
+            else
+            {
+                printed.insert(currDepend);
+
+                for (auto i = currPos->dependencies.begin(); i != currPos->dependencies.end() - 1; ++i)
+                {
+                    // Print the current level
+                    Strings::append(prefix_buf, "+-- ", *i, "\n");
+                    print2(prefix_buf);
+                    prefix_buf.resize(original_size);
+
+                    // Recurse
+                    prefix_buf.append("|   ");
+                    print_dep_tree(prefix_buf, *i, allDepends, printed);
+                    prefix_buf.resize(original_size);
+                }
+
+                // Print the last of the current level
+                Strings::append(prefix_buf, "+-- ", currPos->dependencies.back(), "\n");
+                print2(prefix_buf);
+                prefix_buf.resize(original_size);
+
+                // Recurse
+                prefix_buf.append("    ");
+                print_dep_tree(prefix_buf, currPos->dependencies.back(), allDepends, printed);
+                prefix_buf.resize(original_size);
+            }
+        }
+
         constexpr StringLiteral OPTION_DOT = "dot";
         constexpr StringLiteral OPTION_DGML = "dgml";
         constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
@@ -321,7 +385,9 @@ namespace vcpkg::Commands::DependInfo
                 print2("]");
             }
             print2("\n");
-            RecurseFindDependencies(0, first->package, false, depend_info);
+            std::set<std::string> printed;
+            std::string prefix_buf;
+            print_dep_tree(prefix_buf, first->package, depend_info, printed);
         }
         else
         {
@@ -348,43 +414,6 @@ namespace vcpkg::Commands::DependInfo
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void RecurseFindDependencies(int levelFrom,
-                                 const std::string& currDepend,
-                                 bool isEnd,
-                                 const std::vector<PackageDependInfo>& allDepends)
-    {
-        if (levelFrom == 100)
-        {
-            Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
-        }
-        auto currPos = std::find_if(
-            allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
-        Checks::check_exit(VCPKG_LINE_INFO, currPos != allDepends.end(), "internal vcpkg error");
-
-        for (auto i = currPos->dependencies.begin(); i != currPos->dependencies.end(); i++)
-        {
-            // Handle the connecting lines and spaces in front
-            if (levelFrom)
-            {
-                for (auto j = 0; j < levelFrom - 1; j++)
-                {
-                    print2("|   ");
-                }
-
-                if (!isEnd)
-                    print2("|   ");
-                else
-                    print2("    ");
-            }
-
-            // Handle the current level
-            print2("+-- ", i->c_str(), "\n");
-            // The last element doesn't need additional connecting lines
-            auto j = i;
-            RecurseFindDependencies(levelFrom + 1, i->c_str(), ++j == currPos->dependencies.end(), allDepends);
-        }
     }
 
     void DependInfoCommand::perform_and_exit(const VcpkgCmdArguments& args,
