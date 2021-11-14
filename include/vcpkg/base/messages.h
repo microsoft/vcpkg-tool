@@ -189,7 +189,7 @@ namespace vcpkg::msg
         static ::vcpkg::StringLiteral localization_comment() { return COMMENT; };                                      \
         static ::vcpkg::StringLiteral default_format_string() noexcept { return __VA_ARGS__; }                         \
         static const ::size_t index;                                                                                   \
-    } msg##NAME = {}
+    } msg##NAME VCPKG_UNUSED = {}
 #define REGISTER_MESSAGE(NAME)                                                                                         \
     const ::size_t NAME##_msg_t ::index = ::vcpkg::msg::detail::startup_register_message(                              \
         NAME##_msg_t::name(), NAME##_msg_t::default_format_string(), NAME##_msg_t::localization_comment())

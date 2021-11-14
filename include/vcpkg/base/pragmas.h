@@ -33,13 +33,16 @@
 #define VCPKG_MSVC_WARNING(...)
 #define VCPKG_GCC_DIAGNOSTIC(...)
 #define VCPKG_CLANG_DIAGNOSTIC(DIAGNOSTIC) Z_VCPKG_PRAGMA(clang diagnostic DIAGNOSTIC)
+#define VCPKG_UNUSED [[maybe_unused]]
 #elif defined(_MSC_VER)
 #define VCPKG_MSVC_WARNING(...) Z_VCPKG_PRAGMA(warning(__VA_ARGS__))
 #define VCPKG_GCC_DIAGNOSTIC(...)
 #define VCPKG_CLANG_DIAGNOSTIC(...)
+#define VCPKG_UNUSED [[maybe_unused]]
 #else
 // gcc
 #define VCPKG_MSVC_WARNING(...)
 #define VCPKG_GCC_DIAGNOSTIC(DIAGNOSTIC) Z_VCPKG_PRAGMA(gcc diagnostic DIAGNOSTIC)
 #define VCPKG_CLANG_DIAGNOSTIC(DIAGNOSTIC)
+#define VCPKG_UNUSED __attribute__((unused))
 #endif

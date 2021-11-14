@@ -1291,9 +1291,8 @@ namespace vcpkg
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const VcpkgPaths& paths)
     {
-        return impl.toolsets.get_lazy([&paths]() -> ToolsetsInformation {
-            return VisualStudio::find_toolset_instances_preferred_first(paths);
-        });
+        return impl.toolsets.get_lazy(
+            [&paths]() -> ToolsetsInformation { return VisualStudio::find_toolset_instances_preferred_first(paths); });
     }
 
     static bool toolset_matches_full_version(const Toolset& t, StringView fv)
