@@ -16,9 +16,9 @@ namespace vcpkg
 
         void set_send_metrics(bool should_send_metrics);
         void set_print_metrics(bool should_print_metrics);
-        void set_disabled(bool disabled);
-        void set_user_information(const std::string& user_id, const std::string& first_use_time);
-        static void init_user_information(std::string& user_id, std::string& first_use_time);
+
+        // This function is static and must be called outside the g_metrics lock.
+        static void enable();
 
         void track_metric(const std::string& name, double value);
         void track_buildtime(const std::string& name, double value);
@@ -32,6 +32,4 @@ namespace vcpkg
     };
 
     extern LockGuarded<Metrics> g_metrics;
-
-    std::string get_MAC_user();
 }
