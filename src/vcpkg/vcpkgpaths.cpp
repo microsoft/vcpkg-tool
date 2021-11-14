@@ -1268,17 +1268,6 @@ namespace vcpkg
                                  "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
                                  "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
 
-    static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const VcpkgPaths& paths)
-    {
-        return impl.toolsets.get_lazy([&paths]() -> ToolsetsInformation {
-#if defined(_WIN32)
-            return VisualStudio::find_toolset_instances_preferred_first(paths);
-#else
-            return {};
-#endif
-        });
-    }
-
     DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstance,
                                  (msg::triplet),
                                  "",
@@ -1299,6 +1288,14 @@ namespace vcpkg
                                  "Printed after ErrorNoVSInstance on a separate line",
                                  "     at \"{path}\"");
 
+#if defined(_WIN32)
+    static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const VcpkgPaths& paths)
+    {
+        return impl.toolsets.get_lazy([&paths]() -> ToolsetsInformation {
+            return VisualStudio::find_toolset_instances_preferred_first(paths);
+        });
+    }
+
     static bool toolset_matches_full_version(const Toolset& t, StringView fv)
     {
         // User specification can be a prefix. Example:
@@ -1309,6 +1306,7 @@ namespace vcpkg
         }
         return fv.size() == t.full_version.size() || t.full_version[fv.size()] == '.';
     }
+#endif
 
     const Toolset& VcpkgPaths::get_toolset(const Build::PreBuildInfo& prebuildinfo) const
     {
