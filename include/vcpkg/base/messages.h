@@ -85,10 +85,20 @@ namespace vcpkg::msg
             return res;
         }
 
-        LocalizedString& append(const LocalizedString& s);
+        LocalizedString& append(const LocalizedString& s)
+        {
+            m_data.append(s.m_data);
+            return *this;
+        }
+        LocalizedString& appendnl()
+        {
+            m_data.push_back('\n');
+            return *this;
+        }
 
     private:
         std::string m_data;
+
         // to avoid lock-in on LocalizedString, these are free functions
         // this allows us to convert to `std::string` in the future without changing All The Code
         friend LocalizedString& append_newline(LocalizedString&);
@@ -162,9 +172,13 @@ namespace vcpkg::msg
 
     DECLARE_MSG_ARG(email);
     DECLARE_MSG_ARG(error);
-    DECLARE_MSG_ARG(version);
-    DECLARE_MSG_ARG(value);
+    DECLARE_MSG_ARG(path);
     DECLARE_MSG_ARG(pretty_value);
+    DECLARE_MSG_ARG(triplet);
+    DECLARE_MSG_ARG(url);
+    DECLARE_MSG_ARG(value);
+    DECLARE_MSG_ARG(version);
+    DECLARE_MSG_ARG(list);
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of
@@ -182,6 +196,8 @@ namespace vcpkg::msg
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
     REGISTER_MESSAGE(NAME)
+
+    DECLARE_MESSAGE(SeeURL, (msg::url), "", "See {url} for more information.");
 }
 
 namespace fmt

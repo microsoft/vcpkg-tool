@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/stringview.h>
 
 VCPKG_MSVC_WARNING(push)
 // notes:
@@ -44,4 +45,31 @@ namespace fmt
         }
     };
 
+    template<>
+    struct formatter<vcpkg::StringView> : formatter<string_view>
+    {
+        // parse is inherited from formatter<string_view>.
+        template<class FormatContext>
+        auto format(vcpkg::StringView sv, FormatContext& ctx)
+        {
+            return formatter<string_view>::format(string_view(sv.data(), sv.size()), ctx);
+        }
+    };
+
+    // Other types can take advantage of this specialization without depending on format.h by:
+    // 1. Supporting `vcpkg::StringView(t)`
+    // 2. Define `static constexpr bool fmt_via_StringView = true;`
+    template<class T, class = std::enable_if_t<T::fmt_via_StringView>>
+    using fmt_via_StringView = T;
+
+    template<class T>
+    struct formatter<fmt_via_StringView<T>> : formatter<vcpkg::StringView>
+    {
+        // parse is inherited from formatter<string_view>.
+        template<class FormatContext>
+        auto format(const T& t, FormatContext& ctx)
+        {
+            return formatter<vcpkg::StringView>::format(vcpkg::StringView(t), ctx);
+        }
+    };
 }

@@ -3,6 +3,7 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
 
 #include <string>
@@ -26,6 +27,10 @@ namespace vcpkg
 
         bool operator==(Triplet other) const { return this->m_instance == other.m_instance; }
         bool operator<(Triplet other) const { return canonical_name() < other.canonical_name(); }
+
+        operator StringView() const { return canonical_name(); }
+
+        static constexpr bool fmt_via_StringView = true;
 
     private:
         static const TripletInstance DEFAULT_INSTANCE;
