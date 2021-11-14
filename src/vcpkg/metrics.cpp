@@ -248,7 +248,7 @@ namespace vcpkg
 #endif
         ;
     static bool g_should_print_metrics = false;
-    static bool g_metrics_disabled = true;
+    static std::atomic<bool> g_metrics_disabled = true;
 
 #if defined(_WIN32)
     static std::string get_MAC_user()
@@ -280,9 +280,22 @@ namespace vcpkg
     }
 #endif
 
-    static void load_config(Metrics& m, vcpkg::Filesystem& fs)
+    void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }
+
+    void Metrics::set_print_metrics(bool should_print_metrics) { g_should_print_metrics = should_print_metrics; }
+
+    static bool g_initializing_metrics = false;
+
+    void Metrics::enable()
     {
-        (void)m;
+        {
+            LockGuardPtr<Metrics> metrics(g_metrics);
+            if (g_initializing_metrics) return;
+            g_initializing_metrics = true;
+        }
+
+        // Execute this body exactly once
+        auto& fs = get_real_filesystem();
         auto config = UserConfig::try_read_data(fs);
 
         bool write_config = false;
@@ -303,31 +316,22 @@ namespace vcpkg
         }
 #endif
 
-        g_metricmessage.user_id = config.user_id;
-        g_metricmessage.user_timestamp = config.user_time;
-
-#if defined(_WIN32)
-        m.track_property("user_mac", config.user_mac);
-#endif
-
         if (write_config)
         {
             config.try_write_data(fs);
         }
-    }
 
-    void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }
-
-    void Metrics::set_print_metrics(bool should_print_metrics) { g_should_print_metrics = should_print_metrics; }
-
-    void Metrics::enable()
-    {
-        if (g_metrics_disabled)
         {
-            // Ensure load_config() is called exactly once
-            load_config(*this, get_real_filesystem());
+            LockGuardPtr<Metrics> metrics(g_metrics);
+            g_metricmessage.user_id = config.user_id;
+            g_metricmessage.user_timestamp = config.user_time;
+
+#if defined(_WIN32)
+            metrics->track_property("user_mac", config.user_mac);
+#endif
+
+            g_metrics_disabled = false;
         }
-        g_metrics_disabled = false;
     }
 
     bool Metrics::metrics_enabled() { return !g_metrics_disabled; }

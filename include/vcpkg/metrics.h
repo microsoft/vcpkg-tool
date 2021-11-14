@@ -16,7 +16,9 @@ namespace vcpkg
 
         void set_send_metrics(bool should_send_metrics);
         void set_print_metrics(bool should_print_metrics);
-        void enable();
+
+        // This function is static and must be called outside the g_metrics lock.
+        static void enable();
 
         void track_metric(const std::string& name, double value);
         void track_buildtime(const std::string& name, double value);

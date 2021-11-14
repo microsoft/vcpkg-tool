@@ -251,13 +251,13 @@ int main(const int argc, const char* const* const argv)
         to_enable_metrics = !*p;
     }
 
+    if (to_enable_metrics)
+    {
+        Metrics::enable();
+    }
+
     {
         LockGuardPtr<Metrics> metrics(g_metrics);
-        if (to_enable_metrics)
-        {
-            metrics->enable();
-        }
-
         if (const auto p = args.print_metrics.get())
         {
             metrics->set_print_metrics(*p);
