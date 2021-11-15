@@ -221,7 +221,7 @@ namespace vcpkg::Downloads
         }
         // </HACK>
 
-        if (sha512 != actual_hash)
+        if (!Strings::case_insensitive_ascii_equals(sha512, actual_hash))
         {
             return format_hash_mismatch(sanitized_url, downloaded_path, sha512, actual_hash);
         }
