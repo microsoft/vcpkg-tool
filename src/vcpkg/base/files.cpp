@@ -517,10 +517,12 @@ namespace
         // may have more Win32 path normalization that we do not replicate herein.
         // (There are still edge cases we don't handle, such as trailing whitespace or nulls, but
         // for purposes of remove_all, we never supported such trailing bits)
+#if !defined(__MINGW32__)
         if (has_drive_letter_prefix(native_base.data(), native_base.data() + native_base.size()))
         {
             wide_path = L"\\\\?\\";
         }
+#endif
 
         wide_path.append(Strings::to_utf16(native_base));
 
@@ -2731,7 +2733,7 @@ namespace vcpkg
 
             if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), FALSE))
             {
-                // ec is already cleared here by opening destination_handle
+                ec.clear();
                 return true;
             }
 
