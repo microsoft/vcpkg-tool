@@ -57,10 +57,12 @@ namespace
     {
         return sv.size() == 2 && sv.byte_at_index(0) == '.' && sv.byte_at_index(1) == '.';
     }
+#if !defined(_WIN32)
     bool is_dot_or_dot_dot(const char* ntbs)
     {
         return ntbs[0] == '.' && (ntbs[1] == '\0' || (ntbs[1] == '.' && ntbs[2] == '\0'));
     }
+#endif
 
     [[noreturn]] void exit_filesystem_call_error(LineInfo li,
                                                  const std::error_code& ec,
@@ -72,17 +74,6 @@ namespace
     }
 
 #if defined(_WIN32)
-    stdfs::copy_options convert_copy_options(CopyOptions options)
-    {
-        switch (options)
-        {
-            case CopyOptions::none: return stdfs::copy_options::none;
-            case CopyOptions::skip_existing: return stdfs::copy_options::skip_existing;
-            case CopyOptions::overwrite_existing: return stdfs::copy_options::overwrite_existing;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
-
     FileType convert_file_type(stdfs::file_type type) noexcept
     {
         switch (type)
