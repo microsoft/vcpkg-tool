@@ -161,6 +161,9 @@ namespace vcpkg
         constexpr static StringLiteral CMAKE_SCRIPT_ARG = "x-cmake-args";
         std::vector<std::string> cmake_args;
 
+        constexpr static StringLiteral EXACT_ABI_TOOLS_VERSIONS_SWITCH = "x-abi-tools-use-exact-versions";
+        Optional<bool> exact_abi_tools_versions;
+
         constexpr static StringLiteral DEBUG_SWITCH = "debug";
         Optional<bool> debug = nullopt;
         constexpr static StringLiteral SEND_METRICS_SWITCH = "sendmetrics";

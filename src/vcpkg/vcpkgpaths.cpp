@@ -231,9 +231,11 @@ namespace vcpkg
 
         struct VcpkgPathsImpl
         {
-            VcpkgPathsImpl(Filesystem& fs, FeatureFlagSettings ff_settings)
+            VcpkgPathsImpl(Filesystem& fs,
+                           FeatureFlagSettings ff_settings,
+                           ToolCache::RequireExactVersions abiToolsHandling)
                 : fs_ptr(&fs)
-                , m_tool_cache(get_tool_cache())
+                , m_tool_cache(get_tool_cache(abiToolsHandling))
                 , m_env_cache(ff_settings.compiler_tracking)
                 , m_ff_settings(ff_settings)
             {
@@ -350,7 +352,10 @@ namespace vcpkg
     static Path lockfile_path(const VcpkgPaths& p) { return p.vcpkg_dir() / "vcpkg-lock.json"; }
 
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
-        : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(filesystem, args.feature_flag_settings()))
+        : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(
+              filesystem,
+              args.feature_flag_settings(),
+              Util::Enum::to_enum<ToolCache::RequireExactVersions>(args.exact_abi_tools_versions.value_or(false))))
     {
         original_cwd = filesystem.current_path(VCPKG_LINE_INFO);
 #if defined(_WIN32)
