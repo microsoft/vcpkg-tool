@@ -25,6 +25,7 @@ namespace vcpkg
         {
             // We will not ship an official vcpkg-tool release; the means to bundle this with vcpkg-tool proper is still
             // under development.
+            auto env = get_modified_clean_environment({}, node_root);
             print2(Color::warning,
                    "vcpkg-ce is not bootstrapped correctly. Attempting download of latest CE components.\n");
             const auto ce_tarball = paths.downloads / "ce.tgz";
@@ -39,7 +40,7 @@ namespace vcpkg
             cmd_provision.string_arg("--scripts-prepend-node-path=true");
             cmd_provision.string_arg("--silent");
             cmd_provision.string_arg(ce_tarball.native());
-            const auto provision_status = cmd_execute(cmd_provision, InWorkingDirectory{paths.root});
+            const auto provision_status = cmd_execute(cmd_provision, InWorkingDirectory{paths.root}, env);
             if (provision_status != 0)
             {
                 fs.remove_all(node_modules, VCPKG_LINE_INFO);
