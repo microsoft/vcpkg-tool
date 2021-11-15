@@ -253,7 +253,7 @@ namespace vcpkg
                                                StringView prepend_to_path)
     {
         auto prepend_path_component = prepend_to_path.to_string();
-        if (prepend_path_component.empty())
+        if (!prepend_path_component.empty())
         {
             prepend_path_component.push_back(';');
         }
@@ -261,7 +261,7 @@ namespace vcpkg
         static const std::string system_root_env =
             get_environment_variable("SystemRoot").value_or_exit(VCPKG_LINE_INFO);
         static const std::string system32_env = system_root_env + R"(\system32)";
-        std::string new_path = Strings::format(R"(Path=%s%s;%s;%s\Wbem;%s\WindowsPowerShell\v1.0\)",
+        std::string new_path = Strings::format(R"(PATH=%s%s;%s;%s\Wbem;%s\WindowsPowerShell\v1.0\)",
                                                prepend_path_component,
                                                system32_env,
                                                system_root_env,
@@ -520,6 +520,8 @@ namespace vcpkg
 
         VCPKG_MSVC_WARNING(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
                                             // /analyze can't tell that we transferred ownership here
+        auto environment_block = env.m_env_data;
+#pragma warning(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
         bool succeeded =
             TRUE == CreateProcessW(nullptr,
                                    Strings::to_utf16(cmd_line).data(),
@@ -527,9 +529,7 @@ namespace vcpkg
                                    nullptr,
                                    TRUE,
                                    IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
-                                   env.m_env_data.empty()
-                                       ? nullptr
-                                       : const_cast<void*>(static_cast<const void*>(env.m_env_data.data())),
+                                   environment_block.empty() ? nullptr : &environment_block[0],
                                    working_directory.empty() ? nullptr : working_directory.data(),
                                    &startup_info,
                                    &process_info.proc_info);
