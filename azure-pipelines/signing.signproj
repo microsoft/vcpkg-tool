@@ -30,6 +30,16 @@
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-muslc">
       <Authenticode>LinuxSign</Authenticode>
     </FilesToSign>
+
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\*.js" Exclude="$(IntermediateOutputPath)\vcpkg-ce\**\node_modules\**\*.js">
+      <Authenticode>Microsoft400</Authenticode>
+    </FilesToSign>
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\ce.ps1">
+      <Authenticode>Microsoft400</Authenticode>
+    </FilesToSign>
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\node_modules\**\*.js">
+      <Authenticode>3PartyScriptsSHA2</Authenticode>
+    </FilesToSign>
   </ItemGroup>
 
   <ImportGroup Label="ExtensionTargets">

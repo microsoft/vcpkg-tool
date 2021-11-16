@@ -1,5 +1,3 @@
-variables:
-  VCPKG_REPO_COMMIT_SHA: '261c458af6e3eed5d099144aff95d2b5035f656b'
 jobs:
 - job: linux_gcc_9
   displayName: 'Ubuntu 20.04 with GCC 9'
@@ -11,7 +9,7 @@ jobs:
   steps:
     - bash: |
         git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT" -n
-        git -C "$VCPKG_ROOT" checkout $VCPKG_REPO_COMMIT_SHA
+        git -C "$VCPKG_ROOT" checkout `cat azure-pipelines/vcpkg-scripts-sha.txt`
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
         export CXXFLAGS="-fprofile-arcs -ftest-coverage -fPIC -O0"
@@ -59,7 +57,7 @@ jobs:
   steps:
     - bash: |
         git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT" -n
-        git -C "$VCPKG_ROOT" checkout $VCPKG_REPO_COMMIT_SHA
+        git -C "$VCPKG_ROOT" checkout `cat azure-pipelines/vcpkg-scripts-sha.txt`
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
         cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B build.amd64.debug
@@ -102,10 +100,15 @@ jobs:
       inputs:
         PathtoPublish: '$(DiffFile)'
         ArtifactName: 'format.diff'
-    - script: |
-        git clone https://github.com/microsoft/vcpkg "%VCPKG_ROOT%" -n
-        git -C "%VCPKG_ROOT%" checkout %VCPKG_REPO_COMMIT_SHA%
+    - task: Powershell@2
       displayName: "Clone vcpkg repo to serve as root"
+      inputs:
+        pwsh: true
+        targetType: inline
+        script: |
+          $sha = (Get-Content azure-pipelines/vcpkg-scripts-sha.txt -Raw).Trim()
+          git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT -n
+          git -C "$env:VCPKG_ROOT" checkout $sha
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake, and Run Tests"
       inputs:
@@ -120,6 +123,6 @@ jobs:
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
         filePath: 'azure-pipelines/end-to-end-tests.ps1'
-        arguments: '-Triplet x86-windows -WorkingRoot work -VcpkgRoot "$(VCPKG_ROOT)"'
+        arguments: '-Triplet x86-windows -WorkingRoot work'
         workingDirectory: '$(Build.SourcesDirectory)/build.x86.debug'
         pwsh: true

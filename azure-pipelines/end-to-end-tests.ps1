@@ -25,7 +25,7 @@ Param(
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string]$WorkingRoot,
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $false)]
     [string]$VcpkgRoot,
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
@@ -41,6 +41,15 @@ if (-Not (Test-Path $WorkingRoot)) {
 }
 
 $WorkingRoot = (Get-Item $WorkingRoot).FullName
+if ([string]::IsNullOrWhitespace($VcpkgRoot)) {
+    $VcpkgRoot = $env:VCPKG_ROOT
+}
+
+if ([string]::IsNullOrWhitespace($VcpkgRoot)) {
+    Write-Error "Could not determine VCPKG_ROOT"
+    throw
+}
+
 $VcpkgRoot = (Get-Item $VcpkgRoot).FullName
 
 if ([string]::IsNullOrEmpty($VcpkgExe))

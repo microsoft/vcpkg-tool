@@ -116,6 +116,7 @@ namespace
     void extract_archive_to_empty(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
         const auto ext = archive.extension();
+#if defined(_WIN32)
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
             win32_extract_nupkg(paths, archive, to_path);
@@ -124,14 +125,13 @@ namespace
         {
             win32_extract_msi(archive, to_path);
         }
-#if defined(_WIN32)
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
                  Strings::case_insensitive_ascii_equals(ext, ".7z"))
         {
             win32_extract_with_seven_zip(paths, archive, to_path);
         }
 #else
-        else if (ext == ".zip")
+        if (ext == ".zip")
         {
             const auto code =
                 cmd_execute(Command{"unzip"}.string_arg("-qqo").path_arg(archive), InWorkingDirectory{to_path});
