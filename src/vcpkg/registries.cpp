@@ -206,6 +206,13 @@ namespace
         std::vector<Path> version_paths;
     };
 
+    DECLARE_AND_REGISTER_MESSAGE(ErrorRequireBaseline,
+                                 (),
+                                 "",
+                                 "Error: this vcpkg instance requires a manifest with a specified baseline in order to "
+                                 "interact with ports. Please add 'builtin-baseline' to the manifest or add a "
+                                 "'vcpkg-configuration.json' that redefines the default registry.\n");
+
     struct BuiltinRegistry final : RegistryImplementation
     {
         BuiltinRegistry(std::string&& baseline) : m_baseline_identifier(std::move(baseline))
@@ -227,6 +234,22 @@ namespace
 
         std::string m_baseline_identifier;
         DelayedInit<Baseline> m_baseline;
+
+    private:
+        const GitRegistry& get_git_reg() const
+        {
+            return *m_git_registry.get([this]() {
+                if (m_baseline_identifier.empty())
+                {
+                    msg::println(Color::error, msgErrorRequireBaseline);
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+                return std::make_unique<GitRegistry>(
+                    "https://github.com/Microsoft/vcpkg", "HEAD", std::string(m_baseline_identifier));
+            });
+        }
+
+        DelayedInit<std::unique_ptr<GitRegistry>> m_git_registry;
     };
 
     struct FilesystemRegistry final : RegistryImplementation
@@ -333,6 +356,11 @@ namespace
     // { BuiltinRegistry::RegistryImplementation
     std::unique_ptr<RegistryEntry> BuiltinRegistry::get_port_entry(const VcpkgPaths& paths, StringView port_name) const
     {
+        if (paths.use_git_default_registry())
+        {
+            return get_git_reg().get_port_entry(paths, port_name);
+        }
+
         const auto& fs = paths.get_filesystem();
         if (!m_baseline_identifier.empty())
         {
@@ -383,6 +411,11 @@ namespace
 
     Optional<VersionT> BuiltinRegistry::get_baseline_version(const VcpkgPaths& paths, StringView port_name) const
     {
+        if (paths.use_git_default_registry())
+        {
+            return get_git_reg().get_baseline_version(paths, port_name);
+        }
+
         if (!m_baseline_identifier.empty())
         {
             const auto& baseline = m_baseline.get([this, &paths]() -> Baseline {
@@ -424,6 +457,11 @@ namespace
 
     void BuiltinRegistry::get_all_port_names(std::vector<std::string>& out, const VcpkgPaths& paths) const
     {
+        if (paths.use_git_default_registry())
+        {
+            return get_git_reg().get_all_port_names(out, paths);
+        }
+
         const auto& fs = paths.get_filesystem();
 
         if (!m_baseline_identifier.empty() && fs.exists(paths.builtin_registry_versions, IgnoreErrors{}))
@@ -554,6 +592,11 @@ namespace
             auto maybe_contents = paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             if (!maybe_contents.has_value())
             {
+                get_lock_entry(paths).ensure_up_to_date(paths);
+                maybe_contents = paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+            }
+            if (!maybe_contents.has_value())
+            {
                 print2("Fetching baseline information from ", m_repo, "...\n");
                 if (auto err = paths.git_fetch(m_repo, m_baseline_identifier))
                 {
@@ -621,8 +664,8 @@ namespace
 
     void GitRegistry::get_all_port_names(std::vector<std::string>& out, const VcpkgPaths& paths) const
     {
-        auto versions_path = get_versions_tree_path(paths);
-        load_all_port_names_from_registry_versions(out, paths.get_filesystem(), versions_path);
+        auto versions_path = get_stale_versions_tree_path(paths);
+        load_all_port_names_from_registry_versions(out, paths.get_filesystem(), versions_path.p);
     }
     // } GitRegistry::RegistryImplementation
 

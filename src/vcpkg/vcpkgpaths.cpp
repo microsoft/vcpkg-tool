@@ -278,6 +278,7 @@ namespace vcpkg
             Path registries_git_trees;
 
             bool m_readonly = false;
+            bool m_usegitregistry = false;
 
             Optional<LockFile> m_installed_lock;
         };
@@ -391,6 +392,15 @@ namespace vcpkg
                 {
                     m_pimpl->m_readonly = v->boolean();
                 }
+                if (auto v = bundle_doc->first.object().get("usegitregistry"))
+                {
+                    m_pimpl->m_usegitregistry = v->boolean();
+                }
+                Debug::print("Bundle config: readonly=",
+                             m_pimpl->m_readonly,
+                             ", usegitregistry=",
+                             m_pimpl->m_usegitregistry,
+                             "\n");
             }
             else
             {
@@ -477,6 +487,29 @@ namespace vcpkg
             }
         }
         auto config_file = load_configuration(filesystem, args, root, manifest_root_dir, configuration_from_manifest);
+        if (auto manifest = m_pimpl->m_manifest_doc.get())
+        {
+            if (auto p_baseline = manifest->first.get("builtin-baseline"))
+            {
+                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_baseline", "defined");
+                if (!p_baseline->is_string() || !is_git_commit_sha(p_baseline->string()))
+                {
+                    std::string baseline_in_error;
+                    if (p_baseline->is_string())
+                    {
+                        baseline_in_error = Strings::concat(" (", p_baseline->string(), ')');
+                    }
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
+                    Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                               "Error: the top-level builtin-baseline%s was not a valid commit sha: "
+                                               "expected 40 lowercase hexadecimal characters.\n%s\n",
+                                               baseline_in_error,
+                                               get_current_git_sha_baseline_message());
+                }
+
+                config_file.config.registry_set.set_default_builtin_registry_baseline(p_baseline->string());
+            }
+        }
 
         // metrics from configuration
         {
@@ -1321,6 +1354,8 @@ namespace vcpkg
     }
 
     Filesystem& VcpkgPaths::get_filesystem() const { return *m_pimpl->fs_ptr; }
+
+    bool VcpkgPaths::use_git_default_registry() const { return m_pimpl->m_usegitregistry; }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }
 

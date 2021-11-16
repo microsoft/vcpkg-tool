@@ -1,5 +1,8 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
+$env:X_VCPKG_REGISTRIES_CACHE = Join-Path $TestingRoot 'registries'
+New-Item -ItemType Directory -Force $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
+
 $builtinRegistryArgs = $commonArgs + @("--x-builtin-registry-versions-dir=$PSScriptRoot/../e2e_ports/versions")
 
 Run-Vcpkg install @builtinRegistryArgs 'vcpkg-internal-e2e-test-port'
@@ -15,6 +18,7 @@ Throw-IfFailed
 
 Write-Trace "Test git and filesystem registries"
 Refresh-TestRoot
+New-Item -ItemType Directory -Force $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
 $filesystemRegistry = "$TestingRoot/filesystem-registry"
 $gitRegistryUpstream = "$TestingRoot/git-registry-upstream"
 
