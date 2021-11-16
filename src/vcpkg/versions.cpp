@@ -325,8 +325,10 @@ namespace vcpkg::Versions
     {
         if (a.original_string == b.original_string) return VerComp::eq;
 
-        if (a.version < b.version) return VerComp::lt;
-        if (a.version > b.version) return VerComp::gt;
+        if (auto x = Util::range_lexcomp(a.version, b.version, uint64_comp))
+        {
+            return int_to_vercomp(x);
+        }
 
         // 'empty' is special and sorts before everything else
         // 1.0.0 > 1.0.0-1
@@ -339,8 +341,10 @@ namespace vcpkg::Versions
 
     VerComp compare(const DateVersion& a, const DateVersion& b)
     {
-        if (a.version_string < b.version_string) return VerComp::lt;
-        if (a.version_string > b.version_string) return VerComp::gt;
+        if (auto x = strcmp(a.version_string.c_str(), b.version_string.c_str()))
+        {
+            return int_to_vercomp(x);
+        }
 
         return int_to_vercomp(Util::range_lexcomp(a.identifiers, b.identifiers, uint64_comp));
     }
