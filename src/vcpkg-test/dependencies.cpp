@@ -694,9 +694,7 @@ TEST_CASE ("version parse relaxed", "[versionplan]")
 
     check_relaxed_version(Versions::relaxed_from_string("1.0.0-alpha"), {1, 0, 0}, {"alpha"});
 
-    // TODO: Currently this test fails, the produced identifiers are { "alpha-0", "1" }
-    // but my understanding is that the output should be as in this test.
-    check_relaxed_version(Versions::relaxed_from_string("1.0.0-alpha-0.1"), {1, 0, 0}, {"alpha", "0", "1"});
+    check_relaxed_version(Versions::relaxed_from_string("1.0.0-alpha-0.1"), {1, 0, 0}, {"alpha-0", "1"});
 
     check_relaxed_version(Versions::relaxed_from_string("1.0.0-alpha+extra-ignored"), {1, 0, 0}, {"alpha"});
 
