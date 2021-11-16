@@ -340,6 +340,43 @@ TEST_CASE ("weird platform-expressions whitespace", "[platform-expression]")
     CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
 }
 
+TEST_CASE ("platform-expressions no whitespace", "[platform-expression]")
+{
+    auto m_expr = parse_expr("!windows|linux|arm");
+    REQUIRE(m_expr);
+    auto& expr = *m_expr.get();
+
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+
+    m_expr = parse_expr("!windows&!arm&!x86");
+    REQUIRE(m_expr);
+    expr = *m_expr.get();
+
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK_FALSE(expr.evaluate({
+        {"VCPKG_CMAKE_SYSTEM_NAME", "Linux"},
+        {"VCPKG_TARGET_ARCHITECTURE", "arm"},
+    }));
+
+    m_expr = parse_expr("windows,!arm&linux&(x86|x64)");
+    REQUIRE(m_expr);
+    expr = *m_expr.get();
+
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_TARGET_ARCHITECTURE", ""}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
+}
+
 TEST_CASE ("invalid logic expression, unexpected character", "[platform-expression]")
 {
     auto m_expr = parse_expr("windows arm");
