@@ -15,6 +15,7 @@ parameters:
   - real
 
 variables:
+  VCPKG_BASE_VERSION: $[format('{0:yyyy}-{0:MM}-{0:dd}', pipeline.startTime)]
   TeamName: vcpkg
   # If the user didn't override the signing type, then only real-sign on main.
   ${{ if ne(parameters.SignTypeOverride, 'default') }}:
@@ -90,7 +91,7 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
-          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -B "$(Build.BinariesDirectory)/build"'
+          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -B "$(Build.BinariesDirectory)/build"'
           make -j 4 -C "$(Build.BinariesDirectory)/build"
           mv "$(Build.BinariesDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
     - task: PublishBuildArtifacts@1
@@ -154,18 +155,18 @@ jobs:
     - name: FMT_TARBALL_DIRNAME
       value: "$(fmt-tarball-dirname)"
     steps:
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Unsigned POSIX Binaries'
+      # Download all dependencies and sources
+    - task: PowerShell@2
+      displayName: 'Download vcpkg-ce sources'
       inputs:
-        artifactName: staging
-    - task: CmdLine@2
-      displayName: 'Move Linux Binaries to BinariesDirectory'
-      inputs:
-        failOnStderr: true
+        targetType: 'inline'
         script: |
-          mkdir "$(Build.BinariesDirectory)\build"
-          copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.BinariesDirectory)\vcpkg-glibc"
-          copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.BinariesDirectory)\vcpkg-muslc"
+          $sha = Get-Content azure-pipelines/vcpkg-ce-sha.txt -Raw
+          $sha = $sha.Trim()
+          curl.exe -L -o vcpkg-ce.zip "https://github.com/microsoft/vcpkg-ce/archive/$sha.zip"
+          tar xf vcpkg-ce.zip
+          mv "vcpkg-ce-$sha" vcpkg-ce
+        pwsh: true
     - task: PowerShell@2
       displayName: "Download fmt library"
       inputs:
@@ -182,12 +183,36 @@ jobs:
             found   : $hash"
           }
           tar.exe -xf ./fmtlib.tar.gz
+    - task: Powershell@2
+      displayName: 'Build vcpkg-readonly-bundle.tar.gz'
+      inputs:
+        pwsh: true
+        filePath: azure-pipelines/mint-readonly-bundle.ps1
+        arguments: '-DestinationTarballName "$(Build.BinariesDirectory)\vcpkg-readonly-bundle.tar.gz" -BundleConfig azure-pipelines/readonly-bundleconfig.json -TempPath readonly-temp'
+    # Policy enforcement
     - task: PoliCheck@1
       inputs:
         inputType: 'Basic'
         targetType: 'F'
         targetArgument: '$(Build.SourcesDirectory)'
         result: 'PoliCheck.xml'
+    - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
+      displayName: Run CredScan
+      inputs:
+        toolMajorVersion: V2
+    # Build vcpkg binaries
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Unsigned POSIX Binaries'
+      inputs:
+        artifactName: staging
+    - task: CmdLine@2
+      displayName: 'Move Linux Binaries to BinariesDirectory'
+      inputs:
+        failOnStderr: true
+        script: |
+          mkdir "$(Build.BinariesDirectory)\build"
+          copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.BinariesDirectory)\vcpkg-glibc"
+          copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.BinariesDirectory)\vcpkg-muslc"
     - task: CmdLine@2
       displayName: "Build vcpkg x86 with CMake"
       inputs:
@@ -195,8 +220,9 @@ jobs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
           set PATH=C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja;%PATH%
-          "C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --version
-          "C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -B "$(Build.BinariesDirectory)\x86"
+          set CMAKE="C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe"
+          %CMAKE% --version
+          %CMAKE% -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -B "$(Build.BinariesDirectory)\x86"
           ninja.exe -C "$(Build.BinariesDirectory)\x86"
     - task: CmdLine@2
       displayName: "Build vcpkg arm64 with CMake"
@@ -205,12 +231,47 @@ jobs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=x86
           set PATH=C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja;%PATH%
-          "C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --version
-          "C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_PDB_SUFFIX="-arm64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -B "$(Build.BinariesDirectory)\arm64"
+          set CMAKE="C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe"
+          %CMAKE% --version
+          %CMAKE% -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_PDB_SUFFIX="-arm64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -B "$(Build.BinariesDirectory)\arm64"
           ninja.exe -C "$(Build.BinariesDirectory)\arm64"
-    - task: MicroBuildSigningPlugin@2
+    # Build and test vcpkg-ce
+    - task: UseNode@1
+      displayName: Use Node 16 or later
       inputs:
-        signType: '$(SignType)'
+        version: "16.x"
+    - script: npm install -g @microsoft/rush
+      displayName: Install Rush
+      workingDirectory: vcpkg-ce
+    - script: rush update
+      displayName: Install vcpkg-ce Dependencies
+      workingDirectory: vcpkg-ce
+    - script: rush lint
+      displayName: Check vcpkg-ce for Linting Errors
+      workingDirectory: vcpkg-ce
+    - script: rush rebuild
+      displayName: Build vcpkg-ce Packages
+      workingDirectory: vcpkg-ce
+    - script: rush test
+      displayName: Run vcpkg-ce Tests
+      workingDirectory: vcpkg-ce
+    - script: |
+        rush set-versions
+        node -e "const c = require('./ce/package.json'); p = require('./assets/package.json') ; p.version = c.version; require('fs').writeFileSync('./assets/package.json', JSON.stringify(p,undefined,2)); console.log(``set asset version to `${p.version}``);"
+      displayName: Set vcpkg-ce Package Versions
+      workingDirectory: vcpkg-ce
+    - script: mkdir "$(Build.BinariesDirectory)\vcpkg-ce" && rush deploy -t "$(Build.BinariesDirectory)\vcpkg-ce"
+      displayName: Collect dependencies
+      workingDirectory: vcpkg-ce
+    - task: ComponentGovernanceComponentDetection@0
+      displayName: Detect Components
+      inputs:
+        ignoreDirectories: vcpkg-ce/common/temp
+    - task: MicroBuildSigningPlugin@3
+      displayName: Install MicroBuild Signing
+      inputs:
+        signType: $(SignType)
+        zipSources: false
         feedSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
     - task: NuGetToolInstaller@1
       inputs:
@@ -223,38 +284,49 @@ jobs:
         feedsToUse: 'config'
         restoreDirectory: '$(Build.SourcesDirectory)\packages'
     - task: MSBuild@1
-      displayName: 'Sign Windows and Linux Binaries'
+      displayName: 'Sign Individual Files'
       inputs:
         solution: 'azure-pipelines\signing.signproj'
         msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
-    - task: BinSkim@3
-      inputs:
-        InputType: 'CommandLine'
-        arguments: 'analyze "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.BinariesDirectory)\x86\tls12-download.exe" "$(Build.BinariesDirectory)\arm64\vcpkg.exe" "$(Build.BinariesDirectory)\arm64\tls12-download.exe"'
     - task: MicroBuildSignMacFiles@1
       displayName: 'Developer Sign Mac Files'
-      condition: eq(variables.SignType, 'test')
+      condition: and(eq(variables.SignType, 'test'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
         SigningCert: 8003
     - task: MicroBuildSignMacFiles@1
       displayName: 'Sign and Harden Mac Files'
-      condition: eq(variables.SignType, 'real')
+      condition: and(eq(variables.SignType, 'real'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
         SigningCert: 8023
     - task: MicroBuildSignMacFiles@1
-      condition: eq(variables.SignType, 'real')
+      condition: and(eq(variables.SignType, 'real'), succeeded())
       inputs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
         SigningCert: '8020'
         MacAppName: 'vcpkg'
+    - task: BinSkim@3
+      inputs:
+        InputType: 'CommandLine'
+        arguments: 'analyze "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.BinariesDirectory)\x86\tls12-download.exe" "$(Build.BinariesDirectory)\arm64\vcpkg.exe" "$(Build.BinariesDirectory)\arm64\tls12-download.exe"'
+    # Inject the NOTICE file. This must run after component detection.
+    - task: msospo.ospo-extension.8d7f9abb-6896-461d-9e25-4f74ed65ddb2.notice@0
+      displayName: Generate NOTICE file
+      inputs:
+        outputfile: $(Build.BinariesDirectory)/vcpkg-ce/NOTICE.txt
+    - script: npm pack
+      displayName: Create vcpkg-ce Pack
+      workingDirectory: $(Build.BinariesDirectory)/vcpkg-ce
     - task: CmdLine@2
-      displayName: 'Prepare Drop'
+      displayName: 'Arrange Binaries in Drop'
       inputs:
         failOnStderr: true
         script: |
           mkdir "$(Build.ArtifactStagingDirectory)\drop"
+
+          move "$(Build.BinariesDirectory)\vcpkg-ce\vcpkg-ce-*.tgz" "$(Build.ArtifactStagingDirectory)\drop\ce.tgz"
+          move "$(Build.BinariesDirectory)\vcpkg-readonly-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-readonly-bundle.tar.gz"
 
           move "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
           move "$(Build.BinariesDirectory)\x86\vcpkg.pdb" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.pdb"
@@ -274,18 +346,82 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
     - task: CmdLine@2
       displayName: 'Add Drop PGP Signatures (real sign only)'
-      condition: eq(variables.SignType, 'real')
+      condition: and(eq(variables.SignType, 'real'), succeeded())
       inputs:
         failOnStderr: true
         script: |
           move "$(Build.BinariesDirectory)\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc.sig"
           move "$(Build.BinariesDirectory)\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc.sig"
+    # Do final compliance checks.
+    - task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@1
+      displayName: Check for compliance errors
+      # To avoid spurious warnings about missing logs, explicitly declare what we scanned.
+      inputs:
+        CredScan: true
+        PoliCheck: true
+    # Trust Services Automation (TSA) can automatically open bugs for compliance issues.
+    # https://www.1eswiki.com/wiki/Trust_Services_Automation_(TSA)
+    - task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@1
+      displayName: Upload logs to TSA
+      inputs:
+        tsaVersion: TsaV2
+        codebase: NewOrUpdate
+        codeBaseName: vcpkg-ce
+        notificationAlias: embeddeddev@microsoft.com
+        instanceUrlForTsaV2: DEVDIV
+        projectNameDEVDIV: DevDiv
+        areaPath: DevDiv\Cpp Developer Experience\Cross Platform\Embedded
+        iterationPath: DevDiv
+        # To avoid spurious warnings about missing logs, explicitly declare what we don't upload.
+        uploadAPIScan: false
+        uploadBinSkim: false
+        uploadFortifySCA: false
+        uploadFxCop: false
+        uploadModernCop: false
+        uploadPREfast: false
+        uploadRoslyn: false
+        uploadTSLint: false
+      condition: eq(variables['Build.SourceBranchName'], 'main')
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Drop'
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\drop'
         ArtifactName: 'Drop'
         publishLocation: 'Container'
+    - task: DownloadSecureFile@1
+      displayName: Download Deploy Key
+      name: githubDeployKey
+      condition: and(eq(variables.SignType, 'real'), succeeded())
+      inputs:
+        secureFile: id_vcpkg_tool
+    # GitHub has a large, regularly changing set of IP address, so ignore the
+    # hostname and allow anything with the right key.
+    # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/about-githubs-ip-addresses
+    # This public key should have the well-known fingerprint documented below.
+    # SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8
+    # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
+    - script: mkdir %USERPROFILE%\.ssh && echo * ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==>>%USERPROFILE%\.ssh\known_hosts
+      displayName: Store GitHub Public Key
+      condition: and(eq(variables.SignType, 'real'), succeeded())
+    - script: git -c user.email=embeddedbot@microsoft.com -c user.name="Embedded Bot" push git@github.com:microsoft/vcpkg-tool HEAD:refs/tags/%VCPKG_BASE_VERSION%
+      condition: and(eq(variables.SignType, 'real'), succeeded())
+      env:
+        GIT_SSH_COMMAND: ssh -i "$(githubDeployKey.secureFilePath)"
+      displayName: Push Release Tag
+    - task: GitHubRelease@0
+      displayName: Publish GitHub Release
+      condition: and(eq(variables.SignType, 'real'), succeeded())
+      inputs:
+        gitHubConnection: embeddedbot
+        repositoryName: microsoft/vcpkg-tool
+        isPreRelease: true
+        isDraft: true
+        title: $(VCPKG_BASE_VERSION) Release
+        tagSource: manual
+        tag: $(VCPKG_BASE_VERSION)
+        assets: "$(Build.ArtifactStagingDirectory)\\drop\\*"
+        addChangeLog: true
+        compareWith: 'lastFullRelease'
     - task: MicroBuildCleanup@1
       condition: succeededOrFailed()
       displayName: MicroBuild Cleanup

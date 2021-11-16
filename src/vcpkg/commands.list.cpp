@@ -90,7 +90,7 @@ namespace vcpkg::Commands::List
         nullptr,
     };
 
-    void list_classic_mode(const VcpkgPaths& paths, std::string query, bool output_json, bool enable_fulldesc)
+    static void list_classic_mode(const VcpkgPaths& paths, std::string query, bool output_json, bool enable_fulldesc)
     {
         const StatusParagraphs status_paragraphs = database_load_check(paths);
         auto installed_ipv = get_installed_ports(status_paragraphs);
@@ -136,7 +136,7 @@ namespace vcpkg::Commands::List
         }
     }
 
-    void list_manifest_mode(const VcpkgPaths& paths, const Json::Object* manifest)
+    static void list_manifest_mode(const VcpkgPaths& paths, const Json::Object* manifest)
     {
         const auto& manifest_path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO);
         const auto& configuration = paths.get_configuration();

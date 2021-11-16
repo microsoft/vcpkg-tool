@@ -45,6 +45,8 @@ TEST_CASE ("list of commands is correct", "[commands]")
         "help",
         "list",
         "integrate",
+        "new",
+        "list",
         "owns",
         "update",
         "edit",
@@ -73,7 +75,7 @@ TEST_CASE ("list of commands is correct", "[commands]")
         "depend-info",
         "activate",
         "x-check-support",
-		"z-print-config",
+        "z-print-config",
 #if defined(_WIN32)
         "x-upload-metrics",
 #endif // defined(_WIN32)
