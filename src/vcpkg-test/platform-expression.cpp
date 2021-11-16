@@ -421,6 +421,17 @@ TEST_CASE ("platform-expressions without whitespace", "[platform-expression]")
     CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "arm64"}}));
 }
 
+TEST_CASE ("ambiguities without whitespace", "[platform-expression]")
+{
+    // Operator keywords ("and","not") require a break to separate them from identifiers
+    // In these cases, strings containing an operator keyword parse as an identifier, not as a unary/binary expression
+    auto m_expr = parse_expr("!windowsandandroid");
+    CHECK(m_expr);
+
+    m_expr = parse_expr("notwindows");
+    CHECK(m_expr);
+}
+
 TEST_CASE ("invalid logic expression, unexpected character", "[platform-expression]")
 {
     auto m_expr = parse_expr("windows arm");
