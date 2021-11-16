@@ -522,17 +522,16 @@ namespace vcpkg
                                             // /analyze can't tell that we transferred ownership here
         auto environment_block = env.m_env_data;
 #pragma warning(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
-        bool succeeded =
-            TRUE == CreateProcessW(nullptr,
-                                   Strings::to_utf16(cmd_line).data(),
-                                   nullptr,
-                                   nullptr,
-                                   TRUE,
-                                   IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
-                                   environment_block.empty() ? nullptr : &environment_block[0],
-                                   working_directory.empty() ? nullptr : working_directory.data(),
-                                   &startup_info,
-                                   &process_info.proc_info);
+        bool succeeded = TRUE == CreateProcessW(nullptr,
+                                                Strings::to_utf16(cmd_line).data(),
+                                                nullptr,
+                                                nullptr,
+                                                TRUE,
+                                                IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
+                                                environment_block.empty() ? nullptr : &environment_block[0],
+                                                working_directory.empty() ? nullptr : working_directory.data(),
+                                                &startup_info,
+                                                &process_info.proc_info);
 
         if (succeeded)
             return process_info;
