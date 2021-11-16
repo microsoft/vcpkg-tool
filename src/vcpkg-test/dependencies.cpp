@@ -633,72 +633,51 @@ TEST_CASE ("version install diamond relaxed", "[versionplan]")
 
 TEST_CASE ("version parse semver", "[versionplan]")
 {
-    auto version_basic = Versions::semver_from_string("1.2.3");
-    check_semver_version(version_basic, "1.2.3", "", 1, 2, 3, {});
-
-    auto version_simple_tag = Versions::semver_from_string("1.0.0-alpha");
-    check_semver_version(version_simple_tag, "1.0.0", "alpha", 1, 0, 0, {"alpha"});
-
-    auto version_alphanumeric_tag = Versions::semver_from_string("1.0.0-0alpha0");
-    check_semver_version(version_alphanumeric_tag, "1.0.0", "0alpha0", 1, 0, 0, {"0alpha0"});
-
-    auto version_complex_tag = Versions::semver_from_string("1.0.0-alpha.1.0.0");
-    check_semver_version(version_complex_tag, "1.0.0", "alpha.1.0.0", 1, 0, 0, {"alpha", "1", "0", "0"});
-
-    auto version_complexer_tag = Versions::semver_from_string("1.0.0-alpha.1.x.y.z.0-alpha.0-beta.l-a-s-t");
-    check_semver_version(version_complexer_tag,
+    check_semver_version(Versions::semver_from_string("1.2.3"), "1.2.3", "", 1, 2, 3, {});
+    check_semver_version(Versions::semver_from_string("1.0.0-alpha"), "1.0.0", "alpha", 1, 0, 0, {"alpha"});
+    check_semver_version(Versions::semver_from_string("1.0.0-0alpha0"), "1.0.0", "0alpha0", 1, 0, 0, {"0alpha0"});
+    check_semver_version(
+        Versions::semver_from_string("1.0.0-alpha.1.0.0"), "1.0.0", "alpha.1.0.0", 1, 0, 0, {"alpha", "1", "0", "0"});
+    check_semver_version(Versions::semver_from_string("1.0.0-alpha.1.x.y.z.0-alpha.0-beta.l-a-s-t"),
                          "1.0.0",
                          "alpha.1.x.y.z.0-alpha.0-beta.l-a-s-t",
                          1,
                          0,
                          0,
                          {"alpha", "1", "x", "y", "z", "0-alpha", "0-beta", "l-a-s-t"});
-
-    auto version_ridiculous_tag = Versions::semver_from_string("1.0.0----------------------------------");
-    check_semver_version(version_ridiculous_tag,
+    check_semver_version(Versions::semver_from_string("1.0.0----------------------------------"),
                          "1.0.0",
                          "---------------------------------",
                          1,
                          0,
                          0,
                          {"---------------------------------"});
+    check_semver_version(Versions::semver_from_string("1.0.0+build"), "1.0.0", "", 1, 0, 0, {});
+    check_semver_version(Versions::semver_from_string("1.0.0-alpha+build"), "1.0.0", "alpha", 1, 0, 0, {"alpha"});
+    check_semver_version(Versions::semver_from_string("1.0.0-alpha+build.ok"), "1.0.0", "alpha", 1, 0, 0, {"alpha"});
+    check_semver_version(
+        Versions::semver_from_string("1.0.0-alpha+build.ok-too"), "1.0.0", "alpha", 1, 0, 0, {"alpha"});
 
-    auto version_build_tag = Versions::semver_from_string("1.0.0+build");
-    check_semver_version(version_build_tag, "1.0.0", "", 1, 0, 0, {});
-
-    auto version_prerelease_build_tag = Versions::semver_from_string("1.0.0-alpha+build");
-    check_semver_version(version_prerelease_build_tag, "1.0.0", "alpha", 1, 0, 0, {"alpha"});
-
-    auto version_invalid_incomplete = Versions::semver_from_string("1.0-alpha");
-    CHECK(!version_invalid_incomplete.has_value());
-
-    auto version_invalid_leading_zeroes = Versions::semver_from_string("1.02.03-alpha+build");
-    CHECK(!version_invalid_leading_zeroes.has_value());
-
-    auto version_invalid_leading_zeroes_in_tag = Versions::semver_from_string("1.0.0-01");
-    CHECK(!version_invalid_leading_zeroes_in_tag.has_value());
-
-    auto version_invalid_characters = Versions::semver_from_string("1.0.0-alpha#2");
-    CHECK(!version_invalid_characters.has_value());
+    CHECK(!Versions::semver_from_string("1.0").has_value());
+    CHECK(!Versions::semver_from_string("1.0-alpha").has_value());
+    CHECK(!Versions::semver_from_string("1.0.0.0").has_value());
+    CHECK(!Versions::semver_from_string("1.02.03").has_value());
+    CHECK(!Versions::semver_from_string("1.0.0-").has_value());
+    CHECK(!Versions::semver_from_string("1.0.0-01").has_value());
+    CHECK(!Versions::semver_from_string("1.0.0-alpha#2").has_value());
+    CHECK(!Versions::semver_from_string("1.0.0-alpha+build+notok").has_value());
 }
 
 TEST_CASE ("version parse relaxed", "[versionplan]")
 {
     check_relaxed_version(Versions::relaxed_from_string("1.2.3"), {1, 2, 3});
-
     check_relaxed_version(Versions::relaxed_from_string("1"), {1});
-
     check_relaxed_version(
         Versions::relaxed_from_string("1.20.300.4000.50000.6000000.70000000.80000000.18446744073709551610"),
         {1, 20, 300, 4000, 50000, 6000000, 70000000, 80000000, 18446744073709551610u});
-
-    check_relaxed_version(Versions::relaxed_from_string("1.0.0-alpha"), {1, 0, 0}, {"alpha"});
-
-    // TODO: Currently this test fails, the produced identifiers are { "alpha-0", "1" }
-    // but my understanding is that the output should be as in this test.
-    check_relaxed_version(Versions::relaxed_from_string("1.0.0-alpha-0.1"), {1, 0, 0}, {"alpha", "0", "1"});
-
-    check_relaxed_version(Versions::relaxed_from_string("1.0.0-alpha+extra-ignored"), {1, 0, 0}, {"alpha"});
+    check_relaxed_version(Versions::relaxed_from_string("1.0.0.0-alpha"), {1, 0, 0, 0}, {"alpha"});
+    check_relaxed_version(Versions::relaxed_from_string("1.0.0.0-alpha-0.1"), {1, 0, 0, 0}, {"alpha-0", "1"});
+    check_relaxed_version(Versions::relaxed_from_string("1.0.0.0-alpha+build-ok"), {1, 0, 0, 0}, {"alpha"});
 
     CHECK(!Versions::relaxed_from_string("1.1a.2").has_value());
     CHECK(!Versions::relaxed_from_string("01.002.003").has_value());
@@ -708,23 +687,13 @@ TEST_CASE ("version parse relaxed", "[versionplan]")
 
 TEST_CASE ("version parse date", "[versionplan]")
 {
-    auto version_basic = Versions::DateVersion::from_string("2020-12-25");
-    check_date_version(version_basic, "2020-12-25", {});
+    check_date_version(Versions::DateVersion::from_string("2020-12-25"), "2020-12-25", {});
+    check_date_version(Versions::DateVersion::from_string("2020-12-25.1.2.3"), "2020-12-25", {1, 2, 3});
 
-    auto version_identifiers = Versions::DateVersion::from_string("2020-12-25.1.2.3");
-    check_date_version(version_identifiers, "2020-12-25", {1, 2, 3});
-
-    auto version_invalid_date = Versions::DateVersion::from_string("2020-1-1");
-    CHECK(!version_invalid_date.has_value());
-
-    auto version_invalid_identifiers = Versions::DateVersion::from_string("2020-01-01.alpha");
-    CHECK(!version_invalid_identifiers.has_value());
-
-    auto version_invalid_identifiers_2 = Versions::DateVersion::from_string("2020-01-01.2a");
-    CHECK(!version_invalid_identifiers_2.has_value());
-
-    auto version_invalid_leading_zeroes = Versions::DateVersion::from_string("2020-01-01.01");
-    CHECK(!version_invalid_leading_zeroes.has_value());
+    CHECK(!Versions::DateVersion::from_string("2020-1-1").has_value());
+    CHECK(!Versions::DateVersion::from_string("2020-01-01.alpha").has_value());
+    CHECK(!Versions::DateVersion::from_string("2020-01-01.2a").has_value());
+    CHECK(!Versions::DateVersion::from_string("2020-01-01.01").has_value());
 }
 
 TEST_CASE ("version sort semver", "[versionplan]")
@@ -751,12 +720,6 @@ TEST_CASE ("version sort semver", "[versionplan]")
     std::sort(std::begin(versions), std::end(versions), [](const auto& lhs, const auto& rhs) -> bool {
         return Versions::compare(lhs, rhs) == Versions::VerComp::lt;
     });
-
-    std::string str;
-    for (auto v : versions)
-    {
-        Strings::append(str, v.original_string + "\n");
-    }
 
     CHECK(versions[0].original_string == "0.0.0");
     CHECK(versions[1].original_string == "1.0.0-1");
@@ -821,15 +784,17 @@ TEST_CASE ("version sort relaxed", "[versionplan]")
 
 TEST_CASE ("version sort date", "[versionplan]")
 {
-    std::vector<Versions::DateVersion> versions{unwrap(Versions::DateVersion::from_string("2021-01-01.2")),
-                                                unwrap(Versions::DateVersion::from_string("2021-01-01.1")),
-                                                unwrap(Versions::DateVersion::from_string("2021-01-01.1.1")),
-                                                unwrap(Versions::DateVersion::from_string("2021-01-01.1.0")),
-                                                unwrap(Versions::DateVersion::from_string("2021-01-01")),
-                                                unwrap(Versions::DateVersion::from_string("2021-01-01")),
-                                                unwrap(Versions::DateVersion::from_string("2020-12-25")),
-                                                unwrap(Versions::DateVersion::from_string("2020-12-31")),
-                                                unwrap(Versions::DateVersion::from_string("2021-01-01.10"))};
+    std::vector<Versions::DateVersion> versions{
+        unwrap(Versions::DateVersion::from_string("2021-01-01.2")),
+        unwrap(Versions::DateVersion::from_string("2021-01-01.1")),
+        unwrap(Versions::DateVersion::from_string("2021-01-01.1.1")),
+        unwrap(Versions::DateVersion::from_string("2021-01-01.1.0")),
+        unwrap(Versions::DateVersion::from_string("2021-01-01")),
+        unwrap(Versions::DateVersion::from_string("2021-01-01")),
+        unwrap(Versions::DateVersion::from_string("2020-12-25")),
+        unwrap(Versions::DateVersion::from_string("2020-12-31")),
+        unwrap(Versions::DateVersion::from_string("2021-01-01.10")),
+    };
 
     std::sort(std::begin(versions), std::end(versions), [](const auto& lhs, const auto& rhs) -> bool {
         return Versions::compare(lhs, rhs) == Versions::VerComp::lt;
@@ -844,6 +809,14 @@ TEST_CASE ("version sort date", "[versionplan]")
     CHECK(versions[6].original_string == "2021-01-01.1.1");
     CHECK(versions[7].original_string == "2021-01-01.2");
     CHECK(versions[8].original_string == "2021-01-01.10");
+}
+
+TEST_CASE ("version compare string", "[versionplan]")
+{
+    CHECK(Versions::compare("1.0.0", "1.0.0", Versions::Scheme::String) == Versions::VerComp::eq);
+    CHECK(Versions::compare("1.0.0", "0.0.0", Versions::Scheme::String) == Versions::VerComp::unk);
+    CHECK(Versions::compare("0.0.0", "1.0.0", Versions::Scheme::String) == Versions::VerComp::unk);
+    CHECK(Versions::compare("apple", "orange", Versions::Scheme::String) == Versions::VerComp::unk);
 }
 
 TEST_CASE ("version install simple semver", "[versionplan]")
