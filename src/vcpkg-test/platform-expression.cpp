@@ -427,11 +427,21 @@ TEST_CASE ("invalid logic expression, unexpected character", "[platform-expressi
     CHECK_FALSE(m_expr);
 }
 
-TEST_CASE ("unexpected character in logic expression", "[platform-expression]")
+TEST_CASE ("invalid logic expression, use '|' instead of 'or'", "[platform-expression]")
+{
+    auto m_expr = parse_expr("windows or arm");
+    CHECK_FALSE(m_expr);
+}
+
+TEST_CASE ("unexpected character or identifier in logic expression", "[platform-expression]")
 {
     auto m_expr = parse_expr("windows aND arm");
     CHECK_FALSE(m_expr);
     m_expr = parse_expr("windows a&d arm");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("windows oR arm");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("windows o|r arm");
     CHECK_FALSE(m_expr);
 }
 

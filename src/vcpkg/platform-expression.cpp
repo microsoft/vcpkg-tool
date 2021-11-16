@@ -215,6 +215,7 @@ namespace vcpkg::PlatformExpression
                         return ExprKind::op_list;
                     }
                     case 'a':
+                    case 'o':
                     {
                         // { "and", optional-whitespace, platform-expression-not }
                         // "and" is a synonym of "&"
@@ -224,6 +225,11 @@ namespace vcpkg::PlatformExpression
                         if (name == "and")
                         {
                             return ExprKind::op_and;
+                        }
+                        else if (name == "or")
+                        {
+                            add_error("invalid logic expression, use '|' instead of 'or'");
+                            return ExprKind::op_invalid;
                         }
 
                         // Invalid alphanumeric strings or strings other than "and" are errors.
