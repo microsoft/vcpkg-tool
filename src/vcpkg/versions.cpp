@@ -1,9 +1,13 @@
+#include "..\..\include\vcpkg\versions.h"
+
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/versions.h>
 
 #include <regex>
+
+#include "..\..\include\vcpkg\versions.h"
 
 namespace vcpkg::Versions
 {
@@ -73,33 +77,6 @@ namespace vcpkg::Versions
         return s + i;
     }
 
-    ExpectedS<RelaxedVersion> RelaxedVersion::from_string(const std::string& str)
-    {
-        // (0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*
-        const char* cur = str.c_str();
-        std::vector<uint64_t> numbers;
-        for (;;)
-        {
-            numbers.push_back(0);
-            cur = parse_skip_number(cur, &numbers.back());
-            if (cur)
-            {
-                // (\.(0|[1-9][0-9]*))*
-                if (*cur == 0)
-                {
-                    return RelaxedVersion{str, std::move(numbers)};
-                }
-                else if (*cur == '.')
-                {
-                    ++cur;
-                    continue;
-                }
-            }
-            return Strings::format(
-                "Error: String `%s` must only contain dot-separated numeric values without leading zeroes.", str);
-        }
-    }
-
     // 0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*
     static const char* skip_prerelease_identifier(const char* const s)
     {
@@ -131,7 +108,7 @@ namespace vcpkg::Versions
         return nullptr;
     }
 
-    ExpectedS<SemanticVersion> SemanticVersion::from_string(const std::string& str)
+    static ExpectedS<DotVersion> dot_version_from_string(const std::string& str, bool is_semver)
     {
         // Suggested regex by semver.org
         // ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
@@ -139,17 +116,22 @@ namespace vcpkg::Versions
         // *[a-zA-Z-][0-9a-zA-Z-]*))*))?
         // (?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
 
-        SemanticVersion ret;
+        DotVersion ret;
         ret.original_string = str;
+
         // (0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
-        ret.version.resize(3);
+        int idx = 0;
+        const int limit = is_semver ? 3 : -1;
         const char* cur = str.c_str();
-        cur = parse_skip_number(cur, &ret.version[0]);
-        if (!cur || *cur != '.') goto invalid_semver;
-        cur = parse_skip_number(cur + 1, &ret.version[1]);
-        if (!cur || *cur != '.') goto invalid_semver;
-        cur = parse_skip_number(cur + 1, &ret.version[2]);
+        for (; !is_semver || (idx < limit); ++idx)
+        {
+            ret.version.push_back(0);
+            cur = parse_skip_number(cur, &ret.version[idx]);
+            if (!cur || *cur != '.') break;
+            ++cur;
+        }
         if (!cur) goto invalid_semver;
+        if (is_semver && limit != idx + 1) goto invalid_semver;
         ret.version_string.assign(str.c_str(), cur);
         if (*cur == 0) return ret;
 
@@ -201,6 +183,15 @@ namespace vcpkg::Versions
         return Strings::format("Error: String `%s` is not a valid Semantic Version string, consult https://semver.org",
                                str);
     }
+
+    /*static ExpectedS<DotVersion> semver_from_string(const std::string& str)
+    {
+        return dot_version_from_string(str, true);
+    }
+    static ExpectedS<DotVersion> relaxed_from_string(const std::string& str)
+    {
+        return dot_version_from_string(str, false);
+    }*/
 
     ExpectedS<DateVersion> DateVersion::from_string(const std::string& str)
     {
@@ -267,6 +258,10 @@ namespace vcpkg::Versions
         }
     }
 
+    ExpectedS<DotVersion> relaxed_from_string(const std::string& str) { return dot_version_from_string(str, false); }
+
+    ExpectedS<DotVersion> semver_from_string(const std::string& str) { return dot_version_from_string(str, true); }
+
     VerComp compare(const std::string& a, const std::string& b, Scheme scheme)
     {
         if (scheme == Scheme::String)
@@ -275,13 +270,13 @@ namespace vcpkg::Versions
         }
         if (scheme == Scheme::Semver)
         {
-            return compare(SemanticVersion::from_string(a).value_or_exit(VCPKG_LINE_INFO),
-                           SemanticVersion::from_string(b).value_or_exit(VCPKG_LINE_INFO));
+            return compare(semver_from_string(a).value_or_exit(VCPKG_LINE_INFO),
+                           semver_from_string(b).value_or_exit(VCPKG_LINE_INFO));
         }
         if (scheme == Scheme::Relaxed)
         {
-            return compare(RelaxedVersion::from_string(a).value_or_exit(VCPKG_LINE_INFO),
-                           RelaxedVersion::from_string(b).value_or_exit(VCPKG_LINE_INFO));
+            return compare(relaxed_from_string(a).value_or_exit(VCPKG_LINE_INFO),
+                           relaxed_from_string(b).value_or_exit(VCPKG_LINE_INFO));
         }
         if (scheme == Scheme::Date)
         {
@@ -291,16 +286,7 @@ namespace vcpkg::Versions
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
-    VerComp compare(const RelaxedVersion& a, const RelaxedVersion& b)
-    {
-        if (a.original_string == b.original_string) return VerComp::eq;
-
-        if (a.version < b.version) return VerComp::lt;
-        if (a.version > b.version) return VerComp::gt;
-        Checks::unreachable(VCPKG_LINE_INFO);
-    }
-
-    VerComp compare(const SemanticVersion& a, const SemanticVersion& b)
+    VerComp compare(const DotVersion& a, const DotVersion& b)
     {
         if (a.version_string == b.version_string)
         {
