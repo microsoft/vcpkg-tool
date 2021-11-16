@@ -230,20 +230,15 @@ namespace vcpkg::PlatformExpression
                         // { "and", optional-whitespace, platform-expression-not }
                         // "and" is a synonym of "&"
                         std::string name = match_zero_or_more(is_identifier_char).to_string();
-                        if (!name.empty() && (name == "and"))
+                        Checks::check_exit(VCPKG_LINE_INFO, !name.empty());
+
+                        if (name == "and")
                         {
                             return ExprKind::op_and;
                         }
 
                         // Invalid alphanumeric strings or strings other than "and" are errors.
-                        if (name.empty())
-                        {
-                            add_error("unexpected character in logic expression");
-                        }
-                        else
-                        {
-                            add_error("unexpected identifier in logic expression");
-                        }
+                        add_error("unexpected character or identifier in logic expression");
                         return ExprKind::op_invalid;
                     }
                     default:
