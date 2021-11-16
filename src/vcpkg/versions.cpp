@@ -102,7 +102,7 @@ namespace vcpkg::Versions
         return nullptr;
     }
 
-    static ExpectedS<DotVersion> dot_version_from_string(const std::string& str, bool is_semver)
+    static Optional<DotVersion> dot_version_from_string(const std::string& str)
     {
         // Suggested regex by semver.org
         // ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
@@ -115,17 +115,15 @@ namespace vcpkg::Versions
 
         // (0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
         int idx = 0;
-        const int limit = is_semver ? 3 : -1;
         const char* cur = str.c_str();
-        for (; !is_semver || (idx < limit); ++idx)
+        for (;; ++idx)
         {
             ret.version.push_back(0);
-            cur = parse_skip_number(cur, &ret.version[idx]);
+            cur = parse_skip_number(cur, ret.version.data() + idx);
             if (!cur || *cur != '.') break;
             ++cur;
         }
         if (!cur) goto invalid_semver;
-        if (is_semver && limit != idx + 1) goto invalid_semver;
         ret.version_string.assign(str.c_str(), cur);
         if (*cur == 0) return ret;
 
@@ -174,8 +172,7 @@ namespace vcpkg::Versions
         }
 
     invalid_semver:
-        return Strings::format("Error: String `%s` is not a valid Semantic Version string, consult https://semver.org",
-                               str);
+        return nullopt;
     }
 
     ExpectedS<DateVersion> DateVersion::from_string(const std::string& str)
@@ -243,9 +240,31 @@ namespace vcpkg::Versions
         }
     }
 
-    ExpectedS<DotVersion> relaxed_from_string(const std::string& str) { return dot_version_from_string(str, false); }
+    ExpectedS<DotVersion> relaxed_from_string(const std::string& str)
+    {
+        auto x = dot_version_from_string(str);
+        if (auto p = x.get())
+        {
+            return std::move(*p);
+        }
+        return Strings::format(
+            "Error: String `%s` is not a valid Relaxed version string (semver with arbitrary numeric identifiers)",
+            str);
+    }
 
-    ExpectedS<DotVersion> semver_from_string(const std::string& str) { return dot_version_from_string(str, true); }
+    ExpectedS<DotVersion> semver_from_string(const std::string& str)
+    {
+        auto x = dot_version_from_string(str);
+        if (auto p = x.get())
+        {
+            if (p->version.size() == 3)
+            {
+                return std::move(*p);
+            }
+        }
+        return Strings::format("Error: String `%s` is not a valid Semantic Version string, consult https://semver.org",
+                               str);
+    }
 
     VerComp compare(const std::string& a, const std::string& b, Scheme scheme)
     {
@@ -271,6 +290,37 @@ namespace vcpkg::Versions
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
+    static VerComp int_to_vercomp(int i)
+    {
+        if (i < 0) return VerComp::lt;
+        if (i > 0) return VerComp::gt;
+        return VerComp::eq;
+    }
+
+    static int uint64_comp(uint64_t a, uint64_t b) { return (a > b) - (a < b); }
+
+    static int semver_id_comp(ZStringView a, ZStringView b)
+    {
+        auto maybe_a_num = as_numeric(a);
+        auto maybe_b_num = as_numeric(b);
+        if (auto a_num = maybe_a_num.get())
+        {
+            if (auto b_num = maybe_b_num.get())
+            {
+                return uint64_comp(*a_num, *b_num);
+            }
+            // numerics are smaller than non-numeric
+            return -1;
+        }
+        if (maybe_b_num.has_value())
+        {
+            return 1;
+        }
+
+        // both non-numeric -- ascii-betical sorting.
+        return strcmp(a.c_str(), b.c_str());
+    }
+
     VerComp compare(const DotVersion& a, const DotVersion& b)
     {
         if (a.original_string == b.original_string) return VerComp::eq;
@@ -278,56 +328,20 @@ namespace vcpkg::Versions
         if (a.version < b.version) return VerComp::lt;
         if (a.version > b.version) return VerComp::gt;
 
+        // 'empty' is special and sorts before everything else
         // 1.0.0 > 1.0.0-1
-        if (a.identifiers.empty()) return VerComp::gt;
-        if (b.identifiers.empty()) return VerComp::lt;
-
-        auto a_cur = std::begin(a.identifiers);
-        auto b_cur = std::begin(b.identifiers);
-        auto a_end = std::end(a.identifiers);
-        auto b_end = std::end(b.identifiers);
-        for (; a_cur != a_end && b_cur != b_end; ++a_cur, ++b_cur)
+        if (a.identifiers.empty() || b.identifiers.empty())
         {
-            auto maybe_a_num = as_numeric(*a_cur);
-            auto maybe_b_num = as_numeric(*b_cur);
-            if (auto a_num = maybe_a_num.get())
-            {
-                if (auto b_num = maybe_b_num.get())
-                {
-                    if (*a_num < *b_num) return VerComp::lt;
-                    if (*a_num > *b_num) return VerComp::gt;
-                    continue;
-                }
-                return VerComp::lt;
-            }
-            if (maybe_b_num.has_value()) return VerComp::gt;
-
-            auto strcmp_result = std::strcmp(a_cur->c_str(), b_cur->c_str());
-            if (strcmp_result < 0) return VerComp::lt;
-            if (strcmp_result > 0) return VerComp::gt;
+            return int_to_vercomp(!b.identifiers.empty() - !a.identifiers.empty());
         }
-        if (a_cur == a_end && b_cur == b_end) return VerComp::eq;
-        if (a_cur == a_end) return VerComp::lt;
-        return VerComp::gt;
+        return int_to_vercomp(Util::range_lexcomp(a.identifiers, b.identifiers, semver_id_comp));
     }
 
-    VerComp compare(const Versions::DateVersion& a, const Versions::DateVersion& b)
+    VerComp compare(const DateVersion& a, const DateVersion& b)
     {
         if (a.version_string < b.version_string) return VerComp::lt;
         if (a.version_string > b.version_string) return VerComp::gt;
 
-        auto a_cur = std::begin(a.identifiers);
-        auto b_cur = std::begin(b.identifiers);
-        auto a_end = std::end(a.identifiers);
-        auto b_end = std::end(b.identifiers);
-
-        for (; a_cur != a_end && b_cur != b_end; ++a_cur, ++b_cur)
-        {
-            if (*a_cur < *b_cur) return VerComp::lt;
-            if (*a_cur > *b_cur) return VerComp::gt;
-        }
-        if (a_cur == a_end && b_cur == b_end) return VerComp::eq;
-        if (a_cur == a_end) return VerComp::lt;
-        return VerComp::gt;
+        return int_to_vercomp(Util::range_lexcomp(a.identifiers, b.identifiers, uint64_comp));
     }
 }
