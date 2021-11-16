@@ -752,12 +752,6 @@ TEST_CASE ("version sort semver", "[versionplan]")
         return Versions::compare(lhs, rhs) == Versions::VerComp::lt;
     });
 
-    std::string str;
-    for (auto v : versions)
-    {
-        Strings::append(str, v.original_string + "\n");
-    }
-
     CHECK(versions[0].original_string == "0.0.0");
     CHECK(versions[1].original_string == "1.0.0-1");
     CHECK(versions[2].original_string == "1.0.0-0alpha");
