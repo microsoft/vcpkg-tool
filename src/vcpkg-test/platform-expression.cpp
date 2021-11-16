@@ -137,6 +137,42 @@ TEST_CASE ("platform-expression-not", "[platform-expression]")
     CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
 }
 
+TEST_CASE ("platform-expression-not-alternate", "[platform-expression]")
+{
+    auto m_expr = parse_expr("not windows");
+    REQUIRE(m_expr);
+    auto& expr = *m_expr.get();
+
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
+
+    m_expr = parse_expr("not windows & not arm & not x86");
+    REQUIRE(m_expr);
+    expr = *m_expr.get();
+
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK_FALSE(expr.evaluate({
+        {"VCPKG_CMAKE_SYSTEM_NAME", "Linux"},
+        {"VCPKG_TARGET_ARCHITECTURE", "arm"},
+    }));
+
+    m_expr = parse_expr("not windows and !arm & not x86");
+    REQUIRE(m_expr);
+    expr = *m_expr.get();
+
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK_FALSE(expr.evaluate({
+        {"VCPKG_CMAKE_SYSTEM_NAME", "Linux"},
+        {"VCPKG_TARGET_ARCHITECTURE", "arm"},
+    }));
+}
+
 TEST_CASE ("platform-expression-and", "[platform-expression]")
 {
     auto m_expr = parse_expr("!windows & !arm");
@@ -340,7 +376,7 @@ TEST_CASE ("weird platform-expressions whitespace", "[platform-expression]")
     CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
 }
 
-TEST_CASE ("platform-expressions no whitespace", "[platform-expression]")
+TEST_CASE ("platform-expressions without whitespace", "[platform-expression]")
 {
     auto m_expr = parse_expr("!windows|linux|arm");
     REQUIRE(m_expr);
@@ -349,6 +385,14 @@ TEST_CASE ("platform-expressions no whitespace", "[platform-expression]")
     CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
     CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+
+    m_expr = parse_expr("not(!windows&!x64)");
+    REQUIRE(m_expr);
+    expr = *m_expr.get();
+
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x64"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
 
     m_expr = parse_expr("!windows&!arm&!x86");
     REQUIRE(m_expr);
@@ -449,10 +493,23 @@ TEST_CASE ("invalid identifier", "[platform-expression]")
     CHECK_FALSE(m_expr);
 }
 
-TEST_CASE ("invalid platform-express-alternate-and expressions", "[platform-expression]")
+TEST_CASE ("invalid alternate expressions", "[platform-expression]")
 {
     auto m_expr = parse_expr("windows an%d arm");
     CHECK_FALSE(m_expr);
     m_expr = parse_expr("windows aNd arm");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("windows andMORE arm");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("windows and+ arm");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("windows and& arm");
+    CHECK_FALSE(m_expr);
+
+    m_expr = parse_expr("notANY windows");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("not! windows");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("notx64 windows");
     CHECK_FALSE(m_expr);
 }

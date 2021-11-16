@@ -78,7 +78,7 @@ namespace vcpkg::PlatformExpression
             op_not,
             op_and,
             op_or,
-            op_low_precedence_or,
+            op_list,
             op_empty,
             op_invalid
         };
@@ -143,7 +143,6 @@ namespace vcpkg::PlatformExpression
             // | platform-expression-not
             // | platform-expression-and
             // | platform-expression-or
-            // | platform-expression-low-precedence-or ;
             std::unique_ptr<ExprImpl> expr()
             {
                 // this is the common prefix of all the variants
@@ -156,6 +155,7 @@ namespace vcpkg::PlatformExpression
                 {
                     case ExprKind::op_and:
                         // { "&", optional-whitespace, platform-expression-not }
+                        // { "and", optional-whitespace, platform-expression-not }
                         return expr_binary<ExprKind::op_and, ExprKind::op_or>(
                             std::make_unique<ExprImpl>(oper, std::move(result)));
 
@@ -164,11 +164,9 @@ namespace vcpkg::PlatformExpression
                         return expr_binary<ExprKind::op_or, ExprKind::op_and>(
                             std::make_unique<ExprImpl>(oper, std::move(result)));
 
-                    case ExprKind::op_low_precedence_or:
-                        // { ",", optional-whitespace, platform-expression-not }
-                        // "," is a near-synonym of "|", with the difference that it can be combined with "&", but has
-                        // lower precedence (which is handled in expr_binary()).
-                        return expr_binary<ExprKind::op_low_precedence_or, ExprKind::op_invalid>(
+                    case ExprKind::op_list:
+                        // { ",", optional-whitespace, platform-expression }
+                        return expr_binary<ExprKind::op_list, ExprKind::op_invalid>(
                             std::make_unique<ExprImpl>(oper, std::move(result)));
 
                     case ExprKind::op_empty: return result;
@@ -180,15 +178,6 @@ namespace vcpkg::PlatformExpression
                 }
             }
 
-            // platform-expression-and =
-            // | platform-expression-not, { "&", optional-whitespace, platform-expression-not } ;
-            // | platform-expression-not, { "and", optional-whitespace, platform-expression-not } ;
-            //
-            // platform-expression-or =
-            // | platform-expression-not, { "|", optional-whitespace, platform-expression-not } ;
-            //
-            // platform-expression-low-precedence-or =
-            // | platform-expression-not, { ",", optional-whitespace, platform-expression-not } ;
             ExprKind expr_operator()
             {
                 auto oper = cur();
@@ -223,7 +212,7 @@ namespace vcpkg::PlatformExpression
                         // "," is a near-synonym of "|", with the differences that it can be combined with "&"/"and",
                         // but has lower precedence
                         next();
-                        return ExprKind::op_low_precedence_or;
+                        return ExprKind::op_list;
                     }
                     case 'a':
                     {
@@ -298,6 +287,7 @@ namespace vcpkg::PlatformExpression
             // platform-expression-not =
             // | platform-expression-simple
             // | "!", optional-whitespace, platform-expression-simple ;
+            // | "not", optional-whitespace, platform-expression-simple ;
             std::unique_ptr<ExprImpl> expr_not()
             {
                 if (cur() == '!')
@@ -309,16 +299,39 @@ namespace vcpkg::PlatformExpression
                     // platform-expression-simple
                     return std::make_unique<ExprImpl>(ExprKind::op_not, expr_simple());
                 }
+                else if (cur() == 'n')
+                {
+                    std::string name = match_zero_or_more(is_identifier_char).to_string();
+
+                    // "not"
+                    if (name == "not")
+                    {
+                        // optional-whitespace,
+                        skip_whitespace();
+                        // platform-expression-simple
+                        return std::make_unique<ExprImpl>(ExprKind::op_not, expr_simple());
+                    }
+
+                    // optional-whitespace
+                    skip_whitespace();
+
+                    return std::make_unique<ExprImpl>(ExprKind::identifier, std::move(name));
+                }
 
                 // platform-expression-simple
                 return expr_simple();
             }
 
+            // platform-expression-list =
+            // | platform-expression {",", optional-whitespace, platform-expression};
+            //
             // platform-expression-and =
             // | platform-expression-not, { "&", optional-whitespace, platform-expression-not } ;
+            // | platform-expression-not, { "and", optional-whitespace, platform-expression-not } ;
             //
             // platform-expression-or =
             // | platform-expression-not, { "|", optional-whitespace, platform-expression-not } ;
+            // | platform-expression-not, { "or", optional-whitespace, platform-expression-not } ;
             //
             // Processing of the operator was already taken care of by the caller: continue
             // with the next platform-expression-not.
@@ -333,9 +346,9 @@ namespace vcpkg::PlatformExpression
                     // optional-whitespace,
                     skip_whitespace();
 
-                    if constexpr (oper == ExprKind::op_low_precedence_or)
+                    if constexpr (oper == ExprKind::op_list)
                     {
-                        // platform-expression, (go back to start of repetition)
+                        // platform-expression { ",", optional-whitespace, platform-expression } ;
                         seed->exprs.push_back(expr());
                     }
                     else
@@ -354,14 +367,15 @@ namespace vcpkg::PlatformExpression
                     }
                 }
 
-                if (next_oper == ExprKind::op_low_precedence_or)
+                if (next_oper == ExprKind::op_list)
                 {
-                    // platform-expression, (go back to start of repetition)
+                    // platform-expression { ",", optional-whitespace, platform-expression } ;
+                    //
                     // To handle a lower-precedence, treat the remainder of the string as a platform expression.
                     // E.g., "A & B , C | D" will be treated as "(A & B) , (C | D)", which preserves intended precedence
                     // In this case, see is the LHS at the point in which we see the ",".
 
-                    return expr_binary<ExprKind::op_low_precedence_or, ExprKind::op_invalid>(
+                    return expr_binary<ExprKind::op_list, ExprKind::op_invalid>(
                         std::make_unique<ExprImpl>(next_oper, std::move(seed)));
                 }
                 else
@@ -544,7 +558,7 @@ namespace vcpkg::PlatformExpression
 
                     return valid;
                 }
-                else if ((expr.kind == ExprKind::op_or) || (expr.kind == ExprKind::op_low_precedence_or))
+                else if ((expr.kind == ExprKind::op_or) || (expr.kind == ExprKind::op_list))
                 {
                     bool valid = false;
 
@@ -677,7 +691,7 @@ namespace vcpkg::PlatformExpression
                     case ExprKind::identifier: return expr.identifier;
                     case ExprKind::op_and: join = " & "; break;
                     case ExprKind::op_or: join = " | "; break;
-                    case ExprKind::op_low_precedence_or: join = " , "; break;
+                    case ExprKind::op_list: join = " , "; break;
                     case ExprKind::op_not: return Strings::format("!%s", (*this)(expr.exprs.at(0)));
                     case ExprKind::op_empty: join = ""; break;
                     case ExprKind::op_invalid: join = " invalid "; break;
