@@ -1,13 +1,7 @@
-#include "..\..\include\vcpkg\versions.h"
-
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/versions.h>
-
-#include <regex>
-
-#include "..\..\include\vcpkg\versions.h"
 
 namespace vcpkg::Versions
 {
@@ -184,15 +178,6 @@ namespace vcpkg::Versions
                                str);
     }
 
-    /*static ExpectedS<DotVersion> semver_from_string(const std::string& str)
-    {
-        return dot_version_from_string(str, true);
-    }
-    static ExpectedS<DotVersion> relaxed_from_string(const std::string& str)
-    {
-        return dot_version_from_string(str, false);
-    }*/
-
     ExpectedS<DateVersion> DateVersion::from_string(const std::string& str)
     {
         DateVersion ret;
@@ -288,74 +273,61 @@ namespace vcpkg::Versions
 
     VerComp compare(const DotVersion& a, const DotVersion& b)
     {
-        if (a.version_string == b.version_string)
-        {
-            if (a.prerelease_string == b.prerelease_string) return VerComp::eq;
-            if (a.prerelease_string.empty()) return VerComp::gt;
-            if (b.prerelease_string.empty()) return VerComp::lt;
-        }
+        if (a.original_string == b.original_string) return VerComp::eq;
 
-        // Compare version elements left-to-right.
         if (a.version < b.version) return VerComp::lt;
         if (a.version > b.version) return VerComp::gt;
 
-        // Compare identifiers left-to-right.
-        auto count = std::min(a.identifiers.size(), b.identifiers.size());
-        for (size_t i = 0; i < count; ++i)
+        // 1.0.0 > 1.0.0-1
+        if (a.identifiers.empty()) return VerComp::gt;
+        if (b.identifiers.empty()) return VerComp::lt;
+
+        auto a_cur = std::begin(a.identifiers);
+        auto b_cur = std::begin(b.identifiers);
+        auto a_end = std::end(a.identifiers);
+        auto b_end = std::end(b.identifiers);
+        for (; a_cur != a_end && b_cur != b_end; ++a_cur, ++b_cur)
         {
-            auto&& iden_a = a.identifiers[i];
-            auto&& iden_b = b.identifiers[i];
-
-            auto a_numeric = as_numeric(iden_a);
-            auto b_numeric = as_numeric(iden_b);
-
-            // Numeric identifiers always have lower precedence than non-numeric identifiers.
-            if (a_numeric.has_value() && !b_numeric.has_value()) return VerComp::lt;
-            if (!a_numeric.has_value() && b_numeric.has_value()) return VerComp::gt;
-
-            // Identifiers consisting of only digits are compared numerically.
-            if (a_numeric.has_value() && b_numeric.has_value())
+            auto maybe_a_num = as_numeric(*a_cur);
+            auto maybe_b_num = as_numeric(*b_cur);
+            if (auto a_num = maybe_a_num.get())
             {
-                auto a_value = a_numeric.value_or_exit(VCPKG_LINE_INFO);
-                auto b_value = b_numeric.value_or_exit(VCPKG_LINE_INFO);
-
-                if (a_value < b_value) return VerComp::lt;
-                if (a_value > b_value) return VerComp::gt;
-                continue;
+                if (auto b_num = maybe_b_num.get())
+                {
+                    if (*a_num < *b_num) return VerComp::lt;
+                    if (*a_num > *b_num) return VerComp::gt;
+                    continue;
+                }
+                return VerComp::lt;
             }
+            if (maybe_b_num.has_value()) return VerComp::gt;
 
-            // Identifiers with letters or hyphens are compared lexically in ASCII sort order.
-            auto strcmp_result = std::strcmp(iden_a.c_str(), iden_b.c_str());
+            auto strcmp_result = std::strcmp(a_cur->c_str(), b_cur->c_str());
             if (strcmp_result < 0) return VerComp::lt;
             if (strcmp_result > 0) return VerComp::gt;
         }
-
-        // A larger set of pre-release fields has a higher precedence than a smaller set, if all of the preceding
-        // identifiers are equal.
-        if (a.identifiers.size() < b.identifiers.size()) return VerComp::lt;
-        if (a.identifiers.size() > b.identifiers.size()) return VerComp::gt;
-
-        // This should be unreachable since direct string comparisons of version_string and prerelease_string should
-        // handle this case. If we ever land here, then there's a bug in the the parsing on
-        // SemanticVersion::from_string().
-        Checks::unreachable(VCPKG_LINE_INFO);
+        if (a_cur == a_end && b_cur == b_end) return VerComp::eq;
+        if (a_cur == a_end) return VerComp::lt;
+        return VerComp::gt;
     }
 
     VerComp compare(const Versions::DateVersion& a, const Versions::DateVersion& b)
     {
-        if (a.version_string == b.version_string)
-        {
-            if (a.identifiers == b.identifiers) return VerComp::eq;
-            if (a.identifiers.empty() && !b.identifiers.empty()) return VerComp::lt;
-            if (!a.identifiers.empty() && b.identifiers.empty()) return VerComp::gt;
-        }
-
-        // The date parts in our scheme are lexicographically sortable.
         if (a.version_string < b.version_string) return VerComp::lt;
         if (a.version_string > b.version_string) return VerComp::gt;
-        if (a.identifiers < b.identifiers) return VerComp::lt;
-        if (a.identifiers > b.identifiers) return VerComp::gt;
 
-        Checks::unreachable(VCPKG_LINE_INFO);
+        auto a_cur = std::begin(a.identifiers);
+        auto b_cur = std::begin(b.identifiers);
+        auto a_end = std::end(a.identifiers);
+        auto b_end = std::end(b.identifiers);
+
+        for (; a_cur != a_end && b_cur != b_end; ++a_cur, ++b_cur)
+        {
+            if (*a_cur < *b_cur) return VerComp::lt;
+            if (*a_cur > *b_cur) return VerComp::gt;
+        }
+        if (a_cur == a_end && b_cur == b_end) return VerComp::eq;
+        if (a_cur == a_end) return VerComp::lt;
+        return VerComp::gt;
     }
 }

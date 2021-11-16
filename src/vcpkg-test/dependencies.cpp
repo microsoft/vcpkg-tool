@@ -142,10 +142,12 @@ static void check_semver_version(const ExpectedS<Versions::DotVersion>& maybe_ve
 }
 
 static void check_relaxed_version(const ExpectedS<Versions::DotVersion>& maybe_version,
-                                  const std::vector<uint64_t>& version)
+                                  const std::vector<uint64_t>& version,
+                                  const std::vector<std::string>& identifiers = {})
 {
     auto actual_version = unwrap(maybe_version);
     CHECK(actual_version.version == version);
+    CHECK(actual_version.identifiers == identifiers);
 }
 
 static void check_date_version(const ExpectedS<Versions::DateVersion>& maybe_version,
@@ -682,24 +684,26 @@ TEST_CASE ("version parse semver", "[versionplan]")
 
 TEST_CASE ("version parse relaxed", "[versionplan]")
 {
-    auto version_basic = Versions::relaxed_from_string("1.2.3");
-    check_relaxed_version(version_basic, {1, 2, 3});
+    check_relaxed_version(Versions::relaxed_from_string("1.2.3"), {1, 2, 3});
 
-    auto version_short = Versions::relaxed_from_string("1");
-    check_relaxed_version(version_short, {1});
+    check_relaxed_version(Versions::relaxed_from_string("1"), {1});
 
-    auto version_long =
-        Versions::relaxed_from_string("1.20.300.4000.50000.6000000.70000000.80000000.18446744073709551610");
-    check_relaxed_version(version_long, {1, 20, 300, 4000, 50000, 6000000, 70000000, 80000000, 18446744073709551610u});
+    check_relaxed_version(
+        Versions::relaxed_from_string("1.20.300.4000.50000.6000000.70000000.80000000.18446744073709551610"),
+        {1, 20, 300, 4000, 50000, 6000000, 70000000, 80000000, 18446744073709551610u});
 
-    auto version_invalid_characters = Versions::relaxed_from_string("1.a.0");
-    CHECK(!version_invalid_characters.has_value());
+    check_relaxed_version(Versions::relaxed_from_string("1.0.0-alpha"), {1, 0, 0}, {"alpha"});
 
-    auto version_invalid_identifiers_2 = Versions::relaxed_from_string("1.1a.2");
-    CHECK(!version_invalid_identifiers_2.has_value());
+    // TODO: Currently this test fails, the produced identifiers are { "alpha-0", "1" }
+    // but my understanding is that the output should be as in this test.
+    check_relaxed_version(Versions::relaxed_from_string("1.0.0-alpha-0.1"), {1, 0, 0}, {"alpha", "0", "1"});
 
-    auto version_invalid_leading_zeroes = Versions::relaxed_from_string("01.002.003");
-    CHECK(!version_invalid_leading_zeroes.has_value());
+    check_relaxed_version(Versions::relaxed_from_string("1.0.0-alpha+extra-ignored"), {1, 0, 0}, {"alpha"});
+
+    CHECK(!Versions::relaxed_from_string("1.1a.2").has_value());
+    CHECK(!Versions::relaxed_from_string("01.002.003").has_value());
+    CHECK(!Versions::relaxed_from_string("1.0.0-").has_value());
+    CHECK(!Versions::relaxed_from_string("1.0.0+extra+other").has_value());
 }
 
 TEST_CASE ("version parse date", "[versionplan]")
@@ -725,26 +729,34 @@ TEST_CASE ("version parse date", "[versionplan]")
 
 TEST_CASE ("version sort semver", "[versionplan]")
 {
-    std::vector<Versions::DotVersion> versions{unwrap(Versions::semver_from_string("1.0.0")),
-                                               unwrap(Versions::semver_from_string("0.0.0")),
-                                               unwrap(Versions::semver_from_string("1.1.0")),
-                                               unwrap(Versions::semver_from_string("2.0.0")),
-                                               unwrap(Versions::semver_from_string("1.1.1")),
-                                               unwrap(Versions::semver_from_string("1.0.1")),
-                                               unwrap(Versions::semver_from_string("1.0.0-alpha.1")),
-                                               unwrap(Versions::semver_from_string("1.0.0-beta")),
-                                               unwrap(Versions::semver_from_string("1.0.0-alpha")),
-                                               unwrap(Versions::semver_from_string("1.0.0-alpha.beta")),
-                                               unwrap(Versions::semver_from_string("1.0.0-rc")),
-                                               unwrap(Versions::semver_from_string("1.0.0-beta.2")),
-                                               unwrap(Versions::semver_from_string("1.0.0-beta.20")),
-                                               unwrap(Versions::semver_from_string("1.0.0-beta.3")),
-                                               unwrap(Versions::semver_from_string("1.0.0-1")),
-                                               unwrap(Versions::semver_from_string("1.0.0-0alpha"))};
+    std::vector<Versions::DotVersion> versions{
+        unwrap(Versions::semver_from_string("1.0.0")),
+        unwrap(Versions::semver_from_string("0.0.0")),
+        unwrap(Versions::semver_from_string("1.1.0")),
+        unwrap(Versions::semver_from_string("2.0.0")),
+        unwrap(Versions::semver_from_string("1.1.1")),
+        unwrap(Versions::semver_from_string("1.0.1")),
+        unwrap(Versions::semver_from_string("1.0.0-alpha.1")),
+        unwrap(Versions::semver_from_string("1.0.0-beta")),
+        unwrap(Versions::semver_from_string("1.0.0-alpha")),
+        unwrap(Versions::semver_from_string("1.0.0-alpha.beta")),
+        unwrap(Versions::semver_from_string("1.0.0-rc")),
+        unwrap(Versions::semver_from_string("1.0.0-beta.2")),
+        unwrap(Versions::semver_from_string("1.0.0-beta.20")),
+        unwrap(Versions::semver_from_string("1.0.0-beta.3")),
+        unwrap(Versions::semver_from_string("1.0.0-1")),
+        unwrap(Versions::semver_from_string("1.0.0-0alpha")),
+    };
 
     std::sort(std::begin(versions), std::end(versions), [](const auto& lhs, const auto& rhs) -> bool {
         return Versions::compare(lhs, rhs) == Versions::VerComp::lt;
     });
+
+    std::string str;
+    for (auto v : versions)
+    {
+        Strings::append(str, v.original_string + "\n");
+    }
 
     CHECK(versions[0].original_string == "0.0.0");
     CHECK(versions[1].original_string == "1.0.0-1");
@@ -766,15 +778,24 @@ TEST_CASE ("version sort semver", "[versionplan]")
 
 TEST_CASE ("version sort relaxed", "[versionplan]")
 {
-    std::vector<Versions::DotVersion> versions{unwrap(Versions::relaxed_from_string("1.0.0")),
-                                               unwrap(Versions::relaxed_from_string("1.0")),
-                                               unwrap(Versions::relaxed_from_string("1")),
-                                               unwrap(Versions::relaxed_from_string("2")),
-                                               unwrap(Versions::relaxed_from_string("1.1")),
-                                               unwrap(Versions::relaxed_from_string("1.10.1")),
-                                               unwrap(Versions::relaxed_from_string("1.0.1")),
-                                               unwrap(Versions::relaxed_from_string("1.0.0.1")),
-                                               unwrap(Versions::relaxed_from_string("1.0.0.2"))};
+    std::vector<Versions::DotVersion> versions{
+        unwrap(Versions::relaxed_from_string("2.1-alpha.alpha")),
+        unwrap(Versions::relaxed_from_string("1.0.0")),
+        unwrap(Versions::relaxed_from_string("2.0-1")),
+        unwrap(Versions::relaxed_from_string("1.0")),
+        unwrap(Versions::relaxed_from_string("1")),
+        unwrap(Versions::relaxed_from_string("2.1-alpha")),
+        unwrap(Versions::relaxed_from_string("2")),
+        unwrap(Versions::relaxed_from_string("1.1")),
+        unwrap(Versions::relaxed_from_string("1.10.1")),
+        unwrap(Versions::relaxed_from_string("2.0-0")),
+        unwrap(Versions::relaxed_from_string("1.0.1")),
+        unwrap(Versions::relaxed_from_string("2.1-beta")),
+        unwrap(Versions::relaxed_from_string("1.0.0.1")),
+        unwrap(Versions::relaxed_from_string("1.0.0.2")),
+        unwrap(Versions::relaxed_from_string("2.0")),
+        unwrap(Versions::relaxed_from_string("2.0-rc")),
+    };
 
     std::sort(std::begin(versions), std::end(versions), [](const auto& lhs, const auto& rhs) -> bool {
         return Versions::compare(lhs, rhs) == Versions::VerComp::lt;
@@ -789,6 +810,13 @@ TEST_CASE ("version sort relaxed", "[versionplan]")
     CHECK(versions[6].original_string == "1.1");
     CHECK(versions[7].original_string == "1.10.1");
     CHECK(versions[8].original_string == "2");
+    CHECK(versions[9].original_string == "2.0-0");
+    CHECK(versions[10].original_string == "2.0-1");
+    CHECK(versions[11].original_string == "2.0-rc");
+    CHECK(versions[12].original_string == "2.0");
+    CHECK(versions[13].original_string == "2.1-alpha");
+    CHECK(versions[14].original_string == "2.1-alpha.alpha");
+    CHECK(versions[15].original_string == "2.1-beta");
 }
 
 TEST_CASE ("version sort date", "[versionplan]")
