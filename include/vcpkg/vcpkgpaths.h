@@ -129,6 +129,8 @@ namespace vcpkg
 
         Path ports_cmake;
 
+        std::string get_toolver_diagnostics() const;
+
         const Path& get_tool_exe(const std::string& tool) const;
         const std::string& get_tool_version(const std::string& tool) const;
 

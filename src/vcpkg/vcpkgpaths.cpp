@@ -12,6 +12,7 @@
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/build.h>
 #include <vcpkg/commands.h>
+#include <vcpkg/commands.version.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/metrics.h>
@@ -849,6 +850,38 @@ namespace vcpkg
         {
             return {Strings::trim(std::move(output.output)), expected_left_tag};
         }
+    }
+    std::string VcpkgPaths::get_toolver_diagnostics() const
+    {
+        std::string ret;
+        Strings::append(ret, "    vcpkg-tool version: ", Commands::Version::version(), "\n");
+        if (m_pimpl->m_readonly)
+        {
+            Strings::append(ret, "    vcpkg-readonly: true\n");
+            const auto sha = get_current_git_sha();
+            Strings::append(ret, "    vcpkg-scripts version: ", sha ? StringView(*sha.get()) : "unknown", "\n");
+        }
+        else
+        {
+            const auto dot_git_dir = root / ".git";
+            Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir)
+                                  .string_arg("show")
+                                  .string_arg("--pretty=format:%h %cd (%cr)")
+                                  .string_arg("-s")
+                                  .string_arg("--date=short")
+                                  .string_arg("HEAD");
+
+            auto output = cmd_execute_and_capture_output(showcmd);
+            if (output.exit_code == 0)
+            {
+                Strings::append(ret, "    vcpkg-scripts version: ", output.output, "\n");
+            }
+            else
+            {
+                Strings::append(ret, "    vcpkg-scripts version: unknown\n");
+            }
+        }
+        return ret;
     }
     std::string VcpkgPaths::get_current_git_sha_baseline_message() const
     {
