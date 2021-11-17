@@ -252,10 +252,7 @@ namespace
     {
         static constexpr StringLiteral s_kind = "builtin-git";
 
-        BuiltinGitRegistry(std::string&& baseline) : m_baseline_identifier(std::move(baseline))
-        {
-            Checks::check_exit(VCPKG_LINE_INFO, !m_baseline_identifier.empty());
-        }
+        BuiltinGitRegistry(std::string&& baseline) : m_baseline_identifier(std::move(baseline)) { }
 
         StringLiteral kind() const override { return s_kind; }
 
@@ -276,6 +273,7 @@ namespace
         const GitRegistry& get_git_reg() const
         {
             return *m_git_registry.get([this]() {
+                Checks::check_exit(VCPKG_LINE_INFO, !m_baseline_identifier.empty());
                 return std::make_unique<GitRegistry>(
                     "https://github.com/Microsoft/vcpkg", "HEAD", std::string(m_baseline_identifier));
             });
