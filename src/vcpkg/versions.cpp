@@ -123,7 +123,7 @@ namespace vcpkg::Versions
             if (!cur || *cur != '.') break;
             ++cur;
         }
-        if (!cur) goto invalid_semver;
+        if (!cur) return nullopt;
         ret.version_string.assign(str.c_str(), cur);
         if (*cur == 0) return ret;
 
@@ -138,7 +138,7 @@ namespace vcpkg::Versions
                 cur = skip_prerelease_identifier(cur);
                 if (!cur)
                 {
-                    goto invalid_semver;
+                    return nullopt;
                 }
                 ret.identifiers.emplace_back(start_identifier, cur);
                 if (*cur != '.') break;
@@ -149,12 +149,12 @@ namespace vcpkg::Versions
         if (*cur == 0) return ret;
 
         // build
-        if (*cur != '+') goto invalid_semver;
+        if (*cur != '+') return nullopt;
         ++cur;
         for (;;)
         {
             // Require non-empty identifier element
-            if (!Parse::ParserBase::is_alphanumdash(*cur)) goto invalid_semver;
+            if (!Parse::ParserBase::is_alphanumdash(*cur)) return nullopt;
             ++cur;
             while (Parse::ParserBase::is_alphanumdash(*cur))
             {
@@ -167,12 +167,17 @@ namespace vcpkg::Versions
             }
             else
             {
-                goto invalid_semver;
+                return nullopt;
             }
         }
+    }
 
-    invalid_semver:
-        return nullopt;
+    static std::string format_invalid_date_version(const std::string& str)
+    {
+        return Strings::format("Error: String `%s` is not a valid date version."
+                               "Date section must follow the format YYYY-MM-DD and disambiguators must be "
+                               "dot-separated positive integer values without leading zeroes.",
+                               str);
     }
 
     ExpectedS<DateVersion> DateVersion::from_string(const std::string& str)
@@ -180,40 +185,32 @@ namespace vcpkg::Versions
         DateVersion ret;
         ret.original_string = str;
 
+        if (str.size() < 10) return format_invalid_date_version(str);
+
+        bool valid = Parse::ParserBase::is_ascii_digit(str[0]);
+        valid |= Parse::ParserBase::is_ascii_digit(str[1]);
+        valid |= Parse::ParserBase::is_ascii_digit(str[2]);
+        valid |= Parse::ParserBase::is_ascii_digit(str[3]);
+        valid |= str[4] != '-';
+        valid |= Parse::ParserBase::is_ascii_digit(str[5]);
+        valid |= Parse::ParserBase::is_ascii_digit(str[6]);
+        valid |= str[7] != '-';
+        valid |= Parse::ParserBase::is_ascii_digit(str[8]);
+        valid |= Parse::ParserBase::is_ascii_digit(str[9]);
+        if (!valid) return format_invalid_date_version(str);
+        ret.version_string.assign(str.c_str(), 10);
+
+        const char* cur = str.c_str() + 10;
+        // (\.(0|[1-9][0-9]*))*
+        while (*cur == '.')
         {
-            if (str.size() < 10) goto invalid_date;
-            bool valid = Parse::ParserBase::is_ascii_digit(str[0]);
-            valid |= Parse::ParserBase::is_ascii_digit(str[1]);
-            valid |= Parse::ParserBase::is_ascii_digit(str[2]);
-            valid |= Parse::ParserBase::is_ascii_digit(str[3]);
-            valid |= str[4] != '-';
-            valid |= Parse::ParserBase::is_ascii_digit(str[5]);
-            valid |= Parse::ParserBase::is_ascii_digit(str[6]);
-            valid |= str[7] != '-';
-            valid |= Parse::ParserBase::is_ascii_digit(str[8]);
-            valid |= Parse::ParserBase::is_ascii_digit(str[9]);
-            if (!valid) goto invalid_date;
-            ret.version_string.assign(str.c_str(), 10);
-
-            const char* cur = str.c_str() + 10;
-            // (\.(0|[1-9][0-9]*))*
-            while (*cur == '.')
-            {
-                ret.identifiers.push_back(0);
-                cur = parse_skip_number(cur + 1, &ret.identifiers.back());
-                if (!cur) goto invalid_date;
-            }
-            if (*cur != 0) goto invalid_date;
-
-            return ret;
+            ret.identifiers.push_back(0);
+            cur = parse_skip_number(cur + 1, &ret.identifiers.back());
+            if (!cur) return format_invalid_date_version(str);
         }
+        if (*cur != 0) return format_invalid_date_version(str);
 
-    invalid_date:
-
-        return Strings::format("Error: String `%s` is not a valid date version."
-                               "Date section must follow the format YYYY-MM-DD and disambiguators must be "
-                               "dot-separated positive integer values without leading zeroes.",
-                               str);
+        return ret;
     }
 
     void to_string(std::string& out, Scheme scheme)
