@@ -1334,7 +1334,7 @@ namespace vcpkg::Build
         {
             Strings::append(package, " -> ", scfl->to_versiont());
         }
-        auto description = paths.git_describe_head();
+        auto description = paths.get_current_git_sha();
         return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`, then\n"
                                "submit an issue at https://github.com/Microsoft/vcpkg/issues including:\n"
                                "  package: %s\n"

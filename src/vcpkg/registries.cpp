@@ -384,6 +384,63 @@ namespace
         }
     }
 
+    static ExpectedS<Path> git_checkout_baseline(const VcpkgPaths& paths, StringView commit_sha)
+    {
+        Filesystem& fs = paths.get_filesystem();
+        const auto destination_parent = paths.baselines_output() / commit_sha;
+        auto destination = destination_parent / "baseline.json";
+
+        if (!fs.exists(destination, IgnoreErrors{}))
+        {
+            const auto destination_tmp = destination_parent / "baseline.json.tmp";
+            auto treeish = Strings::concat(commit_sha, ":versions/baseline.json");
+            auto maybe_contents = paths.git_show(treeish, paths.root / ".git");
+            if (auto contents = maybe_contents.get())
+            {
+                std::error_code ec;
+                fs.create_directories(destination_parent, ec);
+                if (ec)
+                {
+                    return {Strings::format(
+                                "Error: while checking out baseline %s\nError: while creating directories %s: %s",
+                                commit_sha,
+                                destination_parent,
+                                ec.message()),
+                            expected_right_tag};
+                }
+                fs.write_contents(destination_tmp, *contents, ec);
+                if (ec)
+                {
+                    return {Strings::format("Error: while checking out baseline %s\nError: while writing %s: %s",
+                                            commit_sha,
+                                            destination_tmp,
+                                            ec.message()),
+                            expected_right_tag};
+                }
+                fs.rename(destination_tmp, destination, ec);
+                if (ec)
+                {
+                    return {Strings::format("Error: while checking out baseline %s\nError: while renaming %s to %s: %s",
+                                            commit_sha,
+                                            destination_tmp,
+                                            destination,
+                                            ec.message()),
+                            expected_right_tag};
+                }
+            }
+            else
+            {
+                return {Strings::format("Error: while checking out baseline from commit '%s' at subpath "
+                                        "'versions/baseline.json':\n%s\nThis may be fixed by updating vcpkg to the "
+                                        "latest master via `git pull` or fetching commits via `git fetch`.",
+                                        commit_sha,
+                                        maybe_contents.error()),
+                        expected_right_tag};
+            }
+        }
+        return destination;
+    }
+
     // { RegistryImplementation
 
     // { BuiltinFilesRegistry::RegistryImplementation
@@ -509,7 +566,7 @@ namespace
         }
 
         const auto& baseline = m_baseline.get([this, &paths]() -> Baseline {
-            auto maybe_path = paths.git_checkout_baseline(m_baseline_identifier);
+            auto maybe_path = git_checkout_baseline(paths, m_baseline_identifier);
             if (!maybe_path.has_value())
             {
                 Checks::exit_with_message(

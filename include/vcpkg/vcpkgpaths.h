@@ -115,7 +115,11 @@ namespace vcpkg
         Path community_triplets;
         Path scripts;
         Path prefab;
+
+    private:
         Path builtin_ports;
+
+    public:
         Path builtin_registry_versions;
 
         Path tools;
@@ -133,10 +137,8 @@ namespace vcpkg
         // Git manipulation in the vcpkg directory
         ExpectedS<std::string> get_current_git_sha() const;
         std::string get_current_git_sha_baseline_message() const;
-        ExpectedS<Path> git_checkout_baseline(StringView commit_sha) const;
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedS<std::string> git_show(const std::string& treeish, const Path& dot_git_dir) const;
-        ExpectedS<std::string> git_describe_head() const;
 
         const Downloads::DownloadManager& get_download_manager() const;
 

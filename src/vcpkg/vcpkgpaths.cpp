@@ -279,6 +279,7 @@ namespace vcpkg
 
             bool m_readonly = false;
             bool m_usegitregistry = false;
+            Optional<std::string> m_embedded_git_sha;
 
             Optional<LockFile> m_installed_lock;
         };
@@ -396,10 +397,16 @@ namespace vcpkg
                 {
                     m_pimpl->m_usegitregistry = v->boolean();
                 }
+                if (auto v = bundle_doc->first.object().get("embeddedsha"))
+                {
+                    m_pimpl->m_embedded_git_sha = v->string().to_string();
+                }
                 Debug::print("Bundle config: readonly=",
                              m_pimpl->m_readonly,
                              ", usegitregistry=",
                              m_pimpl->m_usegitregistry,
+                             ", embeddedsha=",
+                             m_pimpl->m_embedded_git_sha.value_or("nullopt"),
                              "\n");
             }
             else
@@ -827,6 +834,10 @@ namespace vcpkg
 
     ExpectedS<std::string> VcpkgPaths::get_current_git_sha() const
     {
+        if (auto sha = m_pimpl->m_embedded_git_sha.get())
+        {
+            return {*sha, expected_left_tag};
+        }
         auto cmd = git_cmd_builder(this->root / ".git", this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
         auto output = cmd_execute_and_capture_output(cmd);
@@ -870,25 +881,6 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<std::string> VcpkgPaths::git_describe_head() const
-    {
-        // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
-        const auto dot_git_dir = root / ".git";
-        Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir)
-                              .string_arg("show")
-                              .string_arg("--pretty=format:%h %cd (%cr)")
-                              .string_arg("-s")
-                              .string_arg("--date=short")
-                              .string_arg("HEAD");
-
-        auto output = cmd_execute_and_capture_output(showcmd);
-        if (output.exit_code == 0)
-        {
-            return {std::move(output.output), expected_left_tag};
-        }
-        return {std::move(output.output), expected_right_tag};
-    }
-
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
         const auto local_repo = this->root / ".git";
@@ -926,63 +918,6 @@ namespace vcpkg
             ret.emplace(split_line[1], file_info_section.back());
         }
         return ret;
-    }
-
-    ExpectedS<Path> VcpkgPaths::git_checkout_baseline(StringView commit_sha) const
-    {
-        Filesystem& fs = get_filesystem();
-        const auto destination_parent = this->baselines_output() / commit_sha;
-        auto destination = destination_parent / "baseline.json";
-
-        if (!fs.exists(destination, IgnoreErrors{}))
-        {
-            const auto destination_tmp = destination_parent / "baseline.json.tmp";
-            auto treeish = Strings::concat(commit_sha, ":versions/baseline.json");
-            auto maybe_contents = git_show(treeish, this->root / ".git");
-            if (auto contents = maybe_contents.get())
-            {
-                std::error_code ec;
-                fs.create_directories(destination_parent, ec);
-                if (ec)
-                {
-                    return {Strings::format(
-                                "Error: while checking out baseline %s\nError: while creating directories %s: %s",
-                                commit_sha,
-                                destination_parent,
-                                ec.message()),
-                            expected_right_tag};
-                }
-                fs.write_contents(destination_tmp, *contents, ec);
-                if (ec)
-                {
-                    return {Strings::format("Error: while checking out baseline %s\nError: while writing %s: %s",
-                                            commit_sha,
-                                            destination_tmp,
-                                            ec.message()),
-                            expected_right_tag};
-                }
-                fs.rename(destination_tmp, destination, ec);
-                if (ec)
-                {
-                    return {Strings::format("Error: while checking out baseline %s\nError: while renaming %s to %s: %s",
-                                            commit_sha,
-                                            destination_tmp,
-                                            destination,
-                                            ec.message()),
-                            expected_right_tag};
-                }
-            }
-            else
-            {
-                return {Strings::format("Error: while checking out baseline from commit '%s' at subpath "
-                                        "'versions/baseline.json':\n%s\nThis may be fixed by updating vcpkg to the "
-                                        "latest master via `git pull` or fetching commits via `git fetch`.",
-                                        commit_sha,
-                                        maybe_contents.error()),
-                        expected_right_tag};
-            }
-        }
-        return destination;
     }
 
     ExpectedS<Path> VcpkgPaths::git_checkout_port(StringView port_name,
