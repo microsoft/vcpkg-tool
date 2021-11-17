@@ -315,9 +315,9 @@ namespace vcpkg::PlatformExpression
                     // "not"
                     if (name == "not")
                     {
-                        // optional-whitespace,
+                        // required-whitespace, platform-expression-simple
+                        // optional-whitespace, platform-expression-grouped
                         skip_whitespace();
-                        // platform-expression-simple
                         return std::make_unique<ExprImpl>(ExprKind::op_not, expr_simple());
                     }
 
@@ -344,11 +344,13 @@ namespace vcpkg::PlatformExpression
             //
             // platform-expression-and =
             // | platform-expression-not, { "&", optional-whitespace, platform-expression-not }
-            // | platform-expression-binary-keyword-first-operand, { "and", platform-expression-binary-keyword-second-operand } ;
+            // | platform-expression-binary-keyword-first-operand, { "and",
+            // platform-expression-binary-keyword-second-operand } ;
             //
             // platform-expression-or =
             // | platform-expression-not, { "|", optional-whitespace, platform-expression-not }
-            // | platform-expression-binary-keyword-first-operand, { "or", platform-expression-binary-keyword-second-operand } (* to allow for future extension *) ;
+            // | platform-expression-binary-keyword-first-operand, { "or",
+            // platform-expression-binary-keyword-second-operand } (* to allow for future extension *) ;
             //
             // Processing of the operator was already taken care of by the caller: continue
             // with the next platform-expression-not or platform-expression-binary-keyword-second-operand.
