@@ -1,6 +1,7 @@
 #include <vcpkg/base/delayed_init.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 

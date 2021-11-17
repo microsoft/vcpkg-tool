@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/format.h>
+
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/stringview.h>
@@ -31,45 +33,27 @@ namespace vcpkg
 
 namespace fmt
 {
-    template<>
-    struct formatter<vcpkg::LineInfo>
+    template<class Char>
+    struct formatter<vcpkg::LineInfo, Char>
     {
-        constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+        constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
         {
             return vcpkg::basic_format_parse_impl(ctx);
         }
         template<class FormatContext>
-        auto format(const vcpkg::LineInfo& li, FormatContext& ctx) -> decltype(ctx.out())
+        auto format(const vcpkg::LineInfo& li, FormatContext& ctx) const -> decltype(ctx.out())
         {
             return format_to(ctx.out(), "{}({})", li.file_name, li.line_number);
         }
     };
 
-    template<>
-    struct formatter<vcpkg::StringView> : formatter<string_view>
+    template<class Char>
+    struct formatter<vcpkg::StringView, Char> : formatter<string_view, Char>
     {
-        // parse is inherited from formatter<string_view>.
         template<class FormatContext>
-        auto format(vcpkg::StringView sv, FormatContext& ctx)
+        auto format(vcpkg::StringView sv, FormatContext& ctx) const -> decltype(ctx.out())
         {
-            return formatter<string_view>::format(string_view(sv.data(), sv.size()), ctx);
-        }
-    };
-
-    // Other types can take advantage of this specialization without depending on format.h by:
-    // 1. Supporting `vcpkg::StringView(t)`
-    // 2. Define `static constexpr bool fmt_via_StringView = true;`
-    template<class T, class = std::enable_if_t<T::fmt_via_StringView>>
-    using fmt_via_StringView = T;
-
-    template<class T>
-    struct formatter<fmt_via_StringView<T>> : formatter<vcpkg::StringView>
-    {
-        // parse is inherited from formatter<string_view>.
-        template<class FormatContext>
-        auto format(const T& t, FormatContext& ctx)
-        {
-            return formatter<vcpkg::StringView>::format(vcpkg::StringView(t), ctx);
+            return formatter<string_view, Char>::format(string_view(sv.data(), sv.size()), ctx);
         }
     };
 }

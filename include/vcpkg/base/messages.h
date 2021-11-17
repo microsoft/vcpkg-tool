@@ -2,33 +2,13 @@
 
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/messages.h>
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringliteral.h>
 
 #include <string>
-
-namespace vcpkg
-{
-#if defined(_WIN32)
-    enum class Color : unsigned short
-    {
-        none = 0,
-        success = 0x0A, // FOREGROUND_GREEN | FOREGROUND_INTENSITY
-        error = 0xC,    // FOREGROUND_RED | FOREGROUND_INTENSITY
-        warning = 0xE,  // FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY
-    };
-#else
-    enum class Color : char
-    {
-        none = 0,
-        success = '2', // [with 9] bright green
-        error = '1',   // [with 9] bright red
-        warning = '3', // [with 9] bright yellow
-    };
-#endif
-}
 
 namespace vcpkg::msg
 {
@@ -117,8 +97,6 @@ namespace vcpkg::msg
             return lhs.data() < rhs.data();
         }
     };
-
-    void write_unlocalized_text_to_stdout(Color c, StringView sv);
 
     template<class Message, class... Tags, class... Ts>
     LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
