@@ -207,6 +207,34 @@ namespace vcpkg::Util
         return fmap(input_map, [](auto&& p) { return p.first; });
     }
 
+    template<class Range1, class Range2, class Comp>
+    int range_lexcomp(const Range1& r1, const Range2& r2, Comp cmp)
+    {
+        using std::begin;
+        using std::end;
+        static_assert(std::is_same_v<int, decltype(cmp(*begin(r1), *begin(r2)))>,
+                      "Comp must return 'int' (negative for less, 0 for equal, positive for greater)");
+
+        auto a_cur = begin(r1);
+        auto a_end = end(r1);
+
+        auto b_cur = begin(r2);
+        auto b_end = end(r2);
+
+        for (; a_cur != a_end && b_cur != b_end; ++a_cur, ++b_cur)
+        {
+            int x = cmp(*a_cur, *b_cur);
+            if (x != 0)
+            {
+                return x;
+            }
+        }
+        // 1 - 0 => a is larger
+        // 0 - 1 => b is larger
+        // 1 - 1 => equal
+        return (b_cur == b_end) - (a_cur == a_end);
+    }
+
     namespace Enum
     {
         template<class E>

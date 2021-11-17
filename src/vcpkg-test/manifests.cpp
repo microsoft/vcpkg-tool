@@ -157,7 +157,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
         "name": "zlib",
         "version": "1.2.3-rc3"
     })json",
-                            true);
+                            false);
     }
 }
 
