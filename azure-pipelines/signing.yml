@@ -325,7 +325,7 @@ jobs:
         script: |
           mkdir "$(Build.ArtifactStagingDirectory)\drop"
 
-          move "$(Build.BinariesDirectory)\vcpkg-ce\vcpkg-ce-*.tgz" "$(Build.ArtifactStagingDirectory)\drop\ce.tgz"
+          move "$(Build.BinariesDirectory)\vcpkg-ce\vcpkg-ce-*.tgz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-ce.tgz"
           move "$(Build.BinariesDirectory)\vcpkg-readonly-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-readonly-bundle.tar.gz"
 
           move "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
@@ -344,6 +344,8 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
 
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
+
+          copy "$(Build.SourcesDirectory)\install-vcpkg\install-vcpkg.ps1" "$(Build.ArtifactStagingDirectory)\drop\install-vcpkg.ps1"
     - task: CmdLine@2
       displayName: 'Add Drop PGP Signatures (real sign only)'
       condition: and(eq(variables.SignType, 'real'), succeeded())
