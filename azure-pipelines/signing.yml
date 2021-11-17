@@ -358,7 +358,7 @@ jobs:
       # To avoid spurious warnings about missing logs, explicitly declare what we scanned.
       inputs:
         CredScan: true
-        PoliCheck: true
+        PoliCheck: false # Temporarily disabled due to failures in yarn.
     # Trust Services Automation (TSA) can automatically open bugs for compliance issues.
     # https://www.1eswiki.com/wiki/Trust_Services_Automation_(TSA)
     - task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@1
