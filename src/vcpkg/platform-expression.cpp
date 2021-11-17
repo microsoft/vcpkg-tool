@@ -155,7 +155,7 @@ namespace vcpkg::PlatformExpression
                 {
                     case ExprKind::op_and:
                         // { "&", optional-whitespace, platform-expression-not }
-                        // { "and", optional-whitespace, platform-expression-not }
+                        // { "and", platform-expression-binary-keyword-second-operand }
                         return expr_binary<ExprKind::op_and, ExprKind::op_or>(
                             std::make_unique<ExprImpl>(oper, std::move(result)));
 
@@ -218,7 +218,8 @@ namespace vcpkg::PlatformExpression
                     case 'o':
                     {
                         // { "and", optional-whitespace, platform-expression-not }
-                        // "and" is a synonym of "&"
+                        // { "or", platform-expression-binary-keyword-second-operand } }
+                        // "and" is a synonym of "&", "or" is reserved (but not yet supported) as a synonym of "|"
                         std::string name = match_zero_or_more(is_identifier_char).to_string();
                         Checks::check_exit(VCPKG_LINE_INFO, !name.empty());
 
@@ -245,9 +246,11 @@ namespace vcpkg::PlatformExpression
 
             // platform-expression-simple =
             // | platform-expression-identifier
-            // | "(", optional-whitespace, platform-expression, ")", optional-whitespace ;
+            // | platform-expression-grouped ;
             std::unique_ptr<ExprImpl> expr_simple()
             {
+                // platform-expression-grouped =
+                // | "(", optional-whitespace, platform-expression, ")", optional-whitespace ;
                 if (cur() == '(')
                 {
                     // "(",
@@ -292,8 +295,8 @@ namespace vcpkg::PlatformExpression
 
             // platform-expression-not =
             // | platform-expression-simple
-            // | "!", optional-whitespace, platform-expression-simple ;
-            // | "not", optional-whitespace, platform-expression-simple ;
+            // | "!", optional-whitespace, platform-expression-simple
+            // | "not", platform-expression-unary-keyword-operand ;
             std::unique_ptr<ExprImpl> expr_not()
             {
                 if (cur() == '!')
@@ -331,16 +334,24 @@ namespace vcpkg::PlatformExpression
             // platform-expression-list =
             // | platform-expression {",", optional-whitespace, platform-expression};
             //
+            // platform-expression-binary-keyword-first-operand =
+            // | platform-expression-not, required-whitespace
+            // | platform-expression-grouped ;
+            //
+            // platform-expression-binary-keyword-second-operand =
+            // | required-whitespace, platform-expression-not
+            // | platform-expression-grouped ;
+            //
             // platform-expression-and =
-            // | platform-expression-not, { "&", optional-whitespace, platform-expression-not } ;
-            // | platform-expression-not, { "and", optional-whitespace, platform-expression-not } ;
+            // | platform-expression-not, { "&", optional-whitespace, platform-expression-not }
+            // | platform-expression-binary-keyword-first-operand, { "and", platform-expression-binary-keyword-second-operand } ;
             //
             // platform-expression-or =
-            // | platform-expression-not, { "|", optional-whitespace, platform-expression-not } ;
-            // | platform-expression-not, { "or", optional-whitespace, platform-expression-not } ;
+            // | platform-expression-not, { "|", optional-whitespace, platform-expression-not }
+            // | platform-expression-binary-keyword-first-operand, { "or", platform-expression-binary-keyword-second-operand } (* to allow for future extension *) ;
             //
             // Processing of the operator was already taken care of by the caller: continue
-            // with the next platform-expression-not.
+            // with the next platform-expression-not or platform-expression-binary-keyword-second-operand.
             template<ExprKind oper, ExprKind unmixable_oper>
             std::unique_ptr<ExprImpl> expr_binary(std::unique_ptr<ExprImpl>&& seed)
             {
