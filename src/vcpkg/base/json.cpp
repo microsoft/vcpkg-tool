@@ -1056,16 +1056,24 @@ namespace vcpkg::Json
             ++cur;
         }
 
-        // we only check for lowercase in RESERVED since we already remove all
-        // strings with uppercase letters from the basic check
-        if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == "core" || sv == "default")
+        if (sv.size() < 5)
         {
-            return false; // we're a reserved identifier
+            if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == "core")
+            {
+                return false; // we're a reserved identifier
+            }
+            if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
+                sv.byte_at_index(3) >= '1' && sv.byte_at_index(3) <= '9')
+            {
+                return false; // we're a reserved identifier
+            }
         }
-        if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
-            sv.byte_at_index(3) >= '1' && sv.byte_at_index(3) <= '9')
+        else
         {
-            return false; // we're a reserved identifier
+            if (sv == "default")
+            {
+                return false;
+            }
         }
 
         return true;
