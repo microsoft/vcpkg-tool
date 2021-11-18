@@ -1,3 +1,4 @@
 {
-    "readonly": true
+    "readonly": true,
+    "usegitregistry": true
 }
