@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/jsonreader.h>
 
+#include <vcpkg/configuration.h>
 #include <vcpkg/registries.h>
 
 using namespace vcpkg;
@@ -46,37 +47,48 @@ namespace
 
 TEST_CASE ("registry_set_selects_registry", "[registries]")
 {
-    RegistrySet set;
-    set.set_default_registry(std::make_unique<TestRegistryImplementation>(0));
+    {
+        std::vector<Registry> rs;
+        rs.push_back(make_registry(1, {"p1", "q1", "r1"}));
+        rs.push_back(make_registry(2, {"p2", "q2", "r2"}));
+        RegistrySet set(std::make_unique<TestRegistryImplementation>(0), std::move(rs));
 
-    set.add_registry(make_registry(1, {"p1", "q1", "r1"}));
-    set.add_registry(make_registry(2, {"p2", "q2", "r2"}));
+        auto reg = set.registry_for_port("p1");
+        REQUIRE(reg);
+        CHECK(get_tri_num(*reg) == 1);
+        reg = set.registry_for_port("r2");
+        REQUIRE(reg);
+        CHECK(get_tri_num(*reg) == 2);
+        reg = set.registry_for_port("a");
+        REQUIRE(reg);
+        CHECK(get_tri_num(*reg) == 0);
+    }
+    {
+        std::vector<Registry> rs;
+        rs.push_back(make_registry(1, {"p1", "q1", "r1"}));
+        rs.push_back(make_registry(2, {"p2", "q2", "r2"}));
+        RegistrySet set(nullptr, std::move(rs));
 
-    auto reg = set.registry_for_port("p1");
-    REQUIRE(reg);
-    CHECK(get_tri_num(*reg) == 1);
-    reg = set.registry_for_port("r2");
-    REQUIRE(reg);
-    CHECK(get_tri_num(*reg) == 2);
-    reg = set.registry_for_port("a");
-    REQUIRE(reg);
-    CHECK(get_tri_num(*reg) == 0);
+        auto reg = set.registry_for_port("q1");
+        REQUIRE(reg);
+        CHECK(get_tri_num(*reg) == 1);
+        reg = set.registry_for_port("p2");
+        REQUIRE(reg);
+        CHECK(get_tri_num(*reg) == 2);
+        reg = set.registry_for_port("a");
+        CHECK_FALSE(reg);
+    }
+}
 
-    set.set_default_registry(nullptr);
-
-    reg = set.registry_for_port("q1");
-    REQUIRE(reg);
-    CHECK(get_tri_num(*reg) == 1);
-    reg = set.registry_for_port("p2");
-    REQUIRE(reg);
-    CHECK(get_tri_num(*reg) == 2);
-    reg = set.registry_for_port("a");
-    CHECK_FALSE(reg);
+static vcpkg::Optional<Configuration> visit_default_registry(Json::Reader& r, Json::Value&& reg)
+{
+    Json::Object config;
+    config.insert("default-registry", std::move(reg));
+    return r.visit(config, get_configuration_deserializer());
 }
 
 TEST_CASE ("registry_parsing", "[registries]")
 {
-    auto registry_impl_des = get_registry_implementation_deserializer({});
     {
         Json::Reader r;
         auto test_json = parse_json(R"json(
@@ -84,7 +96,7 @@ TEST_CASE ("registry_parsing", "[registries]")
     "kind": "builtin"
 }
     )json");
-        r.visit(test_json, *registry_impl_des);
+        visit_default_registry(r, std::move(test_json));
         CHECK(!r.errors().empty());
     }
     {
@@ -95,8 +107,9 @@ TEST_CASE ("registry_parsing", "[registries]")
     "baseline": "hi"
 }
     )json");
-        r.visit(test_json, *registry_impl_des);
-        CHECK(!r.errors().empty());
+        visit_default_registry(r, std::move(test_json));
+        // Non-SHA strings are allowed and will be diagnosed later
+        CHECK(r.errors().empty());
     }
     {
         Json::Reader r;
@@ -106,9 +119,8 @@ TEST_CASE ("registry_parsing", "[registries]")
     "baseline": "1234567890123456789012345678901234567890"
 }
     )json");
-        auto registry_impl = r.visit(test_json, *registry_impl_des);
+        auto registry_impl = visit_default_registry(r, std::move(test_json));
         REQUIRE(registry_impl);
-        CHECK(*registry_impl.get());
         CHECK(r.errors().empty());
     }
     {
@@ -120,7 +132,7 @@ TEST_CASE ("registry_parsing", "[registries]")
     "path": "a/b"
 }
     )json");
-        r.visit(test_json, *registry_impl_des);
+        visit_default_registry(r, std::move(test_json));
         CHECK(!r.errors().empty());
     }
     {
@@ -131,9 +143,8 @@ TEST_CASE ("registry_parsing", "[registries]")
     "path": "a/b/c"
 }
     )json");
-        auto registry_impl = r.visit(test_json, *registry_impl_des);
+        auto registry_impl = visit_default_registry(r, std::move(test_json));
         REQUIRE(registry_impl);
-        CHECK(*registry_impl.get());
         CHECK(r.errors().empty());
 
         test_json = parse_json(R"json(
@@ -142,9 +153,8 @@ TEST_CASE ("registry_parsing", "[registries]")
     "path": "/a/b/c"
 }
     )json");
-        registry_impl = r.visit(test_json, *registry_impl_des);
+        registry_impl = visit_default_registry(r, std::move(test_json));
         REQUIRE(registry_impl);
-        CHECK(*registry_impl.get());
         CHECK(r.errors().empty());
     }
 
@@ -155,7 +165,7 @@ TEST_CASE ("registry_parsing", "[registries]")
     )json");
     {
         Json::Reader r;
-        r.visit(test_json, *registry_impl_des);
+        visit_default_registry(r, std::move(test_json));
         CHECK(!r.errors().empty());
     }
     test_json = parse_json(R"json(
@@ -166,7 +176,7 @@ TEST_CASE ("registry_parsing", "[registries]")
     )json");
     {
         Json::Reader r;
-        r.visit(test_json, *registry_impl_des);
+        visit_default_registry(r, std::move(test_json));
         CHECK(!r.errors().empty());
     }
 
@@ -178,7 +188,7 @@ TEST_CASE ("registry_parsing", "[registries]")
     )json");
     {
         Json::Reader r;
-        r.visit(test_json, *registry_impl_des);
+        visit_default_registry(r, std::move(test_json));
         CHECK(!r.errors().empty());
     }
 
@@ -192,9 +202,8 @@ TEST_CASE ("registry_parsing", "[registries]")
     )json");
     {
         Json::Reader r;
-        auto registry_impl = r.visit(test_json, *registry_impl_des);
+        auto registry_impl = visit_default_registry(r, std::move(test_json));
         REQUIRE(registry_impl);
-        CHECK(*registry_impl.get());
         INFO(Strings::join("\n", r.errors()));
         CHECK(r.errors().empty());
     }
@@ -207,9 +216,8 @@ TEST_CASE ("registry_parsing", "[registries]")
 }
     )json");
     Json::Reader r;
-    auto registry_impl = r.visit(test_json, *registry_impl_des);
+    auto registry_impl = visit_default_registry(r, std::move(test_json));
     REQUIRE(registry_impl);
-    CHECK(*registry_impl.get());
     INFO(Strings::join("\n", r.errors()));
     CHECK(r.errors().empty());
 }

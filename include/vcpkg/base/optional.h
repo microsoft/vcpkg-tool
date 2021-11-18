@@ -253,6 +253,12 @@ namespace vcpkg
 
         constexpr explicit operator bool() const { return this->m_base.has_value(); }
 
+        T& emplace()
+        {
+            this->m_base = T{};
+            return this->m_base.value();
+        }
+
         constexpr bool has_value() const { return this->m_base.has_value(); }
 
         template<class U>

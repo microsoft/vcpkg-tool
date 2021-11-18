@@ -993,6 +993,59 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::BUILTIN_BASELINE;
     constexpr StringLiteral ManifestDeserializer::VCPKG_CONFIGURATION;
 
+    // Extracts just the configuration information from a manifest object
+    struct ManifestConfigurationDeserializer final : Json::IDeserializer<ManifestConfiguration>
+    {
+        virtual StringView type_name() const override { return "a manifest"; }
+
+        virtual Optional<ManifestConfiguration> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            Optional<ManifestConfiguration> x;
+            ManifestConfiguration& ret = x.emplace();
+            if (!r.optional_object_field(obj,
+                                         ManifestDeserializer::VCPKG_CONFIGURATION,
+                                         ret.config.emplace(),
+                                         get_configuration_deserializer()))
+            {
+                ret.config = nullopt;
+            }
+            if (!r.optional_object_field(obj,
+                                         ManifestDeserializer::BUILTIN_BASELINE,
+                                         ret.builtin_baseline.emplace(),
+                                         BaselineCommitDeserializer::instance))
+            {
+                ret.builtin_baseline = nullopt;
+            }
+            return x;
+        }
+
+        static ManifestConfigurationDeserializer instance;
+    };
+    ManifestConfigurationDeserializer ManifestConfigurationDeserializer::instance;
+
+    ExpectedS<struct ManifestConfiguration> parse_manifest_configuration(StringView origin,
+                                                                         const Json::Object& manifest)
+    {
+        Json::Reader reader;
+
+        auto res = reader.visit(manifest, ManifestConfigurationDeserializer::instance);
+
+        if (!reader.errors().empty())
+        {
+            std::string ret = "Error: in the manifest ";
+            Strings::append(ret, origin, "\nwhile obtaining configuration information from the manifest:\n");
+            for (auto&& err : reader.errors())
+            {
+                Strings::append(ret, "    ", err, "\n");
+            }
+            return std::move(ret);
+        }
+        else
+        {
+            return std::move(res).value_or_exit(VCPKG_LINE_INFO);
+        }
+    }
+
     SourceControlFile SourceControlFile::clone() const
     {
         SourceControlFile ret;
@@ -1370,7 +1423,7 @@ namespace vcpkg
         if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
         {
             Json::Reader reader;
-            auto maybe_configuration = reader.visit(*configuration, *vcpkg::make_configuration_deserializer(""));
+            auto maybe_configuration = reader.visit(*configuration, get_configuration_deserializer());
             if (!reader.errors().empty())
             {
                 print2(Color::error, "Errors occurred while parsing ", ManifestDeserializer::VCPKG_CONFIGURATION, "\n");
@@ -1382,7 +1435,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
             obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,
-                       serialize_configuration(maybe_configuration.value_or_exit(VCPKG_LINE_INFO)));
+                       maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
         }
 
         obj.insert(ManifestDeserializer::NAME, Json::Value::string(scf.core_paragraph->name));

@@ -64,8 +64,6 @@ namespace
 
         Optional<VersionT> get_baseline_version(const VcpkgPaths&, StringView) const override;
 
-        Json::Object serialize() const override;
-
     private:
         friend struct GitRegistryEntry;
 
@@ -231,8 +229,6 @@ namespace
             return paths.builtin_ports_directory() / port_name;
         }
 
-        Json::Object serialize() const override;
-
         ~BuiltinFilesRegistry() = default;
 
         DelayedInit<Baseline> m_baseline;
@@ -263,8 +259,6 @@ namespace
 
         Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const override;
 
-        Json::Object serialize() const override;
-
         ~BuiltinGitRegistry() = default;
 
         std::string m_baseline_identifier;
@@ -289,7 +283,7 @@ namespace
     struct FilesystemRegistry final : RegistryImplementation
     {
         FilesystemRegistry(Path&& path, std::string&& baseline)
-            : m_path(std::move(path)), m_baseline_identifier(baseline)
+            : m_path(std::move(path)), m_baseline_identifier(std::move(baseline))
         {
         }
 
@@ -300,8 +294,6 @@ namespace
         void get_all_port_names(std::vector<std::string>&, const VcpkgPaths&) const override;
 
         Optional<VersionT> get_baseline_version(const VcpkgPaths&, StringView) const override;
-
-        Json::Object serialize() const override;
 
     private:
         Path m_path;
@@ -332,8 +324,6 @@ namespace
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-
-        Json::Object serialize() const override;
 
         ~ArtifactRegistry() = default;
 
@@ -838,252 +828,6 @@ namespace
 {
     using namespace vcpkg;
 
-    struct BaselineDeserializer final : Json::IDeserializer<std::map<std::string, VersionT, std::less<>>>
-    {
-        StringView type_name() const override { return "a baseline object"; }
-
-        Optional<type> visit_object(Json::Reader& r, const Json::Object& obj) override
-        {
-            std::map<std::string, VersionT, std::less<>> result;
-
-            for (auto pr : obj)
-            {
-                const auto& version_value = pr.second;
-                VersionT version;
-                r.visit_in_key(version_value, pr.first, version, get_versiontag_deserializer_instance());
-
-                result.emplace(pr.first.to_string(), std::move(version));
-            }
-
-            return result;
-        }
-
-        static BaselineDeserializer instance;
-    };
-    BaselineDeserializer BaselineDeserializer::instance;
-
-    struct RegistryImplDeserializer : Json::IDeserializer<std::unique_ptr<RegistryImplementation>>
-    {
-        constexpr static StringLiteral KIND = "kind";
-        constexpr static StringLiteral BASELINE = "baseline";
-        constexpr static StringLiteral PATH = "path";
-        constexpr static StringLiteral REPO = "repository";
-        constexpr static StringLiteral REFERENCE = "reference";
-        constexpr static StringLiteral NAME = "name";
-        constexpr static StringLiteral LOCATION = "location";
-
-        constexpr static StringLiteral KIND_BUILTIN = "builtin";
-        constexpr static StringLiteral KIND_FILESYSTEM = "filesystem";
-        constexpr static StringLiteral KIND_GIT = "git";
-        constexpr static StringLiteral KIND_ARTIFACT = "artifact";
-
-        virtual StringView type_name() const override { return "a registry"; }
-        virtual View<StringView> valid_fields() const override;
-
-        virtual Optional<std::unique_ptr<RegistryImplementation>> visit_null(Json::Reader&) override;
-        virtual Optional<std::unique_ptr<RegistryImplementation>> visit_object(Json::Reader&,
-                                                                               const Json::Object&) override;
-
-        RegistryImplDeserializer(const Path& configuration_directory) : config_directory(configuration_directory) { }
-
-        Path config_directory;
-    };
-    constexpr StringLiteral RegistryImplDeserializer::KIND;
-    constexpr StringLiteral RegistryImplDeserializer::BASELINE;
-    constexpr StringLiteral RegistryImplDeserializer::PATH;
-    constexpr StringLiteral RegistryImplDeserializer::REPO;
-    constexpr StringLiteral RegistryImplDeserializer::REFERENCE;
-    constexpr StringLiteral RegistryImplDeserializer::NAME;
-    constexpr StringLiteral RegistryImplDeserializer::LOCATION;
-    constexpr StringLiteral RegistryImplDeserializer::KIND_BUILTIN;
-    constexpr StringLiteral RegistryImplDeserializer::KIND_FILESYSTEM;
-    constexpr StringLiteral RegistryImplDeserializer::KIND_GIT;
-    constexpr StringLiteral RegistryImplDeserializer::KIND_ARTIFACT;
-
-    struct RegistryDeserializer final : Json::IDeserializer<Registry>
-    {
-        constexpr static StringLiteral PACKAGES = "packages";
-
-        virtual StringView type_name() const override { return "a registry"; }
-        virtual View<StringView> valid_fields() const override;
-
-        virtual Optional<Registry> visit_object(Json::Reader&, const Json::Object&) override;
-
-        explicit RegistryDeserializer(const Path& configuration_directory) : impl_des(configuration_directory) { }
-
-        RegistryImplDeserializer impl_des;
-    };
-    constexpr StringLiteral RegistryDeserializer::PACKAGES;
-
-    View<StringView> RegistryImplDeserializer::valid_fields() const
-    {
-        static const StringView t[] = {KIND, BASELINE, PATH, REPO, REFERENCE, NAME, LOCATION};
-        return t;
-    }
-    View<StringView> valid_builtin_fields()
-    {
-        static const StringView t[] = {
-            RegistryImplDeserializer::KIND,
-            RegistryImplDeserializer::BASELINE,
-            RegistryDeserializer::PACKAGES,
-        };
-        return t;
-    }
-    View<StringView> valid_filesystem_fields()
-    {
-        static const StringView t[] = {
-            RegistryImplDeserializer::KIND,
-            RegistryImplDeserializer::BASELINE,
-            RegistryImplDeserializer::PATH,
-            RegistryDeserializer::PACKAGES,
-        };
-        return t;
-    }
-    View<StringView> valid_git_fields()
-    {
-        static const StringView t[] = {
-            RegistryImplDeserializer::KIND,
-            RegistryImplDeserializer::BASELINE,
-            RegistryImplDeserializer::REPO,
-            RegistryImplDeserializer::REFERENCE,
-            RegistryDeserializer::PACKAGES,
-        };
-        return t;
-    }
-    View<StringView> valid_artifact_fields()
-    {
-        static const StringView t[] = {
-            RegistryImplDeserializer::KIND,
-            RegistryImplDeserializer::NAME,
-            RegistryImplDeserializer::LOCATION,
-        };
-        return t;
-    }
-
-    Optional<std::unique_ptr<RegistryImplementation>> RegistryImplDeserializer::visit_null(Json::Reader&)
-    {
-        return nullptr;
-    }
-
-    Optional<std::unique_ptr<RegistryImplementation>> RegistryImplDeserializer::visit_object(Json::Reader& r,
-                                                                                             const Json::Object& obj)
-    {
-        static Json::StringDeserializer kind_deserializer{"a registry implementation kind"};
-        static Json::StringDeserializer baseline_deserializer{"a baseline"};
-        std::string kind;
-
-        r.required_object_field(type_name(), obj, KIND, kind, kind_deserializer);
-
-        std::unique_ptr<RegistryImplementation> res;
-
-        if (kind == KIND_BUILTIN)
-        {
-            std::string baseline;
-            r.required_object_field("a builtin registry", obj, BASELINE, baseline, baseline_deserializer);
-            if (!is_git_commit_sha(baseline))
-            {
-                r.add_generic_error(
-                    "a builtin registry",
-                    "The baseline field of builtin registries must be a git commit SHA (40 lowercase hex characters)");
-            }
-            r.check_for_unexpected_fields(obj, valid_builtin_fields(), "a builtin registry");
-            res = std::make_unique<BuiltinGitRegistry>(std::move(baseline));
-        }
-        else if (kind == KIND_FILESYSTEM)
-        {
-            std::string baseline;
-            r.optional_object_field(obj, BASELINE, baseline, baseline_deserializer);
-            r.check_for_unexpected_fields(obj, valid_filesystem_fields(), "a filesystem registry");
-
-            Path p;
-            r.required_object_field("a filesystem registry", obj, PATH, p, Json::PathDeserializer::instance);
-
-            res = std::make_unique<FilesystemRegistry>(config_directory / p, std::move(baseline));
-        }
-        else if (kind == KIND_GIT)
-        {
-            r.check_for_unexpected_fields(obj, valid_git_fields(), "a git registry");
-
-            std::string repo;
-            Json::StringDeserializer repo_des{"a git repository URL"};
-            r.required_object_field("a git registry", obj, REPO, repo, repo_des);
-
-            std::string ref;
-            Json::StringDeserializer ref_des{"a git reference (for example, a branch)"};
-            if (!r.optional_object_field(obj, REFERENCE, ref, ref_des))
-            {
-                ref = "HEAD";
-            }
-
-            std::string baseline;
-            r.required_object_field("a git registry", obj, BASELINE, baseline, baseline_deserializer);
-
-            res = std::make_unique<GitRegistry>(std::move(repo), std::move(ref), std::move(baseline));
-        }
-        else if (kind == KIND_ARTIFACT)
-        {
-            r.check_for_unexpected_fields(obj, valid_artifact_fields(), "an artifacts registry");
-
-            std::string name;
-            r.required_object_field("an artifact registry", obj, NAME, name, Json::IdentifierDeserializer::instance);
-
-            std::string location;
-            Json::StringDeserializer location_des{"an artifacts git repository URL"};
-            r.required_object_field("an artifacts registry", obj, LOCATION, location, location_des);
-
-            res = std::make_unique<ArtifactRegistry>(std::move(name), std::move(location));
-        }
-        else
-        {
-            StringLiteral valid_kinds[] = {KIND_BUILTIN, KIND_FILESYSTEM, KIND_GIT, KIND_ARTIFACT};
-            r.add_generic_error(type_name(),
-                                "Field \"kind\" did not have an expected value (expected one of: \"",
-                                Strings::join("\", \"", valid_kinds),
-                                "\"; found \"",
-                                kind,
-                                "\")");
-            return nullopt;
-        }
-
-        return std::move(res); // gcc-7 bug workaround redundant move
-    }
-
-    View<StringView> RegistryDeserializer::valid_fields() const
-    {
-        static const StringView t[] = {
-            RegistryImplDeserializer::KIND,
-            RegistryImplDeserializer::BASELINE,
-            RegistryImplDeserializer::PATH,
-            RegistryImplDeserializer::REPO,
-            RegistryImplDeserializer::REFERENCE,
-            RegistryImplDeserializer::NAME,
-            RegistryImplDeserializer::LOCATION,
-            PACKAGES,
-        };
-        return t;
-    }
-
-    Optional<Registry> RegistryDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
-    {
-        auto impl = impl_des.visit_object(r, obj);
-
-        if (!impl.has_value())
-        {
-            return nullopt;
-        }
-
-        static Json::ArrayDeserializer<Json::PackageNameDeserializer> package_names_deserializer{
-            "an array of package names"};
-
-        std::vector<std::string> packages;
-        if (impl.get()->get()->kind() != RegistryImplDeserializer::KIND_ARTIFACT)
-        {
-            r.required_object_field(type_name(), obj, PACKAGES, packages, package_names_deserializer);
-        }
-
-        return Registry{std::move(packages), std::move(impl).value_or_exit(VCPKG_LINE_INFO)};
-    }
-
     Path relative_path_to_versions(StringView port_name)
     {
         char prefix[] = {port_name.byte_at_index(0), '-', '\0'};
@@ -1148,6 +892,30 @@ namespace
         }
         return db_entries;
     }
+
+    struct BaselineDeserializer final : Json::IDeserializer<std::map<std::string, VersionT, std::less<>>>
+    {
+        StringView type_name() const override { return "a baseline object"; }
+
+        Optional<type> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            std::map<std::string, VersionT, std::less<>> result;
+
+            for (auto pr : obj)
+            {
+                const auto& version_value = pr.second;
+                VersionT version;
+                r.visit_in_key(version_value, pr.first, version, get_versiontag_deserializer_instance());
+
+                result.emplace(pr.first.to_string(), std::move(version));
+            }
+
+            return result;
+        }
+
+        static BaselineDeserializer instance;
+    };
+    BaselineDeserializer BaselineDeserializer::instance;
 
     ExpectedS<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin)
     {
@@ -1223,57 +991,6 @@ Optional<Path> RegistryImplementation::get_path_to_baseline_version(const VcpkgP
         }
     }
     return nullopt;
-}
-
-// serializers
-
-Json::Object RegistryImplementation::serialize() const
-{
-    Json::Object obj;
-    obj.insert(RegistryImplDeserializer::KIND, Json::Value::string(kind()));
-    return obj;
-}
-
-Json::Object BuiltinGitRegistry::serialize() const
-{
-    Json::Object obj;
-    obj.insert(RegistryImplDeserializer::KIND, Json::Value::string("builtin"));
-    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
-    return obj;
-}
-
-Json::Object BuiltinFilesRegistry::serialize() const
-{
-    Json::Object obj;
-    obj.insert(RegistryImplDeserializer::KIND, Json::Value::string("builtin"));
-    return obj;
-}
-
-Json::Object GitRegistry::serialize() const
-{
-    Json::Object obj{RegistryImplementation::serialize()};
-    obj.insert(RegistryImplDeserializer::REPO, Json::Value::string(m_repo));
-    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
-    return obj;
-}
-
-Json::Object FilesystemRegistry::serialize() const
-{
-    Json::Object obj{RegistryImplementation::serialize()};
-    obj.insert(RegistryImplDeserializer::PATH, Json::Value::string(m_path.generic_u8string()));
-    if (!m_baseline_identifier.empty())
-    {
-        obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
-    }
-    return obj;
-}
-
-Json::Object ArtifactRegistry::serialize() const
-{
-    Json::Object obj{RegistryImplementation::serialize()};
-    obj.insert(RegistryImplDeserializer::NAME, Json::Value::string(m_name));
-    obj.insert(RegistryImplDeserializer::LOCATION, Json::Value::string(m_location));
-    return obj;
 }
 
 namespace vcpkg
@@ -1426,25 +1143,11 @@ namespace vcpkg
         }
     }
 
-    std::unique_ptr<Json::IDeserializer<std::unique_ptr<RegistryImplementation>>>
-    get_registry_implementation_deserializer(const Path& configuration_directory)
-    {
-        return std::make_unique<RegistryImplDeserializer>(configuration_directory);
-    }
-    std::unique_ptr<Json::IDeserializer<std::vector<Registry>>> get_registry_array_deserializer(
-        const Path& configuration_directory)
-    {
-        return std::make_unique<Json::ArrayDeserializer<RegistryDeserializer>>(
-            "an array of registries", RegistryDeserializer(configuration_directory));
-    }
-
     Registry::Registry(std::vector<std::string>&& packages, std::unique_ptr<RegistryImplementation>&& impl)
         : packages_(std::move(packages)), implementation_(std::move(impl))
     {
         Checks::check_exit(VCPKG_LINE_INFO, implementation_ != nullptr);
     }
-
-    RegistrySet::RegistrySet() : default_registry_(std::make_unique<BuiltinFilesRegistry>()) { }
 
     const RegistryImplementation* RegistrySet::registry_for_port(StringView name) const
     {
@@ -1466,50 +1169,10 @@ namespace vcpkg
         return impl->get_baseline_version(paths, port_name);
     }
 
-    void RegistrySet::add_registry(Registry&& r) { registries_.push_back(std::move(r)); }
-
-    void RegistrySet::set_default_registry(std::unique_ptr<RegistryImplementation>&& r)
-    {
-        default_registry_ = std::move(r);
-    }
-    void RegistrySet::set_default_registry(std::nullptr_t) { default_registry_.reset(); }
-
     bool RegistrySet::is_default_builtin_registry() const
     {
         return default_registry_ && default_registry_->kind() == BuiltinFilesRegistry::s_kind;
     }
-    void RegistrySet::set_default_builtin_registry_baseline(StringView baseline)
-    {
-        if (auto default_registry = default_registry_.get())
-        {
-            const auto k = default_registry->kind();
-            if (k == BuiltinFilesRegistry::s_kind)
-            {
-                default_registry_ = std::make_unique<BuiltinGitRegistry>(baseline.to_string());
-            }
-            else if (k == BuiltinGitRegistry::s_kind)
-            {
-                print2(Color::warning,
-                       R"(warning: attempting to set builtin baseline in both vcpkg.json and vcpkg-configuration.json
-    (only one of these should be used; the baseline from vcpkg-configuration.json will be used))");
-            }
-            else
-            {
-                vcpkg::printf(
-                    Color::warning,
-                    "warning: the default registry has been replaced with a %s registry, but `builtin-baseline` "
-                    "is specified in vcpkg.json. This field will have no effect.\n",
-                    k);
-            }
-        }
-        else
-        {
-            print2(Color::warning,
-                   "warning: the default registry has been disabled, but `builtin-baseline` is specified in "
-                   "vcpkg.json. This field will have no effect.\n");
-        }
-    }
-
     bool RegistrySet::has_modifications() const { return !registries_.empty() || !is_default_builtin_registry(); }
 
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
@@ -1550,4 +1213,25 @@ namespace vcpkg
 
         return sv.size() == 40 && std::all_of(sv.begin(), sv.end(), is_lcase_ascii_hex);
     }
+
+    std::unique_ptr<RegistryImplementation> make_builtin_registry() { return std::make_unique<BuiltinFilesRegistry>(); }
+    std::unique_ptr<RegistryImplementation> make_builtin_registry(std::string baseline)
+    {
+        return std::make_unique<BuiltinGitRegistry>(std::move(baseline));
+    }
+    std::unique_ptr<RegistryImplementation> make_git_registry(std::string repo,
+                                                              std::string reference,
+                                                              std::string baseline)
+    {
+        return std::make_unique<GitRegistry>(std::move(repo), std::move(reference), std::move(baseline));
+    }
+    std::unique_ptr<RegistryImplementation> make_filesystem_registry(Path path, std::string baseline)
+    {
+        return std::make_unique<FilesystemRegistry>(std::move(path), std::move(baseline));
+    }
+    std::unique_ptr<RegistryImplementation> make_artifact_registry(std::string name, std::string location)
+    {
+        return std::make_unique<ArtifactRegistry>(std::move(name), std::move(location));
+    }
+
 }
