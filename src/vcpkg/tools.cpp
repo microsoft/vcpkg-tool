@@ -201,13 +201,13 @@ namespace vcpkg
         }
         else
         {
-            Downloads::verify_downloaded_file_hash(fs, tool_data.url, tool_data.download_path, tool_data.sha512);
+            verify_downloaded_file_hash(fs, tool_data.url, tool_data.download_path, tool_data.sha512);
         }
 
         if (tool_data.is_archive)
         {
             print2("Extracting ", tool_name, "...\n");
-            Archives::extract_archive(paths, tool_data.download_path, tool_data.tool_dir_path);
+            extract_archive(paths, tool_data.download_path, tool_data.tool_dir_path);
         }
         else
         {
@@ -638,13 +638,38 @@ gsutil version: 4.58
 
     struct ToolCacheImpl final : ToolCache
     {
-        ToolCache::RequireExactVersions abiToolVersionHandling;
+        RequireExactVersions abiToolVersionHandling;
+        vcpkg::Cache<std::string, Path> system_cache;
         vcpkg::Cache<std::string, Path> path_only_cache;
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
 
-        ToolCacheImpl(ToolCache::RequireExactVersions abiToolVersionHandling)
-            : abiToolVersionHandling(abiToolVersionHandling)
+        ToolCacheImpl(RequireExactVersions abiToolVersionHandling) : abiToolVersionHandling(abiToolVersionHandling) { }
+
+        virtual const Path& get_tool_path_from_system(const Filesystem& fs, const std::string& tool) const override
         {
+            return system_cache.get_lazy(tool, [&] {
+                if (tool == Tools::TAR)
+                {
+                    auto tars = fs.find_from_PATH("tar");
+                    if (tars.empty())
+                    {
+                        Checks::exit_with_message(VCPKG_LINE_INFO,
+#if defined(_WIN32)
+                                                  "Could not find tar; the action you tried to take assumes Windows 10 "
+                                                  "or later which are bundled with tar.exe."
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+                                                  "Could not find tar; please install it from your system package "
+                                                  "manager."
+#endif // ^^^ !_WIN32
+
+                        );
+                    }
+
+                    return tars[0];
+                }
+
+                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unknown or unavailable tool: %s", tool);
+            });
         }
 
         virtual const Path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const override
@@ -680,8 +705,7 @@ gsutil version: 4.58
                     {
                         return {"cmake", "0"};
                     }
-                    return get_path(
-                        paths, CMakeProvider(), abiToolVersionHandling == ToolCache::RequireExactVersions::YES);
+                    return get_path(paths, CMakeProvider(), abiToolVersionHandling == RequireExactVersions::YES);
                 }
                 if (tool == Tools::GIT)
                 {
@@ -705,9 +729,8 @@ gsutil version: 4.58
                     {
                         return {"pwsh", "0"};
                     }
-                    return get_path(paths,
-                                    PowerShellCoreProvider(),
-                                    abiToolVersionHandling == ToolCache::RequireExactVersions::YES);
+                    return get_path(
+                        paths, PowerShellCoreProvider(), abiToolVersionHandling == RequireExactVersions::YES);
                 }
                 if (tool == Tools::NUGET) return get_path(paths, NuGetProvider());
                 if (tool == Tools::ARIA2) return get_path(paths, Aria2Provider());
@@ -762,7 +785,7 @@ gsutil version: 4.58
         }
     };
 
-    std::unique_ptr<ToolCache> get_tool_cache(ToolCache::RequireExactVersions abiToolVersionHandling)
+    std::unique_ptr<ToolCache> get_tool_cache(RequireExactVersions abiToolVersionHandling)
     {
         return std::make_unique<ToolCacheImpl>(abiToolVersionHandling);
     }

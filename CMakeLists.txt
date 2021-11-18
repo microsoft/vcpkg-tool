@@ -19,6 +19,7 @@ option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
+option(VCPKG_OFFICIAL_BUILD "Option to cause immediate failure if variables required for official builds are unset." OFF)
 set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
 
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
@@ -92,7 +93,11 @@ if(NOT DEFINED VCPKG_VERSION OR VCPKG_VERSION STREQUAL "")
     set(VCPKG_VERSION "unknownhash")
 endif()
 
-if(NOT DEFINED VCPKG_BASE_VERSION)
+if(NOT DEFINED VCPKG_BASE_VERSION OR VCPKG_BASE_VERSION STREQUAL "")
+    if(VCPKG_OFFICIAL_BUILD)
+      message(FATAL_ERROR "VCPKG_BASE_VERSION must be set for official builds.")  
+    endif()
+
     set(VCPKG_BASE_VERSION "9999-99-99")
 endif()
 
@@ -145,6 +150,26 @@ target_compile_definitions(vcpkglib PUBLIC
     VCPKG_VERSION=${VCPKG_VERSION}
     VCPKG_BASE_VERSION=${VCPKG_BASE_VERSION}
 )
+
+if(NOT DEFINED VCPKG_READONLY_BUNDLE_SHA OR VCPKG_READONLY_BUNDLE_SHA STREQUAL "")
+    if(VCPKG_OFFICIAL_BUILD)
+        message(FATAL_ERROR "VCPKG_READONLY_BUNDLE_SHA is required for official builds.")
+    endif()
+else()
+    target_compile_definitions(vcpkglib PUBLIC
+        VCPKG_READONLY_BUNDLE_SHA=${VCPKG_READONLY_BUNDLE_SHA}
+    )
+endif()
+
+if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
+    if(VCPKG_OFFICIAL_BUILD)
+        message(FATAL_ERROR "VCPKG_CE_SHA is required for official builds.")
+    endif()
+else()
+    target_compile_definitions(vcpkglib PUBLIC
+        VCPKG_CE_SHA=${VCPKG_CE_SHA}
+    )
+endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)

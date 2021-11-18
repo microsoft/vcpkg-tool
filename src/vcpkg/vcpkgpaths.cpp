@@ -264,9 +264,7 @@ namespace vcpkg
 
         struct VcpkgPathsImpl
         {
-            VcpkgPathsImpl(Filesystem& fs,
-                           FeatureFlagSettings ff_settings,
-                           ToolCache::RequireExactVersions abiToolsHandling)
+            VcpkgPathsImpl(Filesystem& fs, FeatureFlagSettings ff_settings, RequireExactVersions abiToolsHandling)
                 : fs_ptr(&fs)
                 , m_tool_cache(get_tool_cache(abiToolsHandling))
                 , m_env_cache(ff_settings.compiler_tracking)
@@ -300,7 +298,7 @@ namespace vcpkg
             Configuration m_config;
             std::unique_ptr<RegistrySet> m_registry_set;
 
-            Downloads::DownloadManager m_download_manager;
+            DownloadManager m_download_manager;
 
             FeatureFlagSettings m_ff_settings;
 
@@ -452,7 +450,7 @@ namespace vcpkg
         : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(
               filesystem,
               args.feature_flag_settings(),
-              Util::Enum::to_enum<ToolCache::RequireExactVersions>(args.exact_abi_tools_versions.value_or(false))))
+              Util::Enum::to_enum<RequireExactVersions>(args.exact_abi_tools_versions.value_or(false))))
     {
         original_cwd = filesystem.current_path(VCPKG_LINE_INFO);
 #if defined(_WIN32)
@@ -581,7 +579,7 @@ namespace vcpkg
         }
         downloads = filesystem.almost_canonical(downloads, VCPKG_LINE_INFO);
 
-        m_pimpl->m_download_manager = Downloads::DownloadManager{
+        m_pimpl->m_download_manager = DownloadManager{
             parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);
         prefab = root / "prefab";
@@ -1243,7 +1241,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, m_pimpl->m_registry_set != nullptr);
         return *m_pimpl->m_registry_set;
     }
-    const Downloads::DownloadManager& VcpkgPaths::get_download_manager() const { return m_pimpl->m_download_manager; }
+    const DownloadManager& VcpkgPaths::get_download_manager() const { return m_pimpl->m_download_manager; }
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
                                  (msg::triplet),
