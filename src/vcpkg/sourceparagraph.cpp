@@ -6,6 +6,7 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/configuration.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/platform-expression.h>
@@ -686,6 +687,20 @@ namespace vcpkg
     };
     FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
 
+    struct ContactsDeserializer final : Json::IDeserializer<Json::Object>
+    {
+        virtual StringView type_name() const override { return "a dictionary of contacts"; }
+
+        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            (void)r;
+            return obj;
+        }
+
+        static ContactsDeserializer instance;
+    };
+    ContactsDeserializer ContactsDeserializer::instance;
+
     static constexpr StringLiteral EXPRESSION_WORDS[] = {
         "WITH",
         "AND",
@@ -850,6 +865,8 @@ namespace vcpkg
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral MAINTAINERS = "maintainers";
+        constexpr static StringLiteral CONTACTS = "contacts";
+        constexpr static StringLiteral SUMMARY = "summary";
         constexpr static StringLiteral DESCRIPTION = "description";
         constexpr static StringLiteral HOMEPAGE = "homepage";
         constexpr static StringLiteral DOCUMENTATION = "documentation";
@@ -861,12 +878,15 @@ namespace vcpkg
         constexpr static StringLiteral SUPPORTS = "supports";
         constexpr static StringLiteral OVERRIDES = "overrides";
         constexpr static StringLiteral BUILTIN_BASELINE = "builtin-baseline";
+        constexpr static StringLiteral VCPKG_CONFIGURATION = "vcpkg-configuration";
 
         virtual Span<const StringView> valid_fields() const override
         {
             static const StringView u[] = {
                 NAME,
                 MAINTAINERS,
+                CONTACTS,
+                SUMMARY,
                 DESCRIPTION,
                 HOMEPAGE,
                 DOCUMENTATION,
@@ -878,6 +898,7 @@ namespace vcpkg
                 SUPPORTS,
                 OVERRIDES,
                 BUILTIN_BASELINE,
+                VCPKG_CONFIGURATION,
             };
             static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
 
@@ -901,7 +922,6 @@ namespace vcpkg
             }
 
             static Json::StringDeserializer url_deserializer{"a url"};
-
             r.required_object_field(type_name(), obj, NAME, spgh->name, Json::IdentifierDeserializer::instance);
             auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
             spgh->version = schemed_version.versiont.text();
@@ -909,6 +929,8 @@ namespace vcpkg
             spgh->port_version = schemed_version.versiont.port_version();
 
             r.optional_object_field(obj, MAINTAINERS, spgh->maintainers, Json::ParagraphDeserializer::instance);
+            r.optional_object_field(obj, CONTACTS, spgh->contacts, ContactsDeserializer::instance);
+            r.optional_object_field(obj, SUMMARY, spgh->summary, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DESCRIPTION, spgh->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, HOMEPAGE, spgh->homepage, url_deserializer);
             r.optional_object_field(obj, DOCUMENTATION, spgh->documentation, url_deserializer);
@@ -936,6 +958,18 @@ namespace vcpkg
             r.optional_object_field(
                 obj, FEATURES, control_file->feature_paragraphs, FeaturesFieldDeserializer::instance);
 
+            if (auto configuration = obj.get(VCPKG_CONFIGURATION))
+            {
+                if (!configuration->is_object())
+                {
+                    r.add_generic_error(type_name(), VCPKG_CONFIGURATION, " must be an object");
+                }
+                else
+                {
+                    spgh->vcpkg_configuration = make_optional(configuration->object());
+                }
+            }
+
             if (auto maybe_error = canonicalize(*control_file))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
@@ -961,6 +995,7 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::SUPPORTS;
     constexpr StringLiteral ManifestDeserializer::OVERRIDES;
     constexpr StringLiteral ManifestDeserializer::BUILTIN_BASELINE;
+    constexpr StringLiteral ManifestDeserializer::VCPKG_CONFIGURATION;
 
     SourceControlFile SourceControlFile::clone() const
     {
@@ -1002,6 +1037,14 @@ namespace vcpkg
                                                                          bool is_default_builtin_registry) const
     {
         static constexpr StringLiteral s_extended_help = "See `vcpkg help versioning` for more information.";
+        auto format_error_message = [&](StringView manifest_field, StringView feature_flag) {
+            return Strings::format(" was rejected because it uses \"%s\" and the `%s` feature flag is disabled.\n"
+                                   "This can be fixed by removing \"%s\".\n",
+                                   manifest_field,
+                                   feature_flag,
+                                   manifest_field);
+        };
+
         if (!flags.versions)
         {
             auto check_deps = [&](View<Dependency> deps) -> Optional<std::string> {
@@ -1031,11 +1074,10 @@ namespace vcpkg
             if (core_paragraph->overrides.size() != 0)
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
-                return Strings::concat(origin,
-                                       " was rejected because it uses overrides and the `",
-                                       VcpkgCmdArguments::VERSIONS_FEATURE,
-                                       "` feature flag is disabled.\nThis can be fixed by removing \"overrides\".\n",
-                                       s_extended_help);
+                return Strings::concat(
+                    origin,
+                    format_error_message(ManifestDeserializer::OVERRIDES, VcpkgCmdArguments::VERSIONS_FEATURE),
+                    s_extended_help);
             }
 
             if (core_paragraph->builtin_baseline.has_value())
@@ -1043,9 +1085,7 @@ namespace vcpkg
                 LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
                 return Strings::concat(
                     origin,
-                    " was rejected because it uses builtin-baseline and the `",
-                    VcpkgCmdArguments::VERSIONS_FEATURE,
-                    "` feature flag is disabled.\nThis can be fixed by removing \"builtin-baseline\".\n",
+                    format_error_message(ManifestDeserializer::BUILTIN_BASELINE, VcpkgCmdArguments::VERSIONS_FEATURE),
                     s_extended_help);
             }
         }
@@ -1331,6 +1371,24 @@ namespace vcpkg
             obj.insert(el.first.to_string(), el.second);
         }
 
+        if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
+        {
+            Json::Reader reader;
+            auto maybe_configuration = reader.visit(*configuration, *vcpkg::make_configuration_deserializer(""));
+            if (!reader.errors().empty())
+            {
+                print2(Color::error, "Errors occurred while parsing ", ManifestDeserializer::VCPKG_CONFIGURATION, "\n");
+                for (auto&& msg : reader.errors())
+                    print2("    ", msg, '\n');
+
+                print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for "
+                       "more information.\n");
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+            obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,
+                       serialize_configuration(maybe_configuration.value_or_exit(VCPKG_LINE_INFO)));
+        }
+
         obj.insert(ManifestDeserializer::NAME, Json::Value::string(scf.core_paragraph->name));
 
         serialize_schemed_version(obj,
@@ -1377,6 +1435,8 @@ namespace vcpkg
                 }
 
                 serialize_paragraph(feature_obj, FeatureDeserializer::DESCRIPTION, feature->description, true);
+                serialize_optional_string(
+                    feature_obj, FeatureDeserializer::SUPPORTS, to_string(feature->supports_expression));
 
                 if (!feature->dependencies.empty() || debug)
                 {

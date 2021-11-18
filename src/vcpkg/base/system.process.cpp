@@ -3,6 +3,7 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -328,6 +329,9 @@ namespace vcpkg
             L"IFORT_COMPILER19",
             L"IFORT_COMPILER20",
             L"IFORT_COMPILER21",
+            // Environment variables used by wrapper scripts to allow us to set environment variables in parent shells
+            L"Z_VCPKG_POSTSCRIPT",
+            L"Z_VCPKG_UNDO",
         };
 
         const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");

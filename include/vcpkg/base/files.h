@@ -29,16 +29,8 @@ namespace vcpkg
     enum class CopyOptions
     {
         none = 0,
-
-        existing_mask = 0xF,
         skip_existing = 0x1,
         overwrite_existing = 0x2,
-
-        recursive = 0x10,
-
-        symlinks_mask = 0xF00,
-        copy_symlinks = 0x100,
-        skip_symlinks = 0x200,
     };
 
     struct Path
@@ -301,14 +293,17 @@ namespace vcpkg
         void create_best_link(const Path& to, const Path& from, std::error_code& ec);
         void create_best_link(const Path& to, const Path& from, LineInfo);
 
-        virtual void copy(const Path& source, const Path& destination, CopyOptions options, std::error_code& ec) = 0;
-        void copy(const Path& source, const Path& destination, CopyOptions options, LineInfo);
+        // copies regular files and directories, recursively.
+        // symlinks are followed and copied as if they were regular files or directories
+        //   (like std::filesystem::copy(..., std::filesystem::copy_options::recursive))
+        virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) = 0;
+        void copy_regular_recursive(const Path& source, const Path& destination, LineInfo);
 
         virtual bool copy_file(const Path& source,
                                const Path& destination,
                                CopyOptions options,
                                std::error_code& ec) = 0;
-        void copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li);
+        bool copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li);
 
         virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) = 0;
         void copy_symlink(const Path& source, const Path& destination, LineInfo li);
@@ -389,4 +384,22 @@ namespace vcpkg
             return !Strings::case_insensitive_ascii_equals(target.extension(), ext);
         }
     };
+}
+
+namespace fmt
+{
+    template<>
+    struct formatter<vcpkg::Path>
+    {
+        constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+        {
+            return vcpkg::basic_format_parse_impl(ctx);
+        }
+        template<class FormatContext>
+        auto format(const vcpkg::Path& path, FormatContext& ctx) -> decltype(ctx.out())
+        {
+            return format_to(ctx.out(), "{}", path.native());
+        }
+    };
+
 }

@@ -2,6 +2,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/configuration.h>
@@ -307,7 +308,7 @@ namespace vcpkg::Commands::AddVersion
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            for (auto&& port_dir : fs.get_files_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
+            for (auto&& port_dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
                 port_names.emplace_back(port_dir.stem().to_string());
             }

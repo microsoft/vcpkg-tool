@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/lineinfo.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/stringliteral.h>

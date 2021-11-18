@@ -16,6 +16,7 @@
 #include <vcpkg/commands.env.h>
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/commands.format-manifest.h>
+#include <vcpkg/commands.generate-message-map.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.hash.h>
 #include <vcpkg/commands.info.h>
@@ -32,6 +33,7 @@
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
+#include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
 #include <vcpkg/install.h>
@@ -46,6 +48,7 @@ namespace vcpkg::Commands
         static const Contact::ContactCommand contact{};
         static const InitRegistry::InitRegistryCommand init_registry{};
         static const X_Download::XDownloadCommand xdownload{};
+        static const GenerateDefaultMessageMapCommand generate_message_map{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
@@ -55,6 +58,7 @@ namespace vcpkg::Commands
             {"contact", &contact},
             {"x-init-registry", &init_registry},
             {"x-download", &xdownload},
+            {"x-generate-default-message-map", &generate_message_map},
 
 #if defined(_WIN32)
             {"x-upload-metrics", &upload_metrics},
@@ -125,6 +129,7 @@ namespace vcpkg::Commands
         static const Export::ExportCommand export_command{};
         static const DependInfo::DependInfoCommand depend_info{};
         static const CheckSupport::CheckSupportCommand check_support{};
+        static const Z_PrintConfig::PrintConfigCommand print_config{};
 
         static std::vector<PackageNameAndFunction<const TripletCommand*>> t = {
             {"install", &install},
@@ -138,6 +143,7 @@ namespace vcpkg::Commands
             {"export", &export_command},
             {"depend-info", &depend_info},
             {"x-check-support", &check_support},
+            {"z-print-config", &print_config},
         };
         return t;
     }

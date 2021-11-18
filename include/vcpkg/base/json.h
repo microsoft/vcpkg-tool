@@ -203,6 +203,7 @@ namespace vcpkg::Json
         ~Object() = default;
 
         // asserts if the key is found
+        Value& insert(std::string key, std::string value);
         Value& insert(std::string key, Value&& value);
         Value& insert(std::string key, const Value& value);
         Object& insert(std::string key, Object&& value);

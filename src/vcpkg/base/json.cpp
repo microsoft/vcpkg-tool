@@ -2,6 +2,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/unicode.h>
 
 #include <inttypes.h>
@@ -333,6 +334,7 @@ namespace vcpkg::Json
     bool operator==(const Array& lhs, const Array& rhs) { return lhs.underlying_ == rhs.underlying_; }
     // } struct Array
     // struct Object {
+    Value& Object::insert(std::string key, std::string value) { return insert(key, Value::string(std::move(value))); }
     Value& Object::insert(std::string key, Value&& value)
     {
         vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
@@ -939,7 +941,13 @@ namespace vcpkg::Json
                         add_error("Unexpected character; expected comma or close brace");
                     }
 
+                    auto keyPairLoc = cur_loc();
                     auto val = parse_kv_pair();
+                    if (obj.contains(val.first))
+                    {
+                        add_error(Strings::format("Duplicated key \"%s\" in an object", val.first), keyPairLoc);
+                        return Value();
+                    }
                     obj.insert(std::move(val.first), std::move(val.second));
                 }
             }

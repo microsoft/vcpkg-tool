@@ -60,9 +60,12 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(pgh.core_paragraph->name == "zlib");
     REQUIRE(pgh.core_paragraph->version == "1.2.8");
     REQUIRE(pgh.core_paragraph->maintainers.empty());
+    REQUIRE(pgh.core_paragraph->contacts.is_empty());
+    REQUIRE(pgh.core_paragraph->summary.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.empty());
     REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
+    REQUIRE(!pgh.core_paragraph->vcpkg_configuration.has_value());
 
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
 }
@@ -154,7 +157,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
         "name": "zlib",
         "version": "1.2.3-rc3"
     })json",
-                            true);
+                            false);
     }
 }
 
@@ -612,12 +615,108 @@ TEST_CASE ("manifest overrides", "[manifests]")
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
 }
 
+TEST_CASE ("manifest embed configuration", "[manifests]")
+{
+    std::string raw_config = R"json({
+        "$extra-info": null,
+        "default-registry": {
+            "kind": "builtin",
+            "baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4"
+        },
+        "registries": [
+            {
+                "kind": "filesystem",
+                "path": "a/b/c",
+                "baseline": "default",
+                "packages": [
+                    "a",
+                    "b",
+                    "c"
+                ]
+            },
+            {
+                "kind": "git",
+                "repository": "https://github.com/microsoft/vcpkg-ports",
+                "baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
+                "packages": [ 
+                    "zlib",
+                    "rapidjson",
+                    "fmt"
+                ]
+            },
+            {
+                "kind": "artifact",
+                "name": "vcpkg-artifacts",
+                "location": "https://github.com/microsoft/vcpkg-artifacts"
+            }
+        ]
+    })json";
+
+    std::string raw = Strings::concat(R"json({
+    "vcpkg-configuration": )json",
+                                      raw_config,
+                                      R"json(,
+    "name": "zlib",
+    "version": "1.0.0",
+    "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
+    "dependencies": [
+        "a",
+        {
+            "$extra": null,
+            "name": "b"
+        },
+        {
+            "name": "c",
+            "version>=": "2018-09-01"
+        }
+    ]
+})json");
+    auto m_pgh = test_parse_manifest(raw);
+
+    REQUIRE(m_pgh.has_value());
+    auto& pgh = **m_pgh.get();
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+
+    auto maybe_as_json = Json::parse(raw);
+    REQUIRE(maybe_as_json.has_value());
+    auto as_json = *maybe_as_json.get();
+    REQUIRE(as_json.first.is_object());
+    auto as_json_obj = as_json.first.object();
+    REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
+            Json::stringify(as_json_obj, Json::JsonStyle::with_spaces(4)));
+
+    REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
+    REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
+    REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint ==
+            DependencyConstraint{Versions::Constraint::Type::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[1].name == "b");
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint ==
+            DependencyConstraint{Versions::Constraint::Type::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[2].name == "c");
+    REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
+            DependencyConstraint{Versions::Constraint::Type::Minimum, "2018-09-01", 0});
+
+    auto maybe_config = Json::parse(raw_config, "<test config>");
+    REQUIRE(maybe_config.has_value());
+    auto config = *maybe_config.get();
+    REQUIRE(config.first.is_object());
+    auto config_obj = config.first.object();
+    REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
+    auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
+    REQUIRE(Json::stringify(parsed_config_obj, Json::JsonStyle::with_spaces(4)) ==
+            Json::stringify(config_obj, Json::JsonStyle::with_spaces(4)));
+}
+
 TEST_CASE ("manifest construct maximum", "[manifests]")
 {
     auto m_pgh = test_parse_manifest(R"json({
         "name": "s",
         "version-string": "v",
         "maintainers": ["m"],
+        "contacts": { "a": { "aa": "aa" } },
+        "summary": "d",
         "description": "d",
         "dependencies": ["bd"],
         "default-features": ["df"],
@@ -649,6 +748,16 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->version == "v");
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
+    REQUIRE(pgh.core_paragraph->contacts.size() == 1);
+    auto contact_a = pgh.core_paragraph->contacts.get("a");
+    REQUIRE(contact_a);
+    REQUIRE(contact_a->is_object());
+    auto contact_a_aa = contact_a->object().get("aa");
+    REQUIRE(contact_a_aa);
+    REQUIRE(contact_a_aa->is_string());
+    REQUIRE(contact_a_aa->string() == "aa");
+    REQUIRE(pgh.core_paragraph->summary.size() == 1);
+    REQUIRE(pgh.core_paragraph->summary[0] == "d");
     REQUIRE(pgh.core_paragraph->description.size() == 1);
     REQUIRE(pgh.core_paragraph->description[0] == "d");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);

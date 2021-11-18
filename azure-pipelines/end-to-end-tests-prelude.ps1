@@ -16,12 +16,10 @@ $commonArgs = @(
     "--overlay-triplets=$PSScriptRoot/e2e_ports/triplets"
 )
 $Script:CurrentTest = 'unassigned'
-$env:X_VCPKG_REGISTRIES_CACHE = Join-Path $TestingRoot 'registries'
 
 function Refresh-TestRoot {
     Remove-Item -Recurse -Force $TestingRoot -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $TestingRoot | Out-Null
-    New-Item -ItemType Directory -Force $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
     New-Item -ItemType Directory -Force $NuGetRoot | Out-Null
 }
 
@@ -42,16 +40,21 @@ function Require-FileExists {
     }
 }
 
-function Require-FileEquals {
+function Require-JsonFileEquals {
     [CmdletBinding()]
     Param(
         [string]$File,
-        [string]$Content
+        [string]$Json
     )
     Require-FileExists $File
-    if ((Get-Content $File -Raw) -ne $Content) {
+    $ExpectedJson = $Json | ConvertFrom-Json | ConvertTo-Json -Compress
+    $ActualJson = Get-Content $File | ConvertFrom-Json | ConvertTo-Json -Compress
+
+    if ($ActualJson -ne $ExpectedJson) {
         Write-Stack
-        throw "'$Script:CurrentTest' file '$File' did not have the correct contents"
+        throw "'$Script:CurrentTest' file '$File' did not have the correct contents`n
+                Expected: $ExpectedJson`n
+                Actual:   $ActualJson"
     }
 }
 

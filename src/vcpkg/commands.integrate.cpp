@@ -256,9 +256,8 @@ namespace vcpkg::Commands::Integrate
                 appdata_src_path, create_appdata_shortcut(paths.buildsystems_msbuild_targets), VCPKG_LINE_INFO);
             auto appdata_dst_path = get_appdata_targets_path();
 
-            const auto rc = fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, ec);
-
-            if (!rc || ec)
+            fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, ec);
+            if (ec)
             {
                 print2(Color::error, "Error: Failed to copy file: ", appdata_src_path, " -> ", appdata_dst_path, "\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -269,9 +268,8 @@ namespace vcpkg::Commands::Integrate
                 appdata_src_path2, create_appdata_shortcut(paths.buildsystems_msbuild_props), VCPKG_LINE_INFO);
             auto appdata_dst_path2 = get_appdata_props_path();
 
-            const auto rc2 = fs.copy_file(appdata_src_path2, appdata_dst_path2, CopyOptions::overwrite_existing, ec);
-
-            if (!rc2 || ec)
+            fs.copy_file(appdata_src_path2, appdata_dst_path2, CopyOptions::overwrite_existing, ec);
+            if (ec)
             {
                 print2(
                     Color::error, "Error: Failed to copy file: ", appdata_src_path2, " -> ", appdata_dst_path2, "\n");
@@ -539,9 +537,26 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
             fish_completions_path = home_path / ".config";
         }
 
-        fish_completions_path = fish_completions_path / "fish/completions/vcpkg.fish";
+        fish_completions_path = fish_completions_path / "fish/completions";
 
         auto& fs = paths.get_filesystem();
+
+        std::error_code ec;
+        fs.create_directories(fish_completions_path, ec);
+
+        if (ec)
+        {
+            print2(Color::error,
+                   "Error: Failed to create fish completions directory: ",
+                   fish_completions_path,
+                   ": ",
+                   ec.message(),
+                   "\n");
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        fish_completions_path = fish_completions_path / "vcpkg.fish";
+
         if (fs.exists(fish_completions_path, IgnoreErrors{}))
         {
             vcpkg::printf("vcpkg fish completion is already added at %s.\n", fish_completions_path);

@@ -128,7 +128,7 @@ namespace vcpkg::Archives
             recursion_limiter_sevenzip = false;
         }
 #else
-        if (ext == ".gz")
+        if (ext == ".gz" || ext == ".bz2")
         {
             const auto code =
                 cmd_execute(Command{"tar"}.string_arg("xzf").path_arg(archive), InWorkingDirectory{to_path_partial});

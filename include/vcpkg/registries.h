@@ -24,24 +24,28 @@ namespace vcpkg
     {
         struct EntryData
         {
-            std::string value;
+            std::string reference;
+            std::string commit_id;
             bool stale;
         };
+
+        using LockDataType = std::multimap<std::string, EntryData, std::less<>>;
         struct Entry
         {
             LockFile* lockfile;
-            std::map<std::string, EntryData, std::less<>>::iterator data;
+            LockDataType::iterator data;
 
-            const std::string& value() const { return data->second.value; }
+            const std::string& reference() const { return data->second.reference; }
+            const std::string& commit_id() const { return data->second.commit_id; }
             bool stale() const { return data->second.stale; }
             const std::string& uri() const { return data->first; }
 
             void ensure_up_to_date(const VcpkgPaths& paths) const;
         };
 
-        Entry get_or_fetch(const VcpkgPaths& paths, StringView key);
+        Entry get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference);
 
-        std::map<std::string, EntryData, std::less<>> lockdata;
+        LockDataType lockdata;
         bool modified = false;
     };
 
@@ -66,6 +70,8 @@ namespace vcpkg
         virtual void get_all_port_names(std::vector<std::string>& port_names, const VcpkgPaths& paths) const = 0;
 
         virtual Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const = 0;
+
+        virtual Json::Object serialize() const;
 
         virtual ~RegistryImplementation() = default;
     };
@@ -123,6 +129,8 @@ namespace vcpkg
         std::unique_ptr<RegistryImplementation> default_registry_;
         std::vector<Registry> registries_;
     };
+
+    Json::Object serialize_registry_set(const RegistrySet& config);
 
     std::unique_ptr<Json::IDeserializer<std::unique_ptr<RegistryImplementation>>>
     get_registry_implementation_deserializer(const Path& configuration_directory);

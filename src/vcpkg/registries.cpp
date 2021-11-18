@@ -2,6 +2,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.print.h>
 
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
@@ -49,8 +50,8 @@ namespace
 
     struct GitRegistry final : RegistryImplementation
     {
-        GitRegistry(std::string&& repo, std::string&& baseline)
-            : m_repo(std::move(repo)), m_baseline_identifier(std::move(baseline))
+        GitRegistry(std::string&& repo, std::string&& reference, std::string&& baseline)
+            : m_repo(std::move(repo)), m_reference(std::move(reference)), m_baseline_identifier(std::move(baseline))
         {
         }
 
@@ -62,13 +63,15 @@ namespace
 
         Optional<VersionT> get_baseline_version(const VcpkgPaths&, StringView) const override;
 
+        Json::Object serialize() const override;
+
     private:
         friend struct GitRegistryEntry;
 
         LockFile::Entry get_lock_entry(const VcpkgPaths& paths) const
         {
             return m_lock_entry.get(
-                [this, &paths]() { return paths.get_installed_lockfile().get_or_fetch(paths, m_repo); });
+                [this, &paths]() { return paths.get_installed_lockfile().get_or_fetch(paths, m_repo, m_reference); });
         }
 
         Path get_versions_tree_path(const VcpkgPaths& paths) const
@@ -77,7 +80,7 @@ namespace
                 auto e = get_lock_entry(paths);
                 e.ensure_up_to_date(paths);
                 auto maybe_tree =
-                    paths.git_find_object_id_for_remote_registry_path(e.value(), registry_versions_dir_name);
+                    paths.git_find_object_id_for_remote_registry_path(e.commit_id(), registry_versions_dir_name);
                 if (!maybe_tree)
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-no-versions-at-commit",
@@ -86,7 +89,7 @@ namespace
                         VCPKG_LINE_INFO,
                         "Error: could not find the git tree for `versions` in repo `%s` at commit `%s`: %s",
                         m_repo,
-                        e.value(),
+                        e.commit_id(),
                         maybe_tree.error());
                 }
                 auto maybe_path = paths.git_checkout_object_from_remote_registry(*maybe_tree.get());
@@ -117,7 +120,7 @@ namespace
             if (!m_stale_versions_tree.has_value())
             {
                 auto maybe_tree =
-                    paths.git_find_object_id_for_remote_registry_path(e.value(), registry_versions_dir_name);
+                    paths.git_find_object_id_for_remote_registry_path(e.commit_id(), registry_versions_dir_name);
                 if (!maybe_tree)
                 {
                     // This could be caused by git gc or otherwise -- fall back to full fetch
@@ -135,6 +138,7 @@ namespace
         }
 
         std::string m_repo;
+        std::string m_reference;
         std::string m_baseline_identifier;
         DelayedInit<LockFile::Entry> m_lock_entry;
         mutable Optional<Path> m_stale_versions_tree;
@@ -202,6 +206,13 @@ namespace
         std::vector<Path> version_paths;
     };
 
+    DECLARE_AND_REGISTER_MESSAGE(ErrorRequireBaseline,
+                                 (),
+                                 "",
+                                 "Error: this vcpkg instance requires a manifest with a specified baseline in order to "
+                                 "interact with ports. Please add 'builtin-baseline' to the manifest or add a "
+                                 "'vcpkg-configuration.json' that redefines the default registry.\n");
+
     struct BuiltinRegistry final : RegistryImplementation
     {
         BuiltinRegistry(std::string&& baseline) : m_baseline_identifier(std::move(baseline))
@@ -217,10 +228,28 @@ namespace
 
         Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const override;
 
+        Json::Object serialize() const override;
+
         ~BuiltinRegistry() = default;
 
         std::string m_baseline_identifier;
         DelayedInit<Baseline> m_baseline;
+
+    private:
+        const GitRegistry& get_git_reg() const
+        {
+            return *m_git_registry.get([this]() {
+                if (m_baseline_identifier.empty())
+                {
+                    msg::println(Color::error, msgErrorRequireBaseline);
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+                return std::make_unique<GitRegistry>(
+                    "https://github.com/Microsoft/vcpkg", "HEAD", std::string(m_baseline_identifier));
+            });
+        }
+
+        DelayedInit<std::unique_ptr<GitRegistry>> m_git_registry;
     };
 
     struct FilesystemRegistry final : RegistryImplementation
@@ -238,10 +267,45 @@ namespace
 
         Optional<VersionT> get_baseline_version(const VcpkgPaths&, StringView) const override;
 
+        Json::Object serialize() const override;
+
     private:
         Path m_path;
         std::string m_baseline_identifier;
         DelayedInit<Baseline> m_baseline;
+    };
+
+    struct ArtifactRegistry final : RegistryImplementation
+    {
+        ArtifactRegistry(std::string&& name, std::string&& location)
+            : m_name(std::move(name)), m_location(std::move(location))
+        {
+        }
+
+        StringLiteral kind() const override { return "artifact"; }
+
+        std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths&, StringView) const override
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        void get_all_port_names(std::vector<std::string>&, const VcpkgPaths&) const override
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        Optional<VersionT> get_baseline_version(const VcpkgPaths&, StringView) const override
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        Json::Object serialize() const override;
+
+        ~ArtifactRegistry() = default;
+
+    private:
+        std::string m_name;
+        std::string m_location;
     };
 
     Path relative_path_to_versions(StringView port_name);
@@ -292,6 +356,11 @@ namespace
     // { BuiltinRegistry::RegistryImplementation
     std::unique_ptr<RegistryEntry> BuiltinRegistry::get_port_entry(const VcpkgPaths& paths, StringView port_name) const
     {
+        if (paths.use_git_default_registry())
+        {
+            return get_git_reg().get_port_entry(paths, port_name);
+        }
+
         const auto& fs = paths.get_filesystem();
         if (!m_baseline_identifier.empty())
         {
@@ -342,6 +411,11 @@ namespace
 
     Optional<VersionT> BuiltinRegistry::get_baseline_version(const VcpkgPaths& paths, StringView port_name) const
     {
+        if (paths.use_git_default_registry())
+        {
+            return get_git_reg().get_baseline_version(paths, port_name);
+        }
+
         if (!m_baseline_identifier.empty())
         {
             const auto& baseline = m_baseline.get([this, &paths]() -> Baseline {
@@ -383,6 +457,11 @@ namespace
 
     void BuiltinRegistry::get_all_port_names(std::vector<std::string>& out, const VcpkgPaths& paths) const
     {
+        if (paths.use_git_default_registry())
+        {
+            return get_git_reg().get_all_port_names(out, paths);
+        }
+
         const auto& fs = paths.get_filesystem();
 
         if (!m_baseline_identifier.empty() && fs.exists(paths.builtin_registry_versions, IgnoreErrors{}))
@@ -506,11 +585,16 @@ namespace
                     "commit SHA (40 lowercase hexadecimal characters).\n"
                     "The current HEAD of that repo is \"%s\".\n",
                     m_repo,
-                    e.value());
+                    e.commit_id());
             }
 
             auto path_to_baseline = Path(registry_versions_dir_name) / "baseline.json";
             auto maybe_contents = paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+            if (!maybe_contents.has_value())
+            {
+                get_lock_entry(paths).ensure_up_to_date(paths);
+                maybe_contents = paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+            }
             if (!maybe_contents.has_value())
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
@@ -580,8 +664,8 @@ namespace
 
     void GitRegistry::get_all_port_names(std::vector<std::string>& out, const VcpkgPaths& paths) const
     {
-        auto versions_path = get_versions_tree_path(paths);
-        load_all_port_names_from_registry_versions(out, paths.get_filesystem(), versions_path);
+        auto versions_path = get_stale_versions_tree_path(paths);
+        load_all_port_names_from_registry_versions(out, paths.get_filesystem(), versions_path.p);
     }
     // } GitRegistry::RegistryImplementation
 
@@ -716,10 +800,14 @@ namespace
         constexpr static StringLiteral BASELINE = "baseline";
         constexpr static StringLiteral PATH = "path";
         constexpr static StringLiteral REPO = "repository";
+        constexpr static StringLiteral REFERENCE = "reference";
+        constexpr static StringLiteral NAME = "name";
+        constexpr static StringLiteral LOCATION = "location";
 
         constexpr static StringLiteral KIND_BUILTIN = "builtin";
         constexpr static StringLiteral KIND_FILESYSTEM = "filesystem";
         constexpr static StringLiteral KIND_GIT = "git";
+        constexpr static StringLiteral KIND_ARTIFACT = "artifact";
 
         virtual StringView type_name() const override { return "a registry"; }
         virtual View<StringView> valid_fields() const override;
@@ -736,9 +824,13 @@ namespace
     constexpr StringLiteral RegistryImplDeserializer::BASELINE;
     constexpr StringLiteral RegistryImplDeserializer::PATH;
     constexpr StringLiteral RegistryImplDeserializer::REPO;
+    constexpr StringLiteral RegistryImplDeserializer::REFERENCE;
+    constexpr StringLiteral RegistryImplDeserializer::NAME;
+    constexpr StringLiteral RegistryImplDeserializer::LOCATION;
     constexpr StringLiteral RegistryImplDeserializer::KIND_BUILTIN;
     constexpr StringLiteral RegistryImplDeserializer::KIND_FILESYSTEM;
     constexpr StringLiteral RegistryImplDeserializer::KIND_GIT;
+    constexpr StringLiteral RegistryImplDeserializer::KIND_ARTIFACT;
 
     struct RegistryDeserializer final : Json::IDeserializer<Registry>
     {
@@ -757,7 +849,7 @@ namespace
 
     View<StringView> RegistryImplDeserializer::valid_fields() const
     {
-        static const StringView t[] = {KIND, BASELINE, PATH, REPO};
+        static const StringView t[] = {KIND, BASELINE, PATH, REPO, REFERENCE, NAME, LOCATION};
         return t;
     }
     View<StringView> valid_builtin_fields()
@@ -785,7 +877,17 @@ namespace
             RegistryImplDeserializer::KIND,
             RegistryImplDeserializer::BASELINE,
             RegistryImplDeserializer::REPO,
+            RegistryImplDeserializer::REFERENCE,
             RegistryDeserializer::PACKAGES,
+        };
+        return t;
+    }
+    View<StringView> valid_artifact_fields()
+    {
+        static const StringView t[] = {
+            RegistryImplDeserializer::KIND,
+            RegistryImplDeserializer::NAME,
+            RegistryImplDeserializer::LOCATION,
         };
         return t;
     }
@@ -838,20 +940,40 @@ namespace
             Json::StringDeserializer repo_des{"a git repository URL"};
             r.required_object_field("a git registry", obj, REPO, repo, repo_des);
 
+            std::string ref;
+            Json::StringDeserializer ref_des{"a git reference (for example, a branch)"};
+            if (!r.optional_object_field(obj, REFERENCE, ref, ref_des))
+            {
+                ref = "HEAD";
+            }
+
             std::string baseline;
             r.required_object_field("a git registry", obj, BASELINE, baseline, baseline_deserializer);
 
-            res = std::make_unique<GitRegistry>(std::move(repo), std::move(baseline));
+            res = std::make_unique<GitRegistry>(std::move(repo), std::move(ref), std::move(baseline));
+        }
+        else if (kind == KIND_ARTIFACT)
+        {
+            r.check_for_unexpected_fields(obj, valid_artifact_fields(), "an artifacts registry");
+
+            std::string name;
+            r.required_object_field("an artifact registry", obj, NAME, name, Json::IdentifierDeserializer::instance);
+
+            std::string location;
+            Json::StringDeserializer location_des{"an artifacts git repository URL"};
+            r.required_object_field("an artifacts registry", obj, LOCATION, location, location_des);
+
+            res = std::make_unique<ArtifactRegistry>(std::move(name), std::move(location));
         }
         else
         {
-            StringLiteral valid_kinds[] = {KIND_BUILTIN, KIND_FILESYSTEM, KIND_GIT};
+            StringLiteral valid_kinds[] = {KIND_BUILTIN, KIND_FILESYSTEM, KIND_GIT, KIND_ARTIFACT};
             r.add_generic_error(type_name(),
                                 "Field \"kind\" did not have an expected value (expected one of: \"",
                                 Strings::join("\", \"", valid_kinds),
-                                "\", found \"",
+                                "\"; found \"",
                                 kind,
-                                "\").");
+                                "\")");
             return nullopt;
         }
 
@@ -865,6 +987,9 @@ namespace
             RegistryImplDeserializer::BASELINE,
             RegistryImplDeserializer::PATH,
             RegistryImplDeserializer::REPO,
+            RegistryImplDeserializer::REFERENCE,
+            RegistryImplDeserializer::NAME,
+            RegistryImplDeserializer::LOCATION,
             PACKAGES,
         };
         return t;
@@ -883,7 +1008,10 @@ namespace
             "an array of package names"};
 
         std::vector<std::string> packages;
-        r.required_object_field(type_name(), obj, PACKAGES, packages, package_names_deserializer);
+        if (impl.get()->get()->kind() != RegistryImplDeserializer::KIND_ARTIFACT)
+        {
+            r.required_object_field(type_name(), obj, PACKAGES, packages, package_names_deserializer);
+        }
 
         return Registry{std::move(packages), std::move(impl).value_or_exit(VCPKG_LINE_INFO)};
     }
@@ -1012,6 +1140,49 @@ namespace
     }
 }
 
+// serializers
+
+Json::Object RegistryImplementation::serialize() const
+{
+    Json::Object obj;
+    obj.insert(RegistryImplDeserializer::KIND, Json::Value::string(kind()));
+    return obj;
+}
+
+Json::Object BuiltinRegistry::serialize() const
+{
+    Json::Object obj{RegistryImplementation::serialize()};
+    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
+    return obj;
+}
+
+Json::Object GitRegistry::serialize() const
+{
+    Json::Object obj{RegistryImplementation::serialize()};
+    obj.insert(RegistryImplDeserializer::REPO, Json::Value::string(m_repo));
+    obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
+    return obj;
+}
+
+Json::Object FilesystemRegistry::serialize() const
+{
+    Json::Object obj{RegistryImplementation::serialize()};
+    obj.insert(RegistryImplDeserializer::PATH, Json::Value::string(m_path.generic_u8string()));
+    if (!m_baseline_identifier.empty())
+    {
+        obj.insert(RegistryImplDeserializer::BASELINE, Json::Value::string(m_baseline_identifier));
+    }
+    return obj;
+}
+
+Json::Object ArtifactRegistry::serialize() const
+{
+    Json::Object obj{RegistryImplementation::serialize()};
+    obj.insert(RegistryImplDeserializer::NAME, Json::Value::string(m_name));
+    obj.insert(RegistryImplDeserializer::LOCATION, Json::Value::string(m_location));
+    return obj;
+}
+
 namespace vcpkg
 {
     constexpr StringLiteral VersionDbEntryDeserializer::GIT_TREE;
@@ -1129,25 +1300,34 @@ namespace vcpkg
         return r.array_elements(arr, underlying);
     }
 
-    LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView key)
+    LockFile::Entry LockFile::get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference)
     {
-        auto it = lockdata.find(key);
-        if (it == lockdata.end())
+        auto range = lockdata.equal_range(repo);
+        auto it = std::find_if(range.first, range.second, [&reference](const LockDataType::value_type& repo2entry) {
+            return repo2entry.second.reference == reference;
+        });
+
+        if (it == range.second)
         {
-            print2("Fetching registry information from ", key, "...\n");
-            auto x = paths.git_fetch_from_remote_registry(key, "HEAD");
-            it = lockdata.emplace(key.to_string(), EntryData{x.value_or_exit(VCPKG_LINE_INFO), false}).first;
+            print2("Fetching registry information from ", repo, " (", reference, ")...\n");
+            auto x = paths.git_fetch_from_remote_registry(repo, reference);
+            it = lockdata.emplace(repo.to_string(),
+                                  EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
             modified = true;
         }
+
         return {this, it};
     }
     void LockFile::Entry::ensure_up_to_date(const VcpkgPaths& paths) const
     {
         if (data->second.stale)
         {
-            print2("Fetching registry information from ", data->first, "...\n");
-            data->second.value =
-                paths.git_fetch_from_remote_registry(data->first, "HEAD").value_or_exit(VCPKG_LINE_INFO);
+            StringView repo(data->first);
+            StringView reference(data->second.reference);
+            print2("Fetching registry information from ", repo, " (", reference, ")...\n");
+
+            data->second.commit_id =
+                paths.git_fetch_from_remote_registry(repo, reference).value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
             lockfile->modified = true;
         }

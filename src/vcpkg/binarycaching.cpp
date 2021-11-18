@@ -352,7 +352,7 @@ namespace
             auto& spec = action.spec;
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
-            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees, spec);
+            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
             size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
@@ -481,7 +481,7 @@ namespace
 
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
                     url_paths.emplace_back(Strings::replace_all(url_template, "<SHA>", *abi.get()),
-                                           make_temp_archive_path(paths.buildtrees, action.spec));
+                                           make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
 
@@ -715,7 +715,7 @@ namespace
 
             print2("Attempting to fetch ", attempts.size(), " packages from nuget.\n");
 
-            auto packages_config = paths.buildtrees / "packages.config";
+            auto packages_config = paths.buildtrees() / "packages.config";
             const auto& nuget_exe = paths.get_tool_exe("nuget");
             std::vector<Command> cmdlines;
 
@@ -730,7 +730,7 @@ namespace
                     .string_arg("install")
                     .path_arg(packages_config)
                     .string_arg("-OutputDirectory")
-                    .path_arg(paths.packages)
+                    .path_arg(paths.packages())
                     .string_arg("-Source")
                     .string_arg(Strings::join(";", m_read_sources))
                     .string_arg("-ExcludeVersion")
@@ -763,7 +763,7 @@ namespace
                     .string_arg("install")
                     .path_arg(packages_config)
                     .string_arg("-OutputDirectory")
-                    .path_arg(paths.packages)
+                    .path_arg(paths.packages())
                     .string_arg("-ConfigFile")
                     .path_arg(cfg)
                     .string_arg("-ExcludeVersion")
@@ -798,7 +798,8 @@ namespace
                 Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
                     // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the
                     // output directory
-                    const auto nupkg_path = paths.packages / nuget_ref.reference.id / nuget_ref.reference.id + ".nupkg";
+                    const auto nupkg_path =
+                        paths.packages() / nuget_ref.reference.id / nuget_ref.reference.id + ".nupkg";
                     if (fs.exists(nupkg_path, IgnoreErrors{}))
                     {
                         fs.remove(nupkg_path, VCPKG_LINE_INFO);
@@ -809,8 +810,8 @@ namespace
                         const auto nuget_dir = nuget_ref.spec.dir();
                         if (nuget_dir != nuget_ref.reference.id)
                         {
-                            const auto path_from = paths.packages / nuget_ref.reference.id;
-                            const auto path_to = paths.packages / nuget_dir;
+                            const auto path_from = paths.packages() / nuget_ref.reference.id;
+                            const auto path_to = paths.packages() / nuget_dir;
                             fs.rename(path_from, path_to, VCPKG_LINE_INFO);
                         }
                         cache_status[nuget_ref.result_index]->mark_restored();
@@ -843,7 +844,7 @@ namespace
             auto& spec = action.spec;
 
             NugetReference nuget_ref = make_nugetref(action, get_nuget_prefix());
-            auto nuspec_path = paths.buildtrees / spec.name() / (spec.triplet().to_string() + ".nuspec");
+            auto nuspec_path = paths.buildtrees() / spec.name() / (spec.triplet().to_string() + ".nuspec");
             paths.get_filesystem().write_contents(
                 nuspec_path, generate_nuspec(paths, action, nuget_ref), VCPKG_LINE_INFO);
 
@@ -856,7 +857,7 @@ namespace
                 .string_arg("pack")
                 .path_arg(nuspec_path)
                 .string_arg("-OutputDirectory")
-                .path_arg(paths.buildtrees)
+                .path_arg(paths.buildtrees())
                 .string_arg("-NoDefaultExcludes")
                 .string_arg("-ForceEnglishOutput");
 
@@ -871,7 +872,7 @@ namespace
                 return;
             }
 
-            auto nupkg_path = paths.buildtrees / nuget_ref.nupkg_filename();
+            auto nupkg_path = paths.buildtrees() / nuget_ref.nupkg_filename();
             for (auto&& write_src : m_write_sources)
             {
                 Command cmd;
@@ -1017,7 +1018,7 @@ namespace
 
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
                     url_paths.emplace_back(make_gcs_path(prefix, *abi),
-                                           make_temp_archive_path(paths.buildtrees, action.spec));
+                                           make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
 
@@ -1070,7 +1071,7 @@ namespace
             if (m_write_prefixes.empty()) return;
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
-            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees, spec);
+            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
 
             size_t upload_count = 0;

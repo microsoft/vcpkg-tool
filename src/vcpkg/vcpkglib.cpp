@@ -39,14 +39,14 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
 
-        const auto updates_dir = paths.vcpkg_dir_updates;
+        const auto updates_dir = paths.vcpkg_dir_updates();
 
-        fs.create_directory(paths.installed, VCPKG_LINE_INFO);
-        fs.create_directory(paths.vcpkg_dir, VCPKG_LINE_INFO);
-        fs.create_directory(paths.vcpkg_dir_info, VCPKG_LINE_INFO);
+        fs.create_directories(paths.installed(), VCPKG_LINE_INFO);
+        fs.create_directory(paths.vcpkg_dir(), VCPKG_LINE_INFO);
+        fs.create_directory(paths.vcpkg_dir_info(), VCPKG_LINE_INFO);
         fs.create_directory(updates_dir, VCPKG_LINE_INFO);
 
-        const Path& status_file = paths.vcpkg_dir_status_file;
+        const Path& status_file = paths.vcpkg_dir_status_file();
         const auto status_parent = Path(status_file.parent_path());
         const auto status_file_old = status_parent / "status-old";
         const auto status_file_new = status_parent / "status-new";
@@ -89,8 +89,8 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
 
         const auto my_update_id = update_id++;
-        const auto tmp_update_filename = paths.vcpkg_dir_updates / "incomplete";
-        const auto update_filename = paths.vcpkg_dir_updates / Strings::format("%010d", my_update_id);
+        const auto tmp_update_filename = paths.vcpkg_dir_updates() / "incomplete";
+        const auto update_filename = paths.vcpkg_dir_updates() / Strings::format("%010d", my_update_id);
 
         fs.write_contents(tmp_update_filename, Strings::serialize(p), VCPKG_LINE_INFO);
         fs.rename(tmp_update_filename, update_filename, VCPKG_LINE_INFO);

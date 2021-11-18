@@ -4,6 +4,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -25,12 +26,11 @@
 namespace
 {
     using namespace vcpkg;
-    Path process_input_directory_impl(
+    static Path process_input_directory_impl(
         Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
     {
         if (option)
         {
-            // input directories must exist, so we use canonical
             return filesystem.almost_canonical(*option, li);
         }
         else
@@ -39,7 +39,7 @@ namespace
         }
     }
 
-    Path process_input_directory(
+    static Path process_input_directory(
         Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
     {
         auto result = process_input_directory_impl(filesystem, root, option, name, li);
@@ -47,31 +47,10 @@ namespace
         return result;
     }
 
-    Path process_output_directory_impl(
-        Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
+    static Path process_output_directory(Filesystem& fs, const std::string* option, const Path& default_path)
     {
-        if (option)
-        {
-            // output directories might not exist, so we use merely absolute
-            return filesystem.absolute(*option, li);
-        }
-        else
-        {
-            return root / name;
-        }
+        return fs.almost_canonical(option ? Path(*option) : default_path, VCPKG_LINE_INFO);
     }
-
-    Path process_output_directory(
-        Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
-    {
-        auto result = process_output_directory_impl(filesystem, root, option, name, li);
-#if defined(_WIN32)
-        result = vcpkg::win32_fix_path_case(result);
-#endif // _WIN32
-        Debug::print("Using ", name, "-root: ", result, '\n');
-        return result;
-    }
-
 } // unnamed namespace
 
 namespace vcpkg
@@ -145,7 +124,8 @@ namespace vcpkg
     static ConfigAndPath load_configuration(const Filesystem& fs,
                                             const VcpkgCmdArguments& args,
                                             const Path& vcpkg_root,
-                                            const Path& manifest_dir)
+                                            const Path& manifest_dir,
+                                            const Optional<Json::Object>& configuration_from_manifest)
     {
         Path config_dir;
         if (manifest_dir.empty())
@@ -162,7 +142,27 @@ namespace vcpkg
         auto path_to_config = config_dir / "vcpkg-configuration.json";
         if (!fs.exists(path_to_config, IgnoreErrors{}))
         {
-            return {};
+            if (!configuration_from_manifest.has_value())
+            {
+                return {};
+            }
+
+            return {std::move(config_dir),
+                    deserialize_configuration(
+                        configuration_from_manifest.value_or_exit(VCPKG_LINE_INFO), args, manifest_dir / "vcpkg.json")};
+        }
+
+        if (configuration_from_manifest.has_value())
+        {
+            print2(Color::error,
+                   "Ambiguous vcpkg configuration provided by both manifest and configuration file.\n"
+                   "-- Delete configuration file \"",
+                   path_to_config,
+                   "\"\n"
+                   "-- Or remove \"vcpkg-configuration\" from the manifest file \"",
+                   manifest_dir / "vcpkg.json",
+                   "\".");
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         auto parsed_config = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_config);
@@ -231,9 +231,11 @@ namespace vcpkg
 
         struct VcpkgPathsImpl
         {
-            VcpkgPathsImpl(Filesystem& fs, FeatureFlagSettings ff_settings)
+            VcpkgPathsImpl(Filesystem& fs,
+                           FeatureFlagSettings ff_settings,
+                           ToolCache::RequireExactVersions abiToolsHandling)
                 : fs_ptr(&fs)
-                , m_tool_cache(get_tool_cache())
+                , m_tool_cache(get_tool_cache(abiToolsHandling))
                 , m_env_cache(ff_settings.compiler_tracking)
                 , m_ff_settings(ff_settings)
             {
@@ -267,18 +269,94 @@ namespace vcpkg
 
             FeatureFlagSettings m_ff_settings;
 
+            Optional<Path> installed;
+            Optional<Path> buildtrees;
+            Optional<Path> packages;
+
             Path registries_work_tree_dir;
             Path registries_dot_git_dir;
             Path registries_git_trees;
+
+            bool m_readonly = false;
+            bool m_usegitregistry = false;
 
             Optional<LockFile> m_installed_lock;
         };
     }
 
-    static Path lockfile_path(const VcpkgPaths& p) { return p.vcpkg_dir / "vcpkg-lock.json"; }
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgDisallowedClassicMode,
+                                 (),
+                                 "",
+                                 "Error: Could not locate a manifest (vcpkg.json) above the current working "
+                                 "directory.\nThis vcpkg distribution does not have a classic mode instance.");
+
+    const Path& VcpkgPaths::installed() const
+    {
+        if (auto i = m_pimpl->installed.get())
+        {
+            return *i;
+        }
+        msg::println(Color::error, msgVcpkgDisallowedClassicMode);
+        Checks::exit_fail(VCPKG_LINE_INFO);
+    }
+
+    const Path& VcpkgPaths::buildtrees() const
+    {
+        if (auto i = m_pimpl->buildtrees.get())
+        {
+            return *i;
+        }
+        msg::println(Color::error, msgVcpkgDisallowedClassicMode);
+        Checks::exit_fail(VCPKG_LINE_INFO);
+    }
+
+    const Path& VcpkgPaths::packages() const
+    {
+        if (auto i = m_pimpl->packages.get())
+        {
+            return *i;
+        }
+        msg::println(Color::error, msgVcpkgDisallowedClassicMode);
+        Checks::exit_fail(VCPKG_LINE_INFO);
+    }
+
+    const Optional<Path>& VcpkgPaths::maybe_installed() const { return m_pimpl->installed; }
+    const Optional<Path>& VcpkgPaths::maybe_buildtrees() const { return m_pimpl->buildtrees; }
+    const Optional<Path>& VcpkgPaths::maybe_packages() const { return m_pimpl->packages; }
+
+    Optional<Path> VcpkgPaths::maybe_get_tmp_path(const std::string* arg_path,
+                                                  StringLiteral root_subpath,
+                                                  StringLiteral readonly_subpath,
+                                                  LineInfo li) const
+    {
+        if (arg_path)
+        {
+            return get_filesystem().almost_canonical(*arg_path, li);
+        }
+        else if (m_pimpl->m_readonly)
+        {
+            if (m_pimpl->installed)
+            {
+                return get_filesystem().almost_canonical(vcpkg_dir() / readonly_subpath, li);
+            }
+            else
+            {
+                return nullopt;
+            }
+        }
+        else
+        {
+            return get_filesystem().almost_canonical(root / root_subpath, li);
+        }
+    }
+
+    static Path lockfile_path(const VcpkgPaths& p) { return p.vcpkg_dir() / "vcpkg-lock.json"; }
 
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
-        : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(filesystem, args.feature_flag_settings()))
+        : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(
+              filesystem,
+              args.feature_flag_settings(),
+              Util::Enum::to_enum<ToolCache::RequireExactVersions>(args.exact_abi_tools_versions.value_or(false))))
     {
         original_cwd = filesystem.current_path(VCPKG_LINE_INFO);
 #if defined(_WIN32)
@@ -303,6 +381,33 @@ namespace vcpkg
 
         Checks::check_exit(VCPKG_LINE_INFO, !root.empty(), "Error: Could not detect vcpkg-root.");
         Debug::print("Using vcpkg-root: ", root, '\n');
+        const auto vcpkg_root_file = root / ".vcpkg-root";
+        auto bundle_file = filesystem.read_contents(vcpkg_root_file, VCPKG_LINE_INFO);
+        if (!std::all_of(bundle_file.begin(), bundle_file.end(), Parse::ParserBase::is_whitespace))
+        {
+            auto maybe_bundle_doc = Json::parse(bundle_file, vcpkg_root_file.native());
+            if (auto bundle_doc = maybe_bundle_doc.get())
+            {
+                if (auto v = bundle_doc->first.object().get("readonly"))
+                {
+                    m_pimpl->m_readonly = v->boolean();
+                }
+                if (auto v = bundle_doc->first.object().get("usegitregistry"))
+                {
+                    m_pimpl->m_usegitregistry = v->boolean();
+                }
+                Debug::print("Bundle config: readonly=",
+                             m_pimpl->m_readonly,
+                             ", usegitregistry=",
+                             m_pimpl->m_usegitregistry,
+                             "\n");
+            }
+            else
+            {
+                print2(Color::error, "Error: Invalid bundle definition.\n", maybe_bundle_doc.error()->format());
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
 
         std::error_code ec;
         if (args.manifests_enabled())
@@ -319,24 +424,26 @@ namespace vcpkg
 
         if (manifest_root_dir.empty())
         {
-            installed =
-                process_output_directory(filesystem, root, args.install_root_dir.get(), "installed", VCPKG_LINE_INFO);
+            if (!m_pimpl->m_readonly)
+            {
+                m_pimpl->installed =
+                    process_output_directory(filesystem, args.install_root_dir.get(), root / "installed");
+            }
         }
         else
         {
             Debug::print("Using manifest-root: ", manifest_root_dir, '\n');
 
-            installed = process_output_directory(
-                filesystem, manifest_root_dir, args.install_root_dir.get(), "vcpkg_installed", VCPKG_LINE_INFO);
+            m_pimpl->installed = process_output_directory(
+                filesystem, args.install_root_dir.get(), manifest_root_dir / "vcpkg_installed");
 
-            const auto vcpkg_lock = root / ".vcpkg-root";
             if (args.wait_for_lock.value_or(false))
             {
-                m_pimpl->file_lock_handle = filesystem.take_exclusive_file_lock(vcpkg_lock, ec);
+                m_pimpl->file_lock_handle = filesystem.take_exclusive_file_lock(vcpkg_root_file, ec);
             }
             else
             {
-                m_pimpl->file_lock_handle = filesystem.try_take_exclusive_file_lock(vcpkg_lock, ec);
+                m_pimpl->file_lock_handle = filesystem.try_take_exclusive_file_lock(vcpkg_root_file, ec);
             }
 
             if (ec)
@@ -345,7 +452,7 @@ namespace vcpkg
                 bool allow_errors = args.ignore_lock_failures.value_or(false);
                 if (is_already_locked || !allow_errors)
                 {
-                    vcpkg::printf(Color::error, "Failed to take the filesystem lock on %s:\n", vcpkg_lock);
+                    vcpkg::printf(Color::error, "Failed to take the filesystem lock on %s:\n", vcpkg_root_file);
                     vcpkg::printf(Color::error, "    %s\n", ec.message());
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
@@ -355,7 +462,54 @@ namespace vcpkg
             m_pimpl->m_manifest_path = manifest_root_dir / "vcpkg.json";
         }
 
-        auto config_file = load_configuration(filesystem, args, root, manifest_root_dir);
+        vcpkg::Optional<Json::Object> configuration_from_manifest;
+        if (auto manifest = m_pimpl->m_manifest_doc.get())
+        {
+            auto manifest_obj = manifest->first;
+            if (auto config_obj = manifest_obj.get("vcpkg-configuration"))
+            {
+                print2(Color::warning,
+                       "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.\n"
+                       "Loading configuration from: ",
+                       m_pimpl->m_manifest_path,
+                       "\n");
+
+                if (!config_obj->is_object())
+                {
+                    print2(Color::error,
+                           "Failed to parse ",
+                           m_pimpl->m_manifest_path,
+                           ": vcpkg-configuration must be an object\n");
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+
+                configuration_from_manifest = make_optional(config_obj->object());
+            }
+        }
+        auto config_file = load_configuration(filesystem, args, root, manifest_root_dir, configuration_from_manifest);
+        if (auto manifest = m_pimpl->m_manifest_doc.get())
+        {
+            if (auto p_baseline = manifest->first.get("builtin-baseline"))
+            {
+                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_baseline", "defined");
+                if (!p_baseline->is_string() || !is_git_commit_sha(p_baseline->string()))
+                {
+                    std::string baseline_in_error;
+                    if (p_baseline->is_string())
+                    {
+                        baseline_in_error = Strings::concat(" (", p_baseline->string(), ')');
+                    }
+                    LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
+                    Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                               "Error: the top-level builtin-baseline%s was not a valid commit sha: "
+                                               "expected 40 lowercase hexadecimal characters.\n%s\n",
+                                               baseline_in_error,
+                                               get_current_git_sha_baseline_message());
+                }
+
+                config_file.config.registry_set.set_default_builtin_registry_baseline(p_baseline->string());
+            }
+        }
 
         // metrics from configuration
         {
@@ -386,20 +540,39 @@ namespace vcpkg
         config_root_dir = std::move(config_file.config_directory);
         m_pimpl->m_config = std::move(config_file.config);
 
-        buildtrees =
-            process_output_directory(filesystem, root, args.buildtrees_root_dir.get(), "buildtrees", VCPKG_LINE_INFO);
-        downloads =
-            process_output_directory(filesystem, root, args.downloads_root_dir.get(), "downloads", VCPKG_LINE_INFO);
+        m_pimpl->buildtrees = maybe_get_tmp_path(args.buildtrees_root_dir.get(), "buildtrees", "blds", VCPKG_LINE_INFO);
+        m_pimpl->packages = maybe_get_tmp_path(args.packages_root_dir.get(), "packages", "pkgs", VCPKG_LINE_INFO);
+
+        if (args.downloads_root_dir)
+        {
+            downloads = *args.downloads_root_dir;
+        }
+        else if (m_pimpl->m_readonly)
+        {
+            downloads = get_platform_cache_home().value_or_exit(VCPKG_LINE_INFO) / "vcpkg" / "downloads";
+        }
+        else
+        {
+            downloads = root / "downloads";
+        }
+        downloads = filesystem.almost_canonical(downloads, VCPKG_LINE_INFO);
+
+        builtin_ports = process_output_directory(filesystem, args.builtin_ports_root_dir.get(), root / "ports");
+        builtin_registry_versions =
+            process_output_directory(filesystem, args.builtin_registry_versions_dir.get(), root / "versions");
+
         m_pimpl->m_download_manager = Downloads::DownloadManager{
             parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
-        packages =
-            process_output_directory(filesystem, root, args.packages_root_dir.get(), "packages", VCPKG_LINE_INFO);
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);
-        builtin_ports =
-            process_output_directory(filesystem, root, args.builtin_ports_root_dir.get(), "ports", VCPKG_LINE_INFO);
-        builtin_registry_versions = process_output_directory(
-            filesystem, root, args.builtin_registry_versions_dir.get(), "versions", VCPKG_LINE_INFO);
         prefab = root / "prefab";
+
+        Debug::print("Using downloads-root: ", downloads, '\n');
+        Debug::print("Using scripts-root: ", scripts, '\n');
+        Debug::print("Using builtin-ports: ", builtin_ports, '\n');
+        Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
+        Debug::print("Using installed-root: ", m_pimpl->installed.value_or("nullopt"), '\n');
+        Debug::print("Using packages-root: ", m_pimpl->packages.value_or("nullopt"), '\n');
+        Debug::print("Using buildtrees-root: ", m_pimpl->buildtrees.value_or("nullopt"), '\n');
 
         if (args.default_visual_studio_path)
         {
@@ -415,22 +588,6 @@ namespace vcpkg
         buildsystems_msbuild_targets = msbuildDirectory / "vcpkg.targets";
         buildsystems_msbuild_props = msbuildDirectory / "vcpkg.props";
 
-        vcpkg_dir = installed / "vcpkg";
-        vcpkg_dir_status_file = vcpkg_dir / "status";
-        vcpkg_dir_info = vcpkg_dir / "info";
-        vcpkg_dir_updates = vcpkg_dir / "updates";
-
-        const auto versioning_tmp = buildtrees / "versioning_tmp";
-        const auto versioning_output = buildtrees / "versioning";
-
-        baselines_dot_git_dir = versioning_tmp / ".baselines.git";
-        baselines_work_tree = versioning_tmp / "baselines-worktree";
-        baselines_output = versioning_output / "baselines";
-
-        versions_dot_git_dir = versioning_tmp / ".versions.git";
-        versions_work_tree = versioning_tmp / "versions-worktree";
-        versions_output = versioning_output / "versions";
-
         ports_cmake = filesystem.almost_canonical(scripts / "ports.cmake", VCPKG_LINE_INFO);
 
         for (auto&& overlay_triplets_dir : args.overlay_triplets)
@@ -441,18 +598,26 @@ namespace vcpkg
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
     }
 
-    Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages / spec.dir(); }
-    Path VcpkgPaths::build_dir(const PackageSpec& spec) const { return this->buildtrees / spec.name(); }
-    Path VcpkgPaths::build_dir(const std::string& package_name) const { return this->buildtrees / package_name; }
+    Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
+    Path VcpkgPaths::build_dir(const PackageSpec& spec) const { return this->buildtrees() / spec.name(); }
+    Path VcpkgPaths::build_dir(const std::string& package_name) const { return this->buildtrees() / package_name; }
 
     Path VcpkgPaths::build_info_file_path(const PackageSpec& spec) const
     {
         return this->package_dir(spec) / "BUILD_INFO";
     }
 
+    Path VcpkgPaths::vcpkg_dir() const { return installed() / "vcpkg"; }
+    Path VcpkgPaths::vcpkg_dir_status_file() const { return vcpkg_dir() / "status"; }
+    Path VcpkgPaths::vcpkg_dir_info() const { return vcpkg_dir() / "info"; }
+    Path VcpkgPaths::vcpkg_dir_updates() const { return vcpkg_dir() / "updates"; }
+
+    Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
+    Path VcpkgPaths::versions_output() const { return buildtrees() / "versioning_" / "versions"; }
+
     Path VcpkgPaths::listfile_path(const BinaryParagraph& pgh) const
     {
-        return this->vcpkg_dir_info / (pgh.fullstem() + ".list");
+        return this->vcpkg_dir_info() / (pgh.fullstem() + ".list");
     }
 
     bool VcpkgPaths::is_valid_triplet(Triplet t) const
@@ -508,6 +673,63 @@ namespace vcpkg
         });
     }
 
+    static LockFile::LockDataType lockdata_from_json_object(const Json::Object& obj)
+    {
+        LockFile::LockDataType ret;
+        for (auto&& repo_to_ref_info_value : obj)
+        {
+            auto repo = repo_to_ref_info_value.first;
+            const auto& ref_info_value = repo_to_ref_info_value.second;
+
+            if (!ref_info_value.is_object())
+            {
+                Debug::print("Lockfile value for key '", repo, "' was not an object\n");
+                return ret;
+            }
+
+            for (auto&& reference_to_commit : ref_info_value.object())
+            {
+                auto reference = reference_to_commit.first;
+                const auto& commit = reference_to_commit.second;
+
+                if (!commit.is_string())
+                {
+                    Debug::print("Lockfile value for key '", reference, "' was not a string\n");
+                    return ret;
+                }
+                auto sv = commit.string();
+                if (!is_git_commit_sha(sv))
+                {
+                    Debug::print("Lockfile value for key '", reference, "' was not a git commit sha\n");
+                    return ret;
+                }
+                ret.emplace(repo.to_string(), LockFile::EntryData{reference.to_string(), sv.to_string(), true});
+            }
+        }
+        return ret;
+    }
+
+    static Json::Object lockdata_to_json_object(const LockFile::LockDataType& lockdata)
+    {
+        Json::Object obj;
+        for (auto it = lockdata.begin(); it != lockdata.end();)
+        {
+            const auto& repo = it->first;
+            auto repo_info_range = lockdata.equal_range(repo);
+
+            Json::Object repo_info;
+            for (auto repo_it = repo_info_range.first; repo_it != repo_info_range.second; ++repo_it)
+            {
+                repo_info.insert(repo_it->second.reference, Json::Value::string(repo_it->second.commit_id));
+            }
+            repo_info.sort_keys();
+            obj.insert(repo, std::move(repo_info));
+            it = repo_info_range.second;
+        }
+
+        return obj;
+    }
+
     static LockFile load_lockfile(const Filesystem& fs, const Path& p)
     {
         LockFile ret;
@@ -521,26 +743,14 @@ namespace vcpkg
         else if (auto lock_contents = maybe_lock_contents.get())
         {
             auto& doc = lock_contents->first;
-            if (doc.is_object())
+            if (!doc.is_object())
             {
-                for (auto&& x : doc.object())
-                {
-                    if (!x.second.is_string())
-                    {
-                        Debug::print("Lockfile value for key '", x.first, "' was not a string\n");
-                        return ret;
-                    }
-                    auto sv = x.second.string();
-                    if (!is_git_commit_sha(sv))
-                    {
-                        Debug::print("Lockfile value for key '", x.first, "' was not a git commit sha\n");
-                        return ret;
-                    }
-                    ret.lockdata.emplace(x.first.to_string(), LockFile::EntryData{sv.to_string(), true});
-                }
+                Debug::print("Lockfile was not an object\n");
                 return ret;
             }
-            Debug::print("Lockfile was not an object\n");
+
+            ret.lockdata = lockdata_from_json_object(doc.object());
+
             return ret;
         }
         else
@@ -558,6 +768,7 @@ namespace vcpkg
         }
         return *m_pimpl->m_installed_lock.get();
     }
+
     void VcpkgPaths::flush_lockfile() const
     {
         // If the lock file was not loaded, no need to flush it.
@@ -565,11 +776,9 @@ namespace vcpkg
         // lockfile was not modified, no need to write anything to disk.
         const auto& lockfile = *m_pimpl->m_installed_lock.get();
         if (!lockfile.modified) return;
-        Json::Object obj;
-        for (auto&& data : lockfile.lockdata)
-        {
-            obj.insert(data.first, Json::Value::string(data.second.value));
-        }
+
+        auto obj = lockdata_to_json_object(lockfile.lockdata);
+
         get_filesystem().write_rename_contents(
             lockfile_path(*this), "vcpkg-lock.json.tmp", Json::stringify(obj, {}), VCPKG_LINE_INFO);
     }
@@ -661,6 +870,25 @@ namespace vcpkg
         }
     }
 
+    ExpectedS<std::string> VcpkgPaths::git_describe_head() const
+    {
+        // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
+        const auto dot_git_dir = root / ".git";
+        Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir)
+                              .string_arg("show")
+                              .string_arg("--pretty=format:%h %cd (%cr)")
+                              .string_arg("-s")
+                              .string_arg("--date=short")
+                              .string_arg("HEAD");
+
+        auto output = cmd_execute_and_capture_output(showcmd);
+        if (output.exit_code == 0)
+        {
+            return {std::move(output.output), expected_left_tag};
+        }
+        return {std::move(output.output), expected_right_tag};
+    }
+
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
         const auto local_repo = this->root / ".git";
@@ -703,7 +931,7 @@ namespace vcpkg
     ExpectedS<Path> VcpkgPaths::git_checkout_baseline(StringView commit_sha) const
     {
         Filesystem& fs = get_filesystem();
-        const auto destination_parent = this->baselines_output / commit_sha;
+        const auto destination_parent = this->baselines_output() / commit_sha;
         auto destination = destination_parent / "baseline.json";
 
         if (!fs.exists(destination, IgnoreErrors{}))
@@ -767,14 +995,14 @@ namespace vcpkg
          * Because of that, it makes sense to use the git hash as the name for the directory.
          */
         Filesystem& fs = get_filesystem();
-        auto destination = this->versions_output / port_name / git_tree;
+        auto destination = this->versions_output() / port_name / git_tree;
         if (fs.exists(destination, IgnoreErrors{}))
         {
             return destination;
         }
 
-        const auto destination_tmp = this->versions_output / port_name / Strings::concat(git_tree, ".tmp");
-        const auto destination_tar = this->versions_output / port_name / Strings::concat(git_tree, ".tar");
+        const auto destination_tmp = this->versions_output() / port_name / Strings::concat(git_tree, ".tmp");
+        const auto destination_tar = this->versions_output() / port_name / Strings::concat(git_tree, ".tar");
 #define PRELUDE "Error: while checking out port ", port_name, " with git tree ", git_tree, "\n"
         std::error_code ec;
         Path failure_point;
@@ -1057,45 +1285,46 @@ namespace vcpkg
 
         std::vector<const Toolset*> candidates = Util::fmap(vs_toolsets, [](auto&& x) { return &x; });
         const auto tsv = prebuildinfo.platform_toolset.get();
+        const auto tsvf = prebuildinfo.platform_toolset_version.get();
         auto vsp = prebuildinfo.visual_studio_path.get();
         if (!vsp && !m_pimpl->default_vs_path.empty())
         {
             vsp = &m_pimpl->default_vs_path;
         }
 
-        if (tsv && vsp)
-        {
-            Util::erase_remove_if(
-                candidates, [&](const Toolset* t) { return *tsv != t->version || *vsp != t->visual_studio_root_path; });
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               !candidates.empty(),
-                               "Could not find Visual Studio instance at %s with %s toolset.",
-                               *vsp,
-                               *tsv);
+        std::string error_message = "Could not find any Visual Studio instance";
 
-            Checks::check_exit(VCPKG_LINE_INFO, candidates.size() == 1);
-            return *candidates.back();
+        if (vsp)
+        {
+            Util::erase_remove_if(candidates, [&](const Toolset* t) { return *vsp != t->visual_studio_root_path; });
+            error_message += " at " + (*vsp).native();
         }
 
         if (tsv)
         {
             Util::erase_remove_if(candidates, [&](const Toolset* t) { return *tsv != t->version; });
-            Checks::check_exit(
-                VCPKG_LINE_INFO, !candidates.empty(), "Could not find Visual Studio instance with %s toolset.", *tsv);
+            error_message += " with " + *tsv + " toolset";
         }
 
-        if (vsp)
+        if (tsvf)
         {
-            const auto vs_root_path = *vsp;
-            Util::erase_remove_if(candidates,
-                                  [&](const Toolset* t) { return vs_root_path != t->visual_studio_root_path; });
-            Checks::check_exit(
-                VCPKG_LINE_INFO, !candidates.empty(), "Could not find Visual Studio instance at %s.", vs_root_path);
+            Util::erase_remove_if(candidates, [&](const Toolset* t) {
+                const auto requested_version = *tsvf;
+                if (requested_version == t->full_version)
+                {
+                    return false;
+                }
+                // Check if requested version is part of the full version, ie "14.25" should match "14.25.28610"
+                return !(requested_version.size() < t->full_version.size() &&
+                         t->full_version[requested_version.size()] == '.' &&
+                         t->full_version.substr(0, tsvf->size()) == requested_version);
+            });
+            error_message += " for toolset version " + *tsvf;
         }
 
-        Checks::check_exit(VCPKG_LINE_INFO, !candidates.empty(), "No suitable Visual Studio instances were found");
-        return *candidates.front();
+        Checks::check_exit(VCPKG_LINE_INFO, !candidates.empty(), error_message + ".");
 
+        return *candidates.front();
 #endif
     }
 
@@ -1125,6 +1354,8 @@ namespace vcpkg
     }
 
     Filesystem& VcpkgPaths::get_filesystem() const { return *m_pimpl->fs_ptr; }
+
+    bool VcpkgPaths::use_git_default_registry() const { return m_pimpl->m_usegitregistry; }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }
 

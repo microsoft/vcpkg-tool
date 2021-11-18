@@ -32,9 +32,9 @@ namespace vcpkg::Commands::CIClean
         using vcpkg::print2;
         auto& fs = paths.get_filesystem();
         print2("Starting vcpkg CI clean\n");
-        clear_directory(fs, paths.buildtrees);
-        clear_directory(fs, paths.installed);
-        clear_directory(fs, paths.packages);
+        clear_directory(fs, paths.buildtrees());
+        clear_directory(fs, paths.installed());
+        clear_directory(fs, paths.packages());
         print2("Completed vcpkg CI clean\n");
         Checks::exit_success(VCPKG_LINE_INFO);
     }
