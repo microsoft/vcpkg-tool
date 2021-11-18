@@ -571,7 +571,8 @@ namespace vcpkg
 
     Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }
 
-    static std::unique_ptr<RegistryImplementation> instantiate_rconfig(const RegistryConfig& config)
+    static std::unique_ptr<RegistryImplementation> instantiate_rconfig(const RegistryConfig& config,
+                                                                       const Path& config_dir)
     {
         if (auto k = config.kind.get())
         {
@@ -592,8 +593,8 @@ namespace vcpkg
             }
             else if (*k == RegistryConfigDeserializer::KIND_FILESYSTEM)
             {
-                return make_filesystem_registry(config.path.value_or_exit(VCPKG_LINE_INFO),
-                                                config.baseline.value_or_exit(VCPKG_LINE_INFO));
+                return make_filesystem_registry(config_dir / config.path.value_or_exit(VCPKG_LINE_INFO),
+                                                config.baseline.value_or(""));
             }
             else
             {
@@ -606,14 +607,14 @@ namespace vcpkg
         }
     }
 
-    std::unique_ptr<RegistrySet> Configuration::instantiate_registry_set() const
+    std::unique_ptr<RegistrySet> Configuration::instantiate_registry_set(const Path& config_dir) const
     {
-        auto r_impls = Util::fmap(registries, [](const RegistryConfig& rc) {
-            auto impl = instantiate_rconfig(rc);
+        auto r_impls = Util::fmap(registries, [&config_dir](const RegistryConfig& rc) {
+            auto impl = instantiate_rconfig(rc, config_dir);
             Checks::check_exit(VCPKG_LINE_INFO, impl != nullptr);
             return Registry(std::vector<std::string>(rc.packages), std::move(impl));
         });
-        auto reg1 = default_reg ? instantiate_rconfig(*default_reg.get()) : make_builtin_registry();
+        auto reg1 = default_reg ? instantiate_rconfig(*default_reg.get(), config_dir) : make_builtin_registry();
         return std::make_unique<RegistrySet>(std::move(reg1), std::move(r_impls));
     }
 

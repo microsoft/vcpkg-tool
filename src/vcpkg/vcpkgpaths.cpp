@@ -507,7 +507,7 @@ namespace vcpkg
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
-            m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set();
+            m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(m_pimpl->m_config_dir);
         }
 
         // metrics from configuration
