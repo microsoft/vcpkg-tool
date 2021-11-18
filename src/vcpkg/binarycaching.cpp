@@ -358,14 +358,14 @@ namespace
             for (auto&& put_url_template : m_put_url_templates)
             {
                 auto url = Strings::replace_all(std::string(put_url_template), "<SHA>", abi_tag);
-                auto maybe_success = Downloads::put_file(fs, url, Downloads::azure_blob_headers(), tmp_archive_path);
+                auto maybe_success = put_file(fs, url, azure_blob_headers(), tmp_archive_path);
                 if (maybe_success.has_value())
                 {
                     http_remotes_pushed++;
                     continue;
                 }
 
-                auto errors = Downloads::replace_secrets(std::move(maybe_success).error(), m_secrets);
+                auto errors = replace_secrets(std::move(maybe_success).error(), m_secrets);
                 print2(Color::warning, errors);
             }
 
@@ -489,7 +489,7 @@ namespace
 
                 print2("Attempting to fetch ", url_paths.size(), " packages from HTTP servers.\n");
 
-                auto codes = Downloads::download_files(fs, url_paths);
+                auto codes = download_files(fs, url_paths);
                 std::vector<size_t> action_idxs;
                 std::vector<Command> jobs;
                 for (size_t i = 0; i < codes.size(); ++i)
@@ -553,7 +553,7 @@ namespace
                     return;
                 }
 
-                auto codes = Downloads::url_heads(urls, {});
+                auto codes = url_heads(urls, {});
                 Checks::check_exit(VCPKG_LINE_INFO, codes.size() == urls.size());
                 for (size_t i = 0; i < codes.size(); ++i)
                 {
@@ -1791,9 +1791,9 @@ namespace
     };
 }
 
-ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
+ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
 {
-    if (!arg || arg.get()->empty()) return Downloads::DownloadManagerConfig{};
+    if (!arg || arg.get()->empty()) return DownloadManagerConfig{};
 
     LockGuardPtr<Metrics>(g_metrics)->track_property("asset-source", "defined");
 
@@ -1830,16 +1830,16 @@ ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(
     if (!s.azblob_templates_to_put.empty())
     {
         put_url = std::move(s.azblob_templates_to_put.back());
-        auto v = Downloads::azure_blob_headers();
+        auto v = azure_blob_headers();
         put_headers.assign(v.begin(), v.end());
     }
 
-    return Downloads::DownloadManagerConfig{std::move(get_url),
-                                            std::vector<std::string>{},
-                                            std::move(put_url),
-                                            std::move(put_headers),
-                                            std::move(s.secrets),
-                                            s.block_origin};
+    return DownloadManagerConfig{std::move(get_url),
+                                 std::vector<std::string>{},
+                                 std::move(put_url),
+                                 std::move(put_headers),
+                                 std::move(s.secrets),
+                                 s.block_origin};
 }
 
 ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_providers_from_configs(

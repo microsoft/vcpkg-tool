@@ -4,6 +4,7 @@
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/archives.h>
+#include <vcpkg/commands.version.h>
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -13,7 +14,7 @@ namespace vcpkg
 {
     int run_configure_environment_command(const VcpkgPaths& paths, StringView arg0, View<std::string> args)
     {
-        print2(Color::warning, "vcpkg-ce is experimental and may change at any time.\n");
+        print2(Color::warning, "vcpkg-ce ('configure environment') is experimental and may change at any time.\n");
 
         auto& fs = paths.get_filesystem();
         auto& download_manager = paths.get_download_manager();
@@ -23,13 +24,20 @@ namespace vcpkg
         auto ce_path = node_modules / "vcpkg-ce";
         if (!fs.is_directory(ce_path))
         {
-            // We will not ship an official vcpkg-tool release; the means to bundle this with vcpkg-tool proper is still
-            // under development.
             auto env = get_modified_clean_environment({}, node_root);
-            print2(Color::warning,
-                   "vcpkg-ce is not bootstrapped correctly. Attempting download of latest CE components.\n");
-            const auto ce_tarball = paths.downloads / "ce.tgz";
-            download_manager.download_file(fs, "https://aka.ms/vcpkg-ce.tgz", ce_tarball, nullopt);
+#if defined(VCPKG_CE_SHA)
+            print2("Downloading vcpkg-ce bundle " VCPKG_BASE_VERSION_AS_STRING "\n");
+            const auto ce_uri =
+                "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
+                "/vcpkg-ce.tgz";
+            const auto ce_tarball = paths.downloads / "vcpkg-ce-" VCPKG_BASE_VERSION_AS_STRING ".tgz";
+            download_manager.download_file(fs, ce_uri, ce_tarball, std::string(MACRO_TO_STRING(VCPKG_CE_SHA)));
+#else  // ^^^ VCPKG_CE_BUNDLE_SHA / !VCPKG_CE_BUNDLE_SHA vvv
+            print2(Color::warning, "Downloading latest vcpkg-ce bundle\n");
+            const auto ce_uri = "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-ce.tgz";
+            const auto ce_tarball = paths.downloads / "vcpkg-ce-latest.tgz";
+            download_manager.download_file(fs, ce_uri, ce_tarball, nullopt);
+#endif // ^^^ !VCPKG_CE_BUNDLE_SHA
             auto npm_path = Path(node_root) / "node_modules" / "npm" / "bin" / "npm-cli.js";
             Command cmd_provision(node_path);
             cmd_provision.string_arg(npm_path);
@@ -43,6 +51,7 @@ namespace vcpkg
             const auto provision_status = cmd_execute(cmd_provision, InWorkingDirectory{paths.root}, env);
             if (provision_status != 0)
             {
+                fs.remove(ce_tarball, VCPKG_LINE_INFO);
                 fs.remove_all(node_modules, VCPKG_LINE_INFO);
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to provision vcpkg-ce.");
             }

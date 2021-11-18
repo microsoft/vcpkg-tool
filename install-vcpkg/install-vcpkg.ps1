@@ -133,11 +133,7 @@ function bootstrap-vcpkg {
   }
 
   download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg.exe $VCPKG
-  $bundle = "$VCPKG_ROOT/vcpkg-readonly-bundle.tar.gz"
-  download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-readonly-bundle.tar.gz $bundle
-  tar.exe xf $bundle -C $VCPKG_ROOT
-  rm $bundle
-  download https://github.com/microsoft/vcpkg-tool/releases/latest/download/install-vcpkg.ps1 $VCPKG_SCRIPT
+  & $VCPKG z-bootstrap-readonly
 
   $PATH = $ENV:PATH
   $ENV:PATH="$VCPKG_ROOT;$PATH"

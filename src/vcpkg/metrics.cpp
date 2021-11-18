@@ -473,8 +473,7 @@ namespace vcpkg
         GetTempPathW(MAX_PATH, temp_folder);
 
         const Path temp_folder_path = Path(Strings::to_utf8(temp_folder)) / "vcpkg";
-        const Path temp_folder_path_exe =
-            temp_folder_path / Strings::format("vcpkg-%s.exe", Commands::Version::base_version());
+        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING ".exe";
 #endif
 
         std::error_code ec;

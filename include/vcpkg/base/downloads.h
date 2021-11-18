@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace vcpkg::Downloads
+namespace vcpkg
 {
     namespace details
     {
