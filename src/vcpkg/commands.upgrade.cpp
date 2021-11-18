@@ -207,7 +207,7 @@ namespace vcpkg::Commands::Upgrade
                                                                  Build::null_build_logs_recorder(),
                                                                  var_provider);
 
-        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
+        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {

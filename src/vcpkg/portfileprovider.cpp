@@ -11,8 +11,6 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versiondeserializers.h>
 
-#include <regex>
-
 using namespace vcpkg;
 using namespace Versions;
 

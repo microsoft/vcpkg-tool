@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/json.h>
 
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
@@ -45,6 +46,8 @@ namespace vcpkg::Json
 
     struct Reader
     {
+        Reader();
+
         const std::vector<std::string>& errors() const { return m_errors; }
         std::vector<std::string>& errors() { return m_errors; }
 
@@ -196,6 +199,11 @@ namespace vcpkg::Json
 
             return result;
         }
+
+        static uint64_t get_reader_stats();
+
+    private:
+        StatsTimer m_stat_timer;
     };
 
     VCPKG_MSVC_WARNING(push)

@@ -1259,6 +1259,10 @@ namespace vcpkg
     }
 
     const Configuration& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
+    void VcpkgPaths::set_builtin_baseline(const std::string& baseline) const
+    {
+        m_pimpl->m_config.registry_set.set_default_builtin_registry_baseline(baseline);
+    }
     const Downloads::DownloadManager& VcpkgPaths::get_download_manager() const { return m_pimpl->m_download_manager; }
 
     const Toolset& VcpkgPaths::get_toolset(const Build::PreBuildInfo& prebuildinfo) const

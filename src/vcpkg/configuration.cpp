@@ -318,20 +318,16 @@ namespace
             obj.insert(el.first.to_string(), el.second);
         }
 
-        if (auto default_registry = config.registry_set.default_registry())
+        if (!config.registry_set.is_default_builtin_registry())
         {
-            auto&& serialized = default_registry->serialize();
-
-            // The `baseline` field can only be an empty string when the original
-            // vcpkg-configuration doesn't override `default-registry`
-            if (!serialized.get("baseline")->string().empty())
+            if (auto default_registry = config.registry_set.default_registry())
             {
-                obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, serialized);
+                obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, default_registry->serialize());
             }
-        }
-        else
-        {
-            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, Json::Value::null(nullptr));
+            else
+            {
+                obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, Json::Value::null(nullptr));
+            }
         }
 
         auto reg_view = config.registry_set.registries();

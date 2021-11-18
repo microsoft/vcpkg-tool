@@ -298,4 +298,6 @@ namespace vcpkg::Json
     std::string stringify(const Value&, JsonStyle style);
     std::string stringify(const Object&, JsonStyle style);
     std::string stringify(const Array&, JsonStyle style);
+
+    uint64_t get_json_parsing_stats();
 }
