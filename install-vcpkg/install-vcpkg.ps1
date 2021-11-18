@@ -20,34 +20,6 @@ $args=[System.Collections.ArrayList][System.Array]$args
 # GLOBALS
 $VCPKG_START_TIME=get-date
 
-function eval($item) {
-  if( $item -is [ScriptBlock] ) { return & $item }
-  return $item
-}
-
-function Invoke-Assignment {
-  if( $args ) {
-    # ternary
-    if ($p = [array]::IndexOf($args,'?' )+1) {
-      if (eval($args[0])) { return eval($args[$p]) }  # ternary true
-      return eval($args[([array]::IndexOf($args,':',$p))+1])  # ternary false
-    }
-
-    # null-coalescing
-    if ($p = ([array]::IndexOf($args,'??',$p)+1)) {
-      if ($result = eval($args[0])) { return $result }  # first arg true
-      return eval($args[$p]) # first arg false
-    }
-
-    # neither ternary or null-coalescing, just a value
-    return eval($args[0])
-  }
-  return $null
-}
-
-# alias the function to the equals sign (which doesn't impede the normal use of = )
-set-alias = Invoke-Assignment
-
 function resolve([string]$name) {
   $name = Resolve-Path $name -ErrorAction 0 -ErrorVariable _err
   if (-not($name)) { return $_err[0].TargetObject }
