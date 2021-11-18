@@ -1339,7 +1339,7 @@ namespace vcpkg::Dependencies
                 Optional<std::unique_ptr<VersionSchemeInfo>> semver;
                 Optional<std::unique_ptr<VersionSchemeInfo>> date;
                 std::set<std::string> requested_features;
-                // state to track if default features must be enables at next add_port_at_version call
+                // state to track if default features must be enables at next require_port_version call
                 bool update_default_features = false;
                 bool user_requested = false;
 
@@ -1825,6 +1825,7 @@ namespace vcpkg::Dependencies
             Util::sort_unique_erase(specs);
             m_var_provider.load_dep_info_vars(specs, m_host_triplet);
             const auto& vars = m_var_provider.get_dep_info_vars(toplevel).value_or_exit(VCPKG_LINE_INFO);
+            std::vector<const Dependency*> active_deps;
 
             // First add all top level packages to ensure the default_features is set to false before recursing into the
             // individual packages. Otherwise, a case like:
@@ -1835,6 +1836,19 @@ namespace vcpkg::Dependencies
             {
                 if (!dep.platform.evaluate(vars)) continue;
 
+                active_deps.push_back(&dep);
+
+                // Disable default features for deps with [core] as a dependency
+                // Note: x[core], x[y] will still eventually depend on defaults due to the second x[y]
+                if (Util::find(dep.features, "core") != dep.features.end())
+                {
+                    emplace_package(dep_to_spec(dep), dep.host, Dependency::DefaultFeatures::No);
+                }
+            }
+
+            for (auto pdep : active_deps)
+            {
+                const auto& dep = *pdep;
                 auto spec = dep_to_spec(dep);
 
                 auto& node = emplace_package(spec, dep.host, dep.default_features);
