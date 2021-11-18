@@ -57,10 +57,12 @@ namespace
     {
         return sv.size() == 2 && sv.byte_at_index(0) == '.' && sv.byte_at_index(1) == '.';
     }
+#if !defined(_WIN32)
     bool is_dot_or_dot_dot(const char* ntbs)
     {
         return ntbs[0] == '.' && (ntbs[1] == '\0' || (ntbs[1] == '.' && ntbs[2] == '\0'));
     }
+#endif
 
     [[noreturn]] void exit_filesystem_call_error(LineInfo li,
                                                  const std::error_code& ec,
@@ -72,17 +74,6 @@ namespace
     }
 
 #if defined(_WIN32)
-    stdfs::copy_options convert_copy_options(CopyOptions options)
-    {
-        switch (options)
-        {
-            case CopyOptions::none: return stdfs::copy_options::none;
-            case CopyOptions::skip_existing: return stdfs::copy_options::skip_existing;
-            case CopyOptions::overwrite_existing: return stdfs::copy_options::overwrite_existing;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
-
     FileType convert_file_type(stdfs::file_type type) noexcept
     {
         switch (type)
@@ -97,7 +88,9 @@ namespace
             case stdfs::file_type::fifo: return FileType::fifo;
             case stdfs::file_type::socket: return FileType::socket;
             case stdfs::file_type::unknown: return FileType::unknown;
+#if !defined(__MINGW32__)
             case stdfs::file_type::junction: return FileType::junction;
+#endif
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -356,6 +349,50 @@ namespace
     }
 
 #if defined(_WIN32)
+    struct FileHandle
+    {
+        HANDLE h_file;
+        FileHandle() = delete;
+        FileHandle(const FileHandle&) = delete;
+        FileHandle& operator=(const FileHandle&) = delete;
+
+        FileHandle(const wchar_t* file_name,
+                   DWORD desired_access,
+                   DWORD share_mode,
+                   DWORD creation_disposition,
+                   DWORD flags_and_attributes,
+                   std::error_code& ec) noexcept
+            : h_file(::CreateFileW(
+                  file_name, desired_access, share_mode, nullptr, creation_disposition, flags_and_attributes, 0))
+        {
+            if (h_file == INVALID_HANDLE_VALUE)
+            {
+                const auto last_error = static_cast<int>(GetLastError());
+                ec.assign(last_error, std::system_category());
+            }
+            else
+            {
+                ec.clear();
+            }
+        }
+
+        // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 6001)
+#endif // ^^^ _MSC_VER
+        ~FileHandle()
+        {
+            if (h_file != INVALID_HANDLE_VALUE)
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, ::CloseHandle(h_file));
+            }
+        }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif // ^^^ _MSC_VER
+    };
+
     struct RemoveAllErrorInfo
     {
         std::error_code ec;
@@ -471,10 +508,12 @@ namespace
         // may have more Win32 path normalization that we do not replicate herein.
         // (There are still edge cases we don't handle, such as trailing whitespace or nulls, but
         // for purposes of remove_all, we never supported such trailing bits)
+#if !defined(__MINGW32__)
         if (has_drive_letter_prefix(native_base.data(), native_base.data() + native_base.size()))
         {
             wide_path = L"\\\\?\\";
         }
+#endif
 
         wide_path.append(Strings::to_utf16(native_base));
 
@@ -1566,14 +1605,16 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li)
+    bool Filesystem::copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li)
     {
         std::error_code ec;
-        this->copy_file(source, destination, options, ec);
+        const bool result = this->copy_file(source, destination, options, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {source, destination});
         }
+
+        return result;
     }
 
     void Filesystem::copy_symlink(const Path& source, const Path& destination, LineInfo li)
@@ -2653,8 +2694,43 @@ namespace vcpkg
                                std::error_code& ec) override
         {
 #if defined(_WIN32)
-            return stdfs::copy_file(
-                to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
+            DWORD last_error;
+            auto wide_source = Strings::to_utf16(source.native());
+            auto wide_destination = Strings::to_utf16(destination.native());
+            if (options != CopyOptions::overwrite_existing)
+            {
+                if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), TRUE))
+                {
+                    ec.clear();
+                    return true;
+                }
+
+                last_error = GetLastError();
+                if (last_error != ERROR_FILE_EXISTS || options == CopyOptions::none)
+                {
+                    ec.assign(static_cast<int>(last_error), std::system_category());
+                    return false;
+                }
+
+                // open handles to both files in exclusive mode to implement the equivalent() check
+                FileHandle source_handle(wide_source.c_str(), FILE_READ_DATA, 0, OPEN_EXISTING, 0, ec);
+                if (ec)
+                {
+                    return false;
+                }
+                FileHandle destination_handle(wide_destination.c_str(), FILE_WRITE_DATA, 0, OPEN_EXISTING, 0, ec);
+                return false;
+            }
+
+            if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), FALSE))
+            {
+                ec.clear();
+                return true;
+            }
+
+            last_error = GetLastError();
+            ec.assign(static_cast<int>(last_error), std::system_category());
+            return false;
 #else // ^^^ _WIN32 // !_WIN32 vvv
             PosixFd source_fd{source.c_str(), O_RDONLY, ec};
             if (ec)
