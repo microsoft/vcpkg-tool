@@ -94,7 +94,7 @@ namespace vcpkg::Commands::X_Download
     void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
-        Downloads::DownloadManager download_manager{
+        DownloadManager download_manager{
             parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
         auto file = fs.absolute(args.command_arguments[0], VCPKG_LINE_INFO);
 

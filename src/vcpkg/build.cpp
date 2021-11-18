@@ -633,7 +633,7 @@ namespace vcpkg::Build
                                   {"DOWNLOADS", paths.downloads},
                                   {"TARGET_TRIPLET", triplet.canonical_name()},
                                   {"TARGET_TRIPLET_FILE", paths.get_triplet_file_path(triplet)},
-                                  {"VCPKG_BASE_VERSION", Commands::Version::base_version()},
+                                  {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
                                   {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
                                   {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
                               });
