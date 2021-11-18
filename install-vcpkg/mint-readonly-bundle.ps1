@@ -25,15 +25,16 @@ $sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
 $sha = $sha.Trim()
 
 $scripts_dependencies = @(
+    'addPoshVcpkgToPowershellProfile.ps1',
+    'build_info.cmake',
     'buildsystems',
     'cmake',
     'detect_compiler',
     'get_cmake_vars',
+    'ports.cmake',
     'posh-vcpkg',
     'templates',
     'toolchains',
-    'addPoshVcpkgToPowershellProfile.ps1',
-    'ports.cmake',
     'vcpkg_completion.bash',
     'vcpkg_completion.fish',
     'vcpkg_completion.zsh',
