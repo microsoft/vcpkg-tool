@@ -40,7 +40,7 @@ namespace vcpkg::Commands::Create
             {"PORT", port_name},
             {"PORT_PATH", (paths.builtin_ports_directory() / port_name).generic_u8string()},
             {"URL", url},
-            {"VCPKG_BASE_VERSION", Commands::Version::base_version()},
+            {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
         };
 
         if (args.command_arguments.size() >= 3)

@@ -140,9 +140,7 @@ namespace
 #endif
         else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz")
         {
-            const auto code = cmd_execute(Command{paths.get_tool_exe(Tools::TAR)}.string_arg("xzf").path_arg(archive),
-                                          InWorkingDirectory{to_path});
-            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+            vcpkg::extract_tar(paths.get_tool_exe(Tools::TAR), archive, to_path);
         }
         else
         {
@@ -151,8 +149,15 @@ namespace
     }
 }
 
-namespace vcpkg::Archives
+namespace vcpkg
 {
+    void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path)
+    {
+        const auto code =
+            cmd_execute(Command{tar_tool}.string_arg("xzf").path_arg(archive), InWorkingDirectory{to_path});
+        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+    }
+
     Path extract_archive_to_temp_subdirectory(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
         Filesystem& fs = paths.get_filesystem();

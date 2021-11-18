@@ -9,7 +9,7 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
-namespace vcpkg::Downloads
+namespace vcpkg
 {
 #if defined(_WIN32)
     struct WinHttpHandleDeleter
@@ -616,7 +616,7 @@ namespace vcpkg::Downloads
             if (auto read_template = m_config.m_read_url_template.get())
             {
                 auto read_url = Strings::replace_all(*read_template, "<SHA>", *hash);
-                if (Downloads::try_download_file(
+                if (try_download_file(
                         fs, read_url, m_config.m_read_headers, download_path, sha512, m_config.m_secrets, errors))
                     return read_url;
             }
@@ -663,7 +663,7 @@ namespace vcpkg::Downloads
         auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            return Downloads::put_file(fs, maybe_mirror_url, m_config.m_write_headers, file_to_put);
+            return put_file(fs, maybe_mirror_url, m_config.m_write_headers, file_to_put);
         }
         return 0;
     }

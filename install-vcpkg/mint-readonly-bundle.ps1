@@ -1,19 +1,25 @@
 [CmdletBinding()]
 Param(
-    [Parameter(Mandatory = $True)]
+    [Parameter(Mandatory = $true)]
     [string]$DestinationTarballName,
-    [Parameter(Mandatory = $True)]
-    [string]$BundleConfig,
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$AdditionalFiles,
     [Parameter()]
     [string]$TempPath
 )
 
-if (-not (Test-Path $BundleConfig)) {
-    Write-Error 'BundleConfig must be an existing file.'
-    throw
-}
+$AdditionalFilesNames = New-Object string[] $AdditionalFiles.Length
+for ($idx = 0; $idx -ne $AdditionalFiles.Length; $idx++) {
+    $raw = $AdditionalFiles[$idx]
+    if (-not (Test-Path $raw)) {
+        Write-Error "'$raw' did not exist."
+        throw
+    }
 
-$BundleConfig = (Get-Item $BundleConfig).FullName
+    $itemized = Get-Item $raw
+    $AdditionalFiles[$idx] = $itemized.FullName
+    $AdditionalFilesNames[$idx] = $itemized.Name
+}
 
 $sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
 $sha = $sha.Trim()
@@ -60,7 +66,10 @@ try {
         popd
     }
 
-    cp $BundleConfig 'out/.vcpkg-root'
+    for ($idx = 0; $idx -ne $AdditionalFiles.Length; $idx++) {
+        cp $AdditionalFiles[$idx] "out/$($AdditionalFilesNames[$idx])"
+    }
+
     tar czf $DestinationTarballName -C out *
 }
 finally {
