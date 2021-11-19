@@ -1342,19 +1342,15 @@ namespace vcpkg::Build
         {
             Strings::append(package, " -> ", scfl->to_versiont());
         }
-        auto description = paths.git_describe_head();
         return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`, then\n"
                                "submit an issue at https://github.com/Microsoft/vcpkg/issues including:\n"
                                "  package: %s\n"
-                               "  vcpkg version: %s\n"
-                               "  vcpkg-tool version: %s\n"
+                               "%s"
                                "\n"
                                "Additionally, attach any relevant sections from the log files above.",
                                vcpkg_update_cmd,
                                package,
-                               description.has_value() ? description.value_or_exit(VCPKG_LINE_INFO)
-                                                       : "Failed to get HEAD: " + description.error(),
-                               Commands::Version::version());
+                               paths.get_toolver_diagnostics());
     }
 
     static BuildInfo inner_create_buildinfo(Parse::Paragraph pgh)
