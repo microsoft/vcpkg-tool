@@ -38,6 +38,8 @@ namespace
 {
     using namespace vcpkg;
 
+    std::atomic<uint64_t> g_us_filesystem_stats(0);
+
     struct IsSlash
     {
         bool operator()(const char c) const noexcept
@@ -1826,6 +1828,7 @@ namespace vcpkg
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const override
         {
+            StatsTimer t(g_us_filesystem_stats);
             ReadFilePointer file{file_path, ec};
             if (ec)
             {
@@ -1853,6 +1856,7 @@ namespace vcpkg
         }
         virtual std::vector<std::string> read_lines(const Path& file_path, std::error_code& ec) const override
         {
+            StatsTimer t(g_us_filesystem_stats);
             ReadFilePointer file{file_path, ec};
             if (ec)
             {
@@ -2553,6 +2557,7 @@ namespace vcpkg
         }
         virtual bool create_directories(const Path& new_directory, std::error_code& ec) override
         {
+            StatsTimer t(g_us_filesystem_stats);
 #if defined(_WIN32)
             return stdfs::create_directories(to_stdfs_path(new_directory), ec);
 #else // ^^^ _WIN32 // !_WIN32 vvv
@@ -2652,6 +2657,11 @@ namespace vcpkg
 
         virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) override
         {
+            StatsTimer t(g_us_filesystem_stats);
+            copy_regular_recursive_impl(source, destination, ec);
+        }
+        void copy_regular_recursive_impl(const Path& source, const Path& destination, std::error_code& ec)
+        {
 #if defined(_WIN32)
             stdfs::copy(to_stdfs_path(source), to_stdfs_path(destination), stdfs::copy_options::recursive, ec);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
@@ -2682,7 +2692,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    this->copy_regular_recursive(source_entry_name, destination_entry_name, ec);
+                    this->copy_regular_recursive_impl(source_entry_name, destination_entry_name, ec);
                 }
             }
 #endif // ^^^ !_WIN32
@@ -2940,6 +2950,7 @@ namespace vcpkg
         }
         virtual void write_contents(const Path& file_path, const std::string& data, std::error_code& ec) override
         {
+            StatsTimer t(g_us_filesystem_stats);
             auto f = open_for_write(file_path, ec);
             if (!ec)
             {
@@ -3228,6 +3239,8 @@ namespace vcpkg
         message.push_back('\n');
         print2(message);
     }
+
+    uint64_t get_filesystem_stats() { return g_us_filesystem_stats.load(); }
 
 #ifdef _WIN32
     Path win32_fix_path_case(const Path& source)

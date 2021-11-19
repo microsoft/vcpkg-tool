@@ -3,6 +3,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
@@ -12,6 +13,7 @@
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/build.h>
 #include <vcpkg/commands.h>
+#include <vcpkg/commands.version.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/metrics.h>
@@ -246,7 +248,7 @@ namespace vcpkg
             }
 
             Lazy<std::vector<VcpkgPaths::TripletFile>> available_triplets;
-            Lazy<std::vector<Toolset>> toolsets;
+            Lazy<ToolsetsInformation> toolsets;
             Lazy<std::map<std::string, std::string>> cmake_script_hashes;
             Lazy<std::string> ports_cmake_hash;
 
@@ -279,6 +281,7 @@ namespace vcpkg
 
             bool m_readonly = false;
             bool m_usegitregistry = false;
+            Optional<std::string> m_embedded_git_sha;
 
             Optional<LockFile> m_installed_lock;
         };
@@ -396,10 +399,16 @@ namespace vcpkg
                 {
                     m_pimpl->m_usegitregistry = v->boolean();
                 }
+                if (auto v = bundle_doc->first.object().get("embeddedsha"))
+                {
+                    m_pimpl->m_embedded_git_sha = v->string().to_string();
+                }
                 Debug::print("Bundle config: readonly=",
                              m_pimpl->m_readonly,
                              ", usegitregistry=",
                              m_pimpl->m_usegitregistry,
+                             ", embeddedsha=",
+                             m_pimpl->m_embedded_git_sha.value_or("nullopt"),
                              "\n");
             }
             else
@@ -827,6 +836,10 @@ namespace vcpkg
 
     ExpectedS<std::string> VcpkgPaths::get_current_git_sha() const
     {
+        if (auto sha = m_pimpl->m_embedded_git_sha.get())
+        {
+            return {*sha, expected_left_tag};
+        }
         auto cmd = git_cmd_builder(this->root / ".git", this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
         auto output = cmd_execute_and_capture_output(cmd);
@@ -838,6 +851,38 @@ namespace vcpkg
         {
             return {Strings::trim(std::move(output.output)), expected_left_tag};
         }
+    }
+    std::string VcpkgPaths::get_toolver_diagnostics() const
+    {
+        std::string ret;
+        Strings::append(ret, "    vcpkg-tool version: ", Commands::Version::version(), "\n");
+        if (m_pimpl->m_readonly)
+        {
+            Strings::append(ret, "    vcpkg-readonly: true\n");
+            const auto sha = get_current_git_sha();
+            Strings::append(ret, "    vcpkg-scripts version: ", sha ? StringView(*sha.get()) : "unknown", "\n");
+        }
+        else
+        {
+            const auto dot_git_dir = root / ".git";
+            Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir)
+                                  .string_arg("show")
+                                  .string_arg("--pretty=format:%h %cd (%cr)")
+                                  .string_arg("-s")
+                                  .string_arg("--date=short")
+                                  .string_arg("HEAD");
+
+            auto output = cmd_execute_and_capture_output(showcmd);
+            if (output.exit_code == 0)
+            {
+                Strings::append(ret, "    vcpkg-scripts version: ", output.output, "\n");
+            }
+            else
+            {
+                Strings::append(ret, "    vcpkg-scripts version: unknown\n");
+            }
+        }
+        return ret;
     }
     std::string VcpkgPaths::get_current_git_sha_baseline_message() const
     {
@@ -868,25 +913,6 @@ namespace vcpkg
         {
             return {std::move(output.output), expected_right_tag};
         }
-    }
-
-    ExpectedS<std::string> VcpkgPaths::git_describe_head() const
-    {
-        // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
-        const auto dot_git_dir = root / ".git";
-        Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir)
-                              .string_arg("show")
-                              .string_arg("--pretty=format:%h %cd (%cr)")
-                              .string_arg("-s")
-                              .string_arg("--date=short")
-                              .string_arg("HEAD");
-
-        auto output = cmd_execute_and_capture_output(showcmd);
-        if (output.exit_code == 0)
-        {
-            return {std::move(output.output), expected_left_tag};
-        }
-        return {std::move(output.output), expected_right_tag};
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
@@ -926,63 +952,6 @@ namespace vcpkg
             ret.emplace(split_line[1], file_info_section.back());
         }
         return ret;
-    }
-
-    ExpectedS<Path> VcpkgPaths::git_checkout_baseline(StringView commit_sha) const
-    {
-        Filesystem& fs = get_filesystem();
-        const auto destination_parent = this->baselines_output() / commit_sha;
-        auto destination = destination_parent / "baseline.json";
-
-        if (!fs.exists(destination, IgnoreErrors{}))
-        {
-            const auto destination_tmp = destination_parent / "baseline.json.tmp";
-            auto treeish = Strings::concat(commit_sha, ":versions/baseline.json");
-            auto maybe_contents = git_show(treeish, this->root / ".git");
-            if (auto contents = maybe_contents.get())
-            {
-                std::error_code ec;
-                fs.create_directories(destination_parent, ec);
-                if (ec)
-                {
-                    return {Strings::format(
-                                "Error: while checking out baseline %s\nError: while creating directories %s: %s",
-                                commit_sha,
-                                destination_parent,
-                                ec.message()),
-                            expected_right_tag};
-                }
-                fs.write_contents(destination_tmp, *contents, ec);
-                if (ec)
-                {
-                    return {Strings::format("Error: while checking out baseline %s\nError: while writing %s: %s",
-                                            commit_sha,
-                                            destination_tmp,
-                                            ec.message()),
-                            expected_right_tag};
-                }
-                fs.rename(destination_tmp, destination, ec);
-                if (ec)
-                {
-                    return {Strings::format("Error: while checking out baseline %s\nError: while renaming %s to %s: %s",
-                                            commit_sha,
-                                            destination_tmp,
-                                            destination,
-                                            ec.message()),
-                            expected_right_tag};
-                }
-            }
-            else
-            {
-                return {Strings::format("Error: while checking out baseline from commit '%s' at subpath "
-                                        "'versions/baseline.json':\n%s\nThis may be fixed by updating vcpkg to the "
-                                        "latest master via `git pull` or fetching commits via `git fetch`.",
-                                        commit_sha,
-                                        maybe_contents.error()),
-                        expected_right_tag};
-            }
-        }
-        return destination;
     }
 
     ExpectedS<Path> VcpkgPaths::git_checkout_port(StringView port_name,
@@ -1259,7 +1228,57 @@ namespace vcpkg
     }
 
     const Configuration& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
+    void VcpkgPaths::set_builtin_baseline(const std::string& baseline) const
+    {
+        m_pimpl->m_config.registry_set.set_default_builtin_registry_baseline(baseline);
+    }
     const Downloads::DownloadManager& VcpkgPaths::get_download_manager() const { return m_pimpl->m_download_manager; }
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
+                                 (msg::triplet),
+                                 "",
+                                 "Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
+                                 "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
+                                 "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstance,
+                                 (msg::triplet),
+                                 "",
+                                 "Error: in triplet {triplet}: Unable to find a valid Visual Studio instance");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion,
+                                 (msg::version),
+                                 "Printed after ErrorNoVSInstance on a separate line",
+                                 "    with toolset version {version}");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion,
+                                 (msg::version),
+                                 "Printed after ErrorNoVSInstance on a separate line",
+                                 "    with toolset version prefix {version}");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt,
+                                 (msg::path),
+                                 "Printed after ErrorNoVSInstance on a separate line",
+                                 "     at \"{path}\"");
+
+#if defined(_WIN32)
+    static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const VcpkgPaths& paths)
+    {
+        return impl.toolsets.get_lazy(
+            [&paths]() -> ToolsetsInformation { return VisualStudio::find_toolset_instances_preferred_first(paths); });
+    }
+
+    static bool toolset_matches_full_version(const Toolset& t, StringView fv)
+    {
+        // User specification can be a prefix. Example:
+        // fv = "14.25", t.full_version = "14.25.28610"
+        if (!Strings::starts_with(t.full_version, fv))
+        {
+            return false;
+        }
+        return fv.size() == t.full_version.size() || t.full_version[fv.size()] == '.';
+    }
+#endif
 
     const Toolset& VcpkgPaths::get_toolset(const Build::PreBuildInfo& prebuildinfo) const
     {
@@ -1278,12 +1297,13 @@ namespace vcpkg
             return external_toolset;
         }
 
-#if !defined(_WIN32)
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Cannot build windows triplets from non-windows.");
+#if !defined(WIN32)
+        msg::println(Color::error, msgErrorVcvarsUnsupported, msg::triplet = prebuildinfo.triplet);
+        Checks::exit_fail(VCPKG_LINE_INFO);
 #else
-        View<Toolset> vs_toolsets = get_all_toolsets();
+        const auto& toolsets_info = get_all_toolsets(*m_pimpl, *this);
+        View<Toolset> vs_toolsets = toolsets_info.toolsets;
 
-        std::vector<const Toolset*> candidates = Util::fmap(vs_toolsets, [](auto&& x) { return &x; });
         const auto tsv = prebuildinfo.platform_toolset.get();
         const auto tsvf = prebuildinfo.platform_toolset_version.get();
         auto vsp = prebuildinfo.visual_studio_path.get();
@@ -1292,49 +1312,30 @@ namespace vcpkg
             vsp = &m_pimpl->default_vs_path;
         }
 
-        std::string error_message = "Could not find any Visual Studio instance";
-
-        if (vsp)
+        auto candidate = Util::find_if(vs_toolsets, [&](const Toolset& t) {
+            return (!tsv || *tsv == t.version) && (!vsp || *vsp == t.visual_studio_root_path) &&
+                   (!tsvf || toolset_matches_full_version(t, *tsvf));
+        });
+        if (candidate == vs_toolsets.end())
         {
-            Util::erase_remove_if(candidates, [&](const Toolset* t) { return *vsp != t->visual_studio_root_path; });
-            error_message += " at " + (*vsp).native();
+            msg::println(Color::error, msgErrorNoVSInstance, msg::triplet = prebuildinfo.triplet);
+            if (vsp)
+            {
+                msg::println(Color::error, msgErrorNoVSInstanceAt, msg::path = *vsp);
+            }
+            if (tsv)
+            {
+                msg::println(Color::error, msgErrorNoVSInstanceVersion, msg::version = *tsv);
+            }
+            if (tsvf)
+            {
+                msg::println(Color::error, msgErrorNoVSInstanceFullVersion, msg::version = *tsvf);
+            }
+
+            msg::print(Color::error, toolsets_info.get_localized_debug_info());
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
-
-        if (tsv)
-        {
-            Util::erase_remove_if(candidates, [&](const Toolset* t) { return *tsv != t->version; });
-            error_message += " with " + *tsv + " toolset";
-        }
-
-        if (tsvf)
-        {
-            Util::erase_remove_if(candidates, [&](const Toolset* t) {
-                const auto requested_version = *tsvf;
-                if (requested_version == t->full_version)
-                {
-                    return false;
-                }
-                // Check if requested version is part of the full version, ie "14.25" should match "14.25.28610"
-                return !(requested_version.size() < t->full_version.size() &&
-                         t->full_version[requested_version.size()] == '.' &&
-                         t->full_version.substr(0, tsvf->size()) == requested_version);
-            });
-            error_message += " for toolset version " + *tsvf;
-        }
-
-        Checks::check_exit(VCPKG_LINE_INFO, !candidates.empty(), error_message + ".");
-
-        return *candidates.front();
-#endif
-    }
-
-    View<Toolset> VcpkgPaths::get_all_toolsets() const
-    {
-#if defined(_WIN32)
-        return m_pimpl->toolsets.get_lazy(
-            [this]() { return VisualStudio::find_toolset_instances_preferred_first(*this); });
-#else
-        return {};
+        return *candidate;
 #endif
     }
 

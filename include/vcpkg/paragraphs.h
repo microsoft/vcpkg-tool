@@ -15,6 +15,8 @@ namespace vcpkg::Paragraphs
 {
     using Paragraph = Parse::Paragraph;
 
+    uint64_t get_load_ports_stats();
+
     ExpectedS<Paragraph> parse_single_paragraph(StringView str, StringView origin);
     ExpectedS<Paragraph> get_single_paragraph(const Filesystem& fs, const Path& control_path);
 

@@ -24,6 +24,8 @@
 
 namespace vcpkg
 {
+    static std::atomic<uint64_t> g_subprocess_stats(0);
+
 #if defined(_WIN32)
     namespace
     {
@@ -693,9 +695,6 @@ namespace vcpkg
         if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
         int exit_code = static_cast<int>(long_exit_code);
         g_ctrl_c_state.transition_from_spawn_process();
-
-        Debug::print(
-            "cmd_execute() returned ", exit_code, " after ", static_cast<unsigned int>(timer.microseconds()), " us\n");
 #else
         (void)env;
         std::string real_command_line;
@@ -712,9 +711,10 @@ namespace vcpkg
         fflush(nullptr);
 
         int exit_code = system(real_command_line.c_str());
-        Debug::print(
-            "system() returned ", exit_code, " after ", static_cast<unsigned int>(timer.microseconds()), " us\n");
 #endif
+        const auto elapsed = timer.us_64();
+        g_subprocess_stats += elapsed;
+        Debug::print("cmd_execute() returned ", exit_code, " after ", elapsed, " us\n");
         return exit_code;
     }
 
@@ -737,7 +737,7 @@ namespace vcpkg
                                     std::function<void(StringView)> data_cb,
                                     const Environment& env)
     {
-        auto timer = ElapsedTimer::create_started();
+        const auto timer = ElapsedTimer::create_started();
 
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
@@ -790,10 +790,12 @@ namespace vcpkg
 
         const auto exit_code = pclose(pipe);
 #endif
+        const auto elapsed = timer.us_64();
+        g_subprocess_stats += elapsed;
         Debug::print("cmd_execute_and_stream_data() returned ",
                      exit_code,
                      " after ",
-                     Strings::format("%8d", static_cast<int>(timer.microseconds())),
+                     Strings::format("%8llu", static_cast<unsigned long long>(elapsed)),
                      " us\n");
 
         return exit_code;
@@ -808,6 +810,8 @@ namespace vcpkg
             cmd_line, wd, [&](StringView sv) { Strings::append(output, sv); }, env);
         return {rc, std::move(output)};
     }
+
+    uint64_t get_subproccess_stats() { return g_subprocess_stats.load(); }
 
 #if defined(_WIN32)
     static BOOL ctrl_handler(DWORD fdw_ctrl_type)

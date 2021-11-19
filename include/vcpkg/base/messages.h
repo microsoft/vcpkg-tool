@@ -2,33 +2,13 @@
 
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/messages.h>
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringliteral.h>
 
 #include <string>
-
-namespace vcpkg
-{
-#if defined(_WIN32)
-    enum class Color : unsigned short
-    {
-        none = 0,
-        success = 0x0A, // FOREGROUND_GREEN | FOREGROUND_INTENSITY
-        error = 0xC,    // FOREGROUND_RED | FOREGROUND_INTENSITY
-        warning = 0xE,  // FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY
-    };
-#else
-    enum class Color : char
-    {
-        none = 0,
-        success = '2', // [with 9] bright green
-        error = '1',   // [with 9] bright red
-        warning = '3', // [with 9] bright yellow
-    };
-#endif
-}
 
 namespace vcpkg::msg
 {
@@ -85,10 +65,20 @@ namespace vcpkg::msg
             return res;
         }
 
-        LocalizedString& append(const LocalizedString& s);
+        LocalizedString& append(const LocalizedString& s)
+        {
+            m_data.append(s.m_data);
+            return *this;
+        }
+        LocalizedString& appendnl()
+        {
+            m_data.push_back('\n');
+            return *this;
+        }
 
     private:
         std::string m_data;
+
         // to avoid lock-in on LocalizedString, these are free functions
         // this allows us to convert to `std::string` in the future without changing All The Code
         friend LocalizedString& append_newline(LocalizedString&);
@@ -107,8 +97,6 @@ namespace vcpkg::msg
             return lhs.data() < rhs.data();
         }
     };
-
-    void write_unlocalized_text_to_stdout(Color c, StringView sv);
 
     template<class Message, class... Tags, class... Ts>
     LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
@@ -162,9 +150,13 @@ namespace vcpkg::msg
 
     DECLARE_MSG_ARG(email);
     DECLARE_MSG_ARG(error);
-    DECLARE_MSG_ARG(version);
-    DECLARE_MSG_ARG(value);
+    DECLARE_MSG_ARG(path);
     DECLARE_MSG_ARG(pretty_value);
+    DECLARE_MSG_ARG(triplet);
+    DECLARE_MSG_ARG(url);
+    DECLARE_MSG_ARG(value);
+    DECLARE_MSG_ARG(version);
+    DECLARE_MSG_ARG(list);
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of
@@ -175,13 +167,15 @@ namespace vcpkg::msg
         static ::vcpkg::StringLiteral localization_comment() { return COMMENT; };                                      \
         static ::vcpkg::StringLiteral default_format_string() noexcept { return __VA_ARGS__; }                         \
         static const ::size_t index;                                                                                   \
-    } msg##NAME = {}
+    } msg##NAME VCPKG_UNUSED = {}
 #define REGISTER_MESSAGE(NAME)                                                                                         \
     const ::size_t NAME##_msg_t ::index = ::vcpkg::msg::detail::startup_register_message(                              \
         NAME##_msg_t::name(), NAME##_msg_t::default_format_string(), NAME##_msg_t::localization_comment())
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
     REGISTER_MESSAGE(NAME)
+
+    DECLARE_MESSAGE(SeeURL, (msg::url), "", "See {url} for more information.");
 }
 
 namespace fmt
