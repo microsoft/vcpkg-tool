@@ -6,6 +6,8 @@ namespace vcpkg::msg
 {
     DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
 
+    REGISTER_MESSAGE(SeeURL);
+
     // basic implementation - the write_unlocalized_text_to_stdout
 #if defined(_WIN32)
     static bool is_console(HANDLE h)

@@ -3,6 +3,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
@@ -246,7 +247,7 @@ namespace vcpkg
             }
 
             Lazy<std::vector<VcpkgPaths::TripletFile>> available_triplets;
-            Lazy<std::vector<Toolset>> toolsets;
+            Lazy<ToolsetsInformation> toolsets;
             Lazy<std::map<std::string, std::string>> cmake_script_hashes;
             Lazy<std::string> ports_cmake_hash;
 
@@ -1265,6 +1266,52 @@ namespace vcpkg
     }
     const Downloads::DownloadManager& VcpkgPaths::get_download_manager() const { return m_pimpl->m_download_manager; }
 
+    DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
+                                 (msg::triplet),
+                                 "",
+                                 "Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
+                                 "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
+                                 "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstance,
+                                 (msg::triplet),
+                                 "",
+                                 "Error: in triplet {triplet}: Unable to find a valid Visual Studio instance");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion,
+                                 (msg::version),
+                                 "Printed after ErrorNoVSInstance on a separate line",
+                                 "    with toolset version {version}");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion,
+                                 (msg::version),
+                                 "Printed after ErrorNoVSInstance on a separate line",
+                                 "    with toolset version prefix {version}");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt,
+                                 (msg::path),
+                                 "Printed after ErrorNoVSInstance on a separate line",
+                                 "     at \"{path}\"");
+
+#if defined(_WIN32)
+    static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const VcpkgPaths& paths)
+    {
+        return impl.toolsets.get_lazy(
+            [&paths]() -> ToolsetsInformation { return VisualStudio::find_toolset_instances_preferred_first(paths); });
+    }
+
+    static bool toolset_matches_full_version(const Toolset& t, StringView fv)
+    {
+        // User specification can be a prefix. Example:
+        // fv = "14.25", t.full_version = "14.25.28610"
+        if (!Strings::starts_with(t.full_version, fv))
+        {
+            return false;
+        }
+        return fv.size() == t.full_version.size() || t.full_version[fv.size()] == '.';
+    }
+#endif
+
     const Toolset& VcpkgPaths::get_toolset(const Build::PreBuildInfo& prebuildinfo) const
     {
         if (!prebuildinfo.using_vcvars())
@@ -1282,12 +1329,13 @@ namespace vcpkg
             return external_toolset;
         }
 
-#if !defined(_WIN32)
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Cannot build windows triplets from non-windows.");
+#if !defined(WIN32)
+        msg::println(Color::error, msgErrorVcvarsUnsupported, msg::triplet = prebuildinfo.triplet);
+        Checks::exit_fail(VCPKG_LINE_INFO);
 #else
-        View<Toolset> vs_toolsets = get_all_toolsets();
+        const auto& toolsets_info = get_all_toolsets(*m_pimpl, *this);
+        View<Toolset> vs_toolsets = toolsets_info.toolsets;
 
-        std::vector<const Toolset*> candidates = Util::fmap(vs_toolsets, [](auto&& x) { return &x; });
         const auto tsv = prebuildinfo.platform_toolset.get();
         const auto tsvf = prebuildinfo.platform_toolset_version.get();
         auto vsp = prebuildinfo.visual_studio_path.get();
@@ -1296,49 +1344,30 @@ namespace vcpkg
             vsp = &m_pimpl->default_vs_path;
         }
 
-        std::string error_message = "Could not find any Visual Studio instance";
-
-        if (vsp)
+        auto candidate = Util::find_if(vs_toolsets, [&](const Toolset& t) {
+            return (!tsv || *tsv == t.version) && (!vsp || *vsp == t.visual_studio_root_path) &&
+                   (!tsvf || toolset_matches_full_version(t, *tsvf));
+        });
+        if (candidate == vs_toolsets.end())
         {
-            Util::erase_remove_if(candidates, [&](const Toolset* t) { return *vsp != t->visual_studio_root_path; });
-            error_message += " at " + (*vsp).native();
+            msg::println(Color::error, msgErrorNoVSInstance, msg::triplet = prebuildinfo.triplet);
+            if (vsp)
+            {
+                msg::println(Color::error, msgErrorNoVSInstanceAt, msg::path = *vsp);
+            }
+            if (tsv)
+            {
+                msg::println(Color::error, msgErrorNoVSInstanceVersion, msg::version = *tsv);
+            }
+            if (tsvf)
+            {
+                msg::println(Color::error, msgErrorNoVSInstanceFullVersion, msg::version = *tsvf);
+            }
+
+            msg::print(Color::error, toolsets_info.get_localized_debug_info());
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
-
-        if (tsv)
-        {
-            Util::erase_remove_if(candidates, [&](const Toolset* t) { return *tsv != t->version; });
-            error_message += " with " + *tsv + " toolset";
-        }
-
-        if (tsvf)
-        {
-            Util::erase_remove_if(candidates, [&](const Toolset* t) {
-                const auto requested_version = *tsvf;
-                if (requested_version == t->full_version)
-                {
-                    return false;
-                }
-                // Check if requested version is part of the full version, ie "14.25" should match "14.25.28610"
-                return !(requested_version.size() < t->full_version.size() &&
-                         t->full_version[requested_version.size()] == '.' &&
-                         t->full_version.substr(0, tsvf->size()) == requested_version);
-            });
-            error_message += " for toolset version " + *tsvf;
-        }
-
-        Checks::check_exit(VCPKG_LINE_INFO, !candidates.empty(), error_message + ".");
-
-        return *candidates.front();
-#endif
-    }
-
-    View<Toolset> VcpkgPaths::get_all_toolsets() const
-    {
-#if defined(_WIN32)
-        return m_pimpl->toolsets.get_lazy(
-            [this]() { return VisualStudio::find_toolset_instances_preferred_first(*this); });
-#else
-        return {};
+        return *candidate;
 #endif
     }
 

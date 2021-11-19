@@ -1,6 +1,7 @@
 #pragma once
 
-#include <vcpkg/base/messages.h>
+#include <vcpkg/base/fwd/messages.h>
+
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/view.h>
 

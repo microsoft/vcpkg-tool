@@ -1,7 +1,10 @@
 #pragma once
 
+#include <vcpkg/base/fwd/format.h>
+
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/stringview.h>
 
 VCPKG_MSVC_WARNING(push)
 // notes:
@@ -30,18 +33,27 @@ namespace vcpkg
 
 namespace fmt
 {
-    template<>
-    struct formatter<vcpkg::LineInfo>
+    template<class Char>
+    struct formatter<vcpkg::LineInfo, Char>
     {
-        constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+        constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
         {
             return vcpkg::basic_format_parse_impl(ctx);
         }
         template<class FormatContext>
-        auto format(const vcpkg::LineInfo& li, FormatContext& ctx) -> decltype(ctx.out())
+        auto format(const vcpkg::LineInfo& li, FormatContext& ctx) const -> decltype(ctx.out())
         {
             return format_to(ctx.out(), "{}({})", li.file_name, li.line_number);
         }
     };
 
+    template<class Char>
+    struct formatter<vcpkg::StringView, Char> : formatter<string_view, Char>
+    {
+        template<class FormatContext>
+        auto format(vcpkg::StringView sv, FormatContext& ctx) const -> decltype(ctx.out())
+        {
+            return formatter<string_view, Char>::format(string_view(sv.data(), sv.size()), ctx);
+        }
+    };
 }

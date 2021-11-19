@@ -1033,7 +1033,7 @@ namespace vcpkg::Install
                                "warning: vcpkg appears to be in a Visual Studio prompt targeting ",
                                vs_prompt_view,
                                " but is installing packages for ",
-                               common_triplet.to_string(),
+                               common_triplet,
                                ". Consider using --triplet ",
                                vs_prompt_view,
                                "-windows or --triplet ",

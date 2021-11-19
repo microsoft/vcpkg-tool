@@ -161,8 +161,6 @@ namespace vcpkg
         // Retrieve a toolset matching the requirements in prebuildinfo
         const Toolset& get_toolset(const Build::PreBuildInfo& prebuildinfo) const;
 
-        View<Toolset> get_all_toolsets() const;
-
         Filesystem& get_filesystem() const;
 
         const Environment& get_action_env(const Build::AbiInfo& abi_info) const;
