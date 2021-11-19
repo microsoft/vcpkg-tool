@@ -63,6 +63,8 @@ namespace vcpkg
         cmd_run.string_arg("--accept-eula");
         cmd_run.string_arg(arg0);
         cmd_run.forwarded_args(args);
+        // tell vcpkg-ce that it's being called from vcpkg
+        cmd_run.string_arg("--from-vcpkg");
         return cmd_execute(cmd_run, InWorkingDirectory{paths.original_cwd});
     }
 }
