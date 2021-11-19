@@ -38,6 +38,8 @@ namespace
 {
     using namespace vcpkg;
 
+    std::atomic<uint64_t> g_us_filesystem_stats(0);
+
     struct IsSlash
     {
         bool operator()(const char c) const noexcept
@@ -57,10 +59,12 @@ namespace
     {
         return sv.size() == 2 && sv.byte_at_index(0) == '.' && sv.byte_at_index(1) == '.';
     }
+#if !defined(_WIN32)
     bool is_dot_or_dot_dot(const char* ntbs)
     {
         return ntbs[0] == '.' && (ntbs[1] == '\0' || (ntbs[1] == '.' && ntbs[2] == '\0'));
     }
+#endif
 
     [[noreturn]] void exit_filesystem_call_error(LineInfo li,
                                                  const std::error_code& ec,
@@ -72,17 +76,6 @@ namespace
     }
 
 #if defined(_WIN32)
-    stdfs::copy_options convert_copy_options(CopyOptions options)
-    {
-        switch (options)
-        {
-            case CopyOptions::none: return stdfs::copy_options::none;
-            case CopyOptions::skip_existing: return stdfs::copy_options::skip_existing;
-            case CopyOptions::overwrite_existing: return stdfs::copy_options::overwrite_existing;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
-
     FileType convert_file_type(stdfs::file_type type) noexcept
     {
         switch (type)
@@ -97,7 +90,9 @@ namespace
             case stdfs::file_type::fifo: return FileType::fifo;
             case stdfs::file_type::socket: return FileType::socket;
             case stdfs::file_type::unknown: return FileType::unknown;
+#if !defined(__MINGW32__)
             case stdfs::file_type::junction: return FileType::junction;
+#endif
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -356,6 +351,50 @@ namespace
     }
 
 #if defined(_WIN32)
+    struct FileHandle
+    {
+        HANDLE h_file;
+        FileHandle() = delete;
+        FileHandle(const FileHandle&) = delete;
+        FileHandle& operator=(const FileHandle&) = delete;
+
+        FileHandle(const wchar_t* file_name,
+                   DWORD desired_access,
+                   DWORD share_mode,
+                   DWORD creation_disposition,
+                   DWORD flags_and_attributes,
+                   std::error_code& ec) noexcept
+            : h_file(::CreateFileW(
+                  file_name, desired_access, share_mode, nullptr, creation_disposition, flags_and_attributes, 0))
+        {
+            if (h_file == INVALID_HANDLE_VALUE)
+            {
+                const auto last_error = static_cast<int>(GetLastError());
+                ec.assign(last_error, std::system_category());
+            }
+            else
+            {
+                ec.clear();
+            }
+        }
+
+        // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 6001)
+#endif // ^^^ _MSC_VER
+        ~FileHandle()
+        {
+            if (h_file != INVALID_HANDLE_VALUE)
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, ::CloseHandle(h_file));
+            }
+        }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif // ^^^ _MSC_VER
+    };
+
     struct RemoveAllErrorInfo
     {
         std::error_code ec;
@@ -432,7 +471,6 @@ namespace
         else
         {
             stdfs::remove(current_entry.path(), ec);
-            if (err.check_ec(ec, current_entry)) return;
         }
 
         err.check_ec(ec, current_entry);
@@ -463,7 +501,25 @@ namespace
 
     void vcpkg_remove_all(const Path& base, std::error_code& ec, Path& failure_point)
     {
-        stdfs::directory_entry entry(to_stdfs_path(base), ec);
+        std::wstring wide_path;
+        const auto& native_base = base.native();
+        // Attempt to handle paths that are too long in recursive delete by prefixing absolute ones with
+        // backslash backslash question backslash
+        // See https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+        // We are conservative and only accept paths that begin with a drive letter prefix because other forms
+        // may have more Win32 path normalization that we do not replicate herein.
+        // (There are still edge cases we don't handle, such as trailing whitespace or nulls, but
+        // for purposes of remove_all, we never supported such trailing bits)
+#if !defined(__MINGW32__)
+        if (has_drive_letter_prefix(native_base.data(), native_base.data() + native_base.size()))
+        {
+            wide_path = L"\\\\?\\";
+        }
+#endif
+
+        wide_path.append(Strings::to_utf16(native_base));
+
+        stdfs::directory_entry entry(wide_path, ec);
         translate_not_found_to_success(ec);
         if (ec)
         {
@@ -1551,14 +1607,16 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li)
+    bool Filesystem::copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li)
     {
         std::error_code ec;
-        this->copy_file(source, destination, options, ec);
+        const bool result = this->copy_file(source, destination, options, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {source, destination});
         }
+
+        return result;
     }
 
     void Filesystem::copy_symlink(const Path& source, const Path& destination, LineInfo li)
@@ -1770,6 +1828,7 @@ namespace vcpkg
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const override
         {
+            StatsTimer t(g_us_filesystem_stats);
             ReadFilePointer file{file_path, ec};
             if (ec)
             {
@@ -1797,6 +1856,7 @@ namespace vcpkg
         }
         virtual std::vector<std::string> read_lines(const Path& file_path, std::error_code& ec) const override
         {
+            StatsTimer t(g_us_filesystem_stats);
             ReadFilePointer file{file_path, ec};
             if (ec)
             {
@@ -2497,6 +2557,7 @@ namespace vcpkg
         }
         virtual bool create_directories(const Path& new_directory, std::error_code& ec) override
         {
+            StatsTimer t(g_us_filesystem_stats);
 #if defined(_WIN32)
             return stdfs::create_directories(to_stdfs_path(new_directory), ec);
 #else // ^^^ _WIN32 // !_WIN32 vvv
@@ -2596,6 +2657,11 @@ namespace vcpkg
 
         virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) override
         {
+            StatsTimer t(g_us_filesystem_stats);
+            copy_regular_recursive_impl(source, destination, ec);
+        }
+        void copy_regular_recursive_impl(const Path& source, const Path& destination, std::error_code& ec)
+        {
 #if defined(_WIN32)
             stdfs::copy(to_stdfs_path(source), to_stdfs_path(destination), stdfs::copy_options::recursive, ec);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
@@ -2626,7 +2692,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    this->copy_regular_recursive(source_entry_name, destination_entry_name, ec);
+                    this->copy_regular_recursive_impl(source_entry_name, destination_entry_name, ec);
                 }
             }
 #endif // ^^^ !_WIN32
@@ -2638,8 +2704,43 @@ namespace vcpkg
                                std::error_code& ec) override
         {
 #if defined(_WIN32)
-            return stdfs::copy_file(
-                to_stdfs_path(source), to_stdfs_path(destination), convert_copy_options(options), ec);
+            DWORD last_error;
+            auto wide_source = Strings::to_utf16(source.native());
+            auto wide_destination = Strings::to_utf16(destination.native());
+            if (options != CopyOptions::overwrite_existing)
+            {
+                if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), TRUE))
+                {
+                    ec.clear();
+                    return true;
+                }
+
+                last_error = GetLastError();
+                if (last_error != ERROR_FILE_EXISTS || options == CopyOptions::none)
+                {
+                    ec.assign(static_cast<int>(last_error), std::system_category());
+                    return false;
+                }
+
+                // open handles to both files in exclusive mode to implement the equivalent() check
+                FileHandle source_handle(wide_source.c_str(), FILE_READ_DATA, 0, OPEN_EXISTING, 0, ec);
+                if (ec)
+                {
+                    return false;
+                }
+                FileHandle destination_handle(wide_destination.c_str(), FILE_WRITE_DATA, 0, OPEN_EXISTING, 0, ec);
+                return false;
+            }
+
+            if (::CopyFileW(wide_source.c_str(), wide_destination.c_str(), FALSE))
+            {
+                ec.clear();
+                return true;
+            }
+
+            last_error = GetLastError();
+            ec.assign(static_cast<int>(last_error), std::system_category());
+            return false;
 #else // ^^^ _WIN32 // !_WIN32 vvv
             PosixFd source_fd{source.c_str(), O_RDONLY, ec};
             if (ec)
@@ -2730,7 +2831,7 @@ namespace vcpkg
 #else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
             constexpr std::size_t buffer_length = 4096;
             unsigned char buffer[buffer_length];
-            while (auto read_bytes = i_fd.read(buffer, buffer_length))
+            while (auto read_bytes = source_fd.read(buffer, buffer_length))
             {
                 if (read_bytes == -1)
                 {
@@ -2849,6 +2950,7 @@ namespace vcpkg
         }
         virtual void write_contents(const Path& file_path, const std::string& data, std::error_code& ec) override
         {
+            StatsTimer t(g_us_filesystem_stats);
             auto f = open_for_write(file_path, ec);
             if (!ec)
             {
@@ -3137,6 +3239,8 @@ namespace vcpkg
         message.push_back('\n');
         print2(message);
     }
+
+    uint64_t get_filesystem_stats() { return g_us_filesystem_stats.load(); }
 
 #ifdef _WIN32
     Path win32_fix_path_case(const Path& source)

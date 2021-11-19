@@ -1,8 +1,11 @@
 #pragma once
 
+#include <vcpkg/base/fwd/format.h>
+
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
 
 #include <string>
@@ -24,6 +27,8 @@ namespace vcpkg
         size_t hash_code() const;
         Optional<CPUArchitecture> guess_architecture() const noexcept;
 
+        operator StringView() const { return canonical_name(); }
+
         bool operator==(Triplet other) const { return this->m_instance == other.m_instance; }
         bool operator<(Triplet other) const { return canonical_name() < other.canonical_name(); }
 
@@ -40,6 +45,8 @@ namespace vcpkg
     Triplet default_triplet(const VcpkgCmdArguments& args);
     Triplet default_host_triplet(const VcpkgCmdArguments& args);
 }
+
+VCPKG_FORMAT_AS(vcpkg::Triplet, vcpkg::StringView);
 
 namespace std
 {

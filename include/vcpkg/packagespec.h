@@ -62,7 +62,7 @@ namespace vcpkg
     {
         FeatureSpec(const PackageSpec& spec, const std::string& feature) : m_spec(spec), m_feature(feature) { }
 
-        const std::string& name() const { return m_spec.name(); }
+        const std::string& port() const { return m_spec.name(); }
         const std::string& feature() const { return m_feature; }
         Triplet triplet() const { return m_spec.triplet(); }
 
@@ -73,8 +73,8 @@ namespace vcpkg
 
         bool operator<(const FeatureSpec& other) const
         {
-            if (name() < other.name()) return true;
-            if (name() > other.name()) return false;
+            if (port() < other.port()) return true;
+            if (port() > other.port()) return false;
             if (feature() < other.feature()) return true;
             if (feature() > other.feature()) return false;
             return triplet() < other.triplet();
@@ -82,7 +82,7 @@ namespace vcpkg
 
         bool operator==(const FeatureSpec& other) const
         {
-            return triplet() == other.triplet() && name() == other.name() && feature() == other.feature();
+            return triplet() == other.triplet() && port() == other.port() && feature() == other.feature();
         }
 
         bool operator!=(const FeatureSpec& other) const { return !(*this == other); }

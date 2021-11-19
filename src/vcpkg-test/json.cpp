@@ -240,3 +240,14 @@ TEST_CASE ("JSON track newlines", "[json]")
                   ^
 )");
 }
+
+TEST_CASE ("JSON duplicated object keys", "[json]")
+{
+    auto res = Json::parse("{\"name\": 1, \"name\": 2}", "filename");
+    REQUIRE(!res);
+    REQUIRE(res.error()->format() ==
+            R"(filename:1:13: error: Duplicated key "name" in an object
+   on expression: {"name": 1, "name": 2}
+                              ^
+)");
+}

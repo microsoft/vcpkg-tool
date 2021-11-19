@@ -147,6 +147,8 @@ namespace vcpkg
         return cmd_execute_and_stream_data(cmd_line, InWorkingDirectory{Path()}, std::move(data_cb), env);
     }
 
+    uint64_t get_subproccess_stats();
+
     void register_console_ctrl_handler();
 #if defined(_WIN32)
     void initialize_global_job_object();

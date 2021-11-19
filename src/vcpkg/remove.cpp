@@ -49,7 +49,7 @@ namespace vcpkg::Remove
             std::vector<Path> dirs_touched;
             for (auto&& suffix : lines)
             {
-                auto target = paths.installed / suffix;
+                auto target = paths.installed() / suffix;
 
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
@@ -160,7 +160,7 @@ namespace vcpkg::Remove
         if (purge == Purge::YES)
         {
             Filesystem& fs = paths.get_filesystem();
-            fs.remove_all(paths.packages / action.spec.dir(), VCPKG_LINE_INFO);
+            fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
         }
     }
 

@@ -3,6 +3,7 @@
 #include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/optional.h>
 
+#include <atomic>
 #include <chrono>
 #include <string>
 
@@ -40,12 +41,23 @@ namespace vcpkg
         }
 
         double microseconds() const { return elapsed().as<std::chrono::duration<double, std::micro>>().count(); }
+        uint64_t us_64() const { return elapsed().as<std::chrono::duration<uint64_t, std::micro>>().count(); }
 
         std::string to_string() const;
         void to_string(std::string& into) const;
 
     private:
         std::chrono::high_resolution_clock::time_point m_start_tick;
+    };
+
+    struct StatsTimer
+    {
+        StatsTimer(std::atomic<uint64_t>& stat) : m_stat(&stat), m_timer(ElapsedTimer::create_started()) { }
+        ~StatsTimer() { m_stat->fetch_add(m_timer.us_64()); }
+
+    private:
+        std::atomic<uint64_t>* const m_stat;
+        const ElapsedTimer m_timer;
     };
 
     struct CTime

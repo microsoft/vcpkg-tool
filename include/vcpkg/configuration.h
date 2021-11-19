@@ -16,11 +16,15 @@ namespace vcpkg
         // `registries` and `default_registry`. The fall back logic is
         // taken care of in RegistrySet.
         RegistrySet registry_set;
+        Json::Object ce_metadata;
         Json::Object extra_info;
 
         void validate_feature_flags(const FeatureFlagSettings& flags);
+
+        static View<StringView> known_fields();
     };
 
     std::unique_ptr<Json::IDeserializer<Configuration>> make_configuration_deserializer(const Path& config_directory);
     Json::Object serialize_configuration(const Configuration& config);
+    std::vector<std::string> find_unknown_fields(const Configuration& config);
 }

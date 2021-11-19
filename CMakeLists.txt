@@ -6,10 +6,6 @@ if(NOT CMAKE_MSVC_RUNTIME_LIBRARY)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-if(WIN32)
-    string(APPEND CMAKE_CXX_FLAGS " /EHsc")
-endif()
-
 # ===============
 # === Options ===
 # ===============
@@ -96,12 +92,13 @@ if(NOT DEFINED VCPKG_VERSION OR VCPKG_VERSION STREQUAL "")
     set(VCPKG_VERSION "unknownhash")
 endif()
 
-set(VCPKG_BASE_VERSION "2021-11-02")
+set(VCPKG_BASE_VERSION "2021-11-15")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
 if(MSVC)
+    string(APPEND CMAKE_CXX_FLAGS " /EHsc")
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi /guard:cf")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DEBUG /debugtype:cv,fixup /guard:cf")

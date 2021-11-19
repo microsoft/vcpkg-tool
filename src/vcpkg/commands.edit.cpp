@@ -111,7 +111,7 @@ namespace vcpkg::Commands::Edit
         if (Util::Sets::contains(options.switches, OPTION_ALL))
         {
             const auto& fs = paths.get_filesystem();
-            auto packages = fs.get_files_non_recursive(paths.packages, VCPKG_LINE_INFO);
+            auto packages = fs.get_files_non_recursive(paths.packages(), VCPKG_LINE_INFO);
 
             // TODO: Support edit for --overlay-ports
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {

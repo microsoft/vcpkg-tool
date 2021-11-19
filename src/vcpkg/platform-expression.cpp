@@ -77,7 +77,10 @@ namespace vcpkg::PlatformExpression
             identifier,
             op_not,
             op_and,
-            op_or
+            op_or,
+            op_list,
+            op_empty,
+            op_invalid
         };
 
         struct ExprImpl
@@ -139,34 +142,115 @@ namespace vcpkg::PlatformExpression
             // platform-expression =
             // | platform-expression-not
             // | platform-expression-and
-            // | platform-expression-or ;
+            // | platform-expression-or
             std::unique_ptr<ExprImpl> expr()
             {
                 // this is the common prefix of all the variants
                 // platform-expression-not,
                 auto result = expr_not();
 
-                switch (cur())
+                // the first expression must be followed by a logical operator (or nothing)
+                auto oper = expr_operator();
+                switch (oper)
+                {
+                    case ExprKind::op_and:
+                        // { "&", optional-whitespace, platform-expression-not }
+                        // { "and", platform-expression-binary-keyword-second-operand }
+                        return expr_binary<ExprKind::op_and, ExprKind::op_or>(
+                            std::make_unique<ExprImpl>(oper, std::move(result)));
+
+                    case ExprKind::op_or:
+                        // { "|", optional-whitespace, platform-expression-not }
+                        return expr_binary<ExprKind::op_or, ExprKind::op_and>(
+                            std::make_unique<ExprImpl>(oper, std::move(result)));
+
+                    case ExprKind::op_list:
+                        // { ",", optional-whitespace, platform-expression }
+                        return expr_binary<ExprKind::op_list, ExprKind::op_invalid>(
+                            std::make_unique<ExprImpl>(oper, std::move(result)));
+
+                    case ExprKind::op_empty: return result;
+
+                    default:
+                        // op_identifier and op_invalid both indicate a syntax error, which should have
+                        // already been flagged by expr_operator.
+                        return result;
+                }
+            }
+
+            ExprKind expr_operator()
+            {
+                auto oper = cur();
+
+                // Support chains of the vcpkg operators (`&`, `|`)  to avoid breaking backwards compatibility
+                switch (oper)
+                {
+                    case '|':
+                    case '&':
+                        do
+                        {
+                            next();
+                        } while (allow_multiple_binary_operators() && cur() == oper);
+                        break;
+                }
+
+                switch (oper)
                 {
                     case '|':
                     {
                         // { "|", optional-whitespace, platform-expression-not }
-                        return expr_binary<'|', '&'>(std::make_unique<ExprImpl>(ExprKind::op_or, std::move(result)));
+                        return ExprKind::op_or;
                     }
                     case '&':
                     {
                         // { "&", optional-whitespace, platform-expression-not }
-                        return expr_binary<'&', '|'>(std::make_unique<ExprImpl>(ExprKind::op_and, std::move(result)));
+                        return ExprKind::op_and;
                     }
-                    default: return result;
+                    case ',':
+                    {
+                        // { ",", optional-whitespace, platform-expression-not }
+                        // "," is a near-synonym of "|", with the differences that it can be combined with "&"/"and",
+                        // but has lower precedence
+                        next();
+                        return ExprKind::op_list;
+                    }
+                    case 'a':
+                    case 'o':
+                    {
+                        // { "and", optional-whitespace, platform-expression-not }
+                        // { "or", platform-expression-binary-keyword-second-operand } }
+                        // "and" is a synonym of "&", "or" is reserved (but not yet supported) as a synonym of "|"
+                        std::string name = match_zero_or_more(is_identifier_char).to_string();
+                        Checks::check_exit(VCPKG_LINE_INFO, !name.empty());
+
+                        if (name == "and")
+                        {
+                            return ExprKind::op_and;
+                        }
+                        else if (name == "or")
+                        {
+                            add_error("invalid logic expression, use '|' instead of 'or'");
+                            return ExprKind::op_invalid;
+                        }
+
+                        // Invalid alphanumeric strings or strings other than "and" are errors.
+                        add_error("unexpected character or identifier in logic expression");
+                        return ExprKind::op_invalid;
+                    }
+                    default:
+                        // Perhaps this should be an error, but in the previous implementation, this
+                        // was a do-nothing case, so let's maintain that behavior.
+                        return ExprKind::op_empty;
                 }
             }
 
             // platform-expression-simple =
             // | platform-expression-identifier
-            // | "(", optional-whitespace, platform-expression, ")", optional-whitespace ;
+            // | platform-expression-grouped ;
             std::unique_ptr<ExprImpl> expr_simple()
             {
+                // platform-expression-grouped =
+                // | "(", optional-whitespace, platform-expression, ")", optional-whitespace ;
                 if (cur() == '(')
                 {
                     // "(",
@@ -200,7 +284,7 @@ namespace vcpkg::PlatformExpression
 
                 if (name.empty())
                 {
-                    add_error("unexpected character in logic expression");
+                    add_error("missing or invalid identifier");
                 }
 
                 // optional-whitespace
@@ -211,7 +295,8 @@ namespace vcpkg::PlatformExpression
 
             // platform-expression-not =
             // | platform-expression-simple
-            // | "!", optional-whitespace, platform-expression-simple ;
+            // | "!", optional-whitespace, platform-expression-simple
+            // | "not", platform-expression-unary-keyword-operand ;
             std::unique_ptr<ExprImpl> expr_not()
             {
                 if (cur() == '!')
@@ -223,43 +308,99 @@ namespace vcpkg::PlatformExpression
                     // platform-expression-simple
                     return std::make_unique<ExprImpl>(ExprKind::op_not, expr_simple());
                 }
+                else if (cur() == 'n')
+                {
+                    std::string name = match_zero_or_more(is_identifier_char).to_string();
+
+                    // "not"
+                    if (name == "not")
+                    {
+                        // required-whitespace, platform-expression-simple
+                        // optional-whitespace, platform-expression-grouped
+                        skip_whitespace();
+                        return std::make_unique<ExprImpl>(ExprKind::op_not, expr_simple());
+                    }
+
+                    // optional-whitespace
+                    skip_whitespace();
+
+                    return std::make_unique<ExprImpl>(ExprKind::identifier, std::move(name));
+                }
 
                 // platform-expression-simple
                 return expr_simple();
             }
 
+            // platform-expression-list =
+            // | platform-expression {",", optional-whitespace, platform-expression};
+            //
+            // platform-expression-binary-keyword-first-operand =
+            // | platform-expression-not, required-whitespace
+            // | platform-expression-grouped ;
+            //
+            // platform-expression-binary-keyword-second-operand =
+            // | required-whitespace, platform-expression-not
+            // | platform-expression-grouped ;
+            //
             // platform-expression-and =
-            // | platform-expression-not, { "&", optional-whitespace, platform-expression-not } ;
+            // | platform-expression-not, { "&", optional-whitespace, platform-expression-not }
+            // | platform-expression-binary-keyword-first-operand, { "and",
+            // platform-expression-binary-keyword-second-operand } ;
             //
             // platform-expression-or =
-            // | platform-expression-not, { "|", optional-whitespace, platform-expression-not } ;
+            // | platform-expression-not, { "|", optional-whitespace, platform-expression-not }
+            // | platform-expression-binary-keyword-first-operand, { "or",
+            // platform-expression-binary-keyword-second-operand } (* to allow for future extension *) ;
             //
-            // already taken care of by the caller: platform-expression-not
-            // so we start at either "&" or "|"
-            template<char oper, char other>
+            // Processing of the operator was already taken care of by the caller: continue
+            // with the next platform-expression-not or platform-expression-binary-keyword-second-operand.
+            template<ExprKind oper, ExprKind unmixable_oper>
             std::unique_ptr<ExprImpl> expr_binary(std::unique_ptr<ExprImpl>&& seed)
             {
+                // gather consecutive instances of the same operation into a single expr node
+                // e.g., parsing 'A & B & C' yields {&, vector<A,B,C>}
+                ExprKind next_oper = ExprKind::op_invalid;
                 do
                 {
-                    // Support chains of the operator to avoid breaking backwards compatibility
-                    do
-                    {
-                        // "&" or "|",
-                        next();
-                    } while (allow_multiple_binary_operators() && cur() == oper);
-
                     // optional-whitespace,
                     skip_whitespace();
-                    // platform-expression-not, (go back to start of repetition)
-                    seed->exprs.push_back(expr_not());
-                } while (cur() == oper);
 
-                if (cur() == other)
+                    if constexpr (oper == ExprKind::op_list)
+                    {
+                        // platform-expression { ",", optional-whitespace, platform-expression } ;
+                        seed->exprs.push_back(expr());
+                    }
+                    else
+                    {
+                        // platform-expression-not, (go back to start of repetition)
+                        seed->exprs.push_back(expr_not());
+                    }
+                    next_oper = expr_operator();
+                } while (next_oper == oper);
+
+                if constexpr (unmixable_oper != ExprKind::op_invalid)
                 {
-                    add_error("mixing & and | is not allowed; use () to specify order of operations");
+                    if (next_oper == unmixable_oper)
+                    {
+                        add_error("mixing & and | is not allowed; use () to specify order of operations");
+                    }
                 }
 
-                return std::move(seed);
+                if (next_oper == ExprKind::op_list)
+                {
+                    // platform-expression { ",", optional-whitespace, platform-expression } ;
+                    //
+                    // To handle a lower-precedence, treat the remainder of the string as a platform expression.
+                    // E.g., "A & B , C | D" will be treated as "(A & B) , (C | D)", which preserves intended precedence
+                    // In this case, see is the LHS at the point in which we see the ",".
+
+                    return expr_binary<ExprKind::op_list, ExprKind::op_invalid>(
+                        std::make_unique<ExprImpl>(next_oper, std::move(seed)));
+                }
+                else
+                {
+                    return std::move(seed);
+                }
             }
         };
     }
@@ -436,7 +577,7 @@ namespace vcpkg::PlatformExpression
 
                     return valid;
                 }
-                else if (expr.kind == ExprKind::op_or)
+                else if ((expr.kind == ExprKind::op_or) || (expr.kind == ExprKind::op_list))
                 {
                     bool valid = false;
 
@@ -569,7 +710,10 @@ namespace vcpkg::PlatformExpression
                     case ExprKind::identifier: return expr.identifier;
                     case ExprKind::op_and: join = " & "; break;
                     case ExprKind::op_or: join = " | "; break;
+                    case ExprKind::op_list: join = " , "; break;
                     case ExprKind::op_not: return Strings::format("!%s", (*this)(expr.exprs.at(0)));
+                    case ExprKind::op_empty: join = ""; break;
+                    case ExprKind::op_invalid: join = " invalid "; break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
 

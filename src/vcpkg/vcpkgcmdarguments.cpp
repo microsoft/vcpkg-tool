@@ -308,6 +308,7 @@ namespace vcpkg
                 {WAIT_FOR_LOCK_SWITCH, &VcpkgCmdArguments::wait_for_lock},
                 {IGNORE_LOCK_FAILURES_SWITCH, &VcpkgCmdArguments::ignore_lock_failures},
                 {JSON_SWITCH, &VcpkgCmdArguments::json},
+                {EXACT_ABI_TOOLS_VERSIONS_SWITCH, &VcpkgCmdArguments::exact_abi_tools_versions},
             };
 
             Optional<StringView> lookahead;
@@ -1035,4 +1036,5 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::VERSIONS_FEATURE;
 
     constexpr StringLiteral VcpkgCmdArguments::CMAKE_SCRIPT_ARG;
+    constexpr StringLiteral VcpkgCmdArguments::EXACT_ABI_TOOLS_VERSIONS_SWITCH;
 }

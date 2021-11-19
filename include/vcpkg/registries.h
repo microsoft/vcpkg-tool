@@ -71,6 +71,8 @@ namespace vcpkg
 
         virtual Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const = 0;
 
+        virtual Optional<Path> get_path_to_baseline_version(const VcpkgPaths& paths, StringView port_name) const;
+
         virtual Json::Object serialize() const;
 
         virtual ~RegistryImplementation() = default;
@@ -118,7 +120,7 @@ namespace vcpkg
         void set_default_registry(std::unique_ptr<RegistryImplementation>&& r);
         void set_default_registry(std::nullptr_t r);
         bool is_default_builtin_registry() const;
-        void set_default_builtin_registry_baseline(StringView baseline) const;
+        void set_default_builtin_registry_baseline(StringView baseline);
 
         // returns whether the registry set has any modifications to the default
         // (i.e., whether `default_registry` was set, or `registries` had any entries)

@@ -227,6 +227,7 @@ namespace vcpkg::Build
         std::string cmake_system_name;
         std::string cmake_system_version;
         Optional<std::string> platform_toolset;
+        Optional<std::string> platform_toolset_version;
         Optional<Path> visual_studio_path;
         Optional<std::string> external_toolchain_file;
         Optional<ConfigurationType> build_type;
@@ -241,7 +242,7 @@ namespace vcpkg::Build
         const VcpkgPaths& m_paths;
     };
 
-    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset, const VcpkgPaths&);
+    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset);
 
     struct ExtendedBuildResult
     {

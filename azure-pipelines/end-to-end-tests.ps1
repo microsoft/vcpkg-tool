@@ -71,10 +71,9 @@ $envvars_clear = @(
     "VCPKG_KEEP_ENV_VARS",
     "VCPKG_ROOT",
     "VCPKG_FEATURE_FLAGS",
-    "VCPKG_DISABLE_METRICS",
-    "X_VCPKG_REGISTRIES_CACHE"
+    "VCPKG_DISABLE_METRICS"
 )
-$envvars = $envvars_clear + @("VCPKG_DOWNLOADS")
+$envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE")
 
 foreach ($Test in $AllTests)
 {

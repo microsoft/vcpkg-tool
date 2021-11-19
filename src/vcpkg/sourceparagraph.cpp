@@ -683,6 +683,20 @@ namespace vcpkg
     };
     FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
 
+    struct ContactsDeserializer final : Json::IDeserializer<Json::Object>
+    {
+        virtual StringView type_name() const override { return "a dictionary of contacts"; }
+
+        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            (void)r;
+            return obj;
+        }
+
+        static ContactsDeserializer instance;
+    };
+    ContactsDeserializer ContactsDeserializer::instance;
+
     static constexpr StringLiteral EXPRESSION_WORDS[] = {
         "WITH",
         "AND",
@@ -847,6 +861,8 @@ namespace vcpkg
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral MAINTAINERS = "maintainers";
+        constexpr static StringLiteral CONTACTS = "contacts";
+        constexpr static StringLiteral SUMMARY = "summary";
         constexpr static StringLiteral DESCRIPTION = "description";
         constexpr static StringLiteral HOMEPAGE = "homepage";
         constexpr static StringLiteral DOCUMENTATION = "documentation";
@@ -865,6 +881,8 @@ namespace vcpkg
             static const StringView u[] = {
                 NAME,
                 MAINTAINERS,
+                CONTACTS,
+                SUMMARY,
                 DESCRIPTION,
                 HOMEPAGE,
                 DOCUMENTATION,
@@ -900,7 +918,6 @@ namespace vcpkg
             }
 
             static Json::StringDeserializer url_deserializer{"a url"};
-
             r.required_object_field(type_name(), obj, NAME, spgh->name, Json::IdentifierDeserializer::instance);
             auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
             spgh->version = schemed_version.versiont.text();
@@ -908,6 +925,8 @@ namespace vcpkg
             spgh->port_version = schemed_version.versiont.port_version();
 
             r.optional_object_field(obj, MAINTAINERS, spgh->maintainers, Json::ParagraphDeserializer::instance);
+            r.optional_object_field(obj, CONTACTS, spgh->contacts, ContactsDeserializer::instance);
+            r.optional_object_field(obj, SUMMARY, spgh->summary, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DESCRIPTION, spgh->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, HOMEPAGE, spgh->homepage, url_deserializer);
             r.optional_object_field(obj, DOCUMENTATION, spgh->documentation, url_deserializer);
