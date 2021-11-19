@@ -1342,13 +1342,21 @@ namespace vcpkg::Build
         {
             Strings::append(package, " -> ", scfl->to_versiont());
         }
-        return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`, then\n"
-                               "submit an issue at https://github.com/Microsoft/vcpkg/issues including:\n"
+        return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`.\n"
+                               "Then check for known issues at:\n"
+                               "  https://github.com/microsoft/vcpkg/issues?q=is%%3Aissue+is%%3Aopen+in%%3Atitle+%s\n"
+                               "You can submit a new issue at:\n"
+                               "  "
+                               "https://github.com/microsoft/vcpkg/issues/"
+                               "new?template=report-package-build-failure.md&title=[%s]+Build+error\n"
+                               "including:\n"
                                "  package: %s\n"
                                "%s"
                                "\n"
                                "Additionally, attach any relevant sections from the log files above.",
                                vcpkg_update_cmd,
+                               action.spec.name(),
+                               action.spec.name(),
                                package,
                                paths.get_toolver_diagnostics());
     }
