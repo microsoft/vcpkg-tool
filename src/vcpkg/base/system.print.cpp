@@ -6,7 +6,7 @@ namespace vcpkg
 {
     namespace details
     {
-        void print(StringView message) { fwrite(message.data(), 1, message.size(), stdout); }
+        void print(StringView message) { msg::write_unlocalized_text_to_stdout(Color::none, message); }
 
         void print(const Color c, StringView message) { msg::write_unlocalized_text_to_stdout(c, message); }
     }
