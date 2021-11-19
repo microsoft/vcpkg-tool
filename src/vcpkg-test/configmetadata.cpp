@@ -272,7 +272,6 @@ TEST_CASE ("config ce metadata only", "[ce-metadata]")
 
     auto config = parse_test_configuration(raw_config);
     REQUIRE(!config.registries.size());
-    REQUIRE(config.instantiate_registry_set({})->is_default_builtin_registry());
 
     REQUIRE(!config.extra_info.is_empty());
     REQUIRE(config.extra_info.size() == 1);

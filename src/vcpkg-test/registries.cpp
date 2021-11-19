@@ -13,11 +13,11 @@ namespace
     {
         StringLiteral kind() const override { return "test"; }
 
-        std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths&, StringView) const override { return nullptr; }
+        std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override { return nullptr; }
 
-        void get_all_port_names(std::vector<std::string>&, const VcpkgPaths&) const override { }
+        void get_all_port_names(std::vector<std::string>&) const override { }
 
-        Optional<VersionT> get_baseline_version(const VcpkgPaths&, StringView) const override { return nullopt; }
+        Optional<VersionT> get_baseline_version(StringView) const override { return nullopt; }
 
         int number;
 

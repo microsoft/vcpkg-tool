@@ -579,11 +579,23 @@ namespace vcpkg::Install
         {OPTION_MANIFEST_FEATURE, "A feature from the manifest to install."},
     }};
 
-    std::vector<std::string> get_all_port_names(const VcpkgPaths& paths)
+    static std::vector<std::string> get_all_port_names(const VcpkgPaths& paths)
     {
-        auto sources_and_errors = Paragraphs::try_load_all_registry_ports(paths);
+        const auto& registries = paths.get_registry_set();
 
-        return Util::fmap(sources_and_errors.paragraphs, Paragraphs::get_name_of_control_file);
+        std::vector<std::string> ret;
+        for (const auto& registry : registries.registries())
+        {
+            const auto packages = registry.packages();
+            ret.insert(ret.end(), packages.begin(), packages.end());
+        }
+        if (auto registry = registries.default_registry())
+        {
+            registry->get_all_port_names(ret);
+        }
+
+        Util::sort_unique_erase(ret);
+        return ret;
     }
 
     const CommandStructure COMMAND_STRUCTURE = {

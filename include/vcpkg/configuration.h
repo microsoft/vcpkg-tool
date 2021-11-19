@@ -35,7 +35,7 @@ namespace vcpkg
         Json::Object serialize() const;
         void validate_as_active();
 
-        std::unique_ptr<RegistrySet> instantiate_registry_set(const Path& config_dir) const;
+        std::unique_ptr<RegistrySet> instantiate_registry_set(const VcpkgPaths& paths, const Path& config_dir) const;
 
         static View<StringView> known_fields();
     };

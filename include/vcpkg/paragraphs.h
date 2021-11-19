@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/expected.h>
@@ -54,8 +55,9 @@ namespace vcpkg::Paragraphs
         const std::string& operator()(const SourceControlFile& scf) const { return scf.core_paragraph->name; }
     } get_name_of_control_file;
 
-    LoadResults try_load_all_registry_ports(const VcpkgPaths& paths);
+    LoadResults try_load_all_registry_ports(const Filesystem& fs, const RegistrySet& registries);
 
-    std::vector<SourceControlFileAndLocation> load_all_registry_ports(const VcpkgPaths& paths);
+    std::vector<SourceControlFileAndLocation> load_all_registry_ports(const Filesystem& fs,
+                                                                      const RegistrySet& registries);
     std::vector<SourceControlFileAndLocation> load_overlay_ports(const Filesystem& fs, const Path& dir);
 }
