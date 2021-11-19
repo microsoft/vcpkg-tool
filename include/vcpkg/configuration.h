@@ -20,7 +20,7 @@ namespace vcpkg
         Optional<Path> path;
         Optional<std::string> reference;
         Optional<std::string> repo;
-        std::vector<std::string> packages;
+        Optional<std::vector<std::string>> packages;
 
         Json::Value serialize() const;
     };
@@ -33,7 +33,7 @@ namespace vcpkg
         Json::Object extra_info;
 
         Json::Object serialize() const;
-        void validate_feature_flags();
+        void validate_as_active();
 
         std::unique_ptr<RegistrySet> instantiate_registry_set(const Path& config_dir) const;
 

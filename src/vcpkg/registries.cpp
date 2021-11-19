@@ -828,6 +828,30 @@ namespace
 {
     using namespace vcpkg;
 
+    struct BaselineDeserializer final : Json::IDeserializer<std::map<std::string, VersionT, std::less<>>>
+    {
+        StringView type_name() const override { return "a baseline object"; }
+
+        Optional<type> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            std::map<std::string, VersionT, std::less<>> result;
+
+            for (auto pr : obj)
+            {
+                const auto& version_value = pr.second;
+                VersionT version;
+                r.visit_in_key(version_value, pr.first, version, get_versiontag_deserializer_instance());
+
+                result.emplace(pr.first.to_string(), std::move(version));
+            }
+
+            return result;
+        }
+
+        static BaselineDeserializer instance;
+    };
+    BaselineDeserializer BaselineDeserializer::instance;
+
     Path relative_path_to_versions(StringView port_name)
     {
         char prefix[] = {port_name.byte_at_index(0), '-', '\0'};
@@ -892,30 +916,6 @@ namespace
         }
         return db_entries;
     }
-
-    struct BaselineDeserializer final : Json::IDeserializer<std::map<std::string, VersionT, std::less<>>>
-    {
-        StringView type_name() const override { return "a baseline object"; }
-
-        Optional<type> visit_object(Json::Reader& r, const Json::Object& obj) override
-        {
-            std::map<std::string, VersionT, std::less<>> result;
-
-            for (auto pr : obj)
-            {
-                const auto& version_value = pr.second;
-                VersionT version;
-                r.visit_in_key(version_value, pr.first, version, get_versiontag_deserializer_instance());
-
-                result.emplace(pr.first.to_string(), std::move(version));
-            }
-
-            return result;
-        }
-
-        static BaselineDeserializer instance;
-    };
-    BaselineDeserializer BaselineDeserializer::instance;
 
     ExpectedS<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin)
     {

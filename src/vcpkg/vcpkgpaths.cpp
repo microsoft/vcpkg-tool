@@ -14,6 +14,7 @@
 #include <vcpkg/build.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/configuration.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
@@ -107,6 +108,7 @@ namespace vcpkg
         {
             print2(
                 Color::error, "Failed to parse ", config_path, ": configuration files must have a top-level object\n");
+            msg::println(Color::error, msg::msgSeeURL, msg::url = docs::registries_url);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         const auto& obj = parsed_config.first.object();
@@ -119,12 +121,9 @@ namespace vcpkg
             for (auto&& msg : reader.errors())
                 print2("    ", msg, '\n');
 
-            print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for "
-                   "more information.\n");
+            print2("See ", docs::registries_url, " for more information.\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-
-        parsed_config_opt.get()->validate_feature_flags();
 
         return parsed_config_opt;
     }
@@ -152,7 +151,7 @@ namespace vcpkg
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
-                config->validate_feature_flags();
+                config->validate_as_active();
 
                 if (config_data.has_value())
                 {
@@ -173,6 +172,8 @@ namespace vcpkg
 
         if (auto config = config_data.get())
         {
+            config->validate_as_active();
+
             ret = std::move(*config);
         }
 

@@ -200,7 +200,8 @@ namespace
 
             if (config->kind && *config->kind.get() != RegistryConfigDeserializer::KIND_ARTIFACT)
             {
-                r.required_object_field(type_name(), obj, PACKAGES, config->packages, package_names_deserializer);
+                r.required_object_field(
+                    type_name(), obj, PACKAGES, config->packages.emplace(), package_names_deserializer);
             }
         }
         return impl;
@@ -553,7 +554,7 @@ namespace vcpkg
         return known_fields;
     }
 
-    void Configuration::validate_feature_flags()
+    void Configuration::validate_as_active()
     {
         if (!ce_metadata.is_empty())
         {
@@ -609,11 +610,15 @@ namespace vcpkg
 
     std::unique_ptr<RegistrySet> Configuration::instantiate_registry_set(const Path& config_dir) const
     {
-        auto r_impls = Util::fmap(registries, [&config_dir](const RegistryConfig& rc) {
-            auto impl = instantiate_rconfig(rc, config_dir);
-            Checks::check_exit(VCPKG_LINE_INFO, impl != nullptr);
-            return Registry(std::vector<std::string>(rc.packages), std::move(impl));
-        });
+        std::vector<Registry> r_impls;
+        for (auto&& reg : registries)
+        {
+            // packages will be null for artifact registries
+            if (auto p = reg.packages.get())
+            {
+                r_impls.emplace_back(std::vector<std::string>(*p), instantiate_rconfig(reg, config_dir));
+            }
+        }
         auto reg1 = default_reg ? instantiate_rconfig(*default_reg.get(), config_dir) : make_builtin_registry();
         return std::make_unique<RegistrySet>(std::move(reg1), std::move(r_impls));
     }
@@ -663,10 +668,10 @@ namespace vcpkg
         if (auto p = path.get()) obj.insert(RegistryConfigDeserializer::PATH, Json::Value::string(p->native()));
         if (auto p = reference.get()) obj.insert(RegistryConfigDeserializer::REFERENCE, Json::Value::string(*p));
         if (auto p = repo.get()) obj.insert(RegistryConfigDeserializer::REPO, Json::Value::string(*p));
-        if (!packages.empty())
+        if (packages)
         {
-            auto& arr = obj.insert("packages", Json::Array());
-            for (auto&& p : packages)
+            auto& arr = obj.insert(RegistryDeserializer::PACKAGES, Json::Array());
+            for (auto&& p : *packages.get())
             {
                 arr.push_back(Json::Value::string(p));
             }

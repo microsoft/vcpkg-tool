@@ -106,6 +106,11 @@ TEST_CASE ("config registries only", "[ce-metadata]")
             "kind": "artifact",
             "name": "vcpkg-artifacts",
             "location": "https://github.com/microsoft/vcpkg-artifacts"
+        },
+        {
+            "kind": "filesystem",
+            "path": "path/to/registry",
+            "packages": [ ]
         }
     ]
 })json";
@@ -120,29 +125,35 @@ TEST_CASE ("config registries only", "[ce-metadata]")
         check_string(default_registry, KIND, "builtin");
         check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
 
-        REQUIRE(config.registries.size() == 3);
+        REQUIRE(config.registries.size() == 4);
 
         const auto& git_registry = config.registries[0];
         auto serialized_git_registry = git_registry.serialize().object();
         check_string(serialized_git_registry, KIND, "git");
         check_string(serialized_git_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
         check_string(serialized_git_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
-        REQUIRE(git_registry.packages.size() == 2);
-        REQUIRE(git_registry.packages[0] == "beicode");
-        REQUIRE(git_registry.packages[1] == "beison");
+        REQUIRE(git_registry.packages);
+        auto&& p = *git_registry.packages.get();
+        REQUIRE(p.size() == 2);
+        REQUIRE(p[0] == "beicode");
+        REQUIRE(p[1] == "beison");
 
         const auto& fs_registry = config.registries[1];
         auto serialized_fs_registry = fs_registry.serialize().object();
         check_string(serialized_fs_registry, KIND, "filesystem");
         check_string(serialized_fs_registry, PATH, "path/to/registry");
-        REQUIRE(fs_registry.packages.size() == 1);
-        REQUIRE(fs_registry.packages[0] == "zlib");
+        REQUIRE(fs_registry.packages);
+        REQUIRE(fs_registry.packages.get()->size() == 1);
+        REQUIRE((*fs_registry.packages.get())[0] == "zlib");
 
         const auto& artifact_registry = config.registries[2];
         auto serialized_art_registry = artifact_registry.serialize().object();
         check_string(serialized_art_registry, KIND, "artifact");
         check_string(serialized_art_registry, NAME, "vcpkg-artifacts");
         check_string(serialized_art_registry, LOCATION, "https://github.com/microsoft/vcpkg-artifacts");
+        REQUIRE(!artifact_registry.packages);
+
+        REQUIRE(config.registries[3].packages);
 
         auto raw_obj = parse_json_object(raw_config);
         auto serialized_obj = config.serialize();
@@ -753,9 +764,10 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     check_string(serialized_registry, KIND, "git");
     check_string(serialized_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
     check_string(serialized_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
-    REQUIRE(registry.packages.size() == 2);
-    REQUIRE(registry.packages[0] == "beicode");
-    REQUIRE(registry.packages[1] == "beison");
+    REQUIRE(registry.packages);
+    REQUIRE(registry.packages.get()->size() == 2);
+    REQUIRE(registry.packages.get()->at(0) == "beicode");
+    REQUIRE(registry.packages.get()->at(1) == "beison");
 
     REQUIRE(!config.extra_info.is_empty());
     REQUIRE(config.extra_info.size() == 2);

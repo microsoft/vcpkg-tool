@@ -10,6 +10,7 @@
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
@@ -851,8 +852,7 @@ namespace vcpkg::Install
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
-                print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/manifests.md for "
-                       "more information.\n");
+                print2("See ", docs::manifests_url, " for more information.\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 

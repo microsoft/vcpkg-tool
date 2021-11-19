@@ -7,6 +7,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/configuration.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/platform-expression.h>
@@ -1038,6 +1039,8 @@ namespace vcpkg
             {
                 Strings::append(ret, "    ", err, "\n");
             }
+            print2("See ", docs::registries_url, " for more information.\n");
+            print2("See ", docs::manifests_url, " for more information.\n");
             return std::move(ret);
         }
         else
@@ -1430,8 +1433,7 @@ namespace vcpkg
                 for (auto&& msg : reader.errors())
                     print2("    ", msg, '\n');
 
-                print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for "
-                       "more information.\n");
+                print2("See ", docs::registries_url, " for more information.\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
             obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,

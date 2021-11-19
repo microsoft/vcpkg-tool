@@ -9,6 +9,7 @@
 #include <vcpkg/commands.list.h>
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/commands.search.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
 #include <vcpkg/install.h>
@@ -112,9 +113,7 @@ namespace vcpkg::Help
         { "name": "rapidjson", "version": "2020-09-14" }
     ]
 })");
-        print2(tbl.m_str,
-               "\nExtended documentation is available at "
-               "https://github.com/Microsoft/vcpkg/tree/master/docs/users/versioning.md\n");
+        print2(tbl.m_str, "\nExtended documentation is available at ", docs::versioning_url, "\n");
     }
 
     static constexpr std::array<Topic, 17> topics = {{
