@@ -253,7 +253,10 @@ namespace
     {
         static constexpr StringLiteral s_kind = "builtin-git";
 
-        BuiltinGitRegistry(std::string&& baseline) : m_baseline_identifier(std::move(baseline)) { }
+        BuiltinGitRegistry(std::string&& baseline)
+            : m_baseline_identifier(std::move(baseline)), m_files_impl(std::make_unique<BuiltinFilesRegistry>())
+        {
+        }
 
         StringLiteral kind() const override { return s_kind; }
 

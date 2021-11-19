@@ -340,3 +340,31 @@ finally
 {
     Pop-Location
 }
+
+
+# test builtin registry
+Write-Trace "test builtin registry with baseline"
+$manifestDir = "$TestingRoot/manifest"
+
+New-Item -Path $manifestDir -ItemType Directory
+$manifestDir = (Get-Item $manifestDir).FullName
+
+Push-Location $manifestDir
+try
+{
+    $vcpkgJson = @{
+        "name" = "manifest-test";
+        "version-string" = "1.0.0";
+        "builtin-baseline" = "a4b5cde7f504c1bbbbc455f4a6ee60efd9034772";
+    }
+
+    New-Item -Path 'vcpkg.json' -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+
+    Run-Vcpkg search @builtinRegistryArgs zlib
+    Throw-IfFailed
+}
+finally
+{
+    Pop-Location
+}
