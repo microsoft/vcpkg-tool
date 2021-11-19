@@ -106,8 +106,7 @@ namespace vcpkg::Test
         const static Path BASE_TEMPORARY_DIRECTORY = internal_base_temporary_directory();
         return BASE_TEMPORARY_DIRECTORY;
     }
-    static void check_json_eq(const Json::Value& l, const Json::Value& r, std::string& path);
-    static void check_json_eq(const Json::Value& l, const Json::Value& r, std::string& path);
+
     static void check_json_eq(const Json::Value& l, const Json::Value& r, std::string& path);
 
     static void check_json_eq(const Json::Object& l, const Json::Object& r, std::string& path)
