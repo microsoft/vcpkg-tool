@@ -56,9 +56,11 @@ jobs:
         script: |
           $sha = Get-Content azure-pipelines/vcpkg-ce-sha.txt -Raw
           $sha = $sha.Trim()
-          curl.exe -L -o vcpkg-ce.zip "https://github.com/microsoft/vcpkg-ce/archive/$sha.zip"
-          tar xf vcpkg-ce.zip
-          mv "vcpkg-ce-$sha" vcpkg-ce
+          if( test-path vcpkg-ce) { rmdir -recurse -force vcpkg-ce -ea 0 }
+          # this will keep the .git folder, which is used by set-versions to accurately set the version of ce
+          git clone https://github.com/microsoft/vcpkg-ce/ vcpkg-ce
+          cd vcpkg-ce
+          git checkout $sha
         pwsh: true
     - task: UseNode@1
       displayName: Use Node 16 or later
