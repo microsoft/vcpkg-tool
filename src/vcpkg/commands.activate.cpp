@@ -2,10 +2,9 @@
 
 #include <vcpkg/commands.activate.h>
 #include <vcpkg/configure-environment.h>
-#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands::Activate
+namespace vcpkg::Commands
 {
     void ActivateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
