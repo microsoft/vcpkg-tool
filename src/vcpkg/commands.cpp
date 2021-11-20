@@ -33,6 +33,7 @@
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/commands.upload-metrics.h>
+#include <vcpkg/commands.use.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
@@ -77,7 +78,7 @@ namespace vcpkg::Commands
 
     Span<const PackageNameAndFunction<const PathsCommand*>> get_available_paths_commands()
     {
-        static const Activate::ActivateCommand activate{};
+        static const ActivateCommand activate{};
         static const AddCommand add{};
         static const AddVersion::AddVersionCommand add_version{};
         static const Autocomplete::AutocompleteCommand autocomplete{};
@@ -98,6 +99,7 @@ namespace vcpkg::Commands
         static const PortsDiff::PortsDiffCommand portsdiff{};
         static const Search::SearchCommand search{};
         static const Update::UpdateCommand update{};
+        static const UseCommand use{};
         static const X_VSInstances::VSInstancesCommand vsinstances{};
         static const ZCeCommand ce{};
 
@@ -119,6 +121,7 @@ namespace vcpkg::Commands
             {"portsdiff", &portsdiff},
             {"search", &search},
             {"update", &update},
+            {"use", &use},
             {"x-add-version", &add_version},
             {"x-ci-clean", &ciclean},
             {"x-ci-verify-versions", &ci_verify_versions},
