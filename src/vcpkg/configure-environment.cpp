@@ -12,7 +12,7 @@
 
 namespace vcpkg
 {
-    int run_configure_environment_command(const VcpkgPaths& paths, StringView arg0, View<std::string> args)
+    int run_configure_environment_command(const VcpkgPaths& paths, View<std::string> args)
     {
         print2(Color::warning, "vcpkg-ce ('configure environment') is experimental and may change at any time.\n");
 
@@ -60,11 +60,17 @@ namespace vcpkg
         Command cmd_run(node_path);
         cmd_run.string_arg("--harmony");
         cmd_run.string_arg(ce_path);
-        cmd_run.string_arg("--accept-eula");
-        cmd_run.string_arg(arg0);
         cmd_run.forwarded_args(args);
-        // tell vcpkg-ce that it's being called from vcpkg
         cmd_run.string_arg("--from-vcpkg");
         return cmd_execute(cmd_run, InWorkingDirectory{paths.original_cwd});
+    }
+
+    int run_configure_environment_command(const VcpkgPaths& paths, StringView arg0, View<std::string> args)
+    {
+        std::vector<std::string> all_args;
+        all_args.reserve(args.size() + 1);
+        all_args.emplace_back(arg0.data(), arg0.size());
+        all_args.insert(all_args.end(), args.begin(), args.end());
+        return run_configure_environment_command(paths, all_args);
     }
 }

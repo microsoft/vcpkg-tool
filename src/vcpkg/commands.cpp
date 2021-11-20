@@ -36,6 +36,7 @@
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
 #include <vcpkg/commands.zbootstrap-readonly.h>
+#include <vcpkg/commands.zce.h>
 #include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
@@ -96,30 +97,32 @@ namespace vcpkg::Commands
         static const Search::SearchCommand search{};
         static const Update::UpdateCommand update{};
         static const X_VSInstances::VSInstancesCommand vsinstances{};
+        static const ZCeCommand ce{};
 
         static std::vector<PackageNameAndFunction<const PathsCommand*>> t = {
             {"/?", &help},
             {"help", &help},
-            {"new", &new_},
-            {"search", &search},
-            {"list", &list},
-            {"integrate", &integrate},
-            {"owns", &owns},
-            {"update", &update},
-            {"edit", &edit},
-            {"create", &create},
-            {"cache", &cache},
-            {"portsdiff", &portsdiff},
-            {"autocomplete", &autocomplete},
-            {"fetch", &fetch},
-            {"x-ci-clean", &ciclean},
-            {"x-package-info", &info},
-            {"x-history", &porthistory},
-            {"x-vsinstances", &vsinstances},
-            {"format-manifest", &format_manifest},
-            {"x-ci-verify-versions", &ci_verify_versions},
-            {"x-add-version", &add_version},
             {"activate", &activate},
+            {"autocomplete", &autocomplete},
+            {"cache", &cache},
+            {"create", &create},
+            {"edit", &edit},
+            {"fetch", &fetch},
+            {"format-manifest", &format_manifest},
+            {"integrate", &integrate},
+            {"list", &list},
+            {"new", &new_},
+            {"owns", &owns},
+            {"portsdiff", &portsdiff},
+            {"search", &search},
+            {"update", &update},
+            {"x-add-version", &add_version},
+            {"x-ci-clean", &ciclean},
+            {"x-ci-verify-versions", &ci_verify_versions},
+            {"x-history", &porthistory},
+            {"x-package-info", &info},
+            {"x-vsinstances", &vsinstances},
+            {"z-ce", &ce},
         };
         return t;
     }
