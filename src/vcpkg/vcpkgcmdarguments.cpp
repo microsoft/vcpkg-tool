@@ -236,7 +236,14 @@ namespace vcpkg
         VcpkgCmdArguments args;
         std::vector<std::string> feature_flags;
 
-        args.forwardable_arguments.assign(arg_first, arg_last);
+        if (arg_first == arg_last)
+        {
+            args.forwardable_arguments.clear();
+        }
+        else
+        {
+            args.forwardable_arguments.assign(arg_first + 1, arg_last);
+        }
 
         if (arg_first != arg_last && arg_first + 1 == arg_last && *arg_first == "--version")
         {

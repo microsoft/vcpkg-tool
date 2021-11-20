@@ -3,6 +3,7 @@
 #include <vcpkg/build.h>
 #include <vcpkg/commands.activate.h>
 #include <vcpkg/commands.add-version.h>
+#include <vcpkg/commands.add.h>
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.buildexternal.h>
 #include <vcpkg/commands.cache.h>
@@ -77,6 +78,7 @@ namespace vcpkg::Commands
     Span<const PackageNameAndFunction<const PathsCommand*>> get_available_paths_commands()
     {
         static const Activate::ActivateCommand activate{};
+        static const AddCommand add{};
         static const AddVersion::AddVersionCommand add_version{};
         static const Autocomplete::AutocompleteCommand autocomplete{};
         static const Cache::CacheCommand cache{};
@@ -103,6 +105,7 @@ namespace vcpkg::Commands
             {"/?", &help},
             {"help", &help},
             {"activate", &activate},
+            {"add", &add},
             {"autocomplete", &autocomplete},
             {"cache", &cache},
             {"create", &create},
