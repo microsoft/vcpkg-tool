@@ -13,10 +13,17 @@ parameters:
   - default
   - test
   - real
+- name: VcpkgBaseVersionOverride
+  displayName: vcpkg Base Version (default is today's date in ISO 8601)
+  type: string
 
 variables:
-  - name: VCPKG_BASE_VERSION
-    value: $[format('{0:yyyy}-{0:MM}-{0:dd}', pipeline.startTime)]
+  - ${{ if eq(parameters.VcpkgBaseVersionOverride, '') }}:
+    - name: VCPKG_BASE_VERSION
+      value: $[format('{0:yyyy}-{0:MM}-{0:dd}', pipeline.startTime)]
+  - ${{ if ne(parameters.VcpkgBaseVersionOverride, '') }}:
+    - name: VCPKG_BASE_VERSION
+      value: ${{parameters.VcpkgBaseVersionOverride}}
   - name: TeamName
     value: vcpkg
   - group: vcpkg-dependency-source-blobs
