@@ -14,6 +14,8 @@
 using namespace vcpkg::Parse;
 using namespace vcpkg;
 
+static std::atomic<uint64_t> g_load_ports_stats(0);
+
 namespace vcpkg::Parse
 {
     static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, const std::string& fieldname)
@@ -270,12 +272,11 @@ namespace vcpkg::Paragraphs
                fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
     }
 
-    static ParseExpected<SourceControlFile> try_load_manifest_object(
-        StringView origin,
-        const ExpectedT<std::pair<vcpkg::Json::Value, vcpkg::Json::JsonStyle>, std::unique_ptr<Parse::IParseError>>&
-            res)
+    static ParseExpected<SourceControlFile> try_load_manifest_text(const std::string& text, StringView origin)
     {
-        auto error_info = std::make_unique<ParseControlErrorInfo>();
+        auto res = Json::parse(text);
+
+        std::string error;
         if (auto val = res.get())
         {
             if (val->first.is_object())
@@ -283,39 +284,22 @@ namespace vcpkg::Paragraphs
                 return SourceControlFile::parse_manifest_object(origin, val->first.object());
             }
 
-            error_info->error = "Manifest files must have a top-level object";
+            error = "Manifest files must have a top-level object";
         }
         else
         {
-            error_info->error = res.error()->format();
+            error = res.error()->format();
         }
-
-        error_info->name = origin.to_string();
-        return error_info;
-    }
-
-    static ParseExpected<SourceControlFile> try_load_manifest_text(const std::string& text, StringView origin)
-    {
-        auto res = Json::parse(text);
-        return try_load_manifest_object(origin, res);
-    }
-
-    static ParseExpected<SourceControlFile> try_load_manifest(const Filesystem& fs,
-                                                              const std::string& port_name,
-                                                              const Path& manifest_path,
-                                                              std::error_code& ec)
-    {
-        (void)port_name;
-
         auto error_info = std::make_unique<ParseControlErrorInfo>();
-        auto res = Json::parse_file(fs, manifest_path, ec);
-        if (ec) return error_info;
-
-        return try_load_manifest_object(manifest_path, res);
+        error_info->name = origin.to_string();
+        error_info->error = std::move(error);
+        return error_info;
     }
 
     ParseExpected<SourceControlFile> try_load_port_text(const std::string& text, StringView origin, bool is_manifest)
     {
+        StatsTimer timer(g_load_ports_stats);
+
         if (is_manifest)
         {
             return try_load_manifest_text(text, origin);
@@ -334,19 +318,16 @@ namespace vcpkg::Paragraphs
 
     ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const Path& port_directory)
     {
+        StatsTimer timer(g_load_ports_stats);
+
         const auto manifest_path = port_directory / "vcpkg.json";
         const auto control_path = port_directory / "CONTROL";
         const auto port_name = port_directory.filename().to_string();
-        if (fs.exists(manifest_path, IgnoreErrors{}))
+        std::error_code ec;
+        auto manifest_contents = fs.read_contents(manifest_path, ec);
+        if (ec)
         {
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO,
-                                      !fs.exists(control_path, IgnoreErrors{}),
-                                      "Found both manifest and CONTROL file in port %s; please rename one or the other",
-                                      port_directory);
-
-            std::error_code ec;
-            auto res = try_load_manifest(fs, port_name, manifest_path, ec);
-            if (ec)
+            if (fs.exists(manifest_path, IgnoreErrors{}))
             {
                 auto error_info = std::make_unique<ParseControlErrorInfo>();
                 error_info->name = port_name;
@@ -354,8 +335,15 @@ namespace vcpkg::Paragraphs
                     Strings::format("Failed to load manifest file for port: %s\n", manifest_path, ec.message());
                 return error_info;
             }
+        }
+        else
+        {
+            vcpkg::Checks::check_exit(VCPKG_LINE_INFO,
+                                      !fs.exists(control_path, IgnoreErrors{}),
+                                      "Found both manifest and CONTROL file in port %s; please rename one or the other",
+                                      port_directory);
 
-            return res;
+            return try_load_manifest_text(manifest_contents, manifest_path);
         }
 
         if (fs.exists(control_path, IgnoreErrors{}))
@@ -387,6 +375,8 @@ namespace vcpkg::Paragraphs
 
     ExpectedS<BinaryControlFile> try_load_cached_package(const VcpkgPaths& paths, const PackageSpec& spec)
     {
+        StatsTimer timer(g_load_ports_stats);
+
         ExpectedS<std::vector<Paragraph>> pghs =
             get_paragraphs(paths.get_filesystem(), paths.package_dir(spec) / "CONTROL");
 
@@ -447,16 +437,12 @@ namespace vcpkg::Paragraphs
                 continue;
             }
 
-            auto port_entry = impl->get_port_entry(paths, port_name);
-            auto baseline_version = impl->get_baseline_version(paths, port_name);
-            if (port_entry && baseline_version)
+            if (auto p = impl->get_path_to_baseline_version(paths, port_name))
             {
-                auto port_path =
-                    port_entry->get_path_to_version(paths, *baseline_version.get()).value_or_exit(VCPKG_LINE_INFO);
-                auto maybe_spgh = try_load_port(fs, port_path);
+                auto maybe_spgh = try_load_port(fs, *p.get());
                 if (const auto spgh = maybe_spgh.get())
                 {
-                    ret.paragraphs.push_back({std::move(*spgh), std::move(port_path)});
+                    ret.paragraphs.push_back({std::move(*spgh), std::move(*p.get())});
                 }
                 else
                 {
@@ -468,7 +454,6 @@ namespace vcpkg::Paragraphs
                 // the registry that owns the name of this port does not actually contain the port
                 // this can happen if R1 contains the port definition for <abc>, but doesn't
                 // declare it owns <abc>.
-                continue;
             }
         }
 
@@ -527,4 +512,6 @@ namespace vcpkg::Paragraphs
         load_results_print_error(ret);
         return std::move(ret.paragraphs);
     }
+
+    uint64_t get_load_ports_stats() { return g_load_ports_stats.load(); }
 }

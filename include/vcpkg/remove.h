@@ -8,13 +8,11 @@
 
 namespace vcpkg::Remove
 {
-    enum class Purge
+    enum class Purge : bool
     {
         NO = 0,
         YES
     };
-
-    inline Purge to_purge(const bool value) { return value ? Purge::YES : Purge::NO; }
 
     void perform_remove_plan_action(const VcpkgPaths& paths,
                                     const Dependencies::RemovePlanAction& action,

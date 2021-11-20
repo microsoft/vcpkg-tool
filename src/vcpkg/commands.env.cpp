@@ -51,7 +51,7 @@ namespace vcpkg::Commands::Env
         const Build::PreBuildInfo pre_build_info(
             paths, triplet, var_provider.get_generic_triplet_vars(triplet).value_or_exit(VCPKG_LINE_INFO));
         const Toolset& toolset = paths.get_toolset(pre_build_info);
-        auto build_env_cmd = Build::make_build_env_cmd(pre_build_info, toolset, paths);
+        auto build_env_cmd = Build::make_build_env_cmd(pre_build_info, toolset);
 
         std::unordered_map<std::string, std::string> extra_env = {};
         const bool add_bin = Util::Sets::contains(options.switches, OPTION_BIN);
@@ -61,12 +61,13 @@ namespace vcpkg::Commands::Env
         const bool add_python = Util::Sets::contains(options.switches, OPTION_PYTHON);
 
         std::vector<std::string> path_vars;
-        if (add_bin) path_vars.push_back((paths.installed / triplet.to_string() / "bin").native());
-        if (add_debug_bin) path_vars.push_back((paths.installed / triplet.to_string() / "debug" / "bin").native());
-        if (add_include) extra_env.emplace("INCLUDE", (paths.installed / triplet.to_string() / "include").native());
+        const auto current_triplet_path = paths.installed() / triplet.to_string();
+        if (add_bin) path_vars.push_back((current_triplet_path / "bin").native());
+        if (add_debug_bin) path_vars.push_back((current_triplet_path / "debug" / "bin").native());
+        if (add_include) extra_env.emplace("INCLUDE", (current_triplet_path / "include").native());
         if (add_tools)
         {
-            auto tools_dir = paths.installed / triplet.to_string() / "tools";
+            auto tools_dir = current_triplet_path / "tools";
             path_vars.push_back(tools_dir.native());
             for (auto&& tool_dir : fs.get_directories_non_recursive(tools_dir, VCPKG_LINE_INFO))
             {
@@ -75,7 +76,7 @@ namespace vcpkg::Commands::Env
         }
         if (add_python)
         {
-            extra_env.emplace("PYTHONPATH", (paths.installed / triplet.to_string() / "python").native());
+            extra_env.emplace("PYTHONPATH", (current_triplet_path / "python").native());
         }
 
         if (path_vars.size() > 0) extra_env.emplace("PATH", Strings::join(";", path_vars));

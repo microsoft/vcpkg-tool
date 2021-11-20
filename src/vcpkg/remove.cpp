@@ -49,7 +49,7 @@ namespace vcpkg::Remove
             std::vector<Path> dirs_touched;
             for (auto&& suffix : lines)
             {
-                auto target = paths.installed / suffix;
+                auto target = paths.installed() / suffix;
 
                 const auto status = fs.symlink_status(target, ec);
                 if (ec)
@@ -160,7 +160,7 @@ namespace vcpkg::Remove
         if (purge == Purge::YES)
         {
             Filesystem& fs = paths.get_filesystem();
-            fs.remove_all(paths.packages / action.spec.dir(), VCPKG_LINE_INFO);
+            fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
         }
     }
 
@@ -171,8 +171,8 @@ namespace vcpkg::Remove
     static constexpr StringLiteral OPTION_OUTDATED = "outdated";
 
     static constexpr std::array<CommandSwitch, 5> SWITCHES = {{
-        {OPTION_PURGE, "Remove the cached copy of the package (default)"},
-        {OPTION_NO_PURGE, "Do not remove the cached copy of the package (deprecated)"},
+        {OPTION_PURGE, ""},
+        {OPTION_NO_PURGE, ""},
         {OPTION_RECURSE, "Allow removal of packages not explicitly specified on the command line"},
         {OPTION_DRY_RUN, "Print the packages to be removed, but do not remove them"},
         {OPTION_OUTDATED, "Select all packages with versions that do not match the portfiles"},
@@ -242,15 +242,15 @@ namespace vcpkg::Remove
                 Input::check_triplet(spec.triplet(), paths);
         }
 
-        const bool no_purge_was_passed = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
-        const bool purge_was_passed = Util::Sets::contains(options.switches, OPTION_PURGE);
-        if (purge_was_passed && no_purge_was_passed)
+        const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
+        if (no_purge && Util::Sets::contains(options.switches, OPTION_PURGE))
         {
             print2(Color::error, "Error: cannot specify both --no-purge and --purge.\n");
             print2(COMMAND_STRUCTURE.example_text);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        const Purge purge = to_purge(purge_was_passed || !no_purge_was_passed);
+        const Purge purge = no_purge ? Purge::NO : Purge::YES;
+
         const bool is_recursive = Util::Sets::contains(options.switches, OPTION_RECURSE);
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 

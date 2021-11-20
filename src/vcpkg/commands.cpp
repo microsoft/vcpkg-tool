@@ -33,6 +33,7 @@
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
+#include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
 #include <vcpkg/install.h>
@@ -128,6 +129,7 @@ namespace vcpkg::Commands
         static const Export::ExportCommand export_command{};
         static const DependInfo::DependInfoCommand depend_info{};
         static const CheckSupport::CheckSupportCommand check_support{};
+        static const Z_PrintConfig::PrintConfigCommand print_config{};
 
         static std::vector<PackageNameAndFunction<const TripletCommand*>> t = {
             {"install", &install},
@@ -141,6 +143,7 @@ namespace vcpkg::Commands
             {"export", &export_command},
             {"depend-info", &depend_info},
             {"x-check-support", &check_support},
+            {"z-print-config", &print_config},
         };
         return t;
     }

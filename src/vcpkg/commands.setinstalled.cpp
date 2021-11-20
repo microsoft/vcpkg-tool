@@ -123,7 +123,7 @@ namespace vcpkg::Commands::SetInstalled
                                               Build::null_build_logs_recorder(),
                                               cmake_vars);
 
-        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
+        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 
         std::set<std::string> printed_usages;
         for (auto&& ur_spec : user_requested_specs)

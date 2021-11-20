@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/format.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/stringview.h>
@@ -204,6 +206,8 @@ namespace vcpkg
         virtual ~IExclusiveFileLock() = default;
     };
 
+    uint64_t get_filesystem_stats();
+
     struct Filesystem
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
@@ -303,7 +307,7 @@ namespace vcpkg
                                const Path& destination,
                                CopyOptions options,
                                std::error_code& ec) = 0;
-        void copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li);
+        bool copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li);
 
         virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) = 0;
         void copy_symlink(const Path& source, const Path& destination, LineInfo li);
@@ -386,20 +390,4 @@ namespace vcpkg
     };
 }
 
-namespace fmt
-{
-    template<>
-    struct formatter<vcpkg::Path>
-    {
-        constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
-        {
-            return vcpkg::basic_format_parse_impl(ctx);
-        }
-        template<class FormatContext>
-        auto format(const vcpkg::Path& path, FormatContext& ctx) -> decltype(ctx.out())
-        {
-            return format_to(ctx.out(), "{}", path.native());
-        }
-    };
-
-}
+VCPKG_FORMAT_AS(vcpkg::Path, vcpkg::StringView);

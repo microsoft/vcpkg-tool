@@ -28,7 +28,7 @@ namespace vcpkg
         /// <summary>Find the StatusParagraph for given feature spec.</summary>
         /// <param name="spec">Feature specification to find the status paragraph for</param>
         /// <returns>Iterator for found spec</returns>
-        const_iterator find(const FeatureSpec& spec) const { return find(spec.name(), spec.triplet(), spec.feature()); }
+        const_iterator find(const FeatureSpec& spec) const { return find(spec.port(), spec.triplet(), spec.feature()); }
 
         /// <summary>Find a StatusParagraph by name, triplet and feature.</summary>
         /// <param name="name">Package name</param>

@@ -256,9 +256,8 @@ namespace vcpkg::Commands::Integrate
                 appdata_src_path, create_appdata_shortcut(paths.buildsystems_msbuild_targets), VCPKG_LINE_INFO);
             auto appdata_dst_path = get_appdata_targets_path();
 
-            const auto rc = fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, ec);
-
-            if (!rc || ec)
+            fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, ec);
+            if (ec)
             {
                 print2(Color::error, "Error: Failed to copy file: ", appdata_src_path, " -> ", appdata_dst_path, "\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -269,9 +268,8 @@ namespace vcpkg::Commands::Integrate
                 appdata_src_path2, create_appdata_shortcut(paths.buildsystems_msbuild_props), VCPKG_LINE_INFO);
             auto appdata_dst_path2 = get_appdata_props_path();
 
-            const auto rc2 = fs.copy_file(appdata_src_path2, appdata_dst_path2, CopyOptions::overwrite_existing, ec);
-
-            if (!rc2 || ec)
+            fs.copy_file(appdata_src_path2, appdata_dst_path2, CopyOptions::overwrite_existing, ec);
+            if (ec)
             {
                 print2(
                     Color::error, "Error: Failed to copy file: ", appdata_src_path2, " -> ", appdata_dst_path2, "\n");

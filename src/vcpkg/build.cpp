@@ -2,6 +2,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/system.debug.h>
@@ -299,23 +300,36 @@ namespace vcpkg::Build
         static const std::string LIBRARY_LINKAGE = "LibraryLinkage";
     }
 
+    DECLARE_AND_REGISTER_MESSAGE(
+        UnsupportedToolchain,
+        (msg::triplet, msg::value, msg::path, msg::list),
+        "",
+        "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
+        "architecture was {value}\n    "
+        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
+
+    DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
+                                 (msg::value),
+                                 "",
+                                 "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{value}' to a vcvarsall platform. "
+                                 "Supported system names are '', 'Windows' and 'WindowsStore'.");
+
+#if defined(_WIN32)
     static CStringView to_vcvarsall_target(const std::string& cmake_system_name)
     {
         if (cmake_system_name.empty()) return "";
         if (cmake_system_name == "Windows") return "";
         if (cmake_system_name == "WindowsStore") return "store";
 
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                   "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '%s' to a vcvarsall platform. "
-                                   "Supported systems are '', 'Windows' and 'WindowsStore'.",
-                                   cmake_system_name);
+        msg::println(Color::error, msgUnsupportedSystemName, msg::value = cmake_system_name);
+
+        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
 
     static CStringView to_vcvarsall_toolchain(const std::string& target_architecture,
                                               const Toolset& toolset,
-                                              View<Toolset> all_toolsets)
+                                              Triplet triplet)
     {
-#if defined(_WIN32)
         auto maybe_target_arch = to_cpu_architecture(target_architecture);
         Checks::check_maybe_upgrade(
             VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architecture);
@@ -330,36 +344,27 @@ namespace vcpkg::Build
             if (it != toolset.supported_architectures.end()) return it->name;
         }
 
-        print2("Error: Unsupported toolchain combination.\n");
-        print2("Target was ",
-               target_architecture,
-               " but the chosen Visual Studio instance supports:\n    ",
-               Strings::join(
-                   ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); }),
-               "\nVcpkg selected ",
-               toolset.visual_studio_root_path,
-               " as the Visual Studio instance.\nDetected instances:\n",
-               Strings::join("",
-                             all_toolsets,
-                             [](const Toolset& t) { return Strings::concat("    ", t.visual_studio_root_path, '\n'); }),
-               "\nSee "
-               "https://github.com/microsoft/vcpkg/blob/master/docs/users/triplets.md#VCPKG_VISUAL_STUDIO_PATH "
-               "for more information.\n");
+        const auto toolset_list = Strings::join(
+            ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); });
+
+        msg::println(msgUnsupportedToolchain,
+                     msg::triplet = triplet,
+                     msg::value = target_architecture,
+                     msg::path = toolset.visual_studio_root_path,
+                     msg::list = toolset_list);
+        msg::println(
+            msg::msgSeeURL,
+            msg::url = StringLiteral(
+                "https://github.com/microsoft/vcpkg/blob/master/docs/users/triplets.md#VCPKG_VISUAL_STUDIO_PATH"));
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
-#else
-        (void)target_architecture;
-        (void)toolset;
-        (void)all_toolsets;
-        Checks::exit_with_message(VCPKG_LINE_INFO,
-                                  "Error: vcvars-based toolchains are only usable on Windows platforms.");
-#endif
     }
+#endif
 
 #if defined(_WIN32)
     const Environment& EnvCache::get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info)
     {
         auto build_env_cmd =
-            make_build_env_cmd(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO), paths);
+            make_build_env_cmd(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
 
         const auto& base_env = envs.get_lazy(abi_info.pre_build_info->passthrough_env_vars, [&]() -> EnvMapEntry {
             std::unordered_map<std::string, std::string> env;
@@ -561,11 +566,16 @@ namespace vcpkg::Build
         }
     }
 
-    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info,
-                                      const Toolset& toolset,
-                                      const VcpkgPaths& paths)
+    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset)
     {
         if (!pre_build_info.using_vcvars()) return {};
+
+#if !defined(WIN32)
+        // pre_build_info.using_vcvars() should always be false on non-Win32 hosts.
+        // If it was true, we should have failed earlier while selecting a Toolset
+        (void)toolset;
+        Checks::unreachable(VCPKG_LINE_INFO);
+#else
 
         const char* tonull = " >nul";
         if (Debug::g_debugging)
@@ -573,7 +583,7 @@ namespace vcpkg::Build
             tonull = "";
         }
 
-        const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, paths.get_all_toolsets());
+        const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, pre_build_info.triplet);
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
         return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(
@@ -583,6 +593,7 @@ namespace vcpkg::Build
                             arch,
                             target,
                             tonull));
+#endif
     }
 
     static std::unique_ptr<BinaryControlFile> create_binary_control_file(
@@ -610,7 +621,7 @@ namespace vcpkg::Build
         {
             start += "\n" + Strings::serialize(feature);
         }
-        const auto binary_control_file = paths.packages / bcf.core_paragraph.dir() / "CONTROL";
+        const auto binary_control_file = paths.packages() / bcf.core_paragraph.dir() / "CONTROL";
         paths.get_filesystem().write_contents(binary_control_file, start, VCPKG_LINE_INFO);
     }
 
@@ -640,7 +651,7 @@ namespace vcpkg::Build
     {
         auto triplet = abi_info.pre_build_info->triplet;
         print2("Detecting compiler hash for triplet ", triplet, "...\n");
-        auto buildpath = paths.buildtrees / "detect_compiler";
+        auto buildpath = paths.buildtrees() / "detect_compiler";
 
 #if !defined(_WIN32)
         // TODO: remove when vcpkg.exe is in charge for acquiring tools. Change introduced in vcpkg v0.0.107.
@@ -650,7 +661,7 @@ namespace vcpkg::Build
         std::vector<CMakeVariable> cmake_args{
             {"CURRENT_PORT_DIR", paths.scripts / "detect_compiler"},
             {"CURRENT_BUILDTREES_DIR", buildpath},
-            {"CURRENT_PACKAGES_DIR", paths.packages / ("detect_compiler_" + triplet.canonical_name())},
+            {"CURRENT_PACKAGES_DIR", paths.packages() / ("detect_compiler_" + triplet.canonical_name())},
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {"_HOST_TRIPLET", triplet.canonical_name()},
         };
@@ -783,7 +794,7 @@ namespace vcpkg::Build
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
         {
-            const Path port_config_path = paths.installed / dependency.triplet().canonical_name() / "share" /
+            const Path port_config_path = paths.installed() / dependency.triplet().canonical_name() / "share" /
                                           dependency.name() / "vcpkg-port-config.cmake";
 
             if (fs.is_regular_file(port_config_path))
@@ -889,7 +900,7 @@ namespace vcpkg::Build
 
         const auto& env = paths.get_action_env(action.abi_info.value_or_exit(VCPKG_LINE_INFO));
 
-        auto buildpath = paths.buildtrees / action.spec.name();
+        auto buildpath = paths.buildtrees() / action.spec.name();
         if (!fs.exists(buildpath, IgnoreErrors{}))
         {
             std::error_code err;
@@ -950,11 +961,8 @@ namespace vcpkg::Build
         auto find_itr = action.feature_dependencies.find("core");
         Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
 
-        std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(*scfl.source_control_file->core_paragraph,
-                                                                            triplet,
-                                                                            build_info,
-                                                                            action.public_abi(),
-                                                                            std::move(find_itr->second));
+        std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(
+            *scfl.source_control_file->core_paragraph, triplet, build_info, action.public_abi(), find_itr->second);
 
         if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
         {
@@ -971,7 +979,7 @@ namespace vcpkg::Build
                     Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
 
                     bcf->features.emplace_back(
-                        *scfl.source_control_file->core_paragraph, *f_pgh, triplet, std::move(find_itr->second));
+                        *scfl.source_control_file->core_paragraph, *f_pgh, triplet, find_itr->second);
                 }
             }
         }
@@ -1221,7 +1229,7 @@ namespace vcpkg::Build
         {
             for (const FeatureSpec& fspec : kv.second)
             {
-                if (!status_db.is_installed(fspec) && !(fspec.name() == name && fspec.triplet() == spec.triplet()))
+                if (!status_db.is_installed(fspec) && !(fspec.port() == name && fspec.triplet() == spec.triplet()))
                 {
                     missing_fspecs.emplace_back(fspec);
                 }
@@ -1334,19 +1342,23 @@ namespace vcpkg::Build
         {
             Strings::append(package, " -> ", scfl->to_versiont());
         }
-        auto description = paths.git_describe_head();
-        return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`, then\n"
-                               "submit an issue at https://github.com/Microsoft/vcpkg/issues including:\n"
+        return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`.\n"
+                               "Then check for known issues at:\n"
+                               "  https://github.com/microsoft/vcpkg/issues?q=is%%3Aissue+is%%3Aopen+in%%3Atitle+%s\n"
+                               "You can submit a new issue at:\n"
+                               "  "
+                               "https://github.com/microsoft/vcpkg/issues/"
+                               "new?template=report-package-build-failure.md&title=[%s]+Build+error\n"
+                               "including:\n"
                                "  package: %s\n"
-                               "  vcpkg version: %s\n"
-                               "  vcpkg-tool version: %s\n"
+                               "%s"
                                "\n"
                                "Additionally, attach any relevant sections from the log files above.",
                                vcpkg_update_cmd,
+                               action.spec.name(),
+                               action.spec.name(),
                                package,
-                               description.has_value() ? description.value_or_exit(VCPKG_LINE_INFO)
-                                                       : "Failed to get HEAD: " + description.error(),
-                               Commands::Version::version());
+                               paths.get_toolver_diagnostics());
     }
 
     static BuildInfo inner_create_buildinfo(Parse::Paragraph pgh)
@@ -1454,6 +1466,7 @@ namespace vcpkg::Build
             CMAKE_SYSTEM_NAME,
             CMAKE_SYSTEM_VERSION,
             PLATFORM_TOOLSET,
+            PLATFORM_TOOLSET_VERSION,
             VISUAL_STUDIO_PATH,
             CHAINLOAD_TOOLCHAIN_FILE,
             BUILD_TYPE,
@@ -1469,6 +1482,7 @@ namespace vcpkg::Build
             {"VCPKG_CMAKE_SYSTEM_NAME", VcpkgTripletVar::CMAKE_SYSTEM_NAME},
             {"VCPKG_CMAKE_SYSTEM_VERSION", VcpkgTripletVar::CMAKE_SYSTEM_VERSION},
             {"VCPKG_PLATFORM_TOOLSET", VcpkgTripletVar::PLATFORM_TOOLSET},
+            {"VCPKG_PLATFORM_TOOLSET_VERSION", VcpkgTripletVar::PLATFORM_TOOLSET_VERSION},
             {"VCPKG_VISUAL_STUDIO_PATH", VcpkgTripletVar::VISUAL_STUDIO_PATH},
             {"VCPKG_CHAINLOAD_TOOLCHAIN_FILE", VcpkgTripletVar::CHAINLOAD_TOOLCHAIN_FILE},
             {"VCPKG_BUILD_TYPE", VcpkgTripletVar::BUILD_TYPE},
@@ -1502,6 +1516,9 @@ namespace vcpkg::Build
                 case VcpkgTripletVar::CMAKE_SYSTEM_VERSION: cmake_system_version = variable_value; break;
                 case VcpkgTripletVar::PLATFORM_TOOLSET:
                     platform_toolset = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
+                    break;
+                case VcpkgTripletVar::PLATFORM_TOOLSET_VERSION:
+                    platform_toolset_version = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
                     break;
                 case VcpkgTripletVar::VISUAL_STUDIO_PATH:
                     visual_studio_path = variable_value.empty() ? nullopt : Optional<Path>{variable_value};

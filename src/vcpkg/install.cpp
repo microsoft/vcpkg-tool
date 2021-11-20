@@ -239,7 +239,7 @@ namespace vcpkg::Install
 
         if (!intersection.empty())
         {
-            const auto triplet_install_path = paths.installed / triplet.canonical_name();
+            const auto triplet_install_path = paths.installed() / triplet.canonical_name();
             vcpkg::printf(Color::error,
                           "The following files are already installed in %s and are in conflict with %s\n\n",
                           triplet_install_path.generic_u8string(),
@@ -284,7 +284,7 @@ namespace vcpkg::Install
         }
 
         const InstallDir install_dir = InstallDir::from_destination_root(
-            paths.installed, triplet.to_string(), paths.listfile_path(bcf.core_paragraph));
+            paths.installed(), triplet.to_string(), paths.listfile_path(bcf.core_paragraph));
 
         install_package_and_write_listfile(paths, bcf.core_paragraph.spec, install_dir);
 
@@ -568,7 +568,7 @@ namespace vcpkg::Install
     }};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
-        {OPTION_XUNIT, "File to output results in XUnit format (Internal use)"},
+        {OPTION_XUNIT, ""}, // internal use
         {OPTION_WRITE_PACKAGES_CONFIG,
          "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
          "binarycaching` for more information."},
@@ -627,7 +627,8 @@ namespace vcpkg::Install
         std::error_code ec;
         auto& fs = paths.get_filesystem();
 
-        auto usage_file = paths.installed / bpgh.spec.triplet().canonical_name() / "share" / bpgh.spec.name() / "usage";
+        auto usage_file =
+            paths.installed() / bpgh.spec.triplet().canonical_name() / "share" / bpgh.spec.name() / "usage";
         if (fs.exists(usage_file, IgnoreErrors{}))
         {
             ret.usage_file = true;
@@ -654,7 +655,7 @@ namespace vcpkg::Install
                 if (Strings::contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
                 {
                     // CMake file is inside the share folder
-                    const auto path = paths.installed / suffix;
+                    const auto path = paths.installed() / suffix;
                     const auto contents = fs.read_contents(path, ec);
                     const auto find_package_name = Path(path.parent_path()).filename().to_string();
                     if (!ec)
@@ -920,22 +921,6 @@ namespace vcpkg::Install
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_overrides", "defined");
             }
 
-            if (auto p_baseline = manifest_scf.core_paragraph->builtin_baseline.get())
-            {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_baseline", "defined");
-                if (!is_git_commit_sha(*p_baseline))
-                {
-                    LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
-                    Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                               "Error: the top-level builtin-baseline (%s) was not a valid commit sha: "
-                                               "expected 40 lowercase hexadecimal characters.\n%s\n",
-                                               *p_baseline,
-                                               paths.get_current_git_sha_baseline_message());
-                }
-
-                paths.get_configuration().registry_set.set_default_builtin_registry_baseline(*p_baseline);
-            }
-
             auto verprovider = PortFileProvider::make_versioned_portfile_provider(paths);
             auto baseprovider = PortFileProvider::make_baseline_provider(paths);
 
@@ -943,7 +928,8 @@ namespace vcpkg::Install
             extended_overlay_ports.reserve(args.overlay_ports.size() + 2);
             extended_overlay_ports.push_back(manifest_path.parent_path().to_string());
             Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
-            if (paths.get_configuration().registry_set.is_default_builtin_registry())
+            if (paths.get_configuration().registry_set.is_default_builtin_registry() &&
+                !paths.use_git_default_registry())
             {
                 extended_overlay_ports.push_back(paths.builtin_ports_directory().native());
             }
@@ -1047,7 +1033,7 @@ namespace vcpkg::Install
                                "warning: vcpkg appears to be in a Visual Studio prompt targeting ",
                                vs_prompt_view,
                                " but is installing packages for ",
-                               common_triplet.to_string(),
+                               common_triplet,
                                ". Consider using --triplet ",
                                vs_prompt_view,
                                "-windows or --triplet ",
@@ -1091,7 +1077,7 @@ namespace vcpkg::Install
                                                Build::null_build_logs_recorder(),
                                                var_provider);
 
-        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
+        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {
