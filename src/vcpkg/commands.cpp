@@ -17,6 +17,7 @@
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.env.h>
 #include <vcpkg/commands.fetch.h>
+#include <vcpkg/commands.find.h>
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/commands.generate-message-map.h>
 #include <vcpkg/commands.h>
@@ -88,6 +89,7 @@ namespace vcpkg::Commands
         static const Create::CreateCommand create{};
         static const Edit::EditCommand edit{};
         static const Fetch::FetchCommand fetch{};
+        static const FindCommand find_{};
         static const FormatManifest::FormatManifestCommand format_manifest{};
         static const Help::HelpCommand help{};
         static const Info::InfoCommand info{};
@@ -97,7 +99,7 @@ namespace vcpkg::Commands
         static const Owns::OwnsCommand owns{};
         static const PortHistory::PortHistoryCommand porthistory{};
         static const PortsDiff::PortsDiffCommand portsdiff{};
-        static const Search::SearchCommand search{};
+        static const SearchCommand search{};
         static const Update::UpdateCommand update{};
         static const UseCommand use{};
         static const X_VSInstances::VSInstancesCommand vsinstances{};
@@ -113,6 +115,7 @@ namespace vcpkg::Commands
             {"create", &create},
             {"edit", &edit},
             {"fetch", &fetch},
+            {"find", &find_},
             {"format-manifest", &format_manifest},
             {"integrate", &integrate},
             {"list", &list},
