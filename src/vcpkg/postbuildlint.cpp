@@ -976,7 +976,7 @@ namespace vcpkg::PostBuildLint
     static LintStatus check_no_absolute_paths_in(const Filesystem& fs, const Path& dir, Span<Path> absolute_paths)
     {
         static constexpr StringLiteral extensions[] = {
-            "h", "hpp", "hxx", "py", "sh", "cmake", "pc", "la", "yaml", "cfg", "conf"};
+            "h", "hpp", "hxx", "py", "sh", "cmake", "pc", "yaml", "cfg", "conf"};
         std::vector<std::pair<Path, std::string>> files_and_contents;
         for (auto& path : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
         {
