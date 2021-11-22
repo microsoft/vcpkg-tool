@@ -676,7 +676,7 @@ namespace vcpkg::PlatformExpression
     int compare(const Expr& lhs, const Expr& rhs)
     {
         auto lhs_platform_complexity = lhs.complexity();
-        auto rhs_platform_complexity = lhs.complexity();
+        auto rhs_platform_complexity = rhs.complexity();
 
         if (lhs_platform_complexity < rhs_platform_complexity) return -1;
         if (rhs_platform_complexity < lhs_platform_complexity) return 1;
