@@ -40,9 +40,10 @@ foreach ($k in $b.keys) {
 Refresh-TestRoot
 
 New-Item -ItemType Directory -Force $bundle | Out-Null
+New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 @{
     readonly = $True
-} | ConvertTo-JSON | out-file -enc ascii $bundle/.vcpkg-root | Out-Null
+} | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
 
 $a = Run-Vcpkg z-print-config `
     --vcpkg-root=$bundle `
@@ -72,9 +73,10 @@ Refresh-TestRoot
 
 New-Item -ItemType Directory -Force $manifestdir | Out-Null
 New-Item -ItemType Directory -Force $bundle | Out-Null
+New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 @{
     readonly = $True
-} | ConvertTo-JSON | out-file -enc ascii $bundle/.vcpkg-root | Out-Null
+} | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
 @{
     name = "manifest"
     version = "0"
@@ -112,9 +114,10 @@ $manifestdir = Join-Path $TestingRoot "manifest"
 
 New-Item -ItemType Directory -Force $manifestdir | Out-Null
 New-Item -ItemType Directory -Force $bundle | Out-Null
+New-Item -ItemType File -Force $bundle/.vcpkg-root | Out-Null
 @{
     readonly = $True
-} | ConvertTo-JSON | out-file -enc ascii $bundle/.vcpkg-root | Out-Null
+} | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
 @{
     name = "manifest"
     version = "0"
@@ -163,7 +166,7 @@ $CurrentTest = "Testing bundle.usegitregistry"
 @{
     readonly = $True
     usegitregistry = $True
-} | ConvertTo-JSON | out-file -enc ascii $bundle/.vcpkg-root | Out-Null
+} | ConvertTo-JSON | out-file -enc ascii $bundle/vcpkg-bundle.json | Out-Null
 Run-Vcpkg install --dry-run --vcpkg-root=$bundle `
     --x-manifest-root=$manifestdir `
     --overlay-triplets=$env:VCPKG_ROOT/triplets `

@@ -355,6 +355,63 @@ namespace vcpkg
 
     static Path lockfile_path(const VcpkgPaths& p) { return p.vcpkg_dir() / "vcpkg-lock.json"; }
 
+    static Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
+    {
+        if (args.vcpkg_root_dir)
+        {
+            return fs.almost_canonical(*args.vcpkg_root_dir, VCPKG_LINE_INFO);
+        }
+        else
+        {
+            auto ret = fs.find_file_recursively_up(original_cwd, ".vcpkg-root", VCPKG_LINE_INFO);
+            if (ret.empty())
+            {
+                return fs.find_file_recursively_up(
+                    fs.almost_canonical(get_exe_path_of_current_process(), VCPKG_LINE_INFO),
+                    ".vcpkg-root",
+                    VCPKG_LINE_INFO);
+            }
+            return ret;
+        }
+    }
+
+    static void load_bundle_file(const Filesystem& fs, const Path& root, details::VcpkgPathsImpl& impl)
+    {
+        const auto vcpkg_bundle_file = root / "vcpkg-bundle.json";
+        if (fs.exists(vcpkg_bundle_file, IgnoreErrors{}))
+        {
+            auto bundle_file = fs.read_contents(vcpkg_bundle_file, VCPKG_LINE_INFO);
+            auto maybe_bundle_doc = Json::parse(bundle_file, bundle_file);
+            if (auto bundle_doc = maybe_bundle_doc.get())
+            {
+                if (auto v = bundle_doc->first.object().get("readonly"))
+                {
+                    impl.m_readonly = v->boolean();
+                }
+                if (auto v = bundle_doc->first.object().get("usegitregistry"))
+                {
+                    impl.m_usegitregistry = v->boolean();
+                }
+                if (auto v = bundle_doc->first.object().get("embeddedsha"))
+                {
+                    impl.m_embedded_git_sha = v->string().to_string();
+                }
+                Debug::print("Bundle config: readonly=",
+                             impl.m_readonly,
+                             ", usegitregistry=",
+                             impl.m_usegitregistry,
+                             ", embeddedsha=",
+                             impl.m_embedded_git_sha.value_or("nullopt"),
+                             "\n");
+            }
+            else
+            {
+                print2(Color::error, "Error: Invalid bundle definition.\n", maybe_bundle_doc.error()->format());
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+    }
+
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
         : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(
               filesystem,
@@ -366,58 +423,13 @@ namespace vcpkg
         original_cwd = vcpkg::win32_fix_path_case(original_cwd);
 #endif // _WIN32
 
-        if (args.vcpkg_root_dir)
-        {
-            root = filesystem.almost_canonical(*args.vcpkg_root_dir, VCPKG_LINE_INFO);
-        }
-        else
-        {
-            root = filesystem.find_file_recursively_up(original_cwd, ".vcpkg-root", VCPKG_LINE_INFO);
-            if (root.empty())
-            {
-                root = filesystem.find_file_recursively_up(
-                    filesystem.almost_canonical(get_exe_path_of_current_process(), VCPKG_LINE_INFO),
-                    ".vcpkg-root",
-                    VCPKG_LINE_INFO);
-            }
-        }
-
+        root = determine_root(filesystem, original_cwd, args);
         Checks::check_exit(VCPKG_LINE_INFO, !root.empty(), "Error: Could not detect vcpkg-root.");
         Debug::print("Using vcpkg-root: ", root, '\n');
-        const auto vcpkg_root_file = root / ".vcpkg-root";
-        auto bundle_file = filesystem.read_contents(vcpkg_root_file, VCPKG_LINE_INFO);
-        if (!std::all_of(bundle_file.begin(), bundle_file.end(), Parse::ParserBase::is_whitespace))
-        {
-            auto maybe_bundle_doc = Json::parse(bundle_file, vcpkg_root_file.native());
-            if (auto bundle_doc = maybe_bundle_doc.get())
-            {
-                if (auto v = bundle_doc->first.object().get("readonly"))
-                {
-                    m_pimpl->m_readonly = v->boolean();
-                }
-                if (auto v = bundle_doc->first.object().get("usegitregistry"))
-                {
-                    m_pimpl->m_usegitregistry = v->boolean();
-                }
-                if (auto v = bundle_doc->first.object().get("embeddedsha"))
-                {
-                    m_pimpl->m_embedded_git_sha = v->string().to_string();
-                }
-                Debug::print("Bundle config: readonly=",
-                             m_pimpl->m_readonly,
-                             ", usegitregistry=",
-                             m_pimpl->m_usegitregistry,
-                             ", embeddedsha=",
-                             m_pimpl->m_embedded_git_sha.value_or("nullopt"),
-                             "\n");
-            }
-            else
-            {
-                print2(Color::error, "Error: Invalid bundle definition.\n", maybe_bundle_doc.error()->format());
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
-        }
 
+        load_bundle_file(filesystem, root, *m_pimpl);
+
+        const auto vcpkg_root_file = root / ".vcpkg-root";
         std::error_code ec;
         if (args.manifests_enabled())
         {
