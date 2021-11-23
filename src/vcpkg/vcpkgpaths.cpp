@@ -407,12 +407,12 @@ namespace vcpkg
         }
 
         Debug::print("Bundle config: readonly=",
-                impl.m_readonly,
-                ", usegitregistry=",
-                impl.m_usegitregistry,
-                ", embeddedsha=",
-                impl.m_embedded_git_sha.value_or("nullopt"),
-                "\n");
+                     impl.m_readonly,
+                     ", usegitregistry=",
+                     impl.m_usegitregistry,
+                     ", embeddedsha=",
+                     impl.m_embedded_git_sha.value_or("nullopt"),
+                     "\n");
     }
 
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
