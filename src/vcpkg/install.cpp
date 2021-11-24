@@ -594,9 +594,9 @@ namespace vcpkg::Install
     };
 
     const CommandStructure MANIFEST_COMMAND_STRUCTURE = {
-        create_example_string("install --triplet x64-windows"),
+        create_example_string("install --triplet x64-windows\n  vcpkg install zlib"),
         0,
-        0,
+        SIZE_MAX,
         {MANIFEST_INSTALL_SWITCHES, INSTALL_SETTINGS, MANIFEST_INSTALL_MULTISETTINGS},
         nullptr,
     };
@@ -839,6 +839,25 @@ namespace vcpkg::Install
 
         if (auto manifest = paths.get_manifest().get())
         {
+            const std::vector<ParsedQualifiedSpecifier> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+                ExpectedS<ParsedQualifiedSpecifier> value = parse_qualified_specifier(std::string(arg));
+                if (value)
+                {
+                    if (!value.value_or_exit(VCPKG_LINE_INFO).triplet)
+                    {
+                        return value.value_or_exit(VCPKG_LINE_INFO);
+                    }
+                    print2(Color::error,
+                           "Error: Triplet expressions are not allowed here. Use the --triplet parameter.\n");
+                }
+                else
+                {
+                    print2(Color::error, value.error());
+                }
+                print2(MANIFEST_COMMAND_STRUCTURE.example_text);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            });
+
             Optional<Path> pkgsconfig;
             auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
             if (it_pkgsconfig != options.settings.end())
@@ -864,6 +883,42 @@ namespace vcpkg::Install
                     paths.get_configuration().registry_set.is_default_builtin_registry()))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
+            }
+
+            if (!specs.empty())
+            {
+                for (const auto& spec : specs)
+                {
+                    auto dep = Util::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {
+                        return dep.name == spec.name && !dep.host &&
+                               structurally_equal(spec.platform.value_or(PlatformExpression::Expr()), dep.platform);
+                    });
+                    if (dep == manifest_scf.core_paragraph->dependencies.end())
+                    {
+                        manifest_scf.core_paragraph->dependencies.emplace_back(
+                            spec.name, spec.features.value_or({}), spec.platform.value_or({}));
+                    }
+                    else
+                    {
+                        if (spec.features)
+                        {
+                            for (const auto& feature : spec.features.value_or_exit(VCPKG_LINE_INFO))
+                            {
+                                if (!Util::Vectors::contains(dep->features, feature))
+                                {
+                                    dep->features.push_back(feature);
+                                }
+                            }
+                        }
+                    }
+                }
+                std::error_code ec;
+                fs.write_contents(manifest_path, Json::stringify(serialize_manifest(manifest_scf), {}), ec);
+                if (ec)
+                {
+                    Checks::exit_with_message(
+                        VCPKG_LINE_INFO, "Failed to write manifest file %s: %s\n", manifest_path, ec.message());
+                }
             }
 
             std::vector<std::string> features;
