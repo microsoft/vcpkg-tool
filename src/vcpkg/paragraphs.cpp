@@ -412,7 +412,7 @@ namespace vcpkg::Paragraphs
 
         std::vector<std::string> ports;
 
-        const auto& registries = paths.get_configuration().registry_set;
+        const auto& registries = paths.get_registry_set();
 
         for (const auto& registry : registries.registries())
         {

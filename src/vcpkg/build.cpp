@@ -18,6 +18,7 @@
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
@@ -352,10 +353,7 @@ namespace vcpkg::Build
                      msg::value = target_architecture,
                      msg::path = toolset.visual_studio_root_path,
                      msg::list = toolset_list);
-        msg::println(
-            msg::msgSeeURL,
-            msg::url = StringLiteral(
-                "https://github.com/microsoft/vcpkg/blob/master/docs/users/triplets.md#VCPKG_VISUAL_STUDIO_PATH"));
+        msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
 #endif

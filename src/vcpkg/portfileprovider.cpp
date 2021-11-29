@@ -107,7 +107,7 @@ namespace vcpkg::PortFileProvider
                 }
                 else
                 {
-                    auto version = paths.get_configuration().registry_set.baseline_for_port(paths, port_name);
+                    auto version = paths.get_registry_set().baseline_for_port(paths, port_name);
                     m_baseline_cache.emplace(port_name.to_string(), version);
                     return version;
                 }
@@ -129,7 +129,7 @@ namespace vcpkg::PortFileProvider
                 auto entry_it = m_entry_cache.find(name);
                 if (entry_it == m_entry_cache.end())
                 {
-                    if (auto reg = paths.get_configuration().registry_set.registry_for_port(name))
+                    if (auto reg = paths.get_registry_set().registry_for_port(name))
                     {
                         if (auto entry = reg->get_port_entry(paths, name))
                         {

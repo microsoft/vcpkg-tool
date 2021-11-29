@@ -5,6 +5,8 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/unicode.h>
 
+#include <vcpkg/documentation.h>
+
 #include <inttypes.h>
 
 namespace vcpkg::Json
@@ -1425,9 +1427,9 @@ namespace vcpkg::Json
         if (!is_ident(sv))
         {
             r.add_generic_error(type_name(),
-                                "must be lowercase alphanumeric+hyphens and not reserved (see "
-                                "https://github.com/Microsoft/vcpkg/tree/master/docs/specifications/manifests.md for "
-                                "more information)");
+                                Strings::concat("must be lowercase alphanumeric+hyphens and not reserved (see ",
+                                                vcpkg::docs::manifests_url,
+                                                " for more information)"));
         }
         return sv.to_string();
     }

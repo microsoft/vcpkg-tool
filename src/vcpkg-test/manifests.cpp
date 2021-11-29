@@ -681,10 +681,7 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     auto maybe_as_json = Json::parse(raw);
     REQUIRE(maybe_as_json.has_value());
     auto as_json = *maybe_as_json.get();
-    REQUIRE(as_json.first.is_object());
-    auto as_json_obj = as_json.first.object();
-    REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
-            Json::stringify(as_json_obj, Json::JsonStyle::with_spaces(4)));
+    check_json_eq(Json::Value::object(serialize_manifest(pgh)), as_json.first);
 
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);

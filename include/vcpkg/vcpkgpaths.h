@@ -109,7 +109,6 @@ namespace vcpkg
         Path original_cwd;
         Path root;
         Path manifest_root_dir;
-        Path config_root_dir;
         Path downloads;
         Path triplets;
         Path community_triplets;
@@ -159,8 +158,7 @@ namespace vcpkg
 
         Optional<const Json::Object&> get_manifest() const;
         Optional<const Path&> get_manifest_path() const;
-        const Configuration& get_configuration() const;
-        void set_builtin_baseline(const std::string& baseline) const;
+        const RegistrySet& get_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo
         const Toolset& get_toolset(const Build::PreBuildInfo& prebuildinfo) const;

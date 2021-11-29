@@ -10,6 +10,7 @@
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
@@ -851,17 +852,14 @@ namespace vcpkg::Install
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
-                print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/manifests.md for "
-                       "more information.\n");
+                print2("See ", docs::manifests_url, " for more information.\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
             auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
 
             if (auto maybe_error = manifest_scf.check_against_feature_flags(
-                    manifest_path,
-                    paths.get_feature_flags(),
-                    paths.get_configuration().registry_set.is_default_builtin_registry()))
+                    manifest_path, paths.get_feature_flags(), paths.get_registry_set().is_default_builtin_registry()))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
             }
@@ -928,8 +926,7 @@ namespace vcpkg::Install
             extended_overlay_ports.reserve(args.overlay_ports.size() + 2);
             extended_overlay_ports.push_back(manifest_path.parent_path().to_string());
             Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
-            if (paths.get_configuration().registry_set.is_default_builtin_registry() &&
-                !paths.use_git_default_registry())
+            if (paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry())
             {
                 extended_overlay_ports.push_back(paths.builtin_ports_directory().native());
             }
