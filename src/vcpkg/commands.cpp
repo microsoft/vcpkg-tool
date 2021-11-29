@@ -49,6 +49,7 @@ namespace vcpkg::Commands
         static const InitRegistry::InitRegistryCommand init_registry{};
         static const X_Download::XDownloadCommand xdownload{};
         static const GenerateDefaultMessageMapCommand generate_message_map{};
+        static const Hash::HashCommand hash{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
@@ -56,6 +57,7 @@ namespace vcpkg::Commands
         static std::vector<PackageNameAndFunction<const BasicCommand*>> t = {
             {"version", &version},
             {"contact", &contact},
+            {"hash", &hash},
             {"x-init-registry", &init_registry},
             {"x-download", &xdownload},
             {"x-generate-default-message-map", &generate_message_map},
@@ -81,7 +83,6 @@ namespace vcpkg::Commands
         static const Cache::CacheCommand cache{};
         static const PortsDiff::PortsDiffCommand portsdiff{};
         static const Autocomplete::AutocompleteCommand autocomplete{};
-        static const Hash::HashCommand hash{};
         static const Fetch::FetchCommand fetch{};
         static const CIClean::CICleanCommand ciclean{};
         static const PortHistory::PortHistoryCommand porthistory{};
@@ -103,7 +104,6 @@ namespace vcpkg::Commands
             {"cache", &cache},
             {"portsdiff", &portsdiff},
             {"autocomplete", &autocomplete},
-            {"hash", &hash},
             {"fetch", &fetch},
             {"x-ci-clean", &ciclean},
             {"x-package-info", &info},
