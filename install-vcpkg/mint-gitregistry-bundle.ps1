@@ -71,6 +71,16 @@ try {
         cp $AdditionalFiles[$idx] "out/$($AdditionalFilesNames[$idx])"
     }
 
+    $bundleConfig = @{
+        'readonly' = $False;
+        'usegitregistry' = $True;
+        'embeddedsha' = $sha
+    }
+
+    Set-Content -Path "out/vcpkg-bundle.json" `
+        -Value (ConvertTo-Json -InputObject $bundleConfig) `
+        -Encoding Ascii
+
     tar czf $DestinationTarballName -C out *
 }
 finally {
