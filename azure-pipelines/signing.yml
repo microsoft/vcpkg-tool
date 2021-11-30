@@ -137,7 +137,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: install-vcpkg/mint-gitregistry-bundle.ps1
-        arguments: '-DestinationTarballName "$(Build.BinariesDirectory)\vcpkg-gitregistry-bundle.tar.gz" -TempPath gitregistry-temp install-vcpkg/vcpkg-bundle.json "$(Build.BinariesDirectory)\vcpkg.cmd" "$(Build.BinariesDirectory)\vcpkg.ps1"'
+        arguments: '-DestinationTarballName "$(Build.BinariesDirectory)\vcpkg-gitregistry-bundle.tar.gz" -TempPath gitregistry-temp "$(Build.BinariesDirectory)\vcpkg.cmd" "$(Build.BinariesDirectory)\vcpkg.ps1"'
     - script: npm pack
       displayName: Create vcpkg-ce Pack
       workingDirectory: $(Build.BinariesDirectory)/vcpkg-ce
