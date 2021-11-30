@@ -31,18 +31,18 @@ namespace vcpkg::Commands
 
         const auto& vcpkg_root = fs.almost_canonical(*vcpkg_root_arg, VCPKG_LINE_INFO);
         fs.create_directories(vcpkg_root, VCPKG_LINE_INFO);
-        const auto bundle_tarball = vcpkg_root / "vcpkg-readonly-bundle.tar.gz";
+        const auto bundle_tarball = vcpkg_root / "vcpkg-gitregistry-bundle.tar.gz";
 #if defined(VCPKG_READONLY_BUNDLE_SHA)
         print2("Downloading vcpkg readonly root bundle " VCPKG_BASE_VERSION_AS_STRING "\n");
         const auto bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
-            "/vcpkg-readonly-bundle.tar.gz";
+            "/vcpkg-gitregistry-bundle.tar.gz";
         download_manager.download_file(
             fs, bundle_uri, bundle_tarball, std::string(MACRO_TO_STRING(VCPKG_READONLY_BUNDLE_SHA)));
 #else  // ^^^ VCPKG_READONLY_BUNDLE_SHA / !VCPKG_READONLY_BUNDLE_SHA vvv
         print2(Color::warning, "Downloading latest readonly bundle\n");
         const auto bundle_uri =
-            "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-readonly-bundle.tar.gz";
+            "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-gitregistry-bundle.tar.gz";
         download_manager.download_file(fs, bundle_uri, bundle_tarball, nullopt);
 #endif // ^^^ !VCPKG_READONLY_BUNDLE_SHA
 
