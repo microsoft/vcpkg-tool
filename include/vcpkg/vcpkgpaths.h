@@ -73,9 +73,7 @@ namespace vcpkg
 
         VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args);
         VcpkgPaths(const VcpkgPaths&) = delete;
-        VcpkgPaths(VcpkgPaths&&) = default;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
-        VcpkgPaths& operator=(VcpkgPaths&&) = default;
         ~VcpkgPaths();
 
         Path package_dir(const PackageSpec& spec) const;

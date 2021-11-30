@@ -10,6 +10,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/visualstudio.h>
 
 #endif
