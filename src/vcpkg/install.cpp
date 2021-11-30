@@ -1,5 +1,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
@@ -527,41 +528,25 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 16> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 17> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
-        {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
+        {OPTION_USE_HEAD_VERSION,
+         "Install the libraries on the command line using the latest upstream sources (classic mode)"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
         {OPTION_ONLY_DOWNLOADS, "Download sources but don't build packages"},
         {OPTION_ONLY_BINARYCACHING, "Fail if cached binaries are not available"},
         {OPTION_RECURSE, "Allow removal of packages as part of installation"},
         {OPTION_KEEP_GOING, "Continue installing packages on failure"},
-        {OPTION_EDITABLE, "Disable source re-extraction and binary caching for libraries on the command line"},
+        {OPTION_EDITABLE,
+         "Disable source re-extraction and binary caching for libraries on the command line (classic mode)"},
 
         {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
         {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
         {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
-        {OPTION_ENFORCE_PORT_CHECKS,
-         "Fail install if a port has detected problems or attempts to use a deprecated feature"},
-        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
-    }};
-    static constexpr std::array<CommandSwitch, 17> MANIFEST_INSTALL_SWITCHES = {{
-        {OPTION_DRY_RUN, "Do not actually build or install"},
-        {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
-        {OPTION_NO_DOWNLOADS, "Do not download new sources"},
-        {OPTION_ONLY_DOWNLOADS, "Download sources but don't build packages"},
-        {OPTION_ONLY_BINARYCACHING, "Fail if cached binaries are not available"},
-        {OPTION_RECURSE, "Allow removal of packages as part of installation"},
-        {OPTION_KEEP_GOING, "Continue installing packages on failure"},
-        {OPTION_EDITABLE, "Disable source re-extraction and binary caching for libraries on the command line"},
-        {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
-        {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
-        {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
-        {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
-        {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
-        {OPTION_MANIFEST_NO_DEFAULT_FEATURES, "Don't install the default features from the manifest."},
+        {OPTION_MANIFEST_NO_DEFAULT_FEATURES,
+         "Don't install the default features from the top-level manifest (manifest mode)."},
         {OPTION_ENFORCE_PORT_CHECKS,
          "Fail install if a port has detected problems or attempts to use a deprecated feature"},
         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
@@ -575,8 +560,8 @@ namespace vcpkg::Install
          "binarycaching` for more information."},
     }};
 
-    static constexpr std::array<CommandMultiSetting, 1> MANIFEST_INSTALL_MULTISETTINGS = {{
-        {OPTION_MANIFEST_FEATURE, "A feature from the manifest to install."},
+    static constexpr std::array<CommandMultiSetting, 1> INSTALL_MULTISETTINGS = {{
+        {OPTION_MANIFEST_FEATURE, "Additional feature from the top-level manifest to install (manifest mode)."},
     }};
 
     std::vector<std::string> get_all_port_names(const VcpkgPaths& paths)
@@ -588,17 +573,19 @@ namespace vcpkg::Install
 
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string("install zlib zlib:x64-windows curl boost"),
-        1,
+        0,
         SIZE_MAX,
-        {INSTALL_SWITCHES, INSTALL_SETTINGS},
+        {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
         &get_all_port_names,
     };
 
+    // This command structure must share "critical" values (switches, number of arguments). It exists only to provide a
+    // better example string.
     const CommandStructure MANIFEST_COMMAND_STRUCTURE = {
         create_example_string("install --triplet x64-windows"),
         0,
-        0,
-        {MANIFEST_INSTALL_SWITCHES, INSTALL_SETTINGS, MANIFEST_INSTALL_MULTISETTINGS},
+        SIZE_MAX,
+        {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
         nullptr,
     };
 
@@ -772,17 +759,42 @@ namespace vcpkg::Install
         return ret;
     }
 
-    ///
-    /// <summary>
-    /// Run "install" command.
-    /// </summary>
-    ///
+    DECLARE_AND_REGISTER_MESSAGE(ErrorRequirePackagesToInstall,
+                                 (),
+                                 "",
+                                 "Error: No packages were listed for installation and no manifest was found.");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        ErrorIndividualPackagesUnsupported,
+        (),
+        "",
+        "Error: In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
+        "additional "
+        "packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorRequirePackagesList,
+                                 (),
+                                 "",
+                                 "Error: `vcpkg install` requires a list of packages to install in classic mode.");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        ErrorInvalidClassicModeOption,
+        (msg::value),
+        "",
+        "Error: The option {value} is not supported in classic mode and no manifest was found.");
+
+    DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
+                                 (msg::value),
+                                 "",
+                                 "Error: The option {value} is not supported in manifest mode.");
+
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
                           Triplet default_triplet,
                           Triplet host_triplet)
     {
-        // input sanitization
         const ParsedArguments options =
             args.parse_arguments(paths.manifest_mode_enabled() ? MANIFEST_COMMAND_STRUCTURE : COMMAND_STRUCTURE);
 
@@ -809,6 +821,67 @@ namespace vcpkg::Install
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? Dependencies::UnsupportedPortAction::Warn
                                                  : Dependencies::UnsupportedPortAction::Error;
+
+        if (paths.manifest_mode_enabled())
+        {
+            bool failure = false;
+            if (!args.command_arguments.empty())
+            {
+                msg::println(Color::error, msgErrorIndividualPackagesUnsupported);
+                msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
+                failure = true;
+            }
+            if (use_head_version)
+            {
+                msg::println(Color::error,
+                             msgErrorInvalidManifestModeOption,
+                             msg::value = Strings::concat("--", OPTION_USE_HEAD_VERSION));
+                failure = true;
+            }
+            if (is_editable)
+            {
+                msg::println(Color::error,
+                             msgErrorInvalidManifestModeOption,
+                             msg::value = Strings::concat("--", OPTION_EDITABLE));
+                failure = true;
+            }
+            if (failure)
+            {
+                msg::println(msgUsingManifestAt, msg::path = paths.manifest_root_dir / "vcpkg.json");
+                print2("\n");
+                print_usage(MANIFEST_COMMAND_STRUCTURE);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+        else
+        {
+            bool failure = false;
+            if (args.command_arguments.empty())
+            {
+                msg::println(Color::error, msgErrorRequirePackagesList);
+                failure = true;
+            }
+            if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
+            {
+                msg::println(Color::error,
+                             msgErrorInvalidClassicModeOption,
+                             msg::value = Strings::concat("--", OPTION_MANIFEST_NO_DEFAULT_FEATURES));
+                failure = true;
+            }
+            if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
+            {
+                msg::println(Color::error,
+                             msgErrorInvalidClassicModeOption,
+                             msg::value = Strings::concat("--", OPTION_MANIFEST_FEATURE));
+                failure = true;
+            }
+            if (failure)
+            {
+                print2("\n");
+                print_usage(COMMAND_STRUCTURE);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
 
         BinaryCache binary_cache;
         if (!only_downloads)
