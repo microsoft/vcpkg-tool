@@ -4,6 +4,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/stringview.h>
 
 #include <stdio.h>

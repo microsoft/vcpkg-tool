@@ -85,7 +85,7 @@ namespace vcpkg::Commands::X_Download
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: SHA512's must be 128 hex characters: '%s'", *p);
             }
-            Strings::ascii_to_lowercase(p->begin(), p->end());
+            Strings::ascii_to_lowercase(p->data(), p->data() + p->size());
         }
 
         return sha;

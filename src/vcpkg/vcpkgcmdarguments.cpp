@@ -270,8 +270,8 @@ namespace vcpkg
             }
 
             // make argument case insensitive before the first =
-            auto first_eq = std::find(std::begin(basic_arg), std::end(basic_arg), '=');
-            Strings::ascii_to_lowercase(std::begin(basic_arg), first_eq);
+            auto first_eq = Util::find(Span<char>(basic_arg), '=');
+            Strings::ascii_to_lowercase(basic_arg.data(), first_eq);
             // basic_arg[0] == '-' && basic_arg[1] == '-'
             StringView arg = StringView(basic_arg).substr(2);
             constexpr static std::pair<StringView, std::unique_ptr<std::string> VcpkgCmdArguments::*>

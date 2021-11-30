@@ -803,11 +803,21 @@ namespace vcpkg
 
     ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
                                                      InWorkingDirectory wd,
-                                                     const Environment& env)
+                                                     const Environment& env,
+                                                     bool tee_in_debug)
     {
         std::string output;
         auto rc = cmd_execute_and_stream_data(
-            cmd_line, wd, [&](StringView sv) { Strings::append(output, sv); }, env);
+            cmd_line,
+            wd,
+            [&](StringView sv) {
+                Strings::append(output, sv);
+                if (tee_in_debug && Debug::g_debugging)
+                {
+                    print2(sv);
+                }
+            },
+            env);
         return {rc, std::move(output)};
     }
 
