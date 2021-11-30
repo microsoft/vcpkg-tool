@@ -38,7 +38,7 @@
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.xdownload.h>
 #include <vcpkg/commands.xvsinstances.h>
-#include <vcpkg/commands.zbootstrap-readonly.h>
+#include <vcpkg/commands.zbootstrap-standalone.h>
 #include <vcpkg/commands.zce.h>
 #include <vcpkg/commands.zprintconfig.h>
 #include <vcpkg/export.h>
@@ -57,7 +57,7 @@ namespace vcpkg::Commands
         static const X_Download::XDownloadCommand xdownload{};
         static const GenerateDefaultMessageMapCommand generate_message_map{};
         static const Hash::HashCommand hash{};
-        static const BootstrapReadonlyCommand zboostrap_readonly{};
+        static const BootstrapStandaloneCommand zboostrap_standalone{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
@@ -69,7 +69,7 @@ namespace vcpkg::Commands
             {"x-init-registry", &init_registry},
             {"x-download", &xdownload},
             {"x-generate-default-message-map", &generate_message_map},
-            {"z-bootstrap-readonly", &zboostrap_readonly},
+            {"z-bootstrap-standalone", &zboostrap_standalone},
 #if defined(_WIN32)
             {"x-upload-metrics", &upload_metrics},
 #endif // defined(_WIN32)
