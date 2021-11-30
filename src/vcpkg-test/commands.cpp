@@ -32,6 +32,7 @@ TEST_CASE ("get_available_basic_commands works", "[commands]")
     check_all_commands(Commands::get_available_basic_commands(), {
         "contact",
         "version",
+        "hash",
         "x-download",
         "x-init-registry",
         "x-generate-default-message-map",
@@ -56,7 +57,6 @@ TEST_CASE ("get_available_paths_commands works", "[commands]")
         "cache",
         "portsdiff",
         "autocomplete",
-        "hash",
         "fetch",
         "format-manifest",
         "x-ci-clean",
