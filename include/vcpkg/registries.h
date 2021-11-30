@@ -53,7 +53,7 @@ namespace vcpkg
     {
         virtual View<VersionT> get_port_versions() const = 0;
 
-        virtual ExpectedS<Path> get_path_to_version(const VcpkgPaths& paths, const VersionT& version) const = 0;
+        virtual ExpectedS<Path> get_path_to_version(const VersionT& version) const = 0;
 
         virtual ~RegistryEntry() = default;
     };
@@ -63,15 +63,15 @@ namespace vcpkg
         virtual StringLiteral kind() const = 0;
 
         // returns nullptr if the port doesn't exist
-        virtual std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths& paths, StringView port_name) const = 0;
+        virtual std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const = 0;
 
         // appends the names of the ports to the out parameter
         // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
-        virtual void get_all_port_names(std::vector<std::string>& port_names, const VcpkgPaths& paths) const = 0;
+        virtual void get_all_port_names(std::vector<std::string>& port_names) const = 0;
 
-        virtual Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const = 0;
+        virtual Optional<VersionT> get_baseline_version(StringView port_name) const = 0;
 
-        virtual Optional<Path> get_path_to_baseline_version(const VcpkgPaths& paths, StringView port_name) const;
+        virtual Optional<Path> get_path_to_baseline_version(StringView port_name) const;
 
         virtual ~RegistryImplementation() = default;
     };
@@ -110,7 +110,7 @@ namespace vcpkg
         // finds the correct registry for the port name
         // Returns the null pointer if there is no registry set up for that name
         const RegistryImplementation* registry_for_port(StringView port_name) const;
-        Optional<VersionT> baseline_for_port(const VcpkgPaths& paths, StringView port_name) const;
+        Optional<VersionT> baseline_for_port(StringView port_name) const;
 
         View<Registry> registries() const { return registries_; }
 
@@ -128,13 +128,15 @@ namespace vcpkg
         std::vector<Registry> registries_;
     };
 
-    std::unique_ptr<RegistryImplementation> make_builtin_registry();
-    std::unique_ptr<RegistryImplementation> make_builtin_registry(std::string baseline);
-    std::unique_ptr<RegistryImplementation> make_git_registry(std::string repo,
+    std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths);
+    std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths, std::string baseline);
+    std::unique_ptr<RegistryImplementation> make_git_registry(const VcpkgPaths& paths,
+                                                              std::string repo,
                                                               std::string reference,
                                                               std::string baseline);
-    std::unique_ptr<RegistryImplementation> make_filesystem_registry(Path path, std::string baseline);
-    std::unique_ptr<RegistryImplementation> make_artifact_registry(std::string name, std::string location);
+    std::unique_ptr<RegistryImplementation> make_filesystem_registry(const Filesystem& fs,
+                                                                     Path path,
+                                                                     std::string baseline);
 
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name);

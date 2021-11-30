@@ -4,6 +4,7 @@
 #include <vcpkg/configuration.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace
 {
@@ -572,29 +573,27 @@ namespace vcpkg
 
     Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }
 
-    static std::unique_ptr<RegistryImplementation> instantiate_rconfig(const RegistryConfig& config,
+    static std::unique_ptr<RegistryImplementation> instantiate_rconfig(const VcpkgPaths& paths,
+                                                                       const RegistryConfig& config,
                                                                        const Path& config_dir)
     {
         if (auto k = config.kind.get())
         {
             if (*k == RegistryConfigDeserializer::KIND_BUILTIN)
             {
-                return make_builtin_registry(config.baseline.value_or_exit(VCPKG_LINE_INFO));
+                return make_builtin_registry(paths, config.baseline.value_or_exit(VCPKG_LINE_INFO));
             }
             else if (*k == RegistryConfigDeserializer::KIND_GIT)
             {
-                return make_git_registry(config.repo.value_or_exit(VCPKG_LINE_INFO),
+                return make_git_registry(paths,
+                                         config.repo.value_or_exit(VCPKG_LINE_INFO),
                                          config.reference.value_or("HEAD"),
                                          config.baseline.value_or_exit(VCPKG_LINE_INFO));
             }
-            else if (*k == RegistryConfigDeserializer::KIND_ARTIFACT)
-            {
-                return make_artifact_registry(config.name.value_or_exit(VCPKG_LINE_INFO),
-                                              config.location.value_or_exit(VCPKG_LINE_INFO));
-            }
             else if (*k == RegistryConfigDeserializer::KIND_FILESYSTEM)
             {
-                return make_filesystem_registry(config_dir / config.path.value_or_exit(VCPKG_LINE_INFO),
+                return make_filesystem_registry(paths.get_filesystem(),
+                                                config_dir / config.path.value_or_exit(VCPKG_LINE_INFO),
                                                 config.baseline.value_or(""));
             }
             else
@@ -608,7 +607,8 @@ namespace vcpkg
         }
     }
 
-    std::unique_ptr<RegistrySet> Configuration::instantiate_registry_set(const Path& config_dir) const
+    std::unique_ptr<RegistrySet> Configuration::instantiate_registry_set(const VcpkgPaths& paths,
+                                                                         const Path& config_dir) const
     {
         std::vector<Registry> r_impls;
         for (auto&& reg : registries)
@@ -616,10 +616,11 @@ namespace vcpkg
             // packages will be null for artifact registries
             if (auto p = reg.packages.get())
             {
-                r_impls.emplace_back(std::vector<std::string>(*p), instantiate_rconfig(reg, config_dir));
+                r_impls.emplace_back(std::vector<std::string>(*p), instantiate_rconfig(paths, reg, config_dir));
             }
         }
-        auto reg1 = default_reg ? instantiate_rconfig(*default_reg.get(), config_dir) : make_builtin_registry();
+        auto reg1 =
+            default_reg ? instantiate_rconfig(paths, *default_reg.get(), config_dir) : make_builtin_registry(paths);
         return std::make_unique<RegistrySet>(std::move(reg1), std::move(r_impls));
     }
 

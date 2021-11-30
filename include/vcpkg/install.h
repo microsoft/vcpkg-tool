@@ -72,8 +72,6 @@ namespace vcpkg::Install
         SUCCESS,
     };
 
-    std::vector<std::string> get_all_port_names(const VcpkgPaths& paths);
-
     void install_package_and_write_listfile(const VcpkgPaths& paths, const PackageSpec& spec, const InstallDir& dirs);
 
     void install_files_and_write_listfile(Filesystem& fs,

@@ -463,6 +463,10 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, !root.empty(), "Error: Could not detect vcpkg-root.");
         Debug::print("Using vcpkg-root: ", root, '\n');
 
+        builtin_ports = process_output_directory(filesystem, args.builtin_ports_root_dir.get(), root / "ports");
+        builtin_registry_versions =
+            process_output_directory(filesystem, args.builtin_registry_versions_dir.get(), root / "versions");
+
         load_bundle_file(filesystem, root, *m_pimpl);
 
         const auto vcpkg_root_file = root / ".vcpkg-root";
@@ -531,7 +535,7 @@ namespace vcpkg
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
-            m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(m_pimpl->m_config_dir);
+            m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this, m_pimpl->m_config_dir);
         }
 
         // metrics from configuration
@@ -576,10 +580,6 @@ namespace vcpkg
             downloads = root / "downloads";
         }
         downloads = filesystem.almost_canonical(downloads, VCPKG_LINE_INFO);
-
-        builtin_ports = process_output_directory(filesystem, args.builtin_ports_root_dir.get(), root / "ports");
-        builtin_registry_versions =
-            process_output_directory(filesystem, args.builtin_registry_versions_dir.get(), root / "versions");
 
         m_pimpl->m_download_manager = Downloads::DownloadManager{
             parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};

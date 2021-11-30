@@ -405,14 +405,11 @@ namespace vcpkg::Paragraphs
         return pghs.error();
     }
 
-    LoadResults try_load_all_registry_ports(const VcpkgPaths& paths)
+    LoadResults try_load_all_registry_ports(const Filesystem& fs, const RegistrySet& registries)
     {
         LoadResults ret;
-        const auto& fs = paths.get_filesystem();
 
         std::vector<std::string> ports;
-
-        const auto& registries = paths.get_registry_set();
 
         for (const auto& registry : registries.registries())
         {
@@ -421,7 +418,7 @@ namespace vcpkg::Paragraphs
         }
         if (auto registry = registries.default_registry())
         {
-            registry->get_all_port_names(ports, paths);
+            registry->get_all_port_names(ports);
         }
 
         Util::sort_unique_erase(ports);
@@ -437,7 +434,7 @@ namespace vcpkg::Paragraphs
                 continue;
             }
 
-            if (auto p = impl->get_path_to_baseline_version(paths, port_name))
+            if (auto p = impl->get_path_to_baseline_version(port_name))
             {
                 auto maybe_spgh = try_load_port(fs, *p.get());
                 if (const auto spgh = maybe_spgh.get())
@@ -479,9 +476,10 @@ namespace vcpkg::Paragraphs
         }
     }
 
-    std::vector<SourceControlFileAndLocation> load_all_registry_ports(const VcpkgPaths& paths)
+    std::vector<SourceControlFileAndLocation> load_all_registry_ports(const Filesystem& fs,
+                                                                      const RegistrySet& registries)
     {
-        auto results = try_load_all_registry_ports(paths);
+        auto results = try_load_all_registry_ports(fs, registries);
         load_results_print_error(results);
         return std::move(results.paragraphs);
     }
