@@ -20,7 +20,7 @@
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\node_modules\**\*.js">
       <Authenticode>3PartyScriptsSHA2</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\install-vcpkg.ps1">
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-init.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
   </ItemGroup>

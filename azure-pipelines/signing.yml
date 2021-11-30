@@ -53,7 +53,7 @@ jobs:
       displayName: 'Lock Installer Scripts Versions'
       inputs:
         pwsh: true
-        filePath: install-vcpkg/lock-versions.ps1
+        filePath: vcpkg-init/lock-versions.ps1
         arguments: '-Destination "$(Build.BinariesDirectory)" -VcpkgBaseVersion $(VCPKG_BASE_VERSION)'
     # Build and test vcpkg-ce
     - task: PowerShell@2
@@ -128,27 +128,23 @@ jobs:
         msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
       # Note that signing must happen before packing step because the packs contain files that are themselves signed.
     - script: |
-        copy "$(Build.BinariesDirectory)\install-vcpkg.ps1" "$(Build.BinariesDirectory)\install-vcpkg.cmd"
-        copy "$(Build.BinariesDirectory)\install-vcpkg.ps1" "$(Build.BinariesDirectory)\vcpkg.ps1"
-        copy "$(Build.BinariesDirectory)\install-vcpkg.ps1" "$(Build.BinariesDirectory)\vcpkg.cmd"
+        copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
       displayName: 'Duplicate Install Scripts'
     - task: Powershell@2
-      displayName: 'Build vcpkg-gitregistry-bundle.tar.gz'
+      displayName: 'Build vcpkg-standalone-bundle.tar.gz'
       inputs:
         pwsh: true
-        filePath: install-vcpkg/mint-gitregistry-bundle.ps1
-        arguments: '-DestinationTarballName "$(Build.BinariesDirectory)\vcpkg-gitregistry-bundle.tar.gz" -TempPath gitregistry-temp "$(Build.BinariesDirectory)\vcpkg.cmd" "$(Build.BinariesDirectory)\vcpkg.ps1"'
+        filePath: vcpkg-init/mint-standalone-bundle.ps1
+        arguments: '-DestinationTarballName "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempPath standalone-temp "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.BinariesDirectory)\vcpkg-init.ps1"'
     - script: npm pack
       displayName: Create vcpkg-ce Pack
       workingDirectory: $(Build.BinariesDirectory)/vcpkg-ce
     - script: |
         mkdir "$(Build.ArtifactStagingDirectory)\staging"
         move "$(Build.BinariesDirectory)\vcpkg-ce\vcpkg-ce-*.tgz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz"
-        move "$(Build.BinariesDirectory)\vcpkg-gitregistry-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-gitregistry-bundle.tar.gz"
-        move "$(Build.BinariesDirectory)\install-vcpkg.ps1" "$(Build.ArtifactStagingDirectory)\staging\install-vcpkg.ps1"
-        move "$(Build.BinariesDirectory)\install-vcpkg.cmd" "$(Build.ArtifactStagingDirectory)\staging\install-vcpkg.cmd"
-        move "$(Build.BinariesDirectory)\vcpkg.ps1" "$(Build.ArtifactStagingDirectory)\staging\vcpkg.ps1"
-        move "$(Build.BinariesDirectory)\vcpkg.cmd" "$(Build.ArtifactStagingDirectory)\staging\vcpkg.cmd"
+        move "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz"
+        move "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1"
+        move "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd"
       displayName: 'Arrange Architecture-independent Files for Staging'
     - task: Powershell@2
       displayName: Generate Arch-independent SHA512s
@@ -157,8 +153,8 @@ jobs:
         pwsh: true
         targetType: 'inline'
         script: |
-          $gitregistryBundleSha = (Get-FileHash "$(Build.ArtifactStagingDirectory)\staging\vcpkg-gitregistry-bundle.tar.gz" -Algorithm SHA512).Hash.ToLowerInvariant()
-          Write-Host "##vso[task.setvariable variable=VCPKG_GITREGISTRY_BUNDLE_SHA;isOutput=true]$gitregistryBundleSha"
+          $standaloneBundleSha = (Get-FileHash "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz" -Algorithm SHA512).Hash.ToLowerInvariant()
+          Write-Host "##vso[task.setvariable variable=VCPKG_STANDALONE_BUNDLE_SHA;isOutput=true]$standaloneBundleSha"
           $ceSha = (Get-FileHash "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz" -Algorithm SHA512).Hash.ToLowerInvariant()
           Write-Host "##vso[task.setvariable variable=VCPKG_CE_SHA;isOutput=true]$ceSha"
     - task: PublishBuildArtifacts@1
@@ -174,7 +170,7 @@ jobs:
     pool:
       vmImage: macOS-11
     variables:
-      VCPKG_GITREGISTRY_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_GITREGISTRY_BUNDLE_SHA'] ]
+      VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
     steps:
     - task: CmdLine@2
@@ -192,7 +188,7 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
-          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION -DVCPKG_GITREGISTRY_BUNDLE_SHA=$VCPKG_GITREGISTRY_BUNDLE_SHA -DVCPKG_CE_SHA=$VCPKG_CE_SHA -B "$(Build.BinariesDirectory)/build"
+          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION -DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA -DVCPKG_CE_SHA=$VCPKG_CE_SHA -B "$(Build.BinariesDirectory)/build"
           make -j 8 -C "$(Build.BinariesDirectory)/build"
           zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/build/vcpkg"
     - task: PublishBuildArtifacts@1
@@ -207,7 +203,7 @@ jobs:
     pool:
       name: 'vcpkg-rhel-7-5'
     variables:
-      VCPKG_GITREGISTRY_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_GITREGISTRY_BUNDLE_SHA'] ]
+      VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
     steps:
     - task: CmdLine@2
@@ -226,7 +222,7 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
-          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION -DVCPKG_GITREGISTRY_BUNDLE_SHA=$VCPKG_GITREGISTRY_BUNDLE_SHA -DVCPKG_CE_SHA=$VCPKG_CE_SHA -B "$(Build.BinariesDirectory)/build"'
+          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION -DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA -DVCPKG_CE_SHA=$VCPKG_CE_SHA -B "$(Build.BinariesDirectory)/build"'
           make -j 4 -C "$(Build.BinariesDirectory)/build"
           mv "$(Build.BinariesDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
     - task: PublishBuildArtifacts@1
@@ -241,7 +237,7 @@ jobs:
     dependsOn:
       - arch_independent
     variables:
-      VCPKG_GITREGISTRY_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_GITREGISTRY_BUNDLE_SHA'] ]
+      VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
     steps:
     - task: CmdLine@2
@@ -280,7 +276,7 @@ jobs:
     pool:
       name: 'VSEngSS-MicroBuild2022-1ES'
     variables:
-      VCPKG_GITREGISTRY_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_GITREGISTRY_BUNDLE_SHA'] ]
+      VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
     steps:
     - task: PowerShell@2
@@ -306,7 +302,7 @@ jobs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
           cmake.exe --version
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -DVCPKG_GITREGISTRY_BUNDLE_SHA=%VCPKG_GITREGISTRY_BUNDLE_SHA% -DVCPKG_CE_SHA=%VCPKG_CE_SHA% -B "$(Build.BinariesDirectory)\x86"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -DVCPKG_STANDALONE_BUNDLE_SHA=%VCPKG_STANDALONE_BUNDLE_SHA% -DVCPKG_CE_SHA=%VCPKG_CE_SHA% -B "$(Build.BinariesDirectory)\x86"
           ninja.exe -C "$(Build.BinariesDirectory)\x86"
     - task: CmdLine@2
       displayName: "Build vcpkg arm64 with CMake"
@@ -315,7 +311,7 @@ jobs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=x86
           cmake.exe --version
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -DVCPKG_GITREGISTRY_BUNDLE_SHA=%VCPKG_GITREGISTRY_BUNDLE_SHA% -DVCPKG_CE_SHA=%VCPKG_CE_SHA% -B "$(Build.BinariesDirectory)\arm64"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -DVCPKG_STANDALONE_BUNDLE_SHA=%VCPKG_STANDALONE_BUNDLE_SHA% -DVCPKG_CE_SHA=%VCPKG_CE_SHA% -B "$(Build.BinariesDirectory)\arm64"
           ninja.exe -C "$(Build.BinariesDirectory)\arm64"
     - task: MicroBuildSigningPlugin@3
       displayName: Install MicroBuild Signing
@@ -376,12 +372,12 @@ jobs:
         script: |
           mkdir "$(Build.ArtifactStagingDirectory)\drop"
 
-          move "$(Build.ArtifactStagingDirectory)\staging\install-vcpkg.cmd" "$(Build.ArtifactStagingDirectory)\drop\install-vcpkg.cmd"
-          move "$(Build.ArtifactStagingDirectory)\staging\install-vcpkg.ps1" "$(Build.ArtifactStagingDirectory)\drop\install-vcpkg.ps1"
+          move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.cmd"
+          move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.ps1"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-ce.tgz"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
-          move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-gitregistry-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-gitregistry-bundle.tar.gz"
+          move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
 
           move "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
           move "$(Build.BinariesDirectory)\x86\vcpkg.pdb" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.pdb"

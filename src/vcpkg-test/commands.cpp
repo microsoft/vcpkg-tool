@@ -80,7 +80,7 @@ TEST_CASE ("list of commands is correct", "[commands]")
         "z-ce",
         "x-check-support",
         "z-print-config",
-        "z-bootstrap-readonly",
+        "z-bootstrap-standalone",
 #if defined(_WIN32)
         "x-upload-metrics",
 #endif // defined(_WIN32)

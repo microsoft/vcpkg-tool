@@ -20,7 +20,7 @@ $args=[System.Collections.ArrayList][System.Array]$args
 # GLOBALS
 $VCPKG_START_TIME=get-date
 
-function resolve([string]$name) {
+function z-vcpkg-resolve([string]$name) {
   $name = Resolve-Path $name -ErrorAction 0 -ErrorVariable _err
   if (-not($name)) { return $_err[0].TargetObject }
   $Error.clear()
@@ -29,7 +29,7 @@ function resolve([string]$name) {
 
 $SCRIPT:DEBUG=( $args.indexOf('--debug') -gt -1 )
 
-function vcpkg-debug() {
+function z-vcpkg-debug() {
   $t = [int32]((get-date).Subtract(($VCPKG_START_TIME)).ticks/10000)
   if($SCRIPT:DEBUG) {
     write-host -fore green "[$t msec] " -nonewline
@@ -48,31 +48,31 @@ function download($url, $path) {
     $s.Dispose()
     if( (get-item $path).Length -eq $len ){
       $wc.Dispose();
-      vcpkg-debug "skipping download of '$url' - '$path' is ok."
+      z-vcpkg-debug "skipping download of '$url' - '$path' is ok."
       return $path;
     }
   }
-  vcpkg-debug "Downloading '$url' -> '$path'"
+  z-vcpkg-debug "Downloading '$url' -> '$path'"
   $wc.DownloadFile($url, $path);
   $wc.Dispose();
   if( (get-item $path).Length -ne $wc.ResponseHeaders['Content-Length'] ) {
     throw "Download of '$url' failed.  Check your internet connection."
   }
-  vcpkg-debug "Completed Download of $url"
+  z-vcpkg-debug "Completed Download of $url"
   return $path
 }
 
 # set the home path.
 if( $ENV:VCPKG_ROOT ) {
-  $SCRIPT:VCPKG_ROOT=(resolve $ENV:VCPKG_ROOT)
+  $SCRIPT:VCPKG_ROOT=(z-vcpkg-resolve $ENV:VCPKG_ROOT)
   $ENV:VCPKG_ROOT=$VCPKG_ROOT
 } else {
-  $SCRIPT:VCPKG_ROOT=(resolve "$HOME/.vcpkg")
+  $SCRIPT:VCPKG_ROOT=(z-vcpkg-resolve "$HOME/.vcpkg")
   $ENV:VCPKG_ROOT=$VCPKG_ROOT
 }
 
 $VCPKG = "${VCPKG_ROOT}/vcpkg.exe"
-$SCRIPT:VCPKG_SCRIPT = "${VCPKG_ROOT}/vcpkg.ps1"
+$SCRIPT:VCPKG_SCRIPT = "${VCPKG_ROOT}/vcpkg-init.ps1"
 
 $reset = $args.IndexOf('--reset-vcpkg') -gt -1
 $remove = $args.IndexOf('--remove-vcpkg') -gt -1
@@ -105,12 +105,12 @@ function bootstrap-vcpkg {
   }
 
   download https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg.exe $VCPKG
-  & $VCPKG z-bootstrap-readonly
+  & $VCPKG z-bootstrap-standalone
 
   $PATH = $ENV:PATH
   $ENV:PATH="$VCPKG_ROOT;$PATH"
 
-  vcpkg-debug "Bootstrapped vcpkg: ${VCPKG_ROOT}"
+  z-vcpkg-debug "Bootstrapped vcpkg: ${VCPKG_ROOT}"
 
   if( -not ( test-path $VCPKG_SCRIPT )) {
     Write-Error "ERROR! Bootstrapping vcpkg failed."
@@ -128,7 +128,7 @@ if( -not (bootstrap-vcpkg )) {
 $shh = New-Module -name vcpkg -ArgumentList @($VCPKG,$VCPKG_ROOT) -ScriptBlock {
   param($VCPKG,$VCPKG_ROOT)
 
-  function resolve([string]$name) {
+  function z-vcpkg-resolve([string]$name) {
     $name = Resolve-Path $name -ErrorAction 0 -ErrorVariable _err
     if (-not($name)) { return $_err[0].TargetObject }
     $Error.clear()
@@ -147,13 +147,13 @@ $shh = New-Module -name vcpkg -ArgumentList @($VCPKG,$VCPKG_ROOT) -ScriptBlock {
     if( -not (test-path $VCPKG )) {
       write-error "vcpkg is not installed."
       write-host -nonewline "You can reinstall vcpkg by running "
-      write-host -fore green "iex (iwr -useb https://aka.ms/install-vcpkg.ps1)"
+      write-host -fore green "iex (iwr -useb https://aka.ms/vcpkg-init.ps1)"
       return
     }
 
     # setup the postscript file
     # Generate 31 bits of randomness, to avoid clashing with concurrent executions.
-    $env:Z_VCPKG_POSTSCRIPT = resolve "${VCPKG_ROOT}/VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
+    $env:Z_VCPKG_POSTSCRIPT = z-vcpkg-resolve "${VCPKG_ROOT}/VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
 
     & $VCPKG @args
 
@@ -169,7 +169,11 @@ $shh = New-Module -name vcpkg -ArgumentList @($VCPKG,$VCPKG_ROOT) -ScriptBlock {
   }
 }
 
-return vcpkg @args
+if ($args.Length -ne 0) {
+  return vcpkg @args
+}
+
+return 0
 <#
 :set
 set ARGZ[%i%]=%1&set /a i+=1 & goto :eof
