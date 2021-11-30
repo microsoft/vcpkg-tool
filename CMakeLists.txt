@@ -95,10 +95,11 @@ endif()
 
 if(NOT DEFINED VCPKG_BASE_VERSION OR VCPKG_BASE_VERSION STREQUAL "")
     if(VCPKG_OFFICIAL_BUILD)
-      message(FATAL_ERROR "VCPKG_BASE_VERSION must be set for official builds.")  
+        message(FATAL_ERROR "VCPKG_BASE_VERSION must be set for official builds.")
     endif()
 
-    set(VCPKG_BASE_VERSION "9999-99-99")
+    # The first digit is 2 to work with vcpkg_minimum_required in scripts.
+    set(VCPKG_BASE_VERSION "2999-12-31")
 endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)

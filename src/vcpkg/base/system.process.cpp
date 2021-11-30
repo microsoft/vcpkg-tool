@@ -252,21 +252,25 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path)
     {
-        auto prepend_path_component = prepend_to_path.to_string();
-        if (!prepend_path_component.empty())
-        {
-            prepend_path_component.push_back(';');
-        }
-
         static const std::string system_root_env =
             get_environment_variable("SystemRoot").value_or_exit(VCPKG_LINE_INFO);
         static const std::string system32_env = system_root_env + R"(\system32)";
-        std::string new_path = Strings::format(R"(PATH=%s%s;%s;%s\Wbem;%s\WindowsPowerShell\v1.0\)",
-                                               prepend_path_component,
-                                               system32_env,
-                                               system_root_env,
-                                               system32_env,
-                                               system32_env);
+        std::string new_path = "PATH=";
+        Strings::append(new_path, prepend_to_path);
+        if (new_path.back() != '=' && new_path.back() != ';')
+        {
+            new_path.push_back(';');
+        }
+
+        Strings::append(new_path,
+                        system32_env,
+                        ';',
+                        system_root_env,
+                        ';',
+                        system32_env,
+                        "\\Wbem;",
+                        system32_env,
+                        "\\WindowsPowerShell\\v1.0\\");
 
         std::vector<std::wstring> env_wstrings = {
             L"ALLUSERSPROFILE",

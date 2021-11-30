@@ -126,7 +126,8 @@ namespace
             win32_extract_msi(archive, to_path);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
-                 Strings::case_insensitive_ascii_equals(ext, ".7z"))
+                 Strings::case_insensitive_ascii_equals(ext, ".7z") ||
+                 Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
             win32_extract_with_seven_zip(paths, archive, to_path);
         }
@@ -147,16 +148,6 @@ namespace
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unexpected archive extension: %s", ext);
         }
     }
-}
-
-namespace vcpkg
-{
-    void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path)
-    {
-        const auto code =
-            cmd_execute(Command{tar_tool}.string_arg("xzf").path_arg(archive), InWorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
-    }
 
     Path extract_archive_to_temp_subdirectory(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
@@ -171,6 +162,16 @@ namespace vcpkg
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
         extract_archive_to_empty(paths, archive, to_path_partial);
         return to_path_partial;
+    }
+}
+
+namespace vcpkg
+{
+    void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path)
+    {
+        const auto code =
+            cmd_execute(Command{tar_tool}.string_arg("xzf").path_arg(archive), InWorkingDirectory{to_path});
+        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
     }
 
     void extract_archive(const VcpkgPaths& paths, const Path& archive, const Path& to_path)

@@ -14,7 +14,7 @@
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\*.js" Exclude="$(IntermediateOutputPath)\vcpkg-ce\**\node_modules\**\*.js">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\ce.ps1">
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\scripts\ce.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\node_modules\**\*.js">

@@ -571,9 +571,26 @@ namespace vcpkg
         }
     }
 
+    static bool registry_config_requests_configure_environment(const Optional<RegistryConfig>& target) noexcept
+    {
+        if (auto* reg = target.get())
+        {
+            if (auto* kind = reg->kind.get())
+            {
+                if (*kind == "artifact")
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     bool Configuration::requests_configure_environment() const
     {
-        return registry_set.contains_artifact_registries() || !ce_metadata.is_empty();
+        return !ce_metadata.is_empty() || registry_config_requests_configure_environment(default_reg) ||
+               std::any_of(registries.begin(), registries.end(), registry_config_requests_configure_environment);
     }
 
     Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }

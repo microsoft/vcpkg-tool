@@ -74,8 +74,13 @@ TEST_CASE ("list of commands is correct", "[commands]")
         "export",
         "depend-info",
         "activate",
+        "find",
+        "use",
+        "add",
+        "z-ce",
         "x-check-support",
         "z-print-config",
+        "z-bootstrap-readonly",
 #if defined(_WIN32)
         "x-upload-metrics",
 #endif // defined(_WIN32)

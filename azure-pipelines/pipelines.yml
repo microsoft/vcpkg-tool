@@ -9,7 +9,7 @@ jobs:
   steps:
     - bash: |
         git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT" -n
-        git -C "$VCPKG_ROOT" checkout `cat azure-pipelines/vcpkg-scripts-sha.txt`
+        git -C "$VCPKG_ROOT" checkout `cat install-vcpkg/vcpkg-scripts-sha.txt`
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
         export CXXFLAGS="-fprofile-arcs -ftest-coverage -fPIC -O0"
@@ -57,7 +57,7 @@ jobs:
   steps:
     - bash: |
         git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT" -n
-        git -C "$VCPKG_ROOT" checkout `cat azure-pipelines/vcpkg-scripts-sha.txt`
+        git -C "$VCPKG_ROOT" checkout `cat install-vcpkg/vcpkg-scripts-sha.txt`
       displayName: "Clone vcpkg repo to serve as root"
     - bash: |
         cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B build.amd64.debug
@@ -106,7 +106,7 @@ jobs:
         pwsh: true
         targetType: inline
         script: |
-          $sha = (Get-Content azure-pipelines/vcpkg-scripts-sha.txt -Raw).Trim()
+          $sha = (Get-Content install-vcpkg/vcpkg-scripts-sha.txt -Raw).Trim()
           git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT -n
           git -C "$env:VCPKG_ROOT" checkout $sha
     - task: CmdLine@2
