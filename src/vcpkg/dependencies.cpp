@@ -17,10 +17,10 @@ using namespace vcpkg;
 
 namespace vcpkg::Dependencies
 {
-    struct ClusterGraph;
-
     namespace
     {
+        struct ClusterGraph;
+
         struct ClusterInstalled
         {
             ClusterInstalled(const InstalledPackageView& ipv) : ipv(ipv)
@@ -281,88 +281,88 @@ namespace vcpkg::Dependencies
             std::vector<std::string> m_warnings;
         };
 
-    }
-
-    /// <summary>
-    /// Directional graph representing a collection of packages with their features connected by their dependencies.
-    /// </summary>
-    struct ClusterGraph
-    {
-        explicit ClusterGraph(const PortFileProvider::PortFileProvider& port_provider, Triplet host_triplet)
-            : m_port_provider(port_provider), m_host_triplet(host_triplet)
-        {
-        }
-
-        ClusterGraph(const ClusterGraph&) = delete;
-        ClusterGraph& operator=(const ClusterGraph&) = delete;
-
         /// <summary>
-        ///     Find the cluster associated with spec or if not found, create it from the PortFileProvider.
+        /// Directional graph representing a collection of packages with their features connected by their dependencies.
         /// </summary>
-        /// <param name="spec">Package spec to get the cluster for.</param>
-        /// <returns>The cluster found or created for spec.</returns>
-        Cluster& get(const PackageSpec& spec)
+        struct ClusterGraph
         {
-            auto it = m_graph.find(spec);
-            if (it == m_graph.end())
+            explicit ClusterGraph(const PortFileProvider::PortFileProvider& port_provider, Triplet host_triplet)
+                : m_port_provider(port_provider), m_host_triplet(host_triplet)
             {
-                const SourceControlFileAndLocation* scfl = m_port_provider.get_control_file(spec.name()).get();
-
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   scfl,
-                                   "Error: Cannot find definition for package `%s` while getting `%s`.",
-                                   spec.name(),
-                                   spec);
-
-                it = m_graph
-                         .emplace(
-                             std::piecewise_construct, std::forward_as_tuple(spec), std::forward_as_tuple(spec, *scfl))
-                         .first;
             }
 
-            return it->second;
-        }
+            ClusterGraph(const ClusterGraph&) = delete;
+            ClusterGraph& operator=(const ClusterGraph&) = delete;
 
-        Cluster& insert(const InstalledPackageView& ipv)
-        {
-            ExpectedS<const SourceControlFileAndLocation&> maybe_scfl =
-                m_port_provider.get_control_file(ipv.spec().name());
-
-            if (maybe_scfl.has_value())
+            /// <summary>
+            ///     Find the cluster associated with spec or if not found, create it from the PortFileProvider.
+            /// </summary>
+            /// <param name="spec">Package spec to get the cluster for.</param>
+            /// <returns>The cluster found or created for spec.</returns>
+            Cluster& get(const PackageSpec& spec)
             {
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   maybe_scfl.get()->source_control_file->core_paragraph->type.type ==
-                                       ipv.core->package.type.type,
-                                   "Error: the port type of '%s' differs between the installed and available "
-                                   "portfile.\nPlease manually remove '%s' and re-run this command.",
-                                   ipv.spec().name(),
-                                   ipv.spec());
+                auto it = m_graph.find(spec);
+                if (it == m_graph.end())
+                {
+                    const SourceControlFileAndLocation* scfl = m_port_provider.get_control_file(spec.name()).get();
+
+                    Checks::check_exit(VCPKG_LINE_INFO,
+                                       scfl,
+                                       "Error: Cannot find definition for package `%s` while getting `%s`.",
+                                       spec.name(),
+                                       spec);
+
+                    it = m_graph
+                             .emplace(std::piecewise_construct,
+                                      std::forward_as_tuple(spec),
+                                      std::forward_as_tuple(spec, *scfl))
+                             .first;
+                }
+
+                return it->second;
             }
 
-            return m_graph
-                .emplace(std::piecewise_construct,
-                         std::forward_as_tuple(ipv.spec()),
-                         std::forward_as_tuple(ipv, std::move(maybe_scfl)))
-                .first->second;
-        }
+            Cluster& insert(const InstalledPackageView& ipv)
+            {
+                ExpectedS<const SourceControlFileAndLocation&> maybe_scfl =
+                    m_port_provider.get_control_file(ipv.spec().name());
 
-        const Cluster& find_or_exit(const PackageSpec& spec, LineInfo li) const
-        {
-            auto it = m_graph.find(spec);
-            Checks::check_exit(li, it != m_graph.end(), "Failed to locate spec in graph: %s", spec);
-            return it->second;
-        }
+                if (maybe_scfl.has_value())
+                {
+                    Checks::check_exit(VCPKG_LINE_INFO,
+                                       maybe_scfl.get()->source_control_file->core_paragraph->type.type ==
+                                           ipv.core->package.type.type,
+                                       "Error: the port type of '%s' differs between the installed and available "
+                                       "portfile.\nPlease manually remove '%s' and re-run this command.",
+                                       ipv.spec().name(),
+                                       ipv.spec());
+                }
 
-        auto begin() const { return m_graph.begin(); }
-        auto end() const { return m_graph.end(); }
+                return m_graph
+                    .emplace(std::piecewise_construct,
+                             std::forward_as_tuple(ipv.spec()),
+                             std::forward_as_tuple(ipv, std::move(maybe_scfl)))
+                    .first->second;
+            }
 
-    private:
-        std::map<PackageSpec, Cluster> m_graph;
-        const PortFileProvider::PortFileProvider& m_port_provider;
+            const Cluster& find_or_exit(const PackageSpec& spec, LineInfo li) const
+            {
+                auto it = m_graph.find(spec);
+                Checks::check_exit(li, it != m_graph.end(), "Failed to locate spec in graph: %s", spec);
+                return it->second;
+            }
 
-    public:
-        const Triplet m_host_triplet;
-    };
+            auto begin() const { return m_graph.begin(); }
+            auto end() const { return m_graph.end(); }
+
+        private:
+            std::map<PackageSpec, Cluster> m_graph;
+            const PortFileProvider::PortFileProvider& m_port_provider;
+
+        public:
+            const Triplet m_host_triplet;
+        };
+    }
 
     static std::string to_output_string(RequestType request_type,
                                         const CStringView s,

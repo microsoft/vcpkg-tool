@@ -110,7 +110,7 @@ foreach ($Test in $AllTests)
             }
             else
             {
-                Set-Item "Env:\$var" "$envbackup[$var]"
+                Set-Item "Env:\$var" $envbackup[$var]
             }
         }
     }

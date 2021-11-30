@@ -14,6 +14,7 @@
 #include <vcpkg/help.h>
 #include <vcpkg/install.h>
 #include <vcpkg/remove.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Help
 {

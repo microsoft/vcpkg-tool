@@ -5,8 +5,10 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.env.h>
 #include <vcpkg/help.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands::Env
 {
@@ -61,7 +63,7 @@ namespace vcpkg::Commands::Env
         const bool add_python = Util::Sets::contains(options.switches, OPTION_PYTHON);
 
         std::vector<std::string> path_vars;
-        const auto current_triplet_path = paths.installed() / triplet.to_string();
+        const auto current_triplet_path = paths.installed().triplet_dir(triplet);
         if (add_bin) path_vars.push_back((current_triplet_path / "bin").native());
         if (add_debug_bin) path_vars.push_back((current_triplet_path / "debug" / "bin").native());
         if (add_include) extra_env.emplace("INCLUDE", (current_triplet_path / "include").native());

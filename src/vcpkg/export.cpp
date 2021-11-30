@@ -13,10 +13,12 @@
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Export
 {
@@ -512,12 +514,12 @@ namespace vcpkg::Export
                                         const VcpkgPaths& paths)
     {
         Filesystem& fs = paths.get_filesystem();
-        const auto raw_exported_dir_path = opts.output_dir / export_id;
-        fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
+        const InstalledPaths export_paths(opts.output_dir / export_id);
+        fs.remove_all(export_paths.root(), VCPKG_LINE_INFO);
 
         // TODO: error handling
         std::error_code ec;
-        fs.create_directory(raw_exported_dir_path, ec);
+        fs.create_directory(export_paths.root(), ec);
 
         // execute the plan
         for (const ExportPlanAction& action : export_plan)
@@ -532,46 +534,44 @@ namespace vcpkg::Export
 
             const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
-            const InstallDir dirs = InstallDir::from_destination_root(raw_exported_dir_path / "installed",
-                                                                      action.spec.triplet().to_string(),
-                                                                      raw_exported_dir_path / "installed/vcpkg/info" /
-                                                                          (binary_paragraph.fullstem() + ".list"));
+            const InstallDir dirs =
+                InstallDir::from_destination_root(export_paths, action.spec.triplet(), binary_paragraph);
 
-            auto lines = fs.read_lines(paths.listfile_path(binary_paragraph), VCPKG_LINE_INFO);
+            auto lines = fs.read_lines(paths.installed().listfile_path(binary_paragraph), VCPKG_LINE_INFO);
             std::vector<Path> files;
             for (auto&& suffix : lines)
             {
                 if (suffix.empty()) continue;
                 if (suffix.back() == '/') suffix.pop_back();
                 if (suffix == action.spec.triplet().to_string()) continue;
-                files.push_back(paths.installed() / suffix);
+                files.push_back(paths.installed().root() / suffix);
             }
 
             Install::install_files_and_write_listfile(
-                fs, paths.installed() / action.spec.triplet().to_string(), files, dirs);
+                fs, paths.installed().triplet_dir(action.spec.triplet()), files, dirs);
         }
 
         // Copy files needed for integration
-        export_integration_files(raw_exported_dir_path, paths);
+        export_integration_files(export_paths.root(), paths);
 
         if (opts.raw)
         {
             vcpkg::printf(Color::success,
                           R"(Files exported at: "%s")"
                           "\n",
-                          raw_exported_dir_path);
-            print_next_step_info(raw_exported_dir_path);
+                          export_paths.root());
+            print_next_step_info(export_paths.root());
         }
 
         if (opts.nuget)
         {
             print2("Packing nuget package...\n");
 
-            const auto nuget_id = opts.maybe_nuget_id.value_or(raw_exported_dir_path.filename().to_string());
+            const auto nuget_id = opts.maybe_nuget_id.value_or(export_paths.root().filename().to_string());
             const auto nuget_version = opts.maybe_nuget_version.value_or("1.0.0");
             const auto nuget_description = opts.maybe_nuget_description.value_or("Vcpkg NuGet export");
             const auto output_path = do_nuget_export(
-                paths, nuget_id, nuget_version, nuget_description, raw_exported_dir_path, opts.output_dir);
+                paths, nuget_id, nuget_version, nuget_description, export_paths.root(), opts.output_dir);
             print2(Color::success, "NuGet package exported at: ", output_path, "\n");
 
             vcpkg::printf(R"(
@@ -587,7 +587,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         {
             print2("Creating zip archive...\n");
             const auto output_path =
-                do_archive_export(paths, raw_exported_dir_path, opts.output_dir, ArchiveFormatC::ZIP);
+                do_archive_export(paths, export_paths.root(), opts.output_dir, ArchiveFormatC::ZIP);
             print2(Color::success, "Zip archive exported at: ", output_path, "\n");
             print_next_step_info("[...]");
         }
@@ -596,14 +596,14 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         {
             print2("Creating 7zip archive...\n");
             const auto output_path =
-                do_archive_export(paths, raw_exported_dir_path, opts.output_dir, ArchiveFormatC::SEVEN_ZIP);
+                do_archive_export(paths, export_paths.root(), opts.output_dir, ArchiveFormatC::SEVEN_ZIP);
             print2(Color::success, "7zip archive exported at: ", output_path, "\n");
             print_next_step_info("[...]");
         }
 
         if (!opts.raw)
         {
-            fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
+            fs.remove_all(export_paths.root(), VCPKG_LINE_INFO);
         }
     }
 
@@ -616,7 +616,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                 "vcpkg export does not support manifest mode, in order to allow for future design considerations. You "
                 "may use export in classic mode by running vcpkg outside of a manifest-based project.");
         }
-        const StatusParagraphs status_db = database_load_check(paths);
+        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
         for (auto&& spec : opts.specs)
             Input::check_triplet(spec.triplet(), paths);

@@ -1,5 +1,7 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
+Remove-Item env:VCPKG_DOWNLOADS
+
 if ($IsWindows) {
     $cache_home = $env:LOCALAPPDATA
 } elseif (Test-Path "env:XDG_CACHE_HOME") {

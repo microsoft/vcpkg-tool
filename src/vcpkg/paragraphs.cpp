@@ -9,7 +9,6 @@
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
-#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg::Parse;
 using namespace vcpkg;
@@ -373,12 +372,13 @@ namespace vcpkg::Paragraphs
         return error_info;
     }
 
-    ExpectedS<BinaryControlFile> try_load_cached_package(const VcpkgPaths& paths, const PackageSpec& spec)
+    ExpectedS<BinaryControlFile> try_load_cached_package(const Filesystem& fs,
+                                                         const Path& package_dir,
+                                                         const PackageSpec& spec)
     {
         StatsTimer timer(g_load_ports_stats);
 
-        ExpectedS<std::vector<Paragraph>> pghs =
-            get_paragraphs(paths.get_filesystem(), paths.package_dir(spec) / "CONTROL");
+        ExpectedS<std::vector<Paragraph>> pghs = get_paragraphs(fs, package_dir / "CONTROL");
 
         if (auto p = pghs.get())
         {
@@ -392,7 +392,7 @@ namespace vcpkg::Paragraphs
             if (bcf.core_paragraph.spec != spec)
             {
                 return Strings::concat("Mismatched spec in package at ",
-                                       paths.package_dir(spec),
+                                       package_dir,
                                        ": expected ",
                                        spec,
                                        ", actual ",

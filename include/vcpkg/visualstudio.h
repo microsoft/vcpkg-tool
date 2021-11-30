@@ -1,6 +1,11 @@
 #pragma once
 
-#include <vcpkg/vcpkgpaths.h>
+#include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/messages.h>
+
+#include <vcpkg/fwd/vcpkgpaths.h>
+
+#include <vector>
 
 namespace vcpkg
 {
@@ -20,9 +25,9 @@ namespace vcpkg
 
 namespace vcpkg::VisualStudio
 {
-    std::vector<std::string> get_visual_studio_instances(const VcpkgPaths& paths);
+    std::vector<std::string> get_visual_studio_instances(const Filesystem& fs);
 
-    ToolsetsInformation find_toolset_instances_preferred_first(const VcpkgPaths& paths);
+    ToolsetsInformation find_toolset_instances_preferred_first(const Filesystem& fs);
 }
 
 #endif

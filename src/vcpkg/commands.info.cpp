@@ -52,7 +52,7 @@ namespace vcpkg::Commands::Info
 
         if (installed)
         {
-            const StatusParagraphs status_paragraphs = database_load_check(paths);
+            const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());
             std::set<PackageSpec> specs_written;
             std::vector<PackageSpec> specs_to_write;
             for (auto&& arg : args.command_arguments)
@@ -96,7 +96,7 @@ namespace vcpkg::Commands::Info
                 auto maybe_ipv = status_paragraphs.get_installed_package_view(spec);
                 if (auto ipv = maybe_ipv.get())
                 {
-                    results.insert(spec.to_string(), serialize_ipv(*ipv, paths));
+                    results.insert(spec.to_string(), serialize_ipv(*ipv, paths.installed(), paths.get_filesystem()));
                     if (transitive)
                     {
                         auto deps = ipv->dependencies();
