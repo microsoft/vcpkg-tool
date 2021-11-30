@@ -1,3 +1,4 @@
+#include <vcpkg/base/api_stable_format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/strings.h>
@@ -16,16 +17,18 @@ namespace
 {
     constexpr struct
     {
-        bool operator()(char a, char b) const noexcept
-        {
-            using vcpkg::Strings::details::tolower_char;
-            return tolower_char(a) == tolower_char(b);
-        }
+        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
+    } tolower_char;
+
+    constexpr struct
+    {
+        bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
     } icase_eq;
 }
 
-vcpkg::ExpectedS<std::string> vcpkg::Strings::details::api_stable_format_impl(
-    StringView sv, void (*cb)(void*, std::string&, StringView), void* user)
+vcpkg::ExpectedS<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
+                                                                     void (*cb)(void*, std::string&, StringView),
+                                                                     void* user)
 {
     // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
 
@@ -191,9 +194,11 @@ bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }
 
+void Strings::ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
+
 std::string Strings::ascii_to_lowercase(std::string&& s)
 {
-    Strings::ascii_to_lowercase(s.begin(), s.end());
+    Strings::ascii_to_lowercase(s.data(), s.data() + s.size());
     return std::move(s);
 }
 

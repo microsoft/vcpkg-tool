@@ -1,5 +1,6 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/api_stable_format.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/strings.h>
 
@@ -117,9 +118,9 @@ TEST_CASE ("inplace_replace_all(char)", "[strings]")
 TEST_CASE ("api_stable_format(sv,append_f)", "[strings]")
 {
     namespace Strings = vcpkg::Strings;
+    using vcpkg::api_stable_format;
     using vcpkg::nullopt;
     using vcpkg::StringView;
-    using vcpkg::Strings::api_stable_format;
 
     std::string target;
     auto res = api_stable_format("{", [](std::string&, StringView) { CHECK(false); });

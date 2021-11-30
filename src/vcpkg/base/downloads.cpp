@@ -1,3 +1,4 @@
+#include <vcpkg/base/api_stable_format.h>
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/hash.h>
@@ -643,7 +644,7 @@ namespace vcpkg::Downloads
                     const auto escaped_sha512 = Command(*hash).extract();
                     const auto escaped_dpath = Command(download_path_part_path).extract();
 
-                    auto cmd = Strings::api_stable_format(*script, [&](std::string& out, StringView key) {
+                    auto cmd = api_stable_format(*script, [&](std::string& out, StringView key) {
                                    if (key == "url")
                                    {
                                        Strings::append(out, escaped_url);
