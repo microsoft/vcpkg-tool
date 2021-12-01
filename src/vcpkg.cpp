@@ -187,7 +187,13 @@ int main(const int argc, const char* const* const argv)
 #endif
     set_environment_variable("VCPKG_COMMAND", get_exe_path_of_current_process().generic_u8string());
     
-    // See http://bixense.com/clicolors
+    // Prevent child processes (ex. cmake) from producing "colorized"
+    // output (which may include ANSI escape codes), since it would
+    // complicate parsing the output.
+    //
+    // See http://bixense.com/clicolors for the semantics associated with
+    // the CLICOLOR and CLICOLOR_FORCE env variables
+    //
     set_environment_variable("CLICOLOR_FORCE", {});
     set_environment_variable("CLICOLOR", "0");
 
