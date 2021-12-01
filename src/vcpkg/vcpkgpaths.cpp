@@ -451,8 +451,9 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         return vcpkg::win32_fix_path_case(fs.current_path(VCPKG_LINE_INFO));
-#endif // _WIN32
+#else
         return fs.current_path(VCPKG_LINE_INFO);
+#endif
     }
 
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)

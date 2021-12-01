@@ -46,27 +46,32 @@ namespace vcpkg::Export
         xml.start_complex_open_tag("file")
             .text_attr("src", raw_exported_dir.native() + "\\installed\\**")
             .text_attr("target", "installed")
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", raw_exported_dir.native() + "\\scripts\\**")
             .text_attr("target", "scripts")
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", raw_exported_dir.native() + "\\.vcpkg-root")
             .text_attr("target", "")
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", targets_redirect_path)
             .text_attr("target", Strings::concat("build\\native\\", nuget_id, ".targets"))
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", props_redirect_path)
             .text_attr("target", Strings::concat("build\\native\\", nuget_id, ".props"))
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.close_tag("files").line_break();
         xml.close_tag("package").line_break();
@@ -141,7 +146,6 @@ namespace vcpkg::Export
                                 const Path& output_dir)
     {
         Filesystem& fs = paths.get_filesystem();
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
 
         std::error_code ec;
         fs.create_directories(paths.buildsystems / "tmp", ec);
@@ -168,14 +172,19 @@ namespace vcpkg::Export
 #ifndef _WIN32
         cmd.path_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-        cmd.path_arg(nuget_exe)
+        cmd.path_arg(paths.get_tool_exe(Tools::NUGET))
             .string_arg("pack")
             .path_arg(nuspec_file_path)
             .string_arg("-OutputDirectory")
             .path_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        const int exit_code = cmd_execute_and_capture_output(cmd, get_clean_environment()).exit_code;
+        const auto output = cmd_execute_and_capture_output(cmd, get_clean_environment());
+        const auto exit_code = output.exit_code;
+        if (exit_code != 0)
+        {
+            print2(output.output, '\n');
+        }
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
 
         const auto output_path = output_dir / (nuget_id + "." + nuget_version + ".nupkg");
