@@ -19,7 +19,7 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto& download_manager = paths.get_download_manager();
         auto node_path = paths.get_tool_exe(Tools::NODE);
-        auto node_root = node_path.parent_path();
+        Path node_root = node_path.parent_path();
         auto node_modules = paths.root / "node_modules";
         auto ce_path = node_modules / "vcpkg-ce";
         if (!fs.is_directory(ce_path))
@@ -38,7 +38,12 @@ namespace vcpkg
             const auto ce_tarball = paths.downloads / "vcpkg-ce-latest.tgz";
             download_manager.download_file(fs, ce_uri, ce_tarball, nullopt);
 #endif // ^^^ !VCPKG_CE_BUNDLE_SHA
-            auto npm_path = Path(node_root) / "node_modules" / "npm" / "bin" / "npm-cli.js";
+            auto npm_path = node_root / "node_modules" / "npm" / "bin" / "npm-cli.js";
+            if (!fs.exists(npm_path, VCPKG_LINE_INFO))
+            {
+                npm_path = Path(node_root.parent_path()) / "lib" / "node_modules" / "npm" / "bin" / "npm-cli.js";
+            }
+
             Command cmd_provision(node_path);
             cmd_provision.string_arg(npm_path);
             cmd_provision.string_arg("--force");

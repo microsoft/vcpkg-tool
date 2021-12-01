@@ -1,0 +1,147 @@
+#!/bin/sh
+
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+# wrapper script for vcpkg
+# this is intended to be dot-sourced and then you can use the vcpkg() function.
+
+# check to see if we've been dot-sourced (should work for most POSIX shells)
+sourced=0
+
+if [ -n "$ZSH_EVAL_CONTEXT" ]; then
+  case $ZSH_EVAL_CONTEXT in *:file) sourced=1;; esac
+elif [ -n "$KSH_VERSION" ]; then
+  [ "$(cd $(dirname -- $0) && pwd -P)/$(basename -- $0)" != "$(cd $(dirname -- ${.sh.file}) && pwd -P)/$(basename -- ${.sh.file})" ] && sourced=1
+elif [ -n "$BASH_VERSION" ]; then
+  (return 0 2>/dev/null) && sourced=1
+else # All other shells: examine $0 for known shell binary filenames
+  # Detects `sh` and `dash`; add additional shell filenames as needed.
+  case ${0##*/} in sh|dash) sourced=1;; esac
+fi
+
+if [ $sourced -eq 0 ]; then
+  echo 'This script is expected to be dot-sourced so that it may load vcpkg into the'
+  echo 'current environment and not require permanent changes to the system when you activate.'
+  echo ''
+  echo "You should instead run '. $(basename $0)' first to import vcpkg into the current session."
+  exit
+fi
+
+Z_VCPKG_init() {
+  # find important cmdline args
+  Z_VCPKG_ARGS=()
+  for each in "$@"; do case $each in
+    --remove-vcpkg) Z_VCPKG_REMOVE=TRUE;;
+    *) Z_VCPKG_ARGS+=("$each");;
+  esac ;done
+}
+
+Z_VCPKG_bootstrap() {
+  if [ -f "${VCPKG_ROOT}/vcpkg" ]; then
+    return 0
+  fi
+
+  # it's not there!
+  # let's install it where we want it
+
+  echo installing vcpkg in $VCPKG_ROOT
+
+  if [ "$UNAME" = "Darwin" ]; then
+    curl -L -o "${VCPKG_ROOT}/vcpkg" https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-macos
+  elif [ -e /etc/alpine-release ]; then
+    curl -L -o "${VCPKG_ROOT}/vcpkg" https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-muslc
+  else
+    curl -L -o "${VCPKG_ROOT}/vcpkg" https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-glibc
+  fi
+
+  if [ ! -f "${VCPKG_ROOT}/vcpkg" ]; then
+    echo "ERROR! Unable to find/get vcpkg binary ${VCPKG_ROOT}/vcpkg"
+    return 1;
+  fi
+
+  chmod +x "${VCPKG_ROOT}/vcpkg"
+  "${VCPKG_ROOT}/vcpkg" z-bootstrap-standalone
+  return 0;
+}
+
+Z_VCPKG_cleanup() {
+  # clear things that we're not going to need for the long term
+  unset Z_VCPKG_REMOVE
+  unset Z_VCPKG_ARGS
+  if [ -f "${Z_VCPKG_POSTSCRIPT}" ]; then
+    command rm "${Z_VCPKG_POSTSCRIPT}"
+  fi
+  unset Z_VCPKG_POSTSCRIPT
+  unset -f Z_VCPKG_bootstrap > /dev/null 2>&1
+}
+
+Z_VCPKG_remove() {
+  Z_VCPKG_cleanup
+  if [ -d "$VCPKG_ROOT" ]; then
+    rm -rf "$VCPKG_ROOT"
+  fi
+
+  unset -f Z_VCPKG_init > /dev/null 2>&1
+  unset -f Z_VCPKG_cleanup > /dev/null 2>&1
+  unset -f Z_VCPKG_remove > /dev/null 2>&1
+  unset -f vcpkg > /dev/null 2>&1
+}
+
+Z_VCPKG_init "$@"
+shift $#
+
+if [ -n "$VCPKG_ROOT" ]; then
+  export VCPKG_ROOT=$VCPKG_ROOT
+else
+  export VCPKG_ROOT=~/.vcpkg
+fi;
+
+mkdir -p "$VCPKG_ROOT"
+
+if [ ! -z "$Z_VCPKG_REMOVE" ]; then
+  Z_VCPKG_remove
+  return
+fi
+
+
+Z_VCPKG_bootstrap
+if [ $? -eq 1 ]; then
+  Z_VCPKG_cleanup
+  return 1;
+fi
+
+# So, we're the real script then.
+vcpkg() {
+  Z_VCPKG_init "$@"
+
+  if [ ! -z "$Z_VCPKG_REMOVE" ]; then
+    Z_VCPKG_remove
+    return;
+  fi
+
+  # set the response file
+  # Generate 32 bits of randomness, to avoid clashing with concurrent executions.
+  export Z_VCPKG_POSTSCRIPT="${VCPKG_ROOT}/VCPKG_tmp_$(dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -f1 -d" ").sh"
+
+  # call vcpkg
+  # it picks up the Z_VCPKG_POSTSCRIPT environment variable to know where to dump the postscript
+  "${VCPKG_ROOT}/vcpkg" ${Z_VCPKG_ARGS[@]}
+
+  # Call the post-invocation script if it is present, then delete it.
+  # This allows the invocation to potentially modify the caller's environment (e.g. PATH)
+  if [ -f "${Z_VCPKG_POSTSCRIPT}" ]; then
+    . "${Z_VCPKG_POSTSCRIPT}"
+    command rm "${Z_VCPKG_POSTSCRIPT}"
+    unset Z_VCPKG_POSTSCRIPT
+  fi
+
+  Z_VCPKG_cleanup
+}
+
+# did they dotsource and have args go ahead and run it then!
+if [ -n "$Z_VCPKG_ARGS" ]; then
+  vcpkg "${Z_VCPKG_ARGS[@]}"
+fi
+
+Z_VCPKG_cleanup

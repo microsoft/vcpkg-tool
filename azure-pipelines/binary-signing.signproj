@@ -24,6 +24,9 @@
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
 
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-init">
+      <Authenticode>LinuxSign</Authenticode>
+    </FilesToSign>
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-glibc">
       <Authenticode>LinuxSign</Authenticode>
     </FilesToSign>

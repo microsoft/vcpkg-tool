@@ -41,7 +41,7 @@ function z-vcpkg-debug() {
 function download($url, $path) {
   $wc = New-Object net.webclient
 
-  if( test-path -ea 0 $path) {
+  if( test-path -ea 0 $path ) {
     # check to see if the size is a match before downloading
     $s = $wc.OpenRead($url)
     $len = $wc.ResponseHeaders['Content-Length']
@@ -74,24 +74,13 @@ if( $ENV:VCPKG_ROOT ) {
 $VCPKG = "${VCPKG_ROOT}/vcpkg.exe"
 $SCRIPT:VCPKG_SCRIPT = "${VCPKG_ROOT}/vcpkg-init.ps1"
 
-$reset = $args.IndexOf('--reset-vcpkg') -gt -1
 $remove = $args.IndexOf('--remove-vcpkg') -gt -1
 
-if( $reset -or -$remove ) {
-  $args.remove('--reset-vcpkg');
-  $args.remove('--remove-vcpkg');
-
-  if( $reset ) {
-    write-host "Resetting vcpkg"
-  }
-
+if( $remove ) {
+  write-host "Removing vcpkg"
   remove-item -recurse -force -ea 0 "$VCPKG_ROOT"
   $error.clear();
-
-  if( $remove ) {
-    write-host "Removing vcpkg"
-    exit
-  }
+  exit
 }
 
 function bootstrap-vcpkg {
@@ -136,7 +125,7 @@ $shh = New-Module -name vcpkg -ArgumentList @($VCPKG,$VCPKG_ROOT) -ScriptBlock {
   }
 
   function vcpkg() {
-    if( ($args.indexOf('--remove-vcpkg') -gt -1) -or ($args.indexOf('--reset-vcpkg') -gt -1)) {
+    if( ($args.indexOf('--remove-vcpkg') -gt -1)) {
       # we really want to do call the ps1 script to do this.
       if( test-path "${VCPKG_ROOT}/vcpkg.ps1" ) {
         & "${VCPKG_ROOT}/vcpkg.ps1" @args
@@ -190,11 +179,8 @@ if exist $null erase $null
 IF "%VCPKG_ROOT%"=="" SET VCPKG_ROOT=%USERPROFILE%\.vcpkg
 
 :: we're running vcpkg from the home folder
-set VCPKG_CMD=%VCPKG_ROOT%\vcpkg-init.cmd
-set VCPKG_EXE=%VCPKG_ROOT%\vcpkg.exe
-
-:: if we're being asked to reset the install, call bootstrap
-if "%1" EQU "--reset-vcpkg" goto BOOTSTRAP
+set Z_VCPKG_CMD=%VCPKG_ROOT%\vcpkg-init.cmd
+set Z_VCPKG_EXE=%VCPKG_ROOT%\vcpkg.exe
 
 :: if we're being asked to remove the install, call bootstrap
 if "%1" EQU "--remove-vcpkg" (
@@ -204,13 +190,13 @@ if "%1" EQU "--remove-vcpkg" (
 )
 
 :: do we even have it installed?
-if NOT exist "%VCPKG_CMD%" goto BOOTSTRAP
+if NOT exist "%Z_VCPKG_CMD%" goto BOOTSTRAP
 
 :: if this is the actual installed vcpkg-ce, let's get to the invocation
-if "%~dfp0" == "%VCPKG_CMD%" goto INVOKE
+if "%~dfp0" == "%Z_VCPKG_CMD%" goto INVOKE
 
 :: this is not the 'right' vcpkg cmd, let's forward this on to that one.
-call "%VCPKG_CMD%" %*
+call "%Z_VCPKG_CMD%" %*
 set VCPKG_EXITCODE=%ERRORLEVEL%
 goto :eof
 
@@ -220,9 +206,9 @@ SET /A Z_VCPKG_POSTSCRIPT=%RANDOM% * 32768 + %RANDOM%
 SET Z_VCPKG_POSTSCRIPT=%VCPKG_ROOT%\VCPKG_tmp_%Z_VCPKG_POSTSCRIPT%.cmd
 
 :: call the program
-"%VCPKG_EXE%" %*
+"%Z_VCPKG_EXE%" %*
 set VCPKG_EXITCODE=%ERRORLEVEL%
-doskey vcpkg="%VCPKG_CMD%" $*
+doskey vcpkg="%Z_VCPKG_CMD%" $*
 
 :POSTSCRIPT
 :: Call the post-invocation script if it is present, then delete it.
@@ -237,13 +223,13 @@ goto :fin
 :: add the cmdline args to the environment so powershell can use them
 set /a i=0 & for %%a in (%*) do call :set %%a
 
-set POWERSHELL_EXE=
+set Z_POWERSHELL_EXE=
 for %%i in (pwsh.exe powershell.exe) do (
-  if EXIST "%%~$PATH:i" set POWERSHELL_EXE=%%~$PATH:i & goto :gotpwsh
+  if EXIST "%%~$PATH:i" set Z_POWERSHELL_EXE=%%~$PATH:i & goto :gotpwsh
 )
 :gotpwsh
 
-"%POWERSHELL_EXE%" -noprofile -executionpolicy unrestricted -command "iex (get-content %~dfp0 -raw)#" &&  set REMOVE_VCPKG=
+"%Z_POWERSHELL_EXE%" -noprofile -executionpolicy unrestricted -command "iex (get-content %~dfp0 -raw)#" && set REMOVE_VCPKG=
 set VCPKG_EXITCODE=%ERRORLEVEL%
 
 :: clear out the arguments
@@ -258,9 +244,10 @@ if "%REMOVE_VCPKG%" EQU "TRUE" (
 doskey vcpkg="%VCPKG_ROOT%\vcpkg-init.cmd" $*
 
 :fin
+SET Z_POWERSHELL_EXE=
 SET Z_VCPKG_POSTSCRIPT=
-SET VCPKG_CMD=
-set VCPKG_EXE=
+SET Z_VCPKG_CMD=
+set Z_VCPKG_EXE=
 
 EXIT /B %VCPKG_EXITCODE%
 goto :eof

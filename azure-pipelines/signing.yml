@@ -16,6 +16,7 @@ parameters:
 - name: VcpkgBaseVersionOverride
   displayName: vcpkg Base Version (default is today's date in ISO 8601)
   type: string
+  default:
 
 variables:
   - ${{ if eq(parameters.VcpkgBaseVersionOverride, '') }}:
@@ -135,7 +136,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationTarballName "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempPath standalone-temp "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.BinariesDirectory)\vcpkg-init.ps1"'
+        arguments: '-DestinationTarballName "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempPath standalone-temp "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init"'
     - script: npm pack
       displayName: Create vcpkg-ce Pack
       workingDirectory: $(Build.BinariesDirectory)/vcpkg-ce
@@ -143,6 +144,7 @@ jobs:
         mkdir "$(Build.ArtifactStagingDirectory)\staging"
         move "$(Build.BinariesDirectory)\vcpkg-ce\vcpkg-ce-*.tgz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz"
         move "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz"
+        move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init"
         move "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1"
         move "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd"
       displayName: 'Arrange Architecture-independent Files for Staging'
@@ -334,11 +336,12 @@ jobs:
       inputs:
         artifactName: staging
     - task: CmdLine@2
-      displayName: 'Move Linux Binaries to BinariesDirectory'
+      displayName: 'Copy Linux Binaries to BinariesDirectory'
       inputs:
         failOnStderr: true
         script: |
           mkdir "$(Build.BinariesDirectory)\build"
+          copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init" "$(Build.BinariesDirectory)\vcpkg-init"
           copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.BinariesDirectory)\vcpkg-glibc"
           copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.BinariesDirectory)\vcpkg-muslc"
     - task: MSBuild@1
@@ -372,6 +375,7 @@ jobs:
         script: |
           mkdir "$(Build.ArtifactStagingDirectory)\drop"
 
+          move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.cmd"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.ps1"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-ce.tgz"
@@ -397,6 +401,7 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
+          move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.sig"
           move "$(Build.BinariesDirectory)\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc.sig"
           move "$(Build.BinariesDirectory)\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc.sig"
     # Do compliance checks.
