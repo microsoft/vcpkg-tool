@@ -1005,8 +1005,47 @@ namespace vcpkg::PostBuildLint
         std::string result;
         for (const auto& path_and_contents : files_and_contents)
         {
-            if (Util::any_of(string_paths, [&path_and_contents](const std::string& path) {
-                    return Strings::contains(path_and_contents.second, path);
+            const auto extension = path_and_contents.first.extension().substr(1 /* ignore dot */);
+            const bool is_header = extension == "h" || extension == "hpp" || extension == "hxx";
+            if (Util::any_of(string_paths, [&path_and_contents, extension, is_header](const std::string& path) {
+                    if (extension == "cfg" || extension == "conf")
+                    {
+                        return Strings::contains(path_and_contents.second, path);
+                    }
+                    for (size_t offset = 0;;)
+                    {
+                        const auto index = path_and_contents.second.find(path, offset);
+                        if (index == std::string::npos) return false;
+                        if (is_header)
+                        {
+                            bool new_line = false;
+                            for (auto start = index;;)
+                            {
+                                const auto before = path_and_contents.second.find_last_of("\n/", start);
+                                if (before == std::string::npos) return true;
+                                if (path_and_contents.second[before] == '\n')
+                                {
+                                    if (before == 0) return true;
+                                    new_line = true;
+                                    start = before - 1;
+                                    continue;
+                                }
+                                if (path_and_contents.second[before + 1] == '*') break;              // is in a comment
+                                if (before == 0) return true;                                        // not in a comment
+                                if (!new_line && path_and_contents.second[before - 1] == '/') break; // is in a comment
+                                if (!new_line && path_and_contents.second[before - 1] == '*')
+                                    return true; // is not in a comment
+                                start = before - 1;
+                            }
+                        }
+                        else
+                        { // .py, .sh, .cmake or .pc file
+                            const auto before = path_and_contents.second.find_last_of("\n#", index);
+                            if (before == std::string::npos) return true;
+                            if (path_and_contents.second[before] == '\n') return true; // not a comment
+                        }
+                        offset = index + path.size();
+                    }
                 }))
             {
                 result += "\n    ";
