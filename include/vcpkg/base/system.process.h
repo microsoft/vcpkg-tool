@@ -23,6 +23,8 @@ namespace vcpkg
         std::string s;
     };
 
+    void append_escaped_quoted_string(std::string& target, StringView content);
+
     struct Command
     {
         Command() = default;
@@ -39,6 +41,7 @@ namespace vcpkg
             {
                 buf.push_back(' ');
             }
+
             buf.append(s.data(), s.size());
             return *this;
         }
@@ -92,7 +95,9 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         std::wstring m_env_data;
-#endif
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+        std::string m_env_data;
+#endif // ^^^ !_WIN32
     };
 
     const Environment& get_clean_environment();

@@ -8,6 +8,11 @@ Param(
 
 $versionUnlockedUri = "https://github.com/microsoft/vcpkg-tool/releases/latest/download/"
 $versionLockedUri = "https://github.com/microsoft/vcpkg-tool/releases/download/$VcpkgBaseVersion/"
+
 $pwshInstaller = Get-Content "$PSScriptRoot\vcpkg-init.ps1" -Raw
 $pwshInstaller = $pwshInstaller.Replace($versionUnlockedUri, $versionLockedUri)
-Set-Content -Path "$Destination\vcpkg-init.ps1" -Value $pwshInstaller
+Set-Content -Path "$Destination\vcpkg-init.ps1" -Value $pwshInstaller -NoNewline
+
+$shInstaller = Get-Content "$PSScriptRoot\vcpkg-init" -Raw
+$shInstaller = $shInstaller.Replace($versionUnlockedUri, $versionLockedUri)
+Set-Content -Path "$Destination\vcpkg-init" -Value $shInstaller -NoNewline

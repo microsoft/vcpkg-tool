@@ -24,6 +24,52 @@
 
 namespace vcpkg
 {
+    void append_escaped_quoted_string(std::string& target, StringView content)
+    {
+        if (Strings::find_first_of(content, " \t\n\r\"\\,;&`^|'") != content.end())
+        {
+            // TODO: improve this to properly handle all escaping
+#if _WIN32
+            // On Windows, `\`s before a double-quote must be doubled. Inner double-quotes must be escaped.
+            target.push_back('"');
+            size_t n_slashes = 0;
+            for (auto ch : content)
+            {
+                if (ch == '\\')
+                {
+                    ++n_slashes;
+                }
+                else if (ch == '"')
+                {
+                    target.append(n_slashes + 1, '\\');
+                    n_slashes = 0;
+                }
+                else
+                {
+                    n_slashes = 0;
+                }
+                target.push_back(ch);
+            }
+            target.append(n_slashes, '\\');
+            target.push_back('"');
+#else
+            // On non-Windows, `\` is the escape character and always requires doubling. Inner double-quotes must be
+            // escaped.
+            target.push_back('"');
+            for (auto ch : content)
+            {
+                if (ch == '\\' || ch == '"') target.push_back('\\');
+                target.push_back(ch);
+            }
+            target.push_back('"');
+#endif
+        }
+        else
+        {
+            target.append(content.data(), content.size());
+        }
+    }
+
     static std::atomic<uint64_t> g_subprocess_stats(0);
 
 #if defined(_WIN32)
@@ -203,48 +249,7 @@ namespace vcpkg
     Command& Command::string_arg(StringView s) &
     {
         if (!buf.empty()) buf.push_back(' ');
-        if (Strings::find_first_of(s, " \t\n\r\"\\,;&`^|'") != s.end())
-        {
-            // TODO: improve this to properly handle all escaping
-#if _WIN32
-            // On Windows, `\`s before a double-quote must be doubled. Inner double-quotes must be escaped.
-            buf.push_back('"');
-            size_t n_slashes = 0;
-            for (auto ch : s)
-            {
-                if (ch == '\\')
-                {
-                    ++n_slashes;
-                }
-                else if (ch == '"')
-                {
-                    buf.append(n_slashes + 1, '\\');
-                    n_slashes = 0;
-                }
-                else
-                {
-                    n_slashes = 0;
-                }
-                buf.push_back(ch);
-            }
-            buf.append(n_slashes, '\\');
-            buf.push_back('"');
-#else
-            // On non-Windows, `\` is the escape character and always requires doubling. Inner double-quotes must be
-            // escaped.
-            buf.push_back('"');
-            for (auto ch : s)
-            {
-                if (ch == '\\' || ch == '"') buf.push_back('\\');
-                buf.push_back(ch);
-            }
-            buf.push_back('"');
-#endif
-        }
-        else
-        {
-            Strings::append(buf, s);
-        }
+        append_escaped_quoted_string(buf, s);
         return *this;
     }
 
@@ -394,9 +399,20 @@ namespace vcpkg
         return {env_cstr};
     }
 #else
-    Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>&, StringView)
+    Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>&,
+                                               StringView prepend_to_path)
     {
-        return {};
+        std::string result;
+        if (!prepend_to_path.empty())
+        {
+            std::string new_path = get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO);
+            new_path.insert(new_path.begin(), prepend_to_path.size() + 1, ':');
+            std::copy_n(prepend_to_path.data(), prepend_to_path.size(), new_path.begin());
+            result = "PATH=";
+            append_escaped_quoted_string(result, new_path);
+        }
+
+        return {result};
     }
 #endif
     const Environment& get_clean_environment()
@@ -706,16 +722,22 @@ namespace vcpkg
         g_ctrl_c_state.transition_from_spawn_process();
 #else
         (void)env;
-        std::string real_command_line;
-        if (wd.working_directory.empty())
+        Command real_command_line_builder;
+        if (!wd.working_directory.empty())
         {
-            real_command_line = cmd_line.command_line().to_string();
+            real_command_line_builder.string_arg("cd");
+            real_command_line_builder.path_arg(wd.working_directory);
+            real_command_line_builder.raw_arg("&&");
         }
-        else
+
+        if (!env.m_env_data.empty())
         {
-            real_command_line =
-                Command("cd").path_arg(wd.working_directory).raw_arg("&&").raw_arg(cmd_line.command_line()).extract();
+            real_command_line_builder.raw_arg(env.m_env_data);
         }
+
+        real_command_line_builder.raw_arg(cmd_line.command_line());
+
+        std::string real_command_line = std::move(real_command_line_builder).extract();
         Debug::print("system(", real_command_line, ")\n");
         fflush(nullptr);
 
