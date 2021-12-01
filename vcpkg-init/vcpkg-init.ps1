@@ -169,11 +169,11 @@ $shh = New-Module -name vcpkg -ArgumentList @($VCPKG,$VCPKG_ROOT) -ScriptBlock {
   }
 }
 
-if ($args.Length -ne 0) {
+if ($args.Count -ne 0) {
   return vcpkg @args
 }
 
-return 0
+return
 <#
 :set
 set ARGZ[%i%]=%1&set /a i+=1 & goto :eof
@@ -190,15 +190,15 @@ if exist $null erase $null
 IF "%VCPKG_ROOT%"=="" SET VCPKG_ROOT=%USERPROFILE%\.vcpkg
 
 :: we're running vcpkg from the home folder
-set VCPKG_CMD="%VCPKG_ROOT%\vcpkg.cmd"
-set VCPKG_EXE="%VCPKG_ROOT%\vcpkg.exe"
+set VCPKG_CMD=%VCPKG_ROOT%\vcpkg-init.cmd
+set VCPKG_EXE=%VCPKG_ROOT%\vcpkg.exe
 
 :: if we're being asked to reset the install, call bootstrap
 if "%1" EQU "--reset-vcpkg" goto BOOTSTRAP
 
 :: if we're being asked to remove the install, call bootstrap
 if "%1" EQU "--remove-vcpkg" (
-  set REMOVE_CE=TRUE
+  set REMOVE_VCPKG=TRUE
   doskey vcpkg=
   goto BOOTSTRAP
 )
@@ -210,7 +210,7 @@ if NOT exist "%VCPKG_CMD%" goto BOOTSTRAP
 if "%~dfp0" == "%VCPKG_CMD%" goto INVOKE
 
 :: this is not the 'right' vcpkg cmd, let's forward this on to that one.
-call %VCPKG_CMD% %*
+call "%VCPKG_CMD%" %*
 set VCPKG_EXITCODE=%ERRORLEVEL%
 goto :eof
 
@@ -220,7 +220,7 @@ SET /A Z_VCPKG_POSTSCRIPT=%RANDOM% * 32768 + %RANDOM%
 SET Z_VCPKG_POSTSCRIPT=%VCPKG_ROOT%\VCPKG_tmp_%Z_VCPKG_POSTSCRIPT%.cmd
 
 :: call the program
-"%VCPKG_EXE%"" %*
+"%VCPKG_EXE%" %*
 set VCPKG_EXITCODE=%ERRORLEVEL%
 doskey vcpkg="%VCPKG_CMD%" $*
 
@@ -255,7 +255,7 @@ if "%REMOVE_VCPKG%" EQU "TRUE" (
 )
 
 :CREATEALIAS
-doskey vcpkg="%VCPKG_ROOT%\vcpkg.cmd" $*
+doskey vcpkg="%VCPKG_ROOT%\vcpkg-init.cmd" $*
 
 :fin
 SET Z_VCPKG_POSTSCRIPT=
