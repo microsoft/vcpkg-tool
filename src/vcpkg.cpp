@@ -186,6 +186,8 @@ int main(const int argc, const char* const* const argv)
     }
 #endif
     set_environment_variable("VCPKG_COMMAND", get_exe_path_of_current_process().generic_u8string());
+    
+    // See http://bixense.com/clicolors
     set_environment_variable("CLICOLOR_FORCE", {});
     set_environment_variable("CLICOLOR", "0");
 
