@@ -1844,12 +1844,12 @@ ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     }
 
     return DownloadManagerConfig{std::move(get_url),
-                                            std::vector<std::string>{},
-                                            std::move(put_url),
-                                            std::move(put_headers),
-                                            std::move(s.secrets),
-                                            s.block_origin,
-                                            s.script};
+                                 std::vector<std::string>{},
+                                 std::move(put_url),
+                                 std::move(put_headers),
+                                 std::move(s.secrets),
+                                 s.block_origin,
+                                 s.script};
 }
 
 ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_providers_from_configs(

@@ -579,8 +579,8 @@ namespace vcpkg
         }
         downloads = filesystem.almost_canonical(downloads, VCPKG_LINE_INFO);
 
-        m_pimpl->m_download_manager = DownloadManager{
-            parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
+        m_pimpl->m_download_manager =
+            DownloadManager{parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);
         prefab = root / "prefab";
 
