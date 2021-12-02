@@ -47,7 +47,7 @@ Z_VCPKG_bootstrap() {
 
   echo installing vcpkg in $VCPKG_ROOT
 
-  if [ "$UNAME" = "Darwin" ]; then
+  if [ "$(uname)" = "Darwin" ]; then
     curl -L -o "${VCPKG_ROOT}/vcpkg" https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-macos
   elif [ -e /etc/alpine-release ]; then
     curl -L -o "${VCPKG_ROOT}/vcpkg" https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-muslc
