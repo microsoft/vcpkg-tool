@@ -743,7 +743,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         }
 })json";
     auto object = parse_json_object(raw);
-    auto res = SourceControlFile::parse_manifest_file("<test manifest>", object);
+    auto res = SourceControlFile::parse_manifest_object("<test manifest>", object);
     if (!res.has_value())
     {
         print_error_message(res.error());
