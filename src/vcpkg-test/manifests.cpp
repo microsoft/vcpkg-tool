@@ -711,11 +711,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     auto raw = R"json({
         "name": "s",
         "version-string": "v",
-    "maintainers": "m",
+        "maintainers": "m",
         "contacts": { "a": { "aa": "aa" } },
         "summary": "d",
         "description": "d",
-    "builtin-baseline": "123",
+        "builtin-baseline": "123",
         "dependencies": ["bd"],
         "default-features": ["df"],
         "features": {
