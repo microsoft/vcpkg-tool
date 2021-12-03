@@ -1520,11 +1520,15 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
     auto& b_scf = vp.emplace("b", {"1", 0}, Scheme::Relaxed).source_control_file;
     b_scf->core_paragraph->dependencies.push_back({"a", {"core"}});
 
+    auto& c_scf = vp.emplace("c", {"1", 0}, Scheme::Relaxed).source_control_file;
+    c_scf->core_paragraph->dependencies.push_back({"a"});
+
     MockCMakeVarProvider var_provider;
 
     MockBaselineProvider bp;
     bp.v["a"] = {"1", 0};
     bp.v["b"] = {"1", 0};
+    bp.v["c"] = {"1", 0};
 
     auto install_plan =
         unwrap(create_versioned_install_plan(vp, bp, var_provider, {Dependency{"b"}}, {}, toplevel_spec()));
@@ -1532,6 +1536,13 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
     check_name_and_version(install_plan.install_actions[1], "b", {"1", 0});
+
+    install_plan = unwrap(create_versioned_install_plan(
+        vp, bp, var_provider, {Dependency{"a", {"core"}}, Dependency{"c"}}, {}, toplevel_spec()));
+
+    REQUIRE(install_plan.size() == 2);
+    check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    check_name_and_version(install_plan.install_actions[1], "c", {"1", 0});
 }
 
 static PlatformExpression::Expr parse_platform(StringView l)

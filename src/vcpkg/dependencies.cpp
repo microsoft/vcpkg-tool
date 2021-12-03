@@ -1386,7 +1386,7 @@ namespace vcpkg::Dependencies
 
             std::pair<const PackageSpec, PackageNode>& emplace_package(const PackageSpec& spec);
 
-            // the following 4 functions will add stuff recursivly
+            // the following 5 functions will add stuff recursivly
             void require_dependency(std::pair<const PackageSpec, PackageNode>& ref,
                                     const Dependency& dep,
                                     const std::string& origin);
@@ -1396,6 +1396,8 @@ namespace vcpkg::Dependencies
             void require_port_feature(std::pair<const PackageSpec, PackageNode>& ref,
                                       const std::string& feature,
                                       const std::string& origin);
+
+            void require_port_defaults(std::pair<const PackageSpec, PackageNode>& ref, const std::string& origin);
 
             void add_feature_to(std::pair<const PackageSpec, PackageNode>& ref,
                                 VersionSchemeInfo& vsi,
@@ -1621,6 +1623,11 @@ namespace vcpkg::Dependencies
             {
                 require_port_feature(ref, f, origin);
             }
+
+            if (Util::find(dep.features, StringView{"core"}) == dep.features.end())
+            {
+                require_port_defaults(ref, origin);
+            }
         }
         void VersionedPackageGraph::require_port_version(std::pair<const PackageSpec, PackageNode>& graph_entry,
                                                          const Versions::Version& version,
@@ -1701,6 +1708,24 @@ namespace vcpkg::Dependencies
             }
         }
 
+        void VersionedPackageGraph::require_port_defaults(std::pair<const PackageSpec, PackageNode>& ref,
+                                                          const std::string& origin)
+        {
+            (void)origin;
+            if (!ref.second.default_features)
+            {
+                ref.second.default_features = true;
+                ref.second.foreach_vsi([this, &ref](VersionSchemeInfo& vsi) {
+                    if (vsi.scfl)
+                    {
+                        for (auto&& f : vsi.scfl->source_control_file->core_paragraph->default_features)
+                        {
+                            this->add_feature_to(ref, vsi, f);
+                        }
+                    }
+                });
+            }
+        }
         void VersionedPackageGraph::require_port_feature(std::pair<const PackageSpec, PackageNode>& ref,
                                                          const std::string& feature,
                                                          const std::string& origin)
