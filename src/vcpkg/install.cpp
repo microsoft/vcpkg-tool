@@ -16,6 +16,7 @@
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/remove.h>
@@ -30,29 +31,20 @@ namespace vcpkg::Install
 
     using file_pack = std::pair<std::string, std::string>;
 
-    InstallDir InstallDir::from_destination_root(const Path& destination_root,
-                                                 const std::string& destination_subdirectory,
-                                                 const Path& listfile)
+    InstallDir InstallDir::from_destination_root(const InstalledPaths& ip, Triplet t, const BinaryParagraph& pgh)
     {
         InstallDir dirs;
-        dirs.m_destination = destination_root / destination_subdirectory;
-        dirs.m_destination_subdirectory = destination_subdirectory;
-        dirs.m_listfile = listfile;
+        dirs.m_destination = ip.triplet_dir(t);
+        dirs.m_listfile = ip.listfile_path(pgh);
         return dirs;
     }
 
     const Path& InstallDir::destination() const { return this->m_destination; }
 
-    const std::string& InstallDir::destination_subdirectory() const { return this->m_destination_subdirectory; }
-
     const Path& InstallDir::listfile() const { return this->m_listfile; }
 
-    void install_package_and_write_listfile(const VcpkgPaths& paths,
-                                            const PackageSpec& spec,
-                                            const InstallDir& destination_dir)
+    void install_package_and_write_listfile(Filesystem& fs, const Path& source_dir, const InstallDir& destination_dir)
     {
-        auto& fs = paths.get_filesystem();
-        auto source_dir = paths.package_dir(spec);
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(source_dir, IgnoreErrors{}),
                            Strings::concat("Source directory ", source_dir, "does not exist"));
@@ -69,7 +61,7 @@ namespace vcpkg::Install
 
         const size_t prefix_length = source_dir.native().size();
         const Path& destination = destination_dir.destination();
-        const std::string& destination_subdirectory = destination_dir.destination_subdirectory();
+        std::string destination_subdirectory = destination.filename().to_string();
         const Path& listfile = destination_dir.listfile();
 
         fs.create_directories(destination, ec);
@@ -206,12 +198,14 @@ namespace vcpkg::Install
 
     InstallResult install_package(const VcpkgPaths& paths, const BinaryControlFile& bcf, StatusParagraphs* status_db)
     {
+        auto& fs = paths.get_filesystem();
+        const auto& installed = paths.installed();
         const auto package_dir = paths.package_dir(bcf.core_paragraph.spec);
         Triplet triplet = bcf.core_paragraph.spec.triplet();
-        const std::vector<StatusParagraphAndAssociatedFiles> pgh_and_files = get_installed_files(paths, *status_db);
+        const std::vector<StatusParagraphAndAssociatedFiles> pgh_and_files =
+            get_installed_files(fs, installed, *status_db);
 
-        const SortedVector<std::string> package_files =
-            build_list_of_package_files(paths.get_filesystem(), package_dir);
+        const SortedVector<std::string> package_files = build_list_of_package_files(fs, package_dir);
         const SortedVector<file_pack> installed_files = build_list_of_installed_files(pgh_and_files, triplet);
 
         struct intersection_compare
@@ -241,7 +235,7 @@ namespace vcpkg::Install
 
         if (!intersection.empty())
         {
-            const auto triplet_install_path = paths.installed() / triplet.canonical_name();
+            const auto triplet_install_path = installed.triplet_dir(triplet);
             vcpkg::printf(Color::error,
                           "The following files are already installed in %s and are in conflict with %s\n\n",
                           triplet_install_path.generic_u8string(),
@@ -268,7 +262,7 @@ namespace vcpkg::Install
         source_paragraph.want = Want::INSTALL;
         source_paragraph.state = InstallState::HALF_INSTALLED;
 
-        write_update(paths, source_paragraph);
+        write_update(fs, installed, source_paragraph);
         status_db->insert(std::make_unique<StatusParagraph>(source_paragraph));
 
         std::vector<StatusParagraph> features_spghs;
@@ -281,23 +275,23 @@ namespace vcpkg::Install
             feature_paragraph.want = Want::INSTALL;
             feature_paragraph.state = InstallState::HALF_INSTALLED;
 
-            write_update(paths, feature_paragraph);
+            write_update(fs, installed, feature_paragraph);
             status_db->insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }
 
-        const InstallDir install_dir = InstallDir::from_destination_root(
-            paths.installed(), triplet.to_string(), paths.listfile_path(bcf.core_paragraph));
+        const InstallDir install_dir =
+            InstallDir::from_destination_root(paths.installed(), triplet, bcf.core_paragraph);
 
-        install_package_and_write_listfile(paths, bcf.core_paragraph.spec, install_dir);
+        install_package_and_write_listfile(fs, paths.package_dir(bcf.core_paragraph.spec), install_dir);
 
         source_paragraph.state = InstallState::INSTALLED;
-        write_update(paths, source_paragraph);
+        write_update(fs, installed, source_paragraph);
         status_db->insert(std::make_unique<StatusParagraph>(source_paragraph));
 
         for (auto&& feature_paragraph : features_spghs)
         {
             feature_paragraph.state = InstallState::INSTALLED;
-            write_update(paths, feature_paragraph);
+            write_update(fs, installed, feature_paragraph);
             status_db->insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }
 
@@ -314,6 +308,7 @@ namespace vcpkg::Install
                                                            BinaryCache& binary_cache,
                                                            const Build::IBuildLogsRecorder& build_logs_recorder)
     {
+        auto& fs = paths.get_filesystem();
         const InstallPlanType& plan_type = action.plan_type;
         const std::string display_name = action.spec.to_string();
         const std::string display_name_with_features = action.displayname();
@@ -337,7 +332,7 @@ namespace vcpkg::Install
             auto restore = binary_cache.try_restore(paths, action);
             if (restore == RestoreResult::restored)
             {
-                auto maybe_bcf = Paragraphs::try_load_cached_package(paths, action.spec);
+                auto maybe_bcf = Paragraphs::try_load_cached_package(fs, paths.package_dir(action.spec), action.spec);
                 bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
             }
             else if (action.build_options.build_missing == Build::BuildMissing::NO)
@@ -382,13 +377,11 @@ namespace vcpkg::Install
 
             if (action.build_options.clean_packages == Build::CleanPackages::YES)
             {
-                auto& fs = paths.get_filesystem();
                 fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
             }
 
             if (action.build_options.clean_downloads == Build::CleanDownloads::YES)
             {
-                auto& fs = paths.get_filesystem();
                 std::error_code ec;
                 for (auto& p : fs.get_regular_files_non_recursive(paths.downloads, IgnoreErrors{}))
                 {
@@ -600,12 +593,12 @@ namespace vcpkg::Install
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
         nullptr,
     };
-
     void print_usage_information(const BinaryParagraph& bpgh,
                                  std::set<std::string>& printed_usages,
-                                 const VcpkgPaths& paths)
+                                 const Filesystem& fs,
+                                 const InstalledPaths& installed)
     {
-        auto message = get_cmake_usage(bpgh, paths).message;
+        auto message = get_cmake_usage(fs, installed, bpgh).message;
         if (!message.empty())
         {
             auto existing = printed_usages.lower_bound(message);
@@ -617,7 +610,7 @@ namespace vcpkg::Install
         }
     }
 
-    CMakeUsageInfo get_cmake_usage(const BinaryParagraph& bpgh, const VcpkgPaths& paths)
+    CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh)
     {
         static const std::regex cmake_library_regex(R"(\badd_library\(([^\$\s\)]+)\s)",
                                                     std::regex_constants::ECMAScript);
@@ -625,10 +618,8 @@ namespace vcpkg::Install
         CMakeUsageInfo ret;
 
         std::error_code ec;
-        auto& fs = paths.get_filesystem();
 
-        auto usage_file =
-            paths.installed() / bpgh.spec.triplet().canonical_name() / "share" / bpgh.spec.name() / "usage";
+        auto usage_file = installed.usage_file(bpgh.spec);
         if (fs.exists(usage_file, IgnoreErrors{}))
         {
             ret.usage_file = true;
@@ -642,7 +633,7 @@ namespace vcpkg::Install
             return ret;
         }
 
-        auto files = fs.read_lines(paths.listfile_path(bpgh), ec);
+        auto files = fs.read_lines(installed.listfile_path(bpgh), ec);
         if (!ec)
         {
             std::map<std::string, std::string> config_files;
@@ -655,7 +646,7 @@ namespace vcpkg::Install
                 if (Strings::contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
                 {
                     // CMake file is inside the share folder
-                    const auto path = paths.installed() / suffix;
+                    const auto path = installed.root() / suffix;
                     const auto contents = fs.read_contents(path, ec);
                     const auto find_package_name = Path(path.parent_path()).filename().to_string();
                     if (!ec)
@@ -1069,7 +1060,7 @@ namespace vcpkg::Install
 
         // create the plan
         print2("Computing installation plan...\n");
-        StatusParagraphs status_db = database_load_check(paths);
+        StatusParagraphs status_db = database_load_check(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
         auto action_plan = Dependencies::create_feature_install_plan(
@@ -1184,7 +1175,7 @@ namespace vcpkg::Install
             if (result.action->request_type != RequestType::USER_REQUESTED) continue;
             auto bpgh = result.get_binary_paragraph();
             if (!bpgh) continue;
-            print_usage_information(*bpgh, printed_usages, paths);
+            print_usage_information(*bpgh, printed_usages, fs, paths.installed());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

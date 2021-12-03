@@ -227,22 +227,8 @@ TEST_CASE ("reformat_version generic", "[reformat_version]")
 
 TEST_CASE ("generate_nuspec", "[generate_nuspec]")
 {
-    auto& fsWrapper = get_real_filesystem();
-    VcpkgCmdArguments args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
-    if (auto root = get_environment_variable(VcpkgCmdArguments::VCPKG_ROOT_DIR_ENV))
-    {
-        args.imbue_from_fake_environment(
-            {{VcpkgCmdArguments::VCPKG_ROOT_DIR_ENV.to_string(), root.value_or_exit(VCPKG_LINE_INFO)}});
-    }
-    args.packages_root_dir = std::make_unique<std::string>("/");
-    auto pkgPath = fsWrapper.absolute("/zlib2_x64-windows", VCPKG_LINE_INFO);
-#if defined(_WIN32)
-    pkgPath = vcpkg::win32_fix_path_case(pkgPath);
-#endif // ^^^ _WIN32
-    pkgPath = pkgPath / "**";
-    pkgPath.make_preferred();
-    const auto pkgPathStr = pkgPath.native();
-    VcpkgPaths paths(fsWrapper, args);
+    const Path pkgPath = "/zlib2_x64-windows";
+    const auto pkgPathWild = (pkgPath / "**").native();
 
     auto pghs = Paragraphs::parse_paragraphs(R"(
 Source: zlib2
@@ -288,7 +274,7 @@ Build-Depends: bzip
     REQUIRE(ref.nupkg_filename() == "zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 
     {
-        auto nuspec = generate_nuspec(paths, ipa, ref, {});
+        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -308,7 +294,7 @@ Dependencies:
 </description>
     <packageTypes><packageType name="vcpkg"/></packageTypes>
   </metadata>
-  <files><file src=")" + pkgPathStr +
+  <files><file src=")" + pkgPathWild +
                                R"(" target=""/></files>
 </package>
 )";
@@ -316,7 +302,7 @@ Dependencies:
     }
 
     {
-        auto nuspec = generate_nuspec(paths, ipa, ref, {"urlvalue"});
+        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {"urlvalue"});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -337,14 +323,14 @@ Dependencies:
     <packageTypes><packageType name="vcpkg"/></packageTypes>
     <repository type="git" url="urlvalue"/>
   </metadata>
-  <files><file src=")" + pkgPathStr +
+  <files><file src=")" + pkgPathWild +
                                R"(" target=""/></files>
 </package>
 )";
         REQUIRE_EQUAL_TEXT(nuspec, expected);
     }
     {
-        auto nuspec = generate_nuspec(paths, ipa, ref, {"urlvalue", "branchvalue", "commitvalue"});
+        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {"urlvalue", "branchvalue", "commitvalue"});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -365,7 +351,7 @@ Dependencies:
     <packageTypes><packageType name="vcpkg"/></packageTypes>
     <repository type="git" url="urlvalue" branch="branchvalue" commit="commitvalue"/>
   </metadata>
-  <files><file src=")" + pkgPathStr +
+  <files><file src=")" + pkgPathWild +
                                R"(" target=""/></files>
 </package>
 )";

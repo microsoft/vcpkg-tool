@@ -117,6 +117,21 @@ namespace vcpkg
                 m_inactive = '\0';
             }
 
+            template<class... Args>
+            T& emplace(Args&&... args)
+            {
+                if (m_is_present)
+                {
+                    m_t = T(static_cast<Args&&>(args)...);
+                }
+                else
+                {
+                    new (&m_t) T(static_cast<Args&&>(args)...);
+                    m_is_present = true;
+                }
+                return m_t;
+            }
+
         private:
             bool m_is_present;
             union
@@ -170,6 +185,21 @@ namespace vcpkg
             const T& value() const { return this->m_t; }
             T& value() { return this->m_t; }
 
+            template<class... Args>
+            T& emplace(Args&&... args)
+            {
+                if (m_is_present)
+                {
+                    m_t = T(static_cast<Args&&>(args)...);
+                }
+                else
+                {
+                    new (&m_t) T(static_cast<Args&&>(args)...);
+                    m_is_present = true;
+                }
+                return m_t;
+            }
+
             void destroy()
             {
                 m_is_present = false;
@@ -197,6 +227,12 @@ namespace vcpkg
 
             T& value() const { return *this->m_t; }
 
+            T& emplace(T& t)
+            {
+                m_t = &t;
+                return *m_t;
+            }
+
         private:
             T* m_t;
         };
@@ -214,6 +250,12 @@ namespace vcpkg
             constexpr bool has_value() const { return m_t != nullptr; }
 
             const T& value() const { return *this->m_t; }
+
+            const T& emplace(const T& t)
+            {
+                m_t = &t;
+                return *m_t;
+            }
 
         private:
             const T* m_t;
@@ -253,10 +295,10 @@ namespace vcpkg
 
         constexpr explicit operator bool() const { return this->m_base.has_value(); }
 
-        T& emplace()
+        template<class... Args>
+        T& emplace(Args&&... args)
         {
-            this->m_base = T{};
-            return this->m_base.value();
+            return this->m_base.emplace(static_cast<Args&&>(args)...);
         }
 
         constexpr bool has_value() const { return this->m_base.has_value(); }

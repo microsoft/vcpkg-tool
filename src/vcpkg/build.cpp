@@ -22,6 +22,7 @@
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
@@ -29,6 +30,7 @@
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
 using vcpkg::Build::BuildResult;
@@ -102,7 +104,7 @@ namespace vcpkg::Build
         auto& var_provider = *var_provider_storage;
         var_provider.load_dep_info_vars({{full_spec.package_spec}}, host_triplet);
 
-        StatusParagraphs status_db = database_load_check(paths);
+        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         auto action_plan = Dependencies::create_feature_install_plan(
             provider, var_provider, std::vector<FullPackageSpec>{full_spec}, status_db, {host_triplet});
@@ -791,8 +793,7 @@ namespace vcpkg::Build
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
         {
-            const Path port_config_path = paths.installed() / dependency.triplet().canonical_name() / "share" /
-                                          dependency.name() / "vcpkg-port-config.cmake";
+            const Path port_config_path = paths.installed().vcpkg_port_config_cmake(dependency);
 
             if (fs.is_regular_file(port_config_path))
             {

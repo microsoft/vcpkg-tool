@@ -15,6 +15,7 @@
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgpaths.h>
 
 #include <iterator>
 
@@ -842,7 +843,7 @@ namespace
             NugetReference nuget_ref = make_nugetref(action, get_nuget_prefix());
             auto nuspec_path = paths.buildtrees() / spec.name() / (spec.triplet().to_string() + ".nuspec");
             paths.get_filesystem().write_contents(
-                nuspec_path, generate_nuspec(paths, action, nuget_ref), VCPKG_LINE_INFO);
+                nuspec_path, generate_nuspec(paths.package_dir(spec), action, nuget_ref), VCPKG_LINE_INFO);
 
             const auto& nuget_exe = paths.get_tool_exe("nuget");
             Command cmdline;
@@ -2010,7 +2011,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
             get_environment_variable("GITHUB_SHA").value_or("")};
 }
 
-std::string vcpkg::generate_nuspec(const VcpkgPaths& paths,
+std::string vcpkg::generate_nuspec(const Path& package_dir,
                                    const Dependencies::InstallPlanAction& action,
                                    const vcpkg::NugetReference& ref,
                                    details::NuGetRepoInfo rinfo)
@@ -2076,7 +2077,7 @@ std::string vcpkg::generate_nuspec(const VcpkgPaths& paths,
     xml.close_tag("metadata").line_break();
     xml.open_tag("files");
     xml.start_complex_open_tag("file")
-        .text_attr("src", paths.package_dir(spec) / "**")
+        .text_attr("src", package_dir / "**")
         .text_attr("target", "")
         .finish_self_closing_complex_tag();
     xml.close_tag("files").line_break();

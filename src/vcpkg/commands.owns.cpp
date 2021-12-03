@@ -4,13 +4,17 @@
 #include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands::Owns
 {
-    static void search_file(const VcpkgPaths& paths, const std::string& file_substr, const StatusParagraphs& status_db)
+    static void search_file(Filesystem& fs,
+                            const InstalledPaths& installed,
+                            const std::string& file_substr,
+                            const StatusParagraphs& status_db)
     {
-        const std::vector<StatusParagraphAndAssociatedFiles> installed_files = get_installed_files(paths, status_db);
-        for (const StatusParagraphAndAssociatedFiles& pgh_and_file : installed_files)
+        const auto installed_files = get_installed_files(fs, installed, status_db);
+        for (auto&& pgh_and_file : installed_files)
         {
             const StatusParagraph& pgh = pgh_and_file.pgh;
 
@@ -35,8 +39,8 @@ namespace vcpkg::Commands::Owns
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
 
-        const StatusParagraphs status_db = database_load_check(paths);
-        search_file(paths, args.command_arguments[0], status_db);
+        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        search_file(paths.get_filesystem(), paths.installed(), args.command_arguments[0], status_db);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
