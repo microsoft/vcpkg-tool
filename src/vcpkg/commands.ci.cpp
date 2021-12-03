@@ -22,6 +22,7 @@
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
 
@@ -625,7 +626,7 @@ namespace vcpkg::Commands::CI
         }
         else
         {
-            StatusParagraphs status_db = database_load_check(paths);
+            StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
             auto collection_timer = ElapsedTimer::create_started();
             auto summary = Install::perform(args,

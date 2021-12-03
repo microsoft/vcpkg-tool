@@ -3,6 +3,7 @@
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.zprintconfig.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -37,7 +38,10 @@ namespace vcpkg::Commands::Z_PrintConfig
         obj.insert("host_triplet", host_triplet.canonical_name());
         obj.insert("vcpkg_root", paths.root.native());
         obj.insert("tools", paths.tools.native());
-        opt_add(obj, "installed", paths.maybe_installed());
+        if (auto i = paths.maybe_installed().get())
+        {
+            obj.insert("installed", i->root().native());
+        }
         opt_add(obj, "buildtrees", paths.maybe_buildtrees());
         opt_add(obj, "packages", paths.maybe_packages());
         if (paths.maybe_installed())

@@ -4,6 +4,7 @@
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/configuration.h>
+#include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -14,6 +15,9 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
+
+#include <vcpkg/packagespec.h>
+#include <vcpkg/triplet.h>
 
 namespace vcpkg
 {
@@ -35,10 +39,7 @@ namespace vcpkg
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
-    namespace Downloads
-    {
-        struct DownloadManager;
-    }
+    struct DownloadManager;
 
     namespace Build
     {
@@ -69,16 +70,13 @@ namespace vcpkg
 
         VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args);
         VcpkgPaths(const VcpkgPaths&) = delete;
-        VcpkgPaths(VcpkgPaths&&) = default;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
-        VcpkgPaths& operator=(VcpkgPaths&&) = default;
         ~VcpkgPaths();
 
         Path package_dir(const PackageSpec& spec) const;
         Path build_dir(const PackageSpec& spec) const;
         Path build_dir(const std::string& package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
-        Path listfile_path(const BinaryParagraph& pgh) const;
 
         bool is_valid_triplet(Triplet t) const;
         const std::vector<std::string> get_available_triplets_names() const;
@@ -90,24 +88,20 @@ namespace vcpkg
         LockFile& get_installed_lockfile() const;
         void flush_lockfile() const;
 
-        const Optional<Path>& maybe_installed() const;
+        const Optional<InstalledPaths>& maybe_installed() const;
         const Optional<Path>& maybe_buildtrees() const;
         const Optional<Path>& maybe_packages() const;
 
-        const Path& installed() const;
+        const InstalledPaths& installed() const;
         const Path& buildtrees() const;
         const Path& packages() const;
-
-        Path vcpkg_dir() const;
-        Path vcpkg_dir_status_file() const;
-        Path vcpkg_dir_info() const;
-        Path vcpkg_dir_updates() const;
 
         Path baselines_output() const;
         Path versions_output() const;
 
-        Path original_cwd;
-        Path root;
+        const Path original_cwd;
+        const Path root;
+
         Path manifest_root_dir;
         Path downloads;
         Path triplets;
@@ -141,7 +135,7 @@ namespace vcpkg
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedS<std::string> git_show(const std::string& treeish, const Path& dot_git_dir) const;
 
-        const Downloads::DownloadManager& get_download_manager() const;
+        const DownloadManager& get_download_manager() const;
 
         ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
 

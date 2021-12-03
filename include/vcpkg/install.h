@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vcpkg/fwd/installedpaths.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
+
 #include <vcpkg/base/chrono.h>
 
 #include <vcpkg/binaryparagraph.h>
@@ -45,18 +48,14 @@ namespace vcpkg::Install
 
     struct InstallDir
     {
-        static InstallDir from_destination_root(const Path& destination_root,
-                                                const std::string& destination_subdirectory,
-                                                const Path& listfile);
+        static InstallDir from_destination_root(const InstalledPaths& ip, Triplet t, const BinaryParagraph& pgh);
 
     private:
         Path m_destination;
-        std::string m_destination_subdirectory;
         Path m_listfile;
 
     public:
         const Path& destination() const;
-        const std::string& destination_subdirectory() const;
         const Path& listfile() const;
     };
 
@@ -72,7 +71,7 @@ namespace vcpkg::Install
         SUCCESS,
     };
 
-    void install_package_and_write_listfile(const VcpkgPaths& paths, const PackageSpec& spec, const InstallDir& dirs);
+    void install_package_and_write_listfile(Filesystem& fs, const Path& source_dir, const InstallDir& destination_dir);
 
     void install_files_and_write_listfile(Filesystem& fs,
                                           const Path& source_dir,
@@ -100,10 +99,11 @@ namespace vcpkg::Install
         std::map<std::string, std::vector<std::string>> cmake_targets_map;
     };
 
-    CMakeUsageInfo get_cmake_usage(const BinaryParagraph& bpgh, const VcpkgPaths& paths);
+    CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh);
     void print_usage_information(const BinaryParagraph& bpgh,
                                  std::set<std::string>& printed_usages,
-                                 const VcpkgPaths& paths);
+                                 const Filesystem& fs,
+                                 const InstalledPaths& installed);
 
     extern const CommandStructure COMMAND_STRUCTURE;
 

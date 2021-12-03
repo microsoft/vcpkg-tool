@@ -6,25 +6,8 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#define STRINGIFY(...) #__VA_ARGS__
-#define MACRO_TO_STRING(X) STRINGIFY(X)
-
-#if !defined(VCPKG_VERSION)
-#error VCPKG_VERSION must be defined
-#endif
-
-#define VCPKG_VERSION_AS_STRING MACRO_TO_STRING(VCPKG_VERSION)
-
-#if !defined(VCPKG_BASE_VERSION)
-#error VCPKG_BASE_VERSION must be defined
-#endif
-
-#define VCPKG_BASE_VERSION_AS_STRING MACRO_TO_STRING(VCPKG_BASE_VERSION)
-
 namespace vcpkg::Commands::Version
 {
-    const char* base_version() noexcept { return VCPKG_BASE_VERSION_AS_STRING; }
-
     const char* version() noexcept
     {
         return VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING

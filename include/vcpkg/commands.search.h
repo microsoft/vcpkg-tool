@@ -3,10 +3,9 @@
 #include <vcpkg/commands.interface.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands::Search
+namespace vcpkg::Commands
 {
-    extern const CommandStructure COMMAND_STRUCTURE;
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    extern const CommandStructure SearchCommandStructure;
 
     struct SearchCommand : PathsCommand
     {

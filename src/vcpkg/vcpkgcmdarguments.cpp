@@ -1,6 +1,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
+#include <vcpkg/base/system.process.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.integrate.h>
@@ -235,10 +236,14 @@ namespace vcpkg
         VcpkgCmdArguments args;
         std::vector<std::string> feature_flags;
 
-        if (arg_first != arg_last && arg_first + 1 == arg_last && *arg_first == "--version")
+        if (arg_first != arg_last)
         {
-            args.command = "version";
-            return args;
+            args.forwardable_arguments.assign(arg_first + 1, arg_last);
+            if (arg_first + 1 == arg_last && *arg_first == "--version")
+            {
+                args.command = "version";
+                return args;
+            }
         }
 
         for (auto it = arg_first; it != arg_last; ++it)
@@ -546,6 +551,11 @@ namespace vcpkg
         }
 
         return output;
+    }
+
+    const std::vector<std::string>& VcpkgCmdArguments::get_forwardable_arguments() const noexcept
+    {
+        return forwardable_arguments;
     }
 
     void print_usage()

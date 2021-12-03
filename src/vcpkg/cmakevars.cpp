@@ -9,6 +9,7 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
 using vcpkg::Optional;

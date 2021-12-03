@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vcpkg/fwd/registries.h>
-#include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/expected.h>
 
@@ -32,7 +31,9 @@ namespace vcpkg::Paragraphs
                                                                StringView origin,
                                                                bool is_manifest);
 
-    ExpectedS<BinaryControlFile> try_load_cached_package(const VcpkgPaths& paths, const PackageSpec& spec);
+    ExpectedS<BinaryControlFile> try_load_cached_package(const Filesystem& fs,
+                                                         const Path& package_dir,
+                                                         const PackageSpec& spec);
 
     struct LoadResults
     {

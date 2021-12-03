@@ -1,6 +1,7 @@
 #include <vcpkg/base/checks.h>
 
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -146,9 +147,8 @@ namespace vcpkg
         }
     }
 
-    Json::Value serialize_ipv(const InstalledPackageView& ipv, const VcpkgPaths& paths)
+    Json::Value serialize_ipv(const InstalledPackageView& ipv, const InstalledPaths& installed, const Filesystem& fs)
     {
-        const auto& fs = paths.get_filesystem();
         Json::Object iobj;
         iobj.insert("version-string", Json::Value::string(ipv.core->package.version));
         iobj.insert("port-version", Json::Value::integer(ipv.core->package.port_version));
@@ -170,12 +170,12 @@ namespace vcpkg
         {
             iobj.insert("features", std::move(features));
         }
-        auto usage = Install::get_cmake_usage(ipv.core->package, paths);
+        auto usage = Install::get_cmake_usage(fs, installed, ipv.core->package);
         if (!usage.message.empty())
         {
             iobj.insert("usage", Json::Value::string(std::move(usage.message)));
         }
-        auto owns_files = fs.read_lines(paths.listfile_path(ipv.core->package), VCPKG_LINE_INFO);
+        auto owns_files = fs.read_lines(installed.listfile_path(ipv.core->package), VCPKG_LINE_INFO);
         Json::Array owns;
         for (auto&& owns_file : owns_files)
             owns.push_back(Json::Value::string(std::move(owns_file)));

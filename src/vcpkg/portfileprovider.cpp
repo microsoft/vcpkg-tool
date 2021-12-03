@@ -56,7 +56,7 @@ namespace vcpkg::PortFileProvider
         return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
 
-    PathsPortFileProvider::PathsPortFileProvider(const VcpkgPaths& paths, const std::vector<std::string>& overlay_ports)
+    PathsPortFileProvider::PathsPortFileProvider(const VcpkgPaths& paths, View<std::string> overlay_ports)
         : m_baseline(make_baseline_provider(paths))
         , m_versioned(make_versioned_portfile_provider(paths))
         , m_overlay(make_overlay_provider(paths, overlay_ports))

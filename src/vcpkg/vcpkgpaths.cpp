@@ -17,6 +17,7 @@
 #include <vcpkg/configuration.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/globalstate.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/registries.h>
@@ -264,9 +265,7 @@ namespace vcpkg
 
         struct VcpkgPathsImpl
         {
-            VcpkgPathsImpl(Filesystem& fs,
-                           FeatureFlagSettings ff_settings,
-                           ToolCache::RequireExactVersions abiToolsHandling)
+            VcpkgPathsImpl(Filesystem& fs, FeatureFlagSettings ff_settings, RequireExactVersions abiToolsHandling)
                 : fs_ptr(&fs)
                 , m_tool_cache(get_tool_cache(abiToolsHandling))
                 , m_env_cache(ff_settings.compiler_tracking)
@@ -300,11 +299,11 @@ namespace vcpkg
             Configuration m_config;
             std::unique_ptr<RegistrySet> m_registry_set;
 
-            Downloads::DownloadManager m_download_manager;
+            DownloadManager m_download_manager;
 
             FeatureFlagSettings m_ff_settings;
 
-            Optional<Path> installed;
+            Optional<InstalledPaths> installed;
             Optional<Path> buildtrees;
             Optional<Path> packages;
 
@@ -326,7 +325,7 @@ namespace vcpkg
                                  "Error: Could not locate a manifest (vcpkg.json) above the current working "
                                  "directory.\nThis vcpkg distribution does not have a classic mode instance.");
 
-    const Path& VcpkgPaths::installed() const
+    const InstalledPaths& VcpkgPaths::installed() const
     {
         if (auto i = m_pimpl->installed.get())
         {
@@ -356,7 +355,7 @@ namespace vcpkg
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    const Optional<Path>& VcpkgPaths::maybe_installed() const { return m_pimpl->installed; }
+    const Optional<InstalledPaths>& VcpkgPaths::maybe_installed() const { return m_pimpl->installed; }
     const Optional<Path>& VcpkgPaths::maybe_buildtrees() const { return m_pimpl->buildtrees; }
     const Optional<Path>& VcpkgPaths::maybe_packages() const { return m_pimpl->packages; }
 
@@ -371,9 +370,9 @@ namespace vcpkg
         }
         else if (m_pimpl->m_readonly)
         {
-            if (m_pimpl->installed)
+            if (auto i = m_pimpl->installed.get())
             {
-                return get_filesystem().almost_canonical(vcpkg_dir() / readonly_subpath, li);
+                return get_filesystem().almost_canonical(i->vcpkg_dir() / readonly_subpath, li);
             }
             else
             {
@@ -385,8 +384,6 @@ namespace vcpkg
             return get_filesystem().almost_canonical(root / root_subpath, li);
         }
     }
-
-    static Path lockfile_path(const VcpkgPaths& p) { return p.vcpkg_dir() / "vcpkg-lock.json"; }
 
     static Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
     {
@@ -448,18 +445,23 @@ namespace vcpkg
                      "\n");
     }
 
+    static Path preferred_current_path(const Filesystem& fs)
+    {
+#if defined(_WIN32)
+        return vcpkg::win32_fix_path_case(fs.current_path(VCPKG_LINE_INFO));
+#else
+        return fs.current_path(VCPKG_LINE_INFO);
+#endif
+    }
+
     VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args)
-        : m_pimpl(std::make_unique<details::VcpkgPathsImpl>(
+        : original_cwd(preferred_current_path(filesystem))
+        , root(determine_root(filesystem, original_cwd, args))
+        , m_pimpl(std::make_unique<details::VcpkgPathsImpl>(
               filesystem,
               args.feature_flag_settings(),
-              Util::Enum::to_enum<ToolCache::RequireExactVersions>(args.exact_abi_tools_versions.value_or(false))))
+              Util::Enum::to_enum<RequireExactVersions>(args.exact_abi_tools_versions.value_or(false))))
     {
-        original_cwd = filesystem.current_path(VCPKG_LINE_INFO);
-#if defined(_WIN32)
-        original_cwd = vcpkg::win32_fix_path_case(original_cwd);
-#endif // _WIN32
-
-        root = determine_root(filesystem, original_cwd, args);
         Checks::check_exit(VCPKG_LINE_INFO, !root.empty(), "Error: Could not detect vcpkg-root.");
         Debug::print("Using vcpkg-root: ", root, '\n');
 
@@ -488,8 +490,8 @@ namespace vcpkg
             m_pimpl->m_config_dir = root;
             if (!m_pimpl->m_readonly)
             {
-                m_pimpl->installed =
-                    process_output_directory(filesystem, args.install_root_dir.get(), root / "installed");
+                m_pimpl->installed.emplace(
+                    process_output_directory(filesystem, args.install_root_dir.get(), root / "installed"));
             }
         }
         else
@@ -497,8 +499,8 @@ namespace vcpkg
             Debug::print("Using manifest-root: ", manifest_root_dir, '\n');
 
             m_pimpl->m_config_dir = manifest_root_dir;
-            m_pimpl->installed = process_output_directory(
-                filesystem, args.install_root_dir.get(), manifest_root_dir / "vcpkg_installed");
+            m_pimpl->installed.emplace(process_output_directory(
+                filesystem, args.install_root_dir.get(), manifest_root_dir / "vcpkg_installed"));
 
             if (args.wait_for_lock.value_or(false))
             {
@@ -581,8 +583,8 @@ namespace vcpkg
         }
         downloads = filesystem.almost_canonical(downloads, VCPKG_LINE_INFO);
 
-        m_pimpl->m_download_manager = Downloads::DownloadManager{
-            parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
+        m_pimpl->m_download_manager =
+            DownloadManager{parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
         scripts = process_input_directory(filesystem, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO);
         prefab = root / "prefab";
 
@@ -590,7 +592,10 @@ namespace vcpkg
         Debug::print("Using scripts-root: ", scripts, '\n');
         Debug::print("Using builtin-ports: ", builtin_ports, '\n');
         Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
-        Debug::print("Using installed-root: ", m_pimpl->installed.value_or("nullopt"), '\n');
+        if (auto i = m_pimpl->installed.get())
+        {
+            Debug::print("Using installed-root: ", i->root(), '\n');
+        }
         Debug::print("Using packages-root: ", m_pimpl->packages.value_or("nullopt"), '\n');
         Debug::print("Using buildtrees-root: ", m_pimpl->buildtrees.value_or("nullopt"), '\n');
 
@@ -627,15 +632,10 @@ namespace vcpkg
         return this->package_dir(spec) / "BUILD_INFO";
     }
 
-    Path VcpkgPaths::vcpkg_dir() const { return installed() / "vcpkg"; }
-    Path VcpkgPaths::vcpkg_dir_status_file() const { return vcpkg_dir() / "status"; }
-    Path VcpkgPaths::vcpkg_dir_info() const { return vcpkg_dir() / "info"; }
-    Path VcpkgPaths::vcpkg_dir_updates() const { return vcpkg_dir() / "updates"; }
-
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
     Path VcpkgPaths::versions_output() const { return buildtrees() / "versioning_" / "versions"; }
 
-    Path VcpkgPaths::listfile_path(const BinaryParagraph& pgh) const
+    Path InstalledPaths::listfile_path(const BinaryParagraph& pgh) const
     {
         return this->vcpkg_dir_info() / (pgh.fullstem() + ".list");
     }
@@ -784,7 +784,7 @@ namespace vcpkg
     {
         if (!m_pimpl->m_installed_lock.has_value())
         {
-            m_pimpl->m_installed_lock = load_lockfile(get_filesystem(), lockfile_path(*this));
+            m_pimpl->m_installed_lock = load_lockfile(get_filesystem(), installed().lockfile_path());
         }
         return *m_pimpl->m_installed_lock.get();
     }
@@ -800,7 +800,7 @@ namespace vcpkg
         auto obj = lockdata_to_json_object(lockfile.lockdata);
 
         get_filesystem().write_rename_contents(
-            lockfile_path(*this), "vcpkg-lock.json.tmp", Json::stringify(obj, {}), VCPKG_LINE_INFO);
+            installed().lockfile_path(), "vcpkg-lock.json.tmp", Json::stringify(obj, {}), VCPKG_LINE_INFO);
     }
 
     const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
@@ -1243,7 +1243,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, m_pimpl->m_registry_set != nullptr);
         return *m_pimpl->m_registry_set;
     }
-    const Downloads::DownloadManager& VcpkgPaths::get_download_manager() const { return m_pimpl->m_download_manager; }
+    const DownloadManager& VcpkgPaths::get_download_manager() const { return m_pimpl->m_download_manager; }
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
                                  (msg::triplet),
@@ -1273,10 +1273,10 @@ namespace vcpkg
                                  "     at \"{path}\"");
 
 #if defined(_WIN32)
-    static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const VcpkgPaths& paths)
+    static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)
     {
         return impl.toolsets.get_lazy(
-            [&paths]() -> ToolsetsInformation { return VisualStudio::find_toolset_instances_preferred_first(paths); });
+            [&fs]() -> ToolsetsInformation { return VisualStudio::find_toolset_instances_preferred_first(fs); });
     }
 
     static bool toolset_matches_full_version(const Toolset& t, StringView fv)
@@ -1312,7 +1312,7 @@ namespace vcpkg
         msg::println(Color::error, msgErrorVcvarsUnsupported, msg::triplet = prebuildinfo.triplet);
         Checks::exit_fail(VCPKG_LINE_INFO);
 #else
-        const auto& toolsets_info = get_all_toolsets(*m_pimpl, *this);
+        const auto& toolsets_info = get_all_toolsets(*m_pimpl, get_filesystem());
         View<Toolset> vs_toolsets = toolsets_info.toolsets;
 
         const auto tsv = prebuildinfo.platform_toolset.get();
