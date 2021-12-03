@@ -23,7 +23,7 @@ namespace vcpkg
         std::string s;
     };
 
-    void append_escaped_quoted_string(std::string& target, StringView content);
+    void append_shell_escaped(std::string& target, StringView content);
 
     struct Command
     {

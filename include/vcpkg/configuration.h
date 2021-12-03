@@ -37,7 +37,7 @@ namespace vcpkg
 
         std::unique_ptr<RegistrySet> instantiate_registry_set(const VcpkgPaths& paths, const Path& config_dir) const;
 
-        bool requests_configure_environment() const;
+        bool requests_ce() const;
 
         static View<StringView> known_fields();
     };

@@ -20,7 +20,7 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    void BootstrapStandaloneCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
+    void ZBootstrapStandaloneCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         DownloadManager download_manager{{}};
         const auto& vcpkg_root_arg = args.vcpkg_root_dir;

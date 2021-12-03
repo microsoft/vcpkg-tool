@@ -5,7 +5,7 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands::New
+namespace vcpkg::Commands
 {
     void NewCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {

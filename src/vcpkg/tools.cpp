@@ -665,7 +665,7 @@ gsutil version: 4.58
                         );
                     }
 
-                    return tars[0];
+                    return std::move(tars[0]);
                 }
 
                 Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unknown or unavailable tool: %s", tool);

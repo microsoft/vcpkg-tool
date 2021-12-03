@@ -26,21 +26,22 @@ namespace
         const std::string nugetid = match[1];
         const std::string version = match[2];
 
-        const auto code_and_output = cmd_execute_and_capture_output(Command{nuget_exe}
-                                                                        .string_arg("install")
-                                                                        .string_arg(nugetid)
-                                                                        .string_arg("-Version")
-                                                                        .string_arg(version)
-                                                                        .string_arg("-OutputDirectory")
-                                                                        .path_arg(to_path)
-                                                                        .string_arg("-Source")
-                                                                        .path_arg(paths.downloads)
-                                                                        .string_arg("-nocache")
-                                                                        .string_arg("-DirectDownload")
-                                                                        .string_arg("-NonInteractive")
-                                                                        .string_arg("-ForceEnglishOutput")
-                                                                        .string_arg("-PackageSaveMode")
-                                                                        .string_arg("nuspec"));
+        Command nuget_command{nuget_exe};
+        nuget_command.string_arg("install")
+            .string_arg(nugetid)
+            .string_arg("-Version")
+            .string_arg(version)
+            .string_arg("-OutputDirectory")
+            .path_arg(to_path)
+            .string_arg("-Source")
+            .path_arg(paths.downloads)
+            .string_arg("-nocache")
+            .string_arg("-DirectDownload")
+            .string_arg("-NonInteractive")
+            .string_arg("-ForceEnglishOutput")
+            .string_arg("-PackageSaveMode")
+            .string_arg("nuspec");
+        const auto code_and_output = cmd_execute_and_capture_output(nuget_command);
 
         Checks::check_exit(VCPKG_LINE_INFO,
                            code_and_output.exit_code == 0,
@@ -152,11 +153,10 @@ namespace
     Path extract_archive_to_temp_subdirectory(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
         Filesystem& fs = paths.get_filesystem();
-        Path to_path_partial = to_path + ".partial"
+        Path to_path_partial = to_path + ".partial";
 #if defined(_WIN32)
-                               + "." + std::to_string(GetCurrentProcessId())
+        to_path_partial += "." + std::to_string(GetCurrentProcessId());
 #endif
-            ;
 
         fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);

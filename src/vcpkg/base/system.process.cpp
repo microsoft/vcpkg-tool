@@ -24,7 +24,7 @@
 
 namespace vcpkg
 {
-    void append_escaped_quoted_string(std::string& target, StringView content)
+    void append_shell_escaped(std::string& target, StringView content)
     {
         if (Strings::find_first_of(content, " \t\n\r\"\\,;&`^|'") != content.end())
         {
@@ -249,7 +249,7 @@ namespace vcpkg
     Command& Command::string_arg(StringView s) &
     {
         if (!buf.empty()) buf.push_back(' ');
-        append_escaped_quoted_string(buf, s);
+        append_shell_escaped(buf, s);
         return *this;
     }
 
@@ -261,10 +261,13 @@ namespace vcpkg
             get_environment_variable("SystemRoot").value_or_exit(VCPKG_LINE_INFO);
         static const std::string system32_env = system_root_env + R"(\system32)";
         std::string new_path = "PATH=";
-        Strings::append(new_path, prepend_to_path);
-        if (new_path.back() != '=' && new_path.back() != ';')
+        if (!prepend_to_path.empty())
         {
-            new_path.push_back(';');
+            Strings::append(new_path, prepend_to_path);
+            if (prepend_to_path.back() != ';')
+            {
+                new_path.push_back(';');
+            }
         }
 
         Strings::append(new_path,
@@ -405,11 +408,10 @@ namespace vcpkg
         std::string result;
         if (!prepend_to_path.empty())
         {
-            std::string new_path = get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO);
-            new_path.insert(new_path.begin(), prepend_to_path.size() + 1, ':');
-            std::copy_n(prepend_to_path.data(), prepend_to_path.size(), new_path.begin());
             result = "PATH=";
-            append_escaped_quoted_string(result, new_path);
+            append_shell_escaped(
+                result,
+                Strings::concat(prepend_to_path, ':', get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO)));
         }
 
         return {result};
