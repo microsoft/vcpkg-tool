@@ -45,18 +45,18 @@ namespace vcpkg
             }
 
             Command cmd_provision(node_path);
-            cmd_provision.string_arg(npm_path);
+            cmd_provision.path_arg(npm_path);
             cmd_provision.string_arg("--force");
             cmd_provision.string_arg("install");
             cmd_provision.string_arg("--no-save");
             cmd_provision.string_arg("--no-lockfile");
             cmd_provision.string_arg("--scripts-prepend-node-path=true");
             cmd_provision.string_arg("--silent");
-            cmd_provision.string_arg(ce_tarball.native());
+            cmd_provision.path_arg(ce_tarball);
             const auto provision_status = cmd_execute(cmd_provision, InWorkingDirectory{paths.root}, env);
+            fs.remove(ce_tarball, VCPKG_LINE_INFO);
             if (provision_status != 0)
             {
-                fs.remove(ce_tarball, VCPKG_LINE_INFO);
                 fs.remove_all(node_modules, VCPKG_LINE_INFO);
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to provision vcpkg-ce.");
             }
@@ -64,7 +64,7 @@ namespace vcpkg
 
         Command cmd_run(node_path);
         cmd_run.string_arg("--harmony");
-        cmd_run.string_arg(ce_path);
+        cmd_run.path_arg(ce_path);
         cmd_run.forwarded_args(args);
         cmd_run.string_arg("--from-vcpkg");
         return cmd_execute(cmd_run, InWorkingDirectory{paths.original_cwd});
