@@ -1386,7 +1386,7 @@ namespace vcpkg::Dependencies
 
             std::pair<const PackageSpec, PackageNode>& emplace_package(const PackageSpec& spec);
 
-            // the following 5 functions will add stuff recursivly
+            // the following functions will add stuff recursively
             void require_dependency(std::pair<const PackageSpec, PackageNode>& ref,
                                     const Dependency& dep,
                                     const std::string& origin);
