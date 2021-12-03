@@ -57,7 +57,7 @@ namespace vcpkg::Commands
         static const X_Download::XDownloadCommand xdownload{};
         static const GenerateDefaultMessageMapCommand generate_message_map{};
         static const Hash::HashCommand hash{};
-        static const BootstrapStandaloneCommand zboostrap_standalone{};
+        static const ZBootstrapStandaloneCommand zboostrap_standalone{};
 #if defined(_WIN32)
         static const UploadMetrics::UploadMetricsCommand upload_metrics{};
 #endif // defined(_WIN32)
@@ -95,7 +95,7 @@ namespace vcpkg::Commands
         static const Info::InfoCommand info{};
         static const Integrate::IntegrateCommand integrate{};
         static const List::ListCommand list{};
-        static const New::NewCommand new_{};
+        static const NewCommand new_{};
         static const Owns::OwnsCommand owns{};
         static const PortHistory::PortHistoryCommand porthistory{};
         static const PortsDiff::PortsDiffCommand portsdiff{};

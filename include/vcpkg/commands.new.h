@@ -2,7 +2,7 @@
 
 #include <vcpkg/commands.interface.h>
 
-namespace vcpkg::Commands::New
+namespace vcpkg::Commands
 {
     struct NewCommand : PathsCommand
     {

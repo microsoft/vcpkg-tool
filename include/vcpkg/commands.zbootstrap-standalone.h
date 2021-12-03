@@ -4,7 +4,7 @@
 
 namespace vcpkg::Commands
 {
-    struct BootstrapStandaloneCommand : BasicCommand
+    struct ZBootstrapStandaloneCommand : BasicCommand
     {
         virtual void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const override;
     };
