@@ -1467,6 +1467,15 @@ namespace vcpkg
             exit_filesystem_call_error(li, ec, __func__, {old_path, new_path});
         }
     }
+    void Filesystem::rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li)
+    {
+        std::error_code ec;
+        this->rename_with_retry(old_path, new_path, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {old_path, new_path});
+        }
+    }
     void Filesystem::rename_with_retry(const Path& old_path, const Path& new_path, std::error_code& ec)
     {
         this->rename(old_path, new_path, ec);

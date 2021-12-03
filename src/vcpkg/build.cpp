@@ -181,7 +181,7 @@ namespace vcpkg::Build
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        std::string first_arg = args.command_arguments.at(0);
+        std::string first_arg = args.command_arguments[0];
 
         BinaryCache binary_cache{args};
         const FullPackageSpec spec = Input::check_and_get_full_package_spec(
@@ -483,12 +483,11 @@ namespace vcpkg::Build
 
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
             const Path& powershell_exe_path = paths.get_tool_exe("powershell-core");
-            auto clean_env =
-                get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path().to_string() + ";");
+            auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
             if (build_env_cmd.empty())
                 return clean_env;
             else
-                return cmd_execute_modify_env(build_env_cmd, clean_env);
+                return cmd_execute_and_capture_environment(build_env_cmd, clean_env);
         });
     }
 #else
@@ -636,7 +635,7 @@ namespace vcpkg::Build
                                   {"DOWNLOADS", paths.downloads},
                                   {"TARGET_TRIPLET", triplet.canonical_name()},
                                   {"TARGET_TRIPLET_FILE", paths.get_triplet_file_path(triplet)},
-                                  {"VCPKG_BASE_VERSION", Commands::Version::base_version()},
+                                  {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
                                   {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
                                   {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
                               });

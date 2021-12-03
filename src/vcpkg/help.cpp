@@ -131,7 +131,7 @@ namespace vcpkg::Help
         {"list", command_topic_fn<Commands::List::COMMAND_STRUCTURE>},
         {"owns", command_topic_fn<Commands::Owns::COMMAND_STRUCTURE>},
         {"remove", command_topic_fn<Remove::COMMAND_STRUCTURE>},
-        {"search", command_topic_fn<Commands::Search::COMMAND_STRUCTURE>},
+        {"search", command_topic_fn<Commands::SearchCommandStructure>},
         {"topics", help_topics},
         {"triplet", help_topic_valid_triplet},
         {"versioning", help_topic_versioning},
