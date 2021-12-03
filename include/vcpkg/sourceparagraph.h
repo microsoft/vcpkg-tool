@@ -62,6 +62,7 @@ namespace vcpkg
         Versions::Scheme version_scheme = Versions::Scheme::String;
         std::string version;
         int port_version = 0;
+        bool depend_defaults = true;
         std::vector<std::string> description;
         std::vector<std::string> summary;
         std::vector<std::string> maintainers;

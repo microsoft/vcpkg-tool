@@ -1008,15 +1008,17 @@ namespace vcpkg::Install
             }
             auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
             PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
-            auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
-                                                                            *baseprovider,
-                                                                            *oprovider,
-                                                                            var_provider,
-                                                                            dependencies,
-                                                                            manifest_scf.core_paragraph->overrides,
-                                                                            toplevel,
-                                                                            host_triplet,
-                                                                            unsupported_port_action)
+            auto install_plan = Dependencies::create_versioned_install_plan(
+                                    *verprovider,
+                                    *baseprovider,
+                                    *oprovider,
+                                    var_provider,
+                                    dependencies,
+                                    manifest_scf.core_paragraph->overrides,
+                                    toplevel,
+                                    host_triplet,
+                                    unsupported_port_action,
+                                    Util::Enum::to_enum<DependDefaults>(manifest_scf.core_paragraph->depend_defaults))
                                     .value_or_exit(VCPKG_LINE_INFO);
             for (const auto& warning : install_plan.warnings)
             {

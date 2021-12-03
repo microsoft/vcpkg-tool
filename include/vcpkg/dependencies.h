@@ -203,6 +203,12 @@ namespace vcpkg::Dependencies
                                                            std::vector<std::string> features,
                                                            CMakeVars::CMakeVarProvider& var_provider);
 
+    enum class DependDefaults
+    {
+        NO,
+        YES,
+    };
+
     ExpectedS<ActionPlan> create_versioned_install_plan(const PortFileProvider::IVersionedPortfileProvider& vprovider,
                                                         const PortFileProvider::IBaselineProvider& bprovider,
                                                         const PortFileProvider::IOverlayProvider& oprovider,
@@ -211,7 +217,8 @@ namespace vcpkg::Dependencies
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
                                                         Triplet host_triplet,
-                                                        UnsupportedPortAction unsupported_port_action);
+                                                        UnsupportedPortAction unsupported_port_action,
+                                                        DependDefaults depend_defaults);
 
     void print_plan(const ActionPlan& action_plan, const bool is_recursive = true, const Path& builtin_ports_dir = {});
 }

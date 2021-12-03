@@ -93,13 +93,15 @@ namespace vcpkg::Dependencies
                              std::vector<FeatureSpec>& out_new_dependencies,
                              Triplet host_triplet)
             {
+                const auto& scfl = get_scfl_or_exit();
+
                 ClusterInstallInfo& info = m_install_info.value_or_exit(VCPKG_LINE_INFO);
                 if (feature == "default")
                 {
                     if (!info.defaults_requested)
                     {
                         info.defaults_requested = true;
-                        for (auto&& f : get_scfl_or_exit().source_control_file->core_paragraph->default_features)
+                        for (auto&& f : scfl.source_control_file->core_paragraph->default_features)
                             out_new_dependencies.emplace_back(m_spec, f);
                     }
                     return;
@@ -112,13 +114,15 @@ namespace vcpkg::Dependencies
                 }
                 auto maybe_vars = var_provider.get_dep_info_vars(m_spec);
                 Optional<const std::vector<Dependency>&> maybe_qualified_deps =
-                    get_scfl_or_exit().source_control_file->find_dependencies_for_feature(feature);
+                    scfl.source_control_file->find_dependencies_for_feature(feature);
                 if (!maybe_qualified_deps.has_value())
                 {
                     Checks::exit_with_message(
                         VCPKG_LINE_INFO, "Error: could not find feature '%s' in port '%s'", feature, m_spec.name());
                 }
                 const std::vector<Dependency>* qualified_deps = &maybe_qualified_deps.value_or_exit(VCPKG_LINE_INFO);
+
+                const auto depend_defaults = scfl.source_control_file->core_paragraph->depend_defaults;
 
                 std::vector<FeatureSpec> dep_list;
                 if (auto vars = maybe_vars.get())
@@ -128,7 +132,7 @@ namespace vcpkg::Dependencies
 
                     for (auto&& fspec : fullspec_list)
                     {
-                        Util::Vectors::append(&dep_list, fspec.to_feature_specs({"default"}, {"default"}));
+                        fspec.expand_to(dep_list, depend_defaults);
                     }
 
                     Util::sort_unique_erase(dep_list);
@@ -141,10 +145,7 @@ namespace vcpkg::Dependencies
                     {
                         if (dep.platform.is_empty())
                         {
-                            auto t = dep.host ? host_triplet : m_spec.triplet();
-                            Util::Vectors::append(&dep_list,
-                                                  FullPackageSpec({dep.name, t}, dep.features)
-                                                      .to_feature_specs({"default"}, {"default"}));
+                            dep.to_full_spec(m_spec.triplet(), host_triplet).expand_to(dep_list, depend_defaults);
                         }
                         else
                         {
@@ -1270,12 +1271,14 @@ namespace vcpkg::Dependencies
                                   const IBaselineProvider& base_provider,
                                   const PortFileProvider::IOverlayProvider& oprovider,
                                   const CMakeVars::CMakeVarProvider& var_provider,
-                                  Triplet host_triplet)
+                                  Triplet host_triplet,
+                                  DependDefaults depend_defaults)
                 : m_ver_provider(ver_provider)
                 , m_base_provider(base_provider)
                 , m_o_provider(oprovider)
                 , m_var_provider(var_provider)
                 , m_host_triplet(host_triplet)
+                , m_depend_defaults(depend_defaults == DependDefaults::YES)
             {
             }
 
@@ -1292,6 +1295,7 @@ namespace vcpkg::Dependencies
             const PortFileProvider::IOverlayProvider& m_o_provider;
             const CMakeVars::CMakeVarProvider& m_var_provider;
             const Triplet m_host_triplet;
+            const bool m_depend_defaults;
 
             struct DepSpec
             {
@@ -1337,7 +1341,7 @@ namespace vcpkg::Dependencies
                 Optional<std::unique_ptr<VersionSchemeInfo>> semver;
                 Optional<std::unique_ptr<VersionSchemeInfo>> date;
                 std::set<std::string> requested_features;
-                bool default_features = true;
+                bool default_features;
                 bool user_requested = false;
 
                 VersionSchemeInfo* get_node(const Versions::Version& ver);
@@ -1349,7 +1353,7 @@ namespace vcpkg::Dependencies
                 //     replaces the current entry for the scheme
                 VersionSchemeInfo& emplace_node(Versions::Scheme scheme, const Versions::Version& ver);
 
-                PackageNode() = default;
+                explicit PackageNode(bool default_features) : default_features(default_features) { }
                 PackageNode(const PackageNode&) = delete;
                 PackageNode(PackageNode&&) = default;
                 PackageNode& operator=(const PackageNode&) = delete;
@@ -1389,6 +1393,7 @@ namespace vcpkg::Dependencies
             // the following functions will add stuff recursively
             void require_dependency(std::pair<const PackageSpec, PackageNode>& ref,
                                     const Dependency& dep,
+                                    bool depend_defaults,
                                     const std::string& origin);
             void require_port_version(std::pair<const PackageSpec, PackageNode>& graph_entry,
                                       const Versions::Version& ver,
@@ -1577,7 +1582,10 @@ namespace vcpkg::Dependencies
                 }
                 else
                 {
-                    require_dependency(dep_node, dep, ref.first.name());
+                    require_dependency(dep_node,
+                                       dep,
+                                       vsi.scfl->source_control_file->core_paragraph->depend_defaults,
+                                       ref.first.name());
                 }
 
                 p.first->second.emplace_back(dep_spec, "core");
@@ -1590,6 +1598,7 @@ namespace vcpkg::Dependencies
 
         void VersionedPackageGraph::require_dependency(std::pair<const PackageSpec, PackageNode>& ref,
                                                        const Dependency& dep,
+                                                       bool depend_defaults,
                                                        const std::string& origin)
         {
             auto maybe_overlay = m_o_provider.get_control_file(ref.first.name());
@@ -1624,7 +1633,7 @@ namespace vcpkg::Dependencies
                 require_port_feature(ref, f, origin);
             }
 
-            if (Util::find(dep.features, StringView{"core"}) == dep.features.end())
+            if (depend_defaults && Util::find(dep.features, StringView{"core"}) == dep.features.end())
             {
                 require_port_defaults(ref, origin);
             }
@@ -1742,7 +1751,12 @@ namespace vcpkg::Dependencies
         std::pair<const PackageSpec, VersionedPackageGraph::PackageNode>& VersionedPackageGraph::emplace_package(
             const PackageSpec& spec)
         {
-            return *m_graph.emplace(spec, PackageNode{}).first;
+            auto it = m_graph.find(spec);
+            if (it == m_graph.end())
+            {
+                return *m_graph.emplace(spec, m_depend_defaults).first;
+            }
+            return *it;
         }
 
         Optional<Versions::Version> VersionedPackageGraph::dep_to_version(const std::string& name,
@@ -1961,7 +1975,7 @@ namespace vcpkg::Dependencies
                             const Versions::Version& new_ver,
                             const PackageSpec& origin,
                             View<std::string> features) -> Optional<std::string> {
-                auto&& node = m_graph[spec];
+                auto&& node = emplace_package(spec).second;
                 auto overlay = m_o_provider.get_control_file(spec.name());
                 auto over_it = m_overrides.find(spec.name());
 
@@ -2125,8 +2139,10 @@ namespace vcpkg::Dependencies
                     auto& back = stack.back();
                     if (back.deps.empty())
                     {
-                        emitted[back.ipa.spec] = m_graph[back.ipa.spec].get_node(
-                            to_version(*back.ipa.source_control_file_and_location.get()->source_control_file));
+                        emitted[back.ipa.spec] =
+                            emplace_package(back.ipa.spec)
+                                .second.get_node(
+                                    to_version(*back.ipa.source_control_file_and_location.get()->source_control_file));
                         ret.install_actions.push_back(std::move(back.ipa));
                         stack.pop_back();
                     }
@@ -2153,9 +2169,10 @@ namespace vcpkg::Dependencies
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
                                                         Triplet host_triplet,
-                                                        UnsupportedPortAction unsupported_port_action)
+                                                        UnsupportedPortAction unsupported_port_action,
+                                                        DependDefaults depend_defaults)
     {
-        VersionedPackageGraph vpg(provider, bprovider, oprovider, var_provider, host_triplet);
+        VersionedPackageGraph vpg(provider, bprovider, oprovider, var_provider, host_triplet, depend_defaults);
         for (auto&& o : overrides)
             vpg.add_override(o.name, {o.version, o.port_version});
         vpg.add_roots(deps, toplevel);

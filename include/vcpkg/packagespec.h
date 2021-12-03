@@ -112,6 +112,14 @@ namespace vcpkg
         std::vector<FeatureSpec> to_feature_specs(const std::vector<std::string>& default_features,
                                                   const std::vector<std::string>& all_features) const;
 
+        void to_feature_specs(std::vector<FeatureSpec>& out,
+                              const std::vector<std::string>& default_features,
+                              const std::vector<std::string>& all_features) const;
+
+        /// Splats out individual FeatureSpec's into out. If "core" is missing, adds "core".
+        /// @param with_defaults also add "default" if "core" is missing
+        void expand_to(std::vector<FeatureSpec>& out, bool with_defaults) const;
+
         static ExpectedS<FullPackageSpec> from_string(const std::string& spec_as_string, Triplet default_triplet);
 
         bool operator==(const FullPackageSpec& o) const
@@ -156,6 +164,8 @@ namespace vcpkg
         bool host = false;
 
         Json::Object extra_info;
+
+        FullPackageSpec to_full_spec(Triplet target, Triplet host) const;
 
         friend bool operator==(const Dependency& lhs, const Dependency& rhs);
         friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }

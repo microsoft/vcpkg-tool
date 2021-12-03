@@ -791,14 +791,72 @@ TEST_CASE ("install with default features", "[plan]")
         FullPackageSpec{b_spec, {"core"}},
     };
 
-    auto install_plan = Dependencies::create_feature_install_plan(
-        map_port, var_provider, full_package_specs, StatusParagraphs(std::move(status_db)));
+    auto install_plan =
+        Dependencies::create_feature_install_plan(map_port, var_provider, full_package_specs, status_db);
 
     // Install "a" and indicate that "b" should not install default features
     REQUIRE(install_plan.size() == 3);
     remove_plan_check(install_plan.remove_actions.at(0), "a");
     features_check(install_plan.install_actions.at(0), "b", {"core"});
     features_check(install_plan.install_actions.at(1), "a", {"0", "core"});
+}
+
+TEST_CASE ("install with depend-defaults false", "[plan]")
+{
+    StatusParagraphs status_db;
+
+    PackageSpecMap spec_map;
+    auto a_spec = spec_map.emplace("a", "b");
+    auto b_spec = spec_map.emplace("b", "", {{"0", ""}}, {"0"});
+    auto c_spec = spec_map.emplace("c", "", {{"0", "b"}}, {"0"});
+
+    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MockCMakeVarProvider var_provider;
+
+    std::vector<FullPackageSpec> full_package_specs{
+        FullPackageSpec{a_spec},
+        FullPackageSpec{b_spec, {"core"}},
+    };
+
+    std::vector<FullPackageSpec> full_package_specs2{
+        FullPackageSpec{c_spec},
+        FullPackageSpec{b_spec, {"core"}},
+    };
+
+    // Install "a" and then "b" _should_ install default features
+    SECTION ("depend-defaults true from core")
+    {
+        auto install_plan = Dependencies::create_feature_install_plan(map_port, var_provider, full_package_specs, {});
+        REQUIRE(install_plan.size() == 2);
+        features_check(install_plan.install_actions.at(0), "b", {"0", "core"});
+        features_check(install_plan.install_actions.at(1), "a", {"core"});
+    }
+
+    SECTION ("depend-defaults true from feature")
+    {
+        auto install_plan = Dependencies::create_feature_install_plan(map_port, var_provider, full_package_specs2, {});
+        REQUIRE(install_plan.size() == 2);
+        features_check(install_plan.install_actions.at(0), "b", {"0", "core"});
+        features_check(install_plan.install_actions.at(1), "c", {"0", "core"});
+    }
+
+    // now, disable the implicit default dependency from `a` and `c[0]`
+    SECTION ("depend-defaults false from core")
+    {
+        spec_map.map["a"].source_control_file->core_paragraph->depend_defaults = false;
+        auto install_plan = Dependencies::create_feature_install_plan(map_port, var_provider, full_package_specs, {});
+        REQUIRE(install_plan.size() == 2);
+        features_check(install_plan.install_actions.at(0), "b", {"core"});
+        features_check(install_plan.install_actions.at(1), "a", {"core"});
+    }
+    SECTION ("depend-defaults false from feature")
+    {
+        spec_map.map["c"].source_control_file->core_paragraph->depend_defaults = false;
+        auto install_plan = Dependencies::create_feature_install_plan(map_port, var_provider, full_package_specs2, {});
+        REQUIRE(install_plan.size() == 2);
+        features_check(install_plan.install_actions.at(0), "b", {"core"});
+        features_check(install_plan.install_actions.at(1), "c", {"0", "core"});
+    }
 }
 
 TEST_CASE ("upgrade with default features 1", "[plan]")

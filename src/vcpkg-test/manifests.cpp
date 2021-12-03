@@ -59,6 +59,7 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
     REQUIRE(pgh.core_paragraph->version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->depend_defaults == true);
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->contacts.is_empty());
     REQUIRE(pgh.core_paragraph->summary.empty());
@@ -716,31 +717,32 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         "summary": "d",
         "description": "d",
         "builtin-baseline": "123",
+        "depend-defaults": false,
         "dependencies": ["bd"],
         "default-features": ["df"],
         "features": {
             "iroh" : {
             "$comment": "hello",
-                "description": "zuko's uncle",
-                "dependencies": [
-                    "firebending",
-                    {
-                        "name": "order.white-lotus",
-                        "features": [ "the-ancient-ways" ],
-                        "platform": "!(windows & arm)"
+            "description": "zuko's uncle",
+            "dependencies": [
+                "firebending",
+                {
+                    "name": "order.white-lotus",
+                    "features": [ "the-ancient-ways" ],
+                    "platform": "!(windows & arm)"
                 },
                 {
                     "$extra": [],
                     "$my": [],
                     "name": "tea"
-                    }
-                ]
-            },
-            "zuko": {
-                "description": ["son of the fire lord", "firebending 師父"],
-                "supports": "!(windows & arm)"
-            }
+                }
+            ]
+        },
+        "zuko": {
+            "description": ["son of the fire lord", "firebending 師父"],
+            "supports": "!(windows & arm)"
         }
+    }
 })json";
     auto object = parse_json_object(raw);
     auto res = SourceControlFile::parse_manifest_object("<test manifest>", object);
@@ -766,6 +768,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(contact_a_aa->string() == "aa");
     REQUIRE(pgh.core_paragraph->summary.size() == 1);
     REQUIRE(pgh.core_paragraph->summary[0] == "d");
+    REQUIRE(pgh.core_paragraph->depend_defaults == false);
     REQUIRE(pgh.core_paragraph->description.size() == 1);
     REQUIRE(pgh.core_paragraph->description[0] == "d");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);

@@ -59,6 +59,24 @@ namespace vcpkg
         return feature_specs;
     }
 
+    void FullPackageSpec::expand_to(std::vector<FeatureSpec>& out, bool with_defaults) const
+    {
+        bool core = false;
+        for (auto&& feature : features)
+        {
+            out.emplace_back(package_spec, feature);
+            core = core || feature == "core";
+        }
+        if (!core)
+        {
+            out.emplace_back(package_spec, "core");
+            if (with_defaults)
+            {
+                out.emplace_back(package_spec, "default");
+            }
+        }
+    }
+
     ExpectedS<FullPackageSpec> FullPackageSpec::from_string(const std::string& spec_as_string, Triplet default_triplet)
     {
         return parse_qualified_specifier(spec_as_string)
@@ -266,6 +284,11 @@ namespace vcpkg
         return lhs.port_version == rhs.port_version;
     }
     bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
+
+    FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet) const
+    {
+        return FullPackageSpec({name, host ? host_triplet : target}, features);
+    }
 
     bool operator==(const Dependency& lhs, const Dependency& rhs)
     {

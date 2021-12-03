@@ -872,12 +872,13 @@ namespace vcpkg
         constexpr static StringLiteral DEV_DEPENDENCIES = "dev-dependencies";
         constexpr static StringLiteral FEATURES = "features";
         constexpr static StringLiteral DEFAULT_FEATURES = "default-features";
+        constexpr static StringLiteral DEPEND_DEFAULTS = "depend-defaults";
         constexpr static StringLiteral SUPPORTS = "supports";
         constexpr static StringLiteral OVERRIDES = "overrides";
         constexpr static StringLiteral BUILTIN_BASELINE = "builtin-baseline";
         constexpr static StringLiteral VCPKG_CONFIGURATION = "vcpkg-configuration";
 
-        virtual Span<const StringView> valid_fields() const override
+        virtual View<StringView> valid_fields() const override
         {
             static const StringView u[] = {
                 NAME,
@@ -889,6 +890,7 @@ namespace vcpkg
                 DOCUMENTATION,
                 LICENSE,
                 DEPENDENCIES,
+                DEPEND_DEFAULTS,
                 DEV_DEPENDENCIES,
                 FEATURES,
                 DEFAULT_FEATURES,
@@ -925,6 +927,7 @@ namespace vcpkg
             spgh->version_scheme = schemed_version.scheme;
             spgh->port_version = schemed_version.versiont.port_version();
 
+            r.optional_object_field(obj, DEPEND_DEFAULTS, spgh->depend_defaults, Json::BooleanDeserializer::instance);
             r.optional_object_field(obj, MAINTAINERS, spgh->maintainers, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, CONTACTS, spgh->contacts, ContactsDeserializer::instance);
             r.optional_object_field(obj, SUMMARY, spgh->summary, Json::ParagraphDeserializer::instance);
@@ -1304,8 +1307,7 @@ namespace vcpkg
         {
             if (dep.platform.evaluate(cmake_vars))
             {
-                Triplet t = dep.host ? host : target;
-                ret.emplace_back(FullPackageSpec({dep.name, t}, dep.features));
+                ret.emplace_back(dep.to_full_spec(target, host));
             }
         }
         return ret;
@@ -1459,6 +1461,11 @@ namespace vcpkg
         {
             obj.insert(ManifestDeserializer::BUILTIN_BASELINE,
                        Json::Value::string(scf.core_paragraph->builtin_baseline.value_or_exit(VCPKG_LINE_INFO)));
+        }
+
+        if (!scf.core_paragraph->depend_defaults || debug)
+        {
+            obj.insert(ManifestDeserializer::DEPEND_DEFAULTS, Json::Value::boolean(false));
         }
 
         if (!scf.core_paragraph->dependencies.empty() || debug)
