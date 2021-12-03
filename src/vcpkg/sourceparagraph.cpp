@@ -1443,6 +1443,11 @@ namespace vcpkg
                                   debug);
 
         serialize_paragraph(obj, ManifestDeserializer::MAINTAINERS, scf.core_paragraph->maintainers);
+        if (scf.core_paragraph->contacts.size() > 0)
+        {
+            obj.insert(ManifestDeserializer::CONTACTS, scf.core_paragraph->contacts);
+        }
+        serialize_paragraph(obj, ManifestDeserializer::SUMMARY, scf.core_paragraph->summary);
         serialize_paragraph(obj, ManifestDeserializer::DESCRIPTION, scf.core_paragraph->description);
 
         serialize_optional_string(obj, ManifestDeserializer::HOMEPAGE, scf.core_paragraph->homepage);

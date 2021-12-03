@@ -708,27 +708,31 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
 
 TEST_CASE ("manifest construct maximum", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    auto raw = R"json({
         "name": "s",
         "version-string": "v",
-        "maintainers": ["m"],
+        "maintainers": "m",
         "contacts": { "a": { "aa": "aa" } },
         "summary": "d",
         "description": "d",
+        "builtin-baseline": "123",
         "dependencies": ["bd"],
         "default-features": ["df"],
         "features": {
             "iroh" : {
+            "$comment": "hello",
                 "description": "zuko's uncle",
                 "dependencies": [
                     "firebending",
                     {
-                        "name": "tea"
-                    },
-                    {
                         "name": "order.white-lotus",
                         "features": [ "the-ancient-ways" ],
                         "platform": "!(windows & arm)"
+                },
+                {
+                    "$extra": [],
+                    "$my": [],
+                    "name": "tea"
                     }
                 ]
             },
@@ -737,9 +741,16 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                 "supports": "!(windows & arm)"
             }
         }
-    })json");
-    REQUIRE(m_pgh.has_value());
-    auto& pgh = **m_pgh.get();
+})json";
+    auto object = parse_json_object(raw);
+    auto res = SourceControlFile::parse_manifest_object("<test manifest>", object);
+    if (!res.has_value())
+    {
+        print_error_message(res.error());
+    }
+    REQUIRE(res.has_value());
+    REQUIRE(*res.get() != nullptr);
+    auto& pgh = **res.get();
 
     REQUIRE(pgh.core_paragraph->name == "s");
     REQUIRE(pgh.core_paragraph->version == "v");
@@ -762,6 +773,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
     REQUIRE(pgh.core_paragraph->default_features[0] == "df");
     REQUIRE(pgh.core_paragraph->supports_expression.is_empty());
+    REQUIRE(pgh.core_paragraph->builtin_baseline == "123");
 
     REQUIRE(pgh.feature_paragraphs.size() == 2);
 
@@ -793,7 +805,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
 
-    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    check_json_eq_ordered(serialize_manifest(pgh), object);
 }
 
 TEST_CASE ("SourceParagraph manifest two dependencies", "[manifests]")
@@ -956,7 +968,7 @@ TEST_CASE ("SourceParagraph manifest non-string supports", "[manifests]")
     REQUIRE_FALSE(m_pgh.has_value());
 }
 
-TEST_CASE ("Serialize all the ports", "[manifests]")
+TEST_CASE ("Serialize all the ports", "[all-manifests]")
 {
     std::vector<std::string> args_list = {"format-manifest"};
     auto& fs = get_real_filesystem();
