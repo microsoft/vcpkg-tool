@@ -14,7 +14,6 @@ namespace vcpkg
 
         const Path& root() const { return m_root; }
         Path listfile_path(const BinaryParagraph& pgh) const;
-        const Path& installed() const;
 
         Path vcpkg_dir() const { return m_root / "vcpkg"; }
         Path vcpkg_dir_status_file() const { return vcpkg_dir() / "status"; }
