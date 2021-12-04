@@ -1121,6 +1121,186 @@ namespace
         std::vector<std::string> m_read_prefixes;
         std::vector<std::string> m_write_prefixes;
     };
+
+    bool awscli_stat(const std::string& url)
+    {
+        Command cmd;
+        cmd.string_arg("aws").string_arg("s3").string_arg("ls").string_arg(url);
+        const auto res = cmd_execute(cmd);
+        return res == 0;
+    }
+
+    bool awscli_upload_file(const std::string& aws_object, const Path& archive)
+    {
+        Command cmd;
+        cmd.string_arg("aws").string_arg("s3").string_arg("cp").path_arg(archive).string_arg(aws_object);
+        const auto out = cmd_execute_and_capture_output(cmd);
+        if (out.exit_code == 0)
+        {
+            return true;
+        }
+
+        print2(Color::warning, "aws failed to upload with exit code: ", out.exit_code, '\n', out.output);
+        return false;
+    }
+
+    bool awscli_download_file(const std::string& aws_object, const Path& archive)
+    {
+        Command cmd;
+        cmd.string_arg("aws").string_arg("s3").string_arg("cp").string_arg(aws_object).path_arg(archive);
+        const auto out = cmd_execute_and_capture_output(cmd);
+        if (out.exit_code == 0)
+        {
+            return true;
+        }
+
+        print2(Color::warning, "aws failed to download with exit code: ", out.exit_code, '\n', out.output);
+        return false;
+    }
+
+    struct AwsBinaryProvider : IBinaryProvider
+    {
+        AwsBinaryProvider(std::vector<std::string>&& read_prefixes, std::vector<std::string>&& write_prefixes)
+            : m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
+        {
+        }
+
+        static std::string make_aws_path(const std::string& prefix, const std::string& abi)
+        {
+            return Strings::concat(prefix, abi, ".zip");
+        }
+
+        void prefetch(const VcpkgPaths& paths,
+                      View<Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus*> cache_status) const override
+        {
+            auto& fs = paths.get_filesystem();
+
+            const auto timer = ElapsedTimer::create_started();
+
+            size_t restored_count = 0;
+            for (const auto& prefix : m_read_prefixes)
+            {
+                std::vector<std::pair<std::string, Path>> url_paths;
+                std::vector<size_t> url_indices;
+
+                for (size_t idx = 0; idx < actions.size(); ++idx)
+                {
+                    auto&& action = actions[idx];
+                    auto abi = action.package_abi().get();
+                    if (!abi || !cache_status[idx]->should_attempt_restore(this))
+                    {
+                        continue;
+                    }
+
+                    clean_prepare_dir(fs, paths.package_dir(action.spec));
+                    url_paths.emplace_back(make_aws_path(prefix, *abi),
+                                           make_temp_archive_path(paths.buildtrees(), action.spec));
+                    url_indices.push_back(idx);
+                }
+
+                if (url_paths.empty()) break;
+
+                print2("Attempting to fetch ", url_paths.size(), " packages from AWS.\n");
+                std::vector<Command> jobs;
+                std::vector<size_t> idxs;
+                for (size_t idx = 0; idx < url_paths.size(); ++idx)
+                {
+                    auto&& action = actions[url_indices[idx]];
+                    auto&& url_path = url_paths[idx];
+                    if (!awscli_download_file(url_path.first, url_path.second)) continue;
+                    jobs.push_back(decompress_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
+                    idxs.push_back(idx);
+                }
+
+                const auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+
+                for (size_t j = 0; j < jobs.size(); ++j)
+                {
+                    const auto idx = idxs[j];
+                    if (job_results[j].exit_code != 0)
+                    {
+                        Debug::print("Failed to decompress ", url_paths[idx].second, '\n');
+                        continue;
+                    }
+
+                    // decompression success
+                    ++restored_count;
+                    fs.remove(url_paths[idx].second, VCPKG_LINE_INFO);
+                    cache_status[url_indices[idx]]->mark_restored();
+                }
+            }
+
+            print2("Restored ",
+                   restored_count,
+                   " packages from AWS servers in ",
+                   timer.elapsed(),
+                   ". Use --debug for more information.\n");
+        }
+
+        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
+        {
+            return RestoreResult::unavailable;
+        }
+
+        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
+        {
+            if (m_write_prefixes.empty()) return;
+            const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+            auto& spec = action.spec;
+            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
+            compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
+
+            size_t upload_count = 0;
+            for (const auto& prefix : m_write_prefixes)
+            {
+                if (awscli_upload_file(make_aws_path(prefix, abi), tmp_archive_path))
+                {
+                    ++upload_count;
+                }
+            }
+
+            print2("Uploaded binaries to ", upload_count, " AWS remotes.\n");
+        }
+
+        void precheck(const VcpkgPaths&,
+                      View<Dependencies::InstallPlanAction> actions,
+                      View<CacheStatus*> cache_status) const override
+        {
+            std::vector<CacheAvailability> actions_availability{actions.size()};
+            for (const auto& prefix : m_read_prefixes)
+            {
+                for (size_t idx = 0; idx < actions.size(); ++idx)
+                {
+                    auto&& action = actions[idx];
+                    const auto abi = action.package_abi().get();
+                    if (!abi || !cache_status[idx]->should_attempt_precheck(this))
+                    {
+                        continue;
+                    }
+
+                    if (awscli_stat(make_aws_path(prefix, *abi)))
+                    {
+                        actions_availability[idx] = CacheAvailability::available;
+                        cache_status[idx]->mark_available(this);
+                    }
+                }
+            }
+
+            for (size_t idx = 0; idx < actions.size(); ++idx)
+            {
+                const auto this_cache_status = cache_status[idx];
+                if (this_cache_status && actions_availability[idx] == CacheAvailability::unavailable)
+                {
+                    this_cache_status->mark_unavailable(this);
+                }
+            }
+        }
+
+    private:
+        std::vector<std::string> m_read_prefixes;
+        std::vector<std::string> m_write_prefixes;
+    };
 }
 
 namespace vcpkg
@@ -1412,6 +1592,9 @@ namespace
         std::vector<std::string> gcs_read_prefixes;
         std::vector<std::string> gcs_write_prefixes;
 
+        std::vector<std::string> aws_read_prefixes;
+        std::vector<std::string> aws_write_prefixes;
+
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
 
@@ -1431,6 +1614,8 @@ namespace
             azblob_templates_to_put.clear();
             gcs_read_prefixes.clear();
             gcs_write_prefixes.clear();
+            aws_read_prefixes.clear();
+            aws_write_prefixes.clear();
             sources_to_read.clear();
             sources_to_write.clear();
             configs_to_read.clear();
@@ -1666,6 +1851,36 @@ namespace
                 }
 
                 handle_readwrite(state->gcs_read_prefixes, state->gcs_write_prefixes, std::move(p), segments, 2);
+            }
+            else if (segments[0].second == "x-aws")
+            {
+                // Scheme: x-aws,<prefix>[,<readwrite>]
+                if (segments.size() < 2)
+                {
+                    return add_error("expected arguments: binary config 'aws' requires at least a prefix",
+                                     segments[0].first);
+                }
+
+                if (!Strings::starts_with(segments[1].second, "s3://"))
+                {
+                    return add_error(
+                        "invalid argument: binary config 'aws' requires a s3:// base url as the first argument",
+                        segments[1].first);
+                }
+
+                if (segments.size() > 3)
+                {
+                    return add_error("unexpected arguments: binary config 'aws' requires 1 or 2 arguments",
+                                     segments[3].first);
+                }
+
+                auto p = segments[1].second;
+                if (p.back() != '/')
+                {
+                    p.push_back('/');
+                }
+
+                handle_readwrite(state->aws_read_prefixes, state->aws_write_prefixes, std::move(p), segments, 2);
             }
             else
             {
@@ -1927,6 +2142,12 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
             std::make_unique<GcsBinaryProvider>(std::move(s.gcs_read_prefixes), std::move(s.gcs_write_prefixes)));
     }
 
+    if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
+    {
+        providers.push_back(
+            std::make_unique<AwsBinaryProvider>(std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes)));
+    }
+
     if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.azblob_templates_to_put.empty())
     {
         providers.push_back(std::make_unique<ArchivesBinaryProvider>(std::move(s.archives_to_read),
@@ -2159,6 +2380,10 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
     tbl.format("x-gcs,<prefix>[,<rw>]",
                "**Experimental: will change or be removed without warning** Adds a Google Cloud Storage (GCS) source. "
                "Uses the gsutil CLI for uploads and downloads. Prefix should include the gs:// scheme and be suffixed "
+               "with a `/`.");
+    tbl.format("x-aws,<prefix>[,<rw>]",
+               "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
+               "Uses the aws CLI for uploads and downloads. Prefix should include s3:// scheme and be suffixed "
                "with a `/`.");
     tbl.format("interactive", "Enables interactive credential management for some source types");
     tbl.blank();

@@ -567,6 +567,35 @@ gsutil version: 4.58
         }
     };
 
+    struct AWSCliProvider : ToolProvider
+    {
+        std::string m_exe = "aws";
+
+        virtual const std::string& tool_data_name() const override { return m_exe; }
+        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual std::array<int, 3> default_min_version() const override { return {2, 4, 4}; }
+
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
+        {
+            auto cmd = Command(exe_path).string_arg("--version");
+            auto rc = cmd_execute_and_capture_output(cmd);
+            if (rc.exit_code != 0)
+            {
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
+                        expected_right_tag};
+            }
+
+            /* Sample output:
+aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
+                */
+
+            const auto idx = rc.output.find("aws-cli/");
+            Checks::check_exit(
+                VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of awscli version string: %s", rc.output);
+            return {rc.output.substr(idx), expected_left_tag};
+        }
+    };
+
     struct IfwInstallerBaseProvider : ToolProvider
     {
         std::string m_exe;
@@ -744,6 +773,14 @@ gsutil version: 4.58
                         return {"gsutil", "0"};
                     }
                     return get_path(paths, GsutilProvider());
+                }
+                if (tool == Tools::AWSCLI)
+                {
+                    if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
+                    {
+                        return {"aws", "0"};
+                    }
+                    return get_path(paths, AWSCliProvider());
                 }
                 if (tool == Tools::TAR)
                 {
