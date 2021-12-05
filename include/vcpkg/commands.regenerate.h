@@ -4,7 +4,7 @@
 
 namespace vcpkg
 {
-    struct RegenerateCommand : PathsCommand
+    struct RegenerateCommand : Commands::PathsCommand
     {
         void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;
     };

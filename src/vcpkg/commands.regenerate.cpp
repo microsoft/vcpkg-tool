@@ -19,21 +19,21 @@ namespace
     constexpr StringLiteral PROJECT = "project";
     constexpr StringLiteral REGISTRY = "registry";
 
-    constexpr std::array<CommandSwitch, 2> switches = {
+    constexpr std::array<CommandSwitch, 2> command_switches = {{
         {FORCE, "proceeds with the (potentially dangerous) action without confirmation"},
         {DRY_RUN, "does not actually perform the action, shows only what would be done"},
-    };
+    }};
 
-    constexpr std::array<CommandSetting, 2> settings = {
+    constexpr std::array<CommandSetting, 2> command_settings = {{
         {PROJECT, "override the path to the project folder"},
         {REGISTRY, "override the path to the registry"},
-    };
+    }};
 
     static const CommandStructure command_structure = {
         Strings::format("Regenerates an artifact registry.\n%s\n", create_example_string("x-regenerate")),
         0,
         0,
-        {switches, settings},
+        {command_switches, command_settings},
         nullptr,
     };
 
@@ -45,7 +45,7 @@ namespace
         if (found_setting != settings.end())
         {
             forwarded_args.push_back(Strings::concat("--", name));
-            forwarded_args.push_back(*found_setting);
+            forwarded_args.push_back(found_setting->second);
         }
     }
 }
