@@ -41,7 +41,7 @@ namespace
                                 const std::unordered_map<std::string, std::string>& settings,
                                 StringLiteral name)
     {
-        auto found_setting = settings.find(PROJECT);
+        auto found_setting = settings.find(name);
         if (found_setting != settings.end())
         {
             forwarded_args.push_back(Strings::concat("--", name));
