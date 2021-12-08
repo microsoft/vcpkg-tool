@@ -150,13 +150,8 @@ namespace vcpkg::Commands::SetInstalled
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return Input::check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
-
-        for (auto&& spec : specs)
-        {
-            Input::check_triplet(spec.package_spec.triplet(), paths);
-        }
 
         BinaryCache binary_cache{args};
 

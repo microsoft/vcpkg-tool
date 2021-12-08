@@ -165,6 +165,8 @@ namespace vcpkg
             return this->m_t.get();
         }
 
+        using const_ref_type = decltype(*std::declval<typename ExpectedHolder<T>::const_pointer>());
+        using move_ref_type = decltype(std::move(*std::declval<typename ExpectedHolder<T>::pointer>()));
         template<class F>
         using map_t = decltype(std::declval<F&>()(*std::declval<typename ExpectedHolder<T>::const_pointer>()));
 
@@ -198,12 +200,12 @@ namespace vcpkg
             }
         }
 
-        template<class F, class U = map_t<F>>
-        U then(F f) const&
+        template<class F, class... Args, class U = std::invoke_result_t<F, const_ref_type, Args&&...>>
+        U then(F f, Args&&... args) const&
         {
             if (has_value())
             {
-                return f(*m_t.get());
+                return std::invoke(f, *m_t.get(), static_cast<Args&&>(args)...);
             }
             else
             {
@@ -211,12 +213,12 @@ namespace vcpkg
             }
         }
 
-        template<class F, class U = move_map_t<F>>
-        U then(F f) &&
+        template<class F, class... Args, class U = std::invoke_result_t<F, move_ref_type, Args&&...>>
+        U then(F f, Args&&... args) &&
         {
             if (has_value())
             {
-                return f(std::move(*m_t.get()));
+                return std::invoke(f, std::move(*m_t.get()), static_cast<Args&&>(args)...);
             }
             else
             {

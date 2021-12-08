@@ -19,7 +19,7 @@ namespace vcpkg
     public:
         constexpr Triplet() noexcept : m_instance(&DEFAULT_INSTANCE) { }
 
-        static Triplet from_canonical_name(std::string&& triplet_as_string);
+        static Triplet from_canonical_name(std::string triplet_as_string);
 
         const std::string& canonical_name() const;
         const std::string& to_string() const;

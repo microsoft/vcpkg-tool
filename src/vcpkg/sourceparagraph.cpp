@@ -1297,15 +1297,15 @@ namespace vcpkg
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<vcpkg::Dependency>& deps,
                                                      Triplet target,
                                                      Triplet host,
-                                                     const std::unordered_map<std::string, std::string>& cmake_vars)
+                                                     const std::unordered_map<std::string, std::string>& cmake_vars,
+                                                     bool implicit_default)
     {
         std::vector<FullPackageSpec> ret;
         for (auto&& dep : deps)
         {
             if (dep.platform.evaluate(cmake_vars))
             {
-                Triplet t = dep.host ? host : target;
-                ret.emplace_back(FullPackageSpec({dep.name, t}, dep.features));
+                ret.emplace_back(dep.to_full_spec(target, host, implicit_default));
             }
         }
         return ret;

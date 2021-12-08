@@ -107,7 +107,7 @@ namespace vcpkg::Build
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         auto action_plan = Dependencies::create_feature_install_plan(
-            provider, var_provider, std::vector<FullPackageSpec>{full_spec}, status_db, {host_triplet});
+            provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
@@ -185,9 +185,7 @@ namespace vcpkg::Build
 
         BinaryCache binary_cache{args};
         const FullPackageSpec spec = Input::check_and_get_full_package_spec(
-            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text);
-
-        Input::check_triplet(spec.package_spec.triplet(), paths);
+            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
         PathsPortFileProvider provider(paths, args.overlay_ports);
         const auto port_name = spec.package_spec.name();
