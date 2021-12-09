@@ -57,7 +57,6 @@ TEST_CASE ("list of commands is correct", "[commands]")
         "install",
         "integrate",
         "list",
-        "list",
         "new",
         "owns",
         "portsdiff",

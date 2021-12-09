@@ -1,5 +1,6 @@
 #include <vcpkg/base/basic_checks.h>
 #include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.regenerate.h>
@@ -57,7 +58,7 @@ namespace vcpkg
         std::vector<std::string> forwarded_args;
         forwarded_args.push_back("regenerate");
         const auto parsed = args.parse_arguments(command_structure);
-        if (args.debug.value_or(false))
+        if (Debug::g_debugging)
         {
             forwarded_args.push_back("--debug");
         }
