@@ -139,6 +139,12 @@ namespace vcpkg
         }
     };
 
+    enum class ImplicitDefault
+    {
+        no,
+        yes,
+    };
+
     struct Dependency
     {
         std::string name;
@@ -149,8 +155,8 @@ namespace vcpkg
 
         Json::Object extra_info;
 
-        /// @param implicit_default adds "default" if "core" not present.
-        FullPackageSpec to_full_spec(Triplet target, Triplet host, bool implicit_default) const;
+        /// @param id adds "default" if "core" not present.
+        FullPackageSpec to_full_spec(Triplet target, Triplet host, ImplicitDefault id) const;
 
         friend bool operator==(const Dependency& lhs, const Dependency& rhs);
         friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }
@@ -176,9 +182,9 @@ namespace vcpkg
         Optional<std::string> triplet;
         Optional<PlatformExpression::Expr> platform;
 
-        /// @param implicit_default add "default" if "core" is not present
+        /// @param id add "default" if "core" is not present
         /// @return nullopt on success. On failure, caller should supplement returned string with more context.
-        ExpectedS<FullPackageSpec> to_full_spec(Triplet default_triplet, bool implicit_default) const;
+        ExpectedS<FullPackageSpec> to_full_spec(Triplet default_triplet, ImplicitDefault id) const;
 
         ExpectedS<PackageSpec> to_package_spec(Triplet default_triplet) const;
     };

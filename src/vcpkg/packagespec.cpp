@@ -51,7 +51,7 @@ namespace vcpkg
     static constexpr StringLiteral s_illegal_platform_spec = "platform qualifier is not allowed in this context";
     static constexpr StringLiteral s_illegal_features = "features are not allowed in this context";
 
-    static InternalFeatureSet normalize_feature_list(View<std::string> fs, bool implicit_default)
+    static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
         InternalFeatureSet ret;
         bool core = false;
@@ -67,7 +67,7 @@ namespace vcpkg
         if (!core)
         {
             ret.emplace_back("core");
-            if (implicit_default)
+            if (id == ImplicitDefault::yes)
             {
                 ret.emplace_back("default");
             }
@@ -75,8 +75,7 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedS<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet,
-                                                                      bool implicit_default) const
+    ExpectedS<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet, ImplicitDefault id) const
     {
         if (platform)
         {
@@ -85,7 +84,7 @@ namespace vcpkg
 
         const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
         const View<std::string> fs = !features.get() ? View<std::string>{} : *features.get();
-        return FullPackageSpec{{name, t}, normalize_feature_list(fs, implicit_default)};
+        return FullPackageSpec{{name, t}, normalize_feature_list(fs, id)};
     }
 
     ExpectedS<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet) const
@@ -276,10 +275,9 @@ namespace vcpkg
     }
     bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
 
-    FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, bool implicit_default) const
+    FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
     {
-        return FullPackageSpec{{name, host ? host_triplet : target},
-                               normalize_feature_list(features, implicit_default)};
+        return FullPackageSpec{{name, host ? host_triplet : target}, normalize_feature_list(features, id)};
     }
 
     bool operator==(const Dependency& lhs, const Dependency& rhs)

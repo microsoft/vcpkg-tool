@@ -127,7 +127,7 @@ namespace vcpkg::Dependencies
                 {
                     // Qualified dependency resolution is available
                     auto fullspec_list =
-                        filter_dependencies(*qualified_deps, m_spec.triplet(), host_triplet, *vars, true);
+                        filter_dependencies(*qualified_deps, m_spec.triplet(), host_triplet, *vars, ImplicitDefault::yes);
 
                     for (auto&& fspec : fullspec_list)
                     {
@@ -144,7 +144,7 @@ namespace vcpkg::Dependencies
                     {
                         if (dep.platform.is_empty())
                         {
-                            dep.to_full_spec(m_spec.triplet(), host_triplet, true).expand_to(dep_list);
+                            dep.to_full_spec(m_spec.triplet(), host_triplet, ImplicitDefault::yes).expand_to(dep_list);
                         }
                         else
                         {

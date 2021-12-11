@@ -48,7 +48,7 @@ namespace vcpkg
     {
         const std::string as_lowercase = Strings::ascii_to_lowercase(std::move(full_package_spec_as_string));
         auto expected_spec = parse_qualified_specifier(as_lowercase)
-                                 .then(&ParsedQualifiedSpecifier::to_full_spec, default_triplet, true);
+                                 .then(&ParsedQualifiedSpecifier::to_full_spec, default_triplet, ImplicitDefault::yes);
         if (const auto spec = expected_spec.get())
         {
             Input::check_triplet(spec->package_spec.triplet(), paths);
