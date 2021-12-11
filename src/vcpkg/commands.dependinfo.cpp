@@ -103,7 +103,7 @@ namespace vcpkg::Commands::DependInfo
             {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
              {OPTION_SORT,
               "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-              "(default), "
+              "(default), x-tree, "
               "reverse"}}};
 
         enum SortMode
