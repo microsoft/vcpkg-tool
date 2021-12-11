@@ -170,8 +170,8 @@ namespace vcpkg
         template<class F>
         using map_t = decltype(std::declval<F&>()(*std::declval<typename ExpectedHolder<T>::const_pointer>()));
 
-        template<class F, class U = map_t<F>>
-        ExpectedT<U, S> map(F f) const&
+        template<class F>
+        ExpectedT<map_t<F>, S> map(F f) const&
         {
             if (has_value())
             {
@@ -179,7 +179,7 @@ namespace vcpkg
             }
             else
             {
-                return {error(), expected_right_tag};
+                return ExpectedT<map_t<F>, S>{m_s};
             }
         }
 
@@ -187,8 +187,8 @@ namespace vcpkg
         using move_map_t =
             decltype(std::declval<F&>()(std::move(*std::declval<typename ExpectedHolder<T>::pointer>())));
 
-        template<class F, class U = move_map_t<F>>
-        ExpectedT<U, S> map(F f) &&
+        template<class F>
+        ExpectedT<move_map_t<F>, S> map(F f) &&
         {
             if (has_value())
             {
@@ -196,12 +196,12 @@ namespace vcpkg
             }
             else
             {
-                return {std::move(*this).error(), expected_right_tag};
+                return ExpectedT<move_map_t<F>, S>{std::move(m_s)};
             }
         }
 
-        template<class F, class... Args, class U = std::invoke_result_t<F, const_ref_type, Args&&...>>
-        U then(F f, Args&&... args) const&
+        template<class F, class... Args>
+        std::invoke_result_t<F, const_ref_type, Args&&...> then(F f, Args&&... args) const&
         {
             if (has_value())
             {
@@ -209,12 +209,12 @@ namespace vcpkg
             }
             else
             {
-                return U{error(), expected_right_tag};
+                return std::invoke_result_t<F, const_ref_type, Args&&...>{m_s};
             }
         }
 
-        template<class F, class... Args, class U = std::invoke_result_t<F, move_ref_type, Args&&...>>
-        U then(F f, Args&&... args) &&
+        template<class F, class... Args>
+        std::invoke_result_t<F, move_ref_type, Args&&...> then(F f, Args&&... args) &&
         {
             if (has_value())
             {
@@ -222,11 +222,17 @@ namespace vcpkg
             }
             else
             {
-                return U{std::move(*this).error(), expected_right_tag};
+                return std::invoke_result_t<F, move_ref_type, Args&&...>{std::move(m_s)};
             }
         }
 
     private:
+        template<class, class>
+        friend struct ExpectedT;
+
+        explicit ExpectedT(const ErrorHolder<S>& err) : m_s(err) { }
+        explicit ExpectedT(ErrorHolder<S>&& err) : m_s(static_cast<ErrorHolder<S>&&>(err)) { }
+
         void exit_if_error(const LineInfo& line_info) const
         {
             if (m_s.has_error())
