@@ -881,10 +881,11 @@ namespace vcpkg::Dependencies
                         if (!supports_expression.get()->evaluate(
                                 m_var_provider.get_dep_info_vars(spec.spec()).value_or_exit(VCPKG_LINE_INFO)))
                         {
-                            const auto msg = Strings::format("%s[%s] is only supported on '%s'",
+                            const auto msg = Strings::format("%s[%s] is only supported on '%s'\n%s",
                                                              spec.port(),
                                                              spec.feature(),
-                                                             to_string(*supports_expression.get()));
+                                                             to_string(*supports_expression.get()),
+                                                             "Maybe you should add option '--allow-unsupported'?");
                             if (unsupported_port_action == UnsupportedPortAction::Error)
                             {
                                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: " + msg);
