@@ -90,14 +90,16 @@ namespace vcpkg::Commands::DependInfo
         constexpr StringLiteral OPTION_DGML = "dgml";
         constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
         constexpr StringLiteral OPTION_MAX_RECURSE = "max-recurse";
+        constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
         constexpr StringLiteral OPTION_SORT = "sort";
 
         constexpr int NO_RECURSE_LIMIT_VALUE = -1;
 
-        constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {
+        constexpr std::array<CommandSwitch, 4> DEPEND_SWITCHES = {
             {{OPTION_DOT, "Creates graph on basis of dot"},
              {OPTION_DGML, "Creates graph on basis of dgml"},
-             {OPTION_SHOW_DEPTH, "Show recursion depth in output"}}};
+             {OPTION_SHOW_DEPTH, "Show recursion depth in output"},
+             {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."}}};
 
         constexpr std::array<CommandSetting, 2> DEPEND_SETTINGS = {
             {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
@@ -305,6 +307,9 @@ namespace vcpkg::Commands::DependInfo
         const int max_depth = get_max_depth(options);
         const SortMode sort_mode = get_sort_mode(options);
         const bool show_depth = Util::Sets::contains(options.switches, OPTION_SHOW_DEPTH);
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+                                                 ? Dependencies::UnsupportedPortAction::Warn
+                                                 : Dependencies::UnsupportedPortAction::Error;
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return Input::check_and_get_full_package_spec(
@@ -323,8 +328,8 @@ namespace vcpkg::Commands::DependInfo
         // By passing an empty status_db, we should get a plan containing all dependencies.
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
-        auto action_plan =
-            Dependencies::create_feature_install_plan(provider, var_provider, specs, status_db, {host_triplet});
+        auto action_plan = Dependencies::create_feature_install_plan(
+            provider, var_provider, specs, status_db, {host_triplet, unsupported_port_action});
         Checks::check_exit(
             VCPKG_LINE_INFO, action_plan.remove_actions.empty(), "Only install actions should exist in the plan");
         std::vector<const InstallPlanAction*> install_actions =
