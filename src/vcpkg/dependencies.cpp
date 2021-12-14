@@ -126,8 +126,8 @@ namespace vcpkg::Dependencies
                 if (auto vars = maybe_vars.get())
                 {
                     // Qualified dependency resolution is available
-                    auto fullspec_list =
-                        filter_dependencies(*qualified_deps, m_spec.triplet(), host_triplet, *vars, ImplicitDefault::yes);
+                    auto fullspec_list = filter_dependencies(
+                        *qualified_deps, m_spec.triplet(), host_triplet, *vars, ImplicitDefault::yes);
 
                     for (auto&& fspec : fullspec_list)
                     {
