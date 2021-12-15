@@ -1,4 +1,5 @@
 #include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.print.h>
 
@@ -23,6 +24,14 @@ namespace
         {{}, {}},
         nullptr,
     };
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        AddTripletExpressionNotAllowed,
+        (),
+        "",
+        "Error: Triplet expressions are not allowed here. Use the --triplet parameter when running `vcpkg install`.");
+
+    DECLARE_AND_REGISTER_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
 }
 
 namespace vcpkg::Commands
@@ -54,9 +63,7 @@ namespace vcpkg::Commands
                     {
                         return value.value_or_exit(VCPKG_LINE_INFO);
                     }
-                    print2(Color::error,
-                           "Error: Triplet expressions are not allowed here. Use the --triplet parameter when running "
-                           "`vcpkg install`.\n");
+                    msg::println(Color::error, msgAddTripletExpressionNotAllowed);
                 }
                 else
                 {
@@ -69,7 +76,7 @@ namespace vcpkg::Commands
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
-                print2("See ", docs::manifests_url, " for more information.\n");
+                msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -85,16 +92,13 @@ namespace vcpkg::Commands
                     manifest_scf.core_paragraph->dependencies.push_back(
                         Dependency{spec.name, spec.features.value_or({}), spec.platform.value_or({})});
                 }
-                else
+                else if (spec.features)
                 {
-                    if (spec.features)
+                    for (const auto& feature : spec.features.value_or_exit(VCPKG_LINE_INFO))
                     {
-                        for (const auto& feature : spec.features.value_or_exit(VCPKG_LINE_INFO))
+                        if (!Util::Vectors::contains(dep->features, feature))
                         {
-                            if (!Util::Vectors::contains(dep->features, feature))
-                            {
-                                dep->features.push_back(feature);
-                            }
+                            dep->features.push_back(feature);
                         }
                     }
                 }
@@ -107,7 +111,7 @@ namespace vcpkg::Commands
                 Checks::exit_with_message(
                     VCPKG_LINE_INFO, "Failed to write manifest file %s: %s\n", manifest_path, ec.message());
             }
-            print2("Succeeded in adding ports to vcpkg.json file.\n");
+            msg::println(msgAddPortSucceded);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
