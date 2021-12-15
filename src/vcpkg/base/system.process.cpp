@@ -589,10 +589,12 @@ namespace vcpkg
             unsigned long bytes_read = 0;
             static constexpr int buffer_size = 1024 * 32;
             auto buf = std::make_unique<char[]>(buffer_size);
-            while (ReadFile(child_stdout, (void*)buf.get(), buffer_size, &bytes_read, nullptr) && bytes_read > 0)
+            while (ReadFile(child_stdout, (void*)buf.get(), buffer_size, &bytes_read, nullptr))
             {
                 f(StringView{buf.get(), static_cast<size_t>(bytes_read)});
             }
+
+            Debug::print("ReadFile() finished with GetLastError(): ", GetLastError(), '\n');
 
             CloseHandle(child_stdout);
 
@@ -811,6 +813,7 @@ namespace vcpkg
             return 1;
         }
         char buf[1024];
+        // Use fgets because fread will block until the entire buffer is filled.
         while (fgets(buf, 1024, pipe))
         {
             data_cb(StringView{buf, strlen(buf)});
