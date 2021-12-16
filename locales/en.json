@@ -13,6 +13,7 @@
   "ErrorRequirePackagesList": "Error: `vcpkg install` requires a list of packages to install in classic mode.",
   "ErrorRequirePackagesToInstall": "Error: No packages were listed for installation and no manifest was found.",
   "ErrorVcvarsUnsupported": "Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.",
+  "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.",
   "NoLocalizationForMessages": "No localization for the following messages:",
   "SeeURL": "See {url} for more information.",
   "UnsupportedSystemName": "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{value}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
