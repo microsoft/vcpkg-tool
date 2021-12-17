@@ -163,7 +163,7 @@ namespace vcpkg::msg
 #define DECLARE_MESSAGE(NAME, ARGS, COMMENT, ...)                                                                      \
     constexpr struct NAME##_msg_t : decltype(::vcpkg::msg::detail::make_message_check_format_args ARGS)                \
     {                                                                                                                  \
-        using is_message_type = void; \
+        using is_message_type = void;                                                                                  \
         static ::vcpkg::StringLiteral name() { return #NAME; }                                                         \
         static ::vcpkg::StringLiteral localization_comment() { return COMMENT; };                                      \
         static ::vcpkg::StringLiteral default_format_string() noexcept { return __VA_ARGS__; }                         \

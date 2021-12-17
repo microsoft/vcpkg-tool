@@ -54,8 +54,11 @@ EXCEPTION='{error}'
 CMD=)");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{LOCKED}", "{value}|");
 
-    DECLARE_AND_REGISTER_MESSAGE(ForceSystemBinariesOnWeirdPlatforms, (), "",
-            "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        ForceSystemBinariesOnWeirdPlatforms,
+        (),
+        "",
+        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
 }
 
 static void invalid_command(const std::string& cmd)

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vcpkg/base/basic_checks.h>
-#include <vcpkg/base/strings.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/strings.h>
 
 namespace vcpkg::Checks
 {
@@ -18,10 +18,10 @@ namespace vcpkg::Checks
         exit_with_message(line_info,
                           Strings::format(error_message_template, error_message_arg1, error_message_args...));
     }
-    template <class Message, class... Args>
+    template<class Message, class... Args>
     [[noreturn]] typename Message::is_message_type exit_with_message(const LineInfo& line_info,
-                                        Message m,
-                                        const Args&... args)
+                                                                     Message m,
+                                                                     const Args&... args)
     {
         exit_with_message(line_info, msg::format(m, args...));
     }
@@ -42,9 +42,9 @@ namespace vcpkg::Checks
     }
     template<class Conditional, class Message, class... Args>
     typename Message::is_message_type check_exit(const LineInfo& line_info,
-                    const Conditional& expression,
-                    Message m,
-                    const Args&... args)
+                                                 const Conditional& expression,
+                                                 Message m,
+                                                 const Args&... args)
     {
         if (!expression)
         {
@@ -64,8 +64,8 @@ namespace vcpkg::Checks
     }
     template<class Message, class... Args>
     [[noreturn]] typename Message::is_message_type exit_maybe_upgrade(const LineInfo& line_info,
-                                         Message m,
-                                         const Args&... args)
+                                                                      Message m,
+                                                                      const Args&... args)
     {
         exit_maybe_upgrade(line_info, msg::format(m, args...));
     }
@@ -86,9 +86,9 @@ namespace vcpkg::Checks
     }
     template<class Conditional, class Message, class... Args>
     typename Message::is_message_type check_maybe_upgrade(const LineInfo& line_info,
-                             const Conditional& expression,
-                             Message m,
-                             const Args&... args)
+                                                          const Conditional& expression,
+                                                          Message m,
+                                                          const Args&... args)
     {
         if (!expression)
         {
