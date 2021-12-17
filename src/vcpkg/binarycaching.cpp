@@ -1138,15 +1138,22 @@ namespace
         std::vector<std::string> m_write_prefixes;
     };
 
-    bool awscli_stat(const std::string& url)
+    bool awscli_stat(const VcpkgPaths& paths, const std::string& url)
     {
-        const auto res = cmd_execute(Command{Tools::AWSCLI}.string_arg("s3").string_arg("ls").string_arg(url));
-        return res == 0;
+        const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
+            .string_arg("s3")
+            .string_arg("ls")
+            .string_arg(url);
+        return cmd_execute(cmd) == 0;
     }
 
-    bool awscli_upload_file(const std::string& aws_object, const Path& archive)
+    bool awscli_upload_file(const VcpkgPaths& paths, const std::string& aws_object, const Path& archive)
     {
-        auto cmd = Command{Tools::AWSCLI}.string_arg("s3").string_arg("cp").path_arg(archive).string_arg(aws_object);
+        const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
+            .string_arg("s3")
+            .string_arg("cp")
+            .path_arg(archive)
+            .string_arg(aws_object);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
@@ -1157,9 +1164,13 @@ namespace
         return false;
     }
 
-    bool awscli_download_file(const std::string& aws_object, const Path& archive)
+    bool awscli_download_file(const VcpkgPaths& paths, const std::string& aws_object, const Path& archive)
     {
-        auto cmd = Command{Tools::AWSCLI}.string_arg("s3").string_arg("cp").string_arg(aws_object).path_arg(archive);
+        const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
+            .string_arg("s3")
+            .string_arg("cp")
+            .string_arg(aws_object)
+            .path_arg(archive);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
@@ -1221,7 +1232,7 @@ namespace
                 {
                     auto&& action = actions[url_indices[idx]];
                     auto&& url_path = url_paths[idx];
-                    if (!awscli_download_file(url_path.first, url_path.second)) continue;
+                    if (!awscli_download_file(paths, url_path.first, url_path.second)) continue;
                     jobs.push_back(decompress_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
                     idxs.push_back(idx);
                 }
@@ -1263,7 +1274,7 @@ namespace
             size_t upload_count = 0;
             for (const auto& prefix : m_write_prefixes)
             {
-                if (awscli_upload_file(make_aws_path(prefix, abi), tmp_archive_path))
+                if (awscli_upload_file(paths, make_aws_path(prefix, abi), tmp_archive_path))
                 {
                     ++upload_count;
                 }
@@ -1272,7 +1283,7 @@ namespace
             msg::println(msgAwsUploadedPackages, msg::value = upload_count);
         }
 
-        void precheck(const VcpkgPaths&,
+        void precheck(const VcpkgPaths& paths,
                       View<Dependencies::InstallPlanAction> actions,
                       View<CacheStatus*> cache_status) const override
         {
@@ -1288,7 +1299,7 @@ namespace
                         continue;
                     }
 
-                    if (awscli_stat(make_aws_path(prefix, *abi)))
+                    if (awscli_stat(paths, make_aws_path(prefix, *abi)))
                     {
                         actions_availability[idx] = CacheAvailability::available;
                         cache_status[idx]->mark_available(this);
