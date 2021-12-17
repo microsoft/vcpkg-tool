@@ -1,6 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -23,6 +24,21 @@ using namespace vcpkg;
 
 namespace
 {
+    DECLARE_AND_REGISTER_MESSAGE(AwsFailedToDownload,
+                                 (msg::value, msg::output),
+                                 "",
+                                 "aws failed to download with exit code: {value}\n{output}");
+    DECLARE_AND_REGISTER_MESSAGE(AwsAttemptingToFetchPackages,
+                                 (msg::value),
+                                 "",
+                                 "Attempting to fetch {value} packages from AWS");
+    DECLARE_AND_REGISTER_MESSAGE(AwsRestoredPackages,
+                                 (msg::value, msg::elapsed),
+                                 "",
+                                 "Restored {value} packages from AWS servers in {elapsed}s");
+    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages, (msg::value), "",
+                                 "Uploaded binaries to {value} AWS servers");
+
     struct ConfigSegmentsParser : Parse::ParserBase
     {
         using Parse::ParserBase::ParserBase;
@@ -1124,37 +1140,33 @@ namespace
 
     bool awscli_stat(const std::string& url)
     {
-        Command cmd;
-        cmd.string_arg("aws").string_arg("s3").string_arg("ls").string_arg(url);
-        const auto res = cmd_execute(cmd);
+        const auto res = cmd_execute(Command{Tools::AWSCLI}.string_arg("s3").string_arg("ls").string_arg(url));
         return res == 0;
     }
 
     bool awscli_upload_file(const std::string& aws_object, const Path& archive)
     {
-        Command cmd;
-        cmd.string_arg("aws").string_arg("s3").string_arg("cp").path_arg(archive).string_arg(aws_object);
+        auto cmd = Command{Tools::AWSCLI}.string_arg("s3").string_arg("cp").path_arg(archive).string_arg(aws_object);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
             return true;
         }
 
-        print2(Color::warning, "aws failed to upload with exit code: ", out.exit_code, '\n', out.output);
+        msg::println(Color::warning, msgAwsFailedToDownload, msg::value = out.exit_code, msg::output = out.output);
         return false;
     }
 
     bool awscli_download_file(const std::string& aws_object, const Path& archive)
     {
-        Command cmd;
-        cmd.string_arg("aws").string_arg("s3").string_arg("cp").string_arg(aws_object).path_arg(archive);
+        auto cmd = Command{Tools::AWSCLI}.string_arg("s3").string_arg("cp").string_arg(aws_object).path_arg(archive);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
             return true;
         }
 
-        print2(Color::warning, "aws failed to download with exit code: ", out.exit_code, '\n', out.output);
+        msg::println(Color::warning, msgAwsFailedToDownload, msg::value = out.exit_code, msg::output = out.output);
         return false;
     }
 
@@ -1201,7 +1213,8 @@ namespace
 
                 if (url_paths.empty()) break;
 
-                print2("Attempting to fetch ", url_paths.size(), " packages from AWS.\n");
+                msg::println(msgAwsAttemptingToFetchPackages, msg::value = url_paths.size());
+
                 std::vector<Command> jobs;
                 std::vector<size_t> idxs;
                 for (size_t idx = 0; idx < url_paths.size(); ++idx)
@@ -1231,11 +1244,7 @@ namespace
                 }
             }
 
-            print2("Restored ",
-                   restored_count,
-                   " packages from AWS servers in ",
-                   timer.elapsed(),
-                   ". Use --debug for more information.\n");
+            msg::println(msgAwsRestoredPackages, msg::value = restored_count, msg::elapsed = timer.elapsed().as<std::chrono::seconds>().count());
         }
 
         RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
@@ -1260,7 +1269,7 @@ namespace
                 }
             }
 
-            print2("Uploaded binaries to ", upload_count, " AWS remotes.\n");
+            msg::println(msgAwsUploadedPackages, msg::value = upload_count);
         }
 
         void precheck(const VcpkgPaths&,

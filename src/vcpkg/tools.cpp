@@ -567,7 +567,7 @@ gsutil version: 4.58
         }
     };
 
-    struct AWSCliProvider : ToolProvider
+    struct AwsCliProvider : ToolProvider
     {
         std::string m_exe = "aws";
 
@@ -780,7 +780,7 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
                     {
                         return {"aws", "0"};
                     }
-                    return get_path(paths, AWSCliProvider());
+                    return get_path(paths, AwsCliProvider());
                 }
                 if (tool == Tools::TAR)
                 {
