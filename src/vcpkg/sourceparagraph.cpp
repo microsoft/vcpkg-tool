@@ -646,20 +646,31 @@ namespace vcpkg
     constexpr StringLiteral FeatureDeserializer::DEPENDENCIES;
     constexpr StringLiteral FeatureDeserializer::SUPPORTS;
 
-    struct FeaturesFieldDeserializer : Json::IDeserializer<std::vector<std::unique_ptr<FeatureParagraph>>>
+    struct FeaturesObject
+    {
+        std::vector<std::unique_ptr<FeatureParagraph>> feature_paragraphs;
+        Json::Object extra_features_info;
+    };
+
+    struct FeaturesFieldDeserializer : Json::IDeserializer<FeaturesObject>
     {
         virtual StringView type_name() const override { return "a set of features"; }
 
         virtual Span<const StringView> valid_fields() const override { return {}; }
 
-        virtual Optional<std::vector<std::unique_ptr<FeatureParagraph>>> visit_object(Json::Reader& r,
+        virtual Optional<FeaturesObject> visit_object(Json::Reader& r,
                                                                                       const Json::Object& obj) override
         {
-            std::vector<std::unique_ptr<FeatureParagraph>> res;
+            FeaturesObject res;
             std::vector<std::string> extra_fields;
 
             for (const auto& pr : obj)
             {
+                if (Strings::starts_with(pr.first, "$"))
+                {
+                    res.extra_features_info.insert(pr.first.to_string(), pr.second);
+                    continue;
+                }
                 if (!Json::IdentifierDeserializer::is_ident(pr.first))
                 {
                     r.add_generic_error(type_name(),
@@ -673,7 +684,7 @@ namespace vcpkg
                 if (v)
                 {
                     v->name = pr.first.to_string();
-                    res.push_back(std::move(v));
+                    res.feature_paragraphs.push_back(std::move(v));
                 }
             }
 
@@ -952,8 +963,11 @@ namespace vcpkg
             r.optional_object_field(
                 obj, DEFAULT_FEATURES, spgh->default_features, Json::IdentifierArrayDeserializer::instance);
 
+            FeaturesObject features_tmp;
             r.optional_object_field(
-                obj, FEATURES, control_file->feature_paragraphs, FeaturesFieldDeserializer::instance);
+                obj, FEATURES, features_tmp, FeaturesFieldDeserializer::instance);
+            control_file->feature_paragraphs = std::move(features_tmp.feature_paragraphs);
+            control_file->extra_features_info = std::move(features_tmp.extra_features_info);
 
             if (auto configuration = obj.get(VCPKG_CONFIGURATION))
             {
@@ -1473,9 +1487,13 @@ namespace vcpkg
 
         serialize_optional_array(obj, ManifestDeserializer::DEFAULT_FEATURES, scf.core_paragraph->default_features);
 
-        if (!scf.feature_paragraphs.empty() || debug)
+        if (debug || !scf.feature_paragraphs.empty() || !scf.extra_features_info.is_empty())
         {
             auto& map = obj.insert(ManifestDeserializer::FEATURES, Json::Object());
+            for (const auto& pr : scf.extra_features_info)
+            {
+                map.insert(pr.first.to_string(), pr.second);
+            }
             for (const auto& feature : scf.feature_paragraphs)
             {
                 auto& feature_obj = map.insert(feature->name, Json::Object());

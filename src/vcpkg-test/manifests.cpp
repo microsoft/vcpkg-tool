@@ -719,8 +719,10 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         "dependencies": ["bd"],
         "default-features": ["df"],
         "features": {
+            "$feature-level-comment": "hi",
+            "$feature-level-comment2": "123456",
             "iroh" : {
-            "$comment": "hello",
+                "$comment": "hello",
                 "description": "zuko's uncle",
                 "dependencies": [
                     "firebending",
