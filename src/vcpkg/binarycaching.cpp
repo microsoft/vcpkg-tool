@@ -36,8 +36,7 @@ namespace
                                  (msg::value, msg::elapsed),
                                  "",
                                  "Restored {value} packages from AWS servers in {elapsed}s");
-    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages, (msg::value), "",
-                                 "Uploaded binaries to {value} AWS servers");
+    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages, (msg::value), "", "Uploaded binaries to {value} AWS servers");
 
     struct ConfigSegmentsParser : Parse::ParserBase
     {
@@ -1140,20 +1139,15 @@ namespace
 
     bool awscli_stat(const VcpkgPaths& paths, const std::string& url)
     {
-        const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
-            .string_arg("s3")
-            .string_arg("ls")
-            .string_arg(url);
+        const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("ls").string_arg(url);
         return cmd_execute(cmd) == 0;
     }
 
     bool awscli_upload_file(const VcpkgPaths& paths, const std::string& aws_object, const Path& archive)
     {
-        const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
-            .string_arg("s3")
-            .string_arg("cp")
-            .path_arg(archive)
-            .string_arg(aws_object);
+        const auto cmd =
+            Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("cp").path_arg(archive).string_arg(
+                aws_object);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
@@ -1167,10 +1161,10 @@ namespace
     bool awscli_download_file(const VcpkgPaths& paths, const std::string& aws_object, const Path& archive)
     {
         const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
-            .string_arg("s3")
-            .string_arg("cp")
-            .string_arg(aws_object)
-            .path_arg(archive);
+                             .string_arg("s3")
+                             .string_arg("cp")
+                             .string_arg(aws_object)
+                             .path_arg(archive);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
@@ -1255,7 +1249,9 @@ namespace
                 }
             }
 
-            msg::println(msgAwsRestoredPackages, msg::value = restored_count, msg::elapsed = timer.elapsed().as<std::chrono::seconds>().count());
+            msg::println(msgAwsRestoredPackages,
+                         msg::value = restored_count,
+                         msg::elapsed = timer.elapsed().as<std::chrono::seconds>().count());
         }
 
         RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
