@@ -809,38 +809,52 @@ namespace vcpkg
         }
 
         Debug::print(thread_id, ": popen(", actual_cmd_line, ")\n");
-        // Flush stdout before launching external process
-        fflush(stdout);
+        int exit_code;
+        for (int i = 1; i <= 2; ++i)
+        {
+            // Flush stdout before launching external process
+            fflush(stdout);
 
-        const auto pipe = popen(actual_cmd_line.c_str(), "r");
-        if (pipe == nullptr)
-        {
-            return 1;
-        }
-        char buf[1024];
-        // Use fgets because fread will block until the entire buffer is filled.
-        while (fgets(buf, 1024, pipe))
-        {
-            data_cb(StringView{buf, strlen(buf)});
-        }
+            const auto pipe = popen(actual_cmd_line.c_str(), "r");
+            if (pipe == nullptr)
+            {
+                return 1;
+            }
+            [[maybe_unused]] bool got_output = false;
+            char buf[1024];
+            // Use fgets because fread will block until the entire buffer is filled.
+            while (fgets(buf, 1024, pipe))
+            {
+                data_cb(StringView{buf, strlen(buf)});
+                got_output = true;
+            }
 
-        if (!feof(pipe))
-        {
-            return 1;
-        }
+            if (!feof(pipe))
+            {
+                return 1;
+            }
 
-        auto exit_code = pclose(pipe);
-        if (WIFEXITED(exit_code))
-        {
-            exit_code = WEXITSTATUS(exit_code);
-        }
-        else if (WIFSIGNALED(exit_code))
-        {
-            exit_code = WTERMSIG(exit_code);
-        }
-        else if (WIFSTOPPED(exit_code))
-        {
-            exit_code = WSTOPSIG(exit_code);
+            exit_code = pclose(pipe);
+            if (WIFEXITED(exit_code))
+            {
+                exit_code = WEXITSTATUS(exit_code);
+            }
+            else if (WIFSIGNALED(exit_code))
+            {
+                exit_code = WTERMSIG(exit_code);
+            }
+            else if (WIFSTOPPED(exit_code))
+            {
+                exit_code = WSTOPSIG(exit_code);
+            }
+#ifdef __APPLE__
+            if (exit_code == 127 && !got_output)
+            {
+                Debug::print(thread_id, ": pclose returned 127, try again \n");
+                continue;
+            }
+#endif
+            break;
         }
 #endif
         const auto elapsed = timer.us_64();
