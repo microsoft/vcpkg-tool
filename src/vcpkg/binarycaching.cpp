@@ -201,7 +201,9 @@ namespace
                               .string_arg("-y")
                               .string_arg("-r")
                               .path_arg(destination)
-                              .string_arg("*"),
+                              .string_arg("*")
+                              .string_arg("--exclude")
+                              .string_arg("\\*.DS_Store"),
                           InWorkingDirectory{source});
 #endif
     }

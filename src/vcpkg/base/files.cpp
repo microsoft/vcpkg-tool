@@ -65,6 +65,9 @@ namespace
         return ntbs[0] == '.' && (ntbs[1] == '\0' || (ntbs[1] == '.' && ntbs[2] == '\0'));
     }
 #endif
+#ifdef __APPLE__
+    bool is_DS_Store_file(const dirent* entry) { return Strings::equals(entry->d_name, ".DS_Store"); }
+#endif
 
     [[noreturn]] void exit_filesystem_call_error(LineInfo li,
                                                  const std::error_code& ec,
@@ -2064,7 +2067,7 @@ namespace vcpkg
         {
             return get_regular_files_impl<stdfs::directory_iterator>(dir, ec);
         }
-#else  // ^^^ _WIN32 // !_WIN32 vvv
+#else // ^^^ _WIN32 // !_WIN32 vvv
         static void insert_if_stat_matches(std::vector<Path>& result,
                                            const Path& full,
                                            struct stat* s,
@@ -2131,6 +2134,13 @@ namespace vcpkg
                     {
                         continue;
                     }
+
+#ifdef __APPLE__
+                    if (is_DS_Store_file(entry))
+                    {
+                        continue;
+                    }
+#endif
 
                     const auto full = base / entry->d_name;
                     const auto entry_dtype = get_d_type(entry);
@@ -2271,6 +2281,13 @@ namespace vcpkg
                     {
                         continue;
                     }
+
+#ifdef __APPLE__
+                    if (is_DS_Store_file(entry))
+                    {
+                        continue;
+                    }
+#endif
 
                     auto full = base / entry->d_name;
                     if (selector(get_d_type(entry), full))
