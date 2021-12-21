@@ -26,6 +26,8 @@ namespace vcpkg::PlatformExpression
         windows,
         mingw,
         linux,
+        freebsd,
+        openbsd,
         osx,
         uwp,
         android,
@@ -50,6 +52,8 @@ namespace vcpkg::PlatformExpression
             {"windows", Identifier::windows},
             {"mingw", Identifier::mingw},
             {"linux", Identifier::linux},
+            {"freebsd", Identifier::freebsd},
+            {"openbsd", Identifier::openbsd},
             {"osx", Identifier::osx},
             {"uwp", Identifier::uwp},
             {"android", Identifier::android},
@@ -537,6 +541,8 @@ namespace vcpkg::PlatformExpression
                                    true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "MinGW");
                         case Identifier::mingw: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "MinGW");
                         case Identifier::linux: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
+                        case Identifier::freebsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD");
+                        case Identifier::openbsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD");
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
