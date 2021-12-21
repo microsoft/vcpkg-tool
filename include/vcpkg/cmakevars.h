@@ -5,6 +5,7 @@
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/span.h>
 
 #include <vcpkg/packagespec.h>
 

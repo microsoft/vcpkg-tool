@@ -11,24 +11,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <FilesToSign Include="$(IntermediateOutputPath)\x86\vcpkg.exe">
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\*.js" Exclude="$(IntermediateOutputPath)\vcpkg-ce\**\node_modules\**\*.js">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\x86\tls12-download.exe">
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\scripts\ce.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\arm64\vcpkg.exe">
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\node_modules\**\*.js">
+      <Authenticode>3PartyScriptsSHA2</Authenticode>
+    </FilesToSign>
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-init.ps1">
       <Authenticode>Microsoft400</Authenticode>
-    </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\arm64\tls12-download.exe">
-      <Authenticode>Microsoft400</Authenticode>
-    </FilesToSign>
-
-    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-glibc">
-      <Authenticode>LinuxSign</Authenticode>
-    </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-muslc">
-      <Authenticode>LinuxSign</Authenticode>
     </FilesToSign>
   </ItemGroup>
 

@@ -29,6 +29,9 @@ namespace vcpkg
         constexpr const char* begin() const noexcept { return m_ptr; }
         constexpr const char* end() const noexcept { return m_ptr + m_size; }
 
+        const char& front() const noexcept { return *m_ptr; }
+        const char& back() const noexcept { return m_ptr[m_size - 1]; }
+
         std::reverse_iterator<const char*> rbegin() const noexcept { return std::make_reverse_iterator(end()); }
         std::reverse_iterator<const char*> rend() const noexcept { return std::make_reverse_iterator(begin()); }
 

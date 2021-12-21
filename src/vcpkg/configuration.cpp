@@ -4,10 +4,209 @@
 #include <vcpkg/configuration.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace
 {
     using namespace vcpkg;
+
+    struct RegistryConfigDeserializer : Json::IDeserializer<RegistryConfig>
+    {
+        constexpr static StringLiteral KIND = "kind";
+        constexpr static StringLiteral BASELINE = "baseline";
+        constexpr static StringLiteral PATH = "path";
+        constexpr static StringLiteral REPO = "repository";
+        constexpr static StringLiteral REFERENCE = "reference";
+        constexpr static StringLiteral NAME = "name";
+        constexpr static StringLiteral LOCATION = "location";
+
+        constexpr static StringLiteral KIND_BUILTIN = "builtin";
+        constexpr static StringLiteral KIND_FILESYSTEM = "filesystem";
+        constexpr static StringLiteral KIND_GIT = "git";
+        constexpr static StringLiteral KIND_ARTIFACT = "artifact";
+
+        virtual StringView type_name() const override { return "a registry"; }
+        virtual View<StringView> valid_fields() const override;
+
+        virtual Optional<RegistryConfig> visit_null(Json::Reader&) override;
+        virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) override;
+
+        static RegistryConfigDeserializer instance;
+    };
+    RegistryConfigDeserializer RegistryConfigDeserializer::instance;
+    constexpr StringLiteral RegistryConfigDeserializer::KIND;
+    constexpr StringLiteral RegistryConfigDeserializer::BASELINE;
+    constexpr StringLiteral RegistryConfigDeserializer::PATH;
+    constexpr StringLiteral RegistryConfigDeserializer::REPO;
+    constexpr StringLiteral RegistryConfigDeserializer::REFERENCE;
+    constexpr StringLiteral RegistryConfigDeserializer::NAME;
+    constexpr StringLiteral RegistryConfigDeserializer::LOCATION;
+    constexpr StringLiteral RegistryConfigDeserializer::KIND_BUILTIN;
+    constexpr StringLiteral RegistryConfigDeserializer::KIND_FILESYSTEM;
+    constexpr StringLiteral RegistryConfigDeserializer::KIND_GIT;
+    constexpr StringLiteral RegistryConfigDeserializer::KIND_ARTIFACT;
+
+    struct RegistryDeserializer final : Json::IDeserializer<RegistryConfig>
+    {
+        constexpr static StringLiteral PACKAGES = "packages";
+
+        virtual StringView type_name() const override { return "a registry"; }
+        virtual View<StringView> valid_fields() const override;
+
+        virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) override;
+
+        static RegistryDeserializer instance;
+    };
+    RegistryDeserializer RegistryDeserializer::instance;
+    constexpr StringLiteral RegistryDeserializer::PACKAGES;
+
+    View<StringView> RegistryConfigDeserializer::valid_fields() const
+    {
+        static const StringView t[] = {KIND, BASELINE, PATH, REPO, REFERENCE, NAME, LOCATION};
+        return t;
+    }
+    View<StringView> valid_builtin_fields()
+    {
+        static const StringView t[] = {
+            RegistryConfigDeserializer::KIND,
+            RegistryConfigDeserializer::BASELINE,
+            RegistryDeserializer::PACKAGES,
+        };
+        return t;
+    }
+    View<StringView> valid_filesystem_fields()
+    {
+        static const StringView t[] = {
+            RegistryConfigDeserializer::KIND,
+            RegistryConfigDeserializer::BASELINE,
+            RegistryConfigDeserializer::PATH,
+            RegistryDeserializer::PACKAGES,
+        };
+        return t;
+    }
+    View<StringView> valid_git_fields()
+    {
+        static const StringView t[] = {
+            RegistryConfigDeserializer::KIND,
+            RegistryConfigDeserializer::BASELINE,
+            RegistryConfigDeserializer::REPO,
+            RegistryConfigDeserializer::REFERENCE,
+            RegistryDeserializer::PACKAGES,
+        };
+        return t;
+    }
+    View<StringView> valid_artifact_fields()
+    {
+        static const StringView t[] = {
+            RegistryConfigDeserializer::KIND,
+            RegistryConfigDeserializer::NAME,
+            RegistryConfigDeserializer::LOCATION,
+        };
+        return t;
+    }
+
+    Optional<RegistryConfig> RegistryConfigDeserializer::visit_null(Json::Reader&) { return RegistryConfig(); }
+
+    Optional<RegistryConfig> RegistryConfigDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
+    {
+        static Json::StringDeserializer kind_deserializer{"a registry implementation kind"};
+        static Json::StringDeserializer baseline_deserializer{"a baseline"};
+
+        RegistryConfig res;
+        auto& kind = res.kind.emplace();
+        r.required_object_field(type_name(), obj, KIND, kind, kind_deserializer);
+
+        if (kind == KIND_BUILTIN)
+        {
+            auto& baseline = res.baseline.emplace();
+            r.required_object_field("a builtin registry", obj, BASELINE, baseline, baseline_deserializer);
+            r.check_for_unexpected_fields(obj, valid_builtin_fields(), "a builtin registry");
+        }
+        else if (kind == KIND_FILESYSTEM)
+        {
+            std::string baseline;
+            if (r.optional_object_field(obj, BASELINE, baseline, baseline_deserializer))
+            {
+                res.baseline = std::move(baseline);
+            }
+
+            r.required_object_field(
+                "a filesystem registry", obj, PATH, res.path.emplace(), Json::PathDeserializer::instance);
+
+            r.check_for_unexpected_fields(obj, valid_filesystem_fields(), "a filesystem registry");
+        }
+        else if (kind == KIND_GIT)
+        {
+            static Json::StringDeserializer repo_des{"a git repository URL"};
+            r.required_object_field("a git registry", obj, REPO, res.repo.emplace(), repo_des);
+
+            static Json::StringDeserializer ref_des{"a git reference (for example, a branch)"};
+            if (!r.optional_object_field(obj, REFERENCE, res.reference.emplace(), ref_des))
+            {
+                res.reference = nullopt;
+            }
+
+            r.required_object_field("a git registry", obj, BASELINE, res.baseline.emplace(), baseline_deserializer);
+
+            r.check_for_unexpected_fields(obj, valid_git_fields(), "a git registry");
+        }
+        else if (kind == KIND_ARTIFACT)
+        {
+            r.required_object_field(
+                "an artifacts registry", obj, NAME, res.name.emplace(), Json::IdentifierDeserializer::instance);
+
+            static Json::StringDeserializer location_des{"an artifacts git repository URL"};
+            r.required_object_field("an artifacts registry", obj, LOCATION, res.location.emplace(), location_des);
+
+            r.check_for_unexpected_fields(obj, valid_artifact_fields(), "an artifacts registry");
+        }
+        else
+        {
+            StringLiteral valid_kinds[] = {KIND_BUILTIN, KIND_FILESYSTEM, KIND_GIT, KIND_ARTIFACT};
+            r.add_generic_error(type_name(),
+                                "Field \"kind\" did not have an expected value (expected one of: \"",
+                                Strings::join("\", \"", valid_kinds),
+                                "\"; found \"",
+                                kind,
+                                "\")");
+            return nullopt;
+        }
+
+        return std::move(res); // gcc-7 bug workaround redundant move
+    }
+
+    View<StringView> RegistryDeserializer::valid_fields() const
+    {
+        static const StringView t[] = {
+            RegistryConfigDeserializer::KIND,
+            RegistryConfigDeserializer::BASELINE,
+            RegistryConfigDeserializer::PATH,
+            RegistryConfigDeserializer::REPO,
+            RegistryConfigDeserializer::REFERENCE,
+            RegistryConfigDeserializer::NAME,
+            RegistryConfigDeserializer::LOCATION,
+            PACKAGES,
+        };
+        return t;
+    }
+
+    Optional<RegistryConfig> RegistryDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
+    {
+        auto impl = RegistryConfigDeserializer::instance.visit_object(r, obj);
+
+        if (auto config = impl.get())
+        {
+            static Json::ArrayDeserializer<Json::PackageNameDeserializer> package_names_deserializer{
+                "an array of package names"};
+
+            if (config->kind && *config->kind.get() != RegistryConfigDeserializer::KIND_ARTIFACT)
+            {
+                r.required_object_field(
+                    type_name(), obj, PACKAGES, config->packages.emplace(), package_names_deserializer);
+            }
+        }
+        return impl;
+    }
 
     struct DictionaryDeserializer final : Json::IDeserializer<Json::Object>
     {
@@ -66,11 +265,9 @@ namespace
 
         virtual Optional<Configuration> visit_object(Json::Reader& r, const Json::Object& obj) override;
 
-        ConfigurationDeserializer(const Path& configuration_directory);
-
-    private:
-        Path configuration_directory;
+        static ConfigurationDeserializer instance;
     };
+    ConfigurationDeserializer ConfigurationDeserializer::instance;
     constexpr StringLiteral ConfigurationDeserializer::DEFAULT_REGISTRY;
     constexpr StringLiteral ConfigurationDeserializer::REGISTRIES;
 
@@ -186,9 +383,8 @@ namespace
 
     Optional<Configuration> ConfigurationDeserializer::visit_object(Json::Reader& r, const Json::Object& obj)
     {
-        static const StringView ARTIFACT = "artifact";
-
-        Json::Object extra_info;
+        Configuration ret;
+        Json::Object& extra_info = ret.extra_info;
 
         std::vector<std::string> comment_keys;
         for (const auto& el : obj)
@@ -201,30 +397,24 @@ namespace
             }
         }
 
-        RegistrySet registries;
-
-        auto impl_des = get_registry_implementation_deserializer(configuration_directory);
-
-        std::unique_ptr<RegistryImplementation> default_registry;
-        if (r.optional_object_field(obj, DEFAULT_REGISTRY, default_registry, *impl_des))
+        RegistryConfig default_registry;
+        if (r.optional_object_field(obj, DEFAULT_REGISTRY, default_registry, RegistryConfigDeserializer::instance))
         {
-            if (default_registry && default_registry->kind() == ARTIFACT)
+            if (default_registry.kind.value_or("") == RegistryConfigDeserializer::KIND_ARTIFACT)
             {
-                r.add_generic_error(type_name(), DEFAULT_REGISTRY, " cannot be of \"", ARTIFACT, "\" kind");
+                r.add_generic_error(type_name(),
+                                    DEFAULT_REGISTRY,
+                                    " cannot be of kind \"",
+                                    RegistryConfigDeserializer::KIND_ARTIFACT,
+                                    "\"");
             }
-            registries.set_default_registry(std::move(default_registry));
+            ret.default_reg = std::move(default_registry);
         }
 
-        auto reg_des = get_registry_array_deserializer(configuration_directory);
-        std::vector<Registry> regs;
-        r.optional_object_field(obj, REGISTRIES, regs, *reg_des);
+        static Json::ArrayDeserializer<RegistryDeserializer> regs_des("an array of registries");
+        r.optional_object_field(obj, REGISTRIES, ret.registries, regs_des);
 
-        for (Registry& reg : regs)
-        {
-            registries.add_registry(std::move(reg));
-        }
-
-        Json::Object ce_metadata_obj;
+        Json::Object& ce_metadata_obj = ret.ce_metadata;
         auto maybe_ce_metadata = r.visit(obj, CeMetadataDeserializer::instance);
         if (maybe_ce_metadata.has_value())
         {
@@ -243,12 +433,7 @@ namespace
             ce_metadata_obj.remove(comment_key);
         }
 
-        return Configuration{std::move(registries), ce_metadata_obj, extra_info};
-    }
-
-    ConfigurationDeserializer::ConfigurationDeserializer(const Path& configuration_directory)
-        : configuration_directory(configuration_directory)
-    {
+        return std::move(ret);
     }
 
     static void serialize_ce_metadata(const Json::Object& ce_metadata, Json::Object& put_into)
@@ -305,56 +490,6 @@ namespace
         extract_object(ce_metadata, CeMetadataDeserializer::CE_REQUIRES, put_into);
         extract_object(ce_metadata, CeMetadataDeserializer::CE_SEE_ALSO, put_into);
         serialize_demands(ce_metadata, put_into);
-    }
-
-    static Json::Object serialize_configuration_impl(const Configuration& config)
-    {
-        constexpr static StringLiteral REGISTRY_PACKAGES = "packages";
-
-        Json::Object obj;
-
-        for (const auto& el : config.extra_info)
-        {
-            obj.insert(el.first.to_string(), el.second);
-        }
-
-        if (!config.registry_set.is_default_builtin_registry())
-        {
-            if (auto default_registry = config.registry_set.default_registry())
-            {
-                obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, default_registry->serialize());
-            }
-            else
-            {
-                obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, Json::Value::null(nullptr));
-            }
-        }
-
-        auto reg_view = config.registry_set.registries();
-        if (reg_view.size() > 0)
-        {
-            auto& reg_arr = obj.insert(ConfigurationDeserializer::REGISTRIES, Json::Array());
-            for (const auto& reg : reg_view)
-            {
-                auto reg_obj = reg.implementation().serialize();
-                if (reg.packages().size())
-                {
-                    auto& packages = reg_obj.insert(REGISTRY_PACKAGES, Json::Array{});
-                    for (const auto& pkg : reg.packages())
-                    {
-                        packages.push_back(Json::Value::string(pkg));
-                    }
-                }
-                reg_arr.push_back(std::move(reg_obj));
-            }
-        }
-
-        if (!config.ce_metadata.is_empty())
-        {
-            serialize_ce_metadata(config.ce_metadata, obj);
-        }
-
-        return obj;
     }
 
     static void find_unknown_fields_impl(const Json::Object& obj, std::vector<std::string>& out, StringView path)
@@ -420,19 +555,8 @@ namespace vcpkg
         return known_fields;
     }
 
-    void Configuration::validate_feature_flags(const FeatureFlagSettings& flags)
+    void Configuration::validate_as_active()
     {
-        if (!flags.registries && registry_set.has_modifications())
-        {
-            LockGuardPtr<Metrics>(g_metrics)->track_property(
-                "registries-error-registry-modification-without-feature-flag", "defined");
-            vcpkg::printf(Color::warning,
-                          "Warning: configuration specified the \"registries\" or \"default-registries\" field, but "
-                          "the %s feature flag was not enabled.\n",
-                          VcpkgCmdArguments::REGISTRIES_FEATURE);
-            registry_set = RegistrySet();
-        }
-
         if (!ce_metadata.is_empty())
         {
             auto unknown_fields = find_unknown_fields(*this);
@@ -447,12 +571,145 @@ namespace vcpkg
         }
     }
 
-    std::unique_ptr<Json::IDeserializer<Configuration>> make_configuration_deserializer(const Path& config_directory)
+    static bool registry_config_requests_ce(const RegistryConfig& target) noexcept
     {
-        return std::make_unique<ConfigurationDeserializer>(config_directory);
+        if (auto* kind = target.kind.get())
+        {
+            if (*kind == "artifact")
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    Json::Object serialize_configuration(const Configuration& config) { return serialize_configuration_impl(config); }
+    bool Configuration::requests_ce() const
+    {
+        if (!ce_metadata.is_empty())
+        {
+            return true;
+        }
+
+        if (const auto* pdefault = default_reg.get())
+        {
+            if (registry_config_requests_ce(*pdefault))
+            {
+                return true;
+            }
+        }
+
+        return std::any_of(registries.begin(), registries.end(), registry_config_requests_ce);
+    }
+
+    Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }
+
+    static std::unique_ptr<RegistryImplementation> instantiate_rconfig(const VcpkgPaths& paths,
+                                                                       const RegistryConfig& config,
+                                                                       const Path& config_dir)
+    {
+        if (auto k = config.kind.get())
+        {
+            if (*k == RegistryConfigDeserializer::KIND_BUILTIN)
+            {
+                return make_builtin_registry(paths, config.baseline.value_or_exit(VCPKG_LINE_INFO));
+            }
+            else if (*k == RegistryConfigDeserializer::KIND_GIT)
+            {
+                return make_git_registry(paths,
+                                         config.repo.value_or_exit(VCPKG_LINE_INFO),
+                                         config.reference.value_or("HEAD"),
+                                         config.baseline.value_or_exit(VCPKG_LINE_INFO));
+            }
+            else if (*k == RegistryConfigDeserializer::KIND_FILESYSTEM)
+            {
+                return make_filesystem_registry(paths.get_filesystem(),
+                                                config_dir / config.path.value_or_exit(VCPKG_LINE_INFO),
+                                                config.baseline.value_or(""));
+            }
+            else
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
+    std::unique_ptr<RegistrySet> Configuration::instantiate_registry_set(const VcpkgPaths& paths,
+                                                                         const Path& config_dir) const
+    {
+        std::vector<Registry> r_impls;
+        for (auto&& reg : registries)
+        {
+            // packages will be null for artifact registries
+            if (auto p = reg.packages.get())
+            {
+                r_impls.emplace_back(std::vector<std::string>(*p), instantiate_rconfig(paths, reg, config_dir));
+            }
+        }
+        auto reg1 =
+            default_reg ? instantiate_rconfig(paths, *default_reg.get(), config_dir) : make_builtin_registry(paths);
+        return std::make_unique<RegistrySet>(std::move(reg1), std::move(r_impls));
+    }
+
+    Json::Object Configuration::serialize() const
+    {
+        Json::Object obj;
+
+        for (const auto& el : extra_info)
+        {
+            obj.insert(el.first.to_string(), el.second);
+        }
+
+        if (auto default_registry = default_reg.get())
+        {
+            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, default_registry->serialize());
+        }
+
+        if (!registries.empty())
+        {
+            auto& reg_arr = obj.insert(ConfigurationDeserializer::REGISTRIES, Json::Array());
+            for (const auto& reg : registries)
+            {
+                reg_arr.push_back(reg.serialize());
+            }
+        }
+
+        if (!ce_metadata.is_empty())
+        {
+            serialize_ce_metadata(ce_metadata, obj);
+        }
+
+        return obj;
+    }
+
+    Json::Value RegistryConfig::serialize() const
+    {
+        if (!kind)
+        {
+            return Json::Value::null(nullptr);
+        }
+        Json::Object obj;
+        obj.insert(RegistryConfigDeserializer::KIND, Json::Value::string(*kind.get()));
+        if (auto p = baseline.get()) obj.insert(RegistryConfigDeserializer::BASELINE, Json::Value::string(*p));
+        if (auto p = location.get()) obj.insert(RegistryConfigDeserializer::LOCATION, Json::Value::string(*p));
+        if (auto p = name.get()) obj.insert(RegistryConfigDeserializer::NAME, Json::Value::string(*p));
+        if (auto p = path.get()) obj.insert(RegistryConfigDeserializer::PATH, Json::Value::string(p->native()));
+        if (auto p = reference.get()) obj.insert(RegistryConfigDeserializer::REFERENCE, Json::Value::string(*p));
+        if (auto p = repo.get()) obj.insert(RegistryConfigDeserializer::REPO, Json::Value::string(*p));
+        if (packages)
+        {
+            auto& arr = obj.insert(RegistryDeserializer::PACKAGES, Json::Array());
+            for (auto&& p : *packages.get())
+            {
+                arr.push_back(Json::Value::string(p));
+            }
+        }
+        return Json::Value::object(std::move(obj));
+    }
 
     std::vector<std::string> find_unknown_fields(const Configuration& config)
     {

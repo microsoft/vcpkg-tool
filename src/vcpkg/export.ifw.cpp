@@ -5,7 +5,9 @@
 #include <vcpkg/export.h>
 #include <vcpkg/export.ifw.h>
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Export::IFW
 {
@@ -432,15 +434,13 @@ namespace vcpkg::Export::IFW
             unique_triplets.insert(action.spec.triplet().canonical_name());
 
             // Export real package and return data dir for installation
-            auto ifw_package_dir_path = export_real_package(ifw_packages_dir_path, action, fs);
+            const InstalledPaths installed(export_real_package(ifw_packages_dir_path, action, fs));
 
             // Copy package data
-            const InstallDir dirs = InstallDir::from_destination_root(ifw_package_dir_path,
-                                                                      action.spec.triplet().to_string(),
-                                                                      ifw_package_dir_path / "vcpkg" / "info" /
-                                                                          (binary_paragraph.fullstem() + ".list"));
+            const InstallDir dirs =
+                InstallDir::from_destination_root(installed, action.spec.triplet(), binary_paragraph);
 
-            Install::install_package_and_write_listfile(paths, action.spec, dirs);
+            Install::install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
         }
 
         vcpkg::printf("Exporting packages %s... done\n", ifw_packages_dir_path);

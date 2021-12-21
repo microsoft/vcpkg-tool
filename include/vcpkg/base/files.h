@@ -4,6 +4,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/stringview.h>
 
 #include <stdio.h>
@@ -253,6 +254,7 @@ namespace vcpkg
         void rename(const Path& old_path, const Path& new_path, LineInfo li);
 
         void rename_with_retry(const Path& old_path, const Path& new_path, std::error_code& ec);
+        void rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li);
 
         virtual void rename_or_copy(const Path& old_path,
                                     const Path& new_path,

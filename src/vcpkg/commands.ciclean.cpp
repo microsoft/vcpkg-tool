@@ -3,6 +3,7 @@
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.ciclean.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -33,7 +34,7 @@ namespace vcpkg::Commands::CIClean
         auto& fs = paths.get_filesystem();
         print2("Starting vcpkg CI clean\n");
         clear_directory(fs, paths.buildtrees());
-        clear_directory(fs, paths.installed());
+        clear_directory(fs, paths.installed().root());
         clear_directory(fs, paths.packages());
         print2("Completed vcpkg CI clean\n");
         Checks::exit_success(VCPKG_LINE_INFO);

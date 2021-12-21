@@ -3,15 +3,13 @@
 #include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/pragmas.h>
-#include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/view.h>
 
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
 
+#include <algorithm>
 #include <vector>
 
 namespace vcpkg::Strings::details
@@ -72,11 +70,6 @@ namespace vcpkg::Strings::details
     {
         to_string(into, t);
     }
-
-    constexpr struct
-    {
-        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
-    } tolower_char;
 }
 
 namespace vcpkg::Strings
@@ -142,11 +135,7 @@ namespace vcpkg::Strings
 
     bool case_insensitive_ascii_equals(StringView left, StringView right);
 
-    template<class It>
-    void ascii_to_lowercase(It first, It last)
-    {
-        std::transform(first, last, first, details::tolower_char);
-    }
+    void ascii_to_lowercase(char* first, char* last);
     std::string ascii_to_lowercase(std::string&& s);
 
     std::string ascii_to_uppercase(std::string&& s);

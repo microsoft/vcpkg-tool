@@ -9,7 +9,9 @@
 #include <vcpkg/export.h>
 #include <vcpkg/export.prefab.h>
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Export::Prefab
 {
@@ -508,7 +510,8 @@ namespace vcpkg::Export::Prefab
             for (const auto& triplet : triplets)
             {
                 const auto listfile =
-                    paths.vcpkg_dir_info() / Strings::format("%s_%s_%s", name, norm_version, triplet) + ".list";
+                    paths.installed().vcpkg_dir_info() / Strings::format("%s_%s_%s", name, norm_version, triplet) +
+                    ".list";
                 const auto installed_dir = paths.packages() / Strings::format("%s_%s", name, triplet);
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    utils.exists(listfile, IgnoreErrors{}),

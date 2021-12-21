@@ -281,7 +281,7 @@ namespace vcpkg::Json
         virtual StringView type_name() const override { return type_name_; }
         virtual Optional<std::string> visit_string(Reader&, StringView sv) override { return sv.to_string(); }
 
-        explicit StringDeserializer(StringLiteral type_name_) : type_name_(type_name_) { }
+        constexpr explicit StringDeserializer(StringLiteral type_name_) : type_name_(type_name_) { }
 
     private:
         StringLiteral type_name_;
@@ -327,7 +327,7 @@ namespace vcpkg::Json
 
         virtual StringView type_name() const override { return m_type_name; }
 
-        ArrayDeserializer(StringLiteral type_name_, Underlying&& t = {})
+        constexpr ArrayDeserializer(StringLiteral type_name_, Underlying&& t = {})
             : m_type_name(type_name_), m_underlying_visitor(static_cast<Underlying&&>(t))
         {
         }

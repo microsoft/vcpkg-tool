@@ -124,7 +124,7 @@ namespace vcpkg
         std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
     };
 
-    ExpectedS<Downloads::DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
+    ExpectedS<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const Dependencies::ActionPlan& action);
 

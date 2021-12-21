@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/util.h>
+
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.upload-metrics.h>
@@ -7,82 +9,83 @@
 
 #include <stddef.h>
 
+#include <set>
+
 using namespace vcpkg;
 
-namespace
+TEST_CASE ("list of commands is correct", "[commands]")
 {
-    template<class CommandListT, size_t ExpectedCount>
-    void check_all_commands(const CommandListT& actual_commands, const char* const (&expected_commands)[ExpectedCount])
+    using vcpkg::Util::Sets::contains;
+    std::set<std::string> commands;
+    for (auto command : Commands::get_available_basic_commands())
     {
-        CHECK(actual_commands.size() == ExpectedCount); // makes sure this test is updated if we add a command
-        for (const char* expected_command : expected_commands)
-        {
-            CHECK(Commands::find(StringView{expected_command, strlen(expected_command)}, actual_commands) != nullptr);
-        }
-
-        CHECK(Commands::find("x-never-will-exist", actual_commands) == nullptr);
+        CHECK_FALSE(contains(commands, command.name));
+        commands.insert(command.name);
     }
-} // unnamed namespace
+    for (auto command : Commands::get_available_paths_commands())
+    {
+        CHECK_FALSE(contains(commands, command.name));
+        commands.insert(command.name);
+    }
+    for (auto command : Commands::get_available_triplet_commands())
+    {
+        CHECK_FALSE(contains(commands, command.name));
+        commands.insert(command.name);
+    }
 
-// clang-format tries to wrap the following lists inappropriately
-
-// clang-format off
-TEST_CASE ("get_available_basic_commands works", "[commands]")
-{
-    check_all_commands(Commands::get_available_basic_commands(), {
+    // clang-format off
+    std::set<std::string> expected_commands{
+        "/?",
+        "activate",
+        "add",
+        "autocomplete",
+        "build",
+        "build-external",
+        "cache",
+        "ci",
         "contact",
+        "create",
+        "depend-info",
+        "edit",
+        "env",
+        "export",
+        "fetch",
+        "find",
+        "format-manifest",
+        "hash",
+        "help",
+        "install",
+        "integrate",
+        "list",
+        "new",
+        "owns",
+        "portsdiff",
+        "remove",
+        "search",
+        "update",
+        "upgrade",
+        "use",
         "version",
+        "x-add-version",
+        "x-check-support",
+        "x-ci-clean",
+        "x-ci-verify-versions",
         "x-download",
-        "x-init-registry",
         "x-generate-default-message-map",
+        "x-history",
+        "x-init-registry",
+        "x-package-info",
+        "x-regenerate",
+        "x-set-installed",
+        "x-vsinstances",
+        "z-bootstrap-standalone",
+        "z-ce",
+        "z-print-config",
 #if defined(_WIN32)
         "x-upload-metrics",
 #endif // defined(_WIN32)
-        });
-}
+        };
+    // clang-format on
 
-TEST_CASE ("get_available_paths_commands works", "[commands]")
-{
-    check_all_commands(Commands::get_available_paths_commands(), {
-        "/?",
-        "help",
-        "search",
-        "list",
-        "integrate",
-        "owns",
-        "update",
-        "edit",
-        "create",
-        "cache",
-        "portsdiff",
-        "autocomplete",
-        "hash",
-        "fetch",
-        "format-manifest",
-        "x-ci-clean",
-        "x-history",
-        "x-package-info",
-        "x-vsinstances",
-        "x-ci-verify-versions",
-        "x-add-version",
-        });
+    CHECK(commands == expected_commands);
 }
-
-TEST_CASE ("get_available_commands_type_a works", "[commands]")
-{
-    check_all_commands(Commands::get_available_triplet_commands(), {
-        "install",
-        "x-set-installed",
-        "ci",
-        "remove",
-        "upgrade",
-        "build",
-        "env",
-        "build-external",
-        "export",
-        "depend-info",
-        "x-check-support",
-        "z-print-config"
-        });
-}
-// clang-format on
