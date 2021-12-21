@@ -19,6 +19,8 @@ namespace vcpkg
     const ExpectedS<Path>& get_appdata_local() noexcept;
 #endif
 
+    void open_in_default_browser(const std::string& url);
+
     Optional<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);
 
     long get_process_id();
@@ -38,6 +40,8 @@ namespace vcpkg
     ZStringView to_zstring_view(CPUArchitecture arch) noexcept;
 
     CPUArchitecture get_host_processor();
+
+    std::string get_host_os_name();
 
     std::vector<CPUArchitecture> get_supported_host_architectures();
 

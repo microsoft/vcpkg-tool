@@ -2,12 +2,20 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <ctime>
 
 #if defined(__APPLE__)
+#include <ApplicationServices/ApplicationServices.h>
+#include <CoreFoundation/CFBundle.h>
 #include <sys/sysctl.h>
+#endif
+
+#if defined(_WIN32)
+#include <shellapi.h>
+#include <windows.h>
 #endif
 
 namespace vcpkg
@@ -366,6 +374,41 @@ namespace vcpkg
         }
 
         return nullopt;
+    }
+
+    std::string get_host_os_name()
+    {
+#if defined(_WIN32)
+        return "windows";
+#elif defined(__APPLE__)
+        return "osx";
+#elif defined(__FreeBSD__)
+        return "freebsd";
+#elif defined(__OpenBSD__)
+        return "openbsd";
+#else
+        return "linux";
+#endif
+    }
+
+    void open_in_default_browser(const std::string& url_str)
+    {
+#ifdef __APPLE__
+        CFURLRef url = CFURLCreateWithBytes(nullptr,                 // allocator
+                                            (UInt8*)url_str.c_str(), // URLBytes
+                                            url_str.length(),        // length
+                                            kCFStringEncodingUTF8,   // encoding
+                                            nullptr                  // baseURL
+        );
+        LSOpenCFURLRef(url, nullptr);
+        CFRelease(url);
+#elif _WIN32
+        ShellExecuteA(nullptr, nullptr, url_str.c_str(), nullptr, nullptr, SW_SHOW);
+#else
+        Command cmd("xdg-open");
+        cmd.string_arg(url_str);
+        cmd_execute(cmd, {});
+#endif
     }
 }
 

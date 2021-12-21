@@ -489,6 +489,13 @@ namespace vcpkg::Install
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
+                open_in_default_browser(
+                    Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=",
+                                    Strings::url_encode(Strings::concat_or_view(
+                                        '[', action.spec.name(), "] build failure on ", action.spec.triplet())),
+                                    "&body=",
+                                    Strings::url_encode(Build::create_github_issue(args, result, action.spec, paths))));
+
                 print2(Build::create_user_troubleshooting_message(action, paths), '\n');
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }

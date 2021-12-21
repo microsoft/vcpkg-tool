@@ -948,7 +948,15 @@ namespace vcpkg::Build
             {
                 metrics->track_property("error", "build failed");
                 metrics->track_property("build_error", spec_string);
-                return BuildResult::BUILD_FAILED;
+                const auto logs = buildpath / "logs.txt";
+                std::vector<std::string> error_logs;
+                if (fs.exists(logs, VCPKG_LINE_INFO))
+                {
+                    error_logs = fs.read_lines(buildpath / "logs.txt", VCPKG_LINE_INFO);
+                    Util::filter(error_logs, [](const auto& line) { return Strings::starts_with(line, "error:"); });
+                    Util::fmap(error_logs, [](const std::string& line) { return line.substr(6); });
+                }
+                return {BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
             }
         }
 
@@ -1327,6 +1335,58 @@ namespace vcpkg::Build
         return Strings::format("Error: Building package %s failed with: %s", spec, Build::to_string(build_result));
     }
 
+    std::string create_github_issue(const VcpkgCmdArguments& args,
+                                    const ExtendedBuildResult& build_result,
+                                    const PackageSpec& spec,
+                                    const VcpkgPaths& paths)
+    {
+        const auto& fs = paths.get_filesystem();
+        const auto create_log_details = [&fs](vcpkg::Path&& path) {
+            auto log = fs.read_contents(path, VCPKG_LINE_INFO);
+            if (log.size() > 20'000)
+            {
+                auto first_block_end = log.find_first_of('\n', 3000);
+                if (first_block_end == std::string::npos || first_block_end > 5000) first_block_end = 3000;
+
+                auto last_block_end = log.find_last_of('\n', log.size() - 13000);
+                if (last_block_end == std::string::npos || last_block_end < log.size() - 15000)
+                    last_block_end = log.size() - 13000;
+
+                auto skipped_lines = std::count(log.begin() + first_block_end, log.begin() + last_block_end, '\n');
+                log = log.substr(0, first_block_end) + "\n...\nSkip " + std::to_string(skipped_lines) +
+                      " lines\n...\n" + log.substr(last_block_end);
+            }
+            while (!log.empty() && log.back() == '\n')
+                log.pop_back();
+            return Strings::concat(
+                "<details><summary>", path.native(), "</summary>\n\n```\n", log, "\n```\n</details>");
+        };
+        const auto manifest = paths.get_manifest()
+                                  .map([](const Json::Object& manifest) {
+                                      return Strings::concat("<details><summary>vcpkg.json</summary>\n\n```\n",
+                                                             Json::stringify(manifest, Json::JsonStyle::with_spaces(2)),
+                                                             "\n```\n</details>\n");
+                                  })
+                                  .value_or("");
+
+        return Strings::concat(
+            "**Host Environment**",
+            "\n- Host: ",
+            to_zstring_view(get_host_processor()),
+            '-',
+            get_host_os_name(),
+            "\n- Compiler: ",
+            "compiler",
+            "\n\n**To Reproduce**\n",
+            Strings::concat("`", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
+            "\n\n**Failure logs**\n```\n",
+            paths.get_filesystem().read_contents(build_result.stdoutlog, VCPKG_LINE_INFO),
+            "\n```\n",
+            Strings::join("\n", Util::fmap(build_result.error_logs, create_log_details)),
+            "\n\n**Additional context**\n",
+            manifest);
+    }
+
     std::string create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
     {
 #if defined(_WIN32)
@@ -1573,6 +1633,12 @@ namespace vcpkg::Build
     }
 
     ExtendedBuildResult::ExtendedBuildResult(BuildResult code) : code(code) { }
+    ExtendedBuildResult::ExtendedBuildResult(BuildResult code,
+                                             vcpkg::Path stdoutlog,
+                                             std::vector<std::string>&& error_logs)
+        : code(code), stdoutlog(stdoutlog), error_logs(error_logs)
+    {
+    }
     ExtendedBuildResult::ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf)
         : code(code), binary_control_file(std::move(bcf))
     {

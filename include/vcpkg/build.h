@@ -247,13 +247,21 @@ namespace vcpkg::Build
     struct ExtendedBuildResult
     {
         ExtendedBuildResult(BuildResult code);
+        ExtendedBuildResult(BuildResult code, vcpkg::Path stdoutlog, std::vector<std::string>&& error_logs);
         ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps);
         ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 
         BuildResult code;
         std::vector<FeatureSpec> unmet_dependencies;
         std::unique_ptr<BinaryControlFile> binary_control_file;
+        vcpkg::Path stdoutlog;
+        std::vector<std::string> error_logs;
     };
+
+    std::string create_github_issue(const VcpkgCmdArguments& args,
+                                    const ExtendedBuildResult& build_result,
+                                    const PackageSpec& spec,
+                                    const VcpkgPaths& paths);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
