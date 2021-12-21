@@ -161,8 +161,6 @@ namespace vcpkg::Dependencies
         Optional<InstalledPackageView> m_installed_package;
     };
 
-    struct ClusterGraph;
-
     struct CreateInstallPlanOptions
     {
         CreateInstallPlanOptions(Graphs::Randomizer* r, Triplet t) : randomizer(r), host_triplet(t) { }

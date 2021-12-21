@@ -56,8 +56,7 @@ static Configuration parse_test_configuration(StringView text)
     auto object = parse_json_object(text);
 
     Json::Reader reader;
-    auto deserializer = make_configuration_deserializer("");
-    auto parsed_config_opt = reader.visit(object, *deserializer);
+    auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
     REQUIRE(reader.errors().empty());
 
     return std::move(parsed_config_opt).value_or_exit(VCPKG_LINE_INFO);
@@ -71,19 +70,12 @@ static void check_string(const Json::Object& obj, StringView key, StringView exp
     REQUIRE(value->string() == expected);
 }
 
-static void compare_json_objects(const Json::Object& expected, const Json::Object& actual)
-{
-    REQUIRE(Json::stringify(expected, Json::JsonStyle::with_spaces(4)) ==
-            Json::stringify(actual, Json::JsonStyle::with_spaces(4)));
-}
-
 static void check_errors(const std::string& config_text, const std::string& expected_errors)
 {
     auto object = parse_json_object(config_text);
 
     Json::Reader reader;
-    auto deserializer = make_configuration_deserializer("");
-    auto parsed_config_opt = reader.visit(object, *deserializer);
+    auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
     REQUIRE(!reader.errors().empty());
 
     CHECK_LINES(Strings::join("\n", reader.errors()), expected_errors);
@@ -114,6 +106,11 @@ TEST_CASE ("config registries only", "[ce-metadata]")
             "kind": "artifact",
             "name": "vcpkg-artifacts",
             "location": "https://github.com/microsoft/vcpkg-artifacts"
+        },
+        {
+            "kind": "filesystem",
+            "path": "path/to/registry",
+            "packages": [ ]
         }
     ]
 })json";
@@ -121,39 +118,46 @@ TEST_CASE ("config registries only", "[ce-metadata]")
         auto config = parse_test_configuration(raw_config);
         REQUIRE(config.ce_metadata.is_empty());
         REQUIRE(config.extra_info.is_empty());
-        REQUIRE(config.registry_set.default_registry() != nullptr);
 
-        auto default_registry = config.registry_set.default_registry()->serialize();
+        REQUIRE(config.default_reg.has_value());
+
+        auto default_registry = config.default_reg.get()->serialize().object();
         check_string(default_registry, KIND, "builtin");
         check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
 
-        REQUIRE(config.registry_set.registries().size() == 3);
+        REQUIRE(config.registries.size() == 4);
 
-        const auto& git_registry = config.registry_set.registries()[0];
-        auto serialized_git_registry = git_registry.implementation().serialize();
+        const auto& git_registry = config.registries[0];
+        auto serialized_git_registry = git_registry.serialize().object();
         check_string(serialized_git_registry, KIND, "git");
         check_string(serialized_git_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
         check_string(serialized_git_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
-        REQUIRE(git_registry.packages().size() == 2);
-        REQUIRE(git_registry.packages()[0] == "beicode");
-        REQUIRE(git_registry.packages()[1] == "beison");
+        REQUIRE(git_registry.packages);
+        auto&& p = *git_registry.packages.get();
+        REQUIRE(p.size() == 2);
+        REQUIRE(p[0] == "beicode");
+        REQUIRE(p[1] == "beison");
 
-        const auto& fs_registry = config.registry_set.registries()[1];
-        auto serialized_fs_registry = fs_registry.implementation().serialize();
+        const auto& fs_registry = config.registries[1];
+        auto serialized_fs_registry = fs_registry.serialize().object();
         check_string(serialized_fs_registry, KIND, "filesystem");
         check_string(serialized_fs_registry, PATH, "path/to/registry");
-        REQUIRE(fs_registry.packages().size() == 1);
-        REQUIRE(fs_registry.packages()[0] == "zlib");
+        REQUIRE(fs_registry.packages);
+        REQUIRE(fs_registry.packages.get()->size() == 1);
+        REQUIRE((*fs_registry.packages.get())[0] == "zlib");
 
-        const auto& artifact_registry = config.registry_set.registries()[2];
-        auto serialized_art_registry = artifact_registry.implementation().serialize();
+        const auto& artifact_registry = config.registries[2];
+        auto serialized_art_registry = artifact_registry.serialize().object();
         check_string(serialized_art_registry, KIND, "artifact");
         check_string(serialized_art_registry, NAME, "vcpkg-artifacts");
         check_string(serialized_art_registry, LOCATION, "https://github.com/microsoft/vcpkg-artifacts");
+        REQUIRE(!artifact_registry.packages);
+
+        REQUIRE(config.registries[3].packages);
 
         auto raw_obj = parse_json_object(raw_config);
-        auto serialized_obj = serialize_configuration(config);
-        compare_json_objects(raw_obj, serialized_obj);
+        auto serialized_obj = config.serialize();
+        Test::check_json_eq(raw_obj, serialized_obj);
     }
 
     SECTION ("default invalid json")
@@ -165,7 +169,6 @@ TEST_CASE ("config registries only", "[ce-metadata]")
 })json";
         check_errors(raw_no_baseline, R"(
 $.default-registry (a builtin registry): missing required field 'baseline' (a baseline)
-$.default-registry (a builtin registry): The baseline field of builtin registries must be a git commit SHA (40 lowercase hex characters)
 )");
 
         std::string raw_with_packages = R"json({
@@ -187,7 +190,7 @@ $.default-registry (a registry): unexpected field 'packages', did you mean 'path
     }
 })json";
         check_errors(raw_default_artifact, R"(
-$ (a configuration object): default-registry cannot be of "artifact" kind
+$ (a configuration object): default-registry cannot be of kind "artifact"
 )");
         std::string raw_bad_kind = R"json({
     "registries": [{
@@ -223,9 +226,9 @@ $.registries[0] (a registry): missing required field 'packages' (an array of pac
 })json";
         check_errors(raw_bad_git_registry, R"(
 $.registries[0] (a registry): unexpected field 'no-repository', did you mean 'repository'?
-$.registries[0] (a git registry): unexpected field 'no-repository', did you mean 'repository'?
 $.registries[0] (a git registry): missing required field 'repository' (a git repository URL)
 $.registries[0].reference: mismatched type: expected a git reference (for example, a branch)
+$.registries[0] (a git registry): unexpected field 'no-repository', did you mean 'repository'?
 $.registries[0].packages: mismatched type: expected an array of package names
 )");
 
@@ -239,11 +242,11 @@ $.registries[0].packages: mismatched type: expected an array of package names
 })json";
         check_errors(raw_bad_artifact_registry, R"(
 $.registries[0] (a registry): unexpected field 'no-location', did you mean 'location'?
+$.registries[0] (an artifacts registry): missing required field 'name' (an identifier)
+$.registries[0] (an artifacts registry): missing required field 'location' (an artifacts git repository URL)
 $.registries[0] (an artifacts registry): unexpected field 'no-location', did you mean 'location'?
 $.registries[0] (an artifacts registry): unexpected field 'baseline', did you mean 'kind'?
 $.registries[0] (an artifacts registry): unexpected field 'packages', did you mean 'name'?
-$.registries[0] (an artifact registry): missing required field 'name' (an identifier)
-$.registries[0] (an artifacts registry): missing required field 'location' (an artifacts git repository URL)
 )");
     }
 }
@@ -268,8 +271,7 @@ TEST_CASE ("config ce metadata only", "[ce-metadata]")
 })json";
 
     auto config = parse_test_configuration(raw_config);
-    REQUIRE(!config.registry_set.registries().size());
-    REQUIRE(config.registry_set.is_default_builtin_registry());
+    REQUIRE(!config.registries.size());
 
     REQUIRE(!config.extra_info.is_empty());
     REQUIRE(config.extra_info.size() == 1);
@@ -299,8 +301,8 @@ TEST_CASE ("config ce metadata only", "[ce-metadata]")
     REQUIRE(nested.contains("unexpected"));
 
     auto raw_obj = parse_json_object(raw_config);
-    auto serialized_obj = serialize_configuration(config);
-    compare_json_objects(raw_obj, serialized_obj);
+    auto serialized_obj = config.serialize();
+    Test::check_json_eq(raw_obj, serialized_obj);
 }
 
 TEST_CASE ("metadata strings", "[ce-metadata]")
@@ -320,7 +322,7 @@ TEST_CASE ("metadata strings", "[ce-metadata]")
         check_string(valid_config.ce_metadata, CE_ERROR, "this is a valid error");
 
         auto raw_obj = parse_json_object(valid_raw);
-        compare_json_objects(raw_obj, serialize_configuration(valid_config));
+        Test::check_json_eq(raw_obj, valid_config.serialize());
     }
 
     SECTION ("invalid json")
@@ -383,7 +385,7 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
         check_string(settings, "SETTING_2", "value2");
 
         auto raw_obj = parse_json_object(valid_raw);
-        compare_json_objects(raw_obj, serialize_configuration(valid_config));
+        Test::check_json_eq(raw_obj, valid_config.serialize());
     }
 
     SECTION ("invalid json")
@@ -466,7 +468,7 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
         check_string(level1, CE_MESSAGE, "this is level 1");
 
         auto raw_obj = parse_json_object(simple_raw);
-        compare_json_objects(raw_obj, serialize_configuration(config));
+        Test::check_json_eq(raw_obj, config.serialize());
     }
 
     SECTION ("invalid json")
@@ -517,7 +519,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        compare_json_objects(parse_json_object(raw), serialize_configuration(config));
+        Test::check_json_eq(parse_json_object(raw), config.serialize());
     }
 
     SECTION ("overriden default registry and registries")
@@ -538,7 +540,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        compare_json_objects(parse_json_object(raw), serialize_configuration(config));
+        Test::check_json_eq(parse_json_object(raw), config.serialize());
     }
 
     SECTION ("only registries")
@@ -555,7 +557,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        compare_json_objects(parse_json_object(raw), serialize_configuration(config));
+        Test::check_json_eq(parse_json_object(raw), config.serialize());
     }
 
     SECTION ("preserve comments and unexpected fields")
@@ -580,7 +582,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 })json";
 
         auto config = parse_test_configuration(raw);
-        compare_json_objects(parse_json_object(raw), serialize_configuration(config));
+        Test::check_json_eq(parse_json_object(raw), config.serialize());
 
         auto extra_fields = find_unknown_fields(config);
         CHECK(extra_fields.size() == 4);
@@ -681,7 +683,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
         //   demands
         // Object values in `demands` are also sorted recursively.
         auto config = parse_test_configuration(raw);
-        compare_json_objects(parse_json_object(formatted), serialize_configuration(config));
+        Test::check_json_eq(parse_json_object(formatted), config.serialize());
     }
 }
 
@@ -749,21 +751,22 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
                                              "}");
 
     auto config = parse_test_configuration(raw_config);
-    REQUIRE(config.registry_set.default_registry() != nullptr);
+    REQUIRE(config.default_reg.has_value());
 
-    auto default_registry = config.registry_set.default_registry()->serialize();
+    auto default_registry = config.default_reg.get()->serialize().object();
     check_string(default_registry, KIND, "builtin");
     check_string(default_registry, BASELINE, "843e0ba0d8f9c9c572e45564263eedfc7745e74f");
 
-    REQUIRE(config.registry_set.registries().size() == 1);
-    const auto& registry = *config.registry_set.registries().begin();
-    auto serialized_registry = registry.implementation().serialize();
+    REQUIRE(config.registries.size() == 1);
+    const auto& registry = *config.registries.begin();
+    auto serialized_registry = registry.serialize().object();
     check_string(serialized_registry, KIND, "git");
     check_string(serialized_registry, REPOSITORY, "https://github.com/northwindtraders/vcpkg-registry");
     check_string(serialized_registry, BASELINE, "dacf4de488094a384ca2c202b923ccc097956e0c");
-    REQUIRE(registry.packages().size() == 2);
-    REQUIRE(registry.packages()[0] == "beicode");
-    REQUIRE(registry.packages()[1] == "beison");
+    REQUIRE(registry.packages);
+    REQUIRE(registry.packages.get()->size() == 2);
+    REQUIRE(registry.packages.get()->at(0) == "beicode");
+    REQUIRE(registry.packages.get()->at(1) == "beison");
 
     REQUIRE(!config.extra_info.is_empty());
     REQUIRE(config.extra_info.size() == 2);
@@ -913,6 +916,6 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
 
     // finally test serialization is OK
     auto raw_obj = parse_json_object(raw_config);
-    auto serialized_obj = serialize_configuration(config);
-    compare_json_objects(raw_obj, serialized_obj);
+    auto serialized_obj = config.serialize();
+    Test::check_json_eq(raw_obj, serialized_obj);
 }

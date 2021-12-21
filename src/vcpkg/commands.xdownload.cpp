@@ -85,7 +85,7 @@ namespace vcpkg::Commands::X_Download
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: SHA512's must be 128 hex characters: '%s'", *p);
             }
-            Strings::ascii_to_lowercase(p->begin(), p->end());
+            Strings::ascii_to_lowercase(p->data(), p->data() + p->size());
         }
 
         return sha;
@@ -94,7 +94,7 @@ namespace vcpkg::Commands::X_Download
     void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
-        Downloads::DownloadManager download_manager{
+        DownloadManager download_manager{
             parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
         auto file = fs.absolute(args.command_arguments[0], VCPKG_LINE_INFO);
 

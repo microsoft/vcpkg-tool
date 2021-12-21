@@ -24,6 +24,52 @@
 
 namespace vcpkg
 {
+    void append_shell_escaped(std::string& target, StringView content)
+    {
+        if (Strings::find_first_of(content, " \t\n\r\"\\,;&`^|'") != content.end())
+        {
+            // TODO: improve this to properly handle all escaping
+#if _WIN32
+            // On Windows, `\`s before a double-quote must be doubled. Inner double-quotes must be escaped.
+            target.push_back('"');
+            size_t n_slashes = 0;
+            for (auto ch : content)
+            {
+                if (ch == '\\')
+                {
+                    ++n_slashes;
+                }
+                else if (ch == '"')
+                {
+                    target.append(n_slashes + 1, '\\');
+                    n_slashes = 0;
+                }
+                else
+                {
+                    n_slashes = 0;
+                }
+                target.push_back(ch);
+            }
+            target.append(n_slashes, '\\');
+            target.push_back('"');
+#else
+            // On non-Windows, `\` is the escape character and always requires doubling. Inner double-quotes must be
+            // escaped.
+            target.push_back('"');
+            for (auto ch : content)
+            {
+                if (ch == '\\' || ch == '"') target.push_back('\\');
+                target.push_back(ch);
+            }
+            target.push_back('"');
+#endif
+        }
+        else
+        {
+            target.append(content.data(), content.size());
+        }
+    }
+
     static std::atomic<uint64_t> g_subprocess_stats(0);
 
 #if defined(_WIN32)
@@ -203,64 +249,36 @@ namespace vcpkg
     Command& Command::string_arg(StringView s) &
     {
         if (!buf.empty()) buf.push_back(' ');
-        if (Strings::find_first_of(s, " \t\n\r\"\\,;&`^|'") != s.end())
-        {
-            // TODO: improve this to properly handle all escaping
-#if _WIN32
-            // On Windows, `\`s before a double-quote must be doubled. Inner double-quotes must be escaped.
-            buf.push_back('"');
-            size_t n_slashes = 0;
-            for (auto ch : s)
-            {
-                if (ch == '\\')
-                {
-                    ++n_slashes;
-                }
-                else if (ch == '"')
-                {
-                    buf.append(n_slashes + 1, '\\');
-                    n_slashes = 0;
-                }
-                else
-                {
-                    n_slashes = 0;
-                }
-                buf.push_back(ch);
-            }
-            buf.append(n_slashes, '\\');
-            buf.push_back('"');
-#else
-            // On non-Windows, `\` is the escape character and always requires doubling. Inner double-quotes must be
-            // escaped.
-            buf.push_back('"');
-            for (auto ch : s)
-            {
-                if (ch == '\\' || ch == '"') buf.push_back('\\');
-                buf.push_back(ch);
-            }
-            buf.push_back('"');
-#endif
-        }
-        else
-        {
-            Strings::append(buf, s);
-        }
+        append_shell_escaped(buf, s);
         return *this;
     }
 
 #if defined(_WIN32)
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
-                                               const std::string& prepend_to_path)
+                                               StringView prepend_to_path)
     {
         static const std::string system_root_env =
             get_environment_variable("SystemRoot").value_or_exit(VCPKG_LINE_INFO);
         static const std::string system32_env = system_root_env + R"(\system32)";
-        std::string new_path = Strings::format(R"(Path=%s%s;%s;%s\Wbem;%s\WindowsPowerShell\v1.0\)",
-                                               prepend_to_path,
-                                               system32_env,
-                                               system_root_env,
-                                               system32_env,
-                                               system32_env);
+        std::string new_path = "PATH=";
+        if (!prepend_to_path.empty())
+        {
+            Strings::append(new_path, prepend_to_path);
+            if (prepend_to_path.back() != ';')
+            {
+                new_path.push_back(';');
+            }
+        }
+
+        Strings::append(new_path,
+                        system32_env,
+                        ';',
+                        system_root_env,
+                        ';',
+                        system32_env,
+                        "\\Wbem;",
+                        system32_env,
+                        "\\WindowsPowerShell\\v1.0\\");
 
         std::vector<std::wstring> env_wstrings = {
             L"ALLUSERSPROFILE",
@@ -384,9 +402,19 @@ namespace vcpkg
         return {env_cstr};
     }
 #else
-    Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>&, const std::string&)
+    Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>&,
+                                               StringView prepend_to_path)
     {
-        return {};
+        std::string result;
+        if (!prepend_to_path.empty())
+        {
+            result = "PATH=";
+            append_shell_escaped(
+                result,
+                Strings::concat(prepend_to_path, ':', get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO)));
+        }
+
+        return {result};
     }
 #endif
     const Environment& get_clean_environment()
@@ -514,19 +542,18 @@ namespace vcpkg
 
         VCPKG_MSVC_WARNING(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
                                             // /analyze can't tell that we transferred ownership here
-        bool succeeded =
-            TRUE == CreateProcessW(nullptr,
-                                   Strings::to_utf16(cmd_line).data(),
-                                   nullptr,
-                                   nullptr,
-                                   TRUE,
-                                   IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
-                                   env.m_env_data.empty()
-                                       ? nullptr
-                                       : const_cast<void*>(static_cast<const void*>(env.m_env_data.data())),
-                                   working_directory.empty() ? nullptr : working_directory.data(),
-                                   &startup_info,
-                                   &process_info.proc_info);
+        auto environment_block = env.m_env_data;
+#pragma warning(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
+        bool succeeded = TRUE == CreateProcessW(nullptr,
+                                                Strings::to_utf16(cmd_line).data(),
+                                                nullptr,
+                                                nullptr,
+                                                TRUE,
+                                                IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
+                                                environment_block.empty() ? nullptr : &environment_block[0],
+                                                working_directory.empty() ? nullptr : working_directory.data(),
+                                                &startup_info,
+                                                &process_info.proc_info);
 
         if (succeeded)
             return process_info;
@@ -562,10 +589,12 @@ namespace vcpkg
             unsigned long bytes_read = 0;
             static constexpr int buffer_size = 1024 * 32;
             auto buf = std::make_unique<char[]>(buffer_size);
-            while (ReadFile(child_stdout, (void*)buf.get(), buffer_size, &bytes_read, nullptr) && bytes_read > 0)
+            while (ReadFile(child_stdout, (void*)buf.get(), buffer_size, &bytes_read, nullptr))
             {
                 f(StringView{buf.get(), static_cast<size_t>(bytes_read)});
             }
+
+            Debug::print("ReadFile() finished with GetLastError(): ", GetLastError(), '\n');
 
             CloseHandle(child_stdout);
 
@@ -634,7 +663,7 @@ namespace vcpkg
         Debug::print("cmd_execute_background() took ", static_cast<int>(timer.microseconds()), " us\n");
     }
 
-    Environment cmd_execute_modify_env(const Command& cmd_line, const Environment& env)
+    Environment cmd_execute_and_capture_environment(const Command& cmd_line, const Environment& env)
     {
         static StringLiteral magic_string = "cdARN4xjKueKScMy9C6H";
 
@@ -697,16 +726,22 @@ namespace vcpkg
         g_ctrl_c_state.transition_from_spawn_process();
 #else
         (void)env;
-        std::string real_command_line;
-        if (wd.working_directory.empty())
+        Command real_command_line_builder;
+        if (!wd.working_directory.empty())
         {
-            real_command_line = cmd_line.command_line().to_string();
+            real_command_line_builder.string_arg("cd");
+            real_command_line_builder.path_arg(wd.working_directory);
+            real_command_line_builder.raw_arg("&&");
         }
-        else
+
+        if (!env.m_env_data.empty())
         {
-            real_command_line =
-                Command("cd").path_arg(wd.working_directory).raw_arg("&&").raw_arg(cmd_line.command_line()).extract();
+            real_command_line_builder.raw_arg(env.m_env_data);
         }
+
+        real_command_line_builder.raw_arg(cmd_line.command_line());
+
+        std::string real_command_line = std::move(real_command_line_builder).extract();
         Debug::print("system(", real_command_line, ")\n");
         fflush(nullptr);
 
@@ -778,6 +813,7 @@ namespace vcpkg
             return 1;
         }
         char buf[1024];
+        // Use fgets because fread will block until the entire buffer is filled.
         while (fgets(buf, 1024, pipe))
         {
             data_cb(StringView{buf, strlen(buf)});
@@ -803,11 +839,21 @@ namespace vcpkg
 
     ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
                                                      InWorkingDirectory wd,
-                                                     const Environment& env)
+                                                     const Environment& env,
+                                                     bool tee_in_debug)
     {
         std::string output;
         auto rc = cmd_execute_and_stream_data(
-            cmd_line, wd, [&](StringView sv) { Strings::append(output, sv); }, env);
+            cmd_line,
+            wd,
+            [&](StringView sv) {
+                Strings::append(output, sv);
+                if (tee_in_debug && Debug::g_debugging)
+                {
+                    print2(sv);
+                }
+            },
+            env);
         return {rc, std::move(output)};
     }
 

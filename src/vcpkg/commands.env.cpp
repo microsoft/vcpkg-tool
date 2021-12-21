@@ -5,8 +5,10 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.env.h>
 #include <vcpkg/help.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands::Env
 {
@@ -61,7 +63,7 @@ namespace vcpkg::Commands::Env
         const bool add_python = Util::Sets::contains(options.switches, OPTION_PYTHON);
 
         std::vector<std::string> path_vars;
-        const auto current_triplet_path = paths.installed() / triplet.to_string();
+        const auto current_triplet_path = paths.installed().triplet_dir(triplet);
         if (add_bin) path_vars.push_back((current_triplet_path / "bin").native());
         if (add_debug_bin) path_vars.push_back((current_triplet_path / "debug" / "bin").native());
         if (add_include) extra_env.emplace("INCLUDE", (current_triplet_path / "include").native());
@@ -88,25 +90,20 @@ namespace vcpkg::Commands::Env
             }
         }
 
-        auto env = [&] {
-            auto clean_env = get_modified_clean_environment(extra_env);
-            if (build_env_cmd.empty())
-                return clean_env;
-            else
-            {
-#ifdef _WIN32
-                return cmd_execute_modify_env(build_env_cmd, clean_env);
-#else
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          "Build environment commands are not supported on this platform");
-#endif
-            }
-        }();
+        auto env = get_modified_clean_environment(extra_env);
+        if (!build_env_cmd.empty())
+        {
+#if defined(_WIN32)
+            env = cmd_execute_and_capture_environment(build_env_cmd, env);
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+            Checks::exit_with_message(VCPKG_LINE_INFO, "Build environment commands are not supported on this platform");
+#endif // ^^^ !_WIN32
+        }
 
         Command cmd("cmd");
         if (!args.command_arguments.empty())
         {
-            cmd.string_arg("/c").raw_arg(args.command_arguments.at(0));
+            cmd.string_arg("/c").raw_arg(args.command_arguments[0]);
         }
 #ifdef _WIN32
         enter_interactive_subprocess();

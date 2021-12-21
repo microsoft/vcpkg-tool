@@ -55,9 +55,7 @@ namespace vcpkg::PortFileProvider
 
     struct PathsPortFileProvider : PortFileProvider
     {
-        explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, const std::vector<std::string>& overlay_ports);
-        PathsPortFileProvider(const PathsPortFileProvider&) = delete;
-        PathsPortFileProvider& operator=(const PathsPortFileProvider&) = delete;
+        explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, View<std::string> overlay_ports);
         ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 

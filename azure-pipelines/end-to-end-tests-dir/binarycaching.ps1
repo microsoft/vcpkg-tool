@@ -1,24 +1,29 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
+$commonArgs += @(
+    "--host-triplet",
+    $Triplet
+)
+
 # Test simple installation
-Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "--binarycaching", "--x-binarysource=clear;files,$ArchiveRoot,write"))
+Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "vcpkg-cmake", "vcpkg-cmake-config", "--binarycaching", "--x-binarysource=clear;files,$ArchiveRoot,write"))
 Throw-IfFailed
 
 # Test simple removal
-Run-Vcpkg -TestArgs ($commonArgs + @("remove", "rapidjson"))
+Run-Vcpkg -TestArgs ($commonArgs + @("remove", "rapidjson", "vcpkg-cmake", "vcpkg-cmake-config"))
 Throw-IfFailed
 Require-FileNotExists "$installRoot/$Triplet/include"
 
 if(-Not $IsLinux) {
     # Test simple nuget installation
-    Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "--binarycaching", "--x-binarysource=clear;nuget,$NuGetRoot,readwrite"))
+    Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "vcpkg-cmake", "vcpkg-cmake-config", "--binarycaching", "--x-binarysource=clear;nuget,$NuGetRoot,readwrite"))
     Throw-IfFailed
 }
 
 # Test restoring from files archive
 Remove-Item -Recurse -Force $installRoot
 Remove-Item -Recurse -Force $buildtreesRoot
-Run-Vcpkg -TestArgs ($commonArgs + @("install","rapidjson","--binarycaching","--x-binarysource=clear;files,$ArchiveRoot,read"))
+Run-Vcpkg -TestArgs ($commonArgs + @("install","rapidjson", "vcpkg-cmake", "vcpkg-cmake-config","--binarycaching","--x-binarysource=clear;files,$ArchiveRoot,read"))
 Throw-IfFailed
 Require-FileExists "$installRoot/$Triplet/include/rapidjson/rapidjson.h"
 Require-FileNotExists "$buildtreesRoot/rapidjson/src"
@@ -27,7 +32,7 @@ Require-FileExists "$buildtreesRoot/detect_compiler"
 # Test --no-binarycaching
 Remove-Item -Recurse -Force $installRoot
 Remove-Item -Recurse -Force $buildtreesRoot
-Run-Vcpkg -TestArgs ($commonArgs + @("install","rapidjson","--no-binarycaching","--x-binarysource=clear;files,$ArchiveRoot,read"))
+Run-Vcpkg -TestArgs ($commonArgs + @("install","rapidjson", "vcpkg-cmake", "vcpkg-cmake-config","--no-binarycaching","--x-binarysource=clear;files,$ArchiveRoot,read"))
 Throw-IfFailed
 Require-FileExists "$installRoot/$Triplet/include/rapidjson/rapidjson.h"
 Require-FileExists "$buildtreesRoot/rapidjson/src"
@@ -36,7 +41,7 @@ Require-FileExists "$buildtreesRoot/detect_compiler"
 # Test --editable
 Remove-Item -Recurse -Force $installRoot
 Remove-Item -Recurse -Force $buildtreesRoot
-Run-Vcpkg -TestArgs ($commonArgs + @("install","rapidjson","--editable","--x-binarysource=clear;files,$ArchiveRoot,read"))
+Run-Vcpkg -TestArgs ($commonArgs + @("install","rapidjson", "vcpkg-cmake", "vcpkg-cmake-config","--editable","--x-binarysource=clear;files,$ArchiveRoot,read"))
 Throw-IfFailed
 Require-FileExists "$installRoot/$Triplet/include/rapidjson/rapidjson.h"
 Require-FileExists "$buildtreesRoot/rapidjson/src"
@@ -46,14 +51,14 @@ if(-Not $IsLinux) {
     # Test restoring from nuget
     Remove-Item -Recurse -Force $installRoot
     Remove-Item -Recurse -Force $buildtreesRoot
-    Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "--binarycaching", "--x-binarysource=clear;nuget,$NuGetRoot"))
+    Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "vcpkg-cmake", "vcpkg-cmake-config", "--binarycaching", "--x-binarysource=clear;nuget,$NuGetRoot"))
     Throw-IfFailed
     Require-FileExists "$installRoot/$Triplet/include/rapidjson/rapidjson.h"
     Require-FileNotExists "$buildtreesRoot/rapidjson/src"
 
     # Test four-phase flow
     Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
-    Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "--dry-run", "--x-write-nuget-packages-config=$TestingRoot/packages.config"))
+    Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "vcpkg-cmake", "vcpkg-cmake-config", "--dry-run", "--x-write-nuget-packages-config=$TestingRoot/packages.config"))
     Throw-IfFailed
     Require-FileNotExists "$installRoot/$Triplet/include/rapidjson/rapidjson.h"
     Require-FileNotExists "$buildtreesRoot/rapidjson/src"
@@ -67,7 +72,7 @@ if(-Not $IsLinux) {
     Throw-IfFailed
     Remove-Item -Recurse -Force $NuGetRoot -ErrorAction SilentlyContinue
     mkdir $NuGetRoot
-    Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "zlib", "--binarycaching", "--x-binarysource=clear;nuget,$NuGetRoot2;nuget,$NuGetRoot,write"))
+    Run-Vcpkg -TestArgs ($commonArgs + @("install", "rapidjson", "zlib", "vcpkg-cmake", "vcpkg-cmake-config", "--binarycaching", "--x-binarysource=clear;nuget,$NuGetRoot2;nuget,$NuGetRoot,write"))
     Throw-IfFailed
     Require-FileExists "$installRoot/$Triplet/include/rapidjson/rapidjson.h"
     Require-FileExists "$installRoot/$Triplet/include/zlib.h"
@@ -82,7 +87,7 @@ if(-Not $IsLinux) {
     Require-FileNotExists "$TestingRoot/vcpkg-export-output"
     Require-FileNotExists "$TestingRoot/vcpkg-export.1.0.0.nupkg"
     Require-FileNotExists "$TestingRoot/vcpkg-export-output.zip"
-    Run-Vcpkg -TestArgs ($commonArgs + @("export", "rapidjson", "zlib", "--nuget", "--nuget-id=vcpkg-export", "--nuget-version=1.0.0", "--output=vcpkg-export-output", "--raw", "--zip", "--output-dir=$TestingRoot"))
+    Run-Vcpkg -TestArgs ($commonArgs + @("export", "rapidjson", "zlib", "vcpkg-cmake", "vcpkg-cmake-config", "--nuget", "--nuget-id=vcpkg-export", "--nuget-version=1.0.0", "--output=vcpkg-export-output", "--raw", "--zip", "--output-dir=$TestingRoot"))
     Require-FileExists "$TestingRoot/vcpkg-export-output"
     Require-FileExists "$TestingRoot/vcpkg-export.1.0.0.nupkg"
     Require-FileExists "$TestingRoot/vcpkg-export-output.zip"

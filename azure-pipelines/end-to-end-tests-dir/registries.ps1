@@ -229,6 +229,52 @@ finally
     Pop-Location
 }
 
+# test the filesystem registry with a relative path
+Write-Trace "test the filesystem registry with a relative path"
+$manifestDir = "$TestingRoot/filesystem-registry-test-manifest-dir"
+Remove-Item -Recurse -Force $manifestDir -ErrorAction SilentlyContinue
+
+New-Item -Path $manifestDir -ItemType Directory
+$manifestDir = (Get-Item $manifestDir).FullName
+
+Push-Location $manifestDir
+try
+{
+    $vcpkgJson = @{
+        "name" = "manifest-test";
+        "version-string" = "1.0.0";
+        "dependencies" = @(
+            "vcpkg-internal-e2e-test-port"
+        );
+        # Use versioning features without a builtin-baseline
+        "overrides" = @(@{
+            "name" = "unused";
+            "version" = "0";
+        })
+    }
+    $vcpkgConfigurationJson = @{
+        "default-registry" = $null;
+        "registries" = @(
+            @{
+                "kind" = "filesystem";
+                "path" = "../filesystem-registry";
+                "packages" = @( "vcpkg-internal-e2e-test-port" )
+            }
+        )
+    }
+    New-Item -Path 'vcpkg.json' -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+    New-Item -Path 'vcpkg-configuration.json' -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson)
+
+    Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
+    Throw-IfFailed
+}
+finally
+{
+    Pop-Location
+}
+
 # test the git registry
 Write-Trace "test the git registry"
 $manifestDir = "$TestingRoot/git-registry-test-manifest-dir"

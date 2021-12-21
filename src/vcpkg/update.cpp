@@ -66,7 +66,7 @@ namespace vcpkg::Update
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         print2("Using local portfile versions. To update the local portfiles, use `git pull`.\n");
 
-        const StatusParagraphs status_db = database_load_check(paths);
+        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
 

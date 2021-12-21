@@ -10,3 +10,6 @@
 .DS_Store
 # Qt Creator CMake project files
 CMakeLists.txt.user
+.cache
+/vcpkg-ce.zip
+/vcpkg-ce/**
