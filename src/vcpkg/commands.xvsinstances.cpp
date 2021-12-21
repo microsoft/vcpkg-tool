@@ -3,6 +3,7 @@
 #include <vcpkg/commands.xvsinstances.h>
 #include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+#include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/visualstudio.h>
 
 namespace vcpkg::Commands::X_VSInstances
@@ -20,7 +21,7 @@ namespace vcpkg::Commands::X_VSInstances
 #if defined(_WIN32)
         const ParsedArguments parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const auto instances = vcpkg::VisualStudio::get_visual_studio_instances(paths);
+        const auto instances = vcpkg::VisualStudio::get_visual_studio_instances(paths.get_filesystem());
         for (const std::string& instance : instances)
         {
             print2(instance, '\n');

@@ -13,10 +13,12 @@
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Export
 {
@@ -44,27 +46,32 @@ namespace vcpkg::Export
         xml.start_complex_open_tag("file")
             .text_attr("src", raw_exported_dir.native() + "\\installed\\**")
             .text_attr("target", "installed")
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", raw_exported_dir.native() + "\\scripts\\**")
             .text_attr("target", "scripts")
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", raw_exported_dir.native() + "\\.vcpkg-root")
             .text_attr("target", "")
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", targets_redirect_path)
             .text_attr("target", Strings::concat("build\\native\\", nuget_id, ".targets"))
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", props_redirect_path)
             .text_attr("target", Strings::concat("build\\native\\", nuget_id, ".props"))
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.close_tag("files").line_break();
         xml.close_tag("package").line_break();
@@ -139,7 +146,6 @@ namespace vcpkg::Export
                                 const Path& output_dir)
     {
         Filesystem& fs = paths.get_filesystem();
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
 
         std::error_code ec;
         fs.create_directories(paths.buildsystems / "tmp", ec);
@@ -166,14 +172,19 @@ namespace vcpkg::Export
 #ifndef _WIN32
         cmd.path_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-        cmd.path_arg(nuget_exe)
+        cmd.path_arg(paths.get_tool_exe(Tools::NUGET))
             .string_arg("pack")
             .path_arg(nuspec_file_path)
             .string_arg("-OutputDirectory")
             .path_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        const int exit_code = cmd_execute_and_capture_output(cmd, get_clean_environment()).exit_code;
+        const auto output = cmd_execute_and_capture_output(cmd, get_clean_environment());
+        const auto exit_code = output.exit_code;
+        if (exit_code != 0)
+        {
+            print2(output.output, '\n');
+        }
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
 
         const auto output_path = output_dir / (nuget_id + "." + nuget_version + ".nupkg");
@@ -520,35 +531,36 @@ namespace vcpkg::Export
         fs.create_directory(raw_exported_dir_path, ec);
 
         // execute the plan
-        for (const ExportPlanAction& action : export_plan)
         {
-            if (action.plan_type != ExportPlanType::ALREADY_BUILT)
+            const InstalledPaths export_paths(raw_exported_dir_path / "installed");
+            for (const ExportPlanAction& action : export_plan)
             {
-                Checks::unreachable(VCPKG_LINE_INFO);
+                if (action.plan_type != ExportPlanType::ALREADY_BUILT)
+                {
+                    Checks::unreachable(VCPKG_LINE_INFO);
+                }
+
+                const std::string display_name = action.spec.to_string();
+                print2("Exporting package ", display_name, "...\n");
+
+                const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
+
+                const InstallDir dirs =
+                    InstallDir::from_destination_root(export_paths, action.spec.triplet(), binary_paragraph);
+
+                auto lines = fs.read_lines(paths.installed().listfile_path(binary_paragraph), VCPKG_LINE_INFO);
+                std::vector<Path> files;
+                for (auto&& suffix : lines)
+                {
+                    if (suffix.empty()) continue;
+                    if (suffix.back() == '/') suffix.pop_back();
+                    if (suffix == action.spec.triplet().to_string()) continue;
+                    files.push_back(paths.installed().root() / suffix);
+                }
+
+                Install::install_files_and_write_listfile(
+                    fs, paths.installed().triplet_dir(action.spec.triplet()), files, dirs);
             }
-
-            const std::string display_name = action.spec.to_string();
-            print2("Exporting package ", display_name, "...\n");
-
-            const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-
-            const InstallDir dirs = InstallDir::from_destination_root(raw_exported_dir_path / "installed",
-                                                                      action.spec.triplet().to_string(),
-                                                                      raw_exported_dir_path / "installed/vcpkg/info" /
-                                                                          (binary_paragraph.fullstem() + ".list"));
-
-            auto lines = fs.read_lines(paths.listfile_path(binary_paragraph), VCPKG_LINE_INFO);
-            std::vector<Path> files;
-            for (auto&& suffix : lines)
-            {
-                if (suffix.empty()) continue;
-                if (suffix.back() == '/') suffix.pop_back();
-                if (suffix == action.spec.triplet().to_string()) continue;
-                files.push_back(paths.installed / suffix);
-            }
-
-            Install::install_files_and_write_listfile(
-                fs, paths.installed / action.spec.triplet().to_string(), files, dirs);
         }
 
         // Copy files needed for integration
@@ -616,7 +628,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                 "vcpkg export does not support manifest mode, in order to allow for future design considerations. You "
                 "may use export in classic mode by running vcpkg outside of a manifest-based project.");
         }
-        const StatusParagraphs status_db = database_load_check(paths);
+        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
         for (auto&& spec : opts.specs)
             Input::check_triplet(spec.triplet(), paths);

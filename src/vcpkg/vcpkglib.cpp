@@ -2,6 +2,7 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/vcpkglib.h>
@@ -35,18 +36,16 @@ namespace vcpkg
         return StatusParagraphs(std::move(status_pghs));
     }
 
-    StatusParagraphs database_load_check(const VcpkgPaths& paths)
+    StatusParagraphs database_load_check(Filesystem& fs, const InstalledPaths& installed)
     {
-        auto& fs = paths.get_filesystem();
+        const auto updates_dir = installed.vcpkg_dir_updates();
 
-        const auto updates_dir = paths.vcpkg_dir_updates;
-
-        fs.create_directories(paths.installed, VCPKG_LINE_INFO);
-        fs.create_directory(paths.vcpkg_dir, VCPKG_LINE_INFO);
-        fs.create_directory(paths.vcpkg_dir_info, VCPKG_LINE_INFO);
+        fs.create_directories(installed.root(), VCPKG_LINE_INFO);
+        fs.create_directory(installed.vcpkg_dir(), VCPKG_LINE_INFO);
+        fs.create_directory(installed.vcpkg_dir_info(), VCPKG_LINE_INFO);
         fs.create_directory(updates_dir, VCPKG_LINE_INFO);
 
-        const Path& status_file = paths.vcpkg_dir_status_file;
+        const auto status_file = installed.vcpkg_dir_status_file();
         const auto status_parent = Path(status_file.parent_path());
         const auto status_file_old = status_parent / "status-old";
         const auto status_file_new = status_parent / "status-new";
@@ -83,17 +82,14 @@ namespace vcpkg
         return current_status_db;
     }
 
-    void write_update(const VcpkgPaths& paths, const StatusParagraph& p)
+    void write_update(Filesystem& fs, const InstalledPaths& installed, const StatusParagraph& p)
     {
-        static int update_id = 0;
-        auto& fs = paths.get_filesystem();
+        static std::atomic<int> update_id = 0;
 
         const auto my_update_id = update_id++;
-        const auto tmp_update_filename = paths.vcpkg_dir_updates / "incomplete";
-        const auto update_filename = paths.vcpkg_dir_updates / Strings::format("%010d", my_update_id);
+        const auto update_path = installed.vcpkg_dir_updates() / Strings::format("%010d", my_update_id);
 
-        fs.write_contents(tmp_update_filename, Strings::serialize(p), VCPKG_LINE_INFO);
-        fs.rename(tmp_update_filename, update_filename, VCPKG_LINE_INFO);
+        fs.write_rename_contents(update_path, "incomplete", Strings::serialize(p), VCPKG_LINE_INFO);
     }
 
     static void upgrade_to_slash_terminated_sorted_format(Filesystem& fs,
@@ -195,11 +191,10 @@ namespace vcpkg
         return Util::fmap(ipv_map, [](auto&& p) -> InstalledPackageView { return std::move(p.second); });
     }
 
-    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(const VcpkgPaths& paths,
+    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(Filesystem& fs,
+                                                                       const InstalledPaths& installed,
                                                                        const StatusParagraphs& status_db)
     {
-        auto& fs = paths.get_filesystem();
-
         std::vector<StatusParagraphAndAssociatedFiles> installed_files;
 
         for (const std::unique_ptr<StatusParagraph>& pgh : status_db)
@@ -209,7 +204,7 @@ namespace vcpkg
                 continue;
             }
 
-            const auto listfile_path = paths.listfile_path(pgh->package);
+            const auto listfile_path = installed.listfile_path(pgh->package);
             std::vector<std::string> installed_files_of_current_pgh = fs.read_lines(listfile_path, VCPKG_LINE_INFO);
             Strings::trim_all_and_remove_whitespace_strings(&installed_files_of_current_pgh);
             upgrade_to_slash_terminated_sorted_format(fs, &installed_files_of_current_pgh, listfile_path);

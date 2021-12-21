@@ -1,8 +1,10 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/messages.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/messages.h>
 #include <vcpkg/base/stringliteral.h>
 
 #include <system_error>
@@ -235,10 +237,4 @@ namespace vcpkg
         ErrorHolder<S> m_s;
         ExpectedHolder<T> m_t;
     };
-
-    template<class T>
-    using Expected = ExpectedT<T, std::error_code>;
-
-    template<class T>
-    using ExpectedS = ExpectedT<T, std::string>;
 }

@@ -137,7 +137,7 @@ namespace vcpkg
             else if (has_relax)
             {
                 version_scheme = Versions::Scheme::Relaxed;
-                auto v = Versions::RelaxedVersion::from_string(version.first);
+                auto v = Versions::relaxed_from_string(version.first);
                 if (!v.has_value())
                 {
                     r.add_generic_error(parent_type, "'version' text was not a relaxed version:\n", v.error());
@@ -146,7 +146,7 @@ namespace vcpkg
             else if (has_semver)
             {
                 version_scheme = Versions::Scheme::Semver;
-                auto v = Versions::SemanticVersion::from_string(version.first);
+                auto v = Versions::semver_from_string(version.first);
                 if (!v.has_value())
                 {
                     r.add_generic_error(parent_type, "'version-semver' text was not a semantic version:\n", v.error());

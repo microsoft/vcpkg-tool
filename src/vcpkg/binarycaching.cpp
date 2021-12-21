@@ -12,8 +12,10 @@
 #include <vcpkg/binarycaching.private.h>
 #include <vcpkg/build.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgpaths.h>
 
 #include <iterator>
 
@@ -21,11 +23,6 @@ using namespace vcpkg;
 
 namespace
 {
-    static constexpr StringLiteral s_assetcaching_doc_url =
-        "https://github.com/Microsoft/vcpkg/tree/master/docs/users/assetcaching.md";
-    static constexpr StringLiteral s_binarycaching_doc_url =
-        "https://github.com/Microsoft/vcpkg/tree/master/docs/users/binarycaching.md";
-
     struct ConfigSegmentsParser : Parse::ParserBase
     {
         using Parse::ParserBase::ParserBase;
@@ -352,20 +349,20 @@ namespace
             auto& spec = action.spec;
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
-            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees, spec);
+            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
             size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
                 auto url = Strings::replace_all(std::string(put_url_template), "<SHA>", abi_tag);
-                auto maybe_success = Downloads::put_file(fs, url, Downloads::azure_blob_headers(), tmp_archive_path);
+                auto maybe_success = put_file(fs, url, azure_blob_headers(), tmp_archive_path);
                 if (maybe_success.has_value())
                 {
                     http_remotes_pushed++;
                     continue;
                 }
 
-                auto errors = Downloads::replace_secrets(std::move(maybe_success).error(), m_secrets);
+                auto errors = replace_secrets(std::move(maybe_success).error(), m_secrets);
                 print2(Color::warning, errors);
             }
 
@@ -481,7 +478,7 @@ namespace
 
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
                     url_paths.emplace_back(Strings::replace_all(url_template, "<SHA>", *abi.get()),
-                                           make_temp_archive_path(paths.buildtrees, action.spec));
+                                           make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
 
@@ -489,7 +486,7 @@ namespace
 
                 print2("Attempting to fetch ", url_paths.size(), " packages from HTTP servers.\n");
 
-                auto codes = Downloads::download_files(fs, url_paths);
+                auto codes = download_files(fs, url_paths);
                 std::vector<size_t> action_idxs;
                 std::vector<Command> jobs;
                 for (size_t i = 0; i < codes.size(); ++i)
@@ -553,7 +550,7 @@ namespace
                     return;
                 }
 
-                auto codes = Downloads::url_heads(urls, {});
+                auto codes = url_heads(urls, {});
                 Checks::check_exit(VCPKG_LINE_INFO, codes.size() == urls.size());
                 for (size_t i = 0; i < codes.size(); ++i)
                 {
@@ -633,9 +630,9 @@ namespace
                      res.exit_code != 0)
             {
                 print2(Color::warning,
-                       "One or more NuGet credential providers failed to authenticate. See "
-                       "https://github.com/Microsoft/vcpkg/tree/master/docs/users/binarycaching.md for "
-                       "more details on how to provide credentials.\n");
+                       "One or more NuGet credential providers failed to authenticate. See ",
+                       docs::binarycaching_url,
+                       " for more details on how to provide credentials.\n");
             }
             else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
             {
@@ -715,7 +712,7 @@ namespace
 
             print2("Attempting to fetch ", attempts.size(), " packages from nuget.\n");
 
-            auto packages_config = paths.buildtrees / "packages.config";
+            auto packages_config = paths.buildtrees() / "packages.config";
             const auto& nuget_exe = paths.get_tool_exe("nuget");
             std::vector<Command> cmdlines;
 
@@ -730,7 +727,7 @@ namespace
                     .string_arg("install")
                     .path_arg(packages_config)
                     .string_arg("-OutputDirectory")
-                    .path_arg(paths.packages)
+                    .path_arg(paths.packages())
                     .string_arg("-Source")
                     .string_arg(Strings::join(";", m_read_sources))
                     .string_arg("-ExcludeVersion")
@@ -763,7 +760,7 @@ namespace
                     .string_arg("install")
                     .path_arg(packages_config)
                     .string_arg("-OutputDirectory")
-                    .path_arg(paths.packages)
+                    .path_arg(paths.packages())
                     .string_arg("-ConfigFile")
                     .path_arg(cfg)
                     .string_arg("-ExcludeVersion")
@@ -798,7 +795,8 @@ namespace
                 Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
                     // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the
                     // output directory
-                    const auto nupkg_path = paths.packages / nuget_ref.reference.id / nuget_ref.reference.id + ".nupkg";
+                    const auto nupkg_path =
+                        paths.packages() / nuget_ref.reference.id / nuget_ref.reference.id + ".nupkg";
                     if (fs.exists(nupkg_path, IgnoreErrors{}))
                     {
                         fs.remove(nupkg_path, VCPKG_LINE_INFO);
@@ -809,8 +807,8 @@ namespace
                         const auto nuget_dir = nuget_ref.spec.dir();
                         if (nuget_dir != nuget_ref.reference.id)
                         {
-                            const auto path_from = paths.packages / nuget_ref.reference.id;
-                            const auto path_to = paths.packages / nuget_dir;
+                            const auto path_from = paths.packages() / nuget_ref.reference.id;
+                            const auto path_to = paths.packages() / nuget_dir;
                             fs.rename(path_from, path_to, VCPKG_LINE_INFO);
                         }
                         cache_status[nuget_ref.result_index]->mark_restored();
@@ -843,9 +841,9 @@ namespace
             auto& spec = action.spec;
 
             NugetReference nuget_ref = make_nugetref(action, get_nuget_prefix());
-            auto nuspec_path = paths.buildtrees / spec.name() / (spec.triplet().to_string() + ".nuspec");
+            auto nuspec_path = paths.buildtrees() / spec.name() / (spec.triplet().to_string() + ".nuspec");
             paths.get_filesystem().write_contents(
-                nuspec_path, generate_nuspec(paths, action, nuget_ref), VCPKG_LINE_INFO);
+                nuspec_path, generate_nuspec(paths.package_dir(spec), action, nuget_ref), VCPKG_LINE_INFO);
 
             const auto& nuget_exe = paths.get_tool_exe("nuget");
             Command cmdline;
@@ -856,7 +854,7 @@ namespace
                 .string_arg("pack")
                 .path_arg(nuspec_path)
                 .string_arg("-OutputDirectory")
-                .path_arg(paths.buildtrees)
+                .path_arg(paths.buildtrees())
                 .string_arg("-NoDefaultExcludes")
                 .string_arg("-ForceEnglishOutput");
 
@@ -871,7 +869,7 @@ namespace
                 return;
             }
 
-            auto nupkg_path = paths.buildtrees / nuget_ref.nupkg_filename();
+            auto nupkg_path = paths.buildtrees() / nuget_ref.nupkg_filename();
             for (auto&& write_src : m_write_sources)
             {
                 Command cmd;
@@ -1017,7 +1015,7 @@ namespace
 
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
                     url_paths.emplace_back(make_gcs_path(prefix, *abi),
-                                           make_temp_archive_path(paths.buildtrees, action.spec));
+                                           make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
 
@@ -1070,7 +1068,7 @@ namespace
             if (m_write_prefixes.empty()) return;
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
-            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees, spec);
+            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
 
             size_t upload_count = 0;
@@ -1686,6 +1684,7 @@ namespace
         std::vector<std::string> url_templates_to_get;
         std::vector<std::string> azblob_templates_to_put;
         std::vector<std::string> secrets;
+        Optional<std::string> script;
 
         void clear()
         {
@@ -1694,6 +1693,7 @@ namespace
             url_templates_to_get.clear();
             azblob_templates_to_put.clear();
             secrets.clear();
+            script = nullopt;
         }
     };
 
@@ -1780,19 +1780,30 @@ namespace
                 handle_readwrite(
                     state->url_templates_to_get, state->azblob_templates_to_put, std::move(p), segments, 3);
             }
+            else if (segments[0].second == "x-script")
+            {
+                // Scheme: x-script,<script-template>
+                if (segments.size() != 2)
+                {
+                    return add_error(
+                        "expected arguments: asset config 'x-script' requires exactly the exec template as an argument",
+                        segments[0].first);
+                }
+                state->script = segments[1].second;
+            }
             else
             {
-                return add_error(
-                    "unknown asset provider type: valid source types are 'x-azurl', 'x-block-origin', and 'clear'",
-                    segments[0].first);
+                return add_error("unknown asset provider type: valid source types are 'x-azurl', "
+                                 "'x-script', 'x-block-origin', and 'clear'",
+                                 segments[0].first);
             }
         }
     };
 }
 
-ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
+ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
 {
-    if (!arg || arg.get()->empty()) return Downloads::DownloadManagerConfig{};
+    if (!arg || arg.get()->empty()) return DownloadManagerConfig{};
 
     LockGuardPtr<Metrics>(g_metrics)->track_property("asset-source", "defined");
 
@@ -1801,21 +1812,21 @@ ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(
     parser.parse();
     if (auto err = parser.get_error())
     {
-        return Strings::concat(err->format(), "For more information, see ", s_assetcaching_doc_url, "\n");
+        return Strings::concat(err->format(), "For more information, see ", docs::assetcaching_url, "\n");
     }
 
     if (s.azblob_templates_to_put.size() > 1)
     {
         return Strings::concat("Error: a maximum of one asset write url can be specified\n"
                                "For more information, see ",
-                               s_assetcaching_doc_url,
+                               docs::assetcaching_url,
                                "\n");
     }
     if (s.url_templates_to_get.size() > 1)
     {
         return Strings::concat("Error: a maximum of one asset read url can be specified\n"
                                "For more information, see ",
-                               s_assetcaching_doc_url,
+                               docs::assetcaching_url,
                                "\n");
     }
 
@@ -1829,16 +1840,17 @@ ExpectedS<Downloads::DownloadManagerConfig> vcpkg::parse_download_configuration(
     if (!s.azblob_templates_to_put.empty())
     {
         put_url = std::move(s.azblob_templates_to_put.back());
-        auto v = Downloads::azure_blob_headers();
+        auto v = azure_blob_headers();
         put_headers.assign(v.begin(), v.end());
     }
 
-    return Downloads::DownloadManagerConfig{std::move(get_url),
-                                            std::vector<std::string>{},
-                                            std::move(put_url),
-                                            std::move(put_headers),
-                                            std::move(s.secrets),
-                                            s.block_origin};
+    return DownloadManagerConfig{std::move(get_url),
+                                 std::vector<std::string>{},
+                                 std::move(put_url),
+                                 std::move(put_headers),
+                                 std::move(s.secrets),
+                                 s.block_origin,
+                                 s.script};
 }
 
 ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_providers_from_configs(
@@ -1999,7 +2011,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
             get_environment_variable("GITHUB_SHA").value_or("")};
 }
 
-std::string vcpkg::generate_nuspec(const VcpkgPaths& paths,
+std::string vcpkg::generate_nuspec(const Path& package_dir,
                                    const Dependencies::InstallPlanAction& action,
                                    const vcpkg::NugetReference& ref,
                                    details::NuGetRepoInfo rinfo)
@@ -2065,7 +2077,7 @@ std::string vcpkg::generate_nuspec(const VcpkgPaths& paths,
     xml.close_tag("metadata").line_break();
     xml.open_tag("files");
     xml.start_complex_open_tag("file")
-        .text_attr("src", paths.package_dir(spec) / "**")
+        .text_attr("src", package_dir / "**")
         .text_attr("target", "")
         .finish_self_closing_complex_tag();
     xml.close_tag("files").line_break();
@@ -2094,20 +2106,25 @@ void vcpkg::help_topic_asset_caching(const VcpkgPaths&)
     tbl.format("clear", "Removes all previous sources");
     tbl.format(
         "x-azurl,<url>[,<sas>[,<rw>]]",
-        "Adds an Azure Blob Storage source, optionally using Shared Access Signature validation. URL should "
-        "include "
+        "Adds an Azure Blob Storage source, optionally using Shared Access Signature validation. URL should include "
         "the container path and be terminated with a trailing `/`. SAS, if defined, should be prefixed with a `?`. "
-        "Non-Azure servers will also work if they respond to GET and PUT requests of the form: "
-        "`<url><sha512><sas>`.");
+        "Non-Azure servers will also work if they respond to GET and PUT requests of the form: `<url><sha512><sas>`.");
+    tbl.format("x-script,<template>",
+               "Dispatches to an external tool to fetch the asset. Within the template, \"{url}\" will be replaced by "
+               "the original url, \"{sha512}\" will be replaced by the SHA512 value, and \"{dst}\" will be replaced by "
+               "the output path to save to. These substitutions will all be properly shell escaped, so an example "
+               "template would be: \"curl -L {url} --output {dst}\". \"{{\" will be replaced by \"}\" and \"}}\" will "
+               "be replaced by \"}\" to avoid expansion. Note that this will be executed inside the build environment, "
+               "so the PATH and other environment variables will be modified by the triplet.");
     tbl.format("x-block-origin",
-               "Disables use of the original URLs in case the mirror does not have the file available.");
+               "Disables fallback to the original URLs in case the mirror does not have the file available.");
     tbl.blank();
     tbl.text("The `<rw>` optional parameter for certain strings controls how they will be accessed. It can be "
              "specified as `read`, `write`, or `readwrite` and defaults to `read`.");
     tbl.blank();
     print2(tbl.m_str);
 
-    print2("\nExtended documentation is available at ", s_assetcaching_doc_url, "\n");
+    print2("\nExtended documentation is available at ", docs::assetcaching_url, "\n");
 }
 
 void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
@@ -2174,7 +2191,7 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
             "\nThis consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.\n");
     }
 
-    print2("\nExtended documentation is available at ", s_binarycaching_doc_url, "\n");
+    print2("\nExtended documentation is available at ", docs::binarycaching_url, "\n");
 }
 
 std::string vcpkg::generate_nuget_packages_config(const Dependencies::ActionPlan& action)

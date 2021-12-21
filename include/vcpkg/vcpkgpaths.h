@@ -4,6 +4,7 @@
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/configuration.h>
+#include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -15,6 +16,9 @@
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
+
+#include <vcpkg/packagespec.h>
+#include <vcpkg/triplet.h>
 
 namespace vcpkg
 {
@@ -32,13 +36,11 @@ namespace vcpkg
         Path vcvarsall;
         std::vector<std::string> vcvarsall_options;
         CStringView version;
+        std::string full_version;
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
-    namespace Downloads
-    {
-        struct DownloadManager;
-    }
+    struct DownloadManager;
 
     namespace Build
     {
@@ -69,16 +71,13 @@ namespace vcpkg
 
         VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args);
         VcpkgPaths(const VcpkgPaths&) = delete;
-        VcpkgPaths(VcpkgPaths&&) = default;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
-        VcpkgPaths& operator=(VcpkgPaths&&) = default;
         ~VcpkgPaths();
 
         Path package_dir(const PackageSpec& spec) const;
         Path build_dir(const PackageSpec& spec) const;
         Path build_dir(const std::string& package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
-        Path listfile_path(const BinaryParagraph& pgh) const;
 
         bool is_valid_triplet(Triplet t) const;
         const std::vector<std::string> get_available_triplets_names() const;
@@ -90,19 +89,31 @@ namespace vcpkg
         LockFile& get_installed_lockfile() const;
         void flush_lockfile() const;
 
-        Path original_cwd;
-        Path root;
+        const Optional<InstalledPaths>& maybe_installed() const;
+        const Optional<Path>& maybe_buildtrees() const;
+        const Optional<Path>& maybe_packages() const;
+
+        const InstalledPaths& installed() const;
+        const Path& buildtrees() const;
+        const Path& packages() const;
+
+        Path baselines_output() const;
+        Path versions_output() const;
+
+        const Path original_cwd;
+        const Path root;
+
         Path manifest_root_dir;
-        Path config_root_dir;
-        Path buildtrees;
         Path downloads;
-        Path packages;
-        Path installed;
         Path triplets;
         Path community_triplets;
         Path scripts;
         Path prefab;
+
+    private:
         Path builtin_ports;
+
+    public:
         Path builtin_registry_versions;
 
         Path tools;
@@ -110,20 +121,9 @@ namespace vcpkg
         Path buildsystems_msbuild_targets;
         Path buildsystems_msbuild_props;
 
-        Path vcpkg_dir;
-        Path vcpkg_dir_status_file;
-        Path vcpkg_dir_info;
-        Path vcpkg_dir_updates;
-
-        Path baselines_dot_git_dir;
-        Path baselines_work_tree;
-        Path baselines_output;
-
-        Path versions_dot_git_dir;
-        Path versions_work_tree;
-        Path versions_output;
-
         Path ports_cmake;
+
+        std::string get_toolver_diagnostics() const;
 
         const Path& get_tool_exe(const std::string& tool) const;
         const std::string& get_tool_version(const std::string& tool) const;
@@ -133,17 +133,15 @@ namespace vcpkg
         // Git manipulation in the vcpkg directory
         ExpectedS<std::string> get_current_git_sha() const;
         std::string get_current_git_sha_baseline_message() const;
-        ExpectedS<Path> git_checkout_baseline(StringView commit_sha) const;
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedS<std::string> git_show(const std::string& treeish, const Path& dot_git_dir) const;
-        ExpectedS<std::string> git_describe_head() const;
 
         ExitCodeAndOutput git_commit(const Path& dot_git_dir,
                                      std::vector<Path>&& files,
                                      const std::string& message,
                                      bool amend) const;
 
-        const Downloads::DownloadManager& get_download_manager() const;
+        const DownloadManager& get_download_manager() const;
 
         ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
 
@@ -160,15 +158,10 @@ namespace vcpkg
 
         Optional<const Json::Object&> get_manifest() const;
         Optional<const Path&> get_manifest_path() const;
-        const Configuration& get_configuration() const;
+        const RegistrySet& get_registry_set() const;
 
-        /// <summary>Retrieve a toolset matching a VS version</summary>
-        /// <remarks>
-        ///   Valid version strings are "v120", "v140", "v141", and "". Empty string gets the latest.
-        /// </remarks>
+        // Retrieve a toolset matching the requirements in prebuildinfo
         const Toolset& get_toolset(const Build::PreBuildInfo& prebuildinfo) const;
-
-        View<Toolset> get_all_toolsets() const;
 
         Filesystem& get_filesystem() const;
 
@@ -184,7 +177,13 @@ namespace vcpkg
         // this should be used only for helper commands, not core commands like `install`.
         Path builtin_ports_directory() const { return this->builtin_ports; }
 
+        bool use_git_default_registry() const;
+
     private:
+        Optional<Path> maybe_get_tmp_path(const std::string* arg_path,
+                                          StringLiteral root_subpath,
+                                          StringLiteral readonly_subpath,
+                                          LineInfo li) const;
         std::unique_ptr<details::VcpkgPathsImpl> m_pimpl;
     };
 }

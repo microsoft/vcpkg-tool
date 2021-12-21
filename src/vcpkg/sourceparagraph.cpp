@@ -7,6 +7,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/configuration.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/platform-expression.h>
@@ -683,6 +684,20 @@ namespace vcpkg
     };
     FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
 
+    struct ContactsDeserializer final : Json::IDeserializer<Json::Object>
+    {
+        virtual StringView type_name() const override { return "a dictionary of contacts"; }
+
+        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            (void)r;
+            return obj;
+        }
+
+        static ContactsDeserializer instance;
+    };
+    ContactsDeserializer ContactsDeserializer::instance;
+
     static constexpr StringLiteral EXPRESSION_WORDS[] = {
         "WITH",
         "AND",
@@ -847,6 +862,8 @@ namespace vcpkg
 
         constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral MAINTAINERS = "maintainers";
+        constexpr static StringLiteral CONTACTS = "contacts";
+        constexpr static StringLiteral SUMMARY = "summary";
         constexpr static StringLiteral DESCRIPTION = "description";
         constexpr static StringLiteral HOMEPAGE = "homepage";
         constexpr static StringLiteral DOCUMENTATION = "documentation";
@@ -865,6 +882,8 @@ namespace vcpkg
             static const StringView u[] = {
                 NAME,
                 MAINTAINERS,
+                CONTACTS,
+                SUMMARY,
                 DESCRIPTION,
                 HOMEPAGE,
                 DOCUMENTATION,
@@ -900,7 +919,6 @@ namespace vcpkg
             }
 
             static Json::StringDeserializer url_deserializer{"a url"};
-
             r.required_object_field(type_name(), obj, NAME, spgh->name, Json::IdentifierDeserializer::instance);
             auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
             spgh->version = schemed_version.versiont.text();
@@ -908,6 +926,8 @@ namespace vcpkg
             spgh->port_version = schemed_version.versiont.port_version();
 
             r.optional_object_field(obj, MAINTAINERS, spgh->maintainers, Json::ParagraphDeserializer::instance);
+            r.optional_object_field(obj, CONTACTS, spgh->contacts, ContactsDeserializer::instance);
+            r.optional_object_field(obj, SUMMARY, spgh->summary, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DESCRIPTION, spgh->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, HOMEPAGE, spgh->homepage, url_deserializer);
             r.optional_object_field(obj, DOCUMENTATION, spgh->documentation, url_deserializer);
@@ -973,6 +993,61 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::OVERRIDES;
     constexpr StringLiteral ManifestDeserializer::BUILTIN_BASELINE;
     constexpr StringLiteral ManifestDeserializer::VCPKG_CONFIGURATION;
+
+    // Extracts just the configuration information from a manifest object
+    struct ManifestConfigurationDeserializer final : Json::IDeserializer<ManifestConfiguration>
+    {
+        virtual StringView type_name() const override { return "a manifest"; }
+
+        virtual Optional<ManifestConfiguration> visit_object(Json::Reader& r, const Json::Object& obj) override
+        {
+            Optional<ManifestConfiguration> x;
+            ManifestConfiguration& ret = x.emplace();
+            if (!r.optional_object_field(obj,
+                                         ManifestDeserializer::VCPKG_CONFIGURATION,
+                                         ret.config.emplace(),
+                                         get_configuration_deserializer()))
+            {
+                ret.config = nullopt;
+            }
+            if (!r.optional_object_field(obj,
+                                         ManifestDeserializer::BUILTIN_BASELINE,
+                                         ret.builtin_baseline.emplace(),
+                                         BaselineCommitDeserializer::instance))
+            {
+                ret.builtin_baseline = nullopt;
+            }
+            return x;
+        }
+
+        static ManifestConfigurationDeserializer instance;
+    };
+    ManifestConfigurationDeserializer ManifestConfigurationDeserializer::instance;
+
+    ExpectedS<struct ManifestConfiguration> parse_manifest_configuration(StringView origin,
+                                                                         const Json::Object& manifest)
+    {
+        Json::Reader reader;
+
+        auto res = reader.visit(manifest, ManifestConfigurationDeserializer::instance);
+
+        if (!reader.errors().empty())
+        {
+            std::string ret = "Error: in the manifest ";
+            Strings::append(ret, origin, "\nwhile obtaining configuration information from the manifest:\n");
+            for (auto&& err : reader.errors())
+            {
+                Strings::append(ret, "    ", err, "\n");
+            }
+            print2("See ", docs::registries_url, " for more information.\n");
+            print2("See ", docs::manifests_url, " for more information.\n");
+            return std::move(ret);
+        }
+        else
+        {
+            return std::move(res).value_or_exit(VCPKG_LINE_INFO);
+        }
+    }
 
     SourceControlFile SourceControlFile::clone() const
     {
@@ -1094,12 +1169,6 @@ namespace vcpkg
             }
         }
         return nullopt;
-    }
-
-    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_file(const Path& manifest_path,
-                                                                                   const Json::Object& manifest)
-    {
-        return parse_manifest_object(manifest_path, manifest);
     }
 
     void print_error_message(Span<const std::unique_ptr<Parse::ParseControlErrorInfo>> error_info_list)
@@ -1351,19 +1420,18 @@ namespace vcpkg
         if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
         {
             Json::Reader reader;
-            auto maybe_configuration = reader.visit(*configuration, *vcpkg::make_configuration_deserializer(""));
+            auto maybe_configuration = reader.visit(*configuration, get_configuration_deserializer());
             if (!reader.errors().empty())
             {
                 print2(Color::error, "Errors occurred while parsing ", ManifestDeserializer::VCPKG_CONFIGURATION, "\n");
                 for (auto&& msg : reader.errors())
                     print2("    ", msg, '\n');
 
-                print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md for "
-                       "more information.\n");
+                print2("See ", docs::registries_url, " for more information.\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
             obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,
-                       serialize_configuration(maybe_configuration.value_or_exit(VCPKG_LINE_INFO)));
+                       maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
         }
 
         obj.insert(ManifestDeserializer::NAME, Json::Value::string(scf.core_paragraph->name));
@@ -1375,6 +1443,11 @@ namespace vcpkg
                                   debug);
 
         serialize_paragraph(obj, ManifestDeserializer::MAINTAINERS, scf.core_paragraph->maintainers);
+        if (scf.core_paragraph->contacts.size() > 0)
+        {
+            obj.insert(ManifestDeserializer::CONTACTS, scf.core_paragraph->contacts);
+        }
+        serialize_paragraph(obj, ManifestDeserializer::SUMMARY, scf.core_paragraph->summary);
         serialize_paragraph(obj, ManifestDeserializer::DESCRIPTION, scf.core_paragraph->description);
 
         serialize_optional_string(obj, ManifestDeserializer::HOMEPAGE, scf.core_paragraph->homepage);

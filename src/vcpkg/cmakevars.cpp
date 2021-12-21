@@ -9,6 +9,7 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
 using vcpkg::Optional;
@@ -144,6 +145,7 @@ VCPKG_TARGET_ARCHITECTURE=${VCPKG_TARGET_ARCHITECTURE}
 VCPKG_CMAKE_SYSTEM_NAME=${VCPKG_CMAKE_SYSTEM_NAME}
 VCPKG_CMAKE_SYSTEM_VERSION=${VCPKG_CMAKE_SYSTEM_VERSION}
 VCPKG_PLATFORM_TOOLSET=${VCPKG_PLATFORM_TOOLSET}
+VCPKG_PLATFORM_TOOLSET_VERSION=${VCPKG_PLATFORM_TOOLSET_VERSION}
 VCPKG_VISUAL_STUDIO_PATH=${VCPKG_VISUAL_STUDIO_PATH}
 VCPKG_CHAINLOAD_TOOLCHAIN_FILE=${VCPKG_CHAINLOAD_TOOLCHAIN_FILE}
 VCPKG_BUILD_TYPE=${VCPKG_BUILD_TYPE}
@@ -185,7 +187,7 @@ endfunction()
                             "\")\n");
         }
 
-        auto tags_path = paths.buildtrees / Strings::concat(tag_extract_id++, ".vcpkg_tags.cmake");
+        auto tags_path = paths.buildtrees() / Strings::concat(tag_extract_id++, ".vcpkg_tags.cmake");
         fs.write_contents_and_dirs(tags_path, extraction_file, VCPKG_LINE_INFO);
         return tags_path;
     }
@@ -233,7 +235,7 @@ endfunction()
                 extraction_file, "vcpkg_get_dep_info(", spec.name(), " ", emitted_triplets[spec.triplet()], ")\n");
         }
 
-        auto dep_info_path = paths.buildtrees / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
+        auto dep_info_path = paths.buildtrees() / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
         fs.write_contents_and_dirs(dep_info_path, extraction_file, VCPKG_LINE_INFO);
         return dep_info_path;
     }

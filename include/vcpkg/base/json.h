@@ -203,6 +203,7 @@ namespace vcpkg::Json
         ~Object() = default;
 
         // asserts if the key is found
+        Value& insert(std::string key, std::string value);
         Value& insert(std::string key, Value&& value);
         Value& insert(std::string key, const Value& value);
         Object& insert(std::string key, Object&& value);
@@ -297,4 +298,6 @@ namespace vcpkg::Json
     std::string stringify(const Value&, JsonStyle style);
     std::string stringify(const Object&, JsonStyle style);
     std::string stringify(const Array&, JsonStyle style);
+
+    uint64_t get_json_parsing_stats();
 }

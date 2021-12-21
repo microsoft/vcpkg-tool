@@ -121,5 +121,13 @@ namespace vcpkg::Test
         }
     }
 
+    void check_json_eq(const Json::Value& l, const Json::Value& r);
+    void check_json_eq(const Json::Object& l, const Json::Object& r);
+    void check_json_eq(const Json::Array& l, const Json::Array& r);
+
+    void check_json_eq_ordered(const Json::Value& l, const Json::Value& r);
+    void check_json_eq_ordered(const Json::Object& l, const Json::Object& r);
+    void check_json_eq_ordered(const Json::Array& l, const Json::Array& r);
+
     const Path& base_temporary_directory() noexcept;
 }

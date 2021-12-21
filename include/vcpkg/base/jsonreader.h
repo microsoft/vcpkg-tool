@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/json.h>
 
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
@@ -45,6 +46,8 @@ namespace vcpkg::Json
 
     struct Reader
     {
+        Reader();
+
         const std::vector<std::string>& errors() const { return m_errors; }
         std::vector<std::string>& errors() { return m_errors; }
 
@@ -196,6 +199,11 @@ namespace vcpkg::Json
 
             return result;
         }
+
+        static uint64_t get_reader_stats();
+
+    private:
+        StatsTimer m_stat_timer;
     };
 
     VCPKG_MSVC_WARNING(push)
@@ -273,7 +281,7 @@ namespace vcpkg::Json
         virtual StringView type_name() const override { return type_name_; }
         virtual Optional<std::string> visit_string(Reader&, StringView sv) override { return sv.to_string(); }
 
-        explicit StringDeserializer(StringLiteral type_name_) : type_name_(type_name_) { }
+        constexpr explicit StringDeserializer(StringLiteral type_name_) : type_name_(type_name_) { }
 
     private:
         StringLiteral type_name_;
@@ -319,7 +327,7 @@ namespace vcpkg::Json
 
         virtual StringView type_name() const override { return m_type_name; }
 
-        ArrayDeserializer(StringLiteral type_name_, Underlying&& t = {})
+        constexpr ArrayDeserializer(StringLiteral type_name_, Underlying&& t = {})
             : m_type_name(type_name_), m_underlying_visitor(static_cast<Underlying&&>(t))
         {
         }

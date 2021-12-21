@@ -22,6 +22,70 @@ namespace vcpkg::Commands::DependInfo
 {
     namespace
     {
+        struct PackageDependInfo
+        {
+            std::string package;
+            int depth;
+            std::unordered_set<std::string> features;
+            std::vector<std::string> dependencies;
+        };
+
+        // invariant: prefix_buf is equivalent on exitv (but may have been reallocated)
+        void print_dep_tree(std::string& prefix_buf,
+                            const std::string& currDepend,
+                            const std::vector<PackageDependInfo>& allDepends,
+                            std::set<std::string>& printed)
+        {
+            if (prefix_buf.size() > 400)
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO, "Recursion depth exceeded.");
+            }
+            auto currPos = std::find_if(
+                allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
+            Checks::check_exit(VCPKG_LINE_INFO, currPos != allDepends.end(), "internal vcpkg error");
+            if (currPos->dependencies.empty())
+            {
+                return;
+            }
+
+            const size_t original_size = prefix_buf.size();
+
+            if (Util::Sets::contains(printed, currDepend))
+            {
+                // If we've already printed the set of dependencies, print an elipsis instead
+                Strings::append(prefix_buf, "+- ...\n");
+                print2(prefix_buf);
+                prefix_buf.resize(original_size);
+            }
+            else
+            {
+                printed.insert(currDepend);
+
+                for (auto i = currPos->dependencies.begin(); i != currPos->dependencies.end() - 1; ++i)
+                {
+                    // Print the current level
+                    Strings::append(prefix_buf, "+-- ", *i, "\n");
+                    print2(prefix_buf);
+                    prefix_buf.resize(original_size);
+
+                    // Recurse
+                    prefix_buf.append("|   ");
+                    print_dep_tree(prefix_buf, *i, allDepends, printed);
+                    prefix_buf.resize(original_size);
+                }
+
+                // Print the last of the current level
+                Strings::append(prefix_buf, "+-- ", currPos->dependencies.back(), "\n");
+                print2(prefix_buf);
+                prefix_buf.resize(original_size);
+
+                // Recurse
+                prefix_buf.append("    ");
+                print_dep_tree(prefix_buf, currPos->dependencies.back(), allDepends, printed);
+                prefix_buf.resize(original_size);
+            }
+        }
+
         constexpr StringLiteral OPTION_DOT = "dot";
         constexpr StringLiteral OPTION_DGML = "dgml";
         constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
@@ -39,22 +103,15 @@ namespace vcpkg::Commands::DependInfo
             {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
              {OPTION_SORT,
               "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-              "(default), "
+              "(default), x-tree, "
               "reverse"}}};
-
-        struct PackageDependInfo
-        {
-            std::string package;
-            int depth;
-            std::unordered_set<std::string> features;
-            std::vector<std::string> dependencies;
-        };
 
         enum SortMode
         {
             Lexicographical = 0,
             Topological,
             ReverseTopological,
+            Treelogical,
             Default = Topological
         };
 
@@ -82,10 +139,12 @@ namespace vcpkg::Commands::DependInfo
             constexpr StringLiteral OPTION_SORT_LEXICOGRAPHICAL = "lexicographical";
             constexpr StringLiteral OPTION_SORT_TOPOLOGICAL = "topological";
             constexpr StringLiteral OPTION_SORT_REVERSE = "reverse";
+            constexpr StringLiteral OPTION_SORT_TREE = "x-tree";
 
             static const std::map<std::string, SortMode> sortModesMap{{OPTION_SORT_LEXICOGRAPHICAL, Lexicographical},
                                                                       {OPTION_SORT_TOPOLOGICAL, Topological},
-                                                                      {OPTION_SORT_REVERSE, ReverseTopological}};
+                                                                      {OPTION_SORT_REVERSE, ReverseTopological},
+                                                                      {OPTION_SORT_TREE, Treelogical}};
 
             auto iter = options.settings.find(OPTION_SORT);
             if (iter != options.settings.end())
@@ -264,8 +323,12 @@ namespace vcpkg::Commands::DependInfo
         // By passing an empty status_db, we should get a plan containing all dependencies.
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
-        auto action_plan =
-            Dependencies::create_feature_install_plan(provider, var_provider, specs, status_db, {host_triplet});
+        auto action_plan = Dependencies::create_feature_install_plan(
+            provider, var_provider, specs, status_db, {host_triplet, Dependencies::UnsupportedPortAction::Warn});
+        for (const auto& warning : action_plan.warnings)
+        {
+            print2(Color::warning, warning, '\n');
+        }
         Checks::check_exit(
             VCPKG_LINE_INFO, action_plan.remove_actions.empty(), "Only install actions should exist in the plan");
         std::vector<const InstallPlanAction*> install_actions =
@@ -304,31 +367,54 @@ namespace vcpkg::Commands::DependInfo
         {
             case SortMode::Lexicographical: std::sort(std::begin(depend_info), std::end(depend_info), lex); break;
             case SortMode::ReverseTopological:
-                std::sort(std::begin(depend_info), std::end(depend_info), reverse);
-                break;
+            case SortMode::Treelogical: std::sort(std::begin(depend_info), std::end(depend_info), reverse); break;
             case SortMode::Topological: std::sort(std::begin(depend_info), std::end(depend_info), topo); break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
-        for (auto&& info : depend_info)
+        if (sort_mode == SortMode::Treelogical)
         {
-            if (info.depth >= 0)
-            {
-                std::string features = Strings::join(", ", info.features);
-                const std::string dependencies = Strings::join(", ", info.dependencies);
+            auto first = depend_info.begin();
+            std::string features = Strings::join(", ", first->features);
 
-                if (show_depth)
+            if (show_depth)
+            {
+                print2(Color::error, "(", first->depth, ") ");
+            }
+            print2(Color::success, first->package);
+            if (!features.empty())
+            {
+                print2("[");
+                print2(Color::warning, features);
+                print2("]");
+            }
+            print2("\n");
+            std::set<std::string> printed;
+            std::string prefix_buf;
+            print_dep_tree(prefix_buf, first->package, depend_info, printed);
+        }
+        else
+        {
+            for (auto&& info : depend_info)
+            {
+                if (info.depth >= 0)
                 {
-                    print2(Color::error, "(", info.depth, ") ");
+                    const std::string features = Strings::join(", ", info.features);
+                    const std::string dependencies = Strings::join(", ", info.dependencies);
+
+                    if (show_depth)
+                    {
+                        print2(Color::error, "(", info.depth, ") ");
+                    }
+                    print2(Color::success, info.package);
+                    if (!features.empty())
+                    {
+                        print2("[");
+                        print2(Color::warning, features);
+                        print2("]");
+                    }
+                    print2(": ", dependencies, "\n");
                 }
-                print2(Color::success, info.package);
-                if (!features.empty())
-                {
-                    print2("[");
-                    print2(Color::warning, features);
-                    print2("]");
-                }
-                print2(": ", dependencies, "\n");
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);

@@ -1,6 +1,11 @@
 #pragma once
 
+#include <vcpkg/base/span.h>
+#include <vcpkg/base/stringview.h>
+
 #include <vcpkg/commands.interface.h>
+
+#include <string>
 
 namespace vcpkg::Commands
 {

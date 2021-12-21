@@ -5,7 +5,9 @@
 #include <vcpkg/export.chocolatey.h>
 #include <vcpkg/export.h>
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Export::Chocolatey
 {
@@ -194,12 +196,12 @@ if (Test-Path $installedDir)
 
             const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
-            const InstallDir dirs = InstallDir::from_destination_root(
-                per_package_dir_path / "installed",
-                action.spec.triplet().to_string(),
-                per_package_dir_path / "installed" / "vcpkg" / "info" / (binary_paragraph.fullstem() + ".list"));
+            const InstalledPaths installed(per_package_dir_path / "installed");
 
-            Install::install_package_and_write_listfile(paths, action.spec, dirs);
+            const InstallDir dirs =
+                InstallDir::from_destination_root(installed, action.spec.triplet(), binary_paragraph);
+
+            Install::install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
 
             const std::string nuspec_file_content = create_nuspec_file_contents(
                 per_package_dir_path, binary_paragraph, packages_version, chocolatey_options);

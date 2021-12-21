@@ -2,8 +2,6 @@
 
 #include <vcpkg/base/fwd/stringview.h>
 
-#include <vcpkg/base/format.h>
-
 #include <stddef.h>
 #include <string.h>
 
@@ -31,6 +29,9 @@ namespace vcpkg
         constexpr const char* begin() const noexcept { return m_ptr; }
         constexpr const char* end() const noexcept { return m_ptr + m_size; }
 
+        const char& front() const noexcept { return *m_ptr; }
+        const char& back() const noexcept { return m_ptr[m_size - 1]; }
+
         std::reverse_iterator<const char*> rbegin() const noexcept { return std::make_reverse_iterator(end()); }
         std::reverse_iterator<const char*> rend() const noexcept { return std::make_reverse_iterator(begin()); }
 
@@ -56,19 +57,4 @@ namespace vcpkg
     bool operator>(StringView lhs, StringView rhs) noexcept;
     bool operator<=(StringView lhs, StringView rhs) noexcept;
     bool operator>=(StringView lhs, StringView rhs) noexcept;
-}
-
-namespace fmt
-{
-    template<>
-    struct formatter<vcpkg::StringView> : formatter<string_view>
-    {
-        // parse is inherited from formatter<string_view>.
-        template<class FormatContext>
-        auto format(vcpkg::StringView sv, FormatContext& ctx)
-        {
-            return formatter<string_view>::format(string_view(sv.data(), sv.size()), ctx);
-        }
-    };
-
 }

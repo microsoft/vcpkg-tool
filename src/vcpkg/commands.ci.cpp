@@ -22,6 +22,7 @@
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
 
@@ -625,7 +626,7 @@ namespace vcpkg::Commands::CI
         }
         else
         {
-            StatusParagraphs status_db = database_load_check(paths);
+            StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
             auto collection_timer = ElapsedTimer::create_started();
             auto summary = Install::perform(args,
@@ -673,7 +674,7 @@ namespace vcpkg::Commands::CI
         for (auto&& result : results)
         {
             print2("\nTriplet: ", result.triplet, "\n");
-            print2("Total elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n");
+            print2("Total elapsed time: ", GlobalState::timer.to_string(), "\n");
             result.summary.print();
         }
 

@@ -10,17 +10,45 @@
 
 namespace vcpkg
 {
-    struct Configuration
+    struct RegistryConfig
     {
-        // This member is set up via two different configuration options,
-        // `registries` and `default_registry`. The fall back logic is
-        // taken care of in RegistrySet.
-        RegistrySet registry_set;
-        Json::Object extra_info;
+        // Missing kind means "null"
+        Optional<std::string> kind;
+        Optional<std::string> baseline;
+        Optional<std::string> location;
+        Optional<std::string> name;
+        Optional<Path> path;
+        Optional<std::string> reference;
+        Optional<std::string> repo;
+        Optional<std::vector<std::string>> packages;
 
-        void validate_feature_flags(const FeatureFlagSettings& flags);
+        Json::Value serialize() const;
     };
 
-    std::unique_ptr<Json::IDeserializer<Configuration>> make_configuration_deserializer(const Path& config_directory);
-    Json::Object serialize_configuration(const Configuration& config);
+    struct Configuration
+    {
+        Optional<RegistryConfig> default_reg;
+        std::vector<RegistryConfig> registries;
+        Json::Object ce_metadata;
+        Json::Object extra_info;
+
+        Json::Object serialize() const;
+        void validate_as_active();
+
+        std::unique_ptr<RegistrySet> instantiate_registry_set(const VcpkgPaths& paths, const Path& config_dir) const;
+
+        bool requests_ce() const;
+
+        static View<StringView> known_fields();
+    };
+
+    struct ManifestConfiguration
+    {
+        Optional<std::string> builtin_baseline;
+        Optional<Configuration> config;
+    };
+
+    Json::IDeserializer<Configuration>& get_configuration_deserializer();
+    Json::IDeserializer<ManifestConfiguration>& get_manifest_configuration_deserializer();
+    std::vector<std::string> find_unknown_fields(const Configuration& config);
 }

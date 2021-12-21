@@ -20,12 +20,18 @@ namespace vcpkg::Unicode
 
     int utf8_encode_code_point(char (&array)[4], char32_t code_point) noexcept;
 
-    template<class String>
-    String& utf8_append_code_point(String& str, char32_t code_point)
+    inline std::string& utf8_append_code_point(std::string& str, char32_t code_point)
     {
-        char buf[4] = {};
-        int count = ::vcpkg::Unicode::utf8_encode_code_point(buf, code_point);
-        str.append(buf, buf + count);
+        if (static_cast<uint32_t>(code_point) < 0x80)
+        {
+            str.push_back(static_cast<char>(code_point));
+        }
+        else
+        {
+            char buf[4] = {};
+            int count = ::vcpkg::Unicode::utf8_encode_code_point(buf, code_point);
+            str.append(buf, buf + count);
+        }
         return str;
     }
 
@@ -89,15 +95,22 @@ namespace vcpkg::Unicode
         {
         };
 
-        bool is_eof() const noexcept;
+        constexpr inline bool is_eof() const noexcept { return current_ == end_of_file; }
 
-        void next(std::error_code& ec);
+        [[nodiscard]] utf8_errc next();
 
         Utf8Decoder& operator=(sentinel) noexcept;
 
         char const* pointer_to_current() const noexcept;
 
-        char32_t operator*() const noexcept;
+        char32_t operator*() const noexcept
+        {
+            if (is_eof())
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO, "Dereferenced Utf8Decoder on the end of a string");
+            }
+            return current_;
+        }
 
         Utf8Decoder& operator++() noexcept;
         Utf8Decoder operator++(int) noexcept

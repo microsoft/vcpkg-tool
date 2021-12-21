@@ -1,5 +1,8 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
+$env:X_VCPKG_REGISTRIES_CACHE = Join-Path $TestingRoot 'registries'
+New-Item -ItemType Directory -Force $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
+
 $builtinRegistryArgs = $commonArgs + @("--x-builtin-registry-versions-dir=$PSScriptRoot/../e2e_ports/versions")
 
 Run-Vcpkg install @builtinRegistryArgs 'vcpkg-internal-e2e-test-port'
@@ -15,6 +18,7 @@ Throw-IfFailed
 
 Write-Trace "Test git and filesystem registries"
 Refresh-TestRoot
+New-Item -ItemType Directory -Force $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
 $filesystemRegistry = "$TestingRoot/filesystem-registry"
 $gitRegistryUpstream = "$TestingRoot/git-registry-upstream"
 
@@ -225,6 +229,52 @@ finally
     Pop-Location
 }
 
+# test the filesystem registry with a relative path
+Write-Trace "test the filesystem registry with a relative path"
+$manifestDir = "$TestingRoot/filesystem-registry-test-manifest-dir"
+Remove-Item -Recurse -Force $manifestDir -ErrorAction SilentlyContinue
+
+New-Item -Path $manifestDir -ItemType Directory
+$manifestDir = (Get-Item $manifestDir).FullName
+
+Push-Location $manifestDir
+try
+{
+    $vcpkgJson = @{
+        "name" = "manifest-test";
+        "version-string" = "1.0.0";
+        "dependencies" = @(
+            "vcpkg-internal-e2e-test-port"
+        );
+        # Use versioning features without a builtin-baseline
+        "overrides" = @(@{
+            "name" = "unused";
+            "version" = "0";
+        })
+    }
+    $vcpkgConfigurationJson = @{
+        "default-registry" = $null;
+        "registries" = @(
+            @{
+                "kind" = "filesystem";
+                "path" = "../filesystem-registry";
+                "packages" = @( "vcpkg-internal-e2e-test-port" )
+            }
+        )
+    }
+    New-Item -Path 'vcpkg.json' -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+    New-Item -Path 'vcpkg-configuration.json' -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson)
+
+    Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
+    Throw-IfFailed
+}
+finally
+{
+    Pop-Location
+}
+
 # test the git registry
 Write-Trace "test the git registry"
 $manifestDir = "$TestingRoot/git-registry-test-manifest-dir"
@@ -330,6 +380,34 @@ try
    New-Item -Path $installRoot/vcpkg/vcpkg-lock.json -ItemType File `
         -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgLockJson)
     Run-Vcpkg install @builtinRegistryArgs '--feature-flags=registries,manifests'
+    Throw-IfFailed
+}
+finally
+{
+    Pop-Location
+}
+
+
+# test builtin registry
+Write-Trace "test builtin registry with baseline"
+$manifestDir = "$TestingRoot/manifest"
+
+New-Item -Path $manifestDir -ItemType Directory
+$manifestDir = (Get-Item $manifestDir).FullName
+
+Push-Location $manifestDir
+try
+{
+    $vcpkgJson = @{
+        "name" = "manifest-test";
+        "version-string" = "1.0.0";
+        "builtin-baseline" = "a4b5cde7f504c1bbbbc455f4a6ee60efd9034772";
+    }
+
+    New-Item -Path 'vcpkg.json' -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+
+    Run-Vcpkg search @builtinRegistryArgs zlib
     Throw-IfFailed
 }
 finally

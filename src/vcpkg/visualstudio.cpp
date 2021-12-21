@@ -1,14 +1,41 @@
 #if defined(_WIN32)
 
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/visualstudio.h>
+
+#endif
+
+#include <vcpkg/base/messages.h>
+
+namespace
+{
+    DECLARE_AND_REGISTER_MESSAGE(
+        VSExcludedByLanguagePack,
+        (),
+        "",
+        "The following VS instances were excluded because the English language pack is unavailable:");
+
+    DECLARE_AND_REGISTER_MESSAGE(VSExaminedPaths,
+                                 (),
+                                 "",
+                                 "The following paths were examined for Visual Studio instances:");
+
+    DECLARE_AND_REGISTER_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance");
+
+    DECLARE_AND_REGISTER_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:");
+}
+
+#if defined(_WIN32)
 
 namespace vcpkg::VisualStudio
 {
@@ -75,15 +102,14 @@ namespace vcpkg::VisualStudio
         std::string major_version() const { return version.substr(0, 2); }
     };
 
-    static std::vector<VisualStudioInstance> get_visual_studio_instances_internal(const VcpkgPaths& paths)
+    static std::vector<VisualStudioInstance> get_visual_studio_instances_internal(const Filesystem& fs)
     {
-        const auto& fs = paths.get_filesystem();
         std::vector<VisualStudioInstance> instances;
 
         const auto& program_files_32_bit = get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO);
 
         // Instances from vswhere
-        const Path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio/Installer/vswhere.exe";
+        const Path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
         if (fs.exists(vswhere_exe, IgnoreErrors{}))
         {
             const auto code_and_output = cmd_execute_and_capture_output(Command(vswhere_exe)
@@ -130,8 +156,8 @@ namespace vcpkg::VisualStudio
         const auto maybe_append_path = [&](Path&& path_root, CStringView version, bool check_cl = true) {
             if (check_cl)
             {
-                const auto cl_exe = path_root / "VC/bin/cl.exe";
-                const auto vcvarsall_bat = path_root / "VC/vcvarsall.bat";
+                const auto cl_exe = path_root / "VC" / "bin" / "cl.exe";
+                const auto vcvarsall_bat = path_root / "VC" / "vcvarsall.bat";
 
                 if (!(fs.exists(cl_exe, IgnoreErrors{}) && fs.exists(vcvarsall_bat, IgnoreErrors{}))) return;
             }
@@ -173,26 +199,25 @@ namespace vcpkg::VisualStudio
         return instances;
     }
 
-    std::vector<std::string> get_visual_studio_instances(const VcpkgPaths& paths)
+    std::vector<std::string> get_visual_studio_instances(const Filesystem& fs)
     {
-        std::vector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(paths)};
+        std::vector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(fs)};
         std::sort(sorted.begin(), sorted.end(), VisualStudioInstance::preferred_first_comparator);
         return Util::fmap(sorted, [](const VisualStudioInstance& instance) { return instance.to_string(); });
     }
 
-    std::vector<Toolset> find_toolset_instances_preferred_first(const VcpkgPaths& paths)
+    ToolsetsInformation find_toolset_instances_preferred_first(const Filesystem& fs)
     {
+        ToolsetsInformation ret;
+
         using CPU = CPUArchitecture;
 
-        const auto& fs = paths.get_filesystem();
-
         // Note: this will contain a mix of vcvarsall.bat locations and dumpbin.exe locations.
-        std::vector<Path> paths_examined;
+        std::vector<Path>& paths_examined = ret.paths_examined;
+        std::vector<Toolset>& found_toolsets = ret.toolsets;
+        std::vector<Toolset>& excluded_toolsets = ret.excluded_toolsets;
 
-        std::vector<Toolset> found_toolsets;
-        std::vector<Toolset> excluded_toolsets;
-
-        const SortedVector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(paths),
+        const SortedVector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(fs),
                                                         VisualStudioInstance::preferred_first_comparator};
 
         const bool v140_is_available = Util::find_if(sorted, [&](const VisualStudioInstance& vs_instance) {
@@ -245,7 +270,7 @@ namespace vcpkg::VisualStudio
                     auto toolset_version_full = subdir.filename();
                     auto toolset_version_prefix = toolset_version_full.substr(0, 4);
                     CStringView toolset_version;
-                    std::string vcvars_option;
+                    std::string vcvars_option = "-vcvars_ver=" + toolset_version_full.to_string();
                     if (toolset_version_prefix.size() != 4)
                     {
                         // unknown toolset
@@ -254,17 +279,14 @@ namespace vcpkg::VisualStudio
                     else if (toolset_version_prefix.byte_at_index(3) == '1')
                     {
                         toolset_version = V_141;
-                        vcvars_option = "-vcvars_ver=14.1";
                     }
                     else if (toolset_version_prefix.byte_at_index(3) == '2')
                     {
                         toolset_version = V_142;
-                        vcvars_option = "-vcvars_ver=14.2";
                     }
                     else if (toolset_version_prefix.byte_at_index(3) == '3')
                     {
                         toolset_version = V_143;
-                        vcvars_option = "-vcvars_ver=14.3";
                     }
                     else
                     {
@@ -281,6 +303,7 @@ namespace vcpkg::VisualStudio
                                         vcvarsall_bat,
                                         {vcvars_option},
                                         toolset_version,
+                                        toolset_version_full.to_string(),
                                         supported_architectures};
 
                         const auto english_language_pack = dumpbin_dir / "1033";
@@ -298,6 +321,7 @@ namespace vcpkg::VisualStudio
                                                       vcvarsall_bat,
                                                       {"-vcvars_ver=14.0"},
                                                       V_140,
+                                                      "14",
                                                       supported_architectures});
                         }
 
@@ -341,6 +365,7 @@ namespace vcpkg::VisualStudio
                                                  vcvarsall_bat,
                                                  {},
                                                  major_version == "14" ? V_140 : V_120,
+                                                 major_version,
                                                  supported_architectures};
 
                         const auto english_language_pack = vs_dumpbin_dir / "1033";
@@ -356,30 +381,49 @@ namespace vcpkg::VisualStudio
             }
         }
 
+        return ret;
+    }
+}
+namespace vcpkg
+{
+    msg::LocalizedString ToolsetsInformation::get_localized_debug_info() const
+    {
+        msg::LocalizedString ret;
         if (!excluded_toolsets.empty())
         {
-            print2(
-                Color::warning,
-                "Warning: The following VS instances are excluded because the English language pack is unavailable.\n");
+            ret.append(msg::format(msgVSExcludedByLanguagePack));
+            ret.appendnl();
             for (const Toolset& toolset : excluded_toolsets)
             {
-                print2("    ", toolset.visual_studio_root_path, '\n');
+                ret.append(msg::LocalizedString::from_string_unchecked(
+                    Strings::concat("    ", toolset.visual_studio_root_path, '\n')));
             }
-
-            print2(Color::warning, "Please install the English language pack.\n");
         }
 
-        if (found_toolsets.empty() && Debug::g_debugging)
+        if (toolsets.empty())
         {
-            Debug::print("Could not locate a complete Visual Studio instance\n");
-            Debug::print("The following paths were examined:\n");
+            ret.append(msg::format(msgVSNoInstances)).appendnl();
+        }
+        else
+        {
+            ret.append(msg::format(msgVSExaminedInstances)).appendnl();
+            for (const Toolset& toolset : toolsets)
+            {
+                ret.append(msg::LocalizedString::from_string_unchecked(
+                    Strings::concat("    ", toolset.visual_studio_root_path, '\n')));
+            }
+        }
+
+        if (!paths_examined.empty())
+        {
+            ret.append(msg::format(msgVSExaminedPaths)).appendnl();
             for (const Path& examinee : paths_examined)
             {
-                Debug::print("    ", examinee, '\n');
+                ret.append(msg::LocalizedString::from_string_unchecked(Strings::concat("    ", examinee, '\n')));
             }
         }
 
-        return found_toolsets;
+        return ret;
     }
 }
 

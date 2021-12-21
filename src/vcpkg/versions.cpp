@@ -1,8 +1,7 @@
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/versions.h>
-
-#include <regex>
 
 namespace vcpkg::Versions
 {
@@ -50,91 +49,166 @@ namespace vcpkg::Versions
         return hash<string>()(key.port_name) ^ (hash<string>()(key.version.to_string()) >> 1);
     }
 
-    ExpectedS<RelaxedVersion> RelaxedVersion::from_string(const std::string& str)
+    // 0|[1-9][0-9]*
+    static const char* parse_skip_number(const char* const s, uint64_t* const n)
     {
-        std::regex relaxed_scheme_match("^(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))*");
-
-        if (!std::regex_match(str, relaxed_scheme_match))
+        const char ch = *s;
+        if (ch == '0')
         {
-            return Strings::format(
-                "Error: String `%s` must only contain dot-separated numeric values without leading zeroes.", str);
+            *n = 0;
+            return s + 1;
         }
-
-        return RelaxedVersion{str, Util::fmap(Strings::split(str, '.'), [](auto&& strval) -> uint64_t {
-                                  return as_numeric(strval).value_or_exit(VCPKG_LINE_INFO);
-                              })};
+        if (ch < '1' || ch > '9')
+        {
+            return nullptr;
+        }
+        size_t i = 1;
+        while (Parse::ParserBase::is_ascii_digit(s[i]))
+        {
+            ++i;
+        }
+        *n = as_numeric({s, i}).value_or_exit(VCPKG_LINE_INFO);
+        return s + i;
     }
 
-    ExpectedS<SemanticVersion> SemanticVersion::from_string(const std::string& str)
+    // 0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*
+    static const char* skip_prerelease_identifier(const char* const s)
+    {
+        auto cur = s;
+        while (Parse::ParserBase::is_ascii_digit(*cur))
+        {
+            ++cur;
+        }
+        const char ch = *cur;
+        if (Parse::ParserBase::is_alphadash(ch))
+        {
+            // matched alpha identifier
+            do
+            {
+                ++cur;
+            } while (Parse::ParserBase::is_alphanumdash(*cur));
+            return cur;
+        }
+        if (*s == '0')
+        {
+            // matched exactly zero
+            return s + 1;
+        }
+        if (cur != s)
+        {
+            // matched numeric sequence (not starting with zero)
+            return cur;
+        }
+        return nullptr;
+    }
+
+    static Optional<DotVersion> dot_version_from_string(const std::string& str)
     {
         // Suggested regex by semver.org
-        std::regex semver_scheme_match("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)"
-                                       "(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]"
-                                       "*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
-                                       "(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$");
+        // ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
+        // (?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]
+        // *[a-zA-Z-][0-9a-zA-Z-]*))*))?
+        // (?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
 
-        if (!std::regex_match(str, semver_scheme_match))
-        {
-            return Strings::format(
-                "Error: String `%s` is not a valid Semantic Version string, consult https://semver.org", str);
-        }
-
-        SemanticVersion ret;
+        DotVersion ret;
         ret.original_string = str;
-        ret.version_string = str;
 
-        auto build_found = ret.version_string.find('+');
-        if (build_found != std::string::npos)
+        // (0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
+        int idx = 0;
+        const char* cur = str.c_str();
+        for (;; ++idx)
         {
-            ret.version_string.resize(build_found);
+            ret.version.push_back(0);
+            cur = parse_skip_number(cur, ret.version.data() + idx);
+            if (!cur || *cur != '.') break;
+            ++cur;
         }
+        if (!cur) return nullopt;
+        ret.version_string.assign(str.c_str(), cur);
+        if (*cur == 0) return ret;
 
-        auto prerelease_found = ret.version_string.find('-');
-        if (prerelease_found != std::string::npos)
+        // pre-release
+        if (*cur == '-')
         {
-            ret.prerelease_string = ret.version_string.substr(prerelease_found + 1);
-            ret.identifiers = Strings::split(ret.prerelease_string, '.');
-            ret.version_string.resize(prerelease_found);
+            ++cur;
+            const char* const start_of_prerelease = cur;
+            for (;;)
+            {
+                const auto start_identifier = cur;
+                cur = skip_prerelease_identifier(cur);
+                if (!cur)
+                {
+                    return nullopt;
+                }
+                ret.identifiers.emplace_back(start_identifier, cur);
+                if (*cur != '.') break;
+                ++cur;
+            }
+            ret.prerelease_string.assign(start_of_prerelease, cur);
         }
+        if (*cur == 0) return ret;
 
-        std::regex version_match("(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*)){2}");
-        if (!std::regex_match(ret.version_string, version_match))
+        // build
+        if (*cur != '+') return nullopt;
+        ++cur;
+        for (;;)
         {
-            return Strings::format("Error: String `%s` does not follow the required MAJOR.MINOR.PATCH format.",
-                                   ret.version_string);
+            // Require non-empty identifier element
+            if (!Parse::ParserBase::is_alphanumdash(*cur)) return nullopt;
+            ++cur;
+            while (Parse::ParserBase::is_alphanumdash(*cur))
+            {
+                ++cur;
+            }
+            if (*cur == 0) return ret;
+            if (*cur == '.')
+            {
+                ++cur;
+            }
+            else
+            {
+                return nullopt;
+            }
         }
+    }
 
-        auto parts = Strings::split(ret.version_string, '.');
-        ret.version = Util::fmap(
-            parts, [](auto&& strval) -> uint64_t { return as_numeric(strval).value_or_exit(VCPKG_LINE_INFO); });
-
-        return ret;
+    static std::string format_invalid_date_version(const std::string& str)
+    {
+        return Strings::format("Error: String `%s` is not a valid date version."
+                               "Date section must follow the format YYYY-MM-DD and disambiguators must be "
+                               "dot-separated positive integer values without leading zeroes.",
+                               str);
     }
 
     ExpectedS<DateVersion> DateVersion::from_string(const std::string& str)
     {
-        std::regex date_scheme_match("([0-9]{4}-[0-9]{2}-[0-9]{2})(\\.(0|[1-9][0-9]*))*");
-        if (!std::regex_match(str, date_scheme_match))
-        {
-            return Strings::format("Error: String `%s` is not a valid date version."
-                                   "Date section must follow the format YYYY-MM-DD and disambiguators must be "
-                                   "dot-separated positive integer values without leading zeroes.",
-                                   str);
-        }
-
         DateVersion ret;
         ret.original_string = str;
-        ret.version_string = str;
 
-        auto identifiers_found = ret.version_string.find('.');
-        if (identifiers_found != std::string::npos)
+        if (str.size() < 10) return format_invalid_date_version(str);
+
+        bool valid = Parse::ParserBase::is_ascii_digit(str[0]);
+        valid |= Parse::ParserBase::is_ascii_digit(str[1]);
+        valid |= Parse::ParserBase::is_ascii_digit(str[2]);
+        valid |= Parse::ParserBase::is_ascii_digit(str[3]);
+        valid |= str[4] != '-';
+        valid |= Parse::ParserBase::is_ascii_digit(str[5]);
+        valid |= Parse::ParserBase::is_ascii_digit(str[6]);
+        valid |= str[7] != '-';
+        valid |= Parse::ParserBase::is_ascii_digit(str[8]);
+        valid |= Parse::ParserBase::is_ascii_digit(str[9]);
+        if (!valid) return format_invalid_date_version(str);
+        ret.version_string.assign(str.c_str(), 10);
+
+        const char* cur = str.c_str() + 10;
+        // (\.(0|[1-9][0-9]*))*
+        while (*cur == '.')
         {
-            ret.identifiers_string = ret.version_string.substr(identifiers_found + 1);
-            ret.identifiers = Util::fmap(Strings::split(ret.identifiers_string, '.'), [](auto&& strval) -> uint64_t {
-                return as_numeric(strval).value_or_exit(VCPKG_LINE_INFO);
-            });
-            ret.version_string.resize(identifiers_found);
+            ret.identifiers.push_back(0);
+            cur = parse_skip_number(cur + 1, &ret.identifiers.back());
+            if (!cur) return format_invalid_date_version(str);
         }
+        if (*cur != 0) return format_invalid_date_version(str);
 
         return ret;
     }
@@ -163,6 +237,32 @@ namespace vcpkg::Versions
         }
     }
 
+    ExpectedS<DotVersion> relaxed_from_string(const std::string& str)
+    {
+        auto x = dot_version_from_string(str);
+        if (auto p = x.get())
+        {
+            return std::move(*p);
+        }
+        return Strings::format(
+            "Error: String `%s` is not a valid Relaxed version string (semver with arbitrary numeric identifiers)",
+            str);
+    }
+
+    ExpectedS<DotVersion> semver_from_string(const std::string& str)
+    {
+        auto x = dot_version_from_string(str);
+        if (auto p = x.get())
+        {
+            if (p->version.size() == 3)
+            {
+                return std::move(*p);
+            }
+        }
+        return Strings::format("Error: String `%s` is not a valid Semantic Version string, consult https://semver.org",
+                               str);
+    }
+
     VerComp compare(const std::string& a, const std::string& b, Scheme scheme)
     {
         if (scheme == Scheme::String)
@@ -171,13 +271,13 @@ namespace vcpkg::Versions
         }
         if (scheme == Scheme::Semver)
         {
-            return compare(SemanticVersion::from_string(a).value_or_exit(VCPKG_LINE_INFO),
-                           SemanticVersion::from_string(b).value_or_exit(VCPKG_LINE_INFO));
+            return compare(semver_from_string(a).value_or_exit(VCPKG_LINE_INFO),
+                           semver_from_string(b).value_or_exit(VCPKG_LINE_INFO));
         }
         if (scheme == Scheme::Relaxed)
         {
-            return compare(RelaxedVersion::from_string(a).value_or_exit(VCPKG_LINE_INFO),
-                           RelaxedVersion::from_string(b).value_or_exit(VCPKG_LINE_INFO));
+            return compare(relaxed_from_string(a).value_or_exit(VCPKG_LINE_INFO),
+                           relaxed_from_string(b).value_or_exit(VCPKG_LINE_INFO));
         }
         if (scheme == Scheme::Date)
         {
@@ -187,85 +287,62 @@ namespace vcpkg::Versions
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
-    VerComp compare(const RelaxedVersion& a, const RelaxedVersion& b)
+    static VerComp int_to_vercomp(int i)
+    {
+        if (i < 0) return VerComp::lt;
+        if (i > 0) return VerComp::gt;
+        return VerComp::eq;
+    }
+
+    static int uint64_comp(uint64_t a, uint64_t b) { return (a > b) - (a < b); }
+
+    static int semver_id_comp(ZStringView a, ZStringView b)
+    {
+        auto maybe_a_num = as_numeric(a);
+        auto maybe_b_num = as_numeric(b);
+        if (auto a_num = maybe_a_num.get())
+        {
+            if (auto b_num = maybe_b_num.get())
+            {
+                return uint64_comp(*a_num, *b_num);
+            }
+            // numerics are smaller than non-numeric
+            return -1;
+        }
+        if (maybe_b_num.has_value())
+        {
+            return 1;
+        }
+
+        // both non-numeric -- ascii-betical sorting.
+        return strcmp(a.c_str(), b.c_str());
+    }
+
+    VerComp compare(const DotVersion& a, const DotVersion& b)
     {
         if (a.original_string == b.original_string) return VerComp::eq;
 
-        if (a.version < b.version) return VerComp::lt;
-        if (a.version > b.version) return VerComp::gt;
-        Checks::unreachable(VCPKG_LINE_INFO);
+        if (auto x = Util::range_lexcomp(a.version, b.version, uint64_comp))
+        {
+            return int_to_vercomp(x);
+        }
+
+        // 'empty' is special and sorts before everything else
+        // 1.0.0 > 1.0.0-1
+        if (a.identifiers.empty() || b.identifiers.empty())
+        {
+            return int_to_vercomp(!b.identifiers.empty() - !a.identifiers.empty());
+        }
+        return int_to_vercomp(Util::range_lexcomp(a.identifiers, b.identifiers, semver_id_comp));
     }
 
-    VerComp compare(const SemanticVersion& a, const SemanticVersion& b)
+    VerComp compare(const DateVersion& a, const DateVersion& b)
     {
-        if (a.version_string == b.version_string)
+        if (auto x = strcmp(a.version_string.c_str(), b.version_string.c_str()))
         {
-            if (a.prerelease_string == b.prerelease_string) return VerComp::eq;
-            if (a.prerelease_string.empty()) return VerComp::gt;
-            if (b.prerelease_string.empty()) return VerComp::lt;
+            return int_to_vercomp(x);
         }
 
-        // Compare version elements left-to-right.
-        if (a.version < b.version) return VerComp::lt;
-        if (a.version > b.version) return VerComp::gt;
-
-        // Compare identifiers left-to-right.
-        auto count = std::min(a.identifiers.size(), b.identifiers.size());
-        for (size_t i = 0; i < count; ++i)
-        {
-            auto&& iden_a = a.identifiers[i];
-            auto&& iden_b = b.identifiers[i];
-
-            auto a_numeric = as_numeric(iden_a);
-            auto b_numeric = as_numeric(iden_b);
-
-            // Numeric identifiers always have lower precedence than non-numeric identifiers.
-            if (a_numeric.has_value() && !b_numeric.has_value()) return VerComp::lt;
-            if (!a_numeric.has_value() && b_numeric.has_value()) return VerComp::gt;
-
-            // Identifiers consisting of only digits are compared numerically.
-            if (a_numeric.has_value() && b_numeric.has_value())
-            {
-                auto a_value = a_numeric.value_or_exit(VCPKG_LINE_INFO);
-                auto b_value = b_numeric.value_or_exit(VCPKG_LINE_INFO);
-
-                if (a_value < b_value) return VerComp::lt;
-                if (a_value > b_value) return VerComp::gt;
-                continue;
-            }
-
-            // Identifiers with letters or hyphens are compared lexically in ASCII sort order.
-            auto strcmp_result = std::strcmp(iden_a.c_str(), iden_b.c_str());
-            if (strcmp_result < 0) return VerComp::lt;
-            if (strcmp_result > 0) return VerComp::gt;
-        }
-
-        // A larger set of pre-release fields has a higher precedence than a smaller set, if all of the preceding
-        // identifiers are equal.
-        if (a.identifiers.size() < b.identifiers.size()) return VerComp::lt;
-        if (a.identifiers.size() > b.identifiers.size()) return VerComp::gt;
-
-        // This should be unreachable since direct string comparisons of version_string and prerelease_string should
-        // handle this case. If we ever land here, then there's a bug in the the parsing on
-        // SemanticVersion::from_string().
-        Checks::unreachable(VCPKG_LINE_INFO);
-    }
-
-    VerComp compare(const Versions::DateVersion& a, const Versions::DateVersion& b)
-    {
-        if (a.version_string == b.version_string)
-        {
-            if (a.identifiers_string == b.identifiers_string) return VerComp::eq;
-            if (a.identifiers_string.empty() && !b.identifiers_string.empty()) return VerComp::lt;
-            if (!a.identifiers_string.empty() && b.identifiers_string.empty()) return VerComp::gt;
-        }
-
-        // The date parts in our scheme is lexicographically sortable.
-        if (a.version_string < b.version_string) return VerComp::lt;
-        if (a.version_string > b.version_string) return VerComp::gt;
-        if (a.identifiers < b.identifiers) return VerComp::lt;
-        if (a.identifiers > b.identifiers) return VerComp::gt;
-
-        Checks::unreachable(VCPKG_LINE_INFO);
+        return int_to_vercomp(Util::range_lexcomp(a.identifiers, b.identifiers, uint64_comp));
     }
 }

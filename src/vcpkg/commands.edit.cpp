@@ -87,7 +87,8 @@ namespace vcpkg::Commands::Edit
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
-        auto sources_and_errors = Paragraphs::try_load_all_registry_ports(paths);
+        auto sources_and_errors =
+            Paragraphs::try_load_all_registry_ports(paths.get_filesystem(), paths.get_registry_set());
 
         return Util::fmap(sources_and_errors.paragraphs, Paragraphs::get_name_of_control_file);
     }
@@ -111,7 +112,7 @@ namespace vcpkg::Commands::Edit
         if (Util::Sets::contains(options.switches, OPTION_ALL))
         {
             const auto& fs = paths.get_filesystem();
-            auto packages = fs.get_files_non_recursive(paths.packages, VCPKG_LINE_INFO);
+            auto packages = fs.get_files_non_recursive(paths.packages(), VCPKG_LINE_INFO);
 
             // TODO: Support edit for --overlay-ports
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {

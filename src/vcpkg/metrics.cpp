@@ -8,6 +8,7 @@
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/metrics.h>
+#include <vcpkg/userconfig.h>
 
 #if defined(_WIN32)
 #pragma comment(lib, "version")
@@ -247,11 +248,11 @@ namespace vcpkg
 #endif
         ;
     static bool g_should_print_metrics = false;
-    static bool g_metrics_disabled = false;
+    static std::atomic<bool> g_metrics_disabled = true;
 
-    std::string get_MAC_user()
-    {
 #if defined(_WIN32)
+    static std::string get_MAC_user()
+    {
         if (!LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
         {
             return "{}";
@@ -276,66 +277,78 @@ namespace vcpkg
         }
 
         return "0";
-#else
-        return "{}";
+    }
 #endif
-    }
-
-    void Metrics::set_user_information(const std::string& user_id, const std::string& first_use_time)
-    {
-        g_metricmessage.user_id = user_id;
-        g_metricmessage.user_timestamp = first_use_time;
-    }
-
-    void Metrics::init_user_information(std::string& user_id, std::string& first_use_time)
-    {
-        user_id = generate_random_UUID();
-        first_use_time = get_current_date_time_string();
-    }
 
     void Metrics::set_send_metrics(bool should_send_metrics) { g_should_send_metrics = should_send_metrics; }
 
     void Metrics::set_print_metrics(bool should_print_metrics) { g_should_print_metrics = should_print_metrics; }
 
-    void Metrics::set_disabled(bool disabled) { g_metrics_disabled = disabled; }
+    static bool g_initializing_metrics = false;
+
+    void Metrics::enable()
+    {
+        {
+            LockGuardPtr<Metrics> metrics(g_metrics);
+            if (g_initializing_metrics) return;
+            g_initializing_metrics = true;
+        }
+
+        // Execute this body exactly once
+        auto& fs = get_real_filesystem();
+        auto config = UserConfig::try_read_data(fs);
+
+        bool write_config = false;
+
+        // config file not found, could not be read, or invalid
+        if (config.user_id.empty() || config.user_time.empty())
+        {
+            config.user_id = generate_random_UUID();
+            config.user_time = get_current_date_time_string();
+            write_config = true;
+        }
+
+#if defined(_WIN32)
+        if (config.user_mac.empty())
+        {
+            config.user_mac = get_MAC_user();
+            write_config = true;
+        }
+#endif
+
+        if (write_config)
+        {
+            config.try_write_data(fs);
+        }
+
+        {
+            LockGuardPtr<Metrics> metrics(g_metrics);
+            g_metricmessage.user_id = config.user_id;
+            g_metricmessage.user_timestamp = config.user_time;
+
+#if defined(_WIN32)
+            metrics->track_property("user_mac", config.user_mac);
+#endif
+
+            g_metrics_disabled = false;
+        }
+    }
 
     bool Metrics::metrics_enabled() { return !g_metrics_disabled; }
 
-    void Metrics::track_metric(const std::string& name, double value)
-    {
-        if (!metrics_enabled())
-        {
-            return;
-        }
-        g_metricmessage.track_metric(name, value);
-    }
+    void Metrics::track_metric(const std::string& name, double value) { g_metricmessage.track_metric(name, value); }
 
     void Metrics::track_buildtime(const std::string& name, double value)
     {
-        if (!metrics_enabled())
-        {
-            return;
-        }
         g_metricmessage.track_buildtime(name, value);
     }
 
     void Metrics::track_property(const std::string& name, const std::string& value)
     {
-        if (!metrics_enabled())
-        {
-            return;
-        }
         g_metricmessage.track_property(name, value);
     }
 
-    void Metrics::track_feature(const std::string& name, bool value)
-    {
-        if (!metrics_enabled())
-        {
-            return;
-        }
-        g_metricmessage.track_feature(name, value);
-    }
+    void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
 
     void Metrics::upload(const std::string& payload)
     {
@@ -460,8 +473,7 @@ namespace vcpkg
         GetTempPathW(MAX_PATH, temp_folder);
 
         const Path temp_folder_path = Path(Strings::to_utf8(temp_folder)) / "vcpkg";
-        const Path temp_folder_path_exe =
-            temp_folder_path / Strings::format("vcpkg-%s.exe", Commands::Version::base_version());
+        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING ".exe";
 #endif
 
         std::error_code ec;

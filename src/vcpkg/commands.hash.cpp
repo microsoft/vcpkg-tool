@@ -16,11 +16,11 @@ namespace vcpkg::Commands::Hash
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void HashCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
 
-        const Path file_to_hash = args.command_arguments[0];
+        const auto file_to_hash = (fs.current_path(VCPKG_LINE_INFO) / args.command_arguments[0]).lexically_normal();
 
         auto algorithm = vcpkg::Hash::Algorithm::Sha512;
         if (args.command_arguments.size() == 2)
@@ -28,14 +28,8 @@ namespace vcpkg::Commands::Hash
             algorithm = vcpkg::Hash::algorithm_from_string(args.command_arguments[1]).value_or_exit(VCPKG_LINE_INFO);
         }
 
-        const std::string hash =
-            vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, paths.get_filesystem(), file_to_hash, algorithm);
+        const std::string hash = vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, file_to_hash, algorithm);
         print2(hash, '\n');
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void HashCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Hash::perform_and_exit(args, paths);
     }
 }

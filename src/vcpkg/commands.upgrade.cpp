@@ -15,6 +15,7 @@
 #include <vcpkg/update.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands::Upgrade
 {
@@ -60,7 +61,7 @@ namespace vcpkg::Commands::Upgrade
                                                  : Dependencies::UnsupportedPortAction::Error;
 
         BinaryCache binary_cache{args};
-        StatusParagraphs status_db = database_load_check(paths);
+        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
@@ -207,7 +208,7 @@ namespace vcpkg::Commands::Upgrade
                                                                  Build::null_build_logs_recorder(),
                                                                  var_provider);
 
-        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
+        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {

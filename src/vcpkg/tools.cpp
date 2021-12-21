@@ -152,10 +152,11 @@ namespace vcpkg
         virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const Path& exe_path) const = 0;
     };
 
+    template<typename Func>
     static Optional<PathAndVersion> find_first_with_sufficient_version(const VcpkgPaths& paths,
                                                                        const ToolProvider& tool_provider,
                                                                        const std::vector<Path>& candidates,
-                                                                       const std::array<int, 3>& expected_version)
+                                                                       Func&& accept_version)
     {
         const auto& fs = paths.get_filesystem();
         for (auto&& candidate : candidates)
@@ -167,12 +168,7 @@ namespace vcpkg
             const auto parsed_version = parse_version_string(*version);
             if (!parsed_version) continue;
             auto& actual_version = *parsed_version.get();
-            const auto version_acceptable =
-                actual_version[0] > expected_version[0] ||
-                (actual_version[0] == expected_version[0] && actual_version[1] > expected_version[1]) ||
-                (actual_version[0] == expected_version[0] && actual_version[1] == expected_version[1] &&
-                 actual_version[2] >= expected_version[2]);
-            if (!version_acceptable) continue;
+            if (!accept_version(actual_version)) continue;
 
             return PathAndVersion{candidate, *version};
         }
@@ -205,13 +201,13 @@ namespace vcpkg
         }
         else
         {
-            Downloads::verify_downloaded_file_hash(fs, tool_data.url, tool_data.download_path, tool_data.sha512);
+            verify_downloaded_file_hash(fs, tool_data.url, tool_data.download_path, tool_data.sha512);
         }
 
         if (tool_data.is_archive)
         {
             print2("Extracting ", tool_name, "...\n");
-            Archives::extract_archive(paths, tool_data.download_path, tool_data.tool_dir_path);
+            extract_archive(paths, tool_data.download_path, tool_data.tool_dir_path);
         }
         else
         {
@@ -237,7 +233,7 @@ namespace vcpkg
         return {std::move(downloaded_path), std::move(downloaded_version)};
     }
 
-    static PathAndVersion get_path(const VcpkgPaths& paths, const ToolProvider& tool)
+    static PathAndVersion get_path(const VcpkgPaths& paths, const ToolProvider& tool, bool exact_version = false)
     {
         auto& fs = paths.get_filesystem();
 
@@ -260,7 +256,18 @@ namespace vcpkg
 
         tool.add_special_paths(candidate_paths);
 
-        const auto maybe_path = find_first_with_sufficient_version(paths, tool, candidate_paths, min_version);
+        const auto maybe_path = find_first_with_sufficient_version(
+            paths, tool, candidate_paths, [&min_version, exact_version](const std::array<int, 3>& actual_version) {
+                if (exact_version)
+                {
+                    return actual_version[0] == min_version[0] && actual_version[1] == min_version[1] &&
+                           actual_version[2] == min_version[2];
+                }
+                return actual_version[0] > min_version[0] ||
+                       (actual_version[0] == min_version[0] && actual_version[1] > min_version[1]) ||
+                       (actual_version[0] == min_version[0] && actual_version[1] == min_version[1] &&
+                        actual_version[2] >= min_version[2]);
+            });
         if (const auto p = maybe_path.get())
         {
             return *p;
@@ -412,6 +419,50 @@ Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa
             Checks::check_exit(
                 VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of aria2 version string: %s", rc.output);
             auto start = rc.output.begin() + idx;
+            char newlines[] = "\r\n";
+            auto end = std::find_first_of(start, rc.output.end(), &newlines[0], &newlines[2]);
+            return {std::string(start, end), expected_left_tag};
+        }
+    };
+
+    struct NodeProvider : ToolProvider
+    {
+        virtual const std::string& tool_data_name() const override { return Tools::NODE; }
+        virtual const std::string& exe_stem() const override { return Tools::NODE; }
+        virtual std::array<int, 3> default_min_version() const override { return {16, 12, 0}; }
+
+        virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const override
+        {
+#if defined(_WIN32)
+            const auto& program_files = get_program_files_platform_bitness();
+            if (const auto pf = program_files.get()) out_candidate_paths.push_back(*pf / "nodejs" / "node.exe");
+            const auto& program_files_32_bit = get_program_files_32_bit();
+            if (const auto pf = program_files_32_bit.get()) out_candidate_paths.push_back(*pf / "nodejs" / "node.exe");
+#else
+            // TODO: figure out if this should do anything on non-windows
+            (void)out_candidate_paths;
+#endif
+        }
+
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
+        {
+            auto cmd = Command(exe_path).string_arg("--version");
+            auto rc = cmd_execute_and_capture_output(cmd);
+            if (rc.exit_code != 0)
+            {
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", Tools::NODE, "\n"),
+                        expected_right_tag};
+            }
+
+            // Sample output: v16.12.0
+            auto start = rc.output.begin();
+            if (start == rc.output.end() || *start != 'v')
+            {
+                return {Strings::concat(std::move(rc.output), "\n\nUnexpected output of ", Tools::NODE, " --version\n"),
+                        expected_right_tag};
+            }
+
+            ++start;
             char newlines[] = "\r\n";
             auto end = std::find_first_of(start, rc.output.end(), &newlines[0], &newlines[2]);
             return {std::string(start, end), expected_left_tag};
@@ -587,8 +638,39 @@ gsutil version: 4.58
 
     struct ToolCacheImpl final : ToolCache
     {
+        RequireExactVersions abiToolVersionHandling;
+        vcpkg::Cache<std::string, Path> system_cache;
         vcpkg::Cache<std::string, Path> path_only_cache;
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
+
+        ToolCacheImpl(RequireExactVersions abiToolVersionHandling) : abiToolVersionHandling(abiToolVersionHandling) { }
+
+        virtual const Path& get_tool_path_from_system(const Filesystem& fs, const std::string& tool) const override
+        {
+            return system_cache.get_lazy(tool, [&] {
+                if (tool == Tools::TAR)
+                {
+                    auto tars = fs.find_from_PATH("tar");
+                    if (tars.empty())
+                    {
+                        Checks::exit_with_message(VCPKG_LINE_INFO,
+#if defined(_WIN32)
+                                                  "Could not find tar; the action you tried to take assumes Windows 10 "
+                                                  "or later which are bundled with tar.exe."
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+                                                  "Could not find tar; please install it from your system package "
+                                                  "manager."
+#endif // ^^^ !_WIN32
+
+                        );
+                    }
+
+                    return std::move(tars[0]);
+                }
+
+                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unknown or unavailable tool: %s", tool);
+            });
+        }
 
         virtual const Path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const override
         {
@@ -623,7 +705,7 @@ gsutil version: 4.58
                     {
                         return {"cmake", "0"};
                     }
-                    return get_path(paths, CMakeProvider());
+                    return get_path(paths, CMakeProvider(), abiToolVersionHandling == RequireExactVersions::YES);
                 }
                 if (tool == Tools::GIT)
                 {
@@ -647,10 +729,12 @@ gsutil version: 4.58
                     {
                         return {"pwsh", "0"};
                     }
-                    return get_path(paths, PowerShellCoreProvider());
+                    return get_path(
+                        paths, PowerShellCoreProvider(), abiToolVersionHandling == RequireExactVersions::YES);
                 }
                 if (tool == Tools::NUGET) return get_path(paths, NuGetProvider());
                 if (tool == Tools::ARIA2) return get_path(paths, Aria2Provider());
+                if (tool == Tools::NODE) return get_path(paths, NodeProvider());
                 if (tool == Tools::IFW_INSTALLER_BASE) return get_path(paths, IfwInstallerBaseProvider());
                 if (tool == Tools::MONO) return get_path(paths, MonoProvider());
                 if (tool == Tools::GSUTIL)
@@ -660,6 +744,24 @@ gsutil version: 4.58
                         return {"gsutil", "0"};
                     }
                     return get_path(paths, GsutilProvider());
+                }
+                if (tool == Tools::TAR)
+                {
+                    auto tars = paths.get_filesystem().find_from_PATH("tar");
+                    if (tars.empty())
+                    {
+                        Checks::exit_with_message(VCPKG_LINE_INFO,
+#if defined(_WIN32)
+                                                  "Could not find tar; the action you tried to take assumes Windows 10 "
+                                                  "or later which are bundled with tar.exe."
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+                                                  "Could not find tar; please install it from your system package manager."
+#endif // ^^^ !_WIN32
+
+                        );
+                    }
+
+                    return {tars[0], {}};
                 }
 
                 // For other tools, we simply always auto-download them.
@@ -683,5 +785,8 @@ gsutil version: 4.58
         }
     };
 
-    std::unique_ptr<ToolCache> get_tool_cache() { return std::make_unique<ToolCacheImpl>(); }
+    std::unique_ptr<ToolCache> get_tool_cache(RequireExactVersions abiToolVersionHandling)
+    {
+        return std::make_unique<ToolCacheImpl>(abiToolVersionHandling);
+    }
 }

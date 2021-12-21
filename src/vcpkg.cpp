@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -15,7 +16,6 @@
 #include <vcpkg/input.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/userconfig.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -37,10 +37,6 @@ using namespace vcpkg;
 namespace
 {
     DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::value), "", "invalid command: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgDebugTimeTaken,
-                                 (msg::pretty_value, msg::value),
-                                 "{LOCKED}",
-                                 "[DEBUG] Exiting after %s (%d us)\n");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
                                  (),
                                  "",
@@ -59,12 +55,6 @@ CMD=)");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{LOCKED}", "{value}|");
 }
 
-// 24 hours/day * 30 days/month * 6 months
-static constexpr int SURVEY_INTERVAL_IN_HOURS = 24 * 30 * 6;
-
-// Initial survey appears after 10 days. Therefore, subtract 24 hours/day * 10 days
-static constexpr int SURVEY_INITIAL_OFFSET_IN_HOURS = SURVEY_INTERVAL_IN_HOURS - 24 * 10;
-
 static void invalid_command(const std::string& cmd)
 {
     msg::println(Color::error, msgVcpkgInvalidCommand, msg::value = cmd);
@@ -74,7 +64,6 @@ static void invalid_command(const std::string& cmd)
 
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
-    LockGuardPtr<Metrics>(g_metrics)->track_property("command", args.command);
     if (args.command.empty())
     {
         print_usage();
@@ -98,6 +87,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
     {
+        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
         return command_function->function->perform_and_exit(args, fs);
     }
 
@@ -108,6 +98,7 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_paths_commands()))
     {
+        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
         return command_function->function->perform_and_exit(args, paths);
     }
 
@@ -118,54 +109,11 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
     {
+        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
         return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
     return invalid_command(args.command);
-}
-
-static void load_config(vcpkg::Filesystem& fs)
-{
-    auto config = UserConfig::try_read_data(fs);
-
-    bool write_config = false;
-
-    // config file not found, could not be read, or invalid
-    if (config.user_id.empty() || config.user_time.empty())
-    {
-        ::vcpkg::Metrics::init_user_information(config.user_id, config.user_time);
-        write_config = true;
-    }
-
-#if defined(_WIN32)
-    if (config.user_mac.empty())
-    {
-        config.user_mac = get_MAC_user();
-        write_config = true;
-    }
-#endif
-
-    {
-        LockGuardPtr<Metrics> locked_metrics(g_metrics);
-        locked_metrics->set_user_information(config.user_id, config.user_time);
-#if defined(_WIN32)
-        locked_metrics->track_property("user_mac", config.user_mac);
-#endif
-    }
-
-    if (config.last_completed_survey.empty())
-    {
-        const auto now = CTime::parse(config.user_time).value_or_exit(VCPKG_LINE_INFO);
-        const CTime offset = now.add_hours(-SURVEY_INITIAL_OFFSET_IN_HOURS);
-        config.last_completed_survey = offset.to_string();
-    }
-
-    LockGuardPtr<std::string>(GlobalState::g_surveydate)->assign(config.last_completed_survey);
-
-    if (write_config)
-    {
-        config.try_write_data(fs);
-    }
 }
 
 #if defined(_WIN32)
@@ -210,7 +158,7 @@ int main(const int argc, const char* const* const argv)
         }
     }
 
-    *(LockGuardPtr<ElapsedTimer>(GlobalState::timer)) = ElapsedTimer::create_started();
+    GlobalState::timer = ElapsedTimer::create_started();
 
 #if defined(_WIN32)
     GlobalState::g_init_console_cp = GetConsoleCP();
@@ -238,10 +186,19 @@ int main(const int argc, const char* const* const argv)
     }
 #endif
     set_environment_variable("VCPKG_COMMAND", get_exe_path_of_current_process().generic_u8string());
+
+    // Prevent child processes (ex. cmake) from producing "colorized"
+    // output (which may include ANSI escape codes), since it would
+    // complicate parsing the output.
+    //
+    // See http://bixense.com/clicolors for the semantics associated with
+    // the CLICOLOR and CLICOLOR_FORCE env variables
+    //
     set_environment_variable("CLICOLOR_FORCE", {});
+    set_environment_variable("CLICOLOR", "0");
 
     Checks::register_global_shutdown_handler([]() {
-        const auto elapsed_us_inner = LockGuardPtr<ElapsedTimer>(GlobalState::timer)->microseconds();
+        const auto elapsed_us_inner = GlobalState::timer.microseconds();
 
         bool debugging = Debug::g_debugging;
 
@@ -259,16 +216,34 @@ int main(const int argc, const char* const* const argv)
 #endif
 
         if (debugging)
-            msg::println(msgVcpkgDebugTimeTaken,
-                         msg::pretty_value = LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(),
-                         msg::value = static_cast<int64_t>(elapsed_us_inner));
+        {
+            msg::write_unlocalized_text_to_stdout(Color::none,
+                                                  Strings::concat("[DEBUG] Time in subprocesses: ",
+                                                                  get_subproccess_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in parsing JSON: ",
+                                                                  Json::get_json_parsing_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in JSON reader: ",
+                                                                  Json::Reader::get_reader_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in filesystem: ",
+                                                                  get_filesystem_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in loading ports: ",
+                                                                  Paragraphs::get_load_ports_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Exiting after ",
+                                                                  GlobalState::timer.to_string(),
+                                                                  " (",
+                                                                  static_cast<int64_t>(elapsed_us_inner),
+                                                                  " us)\n"));
+        }
     });
 
     LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version());
 
     register_console_ctrl_handler();
-
-    load_config(fs);
 
 #if (defined(__aarch64__) || defined(__arm__) || defined(__s390x__) ||                                                 \
      ((defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)) &&                    \
@@ -289,22 +264,28 @@ int main(const int argc, const char* const* const argv)
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
     args.check_feature_flag_consistency();
 
+    bool to_enable_metrics = true;
+    auto disable_metrics_tag_file_path = get_exe_path_of_current_process();
+    disable_metrics_tag_file_path.replace_filename("vcpkg.disable-metrics");
+
+    std::error_code ec;
+    if (fs.exists(disable_metrics_tag_file_path, ec) || ec)
+    {
+        to_enable_metrics = false;
+    }
+
+    if (auto p = args.disable_metrics.get())
+    {
+        to_enable_metrics = !*p;
+    }
+
+    if (to_enable_metrics)
+    {
+        Metrics::enable();
+    }
+
     {
         LockGuardPtr<Metrics> metrics(g_metrics);
-        if (const auto p = args.disable_metrics.get())
-        {
-            metrics->set_disabled(*p);
-        }
-
-        auto disable_metrics_tag_file_path = get_exe_path_of_current_process();
-        disable_metrics_tag_file_path.replace_filename("vcpkg.disable-metrics");
-
-        std::error_code ec;
-        if (fs.exists(disable_metrics_tag_file_path, ec) || ec)
-        {
-            metrics->set_disabled(true);
-        }
-
         if (const auto p = args.print_metrics.get())
         {
             metrics->set_print_metrics(*p);
@@ -314,12 +295,12 @@ int main(const int argc, const char* const* const argv)
         {
             metrics->set_send_metrics(*p);
         }
-
-        if (args.send_metrics.value_or(false) && !metrics->metrics_enabled())
-        {
-            msg::println(Color::warning, msgVcpkgSendMetricsButDisabled);
-        }
     } // unlock g_metrics
+
+    if (args.send_metrics.value_or(false) && !to_enable_metrics)
+    {
+        msg::println(Color::warning, msgVcpkgSendMetricsButDisabled);
+    }
 
     args.debug_print_feature_flags();
     args.track_feature_flag_metrics();

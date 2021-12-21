@@ -6,10 +6,6 @@ if(NOT CMAKE_MSVC_RUNTIME_LIBRARY)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-if(WIN32)
-    string(APPEND CMAKE_CXX_FLAGS " /EHsc")
-endif()
-
 # ===============
 # === Options ===
 # ===============
@@ -23,6 +19,7 @@ option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
+option(VCPKG_OFFICIAL_BUILD "Option to cause immediate failure if variables required for official builds are unset." OFF)
 set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
 
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
@@ -96,12 +93,20 @@ if(NOT DEFINED VCPKG_VERSION OR VCPKG_VERSION STREQUAL "")
     set(VCPKG_VERSION "unknownhash")
 endif()
 
-set(VCPKG_BASE_VERSION "2021-11-02")
+if(NOT DEFINED VCPKG_BASE_VERSION OR VCPKG_BASE_VERSION STREQUAL "")
+    if(VCPKG_OFFICIAL_BUILD)
+        message(FATAL_ERROR "VCPKG_BASE_VERSION must be set for official builds.")
+    endif()
+
+    # The first digit is 2 to work with vcpkg_minimum_required in scripts.
+    set(VCPKG_BASE_VERSION "2999-12-31")
+endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
 if(MSVC)
+    string(APPEND CMAKE_CXX_FLAGS " /EHsc")
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi /guard:cf")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DEBUG /debugtype:cv,fixup /guard:cf")
@@ -146,6 +151,26 @@ target_compile_definitions(vcpkglib PUBLIC
     VCPKG_VERSION=${VCPKG_VERSION}
     VCPKG_BASE_VERSION=${VCPKG_BASE_VERSION}
 )
+
+if(NOT DEFINED VCPKG_STANDALONE_BUNDLE_SHA OR VCPKG_STANDALONE_BUNDLE_SHA STREQUAL "")
+    if(VCPKG_OFFICIAL_BUILD)
+        message(FATAL_ERROR "VCPKG_STANDALONE_BUNDLE_SHA is required for official builds.")
+    endif()
+else()
+    target_compile_definitions(vcpkglib PUBLIC
+        VCPKG_STANDALONE_BUNDLE_SHA=${VCPKG_STANDALONE_BUNDLE_SHA}
+    )
+endif()
+
+if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
+    if(VCPKG_OFFICIAL_BUILD)
+        message(FATAL_ERROR "VCPKG_CE_SHA is required for official builds.")
+    endif()
+else()
+    target_compile_definitions(vcpkglib PUBLIC
+        VCPKG_CE_SHA=${VCPKG_CE_SHA}
+    )
+endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)

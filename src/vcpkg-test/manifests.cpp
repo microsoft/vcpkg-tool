@@ -35,7 +35,7 @@ static Json::Object parse_json_object(StringView sv)
 static Parse::ParseExpected<SourceControlFile> test_parse_manifest(StringView sv, bool expect_fail = false)
 {
     auto object = parse_json_object(sv);
-    auto res = SourceControlFile::parse_manifest_file("<test manifest>", object);
+    auto res = SourceControlFile::parse_manifest_object("<test manifest>", object);
     if (!res.has_value() && !expect_fail)
     {
         print_error_message(res.error());
@@ -60,9 +60,12 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(pgh.core_paragraph->name == "zlib");
     REQUIRE(pgh.core_paragraph->version == "1.2.8");
     REQUIRE(pgh.core_paragraph->maintainers.empty());
+    REQUIRE(pgh.core_paragraph->contacts.is_empty());
+    REQUIRE(pgh.core_paragraph->summary.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.empty());
     REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
+    REQUIRE(!pgh.core_paragraph->vcpkg_configuration.has_value());
 
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
 }
@@ -154,7 +157,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
         "name": "zlib",
         "version": "1.2.3-rc3"
     })json",
-                            true);
+                            false);
     }
 }
 
@@ -640,6 +643,11 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
                     "rapidjson",
                     "fmt"
                 ]
+            },
+            {
+                "kind": "artifact",
+                "name": "vcpkg-artifacts",
+                "location": "https://github.com/microsoft/vcpkg-artifacts"
             }
         ]
     })json";
@@ -673,10 +681,7 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     auto maybe_as_json = Json::parse(raw);
     REQUIRE(maybe_as_json.has_value());
     auto as_json = *maybe_as_json.get();
-    REQUIRE(as_json.first.is_object());
-    auto as_json_obj = as_json.first.object();
-    REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) ==
-            Json::stringify(as_json_obj, Json::JsonStyle::with_spaces(4)));
+    check_json_eq(Json::Value::object(serialize_manifest(pgh)), as_json.first);
 
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
@@ -703,25 +708,31 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
 
 TEST_CASE ("manifest construct maximum", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    auto raw = R"json({
         "name": "s",
         "version-string": "v",
-        "maintainers": ["m"],
+        "maintainers": "m",
+        "contacts": { "a": { "aa": "aa" } },
+        "summary": "d",
         "description": "d",
+        "builtin-baseline": "123",
         "dependencies": ["bd"],
         "default-features": ["df"],
         "features": {
             "iroh" : {
+            "$comment": "hello",
                 "description": "zuko's uncle",
                 "dependencies": [
                     "firebending",
                     {
-                        "name": "tea"
-                    },
-                    {
                         "name": "order.white-lotus",
                         "features": [ "the-ancient-ways" ],
                         "platform": "!(windows & arm)"
+                },
+                {
+                    "$extra": [],
+                    "$my": [],
+                    "name": "tea"
                     }
                 ]
             },
@@ -730,14 +741,31 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                 "supports": "!(windows & arm)"
             }
         }
-    })json");
-    REQUIRE(m_pgh.has_value());
-    auto& pgh = **m_pgh.get();
+})json";
+    auto object = parse_json_object(raw);
+    auto res = SourceControlFile::parse_manifest_object("<test manifest>", object);
+    if (!res.has_value())
+    {
+        print_error_message(res.error());
+    }
+    REQUIRE(res.has_value());
+    REQUIRE(*res.get() != nullptr);
+    auto& pgh = **res.get();
 
     REQUIRE(pgh.core_paragraph->name == "s");
     REQUIRE(pgh.core_paragraph->version == "v");
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
+    REQUIRE(pgh.core_paragraph->contacts.size() == 1);
+    auto contact_a = pgh.core_paragraph->contacts.get("a");
+    REQUIRE(contact_a);
+    REQUIRE(contact_a->is_object());
+    auto contact_a_aa = contact_a->object().get("aa");
+    REQUIRE(contact_a_aa);
+    REQUIRE(contact_a_aa->is_string());
+    REQUIRE(contact_a_aa->string() == "aa");
+    REQUIRE(pgh.core_paragraph->summary.size() == 1);
+    REQUIRE(pgh.core_paragraph->summary[0] == "d");
     REQUIRE(pgh.core_paragraph->description.size() == 1);
     REQUIRE(pgh.core_paragraph->description[0] == "d");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
@@ -745,6 +773,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
     REQUIRE(pgh.core_paragraph->default_features[0] == "df");
     REQUIRE(pgh.core_paragraph->supports_expression.is_empty());
+    REQUIRE(pgh.core_paragraph->builtin_baseline == "123");
 
     REQUIRE(pgh.feature_paragraphs.size() == 2);
 
@@ -776,7 +805,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
 
-    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    check_json_eq_ordered(serialize_manifest(pgh), object);
 }
 
 TEST_CASE ("SourceParagraph manifest two dependencies", "[manifests]")
@@ -939,7 +968,7 @@ TEST_CASE ("SourceParagraph manifest non-string supports", "[manifests]")
     REQUIRE_FALSE(m_pgh.has_value());
 }
 
-TEST_CASE ("Serialize all the ports", "[manifests]")
+TEST_CASE ("Serialize all the ports", "[all-manifests]")
 {
     std::vector<std::string> args_list = {"format-manifest"};
     auto& fs = get_real_filesystem();
@@ -977,8 +1006,8 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
             REQUIRE_FALSE(ec);
             REQUIRE(contents);
 
-            auto scf = SourceControlFile::parse_manifest_file(manifest,
-                                                              contents.value_or_exit(VCPKG_LINE_INFO).first.object());
+            auto scf = SourceControlFile::parse_manifest_object(manifest,
+                                                                contents.value_or_exit(VCPKG_LINE_INFO).first.object());
             REQUIRE(scf);
 
             scfs.push_back(std::move(*scf.value_or_exit(VCPKG_LINE_INFO)));
@@ -988,7 +1017,7 @@ TEST_CASE ("Serialize all the ports", "[manifests]")
     for (auto& scf : scfs)
     {
         auto serialized = serialize_manifest(scf);
-        auto serialized_scf = SourceControlFile::parse_manifest_file({}, serialized).value_or_exit(VCPKG_LINE_INFO);
+        auto serialized_scf = SourceControlFile::parse_manifest_object({}, serialized).value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(*serialized_scf == scf);
     }

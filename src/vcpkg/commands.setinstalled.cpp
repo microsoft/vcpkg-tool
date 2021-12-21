@@ -11,6 +11,7 @@
 #include <vcpkg/remove.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands::SetInstalled
 {
@@ -44,6 +45,8 @@ namespace vcpkg::Commands::SetInstalled
                              const Optional<Path>& maybe_pkgsconfig,
                              Triplet host_triplet)
     {
+        auto& fs = paths.get_filesystem();
+
         cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
         Build::compute_all_abis(paths, action_plan, cmake_vars, {});
 
@@ -61,7 +64,7 @@ namespace vcpkg::Commands::SetInstalled
         }
 
         // currently (or once) installed specifications
-        auto status_db = database_load_check(paths);
+        auto status_db = database_load_check(fs, paths.installed());
         std::vector<PackageSpec> specs_to_remove;
         std::set<PackageSpec> specs_installed;
         for (auto&& status_pgh : status_db)
@@ -98,7 +101,6 @@ namespace vcpkg::Commands::SetInstalled
         if (auto p_pkgsconfig = maybe_pkgsconfig.get())
         {
             Build::compute_all_abis(paths, action_plan, cmake_vars, status_db);
-            auto& fs = paths.get_filesystem();
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
@@ -123,7 +125,7 @@ namespace vcpkg::Commands::SetInstalled
                                               Build::null_build_logs_recorder(),
                                               cmake_vars);
 
-        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
+        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 
         std::set<std::string> printed_usages;
         for (auto&& ur_spec : user_requested_specs)
@@ -131,7 +133,7 @@ namespace vcpkg::Commands::SetInstalled
             auto it = status_db.find_installed(ur_spec);
             if (it != status_db.end())
             {
-                Install::print_usage_information(it->get()->package, printed_usages, paths);
+                Install::print_usage_information(it->get()->package, printed_usages, fs, paths.installed());
             }
         }
 

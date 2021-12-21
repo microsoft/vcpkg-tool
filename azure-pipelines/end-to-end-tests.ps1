@@ -25,7 +25,7 @@ Param(
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string]$WorkingRoot,
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $false)]
     [string]$VcpkgRoot,
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
@@ -41,6 +41,15 @@ if (-Not (Test-Path $WorkingRoot)) {
 }
 
 $WorkingRoot = (Get-Item $WorkingRoot).FullName
+if ([string]::IsNullOrWhitespace($VcpkgRoot)) {
+    $VcpkgRoot = $env:VCPKG_ROOT
+}
+
+if ([string]::IsNullOrWhitespace($VcpkgRoot)) {
+    Write-Error "Could not determine VCPKG_ROOT"
+    throw
+}
+
 $VcpkgRoot = (Get-Item $VcpkgRoot).FullName
 
 if ([string]::IsNullOrEmpty($VcpkgExe))
@@ -71,10 +80,9 @@ $envvars_clear = @(
     "VCPKG_KEEP_ENV_VARS",
     "VCPKG_ROOT",
     "VCPKG_FEATURE_FLAGS",
-    "VCPKG_DISABLE_METRICS",
-    "X_VCPKG_REGISTRIES_CACHE"
+    "VCPKG_DISABLE_METRICS"
 )
-$envvars = $envvars_clear + @("VCPKG_DOWNLOADS")
+$envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE")
 
 foreach ($Test in $AllTests)
 {
@@ -111,7 +119,7 @@ foreach ($Test in $AllTests)
             }
             else
             {
-                Set-Item "Env:\$var" "$envbackup[$var]"
+                Set-Item "Env:\$var" $envbackup[$var]
             }
         }
     }

@@ -35,7 +35,10 @@ namespace
 
     bool is_valid_symlink_failure(const std::error_code& ec) noexcept
     {
-#if defined(_WIN32)
+#if defined(__MINGW32__)
+        // mingw doesn't support symlink operations
+        return true;
+#elif defined(_WIN32)
         // on Windows, creating symlinks requires admin rights, so we ignore such failures
         return ec == std::error_code(ERROR_PRIVILEGE_NOT_HELD, std::system_category());
 #else  // ^^^ _WIN32 // !_WIN32

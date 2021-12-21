@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/system.process.h>
+
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
@@ -161,6 +163,9 @@ namespace vcpkg
         constexpr static StringLiteral CMAKE_SCRIPT_ARG = "x-cmake-args";
         std::vector<std::string> cmake_args;
 
+        constexpr static StringLiteral EXACT_ABI_TOOLS_VERSIONS_SWITCH = "x-abi-tools-use-exact-versions";
+        Optional<bool> exact_abi_tools_versions;
+
         constexpr static StringLiteral DEBUG_SWITCH = "debug";
         Optional<bool> debug = nullopt;
         constexpr static StringLiteral SEND_METRICS_SWITCH = "sendmetrics";
@@ -242,6 +247,8 @@ namespace vcpkg
 
         Optional<std::string> asset_sources_template() const;
 
+        const std::vector<std::string>& get_forwardable_arguments() const noexcept;
+
     private:
         void imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env);
 
@@ -250,5 +257,7 @@ namespace vcpkg
 
         std::unordered_set<std::string> command_switches;
         std::unordered_map<std::string, std::vector<std::string>> command_options;
+
+        std::vector<std::string> forwardable_arguments;
     };
 }

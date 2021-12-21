@@ -5,7 +5,6 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/messages.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/system.h>
 
@@ -64,6 +63,7 @@ namespace vcpkg
         std::string version;
         int port_version = 0;
         std::vector<std::string> description;
+        std::vector<std::string> summary;
         std::vector<std::string> maintainers;
         std::string homepage;
         std::string documentation;
@@ -73,6 +73,8 @@ namespace vcpkg
         std::string license; // SPDX license expression
         Optional<std::string> builtin_baseline;
         Optional<Json::Object> vcpkg_configuration;
+        // Currently contacts is only a Json::Object but it will eventually be unified with maintainers
+        Json::Object contacts;
 
         Type type = {Type::PORT};
         PlatformExpression::Expr supports_expression;
@@ -94,9 +96,6 @@ namespace vcpkg
 
         static Parse::ParseExpected<SourceControlFile> parse_manifest_object(StringView origin,
                                                                              const Json::Object& object);
-
-        static Parse::ParseExpected<SourceControlFile> parse_manifest_file(const Path& manifest_path,
-                                                                           const Json::Object& object);
 
         static Parse::ParseExpected<SourceControlFile> parse_control_file(
             StringView origin, std::vector<Parse::Paragraph>&& control_paragraphs);
@@ -125,6 +124,9 @@ namespace vcpkg
 
     Json::Object serialize_manifest(const SourceControlFile& scf);
     Json::Object serialize_debug_manifest(const SourceControlFile& scf);
+
+    ExpectedS<struct ManifestConfiguration> parse_manifest_configuration(StringView origin,
+                                                                         const Json::Object& manifest);
 
     /// <summary>
     /// Named pair of a SourceControlFile and the location of this file

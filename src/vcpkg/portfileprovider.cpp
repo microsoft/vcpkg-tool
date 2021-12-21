@@ -11,8 +11,6 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versiondeserializers.h>
 
-#include <regex>
-
 using namespace vcpkg;
 using namespace Versions;
 
@@ -25,7 +23,7 @@ namespace
         OverlayRegistryEntry(Path&& p, VersionT&& v) : root(p), version(v) { }
 
         View<VersionT> get_port_versions() const override { return {&version, 1}; }
-        ExpectedS<Path> get_path_to_version(const VcpkgPaths&, const VersionT& v) const override
+        ExpectedS<Path> get_path_to_version(const VersionT& v) const override
         {
             if (v == version)
             {
@@ -58,7 +56,7 @@ namespace vcpkg::PortFileProvider
         return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
 
-    PathsPortFileProvider::PathsPortFileProvider(const VcpkgPaths& paths, const std::vector<std::string>& overlay_ports)
+    PathsPortFileProvider::PathsPortFileProvider(const VcpkgPaths& paths, View<std::string> overlay_ports)
         : m_baseline(make_baseline_provider(paths))
         , m_versioned(make_versioned_portfile_provider(paths))
         , m_overlay(make_overlay_provider(paths, overlay_ports))
@@ -109,20 +107,23 @@ namespace vcpkg::PortFileProvider
                 }
                 else
                 {
-                    auto version = paths.get_configuration().registry_set.baseline_for_port(paths, port_name);
+                    auto version = paths.get_registry_set().baseline_for_port(port_name);
                     m_baseline_cache.emplace(port_name.to_string(), version);
                     return version;
                 }
             }
 
         private:
-            const VcpkgPaths& paths; // TODO: remove this data member
+            const VcpkgPaths& paths;
             mutable std::map<std::string, Optional<VersionT>, std::less<>> m_baseline_cache;
         };
 
         struct VersionedPortfileProviderImpl : IVersionedPortfileProvider
         {
-            VersionedPortfileProviderImpl(const VcpkgPaths& paths_) : paths(paths_) { }
+            VersionedPortfileProviderImpl(const Filesystem& fs, const RegistrySet& rset)
+                : m_fs(fs), m_registry_set(rset)
+            {
+            }
             VersionedPortfileProviderImpl(const VersionedPortfileProviderImpl&) = delete;
             VersionedPortfileProviderImpl& operator=(const VersionedPortfileProviderImpl&) = delete;
 
@@ -131,9 +132,9 @@ namespace vcpkg::PortFileProvider
                 auto entry_it = m_entry_cache.find(name);
                 if (entry_it == m_entry_cache.end())
                 {
-                    if (auto reg = paths.get_configuration().registry_set.registry_for_port(name))
+                    if (auto reg = m_registry_set.registry_for_port(name))
                     {
-                        if (auto entry = reg->get_port_entry(paths, name))
+                        if (auto entry = reg->get_port_entry(name))
                         {
                             entry_it = m_entry_cache.emplace(name.to_string(), std::move(entry)).first;
                         }
@@ -168,10 +169,10 @@ namespace vcpkg::PortFileProvider
                 const auto& maybe_ent = entry(version_spec.port_name);
                 if (auto ent = maybe_ent.get())
                 {
-                    auto maybe_path = ent->get()->get_path_to_version(paths, version_spec.version);
+                    auto maybe_path = ent->get()->get_path_to_version(version_spec.version);
                     if (auto path = maybe_path.get())
                     {
-                        auto maybe_control_file = Paragraphs::try_load_port(paths.get_filesystem(), *path);
+                        auto maybe_control_file = Paragraphs::try_load_port(m_fs, *path);
                         if (auto scf = maybe_control_file.get())
                         {
                             if (scf->get()->core_paragraph->name == version_spec.port_name)
@@ -221,7 +222,7 @@ namespace vcpkg::PortFileProvider
             virtual void load_all_control_files(
                 std::map<std::string, const SourceControlFileAndLocation*>& out) const override
             {
-                auto all_ports = Paragraphs::load_all_registry_ports(paths);
+                auto all_ports = Paragraphs::load_all_registry_ports(m_fs, m_registry_set);
                 for (auto&& scfl : all_ports)
                 {
                     auto port_name = scfl.source_control_file->core_paragraph->name;
@@ -236,7 +237,8 @@ namespace vcpkg::PortFileProvider
             }
 
         private:
-            const VcpkgPaths& paths; // TODO: remove this data member
+            const Filesystem& m_fs;
+            const RegistrySet& m_registry_set;
             mutable std::
                 unordered_map<VersionSpec, ExpectedS<std::unique_ptr<SourceControlFileAndLocation>>, VersionSpecHasher>
                     m_control_cache;
@@ -384,7 +386,7 @@ namespace vcpkg::PortFileProvider
 
     std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const vcpkg::VcpkgPaths& paths)
     {
-        return std::make_unique<VersionedPortfileProviderImpl>(paths);
+        return std::make_unique<VersionedPortfileProviderImpl>(paths.get_filesystem(), paths.get_registry_set());
     }
 
     std::unique_ptr<IOverlayProvider> make_overlay_provider(const vcpkg::VcpkgPaths& paths,
