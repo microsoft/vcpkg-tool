@@ -5,6 +5,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/build.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/postbuildlint.buildtype.h>
 #include <vcpkg/postbuildlint.h>
@@ -1191,7 +1192,7 @@ namespace vcpkg::PostBuildLint
         error_count += check_no_absolute_paths_in(
             fs,
             package_dir,
-            std::vector<Path>{package_dir.native(), paths.installed().native(), paths.build_dir(spec)});
+            std::vector<Path>{package_dir.native(), paths.installed().root().native(), paths.build_dir(spec)});
 
         return error_count;
     }
