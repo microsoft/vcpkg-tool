@@ -1337,20 +1337,26 @@ namespace vcpkg::Build
 
     std::string create_github_issue(const VcpkgCmdArguments& args,
                                     const ExtendedBuildResult& build_result,
-                                    const PackageSpec& spec,
-                                    const VcpkgPaths& paths)
+                                    const VcpkgPaths& paths,
+                                    const InstallPlanAction& action)
     {
         const auto& fs = paths.get_filesystem();
         const auto create_log_details = [&fs](vcpkg::Path&& path) {
+            constexpr auto MAX_LOG_LENGTH = 20'000;
+            constexpr auto START_BLOCK_LENGTH = 3'000;
+            constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
+            constexpr auto END_BLOCK_LENGTH = 13'000;
+            constexpr auto END_BLOCK_MAX_LENGTH = 15'000;
             auto log = fs.read_contents(path, VCPKG_LINE_INFO);
-            if (log.size() > 20'000)
+            if (log.size() > MAX_LOG_LENGTH)
             {
-                auto first_block_end = log.find_first_of('\n', 3000);
-                if (first_block_end == std::string::npos || first_block_end > 5000) first_block_end = 3000;
+                auto first_block_end = log.find_first_of('\n', START_BLOCK_LENGTH);
+                if (first_block_end == std::string::npos || first_block_end > START_BLOCK_MAX_LENGTH)
+                    first_block_end = START_BLOCK_LENGTH;
 
-                auto last_block_end = log.find_last_of('\n', log.size() - 13000);
-                if (last_block_end == std::string::npos || last_block_end < log.size() - 15000)
-                    last_block_end = log.size() - 13000;
+                auto last_block_end = log.find_last_of('\n', log.size() - END_BLOCK_LENGTH);
+                if (last_block_end == std::string::npos || last_block_end < log.size() - END_BLOCK_MAX_LENGTH)
+                    last_block_end = log.size() - END_BLOCK_LENGTH;
 
                 auto skipped_lines = std::count(log.begin() + first_block_end, log.begin() + last_block_end, '\n');
                 log = log.substr(0, first_block_end) + "\n...\nSkip " + std::to_string(skipped_lines) +
@@ -1369,16 +1375,26 @@ namespace vcpkg::Build
                                   })
                                   .value_or("");
 
+        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
         return Strings::concat(
-            "**Host Environment**",
+            "Package: ",
+            action.displayname(),
+            " -> ",
+            action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_versiont(),
+            "\n**Host Environment**",
             "\n- Host: ",
             to_zstring_view(get_host_processor()),
             '-',
             get_host_os_name(),
             "\n- Compiler: ",
-            "compiler",
+            compiler_info.id,
+            " ",
+            compiler_info.version,
+            "\n-",
+            Strings::replace_all(paths.get_toolver_diagnostics(), "\n", "\n-"),
             "\n\n**To Reproduce**\n",
-            Strings::concat("`", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
+            Strings::concat("`vcpkg ", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
             "\n\n**Failure logs**\n```\n",
             paths.get_filesystem().read_contents(build_result.stdoutlog, VCPKG_LINE_INFO),
             "\n```\n",

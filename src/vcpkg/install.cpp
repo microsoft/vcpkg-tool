@@ -494,7 +494,7 @@ namespace vcpkg::Install
                                     Strings::url_encode(Strings::concat_or_view(
                                         '[', action.spec.name(), "] build failure on ", action.spec.triplet())),
                                     "&body=",
-                                    Strings::url_encode(Build::create_github_issue(args, result, action.spec, paths))));
+                                    Strings::url_encode(Build::create_github_issue(args, result, paths, action))));
 
                 print2(Build::create_user_troubleshooting_message(action, paths), '\n');
                 Checks::exit_fail(VCPKG_LINE_INFO);

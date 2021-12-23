@@ -260,8 +260,8 @@ namespace vcpkg::Build
 
     std::string create_github_issue(const VcpkgCmdArguments& args,
                                     const ExtendedBuildResult& build_result,
-                                    const PackageSpec& spec,
-                                    const VcpkgPaths& paths);
+                                    const VcpkgPaths& paths,
+                                    const Dependencies::InstallPlanAction& action);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
