@@ -49,7 +49,7 @@ Please send an email to:
     {email}
 containing a brief summary of what you were trying to do and the following data blob:
 
-Version={vcpkg_version}
+Version={version}
 EXCEPTION='{error}'
 CMD=)");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{LOCKED}", "{value}|");
