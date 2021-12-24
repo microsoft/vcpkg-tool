@@ -953,8 +953,9 @@ namespace vcpkg::Build
                 if (fs.exists(logs, VCPKG_LINE_INFO))
                 {
                     error_logs = fs.read_lines(buildpath / "logs.txt", VCPKG_LINE_INFO);
-                    Util::filter(error_logs, [](const auto& line) { return Strings::starts_with(line, "error:"); });
-                    Util::fmap(error_logs, [](const std::string& line) { return line.substr(6); });
+                    Util::erase_remove_if(error_logs,
+                                          [](const auto& line) { return !Strings::starts_with(line, "error:"); });
+                    Util::transform(error_logs, [](const std::string& line) { return line.substr(6); });
                 }
                 return {BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
             }

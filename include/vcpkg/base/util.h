@@ -134,6 +134,12 @@ namespace vcpkg::Util
         cont.erase(std::remove_if(cont.begin(), cont.end(), pred), cont.end());
     }
 
+    template<class Container, class Pred>
+    void transform(Container& cont, Pred pred)
+    {
+        std::transform(cont.begin(), cont.end(), cont.begin(), pred);
+    }
+
     template<class Container, class V>
     auto find(Container&& cont, V&& v)
     {
