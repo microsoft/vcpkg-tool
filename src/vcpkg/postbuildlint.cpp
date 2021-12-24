@@ -1034,8 +1034,7 @@ namespace vcpkg::PostBuildLint
                                 if (path_and_contents.second[before + 1] == '*') break;              // is in a comment
                                 if (before == 0) return true;                                        // not in a comment
                                 if (!new_line && path_and_contents.second[before - 1] == '/') break; // is in a comment
-                                if (!new_line && path_and_contents.second[before - 1] == '*')
-                                    return true; // is not in a comment
+                                if (path_and_contents.second[before - 1] == '*') return true; // is not in a comment
                                 start = before - 1;
                             }
                         }
