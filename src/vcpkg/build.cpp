@@ -167,7 +167,7 @@ namespace vcpkg::Build
         if (result.code != BuildResult::SUCCEEDED)
         {
             print2(Color::error, Build::create_error_message(result.code, spec), '\n');
-            print2(Build::create_user_troubleshooting_message(*action, paths), '\n');
+            print2(Build::create_user_troubleshooting_message(*action, paths, {}), '\n');
             return 1;
         }
 
@@ -1360,7 +1360,7 @@ namespace vcpkg::Build
                     last_block_end = log.size() - END_BLOCK_LENGTH;
 
                 auto skipped_lines = std::count(log.begin() + first_block_end, log.begin() + last_block_end, '\n');
-                log = log.substr(0, first_block_end) + "\n...\nSkip " + std::to_string(skipped_lines) +
+                log = log.substr(0, first_block_end) + "\n...\nSkipped " + std::to_string(skipped_lines) +
                       " lines\n...\n" + log.substr(last_block_end);
             }
             while (!log.empty() && log.back() == '\n')
@@ -1393,7 +1393,7 @@ namespace vcpkg::Build
             " ",
             compiler_info.version,
             "\n-",
-            Strings::replace_all(paths.get_toolver_diagnostics(), "\n", "\n-"),
+            paths.get_toolver_diagnostics(),
             "\n\n**To Reproduce**\n",
             Strings::concat("`vcpkg ", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
             "\n\n**Failure logs**\n```\n",
@@ -1404,7 +1404,9 @@ namespace vcpkg::Build
             manifest);
     }
 
-    std::string create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
+    std::string create_user_troubleshooting_message(const InstallPlanAction& action,
+                                                    const VcpkgPaths& paths,
+                                                    const Optional<Path> issue_body)
     {
 #if defined(_WIN32)
         auto vcpkg_update_cmd = ".\\vcpkg";
@@ -1417,23 +1419,28 @@ namespace vcpkg::Build
         {
             Strings::append(package, " -> ", scfl->to_versiont());
         }
-        return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`.\n"
-                               "Then check for known issues at:\n"
-                               "  https://github.com/microsoft/vcpkg/issues?q=is%%3Aissue+is%%3Aopen+in%%3Atitle+%s\n"
-                               "You can submit a new issue at:\n"
-                               "  "
-                               "https://github.com/microsoft/vcpkg/issues/"
-                               "new?template=report-package-build-failure.md&title=[%s]+Build+error\n"
-                               "including:\n"
-                               "  package: %s\n"
-                               "%s"
-                               "\n"
-                               "Additionally, attach any relevant sections from the log files above.",
-                               vcpkg_update_cmd,
-                               action.spec.name(),
-                               action.spec.name(),
-                               package,
-                               paths.get_toolver_diagnostics());
+        return Strings::format(
+            "Please ensure you're using the latest portfiles with `git pull` and `%s update`.\n"
+            "Then check for known issues at:\n"
+            "  https://github.com/microsoft/vcpkg/issues?q=is%%3Aissue+is%%3Aopen+in%%3Atitle+%s\n"
+            "You can submit a new issue at:\n"
+            "  "
+            "https://github.com/microsoft/vcpkg/issues/"
+            "new?template=report-package-build-failure.md&title=[%s]+Build+error+on+%s\n"
+            "including:\n"
+            "  package: %s\n"
+            "%s"
+            "\n"
+            "Additionally, attach any relevant sections from the log files above%s",
+            vcpkg_update_cmd,
+            action.spec.name(),
+            action.spec.name(),
+            action.spec.triplet(),
+            package,
+            paths.get_toolver_diagnostics(),
+            issue_body
+                .map([](const auto& path) { return Strings::format(" or\nuse the prefilled template from %s", path); })
+                .value_or("."));
     }
 
     static BuildInfo inner_create_buildinfo(Parse::Paragraph pgh)
