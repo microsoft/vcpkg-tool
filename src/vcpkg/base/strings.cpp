@@ -478,26 +478,6 @@ namespace vcpkg::Strings
         return result;
     }
 
-    std::string url_encode(StringView url_component)
-    {
-        static const char* hex = "0123456789abcdef";
-        std::string dst;
-        for (char c : url_component)
-        {
-            if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
-            {
-                dst.push_back(c);
-            }
-            else
-            {
-                dst.push_back('%');
-                dst.push_back(hex[c >> 4]);
-                dst.push_back(hex[c & 0xf]);
-            }
-        }
-        return dst;
-    }
-
     struct LinesCollector::CB
     {
         LinesCollector* parent;
