@@ -26,9 +26,9 @@ namespace vcpkg::Checks
         exit_with_message(line_info, msg::format(m, args...));
     }
 
-    template<class Conditional, class Arg1, class... Args>
+    template<class Arg1, class... Args>
     void check_exit(const LineInfo& line_info,
-                    const Conditional& expression,
+                    bool expression,
                     const char* error_message_template,
                     const Arg1& error_message_arg1,
                     const Args&... error_message_args)
@@ -40,9 +40,9 @@ namespace vcpkg::Checks
                               Strings::format(error_message_template, error_message_arg1, error_message_args...));
         }
     }
-    template<class Conditional, class Message, class... Args>
+    template<class Message, class... Args>
     typename Message::is_message_type check_exit(const LineInfo& line_info,
-                                                 const Conditional& expression,
+                                                 bool expression,
                                                  Message m,
                                                  const Args&... args)
     {
@@ -70,9 +70,9 @@ namespace vcpkg::Checks
         exit_maybe_upgrade(line_info, msg::format(m, args...));
     }
 
-    template<class Conditional, class Arg1, class... Args>
+    template<class Arg1, class... Args>
     void check_maybe_upgrade(const LineInfo& line_info,
-                             const Conditional& expression,
+                             bool expression,
                              const char* error_message_template,
                              const Arg1& error_message_arg1,
                              const Args&... error_message_args)
@@ -84,9 +84,9 @@ namespace vcpkg::Checks
                                Strings::format(error_message_template, error_message_arg1, error_message_args...));
         }
     }
-    template<class Conditional, class Message, class... Args>
+    template<class Message, class... Args>
     typename Message::is_message_type check_maybe_upgrade(const LineInfo& line_info,
-                                                          const Conditional& expression,
+                                                          bool expression,
                                                           Message m,
                                                           const Args&... args)
     {
