@@ -658,8 +658,7 @@ namespace vcpkg
 
         virtual Span<const StringView> valid_fields() const override { return {}; }
 
-        virtual Optional<FeaturesObject> visit_object(Json::Reader& r,
-                                                                                      const Json::Object& obj) override
+        virtual Optional<FeaturesObject> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             FeaturesObject res;
             std::vector<std::string> extra_fields;
@@ -964,8 +963,7 @@ namespace vcpkg
                 obj, DEFAULT_FEATURES, spgh->default_features, Json::IdentifierArrayDeserializer::instance);
 
             FeaturesObject features_tmp;
-            r.optional_object_field(
-                obj, FEATURES, features_tmp, FeaturesFieldDeserializer::instance);
+            r.optional_object_field(obj, FEATURES, features_tmp, FeaturesFieldDeserializer::instance);
             control_file->feature_paragraphs = std::move(features_tmp.feature_paragraphs);
             control_file->extra_features_info = std::move(features_tmp.extra_features_info);
 
