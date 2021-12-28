@@ -255,7 +255,7 @@ namespace vcpkg::Build
         BuildResult code;
         std::vector<FeatureSpec> unmet_dependencies;
         std::unique_ptr<BinaryControlFile> binary_control_file;
-        vcpkg::Path stdoutlog;
+        Optional<vcpkg::Path> stdoutlog;
         std::vector<std::string> error_logs;
     };
 

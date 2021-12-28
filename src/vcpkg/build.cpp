@@ -952,7 +952,7 @@ namespace vcpkg::Build
                 std::vector<std::string> error_logs;
                 if (fs.exists(logs, VCPKG_LINE_INFO))
                 {
-                    error_logs = fs.read_lines(buildpath / "logs.txt", VCPKG_LINE_INFO);
+                    error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
                     Util::erase_remove_if(error_logs,
                                           [](const auto& line) { return !Strings::starts_with(line, "error:"); });
                     Util::transform(error_logs, [](const std::string& line) { return line.substr(6); });
@@ -1397,7 +1397,8 @@ namespace vcpkg::Build
             "\n\n**To Reproduce**\n",
             Strings::concat("`vcpkg ", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
             "\n\n**Failure logs**\n```\n",
-            paths.get_filesystem().read_contents(build_result.stdoutlog, VCPKG_LINE_INFO),
+            paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
+                                                 VCPKG_LINE_INFO),
             "\n```\n",
             Strings::join("\n", Util::fmap(build_result.error_logs, create_log_details)),
             "\n\n**Additional context**\n",

@@ -489,10 +489,17 @@ namespace vcpkg::Install
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
-                const auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
-                paths.get_filesystem().write_contents(
-                    issue_body_path, Build::create_github_issue(args, result, paths, action), VCPKG_LINE_INFO);
-                print2(Build::create_user_troubleshooting_message(action, paths, issue_body_path), '\n');
+                print2(Build::create_user_troubleshooting_message(
+                           action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
+                               const auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
+                               paths.get_filesystem().write_contents(
+                                   issue_body_path,
+                                   Build::create_github_issue(args, result, paths, action),
+                                   VCPKG_LINE_INFO);
+                               return issue_body_path;
+                           })),
+                       '\n');
+
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
