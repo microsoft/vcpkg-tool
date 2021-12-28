@@ -134,10 +134,10 @@ namespace vcpkg::Util
         cont.erase(std::remove_if(cont.begin(), cont.end(), pred), cont.end());
     }
 
-    template<class Container, class Pred>
-    void transform(Container& cont, Pred pred)
+    template<class Range, class F>
+    void transform(Range& r, F f)
     {
-        std::transform(cont.begin(), cont.end(), cont.begin(), pred);
+        std::transform(r.begin(), r.end(), r.begin(), f);
     }
 
     template<class Container, class V>
