@@ -167,7 +167,7 @@ namespace vcpkg::Build
         if (result.code != BuildResult::SUCCEEDED)
         {
             print2(Color::error, Build::create_error_message(result.code, spec), '\n');
-            print2(Build::create_user_troubleshooting_message(*action, paths, {}), '\n');
+            print2(Build::create_user_troubleshooting_message(*action, paths), '\n');
             return 1;
         }
 
@@ -1407,7 +1407,7 @@ namespace vcpkg::Build
 
     std::string create_user_troubleshooting_message(const InstallPlanAction& action,
                                                     const VcpkgPaths& paths,
-                                                    const Optional<Path> issue_body)
+                                                    Optional<Path>&& issue_body)
     {
 #if defined(_WIN32)
         auto vcpkg_update_cmd = ".\\vcpkg";

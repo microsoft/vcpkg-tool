@@ -207,7 +207,7 @@ namespace vcpkg::Build
     std::string create_error_message(const BuildResult build_result, const PackageSpec& spec);
     std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
                                                     const VcpkgPaths& paths,
-                                                    const Optional<Path> issue_body);
+                                                    Optional<Path>&& issue_body = nullopt);
 
     /// <summary>
     /// Settings from the triplet file which impact the build environment and post-build checks
