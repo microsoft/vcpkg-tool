@@ -84,23 +84,6 @@ jobs:
     value: $(Build.SourcesDirectory)\vcpkg-root
   steps:
     - task: Powershell@2
-      displayName: 'Format C++'
-      inputs:
-        filePath: 'azure-pipelines/Format-CxxCode.ps1'
-        pwsh: true
-    - task: Powershell@2
-      displayName: 'Create Diff'
-      inputs:
-        filePath: azure-pipelines/Create-PRDiff.ps1
-        arguments: '-DiffFile $(DiffFile)'
-        pwsh: true
-    - task: PublishBuildArtifacts@1
-      condition: failed()
-      displayName: 'Publish Format and Documentation Diff'
-      inputs:
-        PathtoPublish: '$(DiffFile)'
-        ArtifactName: 'format.diff'
-    - task: Powershell@2
       displayName: "Clone vcpkg repo to serve as root"
       inputs:
         pwsh: true
@@ -126,3 +109,25 @@ jobs:
         arguments: '-Triplet x86-windows -WorkingRoot work'
         workingDirectory: '$(Build.SourcesDirectory)/build.x86.debug'
         pwsh: true
+    - task: Powershell@2
+      displayName: 'Format C++'
+      inputs:
+        filePath: 'azure-pipelines/Format-CxxCode.ps1'
+        pwsh: true
+    - task: CmdLine@2
+      displayName: 'Generate the Messages File'
+      inputs:
+        script: |
+          build.x86.debug\vcpkg.exe x-generate-default-message-map >locales/en.json
+    - task: Powershell@2
+      displayName: 'Create Diff'
+      inputs:
+        filePath: azure-pipelines/Create-PRDiff.ps1
+        arguments: '-DiffFile $(DiffFile)'
+        pwsh: true
+    - task: PublishBuildArtifacts@1
+      condition: failed()
+      displayName: 'Publish Format and Messages File Diff'
+      inputs:
+        PathtoPublish: '$(DiffFile)'
+        ArtifactName: 'format.diff'
