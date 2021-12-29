@@ -307,7 +307,7 @@ namespace vcpkg::Dependencies
                     const SourceControlFileAndLocation* scfl = m_port_provider.get_control_file(spec.name()).get();
 
                     Checks::check_exit(VCPKG_LINE_INFO,
-                                       scfl,
+                                       scfl != nullptr,
                                        "Error: Cannot find definition for package `%s` while getting `%s`.",
                                        spec.name(),
                                        spec);
@@ -1120,7 +1120,7 @@ namespace vcpkg::Dependencies
                 auto p_installed = graph->get(dep).m_installed.get();
                 Checks::check_maybe_upgrade(
                     VCPKG_LINE_INFO,
-                    p_installed,
+                    p_installed != nullptr,
                     "Error: database corrupted. Package %s is installed but dependency %s is not.",
                     ipv.spec(),
                     dep);

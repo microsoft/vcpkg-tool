@@ -27,6 +27,12 @@
 
 #define Z_VCPKG_PRAGMA(PRAGMA) _Pragma(#PRAGMA)
 
+#if defined(_MSC_VER)
+#define VCPKG_SAL_ANNOTATION(...) __VA_ARGS__
+#else
+#define VCPKG_SAL_ANNOTATION(...)
+#endif
+
 // the static_assert(true, "")s are to avoid the extra ';' warning
 #if defined(__clang__)
 // check clang first because it may define _MSC_VER
@@ -45,4 +51,5 @@
 #define VCPKG_GCC_DIAGNOSTIC(DIAGNOSTIC) Z_VCPKG_PRAGMA(gcc diagnostic DIAGNOSTIC)
 #define VCPKG_CLANG_DIAGNOSTIC(DIAGNOSTIC)
 #define VCPKG_UNUSED __attribute__((unused))
+#define VCPKG_SAL_ANNOTATION(...)
 #endif

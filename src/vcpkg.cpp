@@ -53,6 +53,12 @@ Version={version}
 EXCEPTION='{error}'
 CMD=)");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{LOCKED}", "{value}|");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        ForceSystemBinariesOnWeirdPlatforms,
+        (),
+        "",
+        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
 }
 
 static void invalid_command(const std::string& cmd)
@@ -252,9 +258,7 @@ int main(const int argc, const char* const* const argv)
     !defined(_WIN32) && !defined(__APPLE__)
     if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
     {
-        Checks::exit_with_message(
-            VCPKG_LINE_INFO,
-            "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
+        Checks::exit_with_message(VCPKG_LINE_INFO, msgForceSystemBinariesOnWeirdPlatforms);
     }
 #endif
 
