@@ -27,6 +27,7 @@ namespace vcpkg::Checks
     }
 
     template<class Arg1, class... Args>
+    VCPKG_SAL_ANNOTATION(_When_(!expression, _Raises_SEH_exception_))
     void check_exit(const LineInfo& line_info,
                     bool expression,
                     const char* error_message_template,
@@ -41,6 +42,7 @@ namespace vcpkg::Checks
         }
     }
     template<class Message, class... Args>
+    VCPKG_SAL_ANNOTATION(_When_(!expression, _Raises_SEH_exception_))
     typename Message::is_message_type check_exit(const LineInfo& line_info,
                                                  bool expression,
                                                  Message m,
@@ -71,6 +73,7 @@ namespace vcpkg::Checks
     }
 
     template<class Arg1, class... Args>
+    VCPKG_SAL_ANNOTATION(_When_(!expression, _Raises_SEH_exception_))
     void check_maybe_upgrade(const LineInfo& line_info,
                              bool expression,
                              const char* error_message_template,
@@ -85,6 +88,7 @@ namespace vcpkg::Checks
         }
     }
     template<class Message, class... Args>
+    VCPKG_SAL_ANNOTATION(_When_(!expression, _Raises_SEH_exception_))
     typename Message::is_message_type check_maybe_upgrade(const LineInfo& line_info,
                                                           bool expression,
                                                           Message m,
