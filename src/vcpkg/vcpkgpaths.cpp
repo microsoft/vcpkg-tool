@@ -1272,6 +1272,11 @@ namespace vcpkg
                                  "Printed after ErrorNoVSInstance on a separate line",
                                  "     at \"{path}\"");
 
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoWindowsSDK,
+                                 (msg::triplet),
+                                 "",
+                                 "Error: in triplet {triplet}: Unable to find a valid Windows SDK version");
+
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)
     {
@@ -1314,6 +1319,7 @@ namespace vcpkg
 #else
         const auto& toolsets_info = get_all_toolsets(*m_pimpl, get_filesystem());
         View<Toolset> vs_toolsets = toolsets_info.toolsets;
+        View<ToolVersion> winsdk_versions = toolsets_info.winsdk_versions;
 
         const auto tsv = prebuildinfo.platform_toolset.get();
         const auto tsvf = prebuildinfo.platform_toolset_version.get();
@@ -1346,6 +1352,16 @@ namespace vcpkg
             msg::print(Color::error, toolsets_info.get_localized_debug_info());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
+        else
+        {
+        }
+
+        if (!winsdk_versions.size())
+        {
+            msg::println(Color::error, msgErrorNoWindowsSDK, msg::triplet = prebuildinfo.triplet);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         return *candidate;
 #endif
     }

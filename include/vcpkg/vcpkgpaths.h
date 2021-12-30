@@ -39,6 +39,12 @@ namespace vcpkg
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
+    struct ToolVersion
+    {
+        ToolVersion(std::string ver) : full_version(ver) { }
+        std::string full_version;
+    };
+
     struct DownloadManager;
 
     namespace Build

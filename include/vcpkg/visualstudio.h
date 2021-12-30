@@ -16,6 +16,7 @@ namespace vcpkg
 #if defined(_WIN32)
         std::vector<Path> paths_examined;
         std::vector<Toolset> excluded_toolsets;
+        std::vector<ToolVersion> winsdk_versions;
         msg::LocalizedString get_localized_debug_info() const;
 #endif
     };
