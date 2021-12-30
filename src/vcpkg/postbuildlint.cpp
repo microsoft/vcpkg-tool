@@ -980,18 +980,18 @@ namespace vcpkg::PostBuildLint
         std::vector<std::pair<Path, std::string>> files_and_contents;
         for (auto& path : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
         {
-            if (Util::contains(extensions, path.extension().substr(1 /* ignore dot */)))
-            {
-                auto contents = fs.read_contents(path, VCPKG_LINE_INFO);
-                files_and_contents.emplace_back(std::move(path), std::move(contents));
-            }
-            else if (path.extension().empty())
+            if (path.extension().empty())
             {
                 auto contents = fs.read_contents(path, VCPKG_LINE_INFO);
                 if (Strings::starts_with(contents, "#!"))
                 {
                     files_and_contents.emplace_back(std::move(path), std::move(contents));
                 }
+            }
+            else if (Util::contains(extensions, path.extension().substr(1 /* ignore dot */)))
+            {
+                auto contents = fs.read_contents(path, VCPKG_LINE_INFO);
+                files_and_contents.emplace_back(std::move(path), std::move(contents));
             }
         }
         std::vector<std::string> string_paths;
