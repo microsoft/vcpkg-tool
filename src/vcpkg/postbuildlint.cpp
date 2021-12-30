@@ -997,9 +997,13 @@ namespace vcpkg::PostBuildLint
         std::vector<std::string> string_paths;
         for (const auto& path : absolute_paths)
         {
-            string_paths.push_back(path.native());
 #if defined(_WIN32)
-            string_paths.push_back(path.generic_u8string());
+            auto path_preferred = path;
+            path_preferred.make_preferred();
+            string_paths.push_back(path_preferred.generic_u8string());
+            string_paths.push_back(std::move(path).native());
+#else
+            string_paths.push_back(path.native());
 #endif
         }
 
