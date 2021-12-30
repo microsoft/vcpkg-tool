@@ -379,8 +379,10 @@ namespace vcpkg
         return "freebsd";
 #elif defined(__OpenBSD__)
         return "openbsd";
-#else
+#elif defined(__linux__)
         return "linux";
+#else
+        return "unknown"
 #endif
     }
 }
