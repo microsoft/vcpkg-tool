@@ -1356,7 +1356,8 @@ namespace vcpkg
         {
         }
 
-        if (!winsdk_versions.size())
+        // Can't use vsvhere to find Visual Studio 2015
+        if (candidate->version != "v140" && !winsdk_versions.size())
         {
             msg::println(Color::error, msgErrorNoWindowsSDK, msg::triplet = prebuildinfo.triplet);
             Checks::exit_fail(VCPKG_LINE_INFO);

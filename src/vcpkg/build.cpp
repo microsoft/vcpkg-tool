@@ -309,7 +309,26 @@ namespace vcpkg::Build
         "",
         "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
         "architecture was {value}\n    "
-        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
+        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n"
+        "Please check the required Visual Studio Components:\n"
+        "C++:\n"
+        "   Windows Universal C Runtime\n"
+        "   C++ core desktop features\n"
+        "   Visual Studio Build tools:\n"
+        "       * Microsoft.VisualStudio.Component.VC.140 (for Visual Studio 2015)\n"
+        "       * MSVC v141/v142/v143 - VS 2017/2019/2022 C++ x64/x86 build tools (for Visual Studio 2017 or later)\n"
+        "   MSBuild\n"
+        "Windows SDK:\n"
+        "   * 8.1\n"
+        "   * 10.0.18362\n"
+        "   * 10.0.19041\n"
+        "   * 10.0.20348\n"
+        "   * 11.0.22000\n"
+        "ARM/ARM64:\n"
+        "   MSVC v141/v142/v143 - VS 2019 C++ ARM build tools\n"
+        "   MSVC v141/v142/v143 - VS 2019 C++ ARM64 build tools\n"
+        "UWP:\n"
+        "   Visual Studio Build tools for UWP\n");
 
     DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
                                  (msg::value),
