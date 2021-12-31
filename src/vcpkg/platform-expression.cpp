@@ -710,7 +710,7 @@ namespace vcpkg::PlatformExpression
                     case ExprKind::identifier: return expr.identifier;
                     case ExprKind::op_and: join = " & "; break;
                     case ExprKind::op_or: join = " | "; break;
-                    case ExprKind::op_list: join = " , "; break;
+                    case ExprKind::op_list: join = ", "; break;
                     case ExprKind::op_not: return Strings::format("!%s", (*this)(expr.exprs.at(0)));
                     case ExprKind::op_empty: join = ""; break;
                     case ExprKind::op_invalid: join = " invalid "; break;
