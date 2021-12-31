@@ -1,5 +1,6 @@
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -974,6 +975,12 @@ namespace vcpkg::PostBuildLint
         return LintStatus::SUCCESS;
     }
 
+    DECLARE_AND_REGISTER_MESSAGE(FilesContainAbsolutePath,
+                                 (msg::absolute_paths, msg::paths),
+                                 "The ('{absolute_paths}') part should remain unchanged, as a list of paths",
+                                 "The following files contain an absolute path ('{absolute_paths}'): {paths}\n"
+                                 "There should be no absolute paths in the installed package, only relative ones.\n\n");
+
     static LintStatus check_no_absolute_paths_in(const Filesystem& fs, const Path& dir, Span<Path> absolute_paths)
     {
         static constexpr StringLiteral extensions[] = {"h", "hpp", "hxx", "py", "sh", "cmake", "pc", "cfg", "conf"};
@@ -1059,13 +1066,10 @@ namespace vcpkg::PostBuildLint
 
         if (!result.empty())
         {
-            print2(Color::warning,
-                   "The following files contain an absolute path ('",
-                   Strings::join("', '", absolute_paths),
-                   "'):",
-                   result,
-                   "\n"
-                   "There should be no absolute paths in the installed package, only relative ones.\n\n");
+            msg::println(Color::warning,
+                         msgFilesContainAbsolutePath,
+                         msg::absolute_paths = Strings::join("', '", absolute_paths),
+                         msg::paths = result);
             return LintStatus::PROBLEM_DETECTED;
         }
         return LintStatus::SUCCESS;

@@ -151,6 +151,8 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(email);
     DECLARE_MSG_ARG(error);
     DECLARE_MSG_ARG(path);
+    DECLARE_MSG_ARG(paths);
+    DECLARE_MSG_ARG(absolute_paths);
     DECLARE_MSG_ARG(pretty_value);
     DECLARE_MSG_ARG(triplet);
     DECLARE_MSG_ARG(url);
