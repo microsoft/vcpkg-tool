@@ -1077,6 +1077,7 @@ namespace vcpkg::Build
         // just mark the port as no-hash
         const int max_port_file_count = 100;
 
+        std::string portfile_cmake_contents;
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
         size_t port_file_count = 0;
         for (auto& port_file : fs.get_regular_files_recursive(port_dir, VCPKG_LINE_INFO))
@@ -1084,7 +1085,10 @@ namespace vcpkg::Build
             abi_tag_entries.emplace_back(
                 port_file.filename(),
                 vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha256));
-
+            if (port_file.extension() == ".cmake")
+            {
+                portfile_cmake_contents += fs.read_contents(port_file, VCPKG_LINE_INFO);
+            }
             ++port_file_count;
             if (port_file_count > max_port_file_count)
             {
@@ -1100,10 +1104,9 @@ namespace vcpkg::Build
 #endif
 
         auto& helpers = paths.get_cmake_script_hashes();
-        auto portfile_contents = fs.read_contents(port_dir / "portfile.cmake", VCPKG_LINE_INFO);
         for (auto&& helper : helpers)
         {
-            if (Strings::case_insensitive_ascii_contains(portfile_contents, helper.first))
+            if (Strings::case_insensitive_ascii_contains(portfile_cmake_contents, helper.first))
             {
                 abi_tag_entries.emplace_back(helper.first, helper.second);
             }
