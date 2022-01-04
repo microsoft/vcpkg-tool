@@ -241,6 +241,18 @@ namespace vcpkg::Export::Prefab
         return Strings::case_insensitive_ascii_equals(info.cmake_system_name, "android");
     }
 
+    static std::string to_importable_name(const std::string &name)
+    {
+        std::string ret(name.size(), '\0');
+        for (size_t i = 0; i < name.size(); ++i) {
+            ret[i] = name[i];
+            if (ret[i] == '-') {
+                ret[i] = '_';
+            }
+        }
+        return ret;
+    }
+
     void do_export(const std::vector<ExportPlanAction>& export_plan,
                    const VcpkgPaths& paths,
                    const Options& prefab_options,
@@ -369,6 +381,7 @@ namespace vcpkg::Export::Prefab
         for (const auto& action : export_plan)
         {
             const std::string name = action.spec.name();
+            const std::string importable_name = to_importable_name(name);
             auto dependencies = action.dependencies();
 
             const auto action_build_info = Build::read_build_info(utils, paths.build_info_file_path(action.spec));
@@ -393,7 +406,10 @@ namespace vcpkg::Export::Prefab
                 continue;
             }
 
-            const auto per_package_dir_path = paths.prefab / name;
+            const auto per_package_dir_path = paths.prefab / importable_name;
+            if ( utils.exists(per_package_dir_path, error_code) ) {
+                utils.remove_all(per_package_dir_path, error_code);
+            }
 
             const auto& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
             const std::string norm_version = binary_paragraph.version;
@@ -408,7 +424,7 @@ namespace vcpkg::Export::Prefab
 
             utils.create_directories(modules_directory, error_code);
 
-            std::string artifact_id = prefab_options.maybe_artifact_id.value_or(name);
+            std::string artifact_id = prefab_options.maybe_artifact_id.value_or(importable_name);
             std::string group_id = prefab_options.maybe_group_id.value_or("com.vcpkg.ndk.support");
             std::string sdk_min_version = prefab_options.maybe_min_sdk.value_or("16");
             std::string sdk_target_version = prefab_options.maybe_target_sdk.value_or("29");
@@ -474,11 +490,12 @@ namespace vcpkg::Export::Prefab
         <type>aar</type>
         <scope>runtime</scope>
     </dependency>)";
+                const std::string importable_name = to_importable_name(it.name());
                 std::string pom = Strings::replace_all(std::move(maven_pom), "@GROUP_ID@", group_id);
-                Strings::inplace_replace_all(pom, "@ARTIFACT_ID@", it.name());
+                Strings::inplace_replace_all(pom, "@ARTIFACT_ID@", importable_name);
                 Strings::inplace_replace_all(pom, "@VERSION@", version_map[it.name()]);
                 pom_dependencies.push_back(pom);
-                pm.dependencies.push_back(it.name());
+                pm.dependencies.push_back(importable_name);
             }
 
             if (dependencies_minus_empty_packages.size() > 0)
