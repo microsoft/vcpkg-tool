@@ -57,13 +57,16 @@ namespace vcpkg::Commands
             }
             const std::vector<ParsedQualifiedSpecifier> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
                 ExpectedS<ParsedQualifiedSpecifier> value = parse_qualified_specifier(std::string(arg));
-                if (value)
+                if (auto v = value.get())
                 {
-                    if (!value.value_or_exit(VCPKG_LINE_INFO).triplet)
+                    if (v->triplet)
                     {
-                        return value.value_or_exit(VCPKG_LINE_INFO);
+                        msg::println(Color::error, msgAddTripletExpressionNotAllowed);
                     }
-                    msg::println(Color::error, msgAddTripletExpressionNotAllowed);
+                    else
+                    {
+                        return std::move(*v);
+                    }
                 }
                 else
                 {
