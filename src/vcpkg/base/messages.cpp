@@ -223,13 +223,18 @@ namespace vcpkg::msg
         }
     }
 
+    static std::string locale_file_name(StringView language)
+    {
+        std::string filename = "messages";
+        filename.append(language.begin(), language.end()).append(".json");
+        return filename;
+    }
+
     void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base)
     {
         threadunsafe_initialize_context();
 
-        auto path_to_locale = locale_base;
-        path_to_locale /= language;
-        path_to_locale += ".json";
+        auto path_to_locale = locale_base / locale_file_name(language);
 
         auto message_map = Json::parse_file(VCPKG_LINE_INFO, fs, path_to_locale);
         if (!message_map.first.is_object())

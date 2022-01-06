@@ -1,10 +1,10 @@
 { 
   "Projects": [
     {
-      "LanguageSet": "",
+      "LanguageSet": "VS_Main_Languages",
       "LocItems": [
         {
-          "SourceFile": "locales/en.json",
+          "SourceFile": "locales/messages.json",
           "CopyOption": "LangIDOnName",
           "OutputPath": "locales"
         }
