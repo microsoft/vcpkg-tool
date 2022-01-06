@@ -2699,7 +2699,7 @@ namespace vcpkg
                 {
                     this->copy_file(source_entry_name, destination_entry_name, CopyOptions::none, ec);
                 }
-                else
+                else if (!is_dot_or_dot_dot(entry->d_name))
                 {
                     this->copy_regular_recursive_impl(source_entry_name, destination_entry_name, ec);
                 }
