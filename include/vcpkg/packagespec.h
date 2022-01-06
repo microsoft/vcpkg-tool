@@ -117,7 +117,7 @@ namespace vcpkg
         }
 
         /// Splats into individual FeatureSpec's
-        void expand_to(std::vector<FeatureSpec>& out) const;
+        void expand_fspecs_to(std::vector<FeatureSpec>& oFut) const;
 
         friend bool operator==(const FullPackageSpec& l, const FullPackageSpec& r)
         {
@@ -139,10 +139,10 @@ namespace vcpkg
         }
     };
 
-    enum class ImplicitDefault
+    enum class ImplicitDefault : bool
     {
-        no,
-        yes,
+        NO,
+        YES,
     };
 
     struct Dependency

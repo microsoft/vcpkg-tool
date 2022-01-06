@@ -19,8 +19,8 @@ TEST_CASE ("specifier conversion", "[specifier]")
         PackageSpec b_spec("b", Test::X64_WINDOWS);
 
         std::vector<FeatureSpec> fspecs;
-        FullPackageSpec{a_spec, {"0", "1"}}.expand_to(fspecs);
-        FullPackageSpec{b_spec, {"2", "3"}}.expand_to(fspecs);
+        FullPackageSpec{a_spec, {"0", "1"}}.expand_fspecs_to(fspecs);
+        FullPackageSpec{b_spec, {"2", "3"}}.expand_fspecs_to(fspecs);
         Util::sort(fspecs);
         REQUIRE(fspecs.size() == SPEC_SIZE);
 
@@ -99,7 +99,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
         std::vector<FeatureSpec> specs;
         const auto fspecs = Test::parse_test_fspecs("zlib[core,0,1]:x86-uwp openssl[*]:x86-uwp");
         for (auto&& fs : fspecs)
-            fs.expand_to(specs);
+            fs.expand_fspecs_to(specs);
         Util::sort(specs);
 
         std::vector<FeatureSpec> spectargets{

@@ -40,7 +40,7 @@ TEST_CASE ("filter depends", "[dependencies]")
     SECTION ("x64-windows")
     {
         auto v =
-            filter_dependencies(deps, Test::X64_WINDOWS, Test::X86_WINDOWS, x64_win_cmake_vars, ImplicitDefault::yes);
+            filter_dependencies(deps, Test::X64_WINDOWS, Test::X86_WINDOWS, x64_win_cmake_vars, ImplicitDefault::YES);
         REQUIRE(v.size() == 2);
         REQUIRE(v.at(0).package_spec.name() == "liba");
         REQUIRE(v.at(0).features == defaults);
@@ -50,7 +50,7 @@ TEST_CASE ("filter depends", "[dependencies]")
 
     SECTION ("arm-uwp")
     {
-        auto v2 = filter_dependencies(deps, Test::ARM_UWP, Test::X86_WINDOWS, arm_uwp_cmake_vars, ImplicitDefault::no);
+        auto v2 = filter_dependencies(deps, Test::ARM_UWP, Test::X86_WINDOWS, arm_uwp_cmake_vars, ImplicitDefault::NO);
         REQUIRE(v2.size() == 2);
         REQUIRE(v2.at(0).package_spec.name() == "libb");
         REQUIRE(v2.at(0).features == core);

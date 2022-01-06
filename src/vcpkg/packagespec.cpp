@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
@@ -19,7 +20,7 @@ namespace vcpkg
         Strings::append(out, port(), '[', feature(), "]:", triplet());
     }
 
-    void FullPackageSpec::expand_to(std::vector<FeatureSpec>& out) const
+    void FullPackageSpec::expand_fspecs_to(std::vector<FeatureSpec>& out) const
     {
         for (auto&& feature : features)
         {
@@ -48,8 +49,11 @@ namespace vcpkg
         return left.name() == right.name() && left.triplet() == right.triplet();
     }
 
-    static constexpr StringLiteral s_illegal_platform_spec = "platform qualifier is not allowed in this context";
-    static constexpr StringLiteral s_illegal_features = "features are not allowed in this context";
+    DECLARE_AND_REGISTER_MESSAGE(IllegalPlatformSpec,
+                                 (),
+                                 "",
+                                 "Error: Platform qualifier is not allowed in this context");
+    DECLARE_AND_REGISTER_MESSAGE(IllegalFeatures, (), "", "Error: List of features is not allowed in this contect");
 
     static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
@@ -67,7 +71,7 @@ namespace vcpkg
         if (!core)
         {
             ret.emplace_back("core");
-            if (id == ImplicitDefault::yes)
+            if (id == ImplicitDefault::YES)
             {
                 ret.emplace_back("default");
             }
@@ -79,7 +83,7 @@ namespace vcpkg
     {
         if (platform)
         {
-            return {s_illegal_platform_spec, expected_right_tag};
+            return {msg::format(msgIllegalPlatformSpec).data(), expected_right_tag};
         }
 
         const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
@@ -91,11 +95,11 @@ namespace vcpkg
     {
         if (platform)
         {
-            return {s_illegal_platform_spec, expected_right_tag};
+            return {msg::format(msgIllegalPlatformSpec).data(), expected_right_tag};
         }
         if (features)
         {
-            return {s_illegal_features, expected_right_tag};
+            return {msg::format(msgIllegalFeatures).data(), expected_right_tag};
         }
 
         const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;

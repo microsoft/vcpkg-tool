@@ -124,7 +124,7 @@ namespace vcpkg::Test
         {
             auto opt = parse_qualified_specifier(parser);
             REQUIRE(opt.has_value());
-            ret.push_back(unwrap(opt.get()->to_full_spec(t, ImplicitDefault::yes)));
+            ret.push_back(unwrap(opt.get()->to_full_spec(t, ImplicitDefault::YES)));
         }
         return ret;
     }
