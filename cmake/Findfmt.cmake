@@ -16,4 +16,3 @@ if(VCPKG_DEPENDENCY_EXTERNAL_FMT)
 else()
     FetchContent_MakeAvailable(fmt)
 endif()
-
