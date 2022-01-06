@@ -97,14 +97,21 @@ namespace vcpkg::VisualStudio
     static constexpr CStringView COMPONENT_VCTOOLS_2015 = "Microsoft.VisualStudio.Component.VC.140";
     static constexpr CStringView COMPONENT_VCTOOLS_2017_OR_LATER = "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
     static constexpr CStringView COMPONENT_UCRT = "Microsoft.VisualStudio.Component.Windows10SDK";
-    static constexpr CStringView COMPONENT_WIN81SDK = "Microsoft.VisualStudio.Component.Windows81SDK";
-    static constexpr CStringView COMPONENT_WIN10SDK_18362 = "Microsoft.VisualStudio.Component.Windows10SDK.18362";
-    static constexpr CStringView COMPONENT_WIN10SDK_19041 = "Microsoft.VisualStudio.Component.Windows10SDK.19041";
-    static constexpr CStringView COMPONENT_WIN10SDK_20348 = "Microsoft.VisualStudio.Component.Windows10SDK.20348";
-    static constexpr CStringView COMPONENT_WIN11SDK_22000 = "Microsoft.VisualStudio.Component.Windows11SDK.22000";
     static constexpr CStringView COMPONENT_ARM_VCTOOLS = "Microsoft.VisualStudio.Component.VC.Tools.arm";
     static constexpr CStringView COMPONENT_ARM64_VCTOOLS = "Microsoft.VisualStudio.Component.VC.Tools.arm64";
     static constexpr CStringView COMPONENT_UWP = "Microsoft.VisualStudio.ComponentGroup.UWP.VC";
+
+    struct WINDOWS_SDK
+    {
+        CStringView sdk_component_name;
+        CStringView sdl_version_string;
+    };
+
+    static constexpr WINDOWS_SDK WINDOWS_SDKS[] = {{"Windows81SDK", "8.1"},
+                                                   {"Windows10SDK.18362", "18362"},
+                                                   {"Windows10SDK.19041", "19041"},
+                                                   {"Windows10SDK.20348", "20348"},
+                                                   {"Windows11SDK.22000", "22000"}};
 
     enum Installed_Component
     {
@@ -464,84 +471,25 @@ namespace vcpkg::VisualStudio
         const Path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
         if (fs.exists(vswhere_exe, IgnoreErrors{}))
         {
-            const auto win81sdk_output = cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                                            .string_arg("-latest")
-                                                                            .string_arg("-products")
-                                                                            .string_arg("*")
-                                                                            .string_arg("-requires")
-                                                                            .string_arg(COMPONENT_WIN81SDK.c_str())
-                                                                            .string_arg("-property")
-                                                                            .string_arg("installationVersion"));
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               win81sdk_output.exit_code == 0,
-                               "Running vswhere.exe failed with message:\n%s",
-                               win81sdk_output.output);
+            for (auto current_sdk_ver : WINDOWS_SDKS)
+            {
+                const auto winsdk_output = cmd_execute_and_capture_output(
+                    Command(vswhere_exe)
+                        .string_arg("-latest")
+                        .string_arg("-products")
+                        .string_arg("*")
+                        .string_arg("-requires")
+                        .string_arg("Microsoft.VisualStudio.Component." + current_sdk_ver.sdk_component_name)
+                        .string_arg("-property")
+                        .string_arg("installationVersion"));
+                Checks::check_exit(VCPKG_LINE_INFO,
+                                   winsdk_output.exit_code == 0,
+                                   "Running vswhere.exe failed with message:\n%s",
+                                   winsdk_output.output);
 
-            if (!win81sdk_output.output.empty()) toolVersions.emplace_back("8.1");
-
-            const auto win10sdk_18362_output =
-                cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                   .string_arg("-latest")
-                                                   .string_arg("-products")
-                                                   .string_arg("*")
-                                                   .string_arg("-requires")
-                                                   .string_arg(COMPONENT_WIN10SDK_18362.c_str())
-                                                   .string_arg("-property")
-                                                   .string_arg("installationVersion"));
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               win10sdk_18362_output.exit_code == 0,
-                               "Running vswhere.exe failed with message:\n%s",
-                               win10sdk_18362_output.output);
-
-            if (!win10sdk_18362_output.output.empty()) toolVersions.emplace_back("10.0.18362");
-
-            const auto win10sdk_19041_output =
-                cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                   .string_arg("-latest")
-                                                   .string_arg("-products")
-                                                   .string_arg("*")
-                                                   .string_arg("-requires")
-                                                   .string_arg(COMPONENT_WIN10SDK_19041.c_str())
-                                                   .string_arg("-property")
-                                                   .string_arg("installationVersion"));
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               win10sdk_19041_output.exit_code == 0,
-                               "Running vswhere.exe failed with message:\n%s",
-                               win10sdk_19041_output.output);
-
-            if (!win10sdk_19041_output.output.empty()) toolVersions.emplace_back("10.0.19041");
-
-            const auto win10sdk_20348_output =
-                cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                   .string_arg("-latest")
-                                                   .string_arg("-products")
-                                                   .string_arg("*")
-                                                   .string_arg("-requires")
-                                                   .string_arg(COMPONENT_WIN10SDK_20348.c_str())
-                                                   .string_arg("-property")
-                                                   .string_arg("installationVersion"));
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               win10sdk_20348_output.exit_code == 0,
-                               "Running vswhere.exe failed with message:\n%s",
-                               win10sdk_20348_output.output);
-
-            if (!win10sdk_20348_output.output.empty()) toolVersions.emplace_back("10.0.20348");
-
-            const auto win11sdk_2200_output =
-                cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                   .string_arg("-latest")
-                                                   .string_arg("-products")
-                                                   .string_arg("*")
-                                                   .string_arg("-requires")
-                                                   .string_arg(COMPONENT_WIN11SDK_22000.c_str())
-                                                   .string_arg("-property")
-                                                   .string_arg("installationVersion"));
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               win11sdk_2200_output.exit_code == 0,
-                               "Running vswhere.exe failed with message:\n%s",
-                               win11sdk_2200_output.output);
-
-            if (!win11sdk_2200_output.output.empty()) toolVersions.emplace_back("11.0.22000");
+                if (!winsdk_output.output.empty())
+                    toolVersions.emplace_back(current_sdk_ver.sdl_version_string.c_str());
+            }
         }
 
         return toolVersions;
