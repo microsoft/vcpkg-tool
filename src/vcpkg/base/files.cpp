@@ -2819,11 +2819,23 @@ namespace vcpkg
             }
 
 #if defined(__linux__)
-            off_t bytes = 0;
-            if (sendfile(destination_fd.get(), source_fd.get(), &bytes, source_stat.st_size) == -1)
+            // https://man7.org/linux/man-pages/man2/sendfile.2.html#NOTES
+            // sendfile() will transfer at most 0x7ffff000 (2,147,479,552)
+            // bytes, returning the number of bytes actually transferred.
+            constexpr off_t maximum_sendfile = 0x7ffff000;
+            off_t offset = 0;
+            for (off_t remaining_size = source_stat.st_size; remaining_size != 0;)
             {
-                ec.assign(errno, std::generic_category());
-                return false;
+                const off_t this_send_attempt = std::min(maximum_sendfile, remaining_size);
+                const ssize_t this_send_actual =
+                    sendfile(destination_fd.get(), source_fd.get(), &offset, this_send_attempt);
+                if (this_send_actual == -1)
+                {
+                    ec.assign(errno, std::generic_category());
+                    return false;
+                }
+
+                remaining_size -= this_send_actual;
             }
 
             destination_fd.fchmod(source_stat.st_mode, ec);
