@@ -265,7 +265,7 @@ namespace vcpkg
         static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
         Command cmd;
-        cmd.string_arg("curl")
+        cmd.string_arg("curl.exe")
             .string_arg("--head")
             .string_arg("--location")
             .string_arg("-w")
@@ -321,7 +321,7 @@ namespace vcpkg
             static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
             Command cmd;
-            cmd.string_arg("curl")
+            cmd.string_arg("curl.exe")
                 .string_arg("--location")
                 .string_arg("-w")
                 .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
@@ -383,7 +383,7 @@ namespace vcpkg
         {
             // HTTP headers are ignored for FTP clients
             Command cmd;
-            cmd.string_arg("curl");
+            cmd.string_arg("curl.exe");
             cmd.string_arg(url);
             cmd.string_arg("-T").path_arg(file);
             auto res = cmd_execute_and_capture_output(cmd);
@@ -396,7 +396,7 @@ namespace vcpkg
             return 0;
         }
         Command cmd;
-        cmd.string_arg("curl").string_arg("-X").string_arg("PUT");
+        cmd.string_arg("curl.exe").string_arg("-X").string_arg("PUT");
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
@@ -549,7 +549,7 @@ namespace vcpkg
         }
 #endif
         Command cmd;
-        cmd.string_arg("curl")
+        cmd.string_arg("curl.exe")
             .string_arg("--fail")
             .string_arg("-L")
             .string_arg(url)
