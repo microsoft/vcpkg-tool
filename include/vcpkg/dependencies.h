@@ -86,7 +86,7 @@ namespace vcpkg::Dependencies
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
         std::vector<PackageSpec> package_dependencies;
-        std::vector<std::string> feature_list;
+        InternalFeatureSet feature_list;
         Triplet host_triplet;
 
         Optional<Build::AbiInfo> abi_info;
@@ -195,13 +195,6 @@ namespace vcpkg::Dependencies
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
                                    const CreateInstallPlanOptions& options = {Triplet{}});
-
-    // `features` should have "default" instead of missing "core". This is only exposed for testing purposes.
-    std::vector<FullPackageSpec> resolve_deps_as_top_level(const SourceControlFile& scf,
-                                                           Triplet triplet,
-                                                           Triplet host_triplet,
-                                                           std::vector<std::string> features,
-                                                           CMakeVars::CMakeVarProvider& var_provider);
 
     ExpectedS<ActionPlan> create_versioned_install_plan(const PortFileProvider::IVersionedPortfileProvider& vprovider,
                                                         const PortFileProvider::IBaselineProvider& bprovider,

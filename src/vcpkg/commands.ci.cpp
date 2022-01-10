@@ -528,12 +528,7 @@ namespace vcpkg::Commands::CI
 
         std::vector<PackageSpec> specs = PackageSpec::to_package_specs(all_ports, target_triplet);
         // Install the default features for every package
-        auto all_default_full_specs = Util::fmap(specs, [&](auto& spec) {
-            std::vector<std::string> default_features =
-                provider.get_control_file(spec.name()).get()->source_control_file->core_paragraph->default_features;
-            default_features.emplace_back("core");
-            return FullPackageSpec{spec, std::move(default_features)};
-        });
+        auto all_default_full_specs = Util::fmap(specs, [&](auto& spec) { return FullPackageSpec{spec, {"default"}}; });
 
         Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
                                                                  Dependencies::UnsupportedPortAction::Warn);
