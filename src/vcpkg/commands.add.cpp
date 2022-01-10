@@ -25,11 +25,11 @@ namespace
         nullptr,
     };
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        AddTripletExpressionNotAllowed,
-        (),
-        "",
-        "Error: Triplet expressions are not allowed here. Use the --triplet parameter when running `vcpkg install`.");
+    DECLARE_AND_REGISTER_MESSAGE(AddTripletExpressionNotAllowed,
+                                 (),
+                                 "",
+                                 "Error: triplet expressions are not allowed here. You may want to change "
+                                 "`{name}:{triplet}` to `{name}` instead.");
 
     DECLARE_AND_REGISTER_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
 }
