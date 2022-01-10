@@ -155,13 +155,13 @@ namespace vcpkg::Commands::Integrate
 #if defined(_WIN32)
     static Path get_appdata_targets_path()
     {
-        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg/vcpkg.user.targets";
+        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg\\vcpkg.user.targets";
     }
 #endif
 #if defined(_WIN32)
     static Path get_appdata_props_path()
     {
-        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg/vcpkg.user.props";
+        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg\\vcpkg.user.props";
     }
 #endif
 
