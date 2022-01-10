@@ -184,6 +184,24 @@ namespace
         return cmd;
     }
 
+    static std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs)
+    {
+        auto results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+#ifdef __APPLE__
+        int i = 0;
+        for (auto& result : results)
+        {
+            if (result.exit_code == 127 && result.output.empty())
+            {
+                Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
+                result = cmd_execute_and_capture_output(jobs[i], get_clean_environment());
+            }
+            ++i;
+        }
+#endif
+        return results;
+    }
+
     // Compress the source directory into the destination file.
     static void compress_directory(const VcpkgPaths& paths, const Path& source, const Path& destination)
     {
@@ -294,7 +312,7 @@ namespace
                 }
             }
 
-            auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+            auto job_results = decompress_in_parallel(jobs);
 
             for (size_t j = 0; j < jobs.size(); ++j)
             {
@@ -498,7 +516,7 @@ namespace
                             paths, paths.package_dir(actions[url_indices[i]].spec), url_paths[i].second));
                     }
                 }
-                auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+                auto job_results = decompress_in_parallel(jobs);
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
                     const auto i = action_idxs[j];
@@ -1033,7 +1051,7 @@ namespace
                     idxs.push_back(idx);
                 }
 
-                const auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+                const auto job_results = decompress_in_parallel(jobs);
 
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
