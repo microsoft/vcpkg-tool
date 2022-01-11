@@ -1,4 +1,6 @@
 {
+  "AddPortSucceded": "Succeeded in adding ports to vcpkg.json file.",
+  "AddTripletExpressionNotAllowed": "Error: triplet expressions are not allowed here. You may want to change `{name}:{triplet}` to `{name}` instead.",
   "ErrorIndividualPackagesUnsupported": "Error: In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.",
   "ErrorInvalidClassicModeOption": "Error: The option {value} is not supported in classic mode and no manifest was found.",
   "ErrorInvalidManifestModeOption": "Error: The option {value} is not supported in manifest mode.",
