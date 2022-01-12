@@ -265,7 +265,7 @@ namespace vcpkg::Commands::Integrate
             fs.write_contents(
                 appdata_src_path, create_appdata_shortcut(paths.buildsystems_msbuild_targets), VCPKG_LINE_INFO);
             auto appdata_dst_path = get_appdata_targets_path();
-            
+
             if (!fs.exists(appdata_dst_path, IgnoreErrors{}))
             {
                 fs.create_directory(appdata_dst_path, ec);
