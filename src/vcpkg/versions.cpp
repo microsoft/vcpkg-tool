@@ -265,26 +265,20 @@ namespace vcpkg::Versions
 
     VerComp compare(const std::string& a, const std::string& b, Scheme scheme)
     {
-        if (scheme == Scheme::String)
+        switch (scheme)
         {
-            return (a == b) ? VerComp::eq : VerComp::unk;
+            case Scheme::String: return (a == b) ? VerComp::eq : VerComp::unk;
+            case Scheme::Semver:
+                return compare(semver_from_string(a).value_or_exit(VCPKG_LINE_INFO),
+                               semver_from_string(b).value_or_exit(VCPKG_LINE_INFO));
+            case Scheme::Relaxed:
+                return compare(relaxed_from_string(a).value_or_exit(VCPKG_LINE_INFO),
+                               relaxed_from_string(b).value_or_exit(VCPKG_LINE_INFO));
+            case Scheme::Date:
+                return compare(DateVersion::from_string(a).value_or_exit(VCPKG_LINE_INFO),
+                               DateVersion::from_string(b).value_or_exit(VCPKG_LINE_INFO));
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
-        if (scheme == Scheme::Semver)
-        {
-            return compare(semver_from_string(a).value_or_exit(VCPKG_LINE_INFO),
-                           semver_from_string(b).value_or_exit(VCPKG_LINE_INFO));
-        }
-        if (scheme == Scheme::Relaxed)
-        {
-            return compare(relaxed_from_string(a).value_or_exit(VCPKG_LINE_INFO),
-                           relaxed_from_string(b).value_or_exit(VCPKG_LINE_INFO));
-        }
-        if (scheme == Scheme::Date)
-        {
-            return compare(DateVersion::from_string(a).value_or_exit(VCPKG_LINE_INFO),
-                           DateVersion::from_string(b).value_or_exit(VCPKG_LINE_INFO));
-        }
-        Checks::unreachable(VCPKG_LINE_INFO);
     }
 
     static VerComp int_to_vercomp(int i)

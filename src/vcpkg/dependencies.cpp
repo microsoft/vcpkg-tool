@@ -1331,10 +1331,9 @@ namespace vcpkg::Dependencies
                 std::map<Versions::Version, VersionSchemeInfo*, VersionTMapLess> vermap;
                 // We don't know how to compare "version-string" versions, so keep all the versions separately
                 std::map<std::string, VersionSchemeInfo> exacts;
-                // for each version type besides string (relaxed, semver, date), we only track the latest version
+                // for each version type besides string (relaxed-semver, date), we only track the latest version
                 // required
-                Optional<std::unique_ptr<VersionSchemeInfo>> relaxed;
-                Optional<std::unique_ptr<VersionSchemeInfo>> semver;
+                Optional<std::unique_ptr<VersionSchemeInfo>> relaxed_semver;
                 Optional<std::unique_ptr<VersionSchemeInfo>> date;
                 std::set<std::string> requested_features;
                 bool default_features = true;
@@ -1358,13 +1357,9 @@ namespace vcpkg::Dependencies
                 template<class F>
                 void foreach_vsi(F f)
                 {
-                    if (auto r = this->relaxed.get())
+                    if (auto r = this->relaxed_semver.get())
                     {
                         f(**r);
-                    }
-                    if (auto s = this->semver.get())
-                    {
-                        f(**s);
                     }
                     if (auto d = this->date.get())
                     {
@@ -1424,28 +1419,16 @@ namespace vcpkg::Dependencies
             {
                 vsi = &exacts[ver.text()];
             }
-            else if (scheme == Versions::Scheme::Relaxed)
+            else if (scheme == Versions::Scheme::Relaxed || scheme == Versions::Scheme::Semver)
             {
-                if (auto p = relaxed.get())
+                if (auto p = relaxed_semver.get())
                 {
                     vsi = p->get();
                 }
                 else
                 {
-                    relaxed = std::make_unique<VersionSchemeInfo>();
-                    vsi = relaxed.get()->get();
-                }
-            }
-            else if (scheme == Versions::Scheme::Semver)
-            {
-                if (auto p = semver.get())
-                {
-                    vsi = p->get();
-                }
-                else
-                {
-                    semver = std::make_unique<VersionSchemeInfo>();
-                    vsi = semver.get()->get();
+                    relaxed_semver = std::make_unique<VersionSchemeInfo>();
+                    vsi = relaxed_semver.get()->get();
                 }
             }
             else if (scheme == Versions::Scheme::Date)
@@ -1484,6 +1467,16 @@ namespace vcpkg::Dependencies
                                         Versions::Scheme sb,
                                         const Versions::Version& b)
         {
+            if (sa == Versions::Scheme::Semver)
+            {
+                sa = Versions::Scheme::Relaxed;
+            }
+
+            if (sb == Versions::Scheme::Semver)
+            {
+                sb = Versions::Scheme::Relaxed;
+            }
+
             if (sa != sb) return VerComp::unk;
 
             if (a.text() != b.text())

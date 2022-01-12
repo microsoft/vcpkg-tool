@@ -1023,7 +1023,7 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
 {
     MockVersionedPortfileProvider vp;
     vp.emplace("a", {"1.0.0", 0}, Scheme::Semver);
-    vp.emplace("a", {"1.0.1", 0}, Scheme::Relaxed);
+    vp.emplace("a", {"1.0.1", 0}, Scheme::String);
     vp.emplace("a", {"1.0.2", 0}, Scheme::Semver);
 
     MockCMakeVarProvider var_provider;
@@ -1047,7 +1047,7 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
             R"(Error: Version conflict on a:x86-windows: baseline required 1.0.0 but vcpkg could not compare it to 1.0.1
 
 The two versions used incomparable schemes:
-    "1.0.1" was of scheme relaxed
+    "1.0.1" was of scheme string
     "1.0.0" was of scheme semver
 
 This can be resolved by adding an explicit override to the preferred version, for example:
@@ -1077,7 +1077,7 @@ See `vcpkg help versioning` for more information.)");
             R"(Error: Version conflict on a:x86-windows: baseline required 1.0.2 but vcpkg could not compare it to 1.0.1
 
 The two versions used incomparable schemes:
-    "1.0.1" was of scheme relaxed
+    "1.0.1" was of scheme string
     "1.0.2" was of scheme semver
 
 This can be resolved by adding an explicit override to the preferred version, for example:
@@ -1087,6 +1087,47 @@ This can be resolved by adding an explicit override to the preferred version, fo
     ]
 
 See `vcpkg help versioning` for more information.)");
+    }
+}
+
+TEST_CASE ("version install relaxed cross with semver success", "[versionplan]")
+{
+    MockVersionedPortfileProvider vp;
+    vp.emplace("a", {"1.0.0", 0}, Scheme::Semver);
+    vp.emplace("a", {"1.0.1", 0}, Scheme::Relaxed);
+    vp.emplace("a", {"1.0.2", 0}, Scheme::Semver);
+
+    MockCMakeVarProvider var_provider;
+
+    SECTION ("lower baseline")
+    {
+        MockBaselineProvider bp;
+        bp.v["a"] = {"1.0.0", 0};
+
+        auto install_plan =
+            unwrap(create_versioned_install_plan(vp,
+                                                 bp,
+                                                 var_provider,
+                                                 {Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1.0.1", 0}}},
+                                                 {},
+                                                 toplevel_spec()));
+
+        check_name_and_version(install_plan.install_actions[0], "a", {"1.0.1", 0});
+    }
+    SECTION ("higher baseline")
+    {
+        MockBaselineProvider bp;
+        bp.v["a"] = {"1.0.2", 0};
+
+        auto install_plan =
+            unwrap(create_versioned_install_plan(vp,
+                                                 bp,
+                                                 var_provider,
+                                                 {Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1.0.1", 0}}},
+                                                 {},
+                                                 toplevel_spec()));
+
+        check_name_and_version(install_plan.install_actions[0], "a", {"1.0.2", 0});
     }
 }
 
