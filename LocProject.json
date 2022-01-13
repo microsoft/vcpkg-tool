@@ -6,6 +6,7 @@
         {
           "SourceFile": "locales/messages.json",
           "CopyOption": "LangIDOnName",
+          "LclFile": "src/localization-team/{Lang}/messages.json.lcl",
           "OutputPath": "locales"
         }
       ]
