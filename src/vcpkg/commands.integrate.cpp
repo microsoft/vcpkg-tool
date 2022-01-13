@@ -256,7 +256,7 @@ namespace vcpkg::Commands::Integrate
                 appdata_src_path, create_appdata_shortcut(paths.buildsystems_msbuild_targets), VCPKG_LINE_INFO);
             auto appdata_dst_path = get_appdata_targets_path();
 
-            fs.create_directory(appdata_dst_path, VCPKG_LINE_INFO);
+            fs.create_directory(get_appdata_local().value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
 
             fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, ec);
             if (ec)
