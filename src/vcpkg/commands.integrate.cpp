@@ -246,18 +246,8 @@ namespace vcpkg::Commands::Integrate
         {
             std::error_code ec;
             const auto tmp_dir = paths.buildsystems / "tmp";
-            fs.create_directory(paths.buildsystems, ec);
-            if (ec)
-            {
-                print2(Color::error, "Error: Failed to create directory: ", paths.buildsystems, "\n");
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
-            fs.create_directory(tmp_dir, ec);
-            if (ec)
-            {
-                print2(Color::error, "Error: Failed to create directory: ", tmp_dir, "\n");
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
+            fs.create_directory(paths.buildsystems, VCPKG_LINE_INFO);
+            fs.create_directory(tmp_dir, VCPKG_LINE_INFO);
 
             integrate_install_msbuild14(fs, tmp_dir);
 
@@ -266,15 +256,7 @@ namespace vcpkg::Commands::Integrate
                 appdata_src_path, create_appdata_shortcut(paths.buildsystems_msbuild_targets), VCPKG_LINE_INFO);
             auto appdata_dst_path = get_appdata_targets_path();
 
-            if (!fs.exists(appdata_dst_path, IgnoreErrors{}))
-            {
-                fs.create_directory(appdata_dst_path, ec);
-                if (ec)
-                {
-                    print2(Color::error, "Error: Failed to create directory: ", appdata_dst_path, "", "\n");
-                    Checks::exit_fail(VCPKG_LINE_INFO);
-                }
-            }
+            fs.create_directory(appdata_dst_path, VCPKG_LINE_INFO);
 
             fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, ec);
             if (ec)
