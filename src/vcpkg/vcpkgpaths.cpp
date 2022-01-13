@@ -1386,9 +1386,9 @@ namespace vcpkg
         const auto tsv = prebuildinfo.platform_toolset.get();
         const auto tsvf = prebuildinfo.platform_toolset_version.get();
         auto vsp = prebuildinfo.visual_studio_path.get();
-        if (!vsp && !m_pimpl->default_vs_path.empty())
+        if (!vsp && !m_pimpl->m_default_vs_path.empty())
         {
-            vsp = &m_pimpl->default_vs_path;
+            vsp = &m_pimpl->m_default_vs_path;
         }
 
         auto candidate = Util::find_if(vs_toolsets, [&](const Toolset& t) {
