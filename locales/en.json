@@ -2,6 +2,7 @@
   "ErrorIndividualPackagesUnsupported": "Error: In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.",
   "ErrorInvalidClassicModeOption": "Error: The option {value} is not supported in classic mode and no manifest was found.",
   "ErrorInvalidManifestModeOption": "Error: The option {value} is not supported in manifest mode.",
+  "ErrorMissingVcpkgRoot": "Error: Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of {url}.",
   "ErrorNoVSInstance": "Error: in triplet {triplet}: Unable to find a valid Visual Studio instance",
   "ErrorNoVSInstanceAt": "     at \"{path}\"",
   "_ErrorNoVSInstanceAt.comment": "Printed after ErrorNoVSInstance on a separate line",
