@@ -1550,10 +1550,7 @@ namespace vcpkg
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
-}
 
-namespace
-{
     const ExpectedS<Path>& default_cache_path()
     {
         static auto cachepath = get_platform_cache_home().then([](Path p) -> ExpectedS<Path> {
@@ -1593,6 +1590,9 @@ namespace
         return cachepath;
     }
 
+}
+namespace
+{
     struct State
     {
         bool m_cleared = false;

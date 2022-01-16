@@ -5,6 +5,7 @@
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/commands.add.h>
 #include <vcpkg/commands.autocomplete.h>
+#include <vcpkg/commands.binarycache.h>
 #include <vcpkg/commands.buildexternal.h>
 #include <vcpkg/commands.cache.h>
 #include <vcpkg/commands.check-support.h>
@@ -84,6 +85,7 @@ namespace vcpkg::Commands
         static const AddCommand add{};
         static const AddVersion::AddVersionCommand add_version{};
         static const Autocomplete::AutocompleteCommand autocomplete{};
+        static const Binarycache::BinaryCacheCommand binarycache{};
         static const Cache::CacheCommand cache{};
         static const CIClean::CICleanCommand ciclean{};
         static const CIVerifyVersions::CIVerifyVersionsCommand ci_verify_versions{};
@@ -113,6 +115,7 @@ namespace vcpkg::Commands
             {"activate", &activate},
             {"add", &add},
             {"autocomplete", &autocomplete},
+            {"binarycache", &binarycache},
             {"cache", &cache},
             {"create", &create},
             {"edit", &edit},
