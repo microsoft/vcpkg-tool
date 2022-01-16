@@ -583,7 +583,7 @@ namespace vcpkg::PostBuildLint
             auto cmd_line = Command("lipo").string_arg("-archs").path_arg(file);
             ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
             Checks::check_exit(
-                VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
+                VCPKG_LINE_INFO, ec_data.exit_code == 0, "Error: unable to determine the architectures of binary file %s. Running lipo failed with status code %d\n    %s", file, ec_data.exit_code, cmd_line.command_line());
             if (!Util::Vectors::contains(Strings::split(Strings::trim(ec_data.output), ' '), requested_arch))
             {
                 binaries_with_invalid_architecture.push_back({file, ec_data.output});
