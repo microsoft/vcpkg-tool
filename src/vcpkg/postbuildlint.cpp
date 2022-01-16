@@ -1029,8 +1029,11 @@ namespace vcpkg::PostBuildLint
             if (pre_build_info.cmake_system_name.empty() || pre_build_info.cmake_system_name == "Windows" ||
                 pre_build_info.cmake_system_name == "WindowsStore")
             {
-                if (pre_build_info.cmake_system_name == "MinGW") return NotExtensionsCaseInsensitive{{".lib", ".a"}};
                 return NotExtensionsCaseInsensitive{{".lib"}};
+            }
+            if (pre_build_info.cmake_system_name == "MinGW")
+            {
+                return NotExtensionsCaseInsensitive{{".lib", ".a"}};
             }
             return NotExtensionsCaseInsensitive{{".so", ".a", ".dylib"}};
         }();
