@@ -8,7 +8,7 @@ import { execute } from '../util/exec-cmd';
 import { Uri } from '../util/uri';
 
 
-async function installEspIdf(targetLocation: Uri, activation: Activation, options: { subdirectory?: string } = {}) {
+export async function installEspIdf(targetLocation: Uri, activation: Activation) {
   // create the .espressif folder for the espressif installation
   await targetLocation.createDirectory('.espressif');
 
@@ -17,7 +17,7 @@ async function installEspIdf(targetLocation: Uri, activation: Activation, option
     throw new Error(i`Python is not installed`);
   }
 
-  const directoryLocation = `${targetLocation.fsPath.toString()}/${options.subdirectory ?? ''}`;
+  const directoryLocation = await targetLocation.isFile() ? targetLocation.fsPath : targetLocation.toString();
 
   // TODO: look into making sure idf_tools.py updates the system's python installation
   // with the required modules.
@@ -36,8 +36,7 @@ async function installEspIdf(targetLocation: Uri, activation: Activation, option
     `${directoryLocation}/tools/idf_tools.py`,
     'install',
     '--targets=all'
-  ],
-  {
+  ], {
     env: extendedEnvironment
   });
 
