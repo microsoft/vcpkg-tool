@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { ChildProcess, ProcessEnvOptions, spawn, SpawnOptions } from 'child_process';
+import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 
 export interface ExecOptions extends SpawnOptions {
   onCreate?(cp: ChildProcess): void;
@@ -84,11 +84,10 @@ export function execute(command: string, cmdlineargs: Array<string>, options: Ex
  */
 export const execute_shell = (
   command: string,
-  options: ExecOptions = {},
-  environmentOptions?: ProcessEnvOptions
+  options: ExecOptions = {}
 ): Promise<ExecResult> => {
   return new Promise((resolve, reject) => {
-    const cp = spawn(command, environmentOptions ? { ...options, ...environmentOptions, stdio: 'pipe', shell: true } : { ...options, stdio: 'pipe', shell: true });
+    const cp = spawn(command, { ...options, stdio: 'pipe', shell: true });
     if (options.onCreate) {
       options.onCreate(cp);
     }
