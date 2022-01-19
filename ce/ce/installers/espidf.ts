@@ -27,11 +27,6 @@ export async function installEspIdf(targetLocation: Uri, activation: Activation)
     IDF_TOOLS_PATH: `${targetLocation.fsPath.toString()}/.espressif`
   };
 
-
-  const command = [
-    `python.exe ${directoryLocation}/tools/idf_tools.py`, 'install --targets=all',
-    `&& python.exe ${directoryLocation}/tools/idf_tools.py install-python-env`];
-
   const installResult = await execute(pythonPath, [
     `${directoryLocation}/tools/idf_tools.py`,
     'install',
