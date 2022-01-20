@@ -86,8 +86,7 @@ namespace vcpkg
         const auto processor_architecture = raw_processor_architecture.get();
         if (!processor_architecture)
         {
-            msg::print(Color::error, msgProcessorArchitectureMissing);
-            Checks::exit_with_code(VCPKG_LINE_INFO, 1);
+            Checks::exit_with_message(VCPKG_LINE_INFO, msgProcessorArchitectureMissing);
         }
 
         const auto raw_parsed_processor_architecture = to_cpu_architecture(*processor_architecture);
@@ -96,8 +95,8 @@ namespace vcpkg
             return *parsed_processor_architecture;
         }
 
-        msg::print(Color::error, msgProcessorArchitectureMalformed, msg::value = *processor_architecture);
-        Checks::exit_with_code(VCPKG_LINE_INFO, 1);
+        Checks::exit_with_message(
+            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::value = *processor_architecture);
 #else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(__APPLE__)
