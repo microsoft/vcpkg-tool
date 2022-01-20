@@ -17,7 +17,7 @@ namespace
 
         void get_all_port_names(std::vector<std::string>&) const override { }
 
-        Optional<VersionT> get_baseline_version(StringView) const override { return nullopt; }
+        Optional<Version> get_baseline_version(StringView) const override { return nullopt; }
 
         int number;
 
@@ -248,11 +248,11 @@ TEST_CASE ("git_version_db_parsing", "[registries]")
 
     auto results_opt = r.visit(test_json, filesystem_version_db);
     auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
-    CHECK(results[0].version == VersionT{"2021-06-26", 0});
+    CHECK(results[0].version == Version{"2021-06-26", 0});
     CHECK(results[0].git_tree == "9b07f8a38bbc4d13f8411921e6734753e15f8d50");
-    CHECK(results[1].version == VersionT{"2021-01-14", 0});
+    CHECK(results[1].version == Version{"2021-01-14", 0});
     CHECK(results[1].git_tree == "12b84a31469a78dd4b42dcf58a27d4600f6b2d48");
-    CHECK(results[2].version == VersionT{"2020-04-12", 0});
+    CHECK(results[2].version == Version{"2020-04-12", 0});
     CHECK(results[2].git_tree == "bd4565e8ab55bc5e098a1750fa5ff0bc4406ca9b");
     CHECK(r.errors().empty());
 }
@@ -284,11 +284,11 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     )json");
         auto results_opt = r.visit(test_json, filesystem_version_db);
         auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
-        CHECK(results[0].version == VersionT{"puppies", 0});
+        CHECK(results[0].version == Version{"puppies", 0});
         CHECK(results[0].p == "a/b" VCPKG_PREFERRED_SEPARATOR "c/d");
-        CHECK(results[1].version == VersionT{"doggies", 0});
+        CHECK(results[1].version == Version{"doggies", 0});
         CHECK(results[1].p == "a/b" VCPKG_PREFERRED_SEPARATOR "e/d");
-        CHECK(results[2].version == VersionT{"1.2.3", 0});
+        CHECK(results[2].version == Version{"1.2.3", 0});
         CHECK(results[2].p == "a/b" VCPKG_PREFERRED_SEPARATOR "semvers/here");
         CHECK(r.errors().empty());
     }

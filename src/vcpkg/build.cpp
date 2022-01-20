@@ -1339,7 +1339,7 @@ namespace vcpkg::Build
         std::string package = action.displayname();
         if (auto scfl = action.source_control_file_and_location.get())
         {
-            Strings::append(package, " -> ", scfl->to_versiont());
+            Strings::append(package, " -> ", scfl->to_version());
         }
         return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`.\n"
                                "Then check for known issues at:\n"

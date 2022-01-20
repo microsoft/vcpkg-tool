@@ -121,9 +121,9 @@ namespace vcpkg::Commands::Upgrade
 
                 const auto& control_file = maybe_control_file.value_or_exit(VCPKG_LINE_INFO);
                 const auto& control_paragraph = *control_file.source_control_file->core_paragraph;
-                auto control_version = VersionT(control_paragraph.version, control_paragraph.port_version);
+                auto control_version = Version(control_paragraph.raw_version, control_paragraph.port_version);
                 const auto& installed_paragraph = (*installed_status)->package;
-                auto installed_version = VersionT(installed_paragraph.version, installed_paragraph.port_version);
+                auto installed_version = Version(installed_paragraph.version, installed_paragraph.port_version);
                 if (control_version == installed_version)
                 {
                     up_to_date.push_back(spec);

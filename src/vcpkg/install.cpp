@@ -985,7 +985,7 @@ namespace vcpkg::Install
             }
 
             if (std::any_of(dependencies.begin(), dependencies.end(), [](const Dependency& dep) {
-                    return dep.constraint.type != Versions::Constraint::Type::None;
+                    return dep.constraint.type != VersionConstraintKind::None;
                 }))
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_version_constraint", "defined");
@@ -1272,9 +1272,8 @@ namespace vcpkg::Install
 
         for (auto&& install_action : plan.install_actions)
         {
-            auto&& version_as_string = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                           .to_versiont()
-                                           .to_string();
+            auto&& version_as_string =
+                install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version().to_string();
             if (!specs_string.empty()) specs_string.push_back(',');
             specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
                                             ":",

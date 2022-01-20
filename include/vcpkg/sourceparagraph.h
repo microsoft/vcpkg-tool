@@ -60,8 +60,8 @@ namespace vcpkg
     struct SourceParagraph
     {
         std::string name;
-        Versions::Scheme version_scheme = Versions::Scheme::String;
-        std::string version;
+        VersionScheme version_scheme = VersionScheme::String;
+        std::string raw_version;
         int port_version = 0;
         std::vector<std::string> description;
         std::vector<std::string> summary;
@@ -82,7 +82,7 @@ namespace vcpkg
 
         Json::Object extra_info;
 
-        VersionT to_versiont() const { return VersionT{version, port_version}; }
+        Version to_version() const { return Version{raw_version, port_version}; }
 
         friend bool operator==(const SourceParagraph& lhs, const SourceParagraph& rhs);
         friend bool operator!=(const SourceParagraph& lhs, const SourceParagraph& rhs) { return !(lhs == rhs); }
@@ -114,10 +114,10 @@ namespace vcpkg
                                                           const FeatureFlagSettings& flags,
                                                           bool is_default_builtin_registry = true) const;
 
-        VersionT to_versiont() const { return core_paragraph->to_versiont(); }
+        Version to_version() const { return core_paragraph->to_version(); }
         SchemedVersion to_schemed_version() const
         {
-            return SchemedVersion{core_paragraph->version_scheme, core_paragraph->to_versiont()};
+            return SchemedVersion{core_paragraph->version_scheme, core_paragraph->to_version()};
         }
 
         friend bool operator==(const SourceControlFile& lhs, const SourceControlFile& rhs);
@@ -135,7 +135,7 @@ namespace vcpkg
     /// </summary>
     struct SourceControlFileAndLocation
     {
-        VersionT to_versiont() const { return source_control_file->to_versiont(); }
+        Version to_version() const { return source_control_file->to_version(); }
 
         std::unique_ptr<SourceControlFile> source_control_file;
         Path source_location;

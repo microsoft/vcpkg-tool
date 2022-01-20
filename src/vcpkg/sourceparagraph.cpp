@@ -32,7 +32,7 @@ namespace vcpkg
     bool operator==(const SourceParagraph& lhs, const SourceParagraph& rhs)
     {
         if (lhs.name != rhs.name) return false;
-        if (lhs.version != rhs.version) return false;
+        if (lhs.raw_version != rhs.raw_version) return false;
         if (lhs.version_scheme != rhs.version_scheme) return false;
         if (lhs.port_version != rhs.port_version) return false;
         if (!paragraph_equal(lhs.description, rhs.description)) return false;
@@ -256,7 +256,7 @@ namespace vcpkg
         auto spgh = std::make_unique<SourceParagraph>();
 
         parser.required_field(SourceParagraphFields::NAME, spgh->name);
-        parser.required_field(SourceParagraphFields::VERSION, spgh->version);
+        parser.required_field(SourceParagraphFields::VERSION, spgh->raw_version);
 
         auto pv_str = parser.optional_field(SourceParagraphFields::PORT_VERSION);
         if (!pv_str.empty())
@@ -498,7 +498,7 @@ namespace vcpkg
 
             if (has_ge_constraint)
             {
-                dep.constraint.type = Versions::Constraint::Type::Minimum;
+                dep.constraint.type = VersionConstraintKind::Minimum;
                 auto h = dep.constraint.value.find('#');
                 if (h != std::string::npos)
                 {
@@ -565,15 +565,15 @@ namespace vcpkg
                                const Json::Object& obj,
                                std::string& name,
                                std::string& version,
-                               Versions::Scheme& version_scheme,
+                               VersionScheme& version_scheme,
                                int& port_version)
         {
             r.required_object_field(type_name, obj, NAME, name, Json::IdentifierDeserializer::instance);
 
             auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj, true);
-            version = schemed_version.versiont.text();
+            version = schemed_version.version.text();
             version_scheme = schemed_version.scheme;
-            port_version = schemed_version.versiont.port_version();
+            port_version = schemed_version.version.port_version();
         }
 
         virtual Optional<DependencyOverride> visit_object(Json::Reader& r, const Json::Object& obj) override
@@ -931,9 +931,9 @@ namespace vcpkg
             static Json::StringDeserializer url_deserializer{"a url"};
             r.required_object_field(type_name(), obj, NAME, spgh->name, Json::IdentifierDeserializer::instance);
             auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
-            spgh->version = schemed_version.versiont.text();
+            spgh->raw_version = schemed_version.version.text();
             spgh->version_scheme = schemed_version.scheme;
-            spgh->port_version = schemed_version.versiont.port_version();
+            spgh->port_version = schemed_version.version.port_version();
 
             r.optional_object_field(obj, MAINTAINERS, spgh->maintainers, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, CONTACTS, spgh->contacts, ContactsDeserializer::instance);
@@ -1114,7 +1114,7 @@ namespace vcpkg
             auto check_deps = [&](View<Dependency> deps) -> Optional<std::string> {
                 for (auto&& dep : deps)
                 {
-                    if (dep.constraint.type != Versions::Constraint::Type::None)
+                    if (dep.constraint.type != VersionConstraintKind::None)
                     {
                         LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-disabled", "defined");
                         return Strings::concat(
@@ -1160,7 +1160,7 @@ namespace vcpkg
                 if (std::any_of(core_paragraph->dependencies.begin(),
                                 core_paragraph->dependencies.end(),
                                 [](const auto& dependency) {
-                                    return dependency.constraint.type != Versions::Constraint::Type::None;
+                                    return dependency.constraint.type != VersionConstraintKind::None;
                                 }))
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("error-versioning-no-baseline", "defined");
@@ -1326,7 +1326,7 @@ namespace vcpkg
     static bool is_dependency_trivial(const Dependency& dep)
     {
         return dep.features.empty() && dep.platform.is_empty() && dep.extra_info.is_empty() &&
-               dep.constraint.type == Versions::Constraint::Type::None && !dep.host;
+               dep.constraint.type == VersionConstraintKind::None && !dep.host;
     }
 
     static Json::Object serialize_manifest_impl(const SourceControlFile& scf, bool debug)
@@ -1398,7 +1398,7 @@ namespace vcpkg
 
                 serialize_optional_array(dep_obj, DependencyDeserializer::FEATURES, features_copy);
                 serialize_optional_string(dep_obj, DependencyDeserializer::PLATFORM, to_string(dep.platform));
-                if (dep.constraint.type == Versions::Constraint::Type::Minimum)
+                if (dep.constraint.type == VersionConstraintKind::Minimum)
                 {
                     auto s = dep.constraint.value;
                     if (dep.constraint.port_version != 0)
@@ -1450,7 +1450,7 @@ namespace vcpkg
 
         serialize_schemed_version(obj,
                                   scf.core_paragraph->version_scheme,
-                                  scf.core_paragraph->version,
+                                  scf.core_paragraph->raw_version,
                                   scf.core_paragraph->port_version,
                                   debug);
 
