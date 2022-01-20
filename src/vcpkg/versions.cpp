@@ -292,7 +292,8 @@ namespace vcpkg
         {
             return static_cast<VerComp>(!b.identifiers.empty() - !a.identifiers.empty());
         }
-        return static_cast<VerComp>(Util::range_lexcomp(a.identifiers, b.identifiers, semver_id_comp));
+
+        return int_to_vercomp(Util::range_lexcomp(a.identifiers, b.identifiers, semver_id_comp));
     }
 
     bool operator==(const DateVersion& lhs, const DateVersion& rhs) { return compare(lhs, rhs) == VerComp::eq; }
@@ -363,11 +364,24 @@ namespace vcpkg
         }
     }
 
+    VerComp int_to_vercomp(int comparison_result)
+    {
+        if (comparison_result < 0)
+        {
+            return VerComp::lt;
+        }
+        if (comparison_result > 0)
+        {
+            return VerComp::gt;
+        }
+        return VerComp::eq;
+    }
+
     VerComp compare(const DateVersion& a, const DateVersion& b)
     {
         if (auto x = strcmp(a.version_string.c_str(), b.version_string.c_str()))
         {
-            return static_cast<VerComp>(x);
+            return int_to_vercomp(x);
         }
 
         return static_cast<VerComp>(Util::range_lexcomp(a.identifiers, b.identifiers, uint64_comp));

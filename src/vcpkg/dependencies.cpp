@@ -1385,7 +1385,7 @@ namespace vcpkg::Dependencies
         {
             if (sa == VersionScheme::String && sb == VersionScheme::String)
             {
-                return static_cast<VerComp>(a.text().compare(b.text()));
+                return int_to_vercomp(a.text().compare(b.text()));
             }
 
             if (sa == VersionScheme::Date && sb == VersionScheme::Date)

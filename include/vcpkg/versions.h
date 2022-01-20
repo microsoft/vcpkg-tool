@@ -47,10 +47,13 @@ namespace vcpkg
     enum class VerComp
     {
         unk = -2,
-        lt = -1, // these values are chosen to align with std::string::compare's return value
+        lt = -1, // these values are chosen to align with traditional -1/0/1 for less/equal/greater
         eq = 0,
         gt = 1,
     };
+
+    // converts a strcmp <0/0/>0 style integer into a VerComp
+    VerComp int_to_vercomp(int comparison_result);
 
     enum class VersionScheme
     {
