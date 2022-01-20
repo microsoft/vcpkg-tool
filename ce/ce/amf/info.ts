@@ -25,7 +25,7 @@ export class Info extends Entity implements IInfo {
   get description(): string | undefined { return this.asString(this.getMember('description')); }
   set description(value: string | undefined) { this.setMember('description', value); }
 
-  private flags = new Flags(undefined, this, 'options');
+  readonly flags = new Flags(undefined, this, 'options');
 
   get dependencyOnly(): boolean { return this.flags.has('dependencyOnly'); }
   set dependencyOnly(value: boolean) { this.flags.set('dependencyOnly', value); }

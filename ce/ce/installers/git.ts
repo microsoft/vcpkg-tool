@@ -48,6 +48,6 @@ export async function installGit(session: Session, activation: Activation, name:
   }
 
   if (install.espidf) {
-    await installEspIdf(targetDirectory, activation);
+    await installEspIdf(events, targetDirectory, activation);
   }
 }
