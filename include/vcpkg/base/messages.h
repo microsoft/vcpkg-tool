@@ -12,8 +12,6 @@
 
 namespace vcpkg::msg
 {
-    struct LocalizedString;
-
     namespace detail
     {
         template<class Tag, class Type>
