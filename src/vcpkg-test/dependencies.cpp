@@ -99,16 +99,16 @@ T unwrap(ExpectedS<T> e)
     return std::move(*e.get());
 }
 
-static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
-                                   StringLiteral name,
-                                   Versions::Version v,
-                                   std::initializer_list<StringLiteral> features = {})
+static void check_name_and_features(const Dependencies::InstallPlanAction& ipa,
+                                    StringLiteral name,
+                                    std::initializer_list<StringLiteral> features)
 {
     CHECK(ipa.spec.name() == name);
     CHECK(ipa.source_control_file_and_location.has_value());
-    CHECK(ipa.feature_list.size() == features.size() + 1);
     {
         INFO("ipa.feature_list = [" << Strings::join(", ", ipa.feature_list) << "]");
+        INFO("features = [" << Strings::join(", ", features) << "]");
+        CHECK(ipa.feature_list.size() == features.size() + 1);
         for (auto&& f : features)
         {
             INFO("f = \"" << f.c_str() << "\"");
@@ -116,6 +116,14 @@ static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
         }
         CHECK(Util::find(ipa.feature_list, "core") != ipa.feature_list.end());
     }
+}
+
+static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
+                                   StringLiteral name,
+                                   Versions::Version v,
+                                   std::initializer_list<StringLiteral> features = {})
+{
+    check_name_and_features(ipa, name, features);
     if (auto scfl = ipa.source_control_file_and_location.get())
     {
         CHECK(scfl->source_control_file->core_paragraph->version == v.text());
@@ -201,6 +209,8 @@ struct MockOverlayProvider : PortFileProvider::IOverlayProvider
         return it->second;
     }
 
+    SourceControlFileAndLocation& emplace(const std::string& name) { return emplace(name, {"1", 0}); }
+
     virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>&) const override
     {
         Checks::unreachable(VCPKG_LINE_INFO);
@@ -231,27 +241,24 @@ static ExpectedS<Dependencies::ActionPlan> create_versioned_install_plan(
                                                        Dependencies::UnsupportedPortAction::Error);
 }
 
-namespace vcpkg::Dependencies
+static ExpectedS<vcpkg::Dependencies::ActionPlan> create_versioned_install_plan(
+    const PortFileProvider::IVersionedPortfileProvider& provider,
+    const PortFileProvider::IBaselineProvider& bprovider,
+    const PortFileProvider::IOverlayProvider& oprovider,
+    const CMakeVars::CMakeVarProvider& var_provider,
+    const std::vector<Dependency>& deps,
+    const std::vector<DependencyOverride>& overrides,
+    const PackageSpec& toplevel)
 {
-    static ExpectedS<vcpkg::Dependencies::ActionPlan> create_versioned_install_plan(
-        const PortFileProvider::IVersionedPortfileProvider& provider,
-        const PortFileProvider::IBaselineProvider& bprovider,
-        const PortFileProvider::IOverlayProvider& oprovider,
-        const CMakeVars::CMakeVarProvider& var_provider,
-        const std::vector<Dependency>& deps,
-        const std::vector<DependencyOverride>& overrides,
-        const PackageSpec& toplevel)
-    {
-        return vcpkg::Dependencies::create_versioned_install_plan(provider,
-                                                                  bprovider,
-                                                                  oprovider,
-                                                                  var_provider,
-                                                                  deps,
-                                                                  overrides,
-                                                                  toplevel,
-                                                                  Test::ARM_UWP,
-                                                                  Dependencies::UnsupportedPortAction::Error);
-    }
+    return vcpkg::Dependencies::create_versioned_install_plan(provider,
+                                                              bprovider,
+                                                              oprovider,
+                                                              var_provider,
+                                                              deps,
+                                                              overrides,
+                                                              toplevel,
+                                                              Test::ARM_UWP,
+                                                              Dependencies::UnsupportedPortAction::Error);
 }
 
 TEST_CASE ("basic version install single", "[versionplan]")
@@ -1973,8 +1980,8 @@ TEST_CASE ("version overlay ports", "[versionplan]")
     {
         const MockBaselineProvider empty_bp;
 
-        auto install_plan = unwrap(Dependencies::create_versioned_install_plan(
-            vp, empty_bp, oprovider, var_provider, {{"a"}}, {}, toplevel_spec()));
+        auto install_plan =
+            unwrap(create_versioned_install_plan(vp, empty_bp, oprovider, var_provider, {{"a"}}, {}, toplevel_spec()));
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -1982,8 +1989,8 @@ TEST_CASE ("version overlay ports", "[versionplan]")
 
     SECTION ("transitive")
     {
-        auto install_plan = unwrap(
-            Dependencies::create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"b"}}, {}, toplevel_spec()));
+        auto install_plan =
+            unwrap(create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"b"}}, {}, toplevel_spec()));
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -1992,8 +1999,8 @@ TEST_CASE ("version overlay ports", "[versionplan]")
 
     SECTION ("transitive constraint")
     {
-        auto install_plan = unwrap(
-            Dependencies::create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"c"}}, {}, toplevel_spec()));
+        auto install_plan =
+            unwrap(create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"c"}}, {}, toplevel_spec()));
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -2002,59 +2009,59 @@ TEST_CASE ("version overlay ports", "[versionplan]")
 
     SECTION ("none")
     {
-        auto install_plan = unwrap(
-            Dependencies::create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"a"}}, {}, toplevel_spec()));
+        auto install_plan =
+            unwrap(create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"a"}}, {}, toplevel_spec()));
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
     }
     SECTION ("constraint")
     {
-        auto install_plan = unwrap(Dependencies::create_versioned_install_plan(
-            vp,
-            bp,
-            oprovider,
-            var_provider,
-            {
-                Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1", 1}},
-            },
-            {},
-            toplevel_spec()));
+        auto install_plan =
+            unwrap(create_versioned_install_plan(vp,
+                                                 bp,
+                                                 oprovider,
+                                                 var_provider,
+                                                 {
+                                                     Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1", 1}},
+                                                 },
+                                                 {},
+                                                 toplevel_spec()));
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
     }
     SECTION ("constraint+override")
     {
-        auto install_plan = unwrap(Dependencies::create_versioned_install_plan(
-            vp,
-            bp,
-            oprovider,
-            var_provider,
-            {
-                Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1", 1}},
-            },
-            {
-                DependencyOverride{"a", "2", 0},
-            },
-            toplevel_spec()));
+        auto install_plan =
+            unwrap(create_versioned_install_plan(vp,
+                                                 bp,
+                                                 oprovider,
+                                                 var_provider,
+                                                 {
+                                                     Dependency{"a", {}, {}, {Constraint::Type::Minimum, "1", 1}},
+                                                 },
+                                                 {
+                                                     DependencyOverride{"a", "2", 0},
+                                                 },
+                                                 toplevel_spec()));
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
     }
     SECTION ("override")
     {
-        auto install_plan = unwrap(Dependencies::create_versioned_install_plan(vp,
-                                                                               bp,
-                                                                               oprovider,
-                                                                               var_provider,
-                                                                               {
-                                                                                   Dependency{"a"},
-                                                                               },
-                                                                               {
-                                                                                   DependencyOverride{"a", "2", 0},
-                                                                               },
-                                                                               toplevel_spec()));
+        auto install_plan = unwrap(create_versioned_install_plan(vp,
+                                                                 bp,
+                                                                 oprovider,
+                                                                 var_provider,
+                                                                 {
+                                                                     Dependency{"a"},
+                                                                 },
+                                                                 {
+                                                                     DependencyOverride{"a", "2", 0},
+                                                                 },
+                                                                 toplevel_spec()));
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -2083,12 +2090,12 @@ TEST_CASE ("respect supports expression", "[versionplan]")
     {
         // override from non supported to supported version
         MockOverlayProvider oprovider;
-        install_plan = Dependencies::create_versioned_install_plan(
+        install_plan = create_versioned_install_plan(
             vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 1}}, toplevel_spec());
         CHECK(install_plan.has_value());
         // override from supported to non supported version
         bp.v["a"] = {"1", 1};
-        install_plan = Dependencies::create_versioned_install_plan(
+        install_plan = create_versioned_install_plan(
             vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 0}}, toplevel_spec());
         CHECK_FALSE(install_plan.has_value());
     }
@@ -2121,23 +2128,23 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
     {
         // override from non supported to supported version
         MockOverlayProvider oprovider;
-        install_plan = Dependencies::create_versioned_install_plan(vp,
-                                                                   bp,
-                                                                   oprovider,
-                                                                   var_provider,
-                                                                   {Dependency{"a", {"x"}}},
-                                                                   {DependencyOverride{"a", "1", 1}},
-                                                                   toplevel_spec());
+        install_plan = create_versioned_install_plan(vp,
+                                                     bp,
+                                                     oprovider,
+                                                     var_provider,
+                                                     {Dependency{"a", {"x"}}},
+                                                     {DependencyOverride{"a", "1", 1}},
+                                                     toplevel_spec());
         CHECK(install_plan.has_value());
         // override from supported to non supported version
         bp.v["a"] = {"1", 1};
-        install_plan = Dependencies::create_versioned_install_plan(vp,
-                                                                   bp,
-                                                                   oprovider,
-                                                                   var_provider,
-                                                                   {Dependency{"a", {"x"}}},
-                                                                   {DependencyOverride{"a", "1", 0}},
-                                                                   toplevel_spec());
+        install_plan = create_versioned_install_plan(vp,
+                                                     bp,
+                                                     oprovider,
+                                                     var_provider,
+                                                     {Dependency{"a", {"x"}}},
+                                                     {DependencyOverride{"a", "1", 0}},
+                                                     toplevel_spec());
         CHECK_FALSE(install_plan.has_value());
     }
 }

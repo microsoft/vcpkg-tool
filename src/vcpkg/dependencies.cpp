@@ -93,13 +93,15 @@ namespace vcpkg::Dependencies
                              std::vector<FeatureSpec>& out_new_dependencies,
                              Triplet host_triplet)
             {
+                const auto& scfl = get_scfl_or_exit();
+
                 ClusterInstallInfo& info = m_install_info.value_or_exit(VCPKG_LINE_INFO);
                 if (feature == "default")
                 {
                     if (!info.defaults_requested)
                     {
                         info.defaults_requested = true;
-                        for (auto&& f : get_scfl_or_exit().source_control_file->core_paragraph->default_features)
+                        for (auto&& f : scfl.source_control_file->core_paragraph->default_features)
                             out_new_dependencies.emplace_back(m_spec, f);
                     }
                     return;
@@ -112,7 +114,7 @@ namespace vcpkg::Dependencies
                 }
                 auto maybe_vars = var_provider.get_dep_info_vars(m_spec);
                 Optional<const std::vector<Dependency>&> maybe_qualified_deps =
-                    get_scfl_or_exit().source_control_file->find_dependencies_for_feature(feature);
+                    scfl.source_control_file->find_dependencies_for_feature(feature);
                 if (!maybe_qualified_deps.has_value())
                 {
                     Checks::exit_with_message(
@@ -124,11 +126,12 @@ namespace vcpkg::Dependencies
                 if (auto vars = maybe_vars.get())
                 {
                     // Qualified dependency resolution is available
-                    auto fullspec_list = filter_dependencies(*qualified_deps, m_spec.triplet(), host_triplet, *vars);
+                    auto fullspec_list = filter_dependencies(
+                        *qualified_deps, m_spec.triplet(), host_triplet, *vars, ImplicitDefault::YES);
 
                     for (auto&& fspec : fullspec_list)
                     {
-                        Util::Vectors::append(&dep_list, fspec.to_feature_specs({"default"}, {"default"}));
+                        fspec.expand_fspecs_to(dep_list);
                     }
 
                     Util::sort_unique_erase(dep_list);
@@ -141,10 +144,8 @@ namespace vcpkg::Dependencies
                     {
                         if (dep.platform.is_empty())
                         {
-                            auto t = dep.host ? host_triplet : m_spec.triplet();
-                            Util::Vectors::append(&dep_list,
-                                                  FullPackageSpec({dep.name, t}, dep.features)
-                                                      .to_feature_specs({"default"}, {"default"}));
+                            dep.to_full_spec(m_spec.triplet(), host_triplet, ImplicitDefault::YES)
+                                .expand_fspecs_to(dep_list);
                         }
                         else
                         {
@@ -677,74 +678,6 @@ namespace vcpkg::Dependencies
         m_graph->get(spec).request_type = RequestType::USER_REQUESTED;
     }
 
-    // `features` should have "default" instead of missing "core"
-    std::vector<FullPackageSpec> resolve_deps_as_top_level(const SourceControlFile& scf,
-                                                           Triplet triplet,
-                                                           Triplet host_triplet,
-                                                           std::vector<std::string> features,
-                                                           CMakeVars::CMakeVarProvider& var_provider)
-    {
-        PackageSpec spec{scf.core_paragraph->name, triplet};
-        std::map<PackageSpec, std::vector<std::string>> specs_to_features;
-
-        Optional<const PlatformExpression::Context&> ctx_storage = var_provider.get_dep_info_vars(spec);
-        auto ctx = [&]() -> const PlatformExpression::Context& {
-            if (!ctx_storage)
-            {
-                var_provider.load_dep_info_vars({&spec, 1}, host_triplet);
-                ctx_storage = var_provider.get_dep_info_vars(spec);
-            }
-            return ctx_storage.value_or_exit(VCPKG_LINE_INFO);
-        };
-
-        auto handle_deps = [&](View<Dependency> deps) {
-            for (auto&& dep : deps)
-            {
-                if (dep.platform.is_empty() || dep.platform.evaluate(ctx()))
-                {
-                    if (dep.name == spec.name())
-                        Util::Vectors::append(&features, dep.features);
-                    else
-                    {
-                        auto t = dep.host ? host_triplet : triplet;
-                        Util::Vectors::append(&specs_to_features[{dep.name, t}], dep.features);
-                    }
-                }
-            }
-        };
-
-        handle_deps(scf.core_paragraph->dependencies);
-        enum class State
-        {
-            NotVisited = 0,
-            Visited,
-        };
-        std::map<std::string, State> feature_state;
-        while (!features.empty())
-        {
-            auto feature = std::move(features.back());
-            features.pop_back();
-
-            if (feature_state[feature] == State::Visited) continue;
-            feature_state[feature] = State::Visited;
-            if (feature == "default")
-            {
-                Util::Vectors::append(&features, scf.core_paragraph->default_features);
-            }
-            else
-            {
-                auto it =
-                    Util::find_if(scf.feature_paragraphs, [&feature](const std::unique_ptr<FeatureParagraph>& ptr) {
-                        return ptr->name == feature;
-                    });
-                if (it != scf.feature_paragraphs.end()) handle_deps(it->get()->dependencies);
-            }
-        }
-        return Util::fmap(specs_to_features, [](std::pair<const PackageSpec, std::vector<std::string>>& p) {
-            return FullPackageSpec(p.first, Util::sort_unique_erase(std::move(p.second)));
-        });
-    }
-
     ActionPlan create_feature_install_plan(const PortFileProvider::PortFileProvider& port_provider,
                                            const CMakeVars::CMakeVarProvider& var_provider,
                                            View<FullPackageSpec> specs,
@@ -756,31 +689,11 @@ namespace vcpkg::Dependencies
         std::vector<FeatureSpec> feature_specs;
         for (const FullPackageSpec& spec : specs)
         {
-            auto maybe_scfl = port_provider.get_control_file(spec.package_spec.name());
-
-            Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                        maybe_scfl.has_value(),
-                                        "Error: while loading port `%s`: %s",
-                                        spec.package_spec.name(),
-                                        maybe_scfl.error());
-
-            const SourceControlFileAndLocation* scfl = maybe_scfl.get();
-
-            const std::vector<std::string> all_features =
-                Util::fmap(scfl->source_control_file->feature_paragraphs,
-                           [](auto&& feature_paragraph) { return feature_paragraph->name; });
-
-            auto fspecs =
-                spec.to_feature_specs(scfl->source_control_file->core_paragraph->default_features, all_features);
-            feature_specs.insert(
-                feature_specs.end(), std::make_move_iterator(fspecs.begin()), std::make_move_iterator(fspecs.end()));
+            pgraph.mark_user_requested(spec.package_spec);
+            spec.expand_fspecs_to(feature_specs);
         }
         Util::sort_unique_erase(feature_specs);
 
-        for (const FeatureSpec& spec : feature_specs)
-        {
-            pgraph.mark_user_requested(spec.spec());
-        }
         pgraph.install(feature_specs, options.unsupported_port_action);
 
         auto res = pgraph.serialize(options.randomizer);
@@ -828,12 +741,21 @@ namespace vcpkg::Dependencies
             while (!next_dependencies.empty())
             {
                 // Extract the top of the stack
-                FeatureSpec spec = std::move(next_dependencies.back());
+                const FeatureSpec spec = std::move(next_dependencies.back());
                 next_dependencies.pop_back();
 
                 // Get the cluster for the PackageSpec of the FeatureSpec we are adding to the install graph
                 Cluster& clust = m_graph->get(spec.spec());
-                spec = FeatureSpec{clust.m_spec, spec.feature()};
+
+                if (spec.feature() == "*")
+                {
+                    // Expand wildcard feature
+                    for (auto&& fpgh : clust.get_scfl_or_exit().source_control_file->feature_paragraphs)
+                    {
+                        next_dependencies.emplace_back(spec.spec(), fpgh->name);
+                    }
+                    continue;
+                }
 
                 // If this spec hasn't already had its qualified dependencies resolved
                 if (!m_var_provider.get_dep_info_vars(spec.spec()).has_value())
@@ -1723,6 +1645,10 @@ namespace vcpkg::Dependencies
                                                          const std::string& feature,
                                                          const std::string& origin)
         {
+            if (feature == "default")
+            {
+                return require_port_defaults(ref, origin);
+            }
             auto inserted = ref.second.requested_features.emplace(feature).second;
             if (inserted)
             {
@@ -1954,7 +1880,7 @@ namespace vcpkg::Dependencies
                             const Versions::Version& new_ver,
                             const PackageSpec& origin,
                             View<std::string> features) -> Optional<std::string> {
-                auto&& node = m_graph[spec];
+                auto&& node = emplace_package(spec).second;
                 auto overlay = m_o_provider.get_control_file(spec.name());
                 auto over_it = m_overrides.find(spec.name());
 
@@ -1997,6 +1923,7 @@ namespace vcpkg::Dependencies
                 for (auto&& f : features)
                 {
                     if (f == "core") continue;
+                    if (f == "default") continue;
                     auto feature = p_vnode->scfl->source_control_file->find_feature(f);
                     if (!feature)
                     {
@@ -2118,8 +2045,10 @@ namespace vcpkg::Dependencies
                     auto& back = stack.back();
                     if (back.deps.empty())
                     {
-                        emitted[back.ipa.spec] = m_graph[back.ipa.spec].get_node(
-                            to_version(*back.ipa.source_control_file_and_location.get()->source_control_file));
+                        emitted[back.ipa.spec] =
+                            emplace_package(back.ipa.spec)
+                                .second.get_node(
+                                    to_version(*back.ipa.source_control_file_and_location.get()->source_control_file));
                         ret.install_actions.push_back(std::move(back.ipa));
                         stack.pop_back();
                     }

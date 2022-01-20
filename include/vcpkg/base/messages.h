@@ -155,8 +155,10 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(triplet);
     DECLARE_MSG_ARG(url);
     DECLARE_MSG_ARG(value);
+    DECLARE_MSG_ARG(elapsed);
     DECLARE_MSG_ARG(version);
     DECLARE_MSG_ARG(list);
+    DECLARE_MSG_ARG(output);
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of
