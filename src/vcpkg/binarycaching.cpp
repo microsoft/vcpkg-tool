@@ -1457,8 +1457,9 @@ namespace vcpkg
         std::vector<CacheAvailability> results{actions.size()};
         for (size_t idx = 0; idx < results.size(); ++idx)
         {
-            results[idx] = cache_status[idx]->get_available_provider() ? CacheAvailability::available
-                                                                       : CacheAvailability::unavailable;
+            if (cache_status[idx])
+                results[idx] = cache_status[idx]->get_available_provider() ? CacheAvailability::available
+                                                                           : CacheAvailability::unavailable;
         }
 
         return results;
