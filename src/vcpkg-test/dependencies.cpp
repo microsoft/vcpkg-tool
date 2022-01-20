@@ -60,11 +60,15 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
                                           Version&& version,
                                           VersionScheme scheme = VersionScheme::String)
     {
+#if defined(__cpp_lib_map_try_emplace) && __cpp_lib_map_try_emplace >= 201411
+        auto it = v.try_emplace(name).first;
+#else // ^^^ has try_emplace / no try_emplace vvv
         auto it = v.find(name);
         if (it == v.end())
         {
-            it = v.emplace(name).first;
+            it = v.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple()).first;
         }
+#endif
 
         auto it2 = it->second.find(version);
         if (it2 == it->second.end())
