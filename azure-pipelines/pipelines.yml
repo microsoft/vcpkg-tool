@@ -118,7 +118,7 @@ jobs:
       displayName: 'Generate the Messages File'
       inputs:
         script: |
-          build.x86.debug\vcpkg.exe x-generate-default-message-map >locales/en.json
+          build.x86.debug\vcpkg.exe x-generate-default-message-map locales/en.json
     - task: Powershell@2
       displayName: 'Create Diff'
       inputs:
