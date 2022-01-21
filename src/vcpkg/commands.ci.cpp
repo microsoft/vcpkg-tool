@@ -517,8 +517,6 @@ namespace vcpkg::Commands::CI
 
         XunitTestResults xunitTestResults;
 
-        std::vector<std::string> all_ports =
-            Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         std::vector<TripletAndSummary> results;
         auto timer = ElapsedTimer::create_started();
 
@@ -526,9 +524,16 @@ namespace vcpkg::Commands::CI
 
         xunitTestResults.push_collection(target_triplet.canonical_name());
 
-        std::vector<PackageSpec> specs = PackageSpec::to_package_specs(all_ports, target_triplet);
+        std::vector<std::string> all_port_names =
+            Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         // Install the default features for every package
-        auto all_default_full_specs = Util::fmap(specs, [&](auto& spec) { return FullPackageSpec{spec, {"default"}}; });
+        std::vector<FullPackageSpec> all_default_full_specs;
+        all_default_full_specs.reserve(all_port_names.size());
+        for (auto&& port_name : all_port_names)
+        {
+            all_default_full_specs.emplace_back(PackageSpec{std::move(port_name), target_triplet},
+                                                InternalFeatureSet{"core", "default"});
+        }
 
         Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
                                                                  Dependencies::UnsupportedPortAction::Warn);
