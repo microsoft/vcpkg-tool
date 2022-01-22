@@ -47,7 +47,7 @@ namespace vcpkg::msg
         StringView get_localization_comment(::size_t index);
     }
 
-    // load from "locale_base/${language}.json"
+    // load from "locale_base/messages.${language}.json"
     void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base);
     // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
