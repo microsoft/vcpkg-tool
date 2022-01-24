@@ -71,8 +71,9 @@ namespace
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args)
     {
+        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
         Checks::exit_with_message(
-            li, Strings::concat(call_name, "(", Strings::join(", ", args.begin(), args.end()), "): ", ec.message()));
+            li, Strings::concat(li.file_name, "(", li.line_number, "): ", call_name, arguments, ": ", ec.message()));
     }
 
 #if defined(_WIN32)
