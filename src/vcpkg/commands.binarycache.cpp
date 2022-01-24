@@ -128,7 +128,11 @@ namespace
                          F func)
     {
         auto iter = map.find(abi);
-        if (iter == map.end()) return;
+        if (iter == map.end())
+        {
+            func(abi);
+            return;
+        }
         auto info = iter->second;
         map.erase(iter);
         func(abi);
@@ -211,8 +215,8 @@ namespace
                         {
                             same = same && iter->second == value;
                             current_values[i] = std::move(iter->second);
+                            e.erase(iter);
                         }
-                        e.erase(iter);
                     }
                     ++i;
                 }
@@ -228,6 +232,16 @@ namespace
             ++outer_i;
         }
         return differences;
+    }
+
+    std::map<std::string, const BinaryPackageInfo&> create_abi_map(const std::vector<BinaryPackageInfo>& ports)
+    {
+        std::map<std::string, const BinaryPackageInfo&> map;
+        for (auto& port : ports)
+        {
+            map.emplace(port.abi, port);
+        }
+        return map;
     }
 }
 
@@ -250,6 +264,11 @@ namespace vcpkg
                 for (const auto& port : ports)
                 {
                     port_versions[port.abi] = port.full_name();
+                }
+                if (args.command_arguments.size() >= 2)
+                {
+                    Util::erase_remove_if(
+                        ports, [&](const BinaryPackageInfo& i) { return i.spec.name() != args.command_arguments[1]; });
                 }
                 std::map<std::string, std::vector<const BinaryPackageInfo*>> map;
                 Util::group_by(ports, &map, [](const auto& port) { return port.full_name(); });
@@ -294,11 +313,14 @@ namespace vcpkg
                     VCPKG_LINE_INFO, args.command_arguments.size() > 1, "You must provide a hash of a binary package");
                 auto ports = read_path(paths.get_filesystem(), default_cache_path().value_or_exit(VCPKG_LINE_INFO));
                 auto graph = create_reverse_dependency_graph(ports);
-
+                const auto abi_names = create_abi_map(ports);
                 for (size_t i = 1; i < args.command_arguments.size(); ++i)
                 {
                     remove_recusive(graph, args.command_arguments[i], [&](const auto& abi) {
-                        print2("Delete package ", abi, "\n");
+                        auto port = abi_names.find(abi);
+                        auto name = (port != abi_names.end()) ? port->second.full_name() : "unknown";
+                        print2("Delete package ", name, " ", abi, "\n");
+
                         delete_package(
                             paths.get_filesystem(), default_cache_path().value_or_exit(VCPKG_LINE_INFO), abi);
                     });
