@@ -1449,6 +1449,18 @@ namespace vcpkg
                                                          View<Dependencies::InstallPlanAction> actions)
     {
         auto cache_status = build_cache_status_vector(actions, m_status);
+
+        for (size_t i = 0; i < actions.size(); ++i)
+        {
+            if (cache_status[i] == nullptr)
+            {
+                Checks::exit_with_message(
+                    VCPKG_LINE_INFO,
+                    "Error: package %s did not have an abi during ci. This is an internal error.\n",
+                    actions[i].spec);
+            }
+        }
+
         for (auto&& provider : m_providers)
         {
             provider->precheck(paths, actions, cache_status);

@@ -1113,7 +1113,10 @@ namespace vcpkg::Build
         abi_tag_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back("post_build_checks", "2");
         std::vector<std::string> sorted_feature_list = action.feature_list;
-        Util::sort(sorted_feature_list);
+        // Renormalize feature list: remove "default" (since it's a virtual feature) and add "core" to ensure non-empty
+        Util::erase_remove_if(sorted_feature_list, [](const std::string& s) { return s == "default"; });
+        sorted_feature_list.push_back("core");
+        Util::sort_unique_erase(sorted_feature_list);
         abi_tag_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
 
         Util::sort(abi_tag_entries);
