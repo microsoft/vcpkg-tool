@@ -948,14 +948,12 @@ namespace vcpkg::Build
             {
                 metrics->track_property("error", "build failed");
                 metrics->track_property("build_error", spec_string);
-                const auto logs = buildpath / "logs.txt";
+                const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
                 std::vector<std::string> error_logs;
                 if (fs.exists(logs, VCPKG_LINE_INFO))
                 {
                     error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
-                    Util::erase_remove_if(error_logs,
-                                          [](const auto& line) { return !Strings::starts_with(line, "error:"); });
-                    Util::transform(error_logs, [](const std::string& line) { return line.substr(6); });
+                    Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
                 }
                 return {BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
             }
