@@ -60,7 +60,7 @@ namespace vcpkg::Commands::Upgrade
                                                  ? Dependencies::UnsupportedPortAction::Warn
                                                  : Dependencies::UnsupportedPortAction::Error;
 
-        BinaryCache binary_cache{args};
+        BinaryCache binary_cache{args, paths};
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs

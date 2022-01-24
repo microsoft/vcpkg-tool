@@ -481,7 +481,7 @@ namespace vcpkg::Commands::CI
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
 
-        BinaryCache binary_cache{args};
+        BinaryCache binary_cache{args, paths};
         Triplet target_triplet = Triplet::from_canonical_name(std::string(args.command_arguments[0]));
         ExclusionPredicate is_excluded{
             parse_exclusions(settings, OPTION_EXCLUDE),
@@ -556,7 +556,7 @@ namespace vcpkg::Commands::CI
         }
 
         auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
-        const auto precheck_results = binary_cache.precheck(paths, action_plan.install_actions);
+        const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(is_excluded, var_provider, precheck_results, action_plan);
 
         {
