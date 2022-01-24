@@ -65,6 +65,7 @@ TEST_CASE ("[to_cpu_architecture]", "system")
         {nullopt, "ARM6"},
         {nullopt, "AR"},
         {nullopt, "Intel"},
+        {nullopt, "%processor_architew6432%"},
     };
 
     for (auto&& instance : test_cases)
