@@ -466,6 +466,22 @@ namespace vcpkg
         return res;
     }
 
+    void cmd_execute_parallel(LineInfo li, View<Command> cmd_lines, InWorkingDirectory wd, const Environment& env)
+    {
+        auto results = cmd_execute_and_capture_output_parallel(cmd_lines, wd, env);
+        auto job = cmd_lines.begin();
+        for (auto& result : results)
+        {
+            if (result.exit_code != 0)
+            {
+                Checks::exit_with_message(
+                    li,
+                    Strings::concat("The process ", job->command_line(), "failed with exit code ", result.exit_code));
+            }
+            ++job;
+        }
+    }
+
     int cmd_execute_clean(const Command& cmd_line, InWorkingDirectory wd)
     {
         return cmd_execute(cmd_line, wd, get_clean_environment());
@@ -893,5 +909,6 @@ namespace vcpkg
     }
 #else
     void register_console_ctrl_handler() { }
+
 #endif
 }

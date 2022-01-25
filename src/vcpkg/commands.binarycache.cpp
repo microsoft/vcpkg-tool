@@ -4,10 +4,10 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.binarycache.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -73,34 +73,6 @@ namespace
     Path get_filename(const std::string& abi, const std::string& ending)
     {
         return Path(abi.substr(0, 2)) / Path(abi + ending);
-    }
-
-    void extract_file(const VcpkgPaths& paths,
-                      const Path& zip,
-                      const std::string& filename,
-                      const Path& destination_dir)
-    {
-#if defined(_WIN32)
-        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
-
-        cmd_execute_and_capture_output(Command{seven_zip_exe}
-                                           .string_arg("x")
-                                           .string_arg("-o" + destination_dir.native())
-                                           .string_arg("-y")
-                                           .path_arg(zip)
-                                           .string_arg(filename)
-                                           .string_arg("share/*/vcpkg_abi_info.txt"),
-                                       get_clean_environment());
-#else
-        cmd_execute_clean(Command{"unzip"}
-                              .string_arg("-qq")
-                              .string_arg("-n")
-                              .path_arg(zip)
-                              .string_arg(filename)
-                              .string_arg("share/*/vcpkg_abi_info.txt")
-                              .string_arg("-d")
-                              .path_arg(destination_dir.native()));
-#endif
     }
 
     void delete_package(Filesystem& fs, const Path& root_dir, const std::string& abi)
@@ -172,14 +144,20 @@ namespace
                 }
             }
         }
-        int i = 0;
-        for (auto&& abi_hash : missing_abi_hashes)
+        if (!missing_abi_hashes.empty())
         {
-            print2("Extract ", ++i, "/", missing_abi_hashes.size(), " :", abi_hash, "\n");
-            extract_file(paths,
-                         root_dir / get_filename(abi_hash, ".zip"),
-                         "CONTROL",
-                         root_dir / get_filename(abi_hash, "_files"));
+            std::vector<Command> jobs;
+            jobs.reserve(missing_abi_hashes.size());
+            for (auto&& abi_hash : missing_abi_hashes)
+            {
+                jobs.push_back(extract_files_command(paths,
+                                                     root_dir / get_filename(abi_hash, ".zip"),
+                                                     {"CONTROL", "share/*/vcpkg_abi_info.txt"},
+                                                     root_dir / get_filename(abi_hash, "_files")));
+            }
+            print2("Extracting ", missing_abi_hashes.size(), " archives...");
+            cmd_execute_parallel(VCPKG_LINE_INFO, jobs, get_clean_environment());
+            print2(" Done.\n");
         }
 
         std::vector<BinaryPackageInfo> output;
