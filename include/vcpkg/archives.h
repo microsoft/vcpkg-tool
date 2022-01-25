@@ -16,4 +16,7 @@ namespace vcpkg
                                   const Path& zip_file,
                                   View<StringView> files,
                                   const Path& destination_dir);
+
+    std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs);
+    void decompress_in_parallel(LineInfo, View<Command> jobs);
 }

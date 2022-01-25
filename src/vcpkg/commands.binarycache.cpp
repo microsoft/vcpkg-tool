@@ -156,7 +156,7 @@ namespace
                                                      root_dir / get_filename(abi_hash, "_files")));
             }
             print2("Extracting ", missing_abi_hashes.size(), " archives...");
-            cmd_execute_parallel(VCPKG_LINE_INFO, jobs, get_clean_environment());
+            decompress_in_parallel(VCPKG_LINE_INFO, jobs);
             print2(" Done.\n");
         }
 

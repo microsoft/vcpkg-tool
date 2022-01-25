@@ -1,3 +1,5 @@
+#include <vcpkg/base/checks.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 
@@ -207,4 +209,41 @@ namespace vcpkg
         return cmd;
 #endif
     }
+
+    std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs)
+    {
+        auto results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+#ifdef __APPLE__
+        int i = 0;
+        for (auto& result : results)
+        {
+            if (result.exit_code == 127 && result.output.empty())
+            {
+                Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
+                result = cmd_execute_and_capture_output(jobs[i], get_clean_environment());
+            }
+            ++i;
+        }
+#endif
+        return results;
+    }
+
+    void decompress_in_parallel(LineInfo li, View<Command> jobs)
+    {
+        auto results = decompress_in_parallel(jobs);
+        int i = 0;
+        for (auto& result : results)
+        {
+            if (result.exit_code != 0)
+            {
+                Checks::exit_with_message(li,
+                                          Strings::concat("Failed to unzip file with command `",
+                                                          jobs[i].command_line(),
+                                                          "` exit code: ",
+                                                          result.exit_code));
+            }
+            ++i;
+        }
+    }
+
 }
