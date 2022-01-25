@@ -7,6 +7,7 @@
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.binarycache.h>
 #include <vcpkg/paragraphs.h>
+#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -74,14 +75,22 @@ namespace
         return Path(abi.substr(0, 2)) / Path(abi + ending);
     }
 
-    void extract_file(const Path& zip, const std::string& filename, const Path& destination_dir)
+    void extract_file(const VcpkgPaths& paths,
+                      const Path& zip,
+                      const std::string& filename,
+                      const Path& destination_dir)
     {
 #if defined(_WIN32)
         auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
 
-        cmd_execute_and_capture_output(
-            Command{seven_zip_exe}.string_arg("a").path_arg(destination).path_arg(source / "*"),
-            get_clean_environment());
+        cmd_execute_and_capture_output(Command{seven_zip_exe}
+                                           .string_arg("x")
+                                           .string_arg("-o" + destination_dir.native())
+                                           .string_arg("-y")
+                                           .path_arg(zip)
+                                           .string_arg(filename)
+                                           .string_arg("share/*/vcpkg_abi_info.txt"),
+                                       get_clean_environment());
 #else
         cmd_execute_clean(Command{"unzip"}
                               .string_arg("-qq")
@@ -142,8 +151,9 @@ namespace
         }
     }
 
-    std::vector<BinaryPackageInfo> read_path(const Filesystem& fs, const Path& root_dir)
+    std::vector<BinaryPackageInfo> read_path(const VcpkgPaths& paths, const Path& root_dir)
     {
+        const Filesystem& fs = paths.get_filesystem();
         std::vector<Path> control_files;
         std::vector<std::string> missing_abi_hashes;
         for (Path& path : fs.get_regular_files_recursive(root_dir, VCPKG_LINE_INFO))
@@ -166,8 +176,10 @@ namespace
         for (auto&& abi_hash : missing_abi_hashes)
         {
             print2("Extract ", ++i, "/", missing_abi_hashes.size(), " :", abi_hash, "\n");
-            extract_file(
-                root_dir / get_filename(abi_hash, ".zip"), "CONTROL", root_dir / get_filename(abi_hash, "_files"));
+            extract_file(paths,
+                         root_dir / get_filename(abi_hash, ".zip"),
+                         "CONTROL",
+                         root_dir / get_filename(abi_hash, "_files"));
         }
 
         std::vector<BinaryPackageInfo> output;
@@ -256,7 +268,7 @@ namespace vcpkg
             auto&& selector = args.command_arguments[0];
             if (selector == "list")
             {
-                auto ports = read_path(paths.get_filesystem(), default_cache_path().value_or_exit(VCPKG_LINE_INFO));
+                auto ports = read_path(paths, default_cache_path().value_or_exit(VCPKG_LINE_INFO));
                 std::sort(ports.begin(), ports.end(), [](const auto& l, const auto& r) {
                     return l.full_name() < r.full_name();
                 });
@@ -311,7 +323,7 @@ namespace vcpkg
             {
                 Checks::check_exit(
                     VCPKG_LINE_INFO, args.command_arguments.size() > 1, "You must provide a hash of a binary package");
-                auto ports = read_path(paths.get_filesystem(), default_cache_path().value_or_exit(VCPKG_LINE_INFO));
+                auto ports = read_path(paths, default_cache_path().value_or_exit(VCPKG_LINE_INFO));
                 auto graph = create_reverse_dependency_graph(ports);
                 const auto abi_names = create_abi_map(ports);
                 for (size_t i = 1; i < args.command_arguments.size(); ++i)
@@ -332,7 +344,7 @@ namespace vcpkg
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    args.command_arguments.size() == 3,
                                    "You must provide a key and a value, for example cmake 21.1.1");
-                auto ports = read_path(paths.get_filesystem(), default_cache_path().value_or_exit(VCPKG_LINE_INFO));
+                auto ports = read_path(paths, default_cache_path().value_or_exit(VCPKG_LINE_INFO));
                 for (auto& port : ports)
                 {
                     auto iter = port.abi_entries.find(args.command_arguments[1]);
