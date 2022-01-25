@@ -73,7 +73,8 @@ namespace vcpkg
         auto raw_identifier = get_environment_variable("PROCESSOR_IDENTIFIER");
         if (const auto id = raw_identifier.get())
         {
-            if (Strings::contains(id, "ARMv") && Strings::contains(id, "(64 bit)"))
+            // might be either ARMv8 (64-bit) or ARMv9 (64-bit)
+            if (Strings::contains(id, "ARMv") && Strings::contains(id, "(64-bit)"))
             {
                 return CPUArchitecture::ARM64;
             }
