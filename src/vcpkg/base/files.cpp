@@ -1308,7 +1308,9 @@ namespace vcpkg
     WriteFilePointer::WriteFilePointer(const Path& file_path, std::error_code& ec) noexcept
     {
 #if defined(_WIN32)
-        ec.assign(::_wfopen_s(&m_fs, to_stdfs_path(file_path).c_str(), L"wb"), std::generic_category());
+        m_fs = ::_wfsopen(to_stdfs_path(file_path).c_str(), L"wb", _SH_DENYWR);
+        ec.assign(m_fs == nullptr ? errno : 0, std::generic_category());
+        if (m_fs != nullptr) ::setvbuf(m_fs, NULL, _IONBF, 0);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         m_fs = ::fopen(file_path.c_str(), "wb");
         if (m_fs)
