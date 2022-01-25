@@ -74,7 +74,7 @@ namespace vcpkg
         if (const auto id = raw_identifier.get())
         {
             // might be either ARMv8 (64-bit) or ARMv9 (64-bit)
-            if (Strings::contains(id, "ARMv") && Strings::contains(id, "(64-bit)"))
+            if (Strings::contains(*id, "ARMv") && Strings::contains(*id, "(64-bit)"))
             {
                 return CPUArchitecture::ARM64;
             }
