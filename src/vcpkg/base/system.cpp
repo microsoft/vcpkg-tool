@@ -70,6 +70,16 @@ namespace vcpkg
     CPUArchitecture get_host_processor()
     {
 #if defined(_WIN32)
+        auto raw_identifier = get_environment_variable("PROCESSOR_IDENTIFIER");
+        if (const auto id = raw_identifier.get())
+        {
+            // might be either ARMv8 (64-bit) or ARMv9 (64-bit)
+            if (Strings::contains(*id, "ARMv") && Strings::contains(*id, "(64-bit)"))
+            {
+                return CPUArchitecture::ARM64;
+            }
+        }
+
         auto raw_w6432 = get_environment_variable("PROCESSOR_ARCHITEW6432");
         if (const auto w6432 = raw_w6432.get())
         {
