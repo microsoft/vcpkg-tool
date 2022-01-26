@@ -17,7 +17,7 @@ namespace vcpkg
         friend bool operator!=(const Version& left, const Version& right);
 
         // Version has no operator< because without a scheme it is not necessarily semantically comparable;
-        // VersionTMapLess is provided as a less than comparison for use in std::map.
+        // VersionMapLess is provided as a less than comparison for use in std::map.
         friend struct VersionMapLess;
 
         const std::string text() const { return m_text; }
