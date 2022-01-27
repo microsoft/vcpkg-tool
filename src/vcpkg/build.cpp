@@ -1112,10 +1112,13 @@ namespace vcpkg::Build
 
         abi_tag_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back("post_build_checks", "2");
-        std::vector<std::string> sorted_feature_list = action.feature_list;
-        // Renormalize feature list: remove "default" (since it's a virtual feature) and add "core" to ensure non-empty
-        Util::erase_remove_if(sorted_feature_list, [](const std::string& s) { return s == "default"; });
-        sorted_feature_list.push_back("core");
+        InternalFeatureSet sorted_feature_list = action.feature_list;
+        // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
+        // a package ABI, so the "default" should not have made it here.
+        const bool has_no_pseudo_features = std::none_of(sorted_feature_list.begin(),
+                                                         sorted_feature_list.end(),
+                                                         [](const std::string& s) { return s == "default"; });
+        Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
         Util::sort_unique_erase(sorted_feature_list);
         abi_tag_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
 
