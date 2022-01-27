@@ -68,8 +68,6 @@ jobs:
       failOnStderr: true
     - bash: build.amd64.debug/vcpkg-test
       displayName: 'Run vcpkg tests'
-      env:
-        VCPKG_ROOT: UNIT_TESTS_SHOULD_NOT_USE_VCPKG_ROOT
     - task: PowerShell@2
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
