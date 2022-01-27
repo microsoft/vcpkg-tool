@@ -19,6 +19,8 @@ jobs:
       failOnStderr: true
     - bash: build.amd64.debug/vcpkg-test
       displayName: 'Run vcpkg tests'
+      env:
+        VCPKG_ROOT: UNIT_TESTS_SHOULD_NOT_USE_VCPKG_ROOT
     - task: PowerShell@2
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
@@ -93,7 +95,7 @@ jobs:
           git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT -n
           git -C "$env:VCPKG_ROOT" checkout $sha
     - task: CmdLine@2
-      displayName: "Build vcpkg with CMake, and Run Tests"
+      displayName: "Build vcpkg with CMake"
       inputs:
         script: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
@@ -102,6 +104,11 @@ jobs:
           ninja.exe -C build.x86.debug
           build.x86.debug\vcpkg-test.exe
         failOnStderr: true
+    - script: build.x86.debug\vcpkg-test.exe
+      displayName: "Run vcpkg tests"
+      failOnStderr: true
+      env:
+        VCPKG_ROOT: UNIT_TESTS_SHOULD_NOT_USE_VCPKG_ROOT
     - task: PowerShell@2
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
