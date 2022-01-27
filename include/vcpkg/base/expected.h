@@ -7,6 +7,7 @@
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringliteral.h>
 
+#include <functional>
 #include <system_error>
 #include <type_traits>
 
