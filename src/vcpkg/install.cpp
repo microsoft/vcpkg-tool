@@ -850,7 +850,7 @@ namespace vcpkg::Install
             }
             if (failure)
             {
-                msg::println(msgUsingManifestAt, msg::path = paths.manifest_root_dir / "vcpkg.json");
+                msg::println(msgUsingManifestAt, msg::path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO));
                 print2("\n");
                 print_usage(MANIFEST_COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);

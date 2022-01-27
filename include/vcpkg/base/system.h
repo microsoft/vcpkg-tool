@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/zstringview.h>
