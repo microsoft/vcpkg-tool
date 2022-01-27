@@ -126,7 +126,7 @@ namespace vcpkg
 
     struct DependencyConstraint
     {
-        Versions::Constraint::Type type = Versions::Constraint::Type::None;
+        VersionConstraintKind type = VersionConstraintKind::None;
         std::string value;
         int port_version = 0;
 
@@ -135,6 +135,8 @@ namespace vcpkg
         {
             return !(lhs == rhs);
         }
+
+        Optional<Version> try_get_minimum_version() const;
     };
 
     enum class ImplicitDefault : bool
@@ -165,7 +167,7 @@ namespace vcpkg
         std::string name;
         std::string version;
         int port_version = 0;
-        Versions::Scheme version_scheme = Versions::Scheme::String;
+        VersionScheme version_scheme = VersionScheme::String;
 
         Json::Object extra_info;
 

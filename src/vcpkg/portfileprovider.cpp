@@ -12,18 +12,15 @@
 #include <vcpkg/versiondeserializers.h>
 
 using namespace vcpkg;
-using namespace Versions;
 
 namespace
 {
-    using namespace vcpkg;
-
     struct OverlayRegistryEntry final : RegistryEntry
     {
-        OverlayRegistryEntry(Path&& p, VersionT&& v) : root(p), version(v) { }
+        OverlayRegistryEntry(Path&& p, Version&& v) : root(p), version(v) { }
 
-        View<VersionT> get_port_versions() const override { return {&version, 1}; }
-        ExpectedS<Path> get_path_to_version(const VersionT& v) const override
+        View<Version> get_port_versions() const override { return {&version, 1}; }
+        ExpectedS<Path> get_path_to_version(const Version& v) const override
         {
             if (v == version)
             {
@@ -33,7 +30,7 @@ namespace
         }
 
         Path root;
-        VersionT version;
+        Version version;
     };
 }
 
@@ -98,7 +95,7 @@ namespace vcpkg::PortFileProvider
             BaselineProviderImpl(const BaselineProviderImpl&) = delete;
             BaselineProviderImpl& operator=(const BaselineProviderImpl&) = delete;
 
-            virtual Optional<VersionT> get_baseline_version(StringView port_name) const override
+            virtual Optional<Version> get_baseline_version(StringView port_name) const override
             {
                 auto it = m_baseline_cache.find(port_name);
                 if (it != m_baseline_cache.end())
@@ -115,7 +112,7 @@ namespace vcpkg::PortFileProvider
 
         private:
             const VcpkgPaths& paths;
-            mutable std::map<std::string, Optional<VersionT>, std::less<>> m_baseline_cache;
+            mutable std::map<std::string, Optional<Version>, std::less<>> m_baseline_cache;
         };
 
         struct VersionedPortfileProviderImpl : IVersionedPortfileProvider
@@ -158,7 +155,7 @@ namespace vcpkg::PortFileProvider
                 return entry_it->second;
             }
 
-            virtual View<VersionT> get_port_versions(StringView port_name) const override
+            virtual View<Version> get_port_versions(StringView port_name) const override
             {
                 return entry(port_name).value_or_exit(VCPKG_LINE_INFO)->get_port_versions();
             }
@@ -226,7 +223,7 @@ namespace vcpkg::PortFileProvider
                 for (auto&& scfl : all_ports)
                 {
                     auto port_name = scfl.source_control_file->core_paragraph->name;
-                    auto version = scfl.source_control_file->core_paragraph->to_versiont();
+                    auto version = scfl.source_control_file->core_paragraph->to_version();
                     auto it = m_control_cache
                                   .emplace(VersionSpec{std::move(port_name), std::move(version)},
                                            std::make_unique<SourceControlFileAndLocation>(std::move(scfl)))

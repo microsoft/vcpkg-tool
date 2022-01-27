@@ -58,7 +58,7 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->contacts.is_empty());
     REQUIRE(pgh.core_paragraph->summary.empty());
@@ -72,34 +72,34 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
 
 TEST_CASE ("manifest versioning", "[manifests]")
 {
-    std::tuple<StringLiteral, Versions::Scheme, StringLiteral> data[] = {
+    std::tuple<StringLiteral, VersionScheme, StringLiteral> data[] = {
         {R"json({
     "name": "zlib",
     "version-string": "abcd"
 }
 )json",
-         Versions::Scheme::String,
+         VersionScheme::String,
          "abcd"},
         {R"json({
     "name": "zlib",
     "version-date": "2020-01-01"
 }
 )json",
-         Versions::Scheme::Date,
+         VersionScheme::Date,
          "2020-01-01"},
         {R"json({
     "name": "zlib",
     "version": "1.2.3.4.5"
 }
 )json",
-         Versions::Scheme::Relaxed,
+         VersionScheme::Relaxed,
          "1.2.3.4.5"},
         {R"json({
     "name": "zlib",
     "version-semver": "1.2.3-rc3"
 }
 )json",
-         Versions::Scheme::Semver,
+         VersionScheme::Semver,
          "1.2.3-rc3"},
     };
     for (auto&& v : data)
@@ -109,7 +109,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
         auto& pgh = **m_pgh.get();
         CHECK(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
         CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
-        CHECK(pgh.core_paragraph->version == std::get<2>(v));
+        CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
         CHECK(pgh.core_paragraph->port_version == 0);
     }
 
@@ -347,14 +347,12 @@ TEST_CASE ("manifest constraints", "[manifests]")
     REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == raw);
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
-    REQUIRE(pgh.core_paragraph->dependencies[0].constraint ==
-            DependencyConstraint{Versions::Constraint::Type::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
     REQUIRE(pgh.core_paragraph->dependencies[1].name == "c");
-    REQUIRE(pgh.core_paragraph->dependencies[1].constraint ==
-            DependencyConstraint{Versions::Constraint::Type::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
     REQUIRE(pgh.core_paragraph->dependencies[2].name == "d");
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
-            DependencyConstraint{Versions::Constraint::Type::Minimum, "2018-09-01", 0});
+            DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
 
     test_parse_manifest(R"json({
@@ -435,9 +433,9 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
         REQUIRE(pgh.core_paragraph->dependencies[0].constraint.value == "abcd");
         REQUIRE(pgh.core_paragraph->dependencies[0].constraint.port_version == 1);
-        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.type == Versions::Constraint::Type::Minimum);
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.type == VersionConstraintKind::Minimum);
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
-        REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == Versions::Scheme::String);
+        REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == VersionScheme::String);
         REQUIRE(pgh.core_paragraph->overrides[0].version == "abcd");
         REQUIRE(pgh.core_paragraph->overrides[0].port_version == 0);
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
@@ -472,9 +470,9 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
         REQUIRE(pgh.core_paragraph->dependencies[0].constraint.value == "abcd");
         REQUIRE(pgh.core_paragraph->dependencies[0].constraint.port_version == 1);
-        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.type == Versions::Constraint::Type::Minimum);
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.type == VersionConstraintKind::Minimum);
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
-        REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == Versions::Scheme::String);
+        REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == VersionScheme::String);
         REQUIRE(pgh.core_paragraph->overrides[0].version == "abcd");
         REQUIRE(pgh.core_paragraph->overrides[0].port_version == 0);
         REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
@@ -485,7 +483,7 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
 
 TEST_CASE ("manifest overrides", "[manifests]")
 {
-    std::tuple<StringLiteral, Versions::Scheme, StringLiteral> data[] = {
+    std::tuple<StringLiteral, VersionScheme, StringLiteral> data[] = {
         {R"json({
     "name": "zlib",
     "version-date": "2020-01-01",
@@ -498,7 +496,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
     ]
 }
 )json",
-         Versions::Scheme::String,
+         VersionScheme::String,
          "abcd"},
         {R"json({
     "name": "zlib",
@@ -512,7 +510,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
     ]
 }
 )json",
-         Versions::Scheme::Date,
+         VersionScheme::Date,
          "2020-01-01"},
         {R"json({
     "name": "zlib",
@@ -526,7 +524,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
     ]
 }
 )json",
-         Versions::Scheme::Relaxed,
+         VersionScheme::Relaxed,
          "1.2.3.4.5"},
         {R"json({
     "name": "zlib",
@@ -540,7 +538,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
     ]
 }
 )json",
-         Versions::Scheme::Semver,
+         VersionScheme::Semver,
          "1.2.3-rc3"},
     };
     for (auto&& v : data)
@@ -686,14 +684,12 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
-    REQUIRE(pgh.core_paragraph->dependencies[0].constraint ==
-            DependencyConstraint{Versions::Constraint::Type::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
     REQUIRE(pgh.core_paragraph->dependencies[1].name == "b");
-    REQUIRE(pgh.core_paragraph->dependencies[1].constraint ==
-            DependencyConstraint{Versions::Constraint::Type::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
     REQUIRE(pgh.core_paragraph->dependencies[2].name == "c");
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
-            DependencyConstraint{Versions::Constraint::Type::Minimum, "2018-09-01", 0});
+            DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
 
     auto maybe_config = Json::parse(raw_config, "<test config>");
     REQUIRE(maybe_config.has_value());
@@ -755,7 +751,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     auto& pgh = **res.get();
 
     REQUIRE(pgh.core_paragraph->name == "s");
-    REQUIRE(pgh.core_paragraph->version == "v");
+    REQUIRE(pgh.core_paragraph->raw_version == "v");
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
     REQUIRE(pgh.core_paragraph->contacts.size() == 1);
@@ -862,7 +858,7 @@ TEST_CASE ("SourceParagraph manifest construct qualified dependencies", "[manife
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);
@@ -891,7 +887,7 @@ TEST_CASE ("SourceParagraph manifest construct host dependencies", "[manifests]"
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);

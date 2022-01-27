@@ -270,7 +270,19 @@ namespace vcpkg
         if (lhs.value != rhs.value) return false;
         return lhs.port_version == rhs.port_version;
     }
-    bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
+
+    Optional<Version> DependencyConstraint::try_get_minimum_version() const
+    {
+        if (type == VersionConstraintKind::None)
+        {
+            return nullopt;
+        }
+
+        return Version{
+            value,
+            port_version,
+        };
+    }
 
     FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
     {

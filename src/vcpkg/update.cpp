@@ -29,8 +29,8 @@ namespace vcpkg::Update
             if (auto p_scfl = maybe_scfl.get())
             {
                 const auto& latest_pgh = *p_scfl->source_control_file->core_paragraph;
-                auto latest_version = VersionT(latest_pgh.version, latest_pgh.port_version);
-                auto installed_version = VersionT(pgh->package.version, pgh->package.port_version);
+                auto latest_version = Version(latest_pgh.raw_version, latest_pgh.port_version);
+                auto installed_version = Version(pgh->package.version, pgh->package.port_version);
                 if (latest_version != installed_version)
                 {
                     output.push_back(
