@@ -28,13 +28,6 @@ namespace vcpkg
         }
     }
 
-    std::vector<PackageSpec> PackageSpec::to_package_specs(const std::vector<std::string>& ports, Triplet triplet)
-    {
-        return Util::fmap(ports, [&](const std::string& spec_as_string) -> PackageSpec {
-            return {spec_as_string, triplet};
-        });
-    }
-
     const std::string& PackageSpec::name() const { return this->m_name; }
 
     Triplet PackageSpec::triplet() const { return this->m_triplet; }

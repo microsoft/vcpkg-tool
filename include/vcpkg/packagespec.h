@@ -27,8 +27,6 @@ namespace vcpkg
         PackageSpec() = default;
         PackageSpec(std::string name, Triplet triplet) : m_name(std::move(name)), m_triplet(triplet) { }
 
-        static std::vector<PackageSpec> to_package_specs(const std::vector<std::string>& ports, Triplet triplet);
-
         const std::string& name() const;
 
         Triplet triplet() const;
