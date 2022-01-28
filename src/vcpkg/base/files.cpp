@@ -2124,18 +2124,9 @@ namespace vcpkg
             result.push_back(full);
         }
 
-        struct PushPopPathElement
-        {
-            PushPopPathElement(Path& parent, StringView appendee) : p(parent) { p /= appendee; }
-            ~PushPopPathElement() { p.make_parent_path(); }
-
-        private:
-            Path& p;
-        };
-
         static void get_files_recursive_impl(std::vector<Path>& result,
                                              const Path& base,
-                                             Path& out_base,
+                                             const Path& out_base,
                                              std::error_code& ec,
                                              bool want_directories,
                                              bool want_regular_files,
@@ -2170,7 +2161,7 @@ namespace vcpkg
                     }
 
                     const auto full = base / entry->d_name;
-                    PushPopPathElement pushpop_outbase(out_base, entry->d_name);
+                    const auto out_full = out_base / entry->d_name;
                     const auto entry_dtype = get_d_type(entry);
                     struct stat s;
                     struct stat ls;
@@ -2180,11 +2171,11 @@ namespace vcpkg
                             if (want_directories)
                             {
                                 // push results before recursion to get outer entries first
-                                result.push_back(out_base);
+                                result.push_back(out_full);
                             }
 
                             get_files_recursive_impl(
-                                result, full, out_base, ec, want_directories, want_regular_files, want_other);
+                                result, full, out_full, ec, want_directories, want_regular_files, want_other);
                             if (ec)
                             {
                                 return;
@@ -2194,7 +2185,7 @@ namespace vcpkg
                         case PosixDType::Regular:
                             if (want_regular_files)
                             {
-                                result.push_back(out_base);
+                                result.push_back(out_full);
                             }
 
                             break;
@@ -2205,7 +2196,7 @@ namespace vcpkg
                         case PosixDType::BlockDevice:
                             if (want_other)
                             {
-                                result.push_back(out_base);
+                                result.push_back(out_full);
                             }
 
                             break;
@@ -2232,7 +2223,7 @@ namespace vcpkg
                                 if (want_directories && want_regular_files && want_other)
                                 {
                                     // skip extra stat syscall since we want everything
-                                    result.push_back(out_base);
+                                    result.push_back(out_full);
                                 }
                                 else
                                 {
@@ -2252,21 +2243,21 @@ namespace vcpkg
                                     }
 
                                     insert_if_stat_matches(
-                                        result, out_base, &s, want_directories, want_regular_files, want_other);
+                                        result, out_full, &s, want_directories, want_regular_files, want_other);
                                 }
                             }
                             else
                             {
                                 // push results before recursion to get outer entries first
                                 insert_if_stat_matches(
-                                    result, out_base, &ls, want_directories, want_regular_files, want_other);
+                                    result, out_full, &ls, want_directories, want_regular_files, want_other);
                             }
 
                             // recursion check doesn't follow symlinks:
                             if (S_ISDIR(ls.st_mode))
                             {
                                 get_files_recursive_impl(
-                                    result, full, out_base, ec, want_directories, want_regular_files, want_other);
+                                    result, full, out_full, ec, want_directories, want_regular_files, want_other);
                             }
                             break;
                     }
