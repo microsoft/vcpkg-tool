@@ -237,8 +237,9 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_regular_files_recursive(const Path& dir, LineInfo li) const;
 
-        virtual std::vector<Path> get_regular_files_recursive_proximate(const Path& dir, std::error_code& ec) const = 0;
-        std::vector<Path> get_regular_files_recursive_proximate(const Path& dir, LineInfo li) const;
+        virtual std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir,
+                                                                                  std::error_code& ec) const = 0;
+        std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const;
 
         virtual std::vector<Path> get_regular_files_non_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_regular_files_non_recursive(const Path& dir, LineInfo li) const;

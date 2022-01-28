@@ -749,7 +749,7 @@ TEST_CASE ("get_regular_files_recursive_proximate_symlinks", "[files]")
 {
     do_filesystem_enumeration_test(
         [](Filesystem& fs, const Path& root) {
-            return fs.get_regular_files_recursive_proximate(root, VCPKG_LINE_INFO);
+            return fs.get_regular_files_recursive_lexically_proximate(root, VCPKG_LINE_INFO);
         },
         [](const Path&) {
             Path somedir{"some-directory"};

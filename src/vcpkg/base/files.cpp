@@ -1418,10 +1418,10 @@ namespace vcpkg
         return maybe_directories;
     }
 
-    std::vector<Path> Filesystem::get_regular_files_recursive_proximate(const Path& dir, LineInfo li) const
+    std::vector<Path> Filesystem::get_regular_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const
     {
         std::error_code ec;
-        auto maybe_directories = this->get_regular_files_recursive_proximate(dir, ec);
+        auto maybe_directories = this->get_regular_files_recursive_lexically_proximate(dir, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {dir});
@@ -2077,8 +2077,8 @@ namespace vcpkg
             return get_regular_files_impl<stdfs::directory_iterator>(dir, ec);
         }
 
-        virtual std::vector<Path> get_regular_files_recursive_proximate(const Path& dir,
-                                                                        std::error_code& ec) const override
+        virtual std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir,
+                                                                                  std::error_code& ec) const override
         {
             auto ret = this->get_regular_files_recursive(dir, ec);
             if (!ec)
@@ -2372,8 +2372,8 @@ namespace vcpkg
             return result;
         }
 
-        virtual std::vector<Path> get_regular_files_recursive_proximate(const Path& dir,
-                                                                        std::error_code& ec) const override
+        virtual std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir,
+                                                                                  std::error_code& ec) const override
         {
             std::vector<Path> result;
             Path out_base;
