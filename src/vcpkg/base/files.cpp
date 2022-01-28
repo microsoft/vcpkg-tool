@@ -825,8 +825,8 @@ namespace
             if (!S_ISDIR(s.st_mode))
             {
                 // if it isn't still a directory something is racy
-                mark_recursive_error(base, ec, failure_point);
                 ec = std::make_error_code(std::errc::device_or_resource_busy);
+                failure_point = base;
                 return;
             }
 
@@ -2124,10 +2124,10 @@ namespace vcpkg
             result.push_back(full);
         }
 
-        struct PushPopPath
+        struct PushPopPathElement
         {
-            PushPopPath(Path& parent, StringView appendee) : p(parent) { p /= appendee; }
-            ~PushPopPath() { p.make_parent_path(); }
+            PushPopPathElement(Path& parent, StringView appendee) : p(parent) { p /= appendee; }
+            ~PushPopPathElement() { p.make_parent_path(); }
 
         private:
             Path& p;
@@ -2170,7 +2170,7 @@ namespace vcpkg
                     }
 
                     const auto full = base / entry->d_name;
-                    PushPopPath pushpop_outbase(out_base, entry->d_name);
+                    PushPopPathElement pushpop_outbase(out_base, entry->d_name);
                     const auto entry_dtype = get_d_type(entry);
                     struct stat s;
                     struct stat ls;
