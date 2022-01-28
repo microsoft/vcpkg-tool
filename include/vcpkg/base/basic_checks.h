@@ -25,6 +25,9 @@ namespace vcpkg::Checks
     // Display an error message to the user and exit the tool.
     [[noreturn]] void exit_with_message(const LineInfo& line_info, StringView error_message);
 
+    // Display an error message and the line to the user and exit the tool.
+    [[noreturn]] void exit_with_message_and_line(const LineInfo& line_info, StringView error_message);
+
     // If expression is false, call exit_fail.
     void check_exit(const LineInfo& line_info, bool expression);
 
