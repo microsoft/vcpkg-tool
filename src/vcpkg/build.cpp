@@ -1115,11 +1115,18 @@ namespace vcpkg::Build
         InternalFeatureSet sorted_feature_list = action.feature_list;
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
-        const bool has_no_pseudo_features = std::none_of(sorted_feature_list.begin(),
-                                                         sorted_feature_list.end(),
-                                                         [](const std::string& s) { return s == "default"; });
+        static constexpr auto default_literal = StringLiteral{"default"};
+        const bool has_no_pseudo_features = std::none_of(
+            sorted_feature_list.begin(), sorted_feature_list.end(), [](StringView s) { return s == default_literal; });
         Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
         Util::sort_unique_erase(sorted_feature_list);
+
+        // Check that the "core" feature is present. After resolution into InternalFeatureSet "core" meaning "not
+        // default" should have already been handled so "core" should be here.
+        Checks::check_exit(
+            VCPKG_LINE_INFO,
+            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), StringLiteral{"core"}));
+
         abi_tag_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
 
         Util::sort(abi_tag_entries);
