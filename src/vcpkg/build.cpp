@@ -183,7 +183,7 @@ namespace vcpkg::Build
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         std::string first_arg = args.command_arguments[0];
 
-        BinaryCache binary_cache{args};
+        BinaryCache binary_cache{args, paths};
         const FullPackageSpec spec = Input::check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
@@ -1112,8 +1112,21 @@ namespace vcpkg::Build
 
         abi_tag_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back("post_build_checks", "2");
-        std::vector<std::string> sorted_feature_list = action.feature_list;
-        Util::sort(sorted_feature_list);
+        InternalFeatureSet sorted_feature_list = action.feature_list;
+        // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
+        // a package ABI, so the "default" should not have made it here.
+        static constexpr auto default_literal = StringLiteral{"default"};
+        const bool has_no_pseudo_features = std::none_of(
+            sorted_feature_list.begin(), sorted_feature_list.end(), [](StringView s) { return s == default_literal; });
+        Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
+        Util::sort_unique_erase(sorted_feature_list);
+
+        // Check that the "core" feature is present. After resolution into InternalFeatureSet "core" meaning "not
+        // default" should have already been handled so "core" should be here.
+        Checks::check_exit(
+            VCPKG_LINE_INFO,
+            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), StringLiteral{"core"}));
+
         abi_tag_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
 
         Util::sort(abi_tag_entries);
@@ -1290,7 +1303,7 @@ namespace vcpkg::Build
 
         if (result.code == BuildResult::SUCCEEDED)
         {
-            binary_cache.push_success(paths, action);
+            binary_cache.push_success(action);
         }
 
         return result;

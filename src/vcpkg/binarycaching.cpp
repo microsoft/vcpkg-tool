@@ -246,11 +246,13 @@ namespace
 
     struct ArchivesBinaryProvider : IBinaryProvider
     {
-        ArchivesBinaryProvider(std::vector<Path>&& read_dirs,
+        ArchivesBinaryProvider(const VcpkgPaths& paths,
+                               std::vector<Path>&& read_dirs,
                                std::vector<Path>&& write_dirs,
                                std::vector<std::string>&& put_url_templates,
                                std::vector<std::string>&& secrets)
-            : m_read_dirs(std::move(read_dirs))
+            : paths(paths)
+            , m_read_dirs(std::move(read_dirs))
             , m_write_dirs(std::move(write_dirs))
             , m_put_url_templates(std::move(put_url_templates))
             , m_secrets(std::move(secrets))
@@ -259,9 +261,7 @@ namespace
 
         static Path make_archive_subpath(const std::string& abi) { return Path(abi.substr(0, 2)) / (abi + ".zip"); }
 
-        void prefetch(const VcpkgPaths& paths,
-                      View<Dependencies::InstallPlanAction> actions,
-                      View<CacheStatus*> cache_status) const override
+        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<size_t> to_try_restore_idxs;
             std::vector<const Dependencies::InstallPlanAction*> to_try_restore;
@@ -271,16 +271,17 @@ namespace
                 const auto timer = ElapsedTimer::create_started();
                 to_try_restore_idxs.clear();
                 to_try_restore.clear();
-                for (size_t idx = 0; idx < actions.size(); ++idx)
+                for (size_t idx = 0; idx < cache_status.size(); ++idx)
                 {
-                    auto&& action = actions[idx];
-                    if (action.has_package_abi() && cache_status[idx]->should_attempt_restore(this))
+                    auto idx_cache_status = cache_status[idx];
+                    if (idx_cache_status && idx_cache_status->should_attempt_restore(this))
                     {
                         to_try_restore_idxs.push_back(idx);
-                        to_try_restore.push_back(&action);
+                        to_try_restore.push_back(&actions[idx]);
                     }
                 }
-                auto results = try_restore_n(paths, to_try_restore, archives_root_dir);
+
+                auto results = try_restore_n(to_try_restore, archives_root_dir);
                 int num_restored = 0;
                 for (size_t n = 0; n < to_try_restore.size(); ++n)
                 {
@@ -301,8 +302,7 @@ namespace
             }
         }
 
-        std::vector<RestoreResult> try_restore_n(const VcpkgPaths& paths,
-                                                 View<const Dependencies::InstallPlanAction*> actions,
+        std::vector<RestoreResult> try_restore_n(View<const Dependencies::InstallPlanAction*> actions,
                                                  const Path& archives_root_dir) const
         {
             auto& fs = paths.get_filesystem();
@@ -320,7 +320,7 @@ namespace
                 if (fs.exists(archive_path, IgnoreErrors{}))
                 {
                     auto pkg_path = paths.package_dir(spec);
-                    clean_prepare_dir(paths.get_filesystem(), pkg_path);
+                    clean_prepare_dir(fs, pkg_path);
                     jobs.push_back(decompress_archive_cmd(paths, pkg_path, archive_path));
                     action_idxs.push_back(i);
                     archive_paths.push_back(std::move(archive_path));
@@ -355,14 +355,14 @@ namespace
             return results;
         }
 
-        RestoreResult try_restore(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
+        RestoreResult try_restore(const Dependencies::InstallPlanAction& action) const override
         {
             // Note: this method is almost never called -- it will only be called if another provider promised to
             // restore a package but then failed at runtime
             auto p_action = &action;
             for (const auto& archives_root_dir : m_read_dirs)
             {
-                if (try_restore_n(paths, {&p_action, 1}, archives_root_dir)[0] == RestoreResult::restored)
+                if (try_restore_n({&p_action, 1}, archives_root_dir)[0] == RestoreResult::restored)
                 {
                     print2("Restored from ", archives_root_dir.native(), "\n");
                     return RestoreResult::restored;
@@ -371,7 +371,7 @@ namespace
             return RestoreResult::unavailable;
         }
 
-        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
+        void push_success(const Dependencies::InstallPlanAction& action) const override
         {
             if (m_write_dirs.empty() && m_put_url_templates.empty())
             {
@@ -434,21 +434,19 @@ namespace
             }
         }
 
-        void precheck(const VcpkgPaths& paths,
-                      View<Dependencies::InstallPlanAction> actions,
-                      View<CacheStatus*> cache_status) const override
+        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 const auto& action = actions[idx];
-                const auto abi_tag = action.package_abi().get();
-                if (!abi_tag || !cache_status[idx]->should_attempt_precheck(this))
+                const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                if (!cache_status[idx]->should_attempt_precheck(this))
                 {
                     continue;
                 }
 
-                const auto archive_subpath = make_archive_subpath(*abi_tag);
+                const auto archive_subpath = make_archive_subpath(abi_tag);
                 bool any_available = false;
                 for (auto&& archives_root_dir : m_read_dirs)
                 {
@@ -471,6 +469,7 @@ namespace
         }
 
     private:
+        const VcpkgPaths& paths;
         std::vector<Path> m_read_dirs;
         std::vector<Path> m_write_dirs;
         std::vector<std::string> m_put_url_templates;
@@ -478,18 +477,19 @@ namespace
     };
     struct HttpGetBinaryProvider : IBinaryProvider
     {
-        HttpGetBinaryProvider(std::vector<std::string>&& url_templates) : m_url_templates(std::move(url_templates)) { }
+        HttpGetBinaryProvider(const VcpkgPaths& paths, std::vector<std::string>&& url_templates)
+            : paths(paths), m_url_templates(std::move(url_templates))
+        {
+        }
 
-        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
+        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
         {
             return RestoreResult::unavailable;
         }
 
-        void push_success(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override { }
+        void push_success(const Dependencies::InstallPlanAction&) const override { }
 
-        void prefetch(const VcpkgPaths& paths,
-                      View<Dependencies::InstallPlanAction> actions,
-                      View<CacheStatus*> cache_status) const override
+        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             const auto timer = ElapsedTimer::create_started();
             auto& fs = paths.get_filesystem();
@@ -500,18 +500,19 @@ namespace
             {
                 url_paths.clear();
                 url_indices.clear();
-                for (size_t idx = 0; idx < actions.size(); ++idx)
+                for (size_t idx = 0; idx < cache_status.size(); ++idx)
                 {
-                    auto&& action = actions[idx];
-                    auto abi = action.package_abi();
-                    if (!abi || !cache_status[idx]->should_attempt_restore(this))
+                    auto this_cache_status = cache_status[idx];
+                    if (!this_cache_status || !this_cache_status->should_attempt_restore(this))
                     {
                         continue;
                     }
 
+                    auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    url_paths.emplace_back(Strings::replace_all(url_template, "<SHA>", *abi.get()),
-                                           make_temp_archive_path(paths.buildtrees(), action.spec));
+                    auto uri = Strings::replace_all(
+                        url_template, "<SHA>", action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                    url_paths.emplace_back(std::move(uri), make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
 
@@ -555,9 +556,7 @@ namespace
                    ". Use --debug for more information.\n");
         }
 
-        void precheck(const VcpkgPaths&,
-                      View<Dependencies::InstallPlanAction> actions,
-                      View<CacheStatus*> cache_status) const override
+        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<CacheAvailability> actions_present{actions.size()};
             std::vector<std::string> urls;
@@ -568,13 +567,13 @@ namespace
                 url_indices.clear();
                 for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
-                    auto abi = actions[idx].package_abi().get();
-                    if (!abi || !cache_status[idx]->should_attempt_precheck(this))
+                    const auto& abi = actions[idx].package_abi().value_or_exit(VCPKG_LINE_INFO);
+                    if (!cache_status[idx]->should_attempt_precheck(this))
                     {
                         continue;
                     }
 
-                    urls.push_back(Strings::replace_all(std::string(url_template), "<SHA>", *abi));
+                    urls.push_back(Strings::replace_all(std::string(url_template), "<SHA>", abi));
                     url_indices.push_back(idx);
                 }
 
@@ -604,6 +603,7 @@ namespace
             }
         }
 
+        const VcpkgPaths& paths;
         std::vector<std::string> m_url_templates;
     };
 
@@ -620,13 +620,15 @@ namespace
 
     struct NugetBinaryProvider : IBinaryProvider
     {
-        NugetBinaryProvider(std::vector<std::string>&& read_sources,
+        NugetBinaryProvider(const VcpkgPaths& paths,
+                            std::vector<std::string>&& read_sources,
                             std::vector<std::string>&& write_sources,
                             std::vector<Path>&& read_configs,
                             std::vector<Path>&& write_configs,
                             std::string&& timeout,
                             bool interactive)
-            : m_read_sources(std::move(read_sources))
+            : paths(paths)
+            , m_read_sources(std::move(read_sources))
             , m_write_sources(std::move(write_sources))
             , m_read_configs(std::move(read_configs))
             , m_write_configs(std::move(write_configs))
@@ -711,9 +713,7 @@ namespace
             fs.write_contents(packages_config, xml.buf, VCPKG_LINE_INFO);
         }
 
-        void prefetch(const VcpkgPaths& paths,
-                      View<Dependencies::InstallPlanAction> actions,
-                      View<CacheStatus*> cache_status) const override
+        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             if (m_read_sources.empty() && m_read_configs.empty())
             {
@@ -724,16 +724,16 @@ namespace
             auto& fs = paths.get_filesystem();
 
             std::vector<NuGetPrefetchAttempt> attempts;
-            for (size_t idx = 0; idx < actions.size(); ++idx)
+            for (size_t idx = 0; idx < cache_status.size(); ++idx)
             {
-                auto&& action = actions[idx];
-                auto abi = action.package_abi().get();
-                if (!abi || !cache_status[idx]->should_attempt_restore(this))
+                auto this_cache_status = cache_status[idx];
+                if (!this_cache_status || !this_cache_status->should_attempt_restore(this))
                 {
                     continue;
                 }
 
-                auto& spec = action.spec;
+                const auto& action = actions[idx];
+                const auto& spec = action.spec;
                 fs.remove_all(paths.package_dir(spec), VCPKG_LINE_INFO);
                 attempts.push_back({spec, make_nugetref(action, get_nuget_prefix()), idx});
             }
@@ -859,12 +859,12 @@ namespace
                    ". Use --debug for more information.\n");
         }
 
-        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
+        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
         {
             return RestoreResult::unavailable;
         }
 
-        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
+        void push_success(const Dependencies::InstallPlanAction& action) const override
         {
             if (m_write_sources.empty() && m_write_configs.empty())
             {
@@ -875,7 +875,8 @@ namespace
 
             NugetReference nuget_ref = make_nugetref(action, get_nuget_prefix());
             auto nuspec_path = paths.buildtrees() / spec.name() / (spec.triplet().to_string() + ".nuspec");
-            paths.get_filesystem().write_contents(
+            auto& fs = paths.get_filesystem();
+            fs.write_contents(
                 nuspec_path, generate_nuspec(paths.package_dir(spec), action, nuget_ref), VCPKG_LINE_INFO);
 
             const auto& nuget_exe = paths.get_tool_exe("nuget");
@@ -958,12 +959,14 @@ namespace
                 }
             }
 
-            paths.get_filesystem().remove(nupkg_path, IgnoreErrors{});
+            fs.remove(nupkg_path, IgnoreErrors{});
         }
 
-        void precheck(const VcpkgPaths&, View<Dependencies::InstallPlanAction>, View<CacheStatus*>) const override { }
+        void precheck(View<Dependencies::InstallPlanAction>, View<CacheStatus*>) const override { }
 
     private:
+        const VcpkgPaths& paths;
+
         std::vector<std::string> m_read_sources;
         std::vector<std::string> m_write_sources;
 
@@ -1013,8 +1016,10 @@ namespace
 
     struct GcsBinaryProvider : IBinaryProvider
     {
-        GcsBinaryProvider(std::vector<std::string>&& read_prefixes, std::vector<std::string>&& write_prefixes)
-            : m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
+        GcsBinaryProvider(const VcpkgPaths& paths,
+                          std::vector<std::string>&& read_prefixes,
+                          std::vector<std::string>&& write_prefixes)
+            : paths(paths), m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
         {
         }
 
@@ -1023,9 +1028,7 @@ namespace
             return Strings::concat(prefix, abi, ".zip");
         }
 
-        void prefetch(const VcpkgPaths& paths,
-                      View<Dependencies::InstallPlanAction> actions,
-                      View<CacheStatus*> cache_status) const override
+        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
 
@@ -1037,17 +1040,17 @@ namespace
                 std::vector<std::pair<std::string, Path>> url_paths;
                 std::vector<size_t> url_indices;
 
-                for (size_t idx = 0; idx < actions.size(); ++idx)
+                for (size_t idx = 0; idx < cache_status.size(); ++idx)
                 {
-                    auto&& action = actions[idx];
-                    auto abi = action.package_abi().get();
-                    if (!abi || !cache_status[idx]->should_attempt_restore(this))
+                    const auto this_cache_status = cache_status[idx];
+                    if (!this_cache_status || !this_cache_status->should_attempt_restore(this))
                     {
                         continue;
                     }
 
+                    auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    url_paths.emplace_back(make_gcs_path(prefix, *abi),
+                    url_paths.emplace_back(make_gcs_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
                                            make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
@@ -1091,12 +1094,12 @@ namespace
                    ". Use --debug for more information.\n");
         }
 
-        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
+        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
         {
             return RestoreResult::unavailable;
         }
 
-        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
+        void push_success(const Dependencies::InstallPlanAction& action) const override
         {
             if (m_write_prefixes.empty()) return;
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
@@ -1116,9 +1119,7 @@ namespace
             print2("Uploaded binaries to ", upload_count, " GCS remotes.\n");
         }
 
-        void precheck(const VcpkgPaths&,
-                      View<Dependencies::InstallPlanAction> actions,
-                      View<CacheStatus*> cache_status) const override
+        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<CacheAvailability> actions_availability{actions.size()};
             for (const auto& prefix : m_read_prefixes)
@@ -1126,13 +1127,13 @@ namespace
                 for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
                     auto&& action = actions[idx];
-                    const auto abi = action.package_abi().get();
-                    if (!abi || !cache_status[idx]->should_attempt_precheck(this))
+                    const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                    if (!cache_status[idx]->should_attempt_precheck(this))
                     {
                         continue;
                     }
 
-                    if (gsutil_stat(make_gcs_path(prefix, *abi)))
+                    if (gsutil_stat(make_gcs_path(prefix, abi)))
                     {
                         actions_availability[idx] = CacheAvailability::available;
                         cache_status[idx]->mark_available(this);
@@ -1151,6 +1152,8 @@ namespace
         }
 
     private:
+        const VcpkgPaths& paths;
+
         std::vector<std::string> m_read_prefixes;
         std::vector<std::string> m_write_prefixes;
     };
@@ -1195,8 +1198,10 @@ namespace
 
     struct AwsBinaryProvider : IBinaryProvider
     {
-        AwsBinaryProvider(std::vector<std::string>&& read_prefixes, std::vector<std::string>&& write_prefixes)
-            : m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
+        AwsBinaryProvider(const VcpkgPaths& paths,
+                          std::vector<std::string>&& read_prefixes,
+                          std::vector<std::string>&& write_prefixes)
+            : paths(paths), m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
         {
         }
 
@@ -1205,9 +1210,7 @@ namespace
             return Strings::concat(prefix, abi, ".zip");
         }
 
-        void prefetch(const VcpkgPaths& paths,
-                      View<Dependencies::InstallPlanAction> actions,
-                      View<CacheStatus*> cache_status) const override
+        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
 
@@ -1219,17 +1222,17 @@ namespace
                 std::vector<std::pair<std::string, Path>> url_paths;
                 std::vector<size_t> url_indices;
 
-                for (size_t idx = 0; idx < actions.size(); ++idx)
+                for (size_t idx = 0; idx < cache_status.size(); ++idx)
                 {
-                    auto&& action = actions[idx];
-                    auto abi = action.package_abi().get();
-                    if (!abi || !cache_status[idx]->should_attempt_restore(this))
+                    const auto this_cache_status = cache_status[idx];
+                    if (!this_cache_status || !this_cache_status->should_attempt_restore(this))
                     {
                         continue;
                     }
 
+                    auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    url_paths.emplace_back(make_aws_path(prefix, *abi),
+                    url_paths.emplace_back(make_aws_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
                                            make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
@@ -1272,12 +1275,12 @@ namespace
                          msg::elapsed = timer.elapsed().as<std::chrono::seconds>().count());
         }
 
-        RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
+        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
         {
             return RestoreResult::unavailable;
         }
 
-        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const override
+        void push_success(const Dependencies::InstallPlanAction& action) const override
         {
             if (m_write_prefixes.empty()) return;
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
@@ -1297,9 +1300,7 @@ namespace
             msg::println(msgAwsUploadedPackages, msg::value = upload_count);
         }
 
-        void precheck(const VcpkgPaths& paths,
-                      View<Dependencies::InstallPlanAction> actions,
-                      View<CacheStatus*> cache_status) const override
+        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<CacheAvailability> actions_availability{actions.size()};
             for (const auto& prefix : m_read_prefixes)
@@ -1307,13 +1308,13 @@ namespace
                 for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
                     auto&& action = actions[idx];
-                    const auto abi = action.package_abi().get();
-                    if (!abi || !cache_status[idx]->should_attempt_precheck(this))
+                    const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                    if (!cache_status[idx]->should_attempt_precheck(this))
                     {
                         continue;
                     }
 
-                    if (awscli_stat(paths, make_aws_path(prefix, *abi)))
+                    if (awscli_stat(paths, make_aws_path(prefix, abi)))
                     {
                         actions_availability[idx] = CacheAvailability::available;
                         cache_status[idx]->mark_available(this);
@@ -1332,6 +1333,8 @@ namespace
         }
 
     private:
+        const VcpkgPaths& paths;
+
         std::vector<std::string> m_read_prefixes;
         std::vector<std::string> m_write_prefixes;
     };
@@ -1339,7 +1342,10 @@ namespace
 
 namespace vcpkg
 {
-    BinaryCache::BinaryCache(const VcpkgCmdArguments& args) { install_providers_for(args); }
+    BinaryCache::BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    {
+        install_providers_for(args, paths);
+    }
 
     void BinaryCache::install_providers(std::vector<std::unique_ptr<IBinaryProvider>>&& providers)
     {
@@ -1357,19 +1363,21 @@ namespace vcpkg
         }
     }
 
-    void BinaryCache::install_providers_for(const VcpkgCmdArguments& args)
+    void BinaryCache::install_providers_for(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         if (args.binary_caching_enabled())
         {
-            install_providers(create_binary_providers_from_configs(args.binary_sources).value_or_exit(VCPKG_LINE_INFO));
+            install_providers(
+                create_binary_providers_from_configs(paths, args.binary_sources).value_or_exit(VCPKG_LINE_INFO));
         }
     }
 
-    RestoreResult BinaryCache::try_restore(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action)
+    RestoreResult BinaryCache::try_restore(const Dependencies::InstallPlanAction& action)
     {
         const auto abi = action.package_abi().get();
         if (!abi)
         {
+            // e.g. this is a `--head` package
             return RestoreResult::unavailable;
         }
 
@@ -1382,7 +1390,7 @@ namespace vcpkg
         const auto available = cache_status.get_available_provider();
         if (available)
         {
-            switch (available->try_restore(paths, action))
+            switch (available->try_restore(action))
             {
                 case RestoreResult::unavailable:
                     // Even though that provider thought it had it, it didn't; perhaps
@@ -1406,7 +1414,7 @@ namespace vcpkg
                 break;
             }
 
-            switch (provider->try_restore(paths, action))
+            switch (provider->try_restore(action))
             {
                 case RestoreResult::restored: cache_status.mark_restored(); return RestoreResult::restored;
                 case RestoreResult::unavailable: cache_status.mark_unavailable(provider.get()); break;
@@ -1417,42 +1425,35 @@ namespace vcpkg
         return RestoreResult::unavailable;
     }
 
-    void BinaryCache::push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action)
+    void BinaryCache::push_success(const Dependencies::InstallPlanAction& action)
     {
         const auto abi = action.package_abi().get();
         if (abi)
         {
             for (auto&& provider : m_providers)
             {
-                provider->push_success(paths, action);
+                provider->push_success(action);
             }
 
             m_status[*abi].mark_restored();
         }
     }
 
-    static std::vector<CacheStatus*> build_cache_status_vector(View<Dependencies::InstallPlanAction> actions,
-                                                               std::unordered_map<std::string, CacheStatus>& status)
+    void BinaryCache::prefetch(View<Dependencies::InstallPlanAction> actions)
     {
-        std::vector<CacheStatus*> results{actions.size()};
+        std::vector<CacheStatus*> cache_status{actions.size()};
         for (size_t idx = 0; idx < actions.size(); ++idx)
         {
             const auto abi = actions[idx].package_abi().get();
             if (abi)
             {
-                results[idx] = &status[*abi];
+                cache_status[idx] = &m_status[*abi];
             }
         }
 
-        return results;
-    }
-
-    void BinaryCache::prefetch(const VcpkgPaths& paths, View<Dependencies::InstallPlanAction> actions)
-    {
-        auto cache_status = build_cache_status_vector(actions, m_status);
         for (auto&& provider : m_providers)
         {
-            provider->prefetch(paths, actions, cache_status);
+            provider->prefetch(actions, cache_status);
             for (auto status : cache_status)
             {
                 if (status)
@@ -1463,13 +1464,23 @@ namespace vcpkg
         }
     }
 
-    std::vector<CacheAvailability> BinaryCache::precheck(const VcpkgPaths& paths,
-                                                         View<Dependencies::InstallPlanAction> actions)
+    std::vector<CacheAvailability> BinaryCache::precheck(View<Dependencies::InstallPlanAction> actions)
     {
-        auto cache_status = build_cache_status_vector(actions, m_status);
+        std::vector<CacheStatus*> cache_status{actions.size()};
+        for (size_t idx = 0; idx < actions.size(); ++idx)
+        {
+            auto& action = actions[idx];
+            const auto abi = action.package_abi().get();
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               abi,
+                               "Error: package %s did not have an abi during ci. This is an internal error.\n",
+                               action.spec);
+            cache_status[idx] = &m_status[*abi];
+        }
+
         for (auto&& provider : m_providers)
         {
-            provider->precheck(paths, actions, cache_status);
+            provider->precheck(actions, cache_status);
         }
 
         std::vector<CacheAvailability> results{actions.size()};
@@ -1568,6 +1579,26 @@ namespace vcpkg
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
+
+    void BinaryConfigParserState::clear()
+    {
+        m_cleared = true;
+        interactive = false;
+        nugettimeout = "100";
+        archives_to_read.clear();
+        archives_to_write.clear();
+        url_templates_to_get.clear();
+        azblob_templates_to_put.clear();
+        gcs_read_prefixes.clear();
+        gcs_write_prefixes.clear();
+        aws_read_prefixes.clear();
+        aws_write_prefixes.clear();
+        sources_to_read.clear();
+        sources_to_write.clear();
+        configs_to_read.clear();
+        configs_to_write.clear();
+        secrets.clear();
+    }
 }
 
 namespace
@@ -1611,61 +1642,14 @@ namespace
         return cachepath;
     }
 
-    struct State
-    {
-        bool m_cleared = false;
-        bool interactive = false;
-        std::string nugettimeout = "100";
-
-        std::vector<Path> archives_to_read;
-        std::vector<Path> archives_to_write;
-
-        std::vector<std::string> url_templates_to_get;
-        std::vector<std::string> azblob_templates_to_put;
-
-        std::vector<std::string> gcs_read_prefixes;
-        std::vector<std::string> gcs_write_prefixes;
-
-        std::vector<std::string> aws_read_prefixes;
-        std::vector<std::string> aws_write_prefixes;
-
-        std::vector<std::string> sources_to_read;
-        std::vector<std::string> sources_to_write;
-
-        std::vector<Path> configs_to_read;
-        std::vector<Path> configs_to_write;
-
-        std::vector<std::string> secrets;
-
-        void clear()
-        {
-            m_cleared = true;
-            interactive = false;
-            nugettimeout = "100";
-            archives_to_read.clear();
-            archives_to_write.clear();
-            url_templates_to_get.clear();
-            azblob_templates_to_put.clear();
-            gcs_read_prefixes.clear();
-            gcs_write_prefixes.clear();
-            aws_read_prefixes.clear();
-            aws_write_prefixes.clear();
-            sources_to_read.clear();
-            sources_to_write.clear();
-            configs_to_read.clear();
-            configs_to_write.clear();
-            secrets.clear();
-        }
-    };
-
     struct BinaryConfigParser : ConfigSegmentsParser
     {
-        BinaryConfigParser(StringView text, StringView origin, State* state)
+        BinaryConfigParser(StringView text, StringView origin, BinaryConfigParserState* state)
             : ConfigSegmentsParser(text, origin), state(state)
         {
         }
 
-        State* state;
+        BinaryConfigParserState* state;
 
         void parse()
         {
@@ -2102,28 +2086,8 @@ ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
                                  s.script};
 }
 
-ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_providers_from_configs(
-    View<std::string> args)
-{
-    std::string env_string = get_environment_variable("VCPKG_BINARY_SOURCES").value_or("");
-    if (Debug::g_debugging)
-    {
-        const auto& cachepath = default_cache_path();
-        if (cachepath.has_value())
-        {
-            Debug::print("Default binary cache path is: ", cachepath.value_or_exit(VCPKG_LINE_INFO), '\n');
-        }
-        else
-        {
-            Debug::print("No binary cache path. Reason: ", cachepath.error(), '\n');
-        }
-    }
-
-    return create_binary_providers_from_configs_pure(env_string, args);
-}
-
-ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_providers_from_configs_pure(
-    const std::string& env_string, View<std::string> args)
+ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_pure(const std::string& env_string,
+                                                                                    View<std::string> args)
 {
     {
         LockGuardPtr<Metrics> metrics(g_metrics);
@@ -2138,7 +2102,7 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
         }
     }
 
-    State s;
+    BinaryConfigParserState s;
 
     BinaryConfigParser default_parser("default,readwrite", "<defaults>", &s);
     default_parser.parse();
@@ -2169,22 +2133,50 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
         LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-clear", "defined");
     }
 
+    return s;
+}
+
+ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_providers_from_configs(
+    const VcpkgPaths& paths, View<std::string> args)
+{
+    std::string env_string = get_environment_variable("VCPKG_BINARY_SOURCES").value_or("");
+    if (Debug::g_debugging)
+    {
+        const auto& cachepath = default_cache_path();
+        if (cachepath.has_value())
+        {
+            Debug::print("Default binary cache path is: ", cachepath.value_or_exit(VCPKG_LINE_INFO), '\n');
+        }
+        else
+        {
+            Debug::print("No binary cache path. Reason: ", cachepath.error(), '\n');
+        }
+    }
+
+    auto sRawHolder = create_binary_providers_from_configs_pure(env_string, args);
+    if (!sRawHolder.has_value())
+    {
+        return sRawHolder.error();
+    }
+
+    auto& s = sRawHolder.value_or_exit(VCPKG_LINE_INFO);
     std::vector<std::unique_ptr<IBinaryProvider>> providers;
     if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
     {
-        providers.push_back(
-            std::make_unique<GcsBinaryProvider>(std::move(s.gcs_read_prefixes), std::move(s.gcs_write_prefixes)));
+        providers.push_back(std::make_unique<GcsBinaryProvider>(
+            paths, std::move(s.gcs_read_prefixes), std::move(s.gcs_write_prefixes)));
     }
 
     if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
     {
-        providers.push_back(
-            std::make_unique<AwsBinaryProvider>(std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes)));
+        providers.push_back(std::make_unique<AwsBinaryProvider>(
+            paths, std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes)));
     }
 
     if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.azblob_templates_to_put.empty())
     {
-        providers.push_back(std::make_unique<ArchivesBinaryProvider>(std::move(s.archives_to_read),
+        providers.push_back(std::make_unique<ArchivesBinaryProvider>(paths,
+                                                                     std::move(s.archives_to_read),
                                                                      std::move(s.archives_to_write),
                                                                      std::move(s.azblob_templates_to_put),
                                                                      std::move(s.secrets)));
@@ -2193,14 +2185,15 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     if (!s.url_templates_to_get.empty())
     {
         LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-url-get", "defined");
-        providers.push_back(std::make_unique<HttpGetBinaryProvider>(std::move(s.url_templates_to_get)));
+        providers.push_back(std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get)));
     }
 
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||
         !s.configs_to_write.empty())
     {
         LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-nuget", "defined");
-        providers.push_back(std::make_unique<NugetBinaryProvider>(std::move(s.sources_to_read),
+        providers.push_back(std::make_unique<NugetBinaryProvider>(paths,
+                                                                  std::move(s.sources_to_read),
                                                                   std::move(s.sources_to_write),
                                                                   std::move(s.configs_to_read),
                                                                   std::move(s.configs_to_write),

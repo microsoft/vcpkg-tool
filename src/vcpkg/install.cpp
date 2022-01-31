@@ -329,7 +329,7 @@ namespace vcpkg::Install
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
         {
             std::unique_ptr<BinaryControlFile> bcf;
-            auto restore = binary_cache.try_restore(paths, action);
+            auto restore = binary_cache.try_restore(action);
             if (restore == RestoreResult::restored)
             {
                 auto maybe_bcf = Paragraphs::try_load_cached_package(fs, paths.package_dir(action.spec), action.spec);
@@ -481,7 +481,7 @@ namespace vcpkg::Install
         }
 
         Build::compute_all_abis(paths, action_plan, var_provider, status_db);
-        binary_cache.prefetch(paths, action_plan.install_actions);
+        binary_cache.prefetch(action_plan.install_actions);
         for (auto&& action : action_plan.install_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
@@ -889,7 +889,7 @@ namespace vcpkg::Install
         BinaryCache binary_cache;
         if (!only_downloads)
         {
-            binary_cache.install_providers_for(args);
+            binary_cache.install_providers_for(args, paths);
         }
 
         auto& fs = paths.get_filesystem();

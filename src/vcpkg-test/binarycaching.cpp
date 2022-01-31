@@ -18,27 +18,34 @@ using namespace vcpkg;
 
 struct KnowNothingBinaryProvider : IBinaryProvider
 {
-    RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
+    RestoreResult try_restore(const Dependencies::InstallPlanAction& action) const override
     {
+        CHECK(action.has_package_abi());
         return RestoreResult::unavailable;
     }
 
-    virtual void push_success(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override { }
-    virtual void prefetch(const VcpkgPaths&,
-                          View<Dependencies::InstallPlanAction>,
-                          View<CacheStatus* const>) const override
+    virtual void push_success(const Dependencies::InstallPlanAction& action) const override
     {
+        CHECK(action.has_package_abi());
     }
-    virtual void precheck(const VcpkgPaths&,
-                          View<Dependencies::InstallPlanAction>,
+
+    virtual void prefetch(View<Dependencies::InstallPlanAction> actions,
                           View<CacheStatus* const> cache_status) const override
     {
+        REQUIRE(actions.size() == cache_status.size());
+        for (size_t idx = 0; idx < cache_status.size(); ++idx)
+        {
+            CHECK(actions[idx].has_package_abi() == (cache_status[idx] != nullptr));
+        }
+    }
+    virtual void precheck(View<Dependencies::InstallPlanAction> actions,
+                          View<CacheStatus* const> cache_status) const override
+    {
+        REQUIRE(actions.size() == cache_status.size());
         for (const auto c : cache_status)
         {
-            if (c)
-            {
-                c->mark_unavailable(this);
-            }
+            CHECK(c);
+            c->mark_unavailable(this);
         }
     }
 };
@@ -357,6 +364,39 @@ Dependencies:
 )";
         REQUIRE_EQUAL_TEXT(nuspec, expected);
     }
+}
+
+TEST_CASE ("Provider nullptr checks", "[BinaryCache]")
+{
+    // create a binary cache to test
+    BinaryCache uut;
+    std::vector<std::unique_ptr<IBinaryProvider>> providers;
+    providers.emplace_back(std::make_unique<KnowNothingBinaryProvider>());
+    uut.install_providers(std::move(providers));
+
+    // create an action plan with an action without a package ABI set
+    auto pghs = Paragraphs::parse_paragraphs(R"(
+Source: someheadpackage
+Version: 1.5
+Description: 
+)",
+                                             "<testdata>");
+    REQUIRE(pghs.has_value());
+    auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
+    REQUIRE(maybe_scf.has_value());
+    SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
+    std::vector<Dependencies::InstallPlanAction> install_plan;
+    install_plan.emplace_back(PackageSpec{"someheadpackage", Test::X64_WINDOWS},
+                              scfl,
+                              Dependencies::RequestType::USER_REQUESTED,
+                              Test::ARM_UWP,
+                              std::map<std::string, std::vector<FeatureSpec>>{});
+    Dependencies::InstallPlanAction& ipa_without_abi = install_plan.back();
+
+    // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider
+    uut.push_success(ipa_without_abi); // should have no effects
+    CHECK(uut.try_restore(ipa_without_abi) == RestoreResult::unavailable);
+    uut.prefetch(install_plan); // should have no effects
 }
 
 TEST_CASE ("XmlSerializer", "[XmlSerializer]")

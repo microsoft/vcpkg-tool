@@ -132,10 +132,22 @@ namespace vcpkg
         explicit constexpr operator bool() const noexcept { return !m_s.has_error(); }
         constexpr bool has_value() const noexcept { return !m_s.has_error(); }
 
+        const T&& value_or_exit(const LineInfo& line_info) const&&
+        {
+            exit_if_error(line_info);
+            return std::move(*this->m_t.get());
+        }
+
         T&& value_or_exit(const LineInfo& line_info) &&
         {
             exit_if_error(line_info);
             return std::move(*this->m_t.get());
+        }
+
+        T& value_or_exit(const LineInfo& line_info) &
+        {
+            exit_if_error(line_info);
+            return *this->m_t.get();
         }
 
         const T& value_or_exit(const LineInfo& line_info) const&
