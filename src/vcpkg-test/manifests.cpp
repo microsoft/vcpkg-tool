@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/paragraphs.h>
@@ -28,6 +29,7 @@ static Json::Object parse_json_object(StringView sv)
     }
     else
     {
+        vcpkg::print2("Error found while parsing JSON document:\n", sv, '\n');
         Checks::exit_with_message(VCPKG_LINE_INFO, json.error()->format());
     }
 }
@@ -50,9 +52,9 @@ static const FeatureFlagSettings feature_flags_without_versioning{false, false, 
 TEST_CASE ("manifest construct minimum", "[manifests]")
 {
     auto m_pgh = test_parse_manifest(R"json({
-        "name": "zlib",
-        "version-string": "1.2.8"
-    })json");
+    "name": "zlib",
+    "version-string": "1.2.8"
+})json");
 
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
