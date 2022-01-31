@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/json.h>
 
+#include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/expected.h>
@@ -71,7 +72,12 @@ namespace vcpkg
         std::vector<Dependency> dependencies;
         std::vector<DependencyOverride> overrides;
         std::vector<std::string> default_features;
-        std::string license; // SPDX license expression
+
+        // there are two distinct "empty" states here
+        // "user did not provide a license" -> nullopt
+        // "user provided license = null" -> {""}
+        Optional<std::string> license; // SPDX license expression
+
         Optional<std::string> builtin_baseline;
         Optional<Json::Object> vcpkg_configuration;
         // Currently contacts is only a Json::Object but it will eventually be unified with maintainers
@@ -127,8 +133,7 @@ namespace vcpkg
     Json::Object serialize_manifest(const SourceControlFile& scf);
     Json::Object serialize_debug_manifest(const SourceControlFile& scf);
 
-    ExpectedS<struct ManifestConfiguration> parse_manifest_configuration(StringView origin,
-                                                                         const Json::Object& manifest);
+    ExpectedS<ManifestConfiguration> parse_manifest_configuration(StringView origin, const Json::Object& manifest);
 
     /// <summary>
     /// Named pair of a SourceControlFile and the location of this file
@@ -146,4 +151,6 @@ namespace vcpkg
     {
         return print_error_message({&error_info_list, 1});
     }
+
+    std::string parse_spdx_license_expression(StringView sv, Parse::ParseMessages& messages);
 }

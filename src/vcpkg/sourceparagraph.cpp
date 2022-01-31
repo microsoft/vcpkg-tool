@@ -2,6 +2,7 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
@@ -15,6 +16,85 @@
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/versiondeserializers.h>
+
+namespace
+{
+    namespace msg = vcpkg::msg;
+    DECLARE_AND_REGISTER_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsUnicode,
+                                 (msg::value, msg::pretty_value),
+                                 "",
+                                 "SPDX license expression contains a unicode character (U+{value:04x} "
+                                 "'{pretty_value}'), but these expressions are ASCII-only.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsInvalidCharacter,
+                                 (msg::value),
+                                 "",
+                                 "SPDX license expression contains an invalid character (0x{value:02x} '{value}').");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus,
+                                 (),
+                                 "",
+                                 "SPDX license expression contains an extra '+' - these are only allowed directly "
+                                 "after a license identifier.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionDocumentRefUnsupported,
+                                 (),
+                                 "",
+                                 "The current implementation does not support DocumentRef- SPDX references.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundEof,
+                                 (),
+                                 "",
+                                 "Expected a license name, found the end of the string.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundEof,
+                                 (),
+                                 "",
+                                 "Expected an exception name, found the end of the string.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundParen,
+                                 (),
+                                 "",
+                                 "Expected a compound or the end of the string, found a parenthesis.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundParen,
+                                 (),
+                                 "",
+                                 "Expected a license name, found a parenthesis.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundParen,
+                                 (),
+                                 "",
+                                 "Expected an exception name, found a parenthesis.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionImbalancedParens,
+                                 (),
+                                 "",
+                                 "There was a close parenthesis without an opening parenthesis.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundCompound,
+                                 (msg::value),
+                                 "",
+                                 "Expected a license name, found the compound {value}.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundCompound,
+                                 (msg::value),
+                                 "",
+                                 "Expected an exception name, found the compound {value}.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWith,
+                                 (),
+                                 "",
+                                 "Expected either AND or OR, found WITH (WITH is only allowed after license names, not "
+                                 "parenthesized expressions).");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundOrWithFoundWord,
+                                 (msg::value),
+                                 "",
+                                 "Expected either AND, OR, or WITH, found a license or exception name: '{value}'.");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWord,
+                                 (msg::value),
+                                 "",
+                                 "Expected either AND or OR, found a license or exception name: '{value}'.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        LicenseExpressionUnknownLicense,
+        (msg::value),
+        "",
+        "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
+    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionUnknownException,
+                                 (msg::value),
+                                 "",
+                                 "Unknown license exception identifier '{value}'. Known values are listed at "
+                                 "https://spdx.org/licenses/exceptions-index.html");
+} // anonymous namespace
 
 namespace vcpkg
 {
@@ -708,143 +788,252 @@ namespace vcpkg
     };
     ContactsDeserializer ContactsDeserializer::instance;
 
-    static constexpr StringLiteral EXPRESSION_WORDS[] = {
-        "WITH",
-        "AND",
-        "OR",
+    static constexpr StringLiteral VALID_LICENSES[] = {
+#include "spdx-licenses.inc"
     };
-    static constexpr StringLiteral VALID_LICENSES[] =
-#include "spdx-licenses.inc"
-        ;
-    static constexpr StringLiteral VALID_EXCEPTIONS[] =
-#include "spdx-licenses.inc"
-        ;
+    static constexpr StringLiteral VALID_EXCEPTIONS[] = {
+#include "spdx-exceptions.inc"
+    };
 
-    // We "parse" this so that we can add actual license parsing at some point in the future
-    // without breaking anyone
+    // The "license" field; either:
+    // * a string, which must be an SPDX license expression.
+    //   EBNF located at: https://github.com/microsoft/vcpkg/blob/master/docs/maintainers/manifest-files.md#license
+    // * `null`, for when the license of the package cannot be described by an SPDX expression
+    struct SpdxLicenseExpressionParser : Parse::ParserBase
+    {
+        SpdxLicenseExpressionParser(StringView sv, StringView origin) : Parse::ParserBase(sv, origin) { }
+
+        static const StringLiteral* case_insensitive_find(View<StringLiteral> lst, StringView id)
+        {
+            return Util::find_if(lst,
+                                 [id](StringLiteral el) { return Strings::case_insensitive_ascii_equals(id, el); });
+        }
+        static constexpr bool is_idstring_element(char32_t ch) { return is_alphanumdash(ch) || ch == '.'; }
+
+        enum class Expecting
+        {
+            License,        // at the beginning, or after a compound (AND, OR)
+            Exception,      // after a WITH
+            CompoundOrWith, // after a license
+            Compound,       // after an exception (only one WITH is allowed), or after a close paren
+        };
+
+        void eat_idstring(std::string& result, Expecting& expecting)
+        {
+            auto token = match_zero_or_more(is_idstring_element);
+
+            if (Strings::starts_with(token, "DocumentRef-"))
+            {
+                add_error(msg::format(msgLicenseExpressionDocumentRefUnsupported));
+                if (cur() == ':')
+                {
+                    next();
+                }
+                return;
+            }
+            else if (token == "AND" || token == "OR" || token == "WITH")
+            {
+                if (expecting == Expecting::License)
+                {
+                    add_error(msg::format(msgLicenseExpressionExpectLicenseFoundCompound, msg::value = token));
+                }
+                if (expecting == Expecting::Exception)
+                {
+                    add_error(msg::format(msgLicenseExpressionExpectExceptionFoundCompound, msg::value = token));
+                }
+
+                if (token == "WITH")
+                {
+                    if (expecting == Expecting::Compound)
+                    {
+                        add_error(msg::format(msgLicenseExpressionExpectCompoundFoundWith));
+                    }
+                    expecting = Expecting::Exception;
+                }
+                else
+                {
+                    expecting = Expecting::License;
+                }
+
+                result.push_back(' ');
+                result.append(token.begin(), token.end());
+                result.push_back(' ');
+                return;
+            }
+
+            switch (expecting)
+            {
+                case Expecting::Compound:
+                    add_error(msg::format(msgLicenseExpressionExpectCompoundFoundWord, msg::value = token));
+                    break;
+                case Expecting::CompoundOrWith:
+                    add_error(msg::format(msgLicenseExpressionExpectCompoundOrWithFoundWord, msg::value = token));
+                    break;
+                case Expecting::License:
+                    if (Strings::starts_with(token, "LicenseRef-"))
+                    {
+                        result.append(token.begin(), token.end());
+                    }
+                    else
+                    {
+                        auto it = case_insensitive_find(VALID_LICENSES, token);
+                        if (it != std::end(VALID_LICENSES))
+                        {
+                            result.append(it->begin(), it->end());
+                        }
+                        else
+                        {
+                            add_warning(msg::format(msgLicenseExpressionUnknownLicense, msg::value = token));
+                            result.append(token.begin(), token.end());
+                        }
+
+                        if (cur() == '+')
+                        {
+                            next();
+                            result.push_back('+');
+                        }
+                    }
+                    expecting = Expecting::CompoundOrWith;
+                    break;
+                case Expecting::Exception:
+                    auto it = case_insensitive_find(VALID_EXCEPTIONS, token);
+                    if (it != std::end(VALID_EXCEPTIONS))
+                    {
+                        // case normalization
+                        result.append(it->begin(), it->end());
+                    }
+                    else
+                    {
+                        add_warning(msg::format(msgLicenseExpressionUnknownException, msg::value = token));
+                        result.append(token.begin(), token.end());
+                    }
+                    expecting = Expecting::Compound;
+                    break;
+            }
+        }
+
+        std::string parse()
+        {
+            if (cur() == Unicode::end_of_file)
+            {
+                add_error(msg::format(msgEmptyLicenseExpression));
+                return "";
+            }
+
+            Expecting expecting = Expecting::License;
+            std::string result;
+
+            size_t open_parens = 0;
+            while (!at_eof())
+            {
+                skip_whitespace();
+                switch (cur())
+                {
+                    case '(':
+                        if (expecting == Expecting::Compound || expecting == Expecting::CompoundOrWith)
+                        {
+                            add_error(msg::format(msgLicenseExpressionExpectCompoundFoundParen));
+                        }
+                        if (expecting == Expecting::Exception)
+                        {
+                            add_error(msg::format(msgLicenseExpressionExpectExceptionFoundParen));
+                        }
+                        result.push_back('(');
+                        expecting = Expecting::License;
+                        ++open_parens;
+                        next();
+                        break;
+                    case ')':
+                        if (expecting == Expecting::License)
+                        {
+                            add_error(msg::format(msgLicenseExpressionExpectLicenseFoundParen));
+                        }
+                        else if (expecting == Expecting::Exception)
+                        {
+                            add_error(msg::format(msgLicenseExpressionExpectExceptionFoundParen));
+                        }
+                        if (open_parens == 0)
+                        {
+                            add_error(msg::format(msgLicenseExpressionImbalancedParens));
+                        }
+                        result.push_back(')');
+                        expecting = Expecting::Compound;
+                        --open_parens;
+                        next();
+                        break;
+                    case '+':
+                        add_error(msg::format(msgLicenseExpressionContainsExtraPlus));
+                        next();
+                        break;
+                    default:
+                        if (cur() > 0x7F)
+                        {
+                            auto ch = cur();
+                            auto first = it().pointer_to_current();
+                            next();
+                            auto last = it().pointer_to_current();
+                            add_error(msg::format(msgLicenseExpressionContainsUnicode,
+                                                  msg::value = ch,
+                                                  msg::pretty_value = StringView{first, last}));
+                            break;
+                        }
+                        if (!is_idstring_element(cur()))
+                        {
+                            add_error(msg::format(msgLicenseExpressionContainsInvalidCharacter,
+                                                  msg::value = static_cast<char>(cur())));
+                            next();
+                            break;
+                        }
+                        eat_idstring(result, expecting);
+                        break;
+                }
+            }
+
+            if (expecting == Expecting::License)
+            {
+                add_error(msg::format(msgLicenseExpressionExpectLicenseFoundEof));
+            }
+            if (expecting == Expecting::Exception)
+            {
+                add_error(msg::format(msgLicenseExpressionExpectExceptionFoundEof));
+            }
+
+            return result;
+        }
+    };
+
+    std::string parse_spdx_license_expression(StringView sv, Parse::ParseMessages& messages)
+    {
+        auto parser = SpdxLicenseExpressionParser(sv, "<license string>");
+        auto result = parser.parse();
+        messages = parser.extract_messages();
+        return result;
+    }
+
     struct LicenseExpressionDeserializer : Json::IDeserializer<std::string>
     {
         virtual StringView type_name() const override { return "an SPDX license expression"; }
 
-        enum class Mode
+        virtual Optional<std::string> visit_null(Json::Reader&) override { return {std::string()}; }
+
+        // if `sv` is a valid SPDX license expression, returns sv,
+        // but with whitespace normalized
+        virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) override
         {
-            ExpectExpression,
-            ExpectContinue,
-            ExpectException,
-        };
+            auto parser = SpdxLicenseExpressionParser(sv, "<manifest>");
+            auto res = parser.parse();
 
-        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) override
-        {
-            Mode mode = Mode::ExpectExpression;
-            size_t open_parens = 0;
-            std::string current_word;
-
-            const auto check_current_word = [&current_word, &mode] {
-                if (current_word.empty())
-                {
-                    return true;
-                }
-
-                Span<const StringLiteral> valid_ids;
-                bool case_sensitive = false;
-                switch (mode)
-                {
-                    case Mode::ExpectExpression:
-                        valid_ids = VALID_LICENSES;
-                        mode = Mode::ExpectContinue;
-                        // a single + is allowed on the end of licenses
-                        if (current_word.back() == '+')
-                        {
-                            current_word.pop_back();
-                        }
-                        break;
-                    case Mode::ExpectContinue:
-                        valid_ids = EXPRESSION_WORDS;
-                        mode = Mode::ExpectExpression;
-                        case_sensitive = true;
-                        break;
-                    case Mode::ExpectException:
-                        valid_ids = VALID_EXCEPTIONS;
-                        mode = Mode::ExpectContinue;
-                        break;
-                }
-
-                const auto equal = [&](StringView sv) {
-                    if (case_sensitive)
-                    {
-                        return sv == current_word;
-                    }
-                    else
-                    {
-                        return Strings::case_insensitive_ascii_equals(sv, current_word);
-                    }
-                };
-
-                if (std::find_if(valid_ids.begin(), valid_ids.end(), equal) == valid_ids.end())
-                {
-                    return false;
-                }
-
-                if (current_word == "WITH")
-                {
-                    mode = Mode::ExpectException;
-                }
-
-                current_word.clear();
-                return true;
-            };
-
-            for (const auto& ch : sv)
+            for (const auto& warning : parser.messages().warnings)
             {
-                if (ch == ' ' || ch == '\t')
-                {
-                    if (!check_current_word())
-                    {
-                        return nullopt;
-                    }
-                }
-                else if (ch == '(')
-                {
-                    if (!check_current_word())
-                    {
-                        return nullopt;
-                    }
-                    if (mode != Mode::ExpectExpression)
-                    {
-                        return nullopt;
-                    }
-                    ++open_parens;
-                }
-                else if (ch == ')')
-                {
-                    if (!check_current_word())
-                    {
-                        return nullopt;
-                    }
-                    if (mode != Mode::ExpectContinue)
-                    {
-                        return nullopt;
-                    }
-                    if (open_parens == 0)
-                    {
-                        return nullopt;
-                    }
-                    --open_parens;
-                }
-                else
-                {
-                    current_word.push_back(ch);
-                }
+                msg::println(Color::warning, warning.format("<manifest>", Parse::MessageKind::Warning));
             }
-
-            if (!check_current_word())
+            if (auto err = parser.get_error())
             {
+                r.add_generic_error(type_name(), err->format());
                 return nullopt;
             }
-            else
-            {
-                return sv.to_string();
-            }
+
+            return res;
         }
 
         static LicenseExpressionDeserializer instance;
@@ -941,7 +1130,13 @@ namespace vcpkg
             r.optional_object_field(obj, DESCRIPTION, spgh->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, HOMEPAGE, spgh->homepage, url_deserializer);
             r.optional_object_field(obj, DOCUMENTATION, spgh->documentation, url_deserializer);
-            r.optional_object_field(obj, LICENSE, spgh->license, LicenseExpressionDeserializer::instance);
+
+            std::string license;
+            if (r.optional_object_field(obj, LICENSE, license, LicenseExpressionDeserializer::instance))
+            {
+                spgh->license = {std::move(license)};
+            }
+
             r.optional_object_field(obj, DEPENDENCIES, spgh->dependencies, DependencyArrayDeserializer::instance);
             static Json::ArrayDeserializer<DependencyOverrideDeserializer> overrides_deserializer{
                 "an array of overrides"};
@@ -1464,7 +1659,21 @@ namespace vcpkg
 
         serialize_optional_string(obj, ManifestDeserializer::HOMEPAGE, scf.core_paragraph->homepage);
         serialize_optional_string(obj, ManifestDeserializer::DOCUMENTATION, scf.core_paragraph->documentation);
-        serialize_optional_string(obj, ManifestDeserializer::LICENSE, scf.core_paragraph->license);
+        if (auto license = scf.core_paragraph->license.get())
+        {
+            if (license->empty())
+            {
+                obj.insert(ManifestDeserializer::LICENSE, Json::Value::null(nullptr));
+            }
+            else
+            {
+                obj.insert(ManifestDeserializer::LICENSE, Json::Value::string(*license));
+            }
+        }
+        else if (debug)
+        {
+            obj.insert(ManifestDeserializer::LICENSE, Json::Value::string(""));
+        }
         serialize_optional_string(
             obj, ManifestDeserializer::SUPPORTS, to_string(scf.core_paragraph->supports_expression));
         if (scf.core_paragraph->builtin_baseline.has_value())

@@ -236,8 +236,8 @@ TEST_CASE ("JSON track newlines", "[json]")
     REQUIRE(!res);
     REQUIRE(res.error()->format() ==
             R"(filename:2:1: error: Unexpected character; expected property name
-   on expression: ,
-                  ^
+    on expression: ,
+                   ^
 )");
 }
 
@@ -247,7 +247,7 @@ TEST_CASE ("JSON duplicated object keys", "[json]")
     REQUIRE(!res);
     REQUIRE(res.error()->format() ==
             R"(filename:1:13: error: Duplicated key "name" in an object
-   on expression: {"name": 1, "name": 2}
-                              ^
+    on expression: {"name": 1, "name": 2}
+                               ^
 )");
 }

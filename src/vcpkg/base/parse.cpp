@@ -32,7 +32,9 @@ namespace vcpkg::Parse
         as_message.location = SourceLoc{std::next(decoder, caret_col), decoder, row, column};
         as_message.message = msg::LocalizedString::from_string_unchecked(std::string(message));
 
-        return as_message.format(origin, MessageKind::Error).extract_data();
+        auto res = as_message.format(origin, MessageKind::Error).extract_data();
+        res.push_back('\n');
+        return res;
     }
 
     DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessage,
@@ -50,17 +52,22 @@ namespace vcpkg::Parse
                                                msg::column = location.column,
                                                msg::kind = kind_string,
                                                msg::value = message);
+        res.appendnl();
 
         auto line_end = Util::find_if(location.it, Parse::ParserBase::is_lineend);
         StringView line = StringView{
             location.start_of_line.pointer_to_current(),
             line_end.pointer_to_current(),
         };
-        auto expression_string = msg::format(msgFormattedParseMessageExpression, msg::value = line);
+        res.append(msg::format(msgFormattedParseMessageExpression, msg::value = line));
+        res.appendnl();
+
+        auto caret_point = StringView{location.start_of_line.pointer_to_current(), location.it.pointer_to_current()};
+        auto formatted_caret_point = msg::format(msgFormattedParseMessageExpression, msg::value = caret_point);
 
         std::string caret_string;
-        caret_string.reserve(expression_string.data().size());
-        for (char32_t ch : Unicode::Utf8Decoder(expression_string))
+        caret_string.reserve(formatted_caret_point.data().size());
+        for (char32_t ch : Unicode::Utf8Decoder(formatted_caret_point))
         {
             if (ch == '\t')
                 caret_string.push_back('\t');
@@ -71,10 +78,7 @@ namespace vcpkg::Parse
         }
         caret_string.push_back('^');
 
-        res.appendnl()
-            .append(expression_string)
-            .appendnl()
-            .append(msg::LocalizedString::from_string_unchecked(std::move(caret_string)));
+        res.append(msg::LocalizedString::from_string_unchecked(std::move(caret_string)));
 
         return res;
     }
@@ -112,6 +116,11 @@ namespace vcpkg::Parse
         }
 
         return cur();
+    }
+
+    void ParserBase::add_warning(msg::LocalizedString&& message, const SourceLoc& loc)
+    {
+        m_messages.warnings.push_back(ParseMessage{loc, std::move(message)});
     }
 
     void ParserBase::add_error(std::string message, const SourceLoc& loc)
