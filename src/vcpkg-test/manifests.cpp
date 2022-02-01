@@ -1045,11 +1045,34 @@ TEST_CASE ("license serialization", "[manifests][license]")
     CHECK(test_serialized_license("MIT") == "MIT");
     CHECK(test_serialized_license("mit") == "MIT");
     CHECK(test_serialized_license("MiT    AND (aPACHe-2.0 \tOR   \n gpl-2.0+)") == "MIT AND (Apache-2.0 OR GPL-2.0+)");
+    CHECK(test_serialized_license("uNkNoWnLiCeNsE") == "uNkNoWnLiCeNsE");
 }
 
 TEST_CASE ("license error messages", "[manifests][license]")
 {
     Parse::ParseMessages messages;
+    parse_spdx_license_expression("", messages);
+    REQUIRE(messages.error);
+    CHECK(messages.error->format() == R"(<license string>:1:1: error: SPDX license expression was empty.
+    on expression: 
+                   ^
+)");
+
+    parse_spdx_license_expression("MIT ()", messages);
+    REQUIRE(messages.error);
+    CHECK(messages.error->format() == R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
+    on expression: MIT ()
+                       ^
+)");
+
+    parse_spdx_license_expression("MIT +", messages);
+    REQUIRE(messages.error);
+    CHECK(messages.error->format() == R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
+    on expression: MIT +
+                       ^
+)");
+
+
     parse_spdx_license_expression("MIT AND", messages);
     REQUIRE(messages.error);
     CHECK(messages.error->format() == R"(<license string>:1:8: error: Expected a license name, found the end of the string.

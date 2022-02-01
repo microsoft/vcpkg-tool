@@ -33,7 +33,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus,
                                  (),
                                  "",
-                                 "SPDX license expression contains an extra '+' - these are only allowed directly "
+                                 "SPDX license expression contains an extra '+'. These are only allowed directly "
                                  "after a license identifier.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionDocumentRefUnsupported,
                                  (),
