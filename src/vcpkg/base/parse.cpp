@@ -37,21 +37,28 @@ namespace vcpkg::Parse
         return res;
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessage,
-                                 (msg::path, msg::row, msg::column, msg::kind, msg::value),
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageLocation, (msg::path, msg::row, msg::column), "{LOCKED}", "{path}:{row}:{column}: ");
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseError,
+                                 (msg::value),
                                  "",
-                                 "{path}:{row}:{column}: {kind}: {value}");
+                                 "error: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseWarning,
+                                 (msg::value),
+                                 "",
+                                 "warning: {value}");
     DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression, (msg::value), "", "    on expression: {value}");
 
     msg::LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
     {
-        auto kind_string = kind == MessageKind::Warning ? "warning" : "error";
-        msg::LocalizedString res = msg::format(msgFormattedParseMessage,
-                                               msg::path = origin,
-                                               msg::row = location.row,
-                                               msg::column = location.column,
-                                               msg::kind = kind_string,
-                                               msg::value = message);
+        msg::LocalizedString res = msg::format(msgFormattedParseMessageLocation, msg::path = origin, msg::row = location.row, msg::column = location.column);
+        if (kind == MessageKind::Warning)
+        {
+            res.append(msg::format(msgFormattedParseWarning, msg::value = message));
+        }
+        else
+        {
+            res.append(msg::format(msgFormattedParseError, msg::value = message));
+        }
         res.appendnl();
 
         auto line_end = Util::find_if(location.it, Parse::ParserBase::is_lineend);

@@ -998,6 +998,11 @@ static bool license_is_strict(StringView license)
     return messages.error == nullptr && messages.warnings.empty();
 }
 
+static std::string test_format_parse_warning(const Parse::ParseMessage& msg)
+{
+    return msg.format("<license string>", Parse::MessageKind::Warning).extract_data();
+}
+
 TEST_CASE ("simple license in manifest", "[manifests][license]")
 {
     CHECK(manifest_is_parseable(manifest_with_license(Json::Value::null(nullptr))));
@@ -1040,4 +1045,22 @@ TEST_CASE ("license serialization", "[manifests][license]")
     CHECK(test_serialized_license("MIT") == "MIT");
     CHECK(test_serialized_license("mit") == "MIT");
     CHECK(test_serialized_license("MiT    AND (aPACHe-2.0 \tOR   \n gpl-2.0+)") == "MIT AND (Apache-2.0 OR GPL-2.0+)");
+}
+
+TEST_CASE ("license error messages", "[manifests][license]")
+{
+    Parse::ParseMessages messages;
+    parse_spdx_license_expression("MIT AND", messages);
+    REQUIRE(messages.error);
+    CHECK(messages.error->format() == R"(<license string>:1:8: error: Expected a license name, found the end of the string.
+    on expression: MIT AND
+                         ^
+)");
+
+    parse_spdx_license_expression("MIT AND unknownlicense", messages);
+    CHECK(!messages.error);
+    REQUIRE(messages.warnings.size() == 1);
+    CHECK(test_format_parse_warning(messages.warnings[0]) == R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
+    on expression: MIT AND unknownlicense
+                           ^)");
 }

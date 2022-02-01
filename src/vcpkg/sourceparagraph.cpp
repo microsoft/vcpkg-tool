@@ -820,11 +820,12 @@ namespace vcpkg
 
         void eat_idstring(std::string& result, Expecting& expecting)
         {
+            auto loc = cur_loc();
             auto token = match_zero_or_more(is_idstring_element);
 
             if (Strings::starts_with(token, "DocumentRef-"))
             {
-                add_error(msg::format(msgLicenseExpressionDocumentRefUnsupported));
+                add_error(msg::format(msgLicenseExpressionDocumentRefUnsupported), loc);
                 if (cur() == ':')
                 {
                     next();
@@ -835,18 +836,18 @@ namespace vcpkg
             {
                 if (expecting == Expecting::License)
                 {
-                    add_error(msg::format(msgLicenseExpressionExpectLicenseFoundCompound, msg::value = token));
+                    add_error(msg::format(msgLicenseExpressionExpectLicenseFoundCompound, msg::value = token), loc);
                 }
                 if (expecting == Expecting::Exception)
                 {
-                    add_error(msg::format(msgLicenseExpressionExpectExceptionFoundCompound, msg::value = token));
+                    add_error(msg::format(msgLicenseExpressionExpectExceptionFoundCompound, msg::value = token), loc);
                 }
 
                 if (token == "WITH")
                 {
                     if (expecting == Expecting::Compound)
                     {
-                        add_error(msg::format(msgLicenseExpressionExpectCompoundFoundWith));
+                        add_error(msg::format(msgLicenseExpressionExpectCompoundFoundWith), loc);
                     }
                     expecting = Expecting::Exception;
                 }
@@ -864,10 +865,10 @@ namespace vcpkg
             switch (expecting)
             {
                 case Expecting::Compound:
-                    add_error(msg::format(msgLicenseExpressionExpectCompoundFoundWord, msg::value = token));
+                    add_error(msg::format(msgLicenseExpressionExpectCompoundFoundWord, msg::value = token), loc);
                     break;
                 case Expecting::CompoundOrWith:
-                    add_error(msg::format(msgLicenseExpressionExpectCompoundOrWithFoundWord, msg::value = token));
+                    add_error(msg::format(msgLicenseExpressionExpectCompoundOrWithFoundWord, msg::value = token), loc);
                     break;
                 case Expecting::License:
                     if (Strings::starts_with(token, "LicenseRef-"))
@@ -883,7 +884,7 @@ namespace vcpkg
                         }
                         else
                         {
-                            add_warning(msg::format(msgLicenseExpressionUnknownLicense, msg::value = token));
+                            add_warning(msg::format(msgLicenseExpressionUnknownLicense, msg::value = token), loc);
                             result.append(token.begin(), token.end());
                         }
 
@@ -904,7 +905,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        add_warning(msg::format(msgLicenseExpressionUnknownException, msg::value = token));
+                        add_warning(msg::format(msgLicenseExpressionUnknownException, msg::value = token), loc);
                         result.append(token.begin(), token.end());
                     }
                     expecting = Expecting::Compound;
@@ -1030,7 +1031,7 @@ namespace vcpkg
             if (auto err = parser.get_error())
             {
                 r.add_generic_error(type_name(), err->format());
-                return nullopt;
+                return std::string();
             }
 
             return res;

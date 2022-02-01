@@ -172,7 +172,6 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(output);
     DECLARE_MSG_ARG(row);
     DECLARE_MSG_ARG(column);
-    DECLARE_MSG_ARG(kind);
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of
