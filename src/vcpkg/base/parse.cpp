@@ -37,20 +37,20 @@ namespace vcpkg::Parse
         return res;
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageLocation, (msg::path, msg::row, msg::column), "{LOCKED}", "{path}:{row}:{column}: ");
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseError,
-                                 (msg::value),
-                                 "",
-                                 "error: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseWarning,
-                                 (msg::value),
-                                 "",
-                                 "warning: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageLocation,
+                                 (msg::path, msg::row, msg::column),
+                                 "{LOCKED}",
+                                 "{path}:{row}:{column}: ");
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseError, (msg::value), "", "error: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseWarning, (msg::value), "", "warning: {value}");
     DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression, (msg::value), "", "    on expression: {value}");
 
     msg::LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
     {
-        msg::LocalizedString res = msg::format(msgFormattedParseMessageLocation, msg::path = origin, msg::row = location.row, msg::column = location.column);
+        msg::LocalizedString res = msg::format(msgFormattedParseMessageLocation,
+                                               msg::path = origin,
+                                               msg::row = location.row,
+                                               msg::column = location.column);
         if (kind == MessageKind::Warning)
         {
             res.append(msg::format(msgFormattedParseWarning, msg::value = message));

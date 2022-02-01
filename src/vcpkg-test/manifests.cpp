@@ -1060,22 +1060,25 @@ TEST_CASE ("license error messages", "[manifests][license]")
 
     parse_spdx_license_expression("MIT ()", messages);
     REQUIRE(messages.error);
-    CHECK(messages.error->format() == R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
+    CHECK(messages.error->format() ==
+          R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
     on expression: MIT ()
                        ^
 )");
 
     parse_spdx_license_expression("MIT +", messages);
     REQUIRE(messages.error);
-    CHECK(messages.error->format() == R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
+    CHECK(
+        messages.error->format() ==
+        R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
     on expression: MIT +
                        ^
 )");
 
-
     parse_spdx_license_expression("MIT AND", messages);
     REQUIRE(messages.error);
-    CHECK(messages.error->format() == R"(<license string>:1:8: error: Expected a license name, found the end of the string.
+    CHECK(messages.error->format() ==
+          R"(<license string>:1:8: error: Expected a license name, found the end of the string.
     on expression: MIT AND
                          ^
 )");
@@ -1083,7 +1086,9 @@ TEST_CASE ("license error messages", "[manifests][license]")
     parse_spdx_license_expression("MIT AND unknownlicense", messages);
     CHECK(!messages.error);
     REQUIRE(messages.warnings.size() == 1);
-    CHECK(test_format_parse_warning(messages.warnings[0]) == R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
+    CHECK(
+        test_format_parse_warning(messages.warnings[0]) ==
+        R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
     on expression: MIT AND unknownlicense
                            ^)");
 }
