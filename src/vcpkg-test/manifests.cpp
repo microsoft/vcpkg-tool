@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/paragraphs.h>
@@ -28,20 +29,39 @@ static Json::Object parse_json_object(StringView sv)
     }
     else
     {
+        vcpkg::print2("Error found while parsing JSON document:\n", sv, '\n');
         Checks::exit_with_message(VCPKG_LINE_INFO, json.error()->format());
     }
 }
 
-static Parse::ParseExpected<SourceControlFile> test_parse_manifest(StringView sv, bool expect_fail = false)
+enum class PrintErrors : bool
 {
-    auto object = parse_json_object(sv);
-    auto res = SourceControlFile::parse_manifest_object("<test manifest>", object);
-    if (!res.has_value() && !expect_fail)
+    No,
+    Yes,
+};
+
+static Parse::ParseExpected<SourceControlFile> test_parse_manifest(const Json::Object& obj,
+                                                                   PrintErrors print = PrintErrors::Yes)
+{
+    auto res = SourceControlFile::parse_manifest_object("<test manifest>", obj);
+    if (!res.has_value() && print == PrintErrors::Yes)
     {
         print_error_message(res.error());
     }
-    REQUIRE(res.has_value() == !expect_fail);
     return res;
+}
+static Parse::ParseExpected<SourceControlFile> test_parse_manifest(StringView obj, PrintErrors print = PrintErrors::Yes)
+{
+    return test_parse_manifest(parse_json_object(obj), print);
+}
+
+static bool manifest_is_parseable(const Json::Object& obj)
+{
+    return test_parse_manifest(obj, PrintErrors::No).has_value();
+}
+static bool manifest_is_parseable(StringView obj)
+{
+    return test_parse_manifest(parse_json_object(obj), PrintErrors::No).has_value();
 }
 
 static const FeatureFlagSettings feature_flags_with_versioning{false, false, false, true};
@@ -113,57 +133,49 @@ TEST_CASE ("manifest versioning", "[manifests]")
         CHECK(pgh.core_paragraph->port_version == 0);
     }
 
-    test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version-string": "abcd",
         "version-semver": "1.2.3-rc3"
-    })json",
-                        true);
+    })json"));
 
-    test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version-string": "abcd#1"
-    })json",
-                        true);
-    test_parse_manifest(R"json({
+    })json"));
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version": "abcd#1"
-    })json",
-                        true);
-    test_parse_manifest(R"json({
+    })json"));
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version-date": "abcd#1"
-    })json",
-                        true);
-    test_parse_manifest(R"json({
+    })json"));
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version-semver": "abcd#1"
-    })json",
-                        true);
+    })json"));
 
     SECTION ("version syntax")
     {
-        test_parse_manifest(R"json({
+        REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version-semver": "2020-01-01"
-    })json",
-                            true);
-        test_parse_manifest(R"json({
+    })json"));
+        REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version-date": "1.1.1"
-    })json",
-                            true);
-        test_parse_manifest(R"json({
+    })json"));
+        REQUIRE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version": "1.2.3-rc3"
-    })json",
-                            false);
+    })json"));
     }
 }
 
 TEST_CASE ("manifest constraints hash", "[manifests]")
 {
-    auto p = unwrap(test_parse_manifest(R"json({
+    auto m_pgh = test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "dependencies": [
@@ -172,11 +184,13 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
             "version>=": "2018-09-01#1"
         }
     ]
-})json"));
+})json");
+    REQUIRE(m_pgh.has_value());
+    const auto& p = *m_pgh.get();
     REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
     REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 1);
 
-    test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "dependencies": [
@@ -185,10 +199,9 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
             "version>=": "2018-09-01#0"
         }
     ]
-})json",
-                        true);
+})json"));
 
-    test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "dependencies": [
@@ -197,10 +210,9 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
             "version>=": "2018-09-01#-1"
         }
     ]
-})json",
-                        true);
+})json"));
 
-    test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "dependencies": [
@@ -210,13 +222,12 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
             "port-version": 1
         }
     ]
-})json",
-                        true);
+})json"));
 }
 
 TEST_CASE ("manifest overrides embedded port version", "[manifests]")
 {
-    test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -226,9 +237,8 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
             "port-version": 1
         }
     ]
-})json",
-                        true);
-    test_parse_manifest(R"json({
+})json"));
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -238,9 +248,8 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
             "port-version": 1
         }
     ]
-})json",
-                        true);
-    test_parse_manifest(R"json({
+})json"));
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -250,9 +259,8 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
             "port-version": 1
         }
     ]
-})json",
-                        true);
-    test_parse_manifest(R"json({
+})json"));
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -262,10 +270,9 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
             "port-version": 1
         }
     ]
-})json",
-                        true);
+})json"));
 
-    CHECK(unwrap(test_parse_manifest(R"json({
+    auto parsed = test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -274,11 +281,11 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
             "version-string": "abcd#1"
         }
     ]
-})json",
-                                     false))
-              ->core_paragraph->overrides.at(0)
-              .port_version == 1);
-    CHECK(unwrap(test_parse_manifest(R"json({
+})json");
+    REQUIRE(parsed.has_value());
+    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+
+    parsed = test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -287,11 +294,11 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
             "version-date": "2018-01-01#1"
         }
     ]
-})json",
-                                     false))
-              ->core_paragraph->overrides.at(0)
-              .port_version == 1);
-    CHECK(unwrap(test_parse_manifest(R"json({
+})json");
+    REQUIRE(parsed.has_value());
+    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+
+    parsed = test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -300,11 +307,11 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
             "version": "1.2#1"
         }
     ]
-})json",
-                                     false))
-              ->core_paragraph->overrides.at(0)
-              .port_version == 1);
-    CHECK(unwrap(test_parse_manifest(R"json({
+})json");
+    REQUIRE(parsed.has_value());
+    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+
+    parsed = test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -313,10 +320,9 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
             "version-semver": "1.2.0#1"
         }
     ]
-})json",
-                                     false))
-              ->core_paragraph->overrides.at(0)
-              .port_version == 1);
+})json");
+    REQUIRE(parsed.has_value());
+    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
 }
 
 TEST_CASE ("manifest constraints", "[manifests]")
@@ -355,7 +361,7 @@ TEST_CASE ("manifest constraints", "[manifests]")
             DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
 
-    test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version-string": "abcd",
         "dependencies": [
@@ -364,8 +370,7 @@ TEST_CASE ("manifest constraints", "[manifests]")
                 "port-version": 5
             }
         ]
-    })json",
-                        true);
+    })json"));
 }
 
 TEST_CASE ("manifest builtin-baseline", "[manifests]")
@@ -555,7 +560,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     }
 
-    test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version-string": "abcd",
         "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
@@ -565,10 +570,9 @@ TEST_CASE ("manifest overrides", "[manifests]")
             "version-semver": "1.2.3-rc3",
             "version-string": "1.2.3-rc3"
         }
-    ]})json",
-                        true);
+    ]})json"));
 
-    test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "zlib",
         "version-string": "abcd",
         "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
@@ -577,8 +581,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
             "name": "abc",
             "port-version": 5
         }
-    ]})json",
-                        true);
+    ]})json"));
 
     std::string raw = R"json({
     "name": "zlib",
@@ -946,22 +949,146 @@ TEST_CASE ("SourceParagraph manifest supports", "[manifests]")
 
 TEST_CASE ("SourceParagraph manifest empty supports", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "a",
         "version-string": "1.0",
         "supports": ""
-    })json",
-                                     true);
-    REQUIRE_FALSE(m_pgh.has_value());
+    })json"));
 }
 
 TEST_CASE ("SourceParagraph manifest non-string supports", "[manifests]")
 {
-    auto m_pgh = test_parse_manifest(R"json({
+    REQUIRE_FALSE(manifest_is_parseable(R"json({
         "name": "a",
         "version-string": "1.0",
         "supports": true
-    })json",
-                                     true);
-    REQUIRE_FALSE(m_pgh.has_value());
+    })json"));
+}
+
+static Json::Object manifest_with_license(Json::Value&& license)
+{
+    Json::Object res;
+    res.insert("name", Json::Value::string("foo"));
+    res.insert("version", Json::Value::string("0"));
+    res.insert("license", std::move(license));
+    return res;
+}
+static Json::Object manifest_with_license(StringView license)
+{
+    return manifest_with_license(Json::Value::string(license.to_string()));
+}
+static std::string test_serialized_license(StringView license)
+{
+    auto m_pgh = test_parse_manifest(manifest_with_license(license));
+    REQUIRE(m_pgh.has_value());
+
+    return serialize_manifest(**m_pgh.get())["license"].string().to_string();
+}
+
+static bool license_is_parseable(StringView license)
+{
+    Parse::ParseMessages messages;
+    parse_spdx_license_expression(license, messages);
+    return messages.error == nullptr;
+}
+static bool license_is_strict(StringView license)
+{
+    Parse::ParseMessages messages;
+    parse_spdx_license_expression(license, messages);
+    return messages.error == nullptr && messages.warnings.empty();
+}
+
+static std::string test_format_parse_warning(const Parse::ParseMessage& msg)
+{
+    return msg.format("<license string>", Parse::MessageKind::Warning).extract_data();
+}
+
+TEST_CASE ("simple license in manifest", "[manifests][license]")
+{
+    CHECK(manifest_is_parseable(manifest_with_license(Json::Value::null(nullptr))));
+    CHECK_FALSE(manifest_is_parseable(manifest_with_license("")));
+    CHECK(manifest_is_parseable(manifest_with_license("MIT")));
+}
+
+TEST_CASE ("valid and invalid licenses", "[manifests][license]")
+{
+    CHECK(license_is_strict("mIt"));
+    CHECK(license_is_strict("Apache-2.0"));
+    CHECK(license_is_strict("GPL-2.0+"));
+    CHECK_FALSE(license_is_parseable("GPL-2.0++"));
+    CHECK(license_is_strict("LicenseRef-blah"));
+    CHECK_FALSE(license_is_strict("unknownlicense"));
+    CHECK(license_is_parseable("unknownlicense"));
+}
+
+TEST_CASE ("licenses with compounds", "[manifests][license]")
+{
+    CHECK(license_is_strict("GPL-3.0+ WITH GCC-exception-3.1"));
+    CHECK(license_is_strict("Apache-2.0 WITH LLVM-exception"));
+    CHECK_FALSE(license_is_parseable("(Apache-2.0) WITH LLVM-exception"));
+    CHECK(license_is_strict("(Apache-2.0 OR MIT) AND GPL-3.0+ WITH GCC-exception-3.1"));
+    CHECK_FALSE(license_is_parseable("Apache-2.0 WITH"));
+    CHECK_FALSE(license_is_parseable("GPL-3.0+ AND"));
+    CHECK_FALSE(license_is_parseable("MIT and Apache-2.0"));
+    CHECK_FALSE(license_is_parseable("GPL-3.0 WITH GCC-exception+"));
+    CHECK_FALSE(license_is_parseable("(GPL-3.0 WITH GCC-exception)+"));
+}
+
+TEST_CASE ("license serialization", "[manifests][license]")
+{
+    auto m_pgh = test_parse_manifest(manifest_with_license(Json::Value::null(nullptr)));
+    REQUIRE(m_pgh);
+    auto manifest = serialize_manifest(**m_pgh.get());
+    REQUIRE(manifest.contains("license"));
+    CHECK(manifest["license"].is_null());
+
+    CHECK(test_serialized_license("MIT") == "MIT");
+    CHECK(test_serialized_license("mit") == "MIT");
+    CHECK(test_serialized_license("MiT    AND (aPACHe-2.0 \tOR   \n gpl-2.0+)") == "MIT AND (Apache-2.0 OR GPL-2.0+)");
+    CHECK(test_serialized_license("uNkNoWnLiCeNsE") == "uNkNoWnLiCeNsE");
+}
+
+TEST_CASE ("license error messages", "[manifests][license]")
+{
+    Parse::ParseMessages messages;
+    parse_spdx_license_expression("", messages);
+    REQUIRE(messages.error);
+    CHECK(messages.error->format() == R"(<license string>:1:1: error: SPDX license expression was empty.
+    on expression: 
+                   ^
+)");
+
+    parse_spdx_license_expression("MIT ()", messages);
+    REQUIRE(messages.error);
+    CHECK(messages.error->format() ==
+          R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
+    on expression: MIT ()
+                       ^
+)");
+
+    parse_spdx_license_expression("MIT +", messages);
+    REQUIRE(messages.error);
+    CHECK(
+        messages.error->format() ==
+        R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
+    on expression: MIT +
+                       ^
+)");
+
+    parse_spdx_license_expression("MIT AND", messages);
+    REQUIRE(messages.error);
+    CHECK(messages.error->format() ==
+          R"(<license string>:1:8: error: Expected a license name, found the end of the string.
+    on expression: MIT AND
+                         ^
+)");
+
+    parse_spdx_license_expression("MIT AND unknownlicense", messages);
+    CHECK(!messages.error);
+    REQUIRE(messages.warnings.size() == 1);
+    CHECK(
+        test_format_parse_warning(messages.warnings[0]) ==
+        R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
+    on expression: MIT AND unknownlicense
+                           ^)");
 }
