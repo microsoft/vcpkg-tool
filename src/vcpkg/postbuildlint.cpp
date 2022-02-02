@@ -496,6 +496,7 @@ namespace vcpkg::PostBuildLint
             case MachineType::ARM:
             case MachineType::ARMNT: return "arm";
             case MachineType::ARM64: return "arm64";
+            case MachineType::ARM64EC: return "arm64ec";
             default: return "Machine Type Code = " + std::to_string(static_cast<uint16_t>(machine_type));
         }
     }
