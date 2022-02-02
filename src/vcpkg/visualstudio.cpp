@@ -306,13 +306,6 @@ namespace vcpkg::VisualStudio
                                         toolset_version_full.to_string(),
                                         supported_architectures};
 
-                        const auto english_language_pack = dumpbin_dir / "1033";
-                        if (!fs.exists(english_language_pack, IgnoreErrors{}))
-                        {
-                            excluded_toolsets.push_back(std::move(toolset));
-                            continue;
-                        }
-
                         found_toolsets.push_back(std::move(toolset));
                         if (v140_is_available)
                         {
@@ -367,13 +360,6 @@ namespace vcpkg::VisualStudio
                                                  major_version == "14" ? V_140 : V_120,
                                                  major_version,
                                                  supported_architectures};
-
-                        const auto english_language_pack = vs_dumpbin_dir / "1033";
-                        if (!fs.exists(english_language_pack, IgnoreErrors{}))
-                        {
-                            excluded_toolsets.push_back(toolset);
-                            break;
-                        }
 
                         found_toolsets.push_back(toolset);
                     }
