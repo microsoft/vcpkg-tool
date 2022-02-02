@@ -1,3 +1,4 @@
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 
@@ -180,5 +181,65 @@ namespace vcpkg
         fs.remove_all(to_path, VCPKG_LINE_INFO);
         Path to_path_partial = extract_archive_to_temp_subdirectory(paths, archive, to_path);
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
+    }
+
+    int compress_directory_to_zip(const VcpkgPaths& paths, const Path& source, const Path& destination)
+    {
+        auto& fs = paths.get_filesystem();
+        fs.remove(destination, VCPKG_LINE_INFO);
+#if defined(_WIN32)
+        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
+
+        return cmd_execute_and_capture_output(
+                   Command{seven_zip_exe}.string_arg("a").path_arg(destination).path_arg(source / "*"),
+                   get_clean_environment())
+            .exit_code;
+
+#else
+        return cmd_execute_clean(Command{"zip"}
+                                     .string_arg("--quiet")
+                                     .string_arg("-y")
+                                     .string_arg("-r")
+                                     .path_arg(destination)
+                                     .string_arg("*")
+                                     .string_arg("--exclude")
+                                     .string_arg("\\*.DS_Store"),
+                                 InWorkingDirectory{source});
+#endif
+    }
+
+    Command decompress_zip_archive_cmd(const VcpkgPaths& paths, const Path& dst, const Path& archive_path)
+    {
+        Command cmd;
+#if defined(_WIN32)
+        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
+        cmd.path_arg(seven_zip_exe)
+            .string_arg("x")
+            .path_arg(archive_path)
+            .string_arg("-o" + dst.native())
+            .string_arg("-y");
+#else
+        (void)paths;
+        cmd.string_arg("unzip").string_arg("-qq").path_arg(archive_path).string_arg("-d" + dst.native());
+#endif
+        return cmd;
+    }
+
+    std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs)
+    {
+        auto results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+#ifdef __APPLE__
+        int i = 0;
+        for (auto& result : results)
+        {
+            if (result.exit_code == 127 && result.output.empty())
+            {
+                Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
+                result = cmd_execute_and_capture_output(jobs[i], get_clean_environment());
+            }
+            ++i;
+        }
+#endif
+        return results;
     }
 }

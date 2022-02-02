@@ -9,6 +9,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/xmlserializer.h>
 
+#include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binarycaching.private.h>
 #include <vcpkg/build.h>
@@ -183,63 +184,6 @@ namespace
         Checks::check_exit(VCPKG_LINE_INFO, created_last, "unable to clear path: %s", dir);
     }
 
-    static Command decompress_archive_cmd(const VcpkgPaths& paths, const Path& dst, const Path& archive_path)
-    {
-        Command cmd;
-#if defined(_WIN32)
-        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
-        cmd.path_arg(seven_zip_exe)
-            .string_arg("x")
-            .path_arg(archive_path)
-            .string_arg("-o" + dst.native())
-            .string_arg("-y");
-#else
-        (void)paths;
-        cmd.string_arg("unzip").string_arg("-qq").path_arg(archive_path).string_arg("-d" + dst.native());
-#endif
-        return cmd;
-    }
-
-    static std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs)
-    {
-        auto results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
-#ifdef __APPLE__
-        int i = 0;
-        for (auto& result : results)
-        {
-            if (result.exit_code == 127 && result.output.empty())
-            {
-                Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
-                result = cmd_execute_and_capture_output(jobs[i], get_clean_environment());
-            }
-            ++i;
-        }
-#endif
-        return results;
-    }
-
-    // Compress the source directory into the destination file.
-    static void compress_directory(const VcpkgPaths& paths, const Path& source, const Path& destination)
-    {
-        auto& fs = paths.get_filesystem();
-        fs.remove(destination, VCPKG_LINE_INFO);
-#if defined(_WIN32)
-        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
-
-        cmd_execute_and_capture_output(
-            Command{seven_zip_exe}.string_arg("a").path_arg(destination).path_arg(source / "*"),
-            get_clean_environment());
-#else
-        cmd_execute_clean(Command{"zip"}
-                              .string_arg("--quiet")
-                              .string_arg("-y")
-                              .string_arg("-r")
-                              .path_arg(destination)
-                              .string_arg("*"),
-                          InWorkingDirectory{source});
-#endif
-    }
-
     static Path make_temp_archive_path(const Path& buildtrees, const PackageSpec& spec)
     {
         return buildtrees / spec.name() / (spec.triplet().to_string() + ".zip");
@@ -322,7 +266,7 @@ namespace
                 {
                     auto pkg_path = paths.package_dir(spec);
                     clean_prepare_dir(fs, pkg_path);
-                    jobs.push_back(decompress_archive_cmd(paths, pkg_path, archive_path));
+                    jobs.push_back(decompress_zip_archive_cmd(paths, pkg_path, archive_path));
                     action_idxs.push_back(i);
                     archive_paths.push_back(std::move(archive_path));
                 }
@@ -384,7 +328,14 @@ namespace
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
+            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            if (code != 0)
+            {
+                vcpkg::print2(
+                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                return;
+            }
+
             size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
@@ -529,7 +480,7 @@ namespace
                     if (codes[i] == 200)
                     {
                         action_idxs.push_back(i);
-                        jobs.push_back(decompress_archive_cmd(
+                        jobs.push_back(decompress_zip_archive_cmd(
                             paths, paths.package_dir(actions[url_indices[i]].spec), url_paths[i].second));
                     }
                 }
@@ -1066,7 +1017,7 @@ namespace
                     auto&& action = actions[url_indices[idx]];
                     auto&& url_path = url_paths[idx];
                     if (!gsutil_download_file(url_path.first, url_path.second)) continue;
-                    jobs.push_back(decompress_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
+                    jobs.push_back(decompress_zip_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
                     idxs.push_back(idx);
                 }
 
@@ -1106,8 +1057,13 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
-
+            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            if (code != 0)
+            {
+                vcpkg::print2(
+                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                return;
+            }
             size_t upload_count = 0;
             for (const auto& prefix : m_write_prefixes)
             {
@@ -1249,7 +1205,7 @@ namespace
                     auto&& action = actions[url_indices[idx]];
                     auto&& url_path = url_paths[idx];
                     if (!awscli_download_file(paths, url_path.first, url_path.second)) continue;
-                    jobs.push_back(decompress_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
+                    jobs.push_back(decompress_zip_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
                     idxs.push_back(idx);
                 }
 
@@ -1287,7 +1243,13 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            compress_directory(paths, paths.package_dir(spec), tmp_archive_path);
+            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            if (code != 0)
+            {
+                vcpkg::print2(
+                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                return;
+            }
 
             size_t upload_count = 0;
             for (const auto& prefix : m_write_prefixes)

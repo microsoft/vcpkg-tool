@@ -5,4 +5,5 @@ namespace vcpkg
     struct CMakeVariable;
     struct Command;
     struct CommandLess;
+    struct ExitCodeAndOutput;
 }
