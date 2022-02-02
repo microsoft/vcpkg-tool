@@ -203,7 +203,7 @@ namespace vcpkg
                                      .path_arg(destination)
                                      .string_arg("*")
                                      .string_arg("--exclude")
-                                     .string_arg("\\*.DS_Store"),
+                                     .string_arg(".DS_Store"),
                                  InWorkingDirectory{source});
 #endif
     }
