@@ -19,12 +19,6 @@
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(
-        VSExcludedByLanguagePack,
-        (),
-        "",
-        "The following VS instances were excluded because the English language pack is unavailable:");
-
     DECLARE_AND_REGISTER_MESSAGE(VSExaminedPaths,
                                  (),
                                  "",
@@ -215,7 +209,6 @@ namespace vcpkg::VisualStudio
         // Note: this will contain a mix of vcvarsall.bat locations and dumpbin.exe locations.
         std::vector<Path>& paths_examined = ret.paths_examined;
         std::vector<Toolset>& found_toolsets = ret.toolsets;
-        std::vector<Toolset>& excluded_toolsets = ret.excluded_toolsets;
 
         const SortedVector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(fs),
                                                         VisualStudioInstance::preferred_first_comparator};
@@ -375,16 +368,6 @@ namespace vcpkg
     msg::LocalizedString ToolsetsInformation::get_localized_debug_info() const
     {
         msg::LocalizedString ret;
-        if (!excluded_toolsets.empty())
-        {
-            ret.append(msg::format(msgVSExcludedByLanguagePack));
-            ret.appendnl();
-            for (const Toolset& toolset : excluded_toolsets)
-            {
-                ret.append(msg::LocalizedString::from_string_unchecked(
-                    Strings::concat("    ", toolset.visual_studio_root_path, '\n')));
-            }
-        }
 
         if (toolsets.empty())
         {
