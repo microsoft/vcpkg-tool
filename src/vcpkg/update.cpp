@@ -65,7 +65,7 @@ namespace vcpkg::Update
         if (paths.manifest_mode_enabled())
         {
             msg::println(Color::error, msgUpdateCommandNoManifestMode);
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, msgUpdateCommandDidYouMean);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUpdateCommandDidYouMean);
         }
 
         (void)args.parse_arguments(COMMAND_STRUCTURE);

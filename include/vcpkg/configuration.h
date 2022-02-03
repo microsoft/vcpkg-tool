@@ -42,6 +42,25 @@ namespace vcpkg
         static View<StringView> known_fields();
     };
 
+    enum class ConfigurationLocation
+    {
+        None,
+        VcpkgConfigurationFile,
+        ManifestFile,
+    };
+
+    struct ConfigurationAndLocation
+    {
+        Configuration config;
+        Path directory;
+        ConfigurationLocation location = ConfigurationLocation::None;
+
+        std::unique_ptr<RegistrySet> instantiate_registry_set(const VcpkgPaths& paths) const
+        {
+            return config.instantiate_registry_set(paths, directory);
+        }
+    };
+
     struct ManifestConfiguration
     {
         Optional<std::string> builtin_baseline;

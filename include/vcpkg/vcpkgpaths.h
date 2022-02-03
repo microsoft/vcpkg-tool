@@ -58,6 +58,12 @@ namespace vcpkg
     struct PackageSpec;
     struct Triplet;
 
+    struct ManifestAndLocation
+    {
+        Json::Object manifest;
+        Path path;
+    };
+
     struct VcpkgPaths
     {
         struct TripletFile
@@ -147,8 +153,8 @@ namespace vcpkg
                                                                            const Path& relative_path_to_file) const;
         ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 
-        Optional<const Json::Object&> get_manifest() const;
-        Optional<const Path&> get_manifest_path() const;
+        Optional<const ManifestAndLocation&> get_manifest_and_location() const;
+        const ConfigurationAndLocation& get_configuration_and_location() const;
         const RegistrySet& get_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo
@@ -159,7 +165,7 @@ namespace vcpkg
         const Environment& get_action_env(const Build::AbiInfo& abi_info) const;
         const std::string& get_triplet_info(const Build::AbiInfo& abi_info) const;
         const Build::CompilerInfo& get_compiler_info(const Build::AbiInfo& abi_info) const;
-        bool manifest_mode_enabled() const { return get_manifest().has_value(); }
+        bool manifest_mode_enabled() const { return get_manifest_and_location().has_value(); }
 
         const FeatureFlagSettings& get_feature_flags() const;
         void track_feature_flag_metrics() const;

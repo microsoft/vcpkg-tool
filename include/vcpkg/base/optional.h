@@ -107,6 +107,17 @@ namespace vcpkg
             const T& value() const { return this->m_t; }
             T& value() { return this->m_t; }
 
+            const T* get() const&
+            {
+                return m_is_present ? &m_t : nullptr;
+            }
+            T* get() &
+            {
+                return m_is_present ? &m_t : nullptr;
+            }
+            const T* get() const&& = delete;
+            T* get() && = delete;
+
             void destroy()
             {
                 m_is_present = false;
@@ -180,6 +191,17 @@ namespace vcpkg
             const T& value() const { return this->m_t; }
             T& value() { return this->m_t; }
 
+            const T* get() const&
+            {
+                return m_is_present ? &m_t : nullptr;
+            }
+            T* get() &
+            {
+                return m_is_present ? &m_t : nullptr;
+            }
+            const T* get() const&& = delete;
+            T* get() && = delete;
+
             template<class... Args>
             T& emplace(Args&&... args)
             {
@@ -228,6 +250,11 @@ namespace vcpkg
                 return *m_t;
             }
 
+            T* get() const
+            {
+                return m_t;
+            }
+
         private:
             T* m_t;
         };
@@ -246,6 +273,11 @@ namespace vcpkg
 
             const T& value() const { return *this->m_t; }
 
+            const T* get() const
+            {
+                return m_t;
+            }
+
             const T& emplace(const T& t)
             {
                 m_t = &t;
@@ -260,6 +292,10 @@ namespace vcpkg
     template<class T>
     struct Optional
     {
+    private:
+        details::OptionalStorage<T> m_base;
+
+    public:
         constexpr Optional() noexcept { }
 
         // Constructors are intentionally implicit
@@ -320,12 +356,23 @@ namespace vcpkg
             return this->m_base.has_value() ? std::move(this->m_base.value()) : static_cast<T&&>(default_value);
         }
 
-        typename std::add_pointer<const T>::type get() const
+        // this allows us to error out when `.get()` would return a pointer to a temporary
+        decltype(auto) get() const&
         {
-            return this->m_base.has_value() ? &this->m_base.value() : nullptr;
+            return this->m_base.get();
         }
-
-        typename std::add_pointer<T>::type get() { return this->m_base.has_value() ? &this->m_base.value() : nullptr; }
+        decltype(auto) get() &
+        {
+            return this->m_base.get();
+        }
+        decltype(auto) get() const&&
+        {
+            return std::move(this->m_base).get();
+        }
+        decltype(auto) get() &&
+        {
+            return std::move(this->m_base).get();
+        }
 
         template<class F>
         using map_t = decltype(std::declval<F&>()(std::declval<const T&>()));
@@ -396,9 +443,6 @@ namespace vcpkg
             return !rhs.m_base.has_value();
         }
         friend bool operator!=(const Optional& lhs, const Optional& rhs) noexcept { return !(lhs == rhs); }
-
-    private:
-        details::OptionalStorage<T> m_base;
     };
 
     template<class U>
