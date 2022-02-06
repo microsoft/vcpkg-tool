@@ -11,7 +11,6 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
-#include <regex>
 
 namespace vcpkg
 {
