@@ -319,8 +319,8 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
 
             // There are two expected output formats to handle: "cmake3 version x.x.x" and "cmake version x.x.x"
             auto simplifiedOutput = Strings::replace_all(rc.output, "cmake3", "cmake");
-            return { Strings::find_exactly_one_enclosed(simplifiedOutput, "cmake version ", "\n").to_string(),
-                    expected_left_tag };
+            return {Strings::find_exactly_one_enclosed(simplifiedOutput, "cmake version ", "\n").to_string(),
+                    expected_left_tag};
         }
     };
 
