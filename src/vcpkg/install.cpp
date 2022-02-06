@@ -49,6 +49,7 @@ namespace vcpkg::Install
                            fs.exists(source_dir, IgnoreErrors{}),
                            Strings::concat("Source directory ", source_dir, "does not exist"));
         auto files = fs.get_files_recursive(source_dir, VCPKG_LINE_INFO);
+        Util::erase_remove_if(files, [](Path& path) { return path.filename() == ".DS_Store"; });
         install_files_and_write_listfile(fs, source_dir, files, destination_dir);
     }
     void install_files_and_write_listfile(Filesystem& fs,
@@ -177,7 +178,8 @@ namespace vcpkg::Install
 
     static SortedVector<std::string> build_list_of_package_files(const Filesystem& fs, const Path& package_dir)
     {
-        const std::vector<Path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
+        std::vector<Path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
+        Util::erase_remove_if(package_file_paths, [](Path& path) { return path.filename() == ".DS_Store"; });
         const size_t package_remove_char_count = package_dir.native().size() + 1; // +1 for the slash
         auto package_files = Util::fmap(package_file_paths, [package_remove_char_count](const Path& target) {
             return std::string(target.generic_u8string(), package_remove_char_count);

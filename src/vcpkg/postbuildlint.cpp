@@ -959,7 +959,7 @@ namespace vcpkg::PostBuildLint
         std::vector<Path> misplaced_files = fs.get_regular_files_non_recursive(dir, IgnoreErrors{});
         Util::erase_remove_if(misplaced_files, [](const Path& target) {
             const auto filename = target.filename();
-            return filename == "CONTROL" || filename == "BUILD_INFO";
+            return filename == "CONTROL" || filename == "BUILD_INFO" || filename == ".DS_Store";
         });
 
         if (!misplaced_files.empty())
