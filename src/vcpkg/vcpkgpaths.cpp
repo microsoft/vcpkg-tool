@@ -731,11 +731,10 @@ namespace vcpkg
             {
                 for (auto&& path : fs.get_regular_files_non_recursive(triplets_dir, VCPKG_LINE_INFO))
                 {
-                    if (path.filename() == ".DS_Store")
+                    if (Strings::case_insensitive_ascii_equals(path.extension(), ".cmake"))
                     {
-                        continue;
+                        output.emplace_back(TripletFile(path.stem(), triplets_dir));
                     }
-                    output.emplace_back(TripletFile(path.stem(), triplets_dir));
                 }
             }
 
