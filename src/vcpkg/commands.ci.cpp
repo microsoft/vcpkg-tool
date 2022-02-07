@@ -7,6 +7,7 @@
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
+#include <vcpkg/base/view.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/build.h>
@@ -24,6 +25,8 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+
+#include <iostream>
 
 using namespace vcpkg;
 
@@ -74,6 +77,41 @@ namespace
     private:
         Path base_path;
     };
+
+    enum class CiBaselineValue
+    {
+        Skip,
+        Fail
+    };
+
+    template<typename F>
+    void parse_ci_baseline(View<std::string> lines, F&& callback)
+    {
+        for (auto&& line : lines)
+        {
+            if (line.empty() || line[0] == '#') continue;
+            auto colon_sign = line.find(':');
+            Checks::check_exit(VCPKG_LINE_INFO, colon_sign != std::string::npos, "Line '%s' must contain a ':'", line);
+            auto equal_sign = line.find('=', colon_sign + 1);
+            Checks::check_exit(VCPKG_LINE_INFO, equal_sign != std::string::npos, "Line '%s' must contain a '='", line);
+            auto port = Strings::trim(StringView(line.c_str(), colon_sign));
+            auto triplet = Strings::trim(StringView(line.c_str() + colon_sign + 1, equal_sign - colon_sign - 1));
+            auto baseline_value =
+                Strings::trim(StringView(line.c_str() + equal_sign + 1, line.size() - equal_sign - 1));
+            if (baseline_value == "fail")
+            {
+                callback(port, triplet, CiBaselineValue::Fail);
+            }
+            else if (baseline_value == "skip")
+            {
+                callback(port, triplet, CiBaselineValue::Skip);
+            }
+            else
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown value '%s'", baseline_value);
+            }
+        }
+    }
 }
 
 namespace vcpkg::Commands::CI
@@ -93,15 +131,17 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_HOST_EXCLUDE = "host-exclude";
     static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
+    static constexpr StringLiteral OPTION_CI_BASELINE = "ci-baseline";
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
     static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
-    static constexpr std::array<CommandSetting, 7> CI_SETTINGS = {
+    static constexpr std::array<CommandSetting, 8> CI_SETTINGS = {
         {{OPTION_EXCLUDE, "Comma separated list of ports to skip"},
          {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
          {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
+         {OPTION_CI_BASELINE, "Path to the ci.baseline.txt file. Used to skip ports and detect regressions."},
          {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
          {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
          {OPTION_PARENT_HASHES,
@@ -483,10 +523,38 @@ namespace vcpkg::Commands::CI
         const auto& settings = options.settings;
 
         BinaryCache binary_cache{args, paths};
-        Triplet target_triplet = Triplet::from_canonical_name(std::string(args.command_arguments[0]));
+        Triplet target_triplet = Triplet::from_canonical_name(args.command_arguments[0]);
+
+        auto exclusions = parse_exclusions(settings, OPTION_EXCLUDE);
+        auto host_exclusions = parse_exclusions(settings, OPTION_HOST_EXCLUDE);
+        auto baseline_iter = settings.find(OPTION_CI_BASELINE);
+        std::set<PackageSpec> expected_failures;
+        if (baseline_iter != settings.end())
+        {
+            parse_ci_baseline(paths.get_filesystem().read_lines(baseline_iter->second, VCPKG_LINE_INFO),
+                              [&,
+                               target_triplet_string = args.command_arguments[0],
+                               host_triplet_string = host_triplet.canonical_name()](
+                                  StringView port, StringView triplet, CiBaselineValue value) {
+                                  if (triplet == target_triplet_string)
+                                  {
+                                      if (value == CiBaselineValue::Skip)
+                                          expected_failures.emplace(port.to_string(), target_triplet);
+                                      else
+                                          exclusions.insert(port.to_string());
+                                  }
+                                  else if (triplet == host_triplet_string)
+                                  {
+                                      if (value == CiBaselineValue::Skip)
+                                          expected_failures.emplace(port.to_string(), host_triplet);
+                                      else
+                                          host_exclusions.insert(port.to_string());
+                                  }
+                              });
+        }
         ExclusionPredicate is_excluded{
-            parse_exclusions(settings, OPTION_EXCLUDE),
-            parse_exclusions(settings, OPTION_HOST_EXCLUDE),
+            exclusions,
+            host_exclusions,
             target_triplet,
             host_triplet,
         };
@@ -677,6 +745,28 @@ namespace vcpkg::Commands::CI
             print2("\nTriplet: ", result.triplet, "\n");
             print2("Total elapsed time: ", GlobalState::timer.to_string(), "\n");
             result.summary.print();
+
+            if (baseline_iter != settings.end())
+            {
+                print2("\nREGRESSIONS:\n");
+                for (auto&& port_result : result.summary.results)
+                {
+                    switch (port_result.build_result.code)
+                    {
+                        case Build::BuildResult::BUILD_FAILED:
+                        case Build::BuildResult::POST_BUILD_CHECKS_FAILED:
+                        case Build::BuildResult::FILE_CONFLICTS:
+                            if (expected_failures.find(port_result.spec) == expected_failures.end())
+                            {
+                                std::cerr << "    REGRESSION: " << port_result.spec.to_string() << " failed with "
+                                          << Build::to_string(port_result.build_result.code) << ". If expected, add "
+                                          << port_result.spec.to_string() << "=fail to " << baseline_iter->second
+                                          << std::endl;
+                            }
+                        default: break;
+                    }
+                }
+            }
         }
 
         auto it_xunit = settings.find(OPTION_XUNIT);
