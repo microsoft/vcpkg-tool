@@ -316,15 +316,10 @@ namespace vcpkg::Build
         "       * Microsoft.VisualStudio.Component.VC.140 (for Visual Studio 2015)\n"
         "       * MSVC v141/v142/v143 - VS 2017/2019/2022 C++ x64/x86 build tools (for Visual Studio 2017 or later)\n"
         "   MSBuild\n"
-        "One of the following Windows SDKs:\n"
-        "   * 8.1\n"
-        "   * 10.0.18362\n"
-        "   * 10.0.19041\n"
-        "   * 10.0.20348\n"
-        "   * 11.0.22000\n"
+        "Windows SDK 8.1 or greater\n"
         "ARM/ARM64:\n"
-        "   MSVC v141/v142/v143 - VS 2019 C++ ARM build tools\n"
-        "   MSVC v141/v142/v143 - VS 2019 C++ ARM64 build tools\n"
+        "   MSVC v141/v142/v143 - VS 2017/2019/2022 C++ ARM build tools\n"
+        "   MSVC v141/v142/v143 - VS 2017/2019/2022 C++ ARM64 build tools\n"
         "UWP:\n"
         "   Visual Studio Build tools for UWP\n");
 
