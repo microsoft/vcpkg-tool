@@ -454,13 +454,19 @@ namespace vcpkg::VisualStudio
     static std::vector<ToolVersion> get_windows_sdk_versions()
     {
         std::vector<ToolVersion> toolVersions;
-        
 
         for (auto current_sdk : WINDOWS_SDKS)
         {
-            const auto sdk_ver = vcpkg::get_registry_string(HKEY_LOCAL_MACHINE,
-                                       R"(SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\)" + current_sdk,
-                                       "ProductVersion");
+            auto sdk_ver =
+                vcpkg::get_registry_string(HKEY_LOCAL_MACHINE,
+                                           R"(SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\)" + current_sdk,
+                                           "ProductVersion");
+
+            if (sdk_ver.has_value())
+                sdk_ver = vcpkg::get_registry_string(HKEY_CURRENT_USER,
+                                                     R"(SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\)" +
+                                                         current_sdk,
+                                                     "ProductVersion");
 
             if (sdk_ver.has_value()) toolVersions.emplace_back(*sdk_ver.get());
         }
