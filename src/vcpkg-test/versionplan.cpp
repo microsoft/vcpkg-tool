@@ -25,6 +25,9 @@ TEST_CASE ("parse depends", "[dependencies]")
 
 TEST_CASE ("filter depends", "[dependencies]")
 {
+    const std::vector<std::string> defaults{"core", "default"};
+    const std::vector<std::string> core{"core"};
+
     const std::unordered_map<std::string, std::string> x64_win_cmake_vars{{"VCPKG_TARGET_ARCHITECTURE", "x64"},
                                                                           {"VCPKG_CMAKE_SYSTEM_NAME", ""}};
 
@@ -34,15 +37,26 @@ TEST_CASE ("filter depends", "[dependencies]")
     auto deps_ = parse_dependencies_list("liba (!uwp), libb, libc (uwp)");
     REQUIRE(deps_);
     auto& deps = *deps_.get();
-    auto v = filter_dependencies(deps, Test::X64_WINDOWS, Test::X86_WINDOWS, x64_win_cmake_vars);
-    REQUIRE(v.size() == 2);
-    REQUIRE(v.at(0).package_spec.name() == "liba");
-    REQUIRE(v.at(1).package_spec.name() == "libb");
+    SECTION ("x64-windows")
+    {
+        auto v =
+            filter_dependencies(deps, Test::X64_WINDOWS, Test::X86_WINDOWS, x64_win_cmake_vars, ImplicitDefault::YES);
+        REQUIRE(v.size() == 2);
+        REQUIRE(v.at(0).package_spec.name() == "liba");
+        REQUIRE(v.at(0).features == defaults);
+        REQUIRE(v.at(1).package_spec.name() == "libb");
+        REQUIRE(v.at(1).features == defaults);
+    }
 
-    auto v2 = filter_dependencies(deps, Test::ARM_UWP, Test::X86_WINDOWS, arm_uwp_cmake_vars);
-    REQUIRE(v.size() == 2);
-    REQUIRE(v2.at(0).package_spec.name() == "libb");
-    REQUIRE(v2.at(1).package_spec.name() == "libc");
+    SECTION ("arm-uwp")
+    {
+        auto v2 = filter_dependencies(deps, Test::ARM_UWP, Test::X86_WINDOWS, arm_uwp_cmake_vars, ImplicitDefault::NO);
+        REQUIRE(v2.size() == 2);
+        REQUIRE(v2.at(0).package_spec.name() == "libb");
+        REQUIRE(v2.at(0).features == core);
+        REQUIRE(v2.at(1).package_spec.name() == "libc");
+        REQUIRE(v2.at(1).features == core);
+    }
 }
 
 TEST_CASE ("parse feature depends", "[dependencies]")
@@ -70,94 +84,21 @@ TEST_CASE ("qualified dependency", "[dependencies]")
 {
     using namespace Test;
     PackageSpecMap spec_map;
-    auto spec_a = FullPackageSpec{spec_map.emplace("a", "b, b[b1] (linux)"), {}};
-    auto spec_b = FullPackageSpec{spec_map.emplace("b", "", {{"b1", ""}}), {}};
+    spec_map.emplace("a", "b, b[b1] (linux)");
+    spec_map.emplace("b", "", {{"b1", ""}});
 
     PortFileProvider::MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
+    var_provider.dep_info_vars[{"a", Triplet::from_canonical_name("x64-linux")}].emplace("VCPKG_CMAKE_SYSTEM_NAME",
+                                                                                         "Linux");
 
-    auto plan = vcpkg::Dependencies::create_feature_install_plan(map_port, var_provider, {&spec_a, 1}, {});
+    auto plan =
+        vcpkg::Dependencies::create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a"), {});
     REQUIRE(plan.install_actions.size() == 2);
     REQUIRE(plan.install_actions.at(0).feature_list == std::vector<std::string>{"core"});
 
-    FullPackageSpec linspec_a{{"a", Triplet::from_canonical_name("x64-linux")}, {}};
-    var_provider.dep_info_vars[linspec_a.package_spec].emplace("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
-    auto plan2 = vcpkg::Dependencies::create_feature_install_plan(map_port, var_provider, {&linspec_a, 1}, {});
+    auto plan2 = vcpkg::Dependencies::create_feature_install_plan(
+        map_port, var_provider, Test::parse_test_fspecs("a:x64-linux"), {});
     REQUIRE(plan2.install_actions.size() == 2);
     REQUIRE(plan2.install_actions.at(0).feature_list == std::vector<std::string>{"b1", "core"});
-}
-
-TEST_CASE ("resolve_deps_as_top_level", "[dependencies]")
-{
-    using namespace Test;
-    PackageSpecMap spec_map;
-    FullPackageSpec spec_a{spec_map.emplace("a", "b, b[b1] (linux)"), {}};
-    FullPackageSpec spec_b{spec_map.emplace("b", "", {{"b1", ""}}), {}};
-    FullPackageSpec spec_c{spec_map.emplace("c", "b", {{"c1", "b[b1]"}, {"c2", "c[c1], a"}}, {"c1"}), {"core"}};
-    FullPackageSpec spec_d{spec_map.emplace("d", "c[core]"), {}};
-    FullPackageSpec spec_e{spec_map.emplace("e", "c[core]"), {}};
-    spec_map.map.at("e").source_control_file->core_paragraph->dependencies[0].host = true;
-
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
-    MockCMakeVarProvider var_provider;
-    Triplet t_linux = Triplet::from_canonical_name("x64-linux");
-    var_provider.dep_info_vars[{"a", t_linux}].emplace("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
-    {
-        auto deps = vcpkg::Dependencies::resolve_deps_as_top_level(
-            *spec_map.map.at("a").source_control_file, Test::X86_WINDOWS, Test::ARM_UWP, {}, var_provider);
-        REQUIRE(deps.size() == 1);
-        REQUIRE(deps.at(0) == spec_b);
-    }
-    {
-        auto deps = vcpkg::Dependencies::resolve_deps_as_top_level(
-            *spec_map.map.at("a").source_control_file, t_linux, Test::ARM_UWP, {}, var_provider);
-        REQUIRE(deps.size() == 1);
-        REQUIRE(deps.at(0) == FullPackageSpec({"b", t_linux}, {"b1"}));
-    }
-    {
-        // without defaults
-        auto deps = vcpkg::Dependencies::resolve_deps_as_top_level(
-            *spec_map.map.at("c").source_control_file, Test::X86_WINDOWS, Test::ARM_UWP, {}, var_provider);
-        REQUIRE(deps.size() == 1);
-        REQUIRE(deps.at(0) == spec_b);
-    }
-    FullPackageSpec spec_b_with_b1{spec_b.package_spec, {"b1"}};
-    {
-        // with defaults of c (c1)
-        auto deps = vcpkg::Dependencies::resolve_deps_as_top_level(
-            *spec_map.map.at("c").source_control_file, Test::X86_WINDOWS, Test::ARM_UWP, {"default"}, var_provider);
-        REQUIRE(deps.size() == 1);
-        REQUIRE(deps.at(0) == spec_b_with_b1);
-    }
-    {
-        // with c1
-        auto deps = vcpkg::Dependencies::resolve_deps_as_top_level(
-            *spec_map.map.at("c").source_control_file, Test::X86_WINDOWS, Test::ARM_UWP, {"c1"}, var_provider);
-        REQUIRE(deps.size() == 1);
-        REQUIRE(deps.at(0) == spec_b_with_b1);
-    }
-    {
-        // with c2 implying c1
-        auto deps = vcpkg::Dependencies::resolve_deps_as_top_level(
-            *spec_map.map.at("c").source_control_file, Test::X86_WINDOWS, Test::ARM_UWP, {"c2"}, var_provider);
-        REQUIRE(deps.size() == 2);
-        REQUIRE(deps.at(0) == spec_a);
-        REQUIRE(deps.at(1) == spec_b_with_b1);
-    }
-    {
-        // d -> c[core]
-        auto deps = vcpkg::Dependencies::resolve_deps_as_top_level(
-            *spec_map.map.at("d").source_control_file, Test::X86_WINDOWS, Test::ARM_UWP, {}, var_provider);
-        REQUIRE(deps.size() == 1);
-        REQUIRE(deps.at(0) == spec_c);
-    }
-    SECTION ("host dep")
-    {
-        // e -> c[core]:$host
-        auto deps = vcpkg::Dependencies::resolve_deps_as_top_level(
-            *spec_map.map.at("e").source_control_file, Test::X86_WINDOWS, Test::ARM_UWP, {}, var_provider);
-        REQUIRE(deps.size() == 1);
-        REQUIRE(deps.at(0).package_spec.name() == "c");
-        REQUIRE(deps.at(0).package_spec.triplet() == Test::ARM_UWP);
-    }
 }

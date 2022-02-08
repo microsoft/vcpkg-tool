@@ -107,7 +107,7 @@ namespace vcpkg::Build
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         auto action_plan = Dependencies::create_feature_install_plan(
-            provider, var_provider, std::vector<FullPackageSpec>{full_spec}, status_db, {host_triplet});
+            provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
@@ -183,11 +183,9 @@ namespace vcpkg::Build
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         std::string first_arg = args.command_arguments[0];
 
-        BinaryCache binary_cache{args};
+        BinaryCache binary_cache{args, paths};
         const FullPackageSpec spec = Input::check_and_get_full_package_spec(
-            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text);
-
-        Input::check_triplet(spec.package_spec.triplet(), paths);
+            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
         PathsPortFileProvider provider(paths, args.overlay_ports);
         const auto port_name = spec.package_spec.name();
@@ -1096,6 +1094,7 @@ namespace vcpkg::Build
         // just mark the port as no-hash
         const int max_port_file_count = 100;
 
+        std::string portfile_cmake_contents;
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
         size_t port_file_count = 0;
         for (auto& port_file : fs.get_regular_files_recursive(port_dir, VCPKG_LINE_INFO))
@@ -1103,7 +1102,10 @@ namespace vcpkg::Build
             abi_tag_entries.emplace_back(
                 port_file.filename(),
                 vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha256));
-
+            if (port_file.extension() == ".cmake")
+            {
+                portfile_cmake_contents += fs.read_contents(port_file, VCPKG_LINE_INFO);
+            }
             ++port_file_count;
             if (port_file_count > max_port_file_count)
             {
@@ -1119,10 +1121,9 @@ namespace vcpkg::Build
 #endif
 
         auto& helpers = paths.get_cmake_script_hashes();
-        auto portfile_contents = fs.read_contents(port_dir / "portfile.cmake", VCPKG_LINE_INFO);
         for (auto&& helper : helpers)
         {
-            if (Strings::case_insensitive_ascii_contains(portfile_contents, helper.first))
+            if (Strings::case_insensitive_ascii_contains(portfile_cmake_contents, helper.first))
             {
                 abi_tag_entries.emplace_back(helper.first, helper.second);
             }
@@ -1130,8 +1131,21 @@ namespace vcpkg::Build
 
         abi_tag_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back("post_build_checks", "2");
-        std::vector<std::string> sorted_feature_list = action.feature_list;
-        Util::sort(sorted_feature_list);
+        InternalFeatureSet sorted_feature_list = action.feature_list;
+        // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
+        // a package ABI, so the "default" should not have made it here.
+        static constexpr auto default_literal = StringLiteral{"default"};
+        const bool has_no_pseudo_features = std::none_of(
+            sorted_feature_list.begin(), sorted_feature_list.end(), [](StringView s) { return s == default_literal; });
+        Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
+        Util::sort_unique_erase(sorted_feature_list);
+
+        // Check that the "core" feature is present. After resolution into InternalFeatureSet "core" meaning "not
+        // default" should have already been handled so "core" should be here.
+        Checks::check_exit(
+            VCPKG_LINE_INFO,
+            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), StringLiteral{"core"}));
+
         abi_tag_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
 
         Util::sort(abi_tag_entries);
@@ -1308,7 +1322,7 @@ namespace vcpkg::Build
 
         if (result.code == BuildResult::SUCCEEDED)
         {
-            binary_cache.push_success(paths, action);
+            binary_cache.push_success(action);
         }
 
         return result;
@@ -1357,7 +1371,7 @@ namespace vcpkg::Build
         std::string package = action.displayname();
         if (auto scfl = action.source_control_file_and_location.get())
         {
-            Strings::append(package, " -> ", scfl->to_versiont());
+            Strings::append(package, " -> ", scfl->to_version());
         }
         return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`.\n"
                                "Then check for known issues at:\n"

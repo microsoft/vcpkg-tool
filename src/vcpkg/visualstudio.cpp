@@ -101,17 +101,7 @@ namespace vcpkg::VisualStudio
     static constexpr CStringView COMPONENT_ARM64_VCTOOLS = "Microsoft.VisualStudio.Component.VC.Tools.arm64";
     static constexpr CStringView COMPONENT_UWP = "Microsoft.VisualStudio.ComponentGroup.UWP.VC";
 
-    struct WINDOWS_SDK
-    {
-        CStringView sdk_component_name;
-        CStringView sdl_version_string;
-    };
-
-    static constexpr WINDOWS_SDK WINDOWS_SDKS[] = {{"Windows81SDK", "8.1"},
-                                                   {"Windows10SDK.18362", "18362"},
-                                                   {"Windows10SDK.19041", "19041"},
-                                                   {"Windows10SDK.20348", "20348"},
-                                                   {"Windows11SDK.22000", "22000"}};
+    static constexpr CStringView WINDOWS_SDKS[] = {"v8.1", "v10.0"};
 
     enum Installed_Component
     {
@@ -461,35 +451,18 @@ namespace vcpkg::VisualStudio
         return instances;
     }
 
-    static std::vector<ToolVersion> get_windows_sdk_versions(const Filesystem& fs)
+    static std::vector<ToolVersion> get_windows_sdk_versions()
     {
         std::vector<ToolVersion> toolVersions;
+        
 
-        const auto& program_files_32_bit = get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO);
-
-        // Instances from vswhere
-        const Path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
-        if (fs.exists(vswhere_exe, IgnoreErrors{}))
+        for (auto current_sdk : WINDOWS_SDKS)
         {
-            for (auto current_sdk_ver : WINDOWS_SDKS)
-            {
-                const auto winsdk_output = cmd_execute_and_capture_output(
-                    Command(vswhere_exe)
-                        .string_arg("-latest")
-                        .string_arg("-products")
-                        .string_arg("*")
-                        .string_arg("-requires")
-                        .string_arg("Microsoft.VisualStudio.Component." + current_sdk_ver.sdk_component_name)
-                        .string_arg("-property")
-                        .string_arg("installationVersion"));
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   winsdk_output.exit_code == 0,
-                                   "Running vswhere.exe failed with message:\n%s",
-                                   winsdk_output.output);
+            const auto sdk_ver = vcpkg::get_registry_string(HKEY_LOCAL_MACHINE,
+                                       R"(SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\)" + current_sdk,
+                                       "ProductVersion");
 
-                if (!winsdk_output.output.empty())
-                    toolVersions.emplace_back(current_sdk_ver.sdl_version_string.c_str());
-            }
+            if (sdk_ver.has_value()) toolVersions.emplace_back(*sdk_ver.get());
         }
 
         return toolVersions;
@@ -690,7 +663,7 @@ namespace vcpkg::VisualStudio
             }
         }
 
-        winsdk_versions = get_windows_sdk_versions(fs);
+        winsdk_versions = get_windows_sdk_versions();
 
         return ret;
     }

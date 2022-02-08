@@ -1,7 +1,9 @@
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
+#include <algorithm>
 #include <utility>
 
 using namespace vcpkg;
@@ -25,28 +27,67 @@ namespace vcpkg::Parse
 
     std::string ParseError::format() const
     {
-        auto caret_spacing = std::string(18, ' ');
         auto decoder = Unicode::Utf8Decoder(line.data(), line.data() + line.size());
-        for (int i = 0; i < caret_col; ++i, ++decoder)
-        {
-            const char32_t cp = *decoder;
-            // this may eventually want to check for full-width characters and grapheme clusters as well
-            caret_spacing.push_back(cp == '\t' ? '\t' : ' ');
-        }
+        ParseMessage as_message;
+        as_message.location = SourceLoc{std::next(decoder, caret_col), decoder, row, column};
+        as_message.message = msg::LocalizedString::from_string_unchecked(std::string(message));
 
-        return Strings::concat(origin,
-                               ":",
-                               row,
-                               ":",
-                               column,
-                               ": error: ",
-                               message,
-                               "\n"
-                               "   on expression: ", // 18 columns
-                               line,
-                               "\n",
-                               caret_spacing,
-                               "^\n");
+        auto res = as_message.format(origin, MessageKind::Error).extract_data();
+        res.push_back('\n');
+        return res;
+    }
+
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageLocation,
+                                 (msg::path, msg::row, msg::column),
+                                 "{LOCKED}",
+                                 "{path}:{row}:{column}: ");
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseError, (msg::value), "", "error: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseWarning, (msg::value), "", "warning: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression, (msg::value), "", "    on expression: {value}");
+
+    msg::LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
+    {
+        msg::LocalizedString res = msg::format(msgFormattedParseMessageLocation,
+                                               msg::path = origin,
+                                               msg::row = location.row,
+                                               msg::column = location.column);
+        if (kind == MessageKind::Warning)
+        {
+            res.append(msg::format(msgFormattedParseWarning, msg::value = message));
+        }
+        else
+        {
+            res.append(msg::format(msgFormattedParseError, msg::value = message));
+        }
+        res.appendnl();
+
+        auto line_end = Util::find_if(location.it, Parse::ParserBase::is_lineend);
+        StringView line = StringView{
+            location.start_of_line.pointer_to_current(),
+            line_end.pointer_to_current(),
+        };
+        res.append(msg::format(msgFormattedParseMessageExpression, msg::value = line));
+        res.appendnl();
+
+        auto caret_point = StringView{location.start_of_line.pointer_to_current(), location.it.pointer_to_current()};
+        auto formatted_caret_point = msg::format(msgFormattedParseMessageExpression, msg::value = caret_point);
+
+        std::string caret_string;
+        caret_string.reserve(formatted_caret_point.data().size());
+        for (char32_t ch : Unicode::Utf8Decoder(formatted_caret_point))
+        {
+            if (ch == '\t')
+                caret_string.push_back('\t');
+            else if (Unicode::is_double_width_code_point(ch))
+                caret_string.append("  ");
+            else
+                caret_string.push_back(' ');
+        }
+        caret_string.push_back('^');
+
+        res.append(msg::LocalizedString::from_string_unchecked(std::move(caret_string)));
+
+        return res;
     }
 
     const std::string& ParseError::get_message() const { return this->message; }
@@ -84,10 +125,15 @@ namespace vcpkg::Parse
         return cur();
     }
 
+    void ParserBase::add_warning(msg::LocalizedString&& message, const SourceLoc& loc)
+    {
+        m_messages.warnings.push_back(ParseMessage{loc, std::move(message)});
+    }
+
     void ParserBase::add_error(std::string message, const SourceLoc& loc)
     {
         // avoid cascading errors by only saving the first
-        if (!m_err)
+        if (!m_messages.error)
         {
             // find end of line
             auto line_end = loc.it;
@@ -95,7 +141,7 @@ namespace vcpkg::Parse
             {
                 ++line_end;
             }
-            m_err = std::make_unique<ParseError>(
+            m_messages.error = std::make_unique<ParseError>(
                 m_origin.to_string(),
                 loc.row,
                 loc.column,
