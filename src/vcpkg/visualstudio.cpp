@@ -462,7 +462,7 @@ namespace vcpkg::VisualStudio
                                            R"(SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\)" + current_sdk,
                                            "ProductVersion");
 
-            if (sdk_ver.has_value())
+            if (!sdk_ver.has_value())
                 sdk_ver = vcpkg::get_registry_string(HKEY_CURRENT_USER,
                                                      R"(SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\)" +
                                                          current_sdk,
