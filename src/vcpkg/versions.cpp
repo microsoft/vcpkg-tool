@@ -45,6 +45,8 @@ namespace vcpkg
         return Strings::format("%s -> %s", left.to_string(), right.to_string());
     }
 
+    std::string VersionSpec::to_string() const { return Strings::concat(port_name, '@', version); }
+
     namespace
     {
         Optional<uint64_t> as_numeric(StringView str)

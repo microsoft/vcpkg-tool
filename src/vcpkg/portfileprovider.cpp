@@ -172,18 +172,19 @@ namespace vcpkg::PortFileProvider
                         auto maybe_control_file = Paragraphs::try_load_port(m_fs, *path);
                         if (auto scf = maybe_control_file.get())
                         {
-                            if (scf->get()->core_paragraph->name == version_spec.port_name)
+                            auto scf_vspec = scf->get()->to_version_spec();
+                            if (scf_vspec == version_spec)
                             {
                                 return std::unique_ptr<SourceControlFileAndLocation>(
                                     new SourceControlFileAndLocation{std::move(*scf), std::move(*path)});
                             }
                             else
                             {
-                                return Strings::format("Error: Failed to load port from %s: names did "
+                                return Strings::format("Error: Failed to load port from %s: version specs did "
                                                        "not match: '%s' != '%s'",
                                                        *path,
-                                                       version_spec.port_name,
-                                                       scf->get()->core_paragraph->name);
+                                                       version_spec,
+                                                       scf_vspec);
                             }
                         }
                         else
