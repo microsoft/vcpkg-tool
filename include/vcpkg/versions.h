@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/format.h>
+
 #include <vcpkg/base/expected.h>
 
 namespace vcpkg
@@ -132,3 +134,5 @@ namespace vcpkg
         Minimum
     };
 }
+
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionSpec);

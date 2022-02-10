@@ -1,4 +1,5 @@
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 
 #include <vcpkg/configuration.h>
@@ -86,6 +87,12 @@ namespace vcpkg::PortFileProvider
         m_versioned->load_all_control_files(m);
         return Util::fmap(m, [](const auto& p) { return p.second; });
     }
+
+    DECLARE_AND_REGISTER_MESSAGE(VersionSpecMismatch,
+                                 (msg::path, msg::expected, msg::actual),
+                                 "",
+                                 "Error: Failed to load port because version specs did not match\n    Path: "
+                                 "{path}\n    Expected: {expected}\n    Actual: {actual}");
 
     namespace
     {
@@ -180,11 +187,11 @@ namespace vcpkg::PortFileProvider
                             }
                             else
                             {
-                                return Strings::format("Error: Failed to load port from %s: version specs did "
-                                                       "not match: '%s' != '%s'",
-                                                       *path,
-                                                       version_spec,
-                                                       scf_vspec);
+                                return msg::format(msgVersionSpecMismatch,
+                                                   msg::path = *path,
+                                                   msg::expected = version_spec,
+                                                   msg::actual = scf_vspec)
+                                    .extract_data();
                             }
                         }
                         else
