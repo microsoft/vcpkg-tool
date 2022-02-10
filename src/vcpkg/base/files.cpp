@@ -30,6 +30,8 @@
 #include <thread>
 
 #if defined(_WIN32)
+#include <share.h>
+
 #include <filesystem>
 namespace stdfs = std::filesystem;
 #endif // _WIN32
