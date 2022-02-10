@@ -1836,8 +1836,9 @@ namespace vcpkg::Dependencies
         ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan(
             const PackageSpec& toplevel, UnsupportedPortAction unsupported_port_action)
         {
-            if (m_errors.size() > 0)
+            if (!m_errors.empty())
             {
+                Util::sort_unique_erase(m_errors);
                 return Strings::join("\n", m_errors);
             }
 
