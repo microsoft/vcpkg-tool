@@ -56,7 +56,6 @@
   "UsingManifestAt": "Using manifest file at {path}.",
   "VSExaminedInstances": "The following Visual Studio instances were considered:",
   "VSExaminedPaths": "The following paths were examined for Visual Studio instances:",
-  "VSExcludedByLanguagePack": "The following VS instances were excluded because the English language pack is unavailable:",
   "VSNoInstances": "Could not locate a complete Visual Studio instance",
   "VcpkgDisallowedClassicMode": "Error: Could not locate a manifest (vcpkg.json) above the current working directory.\nThis vcpkg distribution does not have a classic mode instance.",
   "VcpkgHasCrashed": "vcpkg.exe has crashed.\nPlease send an email to:\n    {email}\ncontaining a brief summary of what you were trying to do and the following data blob:\n\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
