@@ -1,7 +1,6 @@
 {
   "name": "cycle-detected",
   "version": "0.1.0",
-  "builtin-baseline": "2a31089e777fc187f1cc05338250b8e1810cfb52",
   "dependencies": [
     "arrow",
     "bloom-filter"

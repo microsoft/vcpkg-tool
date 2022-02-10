@@ -1,4 +1,5 @@
 {
+  "default-registry": null,
   "registries": [
     {
       "kind": "filesystem",
