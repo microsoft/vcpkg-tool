@@ -132,6 +132,7 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_CI_BASELINE = "ci-baseline";
+    static constexpr StringLiteral OPTION_PASSING_IS_PASSING = "passing-is-passing";
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
@@ -149,9 +150,10 @@ namespace vcpkg::Commands::CI
          {OPTION_SKIPPED_CASCADE_COUNT,
           "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
 
-    static constexpr std::array<CommandSwitch, 2> CI_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 3> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
         {OPTION_RANDOMIZE, "Randomize the install order"},
+        {OPTION_PASSING_IS_PASSING, "Indicates that 'Passing, remove from fail list' results should not be emitted."},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -528,6 +530,7 @@ namespace vcpkg::Commands::CI
         auto exclusions = parse_exclusions(settings, OPTION_EXCLUDE);
         auto host_exclusions = parse_exclusions(settings, OPTION_HOST_EXCLUDE);
         auto baseline_iter = settings.find(OPTION_CI_BASELINE);
+        const bool passing_is_passing = Util::Sets::contains(options.switches, OPTION_PASSING_IS_PASSING);
         std::set<PackageSpec> expected_failures;
         if (baseline_iter != settings.end())
         {
@@ -539,18 +542,27 @@ namespace vcpkg::Commands::CI
                                   if (triplet == target_triplet_string)
                                   {
                                       if (value == CiBaselineValue::Skip)
-                                          expected_failures.emplace(port.to_string(), target_triplet);
-                                      else
                                           exclusions.insert(port.to_string());
+                                      else if (value == CiBaselineValue::Fail)
+                                          expected_failures.emplace(port.to_string(), target_triplet);
                                   }
                                   else if (triplet == host_triplet_string)
                                   {
                                       if (value == CiBaselineValue::Skip)
-                                          expected_failures.emplace(port.to_string(), host_triplet);
-                                      else
                                           host_exclusions.insert(port.to_string());
+                                      else if (value == CiBaselineValue::Fail)
+                                          expected_failures.emplace(port.to_string(), host_triplet);
                                   }
                               });
+        }
+        else
+        {
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               !passing_is_passing,
+                               Strings::concat("--",
+                                               OPTION_PASSING_IS_PASSING,
+                                               " can only be used if a ci baseline is provided via --",
+                                               OPTION_CI_BASELINE));
         }
         ExclusionPredicate is_excluded{
             exclusions,
@@ -763,6 +775,15 @@ namespace vcpkg::Commands::CI
                                           << port_result.spec.to_string() << "=fail to " << baseline_iter->second
                                           << std::endl;
                             }
+                            break;
+                        case Build::BuildResult::SUCCEEDED:
+                            if (!passing_is_passing &&
+                                expected_failures.find(port_result.spec) != expected_failures.end())
+                            {
+                                std::cerr << "    PASSING, REMOVE FROM FAIL LIST: " << port_result.spec.to_string()
+                                          << " (" << baseline_iter->second << ")" << std::endl;
+                            }
+                            break;
                         default: break;
                     }
                 }
