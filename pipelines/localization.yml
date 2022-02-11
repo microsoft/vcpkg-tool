@@ -1,0 +1,20 @@
+variables:
+- name: GitHubPat
+
+trigger:
+- main
+
+pool:
+  vmImage: windows-latest
+
+steps:
+- task: OneLocBuild@2
+  inputs:
+    locProj: 'LocProject.json'
+    outDir: '$(Build.ArtifactStagingDirectory)'
+    isCreatePrSelected: true
+    repoType: 'gitHub'
+    prSourceBranchPrefix: 'locfiles'
+    isAutoCompletePrSelected: false
+    isUseLfLineEndingsSelected: true
+    gitHubPatVariable: $(GitHubPat)
