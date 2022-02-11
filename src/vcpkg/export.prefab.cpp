@@ -3,6 +3,7 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/archives.h>
 #include <vcpkg/build.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.h>
@@ -192,22 +193,6 @@ namespace vcpkg::Export::Prefab
             return NdkVersion(fragments[0], fragments[1], fragments[2]);
         }
         return {};
-    }
-
-    static void compress_directory(const VcpkgPaths& paths, const Path& source, const Path& destination)
-    {
-        auto& fs = paths.get_filesystem();
-        fs.remove(destination, VCPKG_LINE_INFO);
-#if defined(_WIN32)
-        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
-
-        cmd_execute_and_capture_output(
-            Command(seven_zip_exe).string_arg("a").path_arg(destination).path_arg(source / "*"),
-            get_clean_environment());
-#else
-        cmd_execute_clean(Command{"zip"}.string_arg("--quiet").string_arg("-r").path_arg(destination).string_arg("*"),
-                          InWorkingDirectory{source});
-#endif
     }
 
     static void maven_install(const Path& aar, const Path& pom, const Options& prefab_options)
@@ -633,7 +618,9 @@ namespace vcpkg::Export::Prefab
                     "[DEBUG] Exporting AAR And POM\n\tAAR Path %s\n\tPOM Path %s\n", exported_archive_path, pom_path));
             }
 
-            compress_directory(paths, package_directory, exported_archive_path);
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               compress_directory_to_zip(paths, package_directory, exported_archive_path) != 0,
+                               Strings::concat("Failed to compress folder ", package_directory));
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
