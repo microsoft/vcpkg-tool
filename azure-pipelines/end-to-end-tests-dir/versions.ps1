@@ -80,7 +80,9 @@ if ($out -notmatch ".*Error: while checking out baseline\.*")
 $CurrentTest = "mismatched version database"
 $out = Run-Vcpkg @commonArgs "--feature-flags=versions" install --x-manifest-root="$PSScriptRoot/../e2e_ports/mismatched-version-database" 2>&1 | Out-String
 Throw-IfNotFailed
-if ($out -notmatch ".*version specs did not match: 'arrow@6.0.0.20210925#4' != 'arrow@6.0.0.20210925'*")
+if (($out -notmatch ".*Error: Failed to load port because version specs did not match*") -or
+  ($out -notmatch ".*Expected: arrow@6.0.0.20210925#4.*") -or
+  ($out -notmatch ".*Actual: arrow@6.0.0.20210925.*"))
 {
     $out
     throw "Expected to fail due to mismatched versions between portfile and the version database"
