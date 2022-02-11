@@ -62,5 +62,6 @@
   "VcpkgHasCrashedArgument": "{value}|",
   "_VcpkgHasCrashedArgument.comment": "{LOCKED}",
   "VcpkgInvalidCommand": "invalid command: {value}",
-  "VcpkgSendMetricsButDisabled": "Warning: passed --sendmetrics, but metrics are disabled."
+  "VcpkgSendMetricsButDisabled": "Warning: passed --sendmetrics, but metrics are disabled.",
+  "VersionSpecMismatch": "Error: Failed to load port because version specs did not match\n    Path: {path}\n    Expected: {expected}\n    Actual: {actual}"
 }
