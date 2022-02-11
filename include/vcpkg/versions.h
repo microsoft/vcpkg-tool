@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/format.h>
+
 #include <vcpkg/base/expected.h>
 
 namespace vcpkg
@@ -74,6 +76,8 @@ namespace vcpkg
 
         VersionSpec(const std::string& port_name, const std::string& version_string, int port_version);
 
+        std::string to_string() const;
+
         friend bool operator==(const VersionSpec& lhs, const VersionSpec& rhs);
         friend bool operator!=(const VersionSpec& lhs, const VersionSpec& rhs);
     };
@@ -130,3 +134,5 @@ namespace vcpkg
         Minimum
     };
 }
+
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionSpec);

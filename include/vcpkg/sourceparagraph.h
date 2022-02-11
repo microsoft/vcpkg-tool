@@ -125,6 +125,7 @@ namespace vcpkg
         {
             return SchemedVersion{core_paragraph->version_scheme, core_paragraph->to_version()};
         }
+        VersionSpec to_version_spec() const { return {core_paragraph->name, core_paragraph->to_version()}; }
 
         friend bool operator==(const SourceControlFile& lhs, const SourceControlFile& rhs);
         friend bool operator!=(const SourceControlFile& lhs, const SourceControlFile& rhs) { return !(lhs == rhs); }
