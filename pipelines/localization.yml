@@ -1,0 +1,22 @@
+trigger:
+- test-localization
+pr: none
+
+pool:
+  vmImage: windows-latest
+
+steps:
+- task: OneLocBuild@2
+  inputs:
+    locProj: 'LocProject.json'
+    outDir: '$(Build.ArtifactStagingDirectory)'
+    isCreatePrSelected: true
+    isShouldReusePrSelected: true
+    repoType: 'gitHub'
+    prSourceBranchPrefix: 'locfiles'
+    isAutoCompletePrSelected: false
+    isUseLfLineEndingsSelected: true
+    gitHubPatVariable: '$(GitHubPat)'
+    packageSourceAuth: patAuth
+    patVariable: '$(PackageSourcePat)'
+    xLocCustomPowerShellScript: 'src/localization/Format-LocalizationFiles.ps1'
