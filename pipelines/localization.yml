@@ -1,3 +1,5 @@
+name: microsoft.vcpkg-tool localization
+
 variables:
 - name: GitHubPat
 
