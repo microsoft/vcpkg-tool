@@ -175,11 +175,19 @@ endfunction()
         {
             const FullPackageSpec& spec = *spec_abi_setting.first;
 
+            std::string featurelist;
+            for (auto&& f : spec.features)
+            {
+                if (f == "core" || f == "default" || f == "*") continue;
+                if (!featurelist.empty()) featurelist.push_back(';');
+                featurelist.append(f);
+            }
+
             Strings::append(extraction_file,
                             "vcpkg_get_tags(\"",
                             spec.package_spec.name(),
                             "\" \"",
-                            Strings::join(";", spec.features),
+                            featurelist,
                             "\" \"",
                             emitted_triplets[spec.package_spec.triplet()],
                             "\" \"",
@@ -302,7 +310,7 @@ endfunction()
     {
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(1);
         // Hack: PackageSpecs should never have .name==""
-        FullPackageSpec full_spec({"", triplet});
+        FullPackageSpec full_spec({"", triplet}, {});
         const auto file_path = create_tag_extraction_file(std::array<std::pair<const FullPackageSpec*, std::string>, 1>{
             std::pair<const FullPackageSpec*, std::string>{&full_spec, ""}});
         launch_and_split(file_path, vars);

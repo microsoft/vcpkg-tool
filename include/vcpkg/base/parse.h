@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/cstringview.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
@@ -42,16 +43,36 @@ namespace vcpkg::Parse
         virtual const std::string& get_message() const override;
     };
 
+    struct SourceLoc
+    {
+        Unicode::Utf8Decoder it;
+        Unicode::Utf8Decoder start_of_line;
+        int row;
+        int column;
+    };
+
+    enum class MessageKind
+    {
+        Warning,
+        Error,
+    };
+
+    struct ParseMessage
+    {
+        SourceLoc location = {};
+        msg::LocalizedString message;
+
+        msg::LocalizedString format(StringView origin, MessageKind kind) const;
+    };
+
+    struct ParseMessages
+    {
+        std::unique_ptr<ParseError> error;
+        std::vector<ParseMessage> warnings;
+    };
+
     struct ParserBase
     {
-        struct SourceLoc
-        {
-            Unicode::Utf8Decoder it;
-            Unicode::Utf8Decoder start_of_line;
-            int row;
-            int column;
-        };
-
         ParserBase(StringView text, StringView origin, TextRowCol init_rowcol = {});
 
         static constexpr bool is_whitespace(char32_t ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
@@ -110,9 +131,17 @@ namespace vcpkg::Parse
 
         void add_error(std::string message) { add_error(std::move(message), cur_loc()); }
         void add_error(std::string message, const SourceLoc& loc);
+        void add_error(msg::LocalizedString&& message) { add_error(message.extract_data(), cur_loc()); }
+        void add_error(msg::LocalizedString&& message, const SourceLoc& loc) { add_error(message.extract_data(), loc); }
 
-        const Parse::IParseError* get_error() const { return m_err.get(); }
-        std::unique_ptr<Parse::IParseError> extract_error() { return std::move(m_err); }
+        void add_warning(msg::LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
+        void add_warning(msg::LocalizedString&& message, const SourceLoc& loc);
+
+        const IParseError* get_error() const { return m_messages.error.get(); }
+        std::unique_ptr<IParseError> extract_error() { return std::move(m_messages.error); }
+
+        const ParseMessages& messages() const { return m_messages; }
+        ParseMessages extract_messages() { return std::move(m_messages); }
 
     private:
         Unicode::Utf8Decoder m_it;
@@ -123,6 +152,6 @@ namespace vcpkg::Parse
         StringView m_text;
         StringView m_origin;
 
-        std::unique_ptr<IParseError> m_err;
+        ParseMessages m_messages;
     };
 }

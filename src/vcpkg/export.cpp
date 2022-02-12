@@ -421,7 +421,7 @@ namespace vcpkg::Export
             // input sanitization
             ret.specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
                 return Input::check_and_get_package_spec(
-                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text);
+                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
             });
         }
 
@@ -630,8 +630,6 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         }
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
-        for (auto&& spec : opts.specs)
-            Input::check_triplet(spec.triplet(), paths);
 
         // Load ports from ports dirs
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);

@@ -2,7 +2,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/system.print.h>
+#include <vcpkg/base/messages.h>
 
 #include <string>
 #include <unordered_map>
@@ -10,6 +10,9 @@
 
 namespace vcpkg::Graphs
 {
+    DECLARE_MESSAGE(GraphCycleDetected, (msg::value), "", "Cycle detected within graph at {value}:");
+    DECLARE_MESSAGE(GraphCycleDetectedElement, (msg::value), "{LOCKED}", "    {value}");
+
     enum class ExplorationStatus
     {
         // We have not visited this vertex
@@ -67,12 +70,12 @@ namespace vcpkg::Graphs
                 case ExplorationStatus::FULLY_EXPLORED: return;
                 case ExplorationStatus::PARTIALLY_EXPLORED:
                 {
-                    print2("Cycle detected within graph at ", f.to_string(vertex), ":\n");
+                    msg::println(msgGraphCycleDetected, msg::value = vertex);
                     for (auto&& node : exploration_status)
                     {
                         if (node.second == ExplorationStatus::PARTIALLY_EXPLORED)
                         {
-                            print2("    ", f.to_string(node.first), '\n');
+                            msg::println(msgGraphCycleDetectedElement, msg::value = node.first);
                         }
                     }
                     Checks::exit_fail(VCPKG_LINE_INFO);

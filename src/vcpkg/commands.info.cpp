@@ -12,7 +12,7 @@
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
-#include <vcpkg/versiont.h>
+#include <vcpkg/versions.h>
 
 namespace vcpkg::Commands::Info
 {

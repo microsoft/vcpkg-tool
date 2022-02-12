@@ -32,7 +32,7 @@ namespace vcpkg
     {
         return make_nugetref(action.spec,
                              action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                 .source_control_file->core_paragraph->version,
+                                 .source_control_file->core_paragraph->raw_version,
                              action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi,
                              prefix);
     }

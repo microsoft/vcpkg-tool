@@ -1,5 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
@@ -9,6 +10,25 @@
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
 #endif
+
+namespace
+{
+    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed,
+                                 (vcpkg::msg::value),
+                                 "",
+                                 "Failed to parse %PROCESSOR_ARCHITEW6432% ({value}) as a valid CPU architecture. "
+                                 "Falling back to %PROCESSOR_ARCHITECTURE%.");
+
+    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMissing,
+                                 (),
+                                 "",
+                                 "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
+
+    DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMalformed,
+                                 (vcpkg::msg::value),
+                                 "",
+                                 "Failed to parse %PROCESSOR_ARCHITECTURE% ({value}) as a valid CPU architecture.");
+}
 
 namespace vcpkg
 {
@@ -50,11 +70,43 @@ namespace vcpkg
     CPUArchitecture get_host_processor()
     {
 #if defined(_WIN32)
-        auto w6432 = get_environment_variable("PROCESSOR_ARCHITEW6432");
-        if (const auto p = w6432.get()) return to_cpu_architecture(*p).value_or_exit(VCPKG_LINE_INFO);
+        auto raw_identifier = get_environment_variable("PROCESSOR_IDENTIFIER");
+        if (const auto id = raw_identifier.get())
+        {
+            // might be either ARMv8 (64-bit) or ARMv9 (64-bit)
+            if (Strings::contains(*id, "ARMv") && Strings::contains(*id, "(64-bit)"))
+            {
+                return CPUArchitecture::ARM64;
+            }
+        }
 
-        const auto procarch = get_environment_variable("PROCESSOR_ARCHITECTURE").value_or_exit(VCPKG_LINE_INFO);
-        return to_cpu_architecture(procarch).value_or_exit(VCPKG_LINE_INFO);
+        auto raw_w6432 = get_environment_variable("PROCESSOR_ARCHITEW6432");
+        if (const auto w6432 = raw_w6432.get())
+        {
+            const auto parsed_w6432 = to_cpu_architecture(*w6432);
+            if (const auto parsed = parsed_w6432.get())
+            {
+                return *parsed;
+            }
+
+            msg::print(Color::warning, msgProcessorArchitectureW6432Malformed, msg::value = *w6432);
+        }
+
+        const auto raw_processor_architecture = get_environment_variable("PROCESSOR_ARCHITECTURE");
+        const auto processor_architecture = raw_processor_architecture.get();
+        if (!processor_architecture)
+        {
+            Checks::exit_with_message(VCPKG_LINE_INFO, msgProcessorArchitectureMissing);
+        }
+
+        const auto raw_parsed_processor_architecture = to_cpu_architecture(*processor_architecture);
+        if (const auto parsed_processor_architecture = raw_parsed_processor_architecture.get())
+        {
+            return *parsed_processor_architecture;
+        }
+
+        Checks::exit_with_message(
+            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::value = *processor_architecture);
 #else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(__APPLE__)
