@@ -1,4 +1,5 @@
 #include <vcpkg/base/lockguarded.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
@@ -17,20 +18,45 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+using namespace vcpkg;
+using Install::KeepGoing;
+
+namespace
+{
+    DECLARE_AND_REGISTER_MESSAGE(KeepGoingConflict,
+                                 (),
+                                 "",
+                                 "The switches 'keep-going' and 'no-keep-going' cannot both be used");
+
+    KeepGoing determine_keep_going(bool keep_going_set, bool no_keep_going_set)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, !(keep_going_set && no_keep_going_set), msgKeepGoingConflict);
+        if (keep_going_set)
+        {
+            return KeepGoing::YES;
+        }
+
+        if (no_keep_going_set)
+        {
+            return KeepGoing::NO;
+        }
+
+        return KeepGoing::YES;
+    }
+}
+
 namespace vcpkg::Commands::Upgrade
 {
-    using Install::KeepGoing;
-    using Install::to_keep_going;
-
     static constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
+    // --keep-going is preserved for compatibility with old releases of vcpkg.
     static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
-    static constexpr StringLiteral OPTION_STOP_AT_FAILURE = "stop-at-failure";
+    static constexpr StringLiteral OPTION_NO_KEEP_GOING = "no-keep-going";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
     static constexpr std::array<CommandSwitch, 4> INSTALL_SWITCHES = {{
         {OPTION_NO_DRY_RUN, "Actually upgrade"},
-        {OPTION_KEEP_GOING, "The default (deprecated)"},
-        {OPTION_STOP_AT_FAILURE, "Stop installing packages on failure"},
+        {OPTION_KEEP_GOING, ""},
+        {OPTION_NO_KEEP_GOING, "Stop installing packages on failure"},
         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
 
@@ -56,16 +82,9 @@ namespace vcpkg::Commands::Upgrade
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        if (Util::Sets::contains(options.switches, OPTION_KEEP_GOING))
-        {
-            print2(Color::warning,
-                   "The option `",
-                   OPTION_KEEP_GOING,
-                   "` is the default now. You don't have to pass this option anymore.");
-        }
-
         const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
-        const KeepGoing keep_going = to_keep_going(!Util::Sets::contains(options.switches, OPTION_STOP_AT_FAILURE));
+        const KeepGoing keep_going = determine_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING),
+                                                          Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING));
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? Dependencies::UnsupportedPortAction::Warn
                                                  : Dependencies::UnsupportedPortAction::Error;
