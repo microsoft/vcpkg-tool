@@ -1080,6 +1080,10 @@ namespace vcpkg::Build
         size_t port_file_count = 0;
         for (auto& port_file : fs.get_regular_files_recursive(port_dir, VCPKG_LINE_INFO))
         {
+            if (port_file.filename() == ".DS_Store")
+            {
+                continue;
+            }
             abi_tag_entries.emplace_back(
                 port_file.filename(),
                 vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha256));

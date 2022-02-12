@@ -731,7 +731,10 @@ namespace vcpkg
             {
                 for (auto&& path : fs.get_regular_files_non_recursive(triplets_dir, VCPKG_LINE_INFO))
                 {
-                    output.emplace_back(TripletFile(path.stem(), triplets_dir));
+                    if (Strings::case_insensitive_ascii_equals(path.extension(), ".cmake"))
+                    {
+                        output.emplace_back(TripletFile(path.stem(), triplets_dir));
+                    }
                 }
             }
 
@@ -747,6 +750,10 @@ namespace vcpkg
             auto files = fs.get_regular_files_non_recursive(this->scripts / "cmake", VCPKG_LINE_INFO);
             for (auto&& file : files)
             {
+                if (file.filename() == ".DS_Store")
+                {
+                    continue;
+                }
                 helpers.emplace(file.stem().to_string(),
                                 Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha256));
             }
