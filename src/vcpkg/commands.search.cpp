@@ -9,7 +9,6 @@
 namespace vcpkg::Commands
 {
     static constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
-    static constexpr StringLiteral OPTION_JSON = "x-json";
 
     static constexpr std::array<CommandSwitch, 1> SearchSwitches = {{{OPTION_FULLDESC, "Do not truncate long text"}}};
 
