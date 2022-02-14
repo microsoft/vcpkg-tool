@@ -1,5 +1,6 @@
 variables:
 - name: GitHubPat
+- name: PackageSourcePat
 
 trigger:
 - main
@@ -18,3 +19,5 @@ steps:
     isAutoCompletePrSelected: false
     isUseLfLineEndingsSelected: true
     gitHubPatVariable: GitHubPat
+    packageSourceAuth: patAuth
+    patVariable: PackageSourcePat
