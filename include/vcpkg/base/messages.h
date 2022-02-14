@@ -174,6 +174,10 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(output);
     DECLARE_MSG_ARG(row);
     DECLARE_MSG_ARG(column);
+    DECLARE_MSG_ARG(port_name);
+    DECLARE_MSG_ARG(new_scheme);
+    DECLARE_MSG_ARG(old_scheme);
+    DECLARE_MSG_ARG(option);
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of

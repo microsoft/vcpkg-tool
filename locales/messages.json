@@ -54,6 +54,7 @@
   "ProcessorArchitectureMissing": "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.",
   "ProcessorArchitectureW6432Malformed": "Failed to parse %PROCESSOR_ARCHITEW6432% ({value}) as a valid CPU architecture. Falling back to %PROCESSOR_ARCHITECTURE%.",
   "SeeURL": "See {url} for more information.",
+  "SuggestNewVersionScheme": "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port \"{port_name}\".\nUse `--{option}` to disable this check.\n",
   "UnsupportedSystemName": "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{value}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
   "UnsupportedToolchain": "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target architecture was {value}\n    The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n",
   "UsingManifestAt": "Using manifest file at {path}.",
