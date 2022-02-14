@@ -210,6 +210,48 @@ namespace vcpkg
 #endif
     }
 
+    int compress_directory_to_zip(const VcpkgPaths& paths, const Path& source, const Path& destination)
+    {
+        auto& fs = paths.get_filesystem();
+        fs.remove(destination, VCPKG_LINE_INFO);
+#if defined(_WIN32)
+        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
+
+        return cmd_execute_and_capture_output(
+                   Command{seven_zip_exe}.string_arg("a").path_arg(destination).path_arg(source / "*"),
+                   get_clean_environment())
+            .exit_code;
+
+#else
+        return cmd_execute_clean(Command{"zip"}
+                                     .string_arg("--quiet")
+                                     .string_arg("-y")
+                                     .string_arg("-r")
+                                     .path_arg(destination)
+                                     .string_arg("*")
+                                     .string_arg("--exclude")
+                                     .string_arg(".DS_Store"),
+                                 InWorkingDirectory{source});
+#endif
+    }
+
+    Command decompress_zip_archive_cmd(const VcpkgPaths& paths, const Path& dst, const Path& archive_path)
+    {
+        Command cmd;
+#if defined(_WIN32)
+        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
+        cmd.path_arg(seven_zip_exe)
+            .string_arg("x")
+            .path_arg(archive_path)
+            .string_arg("-o" + dst.native())
+            .string_arg("-y");
+#else
+        (void)paths;
+        cmd.string_arg("unzip").string_arg("-qq").path_arg(archive_path).string_arg("-d" + dst.native());
+#endif
+        return cmd;
+    }
+
     std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs)
     {
         auto results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());

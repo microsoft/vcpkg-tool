@@ -28,13 +28,6 @@ namespace vcpkg
         }
     }
 
-    std::vector<PackageSpec> PackageSpec::to_package_specs(const std::vector<std::string>& ports, Triplet triplet)
-    {
-        return Util::fmap(ports, [&](const std::string& spec_as_string) -> PackageSpec {
-            return {spec_as_string, triplet};
-        });
-    }
-
     const std::string& PackageSpec::name() const { return this->m_name; }
 
     Triplet PackageSpec::triplet() const { return this->m_triplet; }
@@ -277,7 +270,19 @@ namespace vcpkg
         if (lhs.value != rhs.value) return false;
         return lhs.port_version == rhs.port_version;
     }
-    bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
+
+    Optional<Version> DependencyConstraint::try_get_minimum_version() const
+    {
+        if (type == VersionConstraintKind::None)
+        {
+            return nullopt;
+        }
+
+        return Version{
+            value,
+            port_version,
+        };
+    }
 
     FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
     {

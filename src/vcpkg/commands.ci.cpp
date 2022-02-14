@@ -5,6 +5,7 @@
 #include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -481,7 +482,7 @@ namespace vcpkg::Commands::CI
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
 
-        BinaryCache binary_cache{args};
+        BinaryCache binary_cache{args, paths};
         Triplet target_triplet = Triplet::from_canonical_name(std::string(args.command_arguments[0]));
         ExclusionPredicate is_excluded{
             parse_exclusions(settings, OPTION_EXCLUDE),
@@ -517,8 +518,6 @@ namespace vcpkg::Commands::CI
 
         XunitTestResults xunitTestResults;
 
-        std::vector<std::string> all_ports =
-            Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         std::vector<TripletAndSummary> results;
         auto timer = ElapsedTimer::create_started();
 
@@ -526,9 +525,16 @@ namespace vcpkg::Commands::CI
 
         xunitTestResults.push_collection(target_triplet.canonical_name());
 
-        std::vector<PackageSpec> specs = PackageSpec::to_package_specs(all_ports, target_triplet);
+        std::vector<std::string> all_port_names =
+            Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         // Install the default features for every package
-        auto all_default_full_specs = Util::fmap(specs, [&](auto& spec) { return FullPackageSpec{spec, {"default"}}; });
+        std::vector<FullPackageSpec> all_default_full_specs;
+        all_default_full_specs.reserve(all_port_names.size());
+        for (auto&& port_name : all_port_names)
+        {
+            all_default_full_specs.emplace_back(PackageSpec{std::move(port_name), target_triplet},
+                                                InternalFeatureSet{"core", "default"});
+        }
 
         Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
                                                                  Dependencies::UnsupportedPortAction::Warn);
@@ -551,7 +557,7 @@ namespace vcpkg::Commands::CI
         }
 
         auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
-        const auto precheck_results = binary_cache.precheck(paths, action_plan.install_actions);
+        const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(is_excluded, var_provider, precheck_results, action_plan);
 
         {

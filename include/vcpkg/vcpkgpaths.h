@@ -102,25 +102,21 @@ namespace vcpkg
         const Path original_cwd;
         const Path root;
 
-        Path manifest_root_dir;
-        Path downloads;
-        Path triplets;
-        Path community_triplets;
-        Path scripts;
-        Path prefab;
-
     private:
-        Path builtin_ports;
+        const std::unique_ptr<details::VcpkgPathsImpl> m_pimpl;
 
     public:
-        Path builtin_registry_versions;
-
-        Path tools;
-        Path buildsystems;
-        Path buildsystems_msbuild_targets;
-        Path buildsystems_msbuild_props;
-
-        Path ports_cmake;
+        const Path builtin_registry_versions;
+        const Path scripts;
+        const Path prefab;
+        const Path buildsystems;
+        const Path buildsystems_msbuild_targets;
+        const Path buildsystems_msbuild_props;
+        const Path downloads;
+        const Path tools;
+        const Path ports_cmake;
+        const Path triplets;
+        const Path community_triplets;
 
         std::string get_toolver_diagnostics() const;
 
@@ -169,15 +165,8 @@ namespace vcpkg
 
         // the directory of the builtin ports
         // this should be used only for helper commands, not core commands like `install`.
-        Path builtin_ports_directory() const { return this->builtin_ports; }
+        const Path& builtin_ports_directory() const;
 
         bool use_git_default_registry() const;
-
-    private:
-        Optional<Path> maybe_get_tmp_path(const std::string* arg_path,
-                                          StringLiteral root_subpath,
-                                          StringLiteral readonly_subpath,
-                                          LineInfo li) const;
-        std::unique_ptr<details::VcpkgPathsImpl> m_pimpl;
     };
 }

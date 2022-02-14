@@ -70,9 +70,13 @@ function Require-FileNotExists {
 }
 
 function Throw-IfFailed {
+    [CmdletBinding()]
+    Param(
+        [string]$Message = ""
+    )
     if ($LASTEXITCODE -ne 0) {
         Write-Stack
-        throw "'$Script:CurrentTest' had a step with a nonzero exit code"
+        throw "'$Script:CurrentTest' had a step with a nonzero exit code: $Message"
     }
 }
 
@@ -89,11 +93,14 @@ function Write-Trace ([string]$text) {
 
 function Run-Vcpkg {
     Param(
+        [Parameter(Mandatory = $false)]
+        [Switch]$EndToEndTestSilent,
+
         [Parameter(ValueFromRemainingArguments)]
         [string[]]$TestArgs
     )
     $Script:CurrentTest = "$VcpkgExe $($testArgs -join ' ')"
-    Write-Host $Script:CurrentTest
+    if (!$EndToEndTestSilent) { Write-Host $Script:CurrentTest }
     & $VcpkgExe @testArgs
 }
 

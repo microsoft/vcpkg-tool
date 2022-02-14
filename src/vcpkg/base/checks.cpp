@@ -66,6 +66,13 @@ namespace vcpkg
         exit_fail(line_info);
     }
 
+    [[noreturn]] void Checks::exit_with_message_and_line(const LineInfo& line_info, StringView error_message)
+    {
+        print2(Color::error,
+               Strings::format("%s(%d): %s\n", line_info.file_name, line_info.line_number, error_message));
+        exit_fail(line_info);
+    }
+
     void Checks::check_exit(const LineInfo& line_info, bool expression)
     {
         if (!expression)

@@ -400,6 +400,7 @@ namespace vcpkg
 
             return !rhs.m_base.has_value();
         }
+        friend bool operator!=(const Optional& lhs, const Optional& rhs) noexcept { return !(lhs == rhs); }
 
     private:
         details::OptionalStorage<T> m_base;

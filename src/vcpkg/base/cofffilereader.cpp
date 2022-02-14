@@ -211,6 +211,7 @@ namespace vcpkg
             case MachineType::AMD64:
             case MachineType::ARM:
             case MachineType::ARM64:
+            case MachineType::ARM64EC:
             case MachineType::ARMNT:
             case MachineType::EBC:
             case MachineType::I386:

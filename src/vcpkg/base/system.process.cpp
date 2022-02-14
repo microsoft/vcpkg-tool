@@ -386,6 +386,9 @@ namespace vcpkg
             new_path += Strings::format(";%s", extra_env.find("PATH")->second);
         env_cstr.append(Strings::to_utf16(new_path));
         env_cstr.push_back(L'\0');
+        // NOTE: we support VS's without the english language pack,
+        // but we still want to default to english just in case your specific
+        // non-standard build system doesn't support non-english
         env_cstr.append(L"VSLANG=1033");
         env_cstr.push_back(L'\0');
         env_cstr.append(L"VSCMD_SKIP_SENDTELEMETRY=1");
@@ -909,6 +912,5 @@ namespace vcpkg
     }
 #else
     void register_console_ctrl_handler() { }
-
 #endif
 }

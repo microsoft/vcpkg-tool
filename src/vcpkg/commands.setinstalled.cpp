@@ -153,7 +153,7 @@ namespace vcpkg::Commands::SetInstalled
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        BinaryCache binary_cache{args};
+        BinaryCache binary_cache{args, paths};
 
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 

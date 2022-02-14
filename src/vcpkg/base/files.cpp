@@ -30,6 +30,8 @@
 #include <thread>
 
 #if defined(_WIN32)
+#include <share.h>
+
 #include <filesystem>
 namespace stdfs = std::filesystem;
 #endif // _WIN32
@@ -71,8 +73,8 @@ namespace
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args)
     {
-        Checks::exit_with_message(
-            li, Strings::concat(call_name, "(", Strings::join(", ", args.begin(), args.end()), "): ", ec.message()));
+        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
+        Checks::exit_with_message_and_line(li, Strings::concat(call_name, arguments, ": ", ec.message()));
     }
 
 #if defined(_WIN32)
@@ -826,7 +828,7 @@ namespace
             {
                 // if it isn't still a directory something is racy
                 ec = std::make_error_code(std::errc::device_or_resource_busy);
-                mark_recursive_error(base, ec, failure_point);
+                failure_point = base;
                 return;
             }
 
@@ -1308,7 +1310,9 @@ namespace vcpkg
     WriteFilePointer::WriteFilePointer(const Path& file_path, std::error_code& ec) noexcept
     {
 #if defined(_WIN32)
-        ec.assign(::_wfopen_s(&m_fs, to_stdfs_path(file_path).c_str(), L"wb"), std::generic_category());
+        m_fs = ::_wfsopen(to_stdfs_path(file_path).c_str(), L"wb", _SH_DENYWR);
+        ec.assign(m_fs == nullptr ? errno : 0, std::generic_category());
+        if (m_fs != nullptr) ::setvbuf(m_fs, NULL, _IONBF, 0);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         m_fs = ::fopen(file_path.c_str(), "wb");
         if (m_fs)
@@ -1410,6 +1414,18 @@ namespace vcpkg
     {
         std::error_code ec;
         auto maybe_directories = this->get_regular_files_recursive(dir, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {dir});
+        }
+
+        return maybe_directories;
+    }
+
+    std::vector<Path> Filesystem::get_regular_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const
+    {
+        std::error_code ec;
+        auto maybe_directories = this->get_regular_files_recursive_lexically_proximate(dir, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {dir});
@@ -2064,6 +2080,21 @@ namespace vcpkg
         {
             return get_regular_files_impl<stdfs::directory_iterator>(dir, ec);
         }
+
+        virtual std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir,
+                                                                                  std::error_code& ec) const override
+        {
+            auto ret = this->get_regular_files_recursive(dir, ec);
+            if (!ec)
+            {
+                const auto base = to_stdfs_path(dir);
+                for (auto& p : ret)
+                {
+                    p = from_stdfs_path(to_stdfs_path(p).lexically_proximate(base));
+                }
+            }
+            return ret;
+        }
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         static void insert_if_stat_matches(std::vector<Path>& result,
                                            const Path& full,
@@ -2099,6 +2130,7 @@ namespace vcpkg
 
         static void get_files_recursive_impl(std::vector<Path>& result,
                                              const Path& base,
+                                             const Path& out_base,
                                              std::error_code& ec,
                                              bool want_directories,
                                              bool want_regular_files,
@@ -2133,6 +2165,7 @@ namespace vcpkg
                     }
 
                     const auto full = base / entry->d_name;
+                    const auto out_full = out_base / entry->d_name;
                     const auto entry_dtype = get_d_type(entry);
                     struct stat s;
                     struct stat ls;
@@ -2142,11 +2175,11 @@ namespace vcpkg
                             if (want_directories)
                             {
                                 // push results before recursion to get outer entries first
-                                result.push_back(full);
+                                result.push_back(out_full);
                             }
 
                             get_files_recursive_impl(
-                                result, full, ec, want_directories, want_regular_files, want_other);
+                                result, full, out_full, ec, want_directories, want_regular_files, want_other);
                             if (ec)
                             {
                                 return;
@@ -2156,7 +2189,7 @@ namespace vcpkg
                         case PosixDType::Regular:
                             if (want_regular_files)
                             {
-                                result.push_back(full);
+                                result.push_back(out_full);
                             }
 
                             break;
@@ -2167,7 +2200,7 @@ namespace vcpkg
                         case PosixDType::BlockDevice:
                             if (want_other)
                             {
-                                result.push_back(full);
+                                result.push_back(out_full);
                             }
 
                             break;
@@ -2194,7 +2227,7 @@ namespace vcpkg
                                 if (want_directories && want_regular_files && want_other)
                                 {
                                     // skip extra stat syscall since we want everything
-                                    result.push_back(full);
+                                    result.push_back(out_full);
                                 }
                                 else
                                 {
@@ -2214,21 +2247,21 @@ namespace vcpkg
                                     }
 
                                     insert_if_stat_matches(
-                                        result, full, &s, want_directories, want_regular_files, want_other);
+                                        result, out_full, &s, want_directories, want_regular_files, want_other);
                                 }
                             }
                             else
                             {
                                 // push results before recursion to get outer entries first
                                 insert_if_stat_matches(
-                                    result, full, &ls, want_directories, want_regular_files, want_other);
+                                    result, out_full, &ls, want_directories, want_regular_files, want_other);
                             }
 
                             // recursion check doesn't follow symlinks:
                             if (S_ISDIR(ls.st_mode))
                             {
                                 get_files_recursive_impl(
-                                    result, full, ec, want_directories, want_regular_files, want_other);
+                                    result, full, out_full, ec, want_directories, want_regular_files, want_other);
                             }
                             break;
                     }
@@ -2284,7 +2317,8 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, true, true, true);
+            Path out_base = dir;
+            get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
             return result;
         }
 
@@ -2298,7 +2332,8 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, true, false, false);
+            Path out_base = dir;
+            get_files_recursive_impl(result, dir, out_base, ec, true, false, false);
 
             return result;
         }
@@ -2327,7 +2362,17 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, false, true, false);
+            Path out_base = dir;
+            get_files_recursive_impl(result, dir, out_base, ec, false, true, false);
+            return result;
+        }
+
+        virtual std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir,
+                                                                                  std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            Path out_base;
+            get_files_recursive_impl(result, dir, out_base, ec, false, true, false);
             return result;
         }
 
