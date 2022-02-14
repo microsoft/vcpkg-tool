@@ -91,12 +91,8 @@ namespace
     }
 
     constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
-    constexpr StringLiteral OPTION_JSON = "x-json";
 
-    constexpr std::array<CommandSwitch, 2> FindSwitches = {{
-        {OPTION_FULLDESC, "Do not truncate long text"},
-        {OPTION_JSON, "(experimental) List libraries in JSON format"},
-    }};
+    constexpr std::array<CommandSwitch, 1> FindSwitches = {{{OPTION_FULLDESC, "Do not truncate long text"}}};
 
     const CommandStructure FindCommandStructure = {
         Strings::format("Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', "
@@ -208,7 +204,7 @@ namespace vcpkg::Commands
     {
         const ParsedArguments options = args.parse_arguments(FindCommandStructure);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
-        const bool enable_json = Util::Sets::contains(options.switches, OPTION_JSON);
+        const bool enable_json = args.json.value_or(false);
         auto&& selector = args.command_arguments[0];
         Optional<StringView> filter;
         if (args.command_arguments.size() == 2)
@@ -220,12 +216,12 @@ namespace vcpkg::Commands
         {
             if (full_description)
             {
-                print2(Color::warning, "--%s has no effect on find artifact", OPTION_FULLDESC);
+                print2(Color::warning, "--%s has no effect on find artifact\n", OPTION_FULLDESC);
             }
 
             if (enable_json)
             {
-                print2(Color::warning, "--%s has no effect on find artifact", OPTION_JSON);
+                print2(Color::warning, "--x-json has no effect on find artifact\n");
             }
 
             perform_find_artifact_and_exit(paths, filter);
