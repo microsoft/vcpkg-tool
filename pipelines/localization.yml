@@ -1,7 +1,3 @@
-variables:
-- name: GitHubPat
-- name: PackageSourcePat
-
 trigger:
 - main
 
