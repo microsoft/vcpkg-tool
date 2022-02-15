@@ -225,7 +225,7 @@ namespace vcpkg::msg
 
     static std::string locale_file_name(StringView language)
     {
-        std::string filename = "messages";
+        std::string filename = "messages.";
         filename.append(language.begin(), language.end()).append(".json");
         return filename;
     }
