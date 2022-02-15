@@ -14,6 +14,6 @@ steps:
     prSourceBranchPrefix: 'locfiles'
     isAutoCompletePrSelected: false
     isUseLfLineEndingsSelected: true
-    gitHubPatVariable: GitHubPat
+    gitHubPatVariable: '$(GitHubPat)'
     packageSourceAuth: patAuth
     patVariable: '$(PackageSourcePat)'
