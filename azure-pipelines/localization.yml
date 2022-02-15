@@ -11,6 +11,7 @@ steps:
     locProj: 'LocProject.json'
     outDir: '$(Build.ArtifactStagingDirectory)'
     isCreatePrSelected: true
+    isShouldReusePrSelected: true
     repoType: 'gitHub'
     prSourceBranchPrefix: 'locfiles'
     isAutoCompletePrSelected: false
