@@ -9,6 +9,7 @@
 #include <vcpkg/commands.version.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/userconfig.h>
+#include <vcpkg/uuid.h>
 
 #if defined(_WIN32)
 #pragma comment(lib, "version")
@@ -96,10 +97,7 @@ namespace vcpkg
         return res;
     }
 
-    // UUID format version 4, variant 1
-    // http://en.wikipedia.org/wiki/Universally_unique_identifier
-    // [0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
-    static std::string generate_random_UUID()
+    std::string generate_random_UUID()
     {
         std::random_device rnd{};
         std::uniform_int_distribution<std::uint64_t> uid{};

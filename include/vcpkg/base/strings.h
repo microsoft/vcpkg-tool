@@ -74,6 +74,8 @@ namespace vcpkg::Strings::details
 
 namespace vcpkg::Strings
 {
+    inline std::string& append(std::string& into) { return into; }
+
     template<class Arg>
     std::string& append(std::string& into, const Arg& a)
     {
@@ -130,6 +132,8 @@ namespace vcpkg::Strings
 #endif
 
     std::string escape_string(std::string&& s, char char_to_escape, char escape_char);
+
+    const char* case_insensitive_ascii_search(StringView s, StringView pattern);
 
     bool case_insensitive_ascii_contains(StringView s, StringView pattern);
 

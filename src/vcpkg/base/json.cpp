@@ -312,6 +312,12 @@ namespace vcpkg::Json
     }
     // } struct Value
     // struct Array {
+    Value& Array::push_back(std::string value) { return this->push_back(Json::Value::string(std::move(value))); }
+    template<>
+    Value& Array::push_back<void>(StringView value)
+    {
+        return this->push_back(Json::Value::string(value.to_string()));
+    }
     Value& Array::push_back(Value&& value)
     {
         underlying_.push_back(std::move(value));
@@ -337,6 +343,11 @@ namespace vcpkg::Json
     // } struct Array
     // struct Object {
     Value& Object::insert(std::string key, std::string value) { return insert(key, Value::string(std::move(value))); }
+    template<>
+    Value& Object::insert<void>(std::string key, StringView value)
+    {
+        return insert(key, Value::string(value.to_string()));
+    }
     Value& Object::insert(std::string key, Value&& value)
     {
         vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));

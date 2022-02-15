@@ -105,7 +105,11 @@ namespace vcpkg::Test
     template<class T, class S>
     T&& unwrap(vcpkg::ExpectedT<T, S>&& p)
     {
-        REQUIRE(p.has_value());
+        if (!p.has_value())
+        {
+            INFO(p.error_to_string());
+            REQUIRE(p.has_value());
+        }
         return std::move(*p.get());
     }
 

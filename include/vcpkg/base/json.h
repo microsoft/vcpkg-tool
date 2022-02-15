@@ -150,6 +150,9 @@ namespace vcpkg::Json
         using iterator = underlying_t::iterator;
         using const_iterator = underlying_t::const_iterator;
 
+        Value& push_back(std::string value);
+        template<class = void>
+        Value& push_back(StringView value);
         Value& push_back(Value&& value);
         Object& push_back(Object&& value);
         Array& push_back(Array&& value);
@@ -204,6 +207,9 @@ namespace vcpkg::Json
 
         // asserts if the key is found
         Value& insert(std::string key, std::string value);
+        template<class = void>
+        Value& insert(std::string key, StringView value);
+
         Value& insert(std::string key, Value&& value);
         Value& insert(std::string key, const Value& value);
         Object& insert(std::string key, Object&& value);

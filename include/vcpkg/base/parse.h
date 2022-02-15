@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/cstringview.h>
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
@@ -19,7 +20,32 @@ namespace vcpkg::Parse
         virtual std::string format() const = 0;
         virtual const std::string& get_message() const = 0;
     };
+}
+namespace vcpkg
+{
+    template<>
+    struct ErrorHolder<std::unique_ptr<Parse::IParseError>>
+    {
+        ErrorHolder() = default;
+        template<class U>
+        ErrorHolder(U&& err) : m_err(std::forward<U>(err))
+        {
+        }
 
+        bool has_error() const { return m_err != nullptr; }
+
+        const std::unique_ptr<Parse::IParseError>& error() const { return m_err; }
+        std::unique_ptr<Parse::IParseError>& error() { return m_err; }
+
+        std::string to_string() const { return m_err->format(); }
+
+    private:
+        std::unique_ptr<Parse::IParseError> m_err;
+    };
+}
+
+namespace vcpkg::Parse
+{
     struct ParseError : IParseError
     {
         ParseError(std::string origin, int row, int column, int caret_col, std::string line, std::string message)

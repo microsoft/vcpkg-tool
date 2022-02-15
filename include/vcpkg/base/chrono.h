@@ -72,6 +72,8 @@ namespace vcpkg
 
         std::string to_string() const;
 
+        std::string strftime(const char* format) const;
+
         std::chrono::system_clock::time_point to_time_point() const;
 
     private:

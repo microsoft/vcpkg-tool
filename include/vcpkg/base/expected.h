@@ -160,6 +160,8 @@ namespace vcpkg
 
         S&& error() && { return std::move(this->m_s.error()); }
 
+        std::string error_to_string() const { return Strings::concat(m_s.to_string()); }
+
         typename ExpectedHolder<T>::const_pointer get() const
         {
             if (!this->has_value())
