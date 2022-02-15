@@ -64,3 +64,4 @@
   "VcpkgInvalidCommand": "invalid command: {value}",
   "VcpkgSendMetricsButDisabled": "Warning: passed --sendmetrics, but metrics are disabled."
 }
+

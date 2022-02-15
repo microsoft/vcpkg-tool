@@ -19,3 +19,4 @@ steps:
     gitHubPatVariable: '$(GitHubPat)'
     packageSourceAuth: patAuth
     patVariable: '$(PackageSourcePat)'
+    xLocCustomPowerShellScript: 'src/localization/Format-LocalizationFiles.ps1'

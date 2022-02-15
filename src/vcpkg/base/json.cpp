@@ -1091,13 +1091,7 @@ namespace vcpkg::Json
             return std::unique_ptr<Parse::IParseError>();
         }
 
-        StringView without_bom = res;
-        if (Strings::starts_with(res, "\xEF\xBB\xBF"))
-        {
-            without_bom = without_bom.substr(3);
-        }
-
-        return parse(without_bom, json_file);
+        return parse(std::move(res), json_file);
     }
 
     std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file) noexcept
