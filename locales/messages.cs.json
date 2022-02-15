@@ -1,4 +1,4 @@
-{
+﻿{
   "AddPortSucceded": "Succeeded in adding ports to vcpkg.json file.",
   "AddTripletExpressionNotAllowed": "Error: triplet expressions are not allowed here. You may want to change `{name}:{triplet}` to `{name}` instead.",
   "AwsAttemptingToFetchPackages": "Attempting to fetch {value} packages from AWS",
