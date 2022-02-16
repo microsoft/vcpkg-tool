@@ -89,10 +89,10 @@ namespace vcpkg::PortFileProvider
     }
 
     DECLARE_AND_REGISTER_MESSAGE(VersionSpecMismatch,
-                                 (msg::path, msg::expected, msg::actual),
-                                 "Example of {path} is '/vcpkg/overlays/blah', {expected} is '0.1', {actual} is '0.1.0'",
+                                 (msg::path, msg::expected_version, msg::actual_version),
+                                 "",
                                  "error: Failed to load port because version specs did not match\n    Path: "
-                                 "{path}\n    Expected: {expected}\n    Actual: {actual}");
+                                 "{path}\n    Expected: {expected_version}\n    Actual: {actual_version}");
 
     namespace
     {
@@ -189,8 +189,8 @@ namespace vcpkg::PortFileProvider
                             {
                                 return msg::format(msgVersionSpecMismatch,
                                                    msg::path = *path,
-                                                   msg::expected = version_spec,
-                                                   msg::actual = scf_vspec)
+                                                   msg::expected_version = version_spec,
+                                                   msg::actual_version = scf_vspec)
                                     .extract_data();
                             }
                         }

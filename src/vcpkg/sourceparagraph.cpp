@@ -23,12 +23,12 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsUnicode,
                                  (msg::value, msg::pretty_value),
-                                 "Example of {value:04X} is '22BB', {pretty_value} is '⊻'",
+                                 "example of {value:04X} is '22BB'\nexample of {pretty_value} is '⊻'",
                                  "SPDX license expression contains a unicode character (U+{value:04X} "
                                  "'{pretty_value}'), but these expressions are ASCII-only.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsInvalidCharacter,
                                  (msg::value),
-                                 "Example of {value:02X} is '7B', {value} is '{'",
+                                 "example of {value:02X} is '7B'\nexample of {value} is '{'",
                                  "SPDX license expression contains an invalid character (0x{value:02X} '{value}').");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus,
                                  (),

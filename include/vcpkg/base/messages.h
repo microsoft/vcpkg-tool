@@ -175,8 +175,6 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(expected, "");
     DECLARE_MSG_ARG(actual, "");
     DECLARE_MSG_ARG(list, "");
-    DECLARE_MSG_ARG(row, "");
-    DECLARE_MSG_ARG(column, "");
 
     DECLARE_MSG_ARG(email, "vcpkg@microsoft.com");
     DECLARE_MSG_ARG(path, "/foo/bar");
@@ -185,6 +183,17 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(elapsed, "3.532 min");
     DECLARE_MSG_ARG(version, "1.3.8");
     DECLARE_MSG_ARG(package_name, "zlib");
+    DECLARE_MSG_ARG(command_name, "install");
+    DECLARE_MSG_ARG(command_line, "vcpkg install zlib");
+    DECLARE_MSG_ARG(exit_code, "127");
+    DECLARE_MSG_ARG(count, "42");
+    DECLARE_MSG_ARG(row, "42");
+    DECLARE_MSG_ARG(column, "42");
+    DECLARE_MSG_ARG(arch, "x64");
+    DECLARE_MSG_ARG(system_name, "Darwin");
+    DECLARE_MSG_ARG(option, "editable");
+    DECLARE_MSG_ARG(expected_version, "1.3.8");
+    DECLARE_MSG_ARG(actual_version, "1.3.8");
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of
@@ -208,10 +217,12 @@ namespace vcpkg::msg
 
     DECLARE_MESSAGE(SeeURL,
                     (msg::url),
-                    "{url} will be replaced with the URL to look at for more information",
+                    "",
                     "See {url} for more information.");
     DECLARE_MESSAGE(WarningMessage, (), "", "warning: ");
     DECLARE_MESSAGE(ErrorMessage, (), "", "error: ");
+    DECLARE_MESSAGE(BothYesAndNoOptionSpecifiedError, (msg::option), "",
+        "error: cannot specify both --no-{option} and --{option}.");
 }
 
 namespace fmt

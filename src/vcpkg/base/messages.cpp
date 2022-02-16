@@ -9,6 +9,7 @@ namespace vcpkg::msg
     REGISTER_MESSAGE(SeeURL);
     REGISTER_MESSAGE(WarningMessage);
     REGISTER_MESSAGE(ErrorMessage);
+    REGISTER_MESSAGE(BothYesAndNoOptionSpecifiedError);
 
     // basic implementation - the write_unlocalized_text_to_stdout
 #if defined(_WIN32)

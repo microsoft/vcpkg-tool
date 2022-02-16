@@ -11,7 +11,7 @@
 namespace vcpkg::Graphs
 {
     DECLARE_MESSAGE(GraphCycleDetected, (msg::package_name), "", "Cycle detected within graph at {package_name}:");
-    DECLARE_MESSAGE(GraphCycleDetectedElement, (msg::value), "{LOCKED}", "    {value}");
+    DECLARE_MESSAGE(GraphCycleDetectedElement, (msg::package_name), "{LOCKED}", "    {package_name}");
 
     enum class ExplorationStatus
     {
@@ -75,7 +75,7 @@ namespace vcpkg::Graphs
                     {
                         if (node.second == ExplorationStatus::PARTIALLY_EXPLORED)
                         {
-                            msg::println(msgGraphCycleDetectedElement, msg::value = node.first);
+                            msg::println(msgGraphCycleDetectedElement, msg::package_name = node.first);
                         }
                     }
                     Checks::exit_fail(VCPKG_LINE_INFO);

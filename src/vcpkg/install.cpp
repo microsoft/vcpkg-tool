@@ -784,19 +784,19 @@ namespace vcpkg::Install
 
     DECLARE_AND_REGISTER_MESSAGE(
         ErrorInvalidClassicModeOption,
-        (msg::value),
-        "Example for {value} is '--no-default-features'",
-        "Error: The option {value} is not supported in classic mode and no manifest was found.");
+        (msg::option),
+        "",
+        "Error: The option --{option} is not supported in classic mode and no manifest was found.");
 
     DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt,
                                  (msg::path),
-                                 "Example for {path} is '/code/myproj/vcpkg.json'",
+                                 "",
                                  "Using manifest file at {path}.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
-                                 (msg::value),
-                                 "Example for {value} is '--editable'",
-                                 "Error: The option {value} is not supported in manifest mode.");
+                                 (msg::option),
+                                 "",
+                                 "Error: The option --{option} is not supported in manifest mode.");
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
@@ -844,14 +844,14 @@ namespace vcpkg::Install
             {
                 msg::println(Color::error,
                              msgErrorInvalidManifestModeOption,
-                             msg::value = Strings::concat("--", OPTION_USE_HEAD_VERSION));
+                             msg::option = OPTION_USE_HEAD_VERSION);
                 failure = true;
             }
             if (is_editable)
             {
                 msg::println(Color::error,
                              msgErrorInvalidManifestModeOption,
-                             msg::value = Strings::concat("--", OPTION_EDITABLE));
+                             msg::option = OPTION_EDITABLE);
                 failure = true;
             }
             if (failure)
@@ -874,14 +874,14 @@ namespace vcpkg::Install
             {
                 msg::println(Color::error,
                              msgErrorInvalidClassicModeOption,
-                             msg::value = Strings::concat("--", OPTION_MANIFEST_NO_DEFAULT_FEATURES));
+                             msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
                 failure = true;
             }
             if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
             {
                 msg::println(Color::error,
                              msgErrorInvalidClassicModeOption,
-                             msg::value = Strings::concat("--", OPTION_MANIFEST_FEATURE));
+                             msg::option = OPTION_MANIFEST_FEATURE);
                 failure = true;
             }
             if (failure)

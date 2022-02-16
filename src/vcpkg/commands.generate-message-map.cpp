@@ -7,26 +7,35 @@
 namespace
 {
     namespace msg = vcpkg::msg;
-    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoComment,
+    DECLARE_AND_REGISTER_MESSAGE(AllFormatArgsUnbalancedBraces, (msg::value), "example of {value} is 'foo bar {'", "unbalanced brace in format string \"{value}\"");
+    DECLARE_AND_REGISTER_MESSAGE(AllFormatArgsRawArgument, (msg::value), "example of {value} is 'foo {} bar'", "format string \"{value}\" contains a raw format argument");
+
+    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs, (msg::value), "example of {value} 'GenerateMsgNoComment'", "error: parsing format string for {value}:");
+
+    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgIncorrectComment,
                                  (msg::value),
-                                 "example of {value} is 'GenerateMsgHasParametersButNoComment'",
-                                 R"(message {value} accepts arguments, but there is no comment associated with it.
-    You should add a comment explaining what the argument will be replaced with.)");
-    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoCommentError,
-                                 (),
-                                 "",
-                                 "At least one message that accepts arguments did not have a comment; add a comment in "
-                                 "order to silence this message.");
+                                 "example of {value} is 'GenerateMsgNoComment'",
+                                 R"(message {value} has an incorrect comment:)");
+    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoCommentValue,
+                                 (msg::value),
+                                 "example of {value} is 'arch'",
+                                 R"(    {{{value}}} was used in the message, but not commented.)");
+    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoArgumentValue,
+                                 (msg::value),
+                                 "example of {value} is 'arch'",
+                                 R"(    {{{value}}} was specified in a comment, but was not used in the message.)");
 }
 
 namespace vcpkg::Commands
 {
     using namespace msg;
 
-    static constexpr StringLiteral OPTION_REQUIRE_COMMENTS = "require-comments";
+    static constexpr StringLiteral OPTION_ALLOW_BAD_COMMENTS = "allow-incorrect-comments";
+    static constexpr StringLiteral OPTION_NO_ALLOW_BAD_COMMENTS = "no-allow-incorrect-comments";
 
     static constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
-        {OPTION_REQUIRE_COMMENTS, "Require comments for messages that take arguments."},
+        {OPTION_ALLOW_BAD_COMMENTS, "Do not require message comments be correct (the default)."},
+        {OPTION_NO_ALLOW_BAD_COMMENTS, "Require message comments to be correct; error if they are not."},
     };
 
     const static CommandStructure COMMAND_STRUCTURE = {
@@ -37,51 +46,125 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    static bool contains_format_argument(StringView sv)
+    std::vector<StringView> get_all_format_args(StringView fstring, msg::LocalizedString& error)
     {
-        auto last = sv.end();
-        auto it = std::find(sv.begin(), last, '{');
+        error = {};
+        std::vector<StringView> res;
+
+        auto last = fstring.end();
+        auto it = std::find(fstring.begin(), last, '{');
         for (; it != last; it = std::find(it, last, '{'))
         {
             // *it == `{`
             ++it;
-            // if the next character is EOF, then just return false
+            // *it == (first character of thing)
             if (it == last)
             {
-                return false;
+                // ERROR
+                break;
             }
-            // if the next character is a `{`, then that's not a format argument
-            // just skip that '{'
             else if (*it == '{')
             {
+                // raw brace, continue
                 ++it;
+                continue;
             }
-            // otherwise, the next character is not a `{`, and thus: format argument
+
+            auto close_brace = std::find(it, last, '}');
+            if (close_brace == last)
+            {
+                // ERROR
+                break;
+            }
+
+            if (it == close_brace)
+            {
+                // ERROR
+                break;
+            }
+
+            res.emplace_back(it, close_brace);
+            it = close_brace + 1;
+        }
+
+        return res;
+    }
+
+    FormatArgMismatches get_format_arg_mismatches(StringView value, StringView comment, msg::LocalizedString& error)
+    {
+        FormatArgMismatches res;
+
+        auto value_args = get_all_format_args(value, error);
+        if (!error.data().empty())
+        {
+            return res;
+        }
+        auto comment_args = get_all_format_args(comment, error);
+        if (!error.data().empty())
+        {
+            return res;
+        }
+
+        Util::sort_unique_erase(value_args);
+        Util::sort_unique_erase(comment_args);
+        Util::erase_remove_if(comment_args, [](StringView sv) { return sv == "LOCKED"; });
+
+        auto value_it = value_args.begin();
+        auto comment_it = comment_args.begin();
+
+        while (value_it != value_args.end() && comment_it != comment_args.end())
+        {
+            if (*value_it == *comment_it)
+            {
+                ++value_it;
+                ++comment_it;
+            }
+            else if (*value_it < *comment_it)
+            {
+                res.arguments_without_comment.push_back(*value_it);
+                ++value_it;
+            }
             else
             {
-                return true;
+                // *comment_it < *value_it
+                res.comments_without_argument.push_back(*comment_it);
+                ++comment_it;
             }
         }
-        return false;
+
+        if (value_it != value_args.end())
+        {
+            res.arguments_without_comment.insert(res.arguments_without_comment.end(), value_it, value_args.end());
+        }
+        if (comment_it != comment_args.end())
+        {
+            res.comments_without_argument.insert(res.comments_without_argument.end(), comment_it, comment_args.end());
+        }
+
+        return res;
     }
 
     void GenerateDefaultMessageMapCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
-        bool require_comments = Util::Sets::contains(parsed_args.switches, OPTION_REQUIRE_COMMENTS);
+        bool allow_bad_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_ALLOW_BAD_COMMENTS);
 
         LocalizedString comments_msg_type;
         Color comments_msg_color;
-        if (require_comments)
-        {
-            comments_msg_type = msg::format(msg::msgErrorMessage);
-            comments_msg_color = Color::error;
-        }
-        else
+        if (allow_bad_comments)
         {
             comments_msg_type = msg::format(msg::msgWarningMessage);
             comments_msg_color = Color::warning;
+        }
+        else
+        {
+            if (Util::Sets::contains(parsed_args.switches, OPTION_ALLOW_BAD_COMMENTS))
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_ALLOW_BAD_COMMENTS);
+            }
+            comments_msg_type = msg::format(msg::msgErrorMessage);
+            comments_msg_color = Color::error;
         }
 
         // in order to implement sorting, we create a vector of messages before converting into a JSON object
@@ -107,15 +190,32 @@ namespace vcpkg::Commands
         }
         std::sort(messages.begin(), messages.end(), MessageSorter{});
 
-        bool has_value_without_comment = false;
+        bool has_incorrect_comment = false;
+        msg::LocalizedString format_string_parsing_error;
         Json::Object obj;
         for (Message& msg : messages)
         {
-            if (contains_format_argument(msg.value) && msg.comment.empty())
+            auto mismatches = get_format_arg_mismatches(msg.value, msg.comment, format_string_parsing_error);
+            if (!format_string_parsing_error.data().empty())
             {
-                has_value_without_comment = true;
+                msg::println(msgGenerateMsgErrorParsingFormatArgs, msg::value = msg.name);
+                Checks::exit_with_message(VCPKG_LINE_INFO, format_string_parsing_error);
+            }
+
+            if (!mismatches.arguments_without_comment.empty() || !mismatches.comments_without_argument.empty())
+            {
+                has_incorrect_comment = true;
                 msg::print(comments_msg_color, comments_msg_type);
-                msg::println(comments_msg_color, msgGenerateMsgNoComment, msg::value = msg.name);
+                msg::println(comments_msg_color, msgGenerateMsgIncorrectComment, msg::value = msg.name);
+
+                for (const auto& arg : mismatches.arguments_without_comment)
+                {
+                    msg::println(comments_msg_color, msgGenerateMsgNoCommentValue, msg::value = arg);
+                }
+                for (const auto& comment : mismatches.comments_without_argument)
+                {
+                    msg::println(comments_msg_color, msgGenerateMsgNoArgumentValue, msg::value = comment);
+                }
             }
 
             obj.insert(msg.name, Json::Value::string(std::move(msg.value)));
@@ -125,13 +225,9 @@ namespace vcpkg::Commands
             }
         }
 
-        if (has_value_without_comment)
+        if (has_incorrect_comment && !allow_bad_comments)
         {
-            msg::println(comments_msg_color, msgGenerateMsgNoCommentError);
-            if (require_comments)
-            {
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         auto stringified = Json::stringify(obj, {});
