@@ -60,6 +60,10 @@ namespace vcpkg
         {
             return CPUArchitecture::ARM64;
         }
+        if (Strings::starts_with(this->canonical_name(), "arm64ec-"))
+        {
+            return CPUArchitecture::ARM64EC;
+        }
         if (Strings::starts_with(this->canonical_name(), "s390x-"))
         {
             return CPUArchitecture::S390X;
