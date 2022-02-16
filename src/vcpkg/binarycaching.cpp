@@ -26,18 +26,21 @@ using namespace vcpkg;
 namespace
 {
     DECLARE_AND_REGISTER_MESSAGE(AwsFailedToDownload,
-                                 (msg::value, msg::output),
-                                 "",
-                                 "aws failed to download with exit code: {value}\n{output}");
+                                 (msg::value),
+                                 "Example for {value} is '127'",
+                                 "aws failed to download with exit code: {value}");
     DECLARE_AND_REGISTER_MESSAGE(AwsAttemptingToFetchPackages,
                                  (msg::value),
-                                 "",
+                                 "Example for {value} is '35'",
                                  "Attempting to fetch {value} packages from AWS");
     DECLARE_AND_REGISTER_MESSAGE(AwsRestoredPackages,
                                  (msg::value, msg::elapsed),
-                                 "",
+                                 "Example for {value} is '32', {elapsed} is '3'",
                                  "Restored {value} packages from AWS servers in {elapsed}s");
-    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages, (msg::value), "", "Uploaded binaries to {value} AWS servers");
+    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages,
+                                 (msg::value),
+                                 "Example for {value} is '2'",
+                                 "Uploaded binaries to {value} AWS servers");
 
     using Parse::SourceLoc;
 
@@ -1132,7 +1135,8 @@ namespace
             return true;
         }
 
-        msg::println(Color::warning, msgAwsFailedToDownload, msg::value = out.exit_code, msg::output = out.output);
+        msg::println(Color::warning, msgAwsFailedToDownload, msg::value = out.exit_code);
+        msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
         return false;
     }
 
@@ -1149,7 +1153,8 @@ namespace
             return true;
         }
 
-        msg::println(Color::warning, msgAwsFailedToDownload, msg::value = out.exit_code, msg::output = out.output);
+        msg::println(Color::warning, msgAwsFailedToDownload, msg::value = out.exit_code);
+        msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
         return false;
     }
 

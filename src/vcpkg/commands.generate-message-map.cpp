@@ -7,13 +7,16 @@
 namespace
 {
     namespace msg = vcpkg::msg;
-    DECLARE_AND_REGISTER_MESSAGE(
-        GenerateMsgNoComment,
-        (msg::value),
-        "example of {value} is 'GenerateMsgHasParametersButNoComment'",
-        R"(message {value} accepts arguments, but there was no comment associated with it.
+    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoComment,
+                                 (msg::value),
+                                 "example of {value} is 'GenerateMsgHasParametersButNoComment'",
+                                 R"(message {value} accepts arguments, but there is no comment associated with it.
     You should add a comment explaining what the argument will be replaced with.)");
-    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoCommentError, (), "", "At least one message that accepts arguments did not have a comment; add a comment in order to silence this message.");
+    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoCommentError,
+                                 (),
+                                 "",
+                                 "At least one message that accepts arguments did not have a comment; add a comment in "
+                                 "order to silence this message.");
 }
 
 namespace vcpkg::Commands
@@ -122,9 +125,13 @@ namespace vcpkg::Commands
             }
         }
 
-        if (has_value_without_comment && require_comments)
+        if (has_value_without_comment)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, msgGenerateMsgNoCommentError);
+            msg::println(comments_msg_color, msgGenerateMsgNoCommentError);
+            if (require_comments)
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
         }
 
         auto stringified = Json::stringify(obj, {});

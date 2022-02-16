@@ -562,7 +562,7 @@ namespace vcpkg
     DECLARE_AND_REGISTER_MESSAGE(
         ErrorMissingVcpkgRoot,
         (msg::url),
-        "",
+        "{url} will be replaced with 'https://github.com/microsoft/vcpkg'",
         "Error: Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
         "define the VCPKG_ROOT environment variable to point to a cloned copy of {url}.");
 
@@ -1322,29 +1322,29 @@ namespace vcpkg
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
                                  (msg::triplet),
-                                 "",
+                                 "Example of {triplet} is 'x64-windows'",
                                  "Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
                                  "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
                                  "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstance,
                                  (msg::triplet),
-                                 "",
+                                 "Example of {triplet} is 'x64-windows'",
                                  "Error: in triplet {triplet}: Unable to find a valid Visual Studio instance");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion,
                                  (msg::version),
-                                 "Printed after ErrorNoVSInstance on a separate line",
+                                 "",
                                  "    with toolset version {version}");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion,
                                  (msg::version),
-                                 "Printed after ErrorNoVSInstance on a separate line",
+                                 "",
                                  "    with toolset version prefix {version}");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt,
                                  (msg::path),
-                                 "Printed after ErrorNoVSInstance on a separate line",
+                                 "",
                                  "     at \"{path}\"");
 
 #if defined(_WIN32)

@@ -304,14 +304,15 @@ namespace vcpkg::Build
     DECLARE_AND_REGISTER_MESSAGE(
         UnsupportedToolchain,
         (msg::triplet, msg::value, msg::path, msg::list),
-        "",
+        "Example for {triplet} is 'x64-windows', {value} is 'x64', {path} is 'C:\\Program Files (x86)\\Microsoft "
+        "Visual Studio', and {list} is 'x86, arm64'",
         "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
         "architecture was {value}\n    "
         "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
 
     DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
                                  (msg::value),
-                                 "",
+                                 "Example for {value} is 'WindowsPhone'",
                                  "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{value}' to a vcvarsall platform. "
                                  "Supported system names are '', 'Windows' and 'WindowsStore'.");
 

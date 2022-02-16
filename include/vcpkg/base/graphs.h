@@ -10,7 +10,7 @@
 
 namespace vcpkg::Graphs
 {
-    DECLARE_MESSAGE(GraphCycleDetected, (msg::value), "", "Cycle detected within graph at {value}:");
+    DECLARE_MESSAGE(GraphCycleDetected, (msg::value), "Example of {value} is 'zlib'", "Cycle detected within graph at {value}:");
     DECLARE_MESSAGE(GraphCycleDetectedElement, (msg::value), "{LOCKED}", "    {value}");
 
     enum class ExplorationStatus

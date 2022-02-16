@@ -90,8 +90,8 @@ namespace vcpkg::PortFileProvider
 
     DECLARE_AND_REGISTER_MESSAGE(VersionSpecMismatch,
                                  (msg::path, msg::expected, msg::actual),
-                                 "",
-                                 "Error: Failed to load port because version specs did not match\n    Path: "
+                                 "Example of {path} is '/vcpkg/overlays/blah', {expected} is '0.1', {actual} is '0.1.0'",
+                                 "error: Failed to load port because version specs did not match\n    Path: "
                                  "{path}\n    Expected: {expected}\n    Actual: {actual}");
 
     namespace

@@ -15,7 +15,7 @@ namespace
 {
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed,
                                  (vcpkg::msg::value),
-                                 "",
+                                 "Example of {value} is 'ARM32'",
                                  "Failed to parse %PROCESSOR_ARCHITEW6432% ({value}) as a valid CPU architecture. "
                                  "Falling back to %PROCESSOR_ARCHITECTURE%.");
 
@@ -26,7 +26,7 @@ namespace
 
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMalformed,
                                  (vcpkg::msg::value),
-                                 "",
+                                 "Example of {value} is 'ARM32'",
                                  "Failed to parse %PROCESSOR_ARCHITECTURE% ({value}) as a valid CPU architecture.");
 }
 

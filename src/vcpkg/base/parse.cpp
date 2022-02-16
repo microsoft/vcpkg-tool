@@ -41,7 +41,7 @@ namespace vcpkg::Parse
                                  (msg::path, msg::row, msg::column),
                                  "{LOCKED}",
                                  "{path}:{row}:{column}: ");
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression, (msg::value), "", "    on expression: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression, (msg::value), "Example of {value} is 'x64 & windows'", "    on expression: {value}");
 
     msg::LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
     {

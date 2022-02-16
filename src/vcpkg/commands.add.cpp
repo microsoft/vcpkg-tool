@@ -27,7 +27,7 @@ namespace
 
     DECLARE_AND_REGISTER_MESSAGE(AddTripletExpressionNotAllowed,
                                  (),
-                                 "",
+                                 "Example for {name} is 'zlib', {triplet} is 'x64-windows'",
                                  "Error: triplet expressions are not allowed here. You may want to change "
                                  "`{name}:{triplet}` to `{name}` instead.");
 

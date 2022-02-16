@@ -785,14 +785,17 @@ namespace vcpkg::Install
     DECLARE_AND_REGISTER_MESSAGE(
         ErrorInvalidClassicModeOption,
         (msg::value),
-        "",
+        "Example for {value} is '--no-default-features'",
         "Error: The option {value} is not supported in classic mode and no manifest was found.");
 
-    DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
+    DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt,
+                                 (msg::path),
+                                 "Example for {path} is '/code/myproj/vcpkg.json'",
+                                 "Using manifest file at {path}.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
                                  (msg::value),
-                                 "",
+                                 "Example for {value} is '--editable'",
                                  "Error: The option {value} is not supported in manifest mode.");
 
     void perform_and_exit(const VcpkgCmdArguments& args,
