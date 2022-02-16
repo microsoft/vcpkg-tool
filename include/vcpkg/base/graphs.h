@@ -10,7 +10,7 @@
 
 namespace vcpkg::Graphs
 {
-    DECLARE_MESSAGE(GraphCycleDetected, (msg::value), "Example of {value} is 'zlib'", "Cycle detected within graph at {value}:");
+    DECLARE_MESSAGE(GraphCycleDetected, (msg::package_name), "", "Cycle detected within graph at {package_name}:");
     DECLARE_MESSAGE(GraphCycleDetectedElement, (msg::value), "{LOCKED}", "    {value}");
 
     enum class ExplorationStatus
@@ -70,7 +70,7 @@ namespace vcpkg::Graphs
                 case ExplorationStatus::FULLY_EXPLORED: return;
                 case ExplorationStatus::PARTIALLY_EXPLORED:
                 {
-                    msg::println(msgGraphCycleDetected, msg::value = vertex);
+                    msg::println(msgGraphCycleDetected, msg::package_name = vertex);
                     for (auto&& node : exploration_status)
                     {
                         if (node.second == ExplorationStatus::PARTIALLY_EXPLORED)
