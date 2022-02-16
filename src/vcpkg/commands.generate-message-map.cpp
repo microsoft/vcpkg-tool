@@ -60,7 +60,7 @@ namespace vcpkg::Commands
             // *it == (first character of thing)
             if (it == last)
             {
-                // ERROR
+                error = msg::format(msgAllFormatArgsUnbalancedBraces, msg::value = fstring);
                 break;
             }
             else if (*it == '{')
@@ -73,14 +73,28 @@ namespace vcpkg::Commands
             auto close_brace = std::find(it, last, '}');
             if (close_brace == last)
             {
-                // ERROR
+                error = msg::format(msgAllFormatArgsUnbalancedBraces, msg::value = fstring);
                 break;
             }
 
             if (it == close_brace)
             {
-                // ERROR
-                break;
+                error = msg::format(msgAllFormatArgsRawArgument, msg::value = fstring);
+                it = close_brace + 1;
+                continue;
+            }
+
+            // look for `{ {}`
+            auto open_brace_in_between = std::find(it, close_brace, '{');
+            if (open_brace_in_between != close_brace)
+            {
+                error = msg::format(msgAllFormatArgsUnbalancedBraces, msg::value = fstring);
+                if (open_brace_in_between != close_brace - 1)
+                {
+                    res.emplace_back(open_brace_in_between + 1, close_brace);
+                }
+                it = close_brace + 1;
+                continue;
             }
 
             res.emplace_back(it, close_brace);
@@ -94,12 +108,9 @@ namespace vcpkg::Commands
     {
         FormatArgMismatches res;
 
-        auto value_args = get_all_format_args(value, error);
-        if (!error.data().empty())
-        {
-            return res;
-        }
         auto comment_args = get_all_format_args(comment, error);
+        // ignore error; comments are allowed to be incorrect format strings
+        auto value_args = get_all_format_args(value, error);
         if (!error.data().empty())
         {
             return res;
