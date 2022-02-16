@@ -193,7 +193,12 @@ namespace vcpkg::msg
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
     REGISTER_MESSAGE(NAME)
 
-    DECLARE_MESSAGE(SeeURL, (msg::url), "", "See {url} for more information.");
+    DECLARE_MESSAGE(SeeURL,
+                    (msg::url),
+                    "{url} will be replaced with the URL to look at for more information",
+                    "See {url} for more information.");
+    DECLARE_MESSAGE(WarningMessage, (), "", "warning: ");
+    DECLARE_MESSAGE(ErrorMessage, (), "", "error: ");
 }
 
 namespace fmt

@@ -36,19 +36,22 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::value), "", "invalid command: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand,
+                                 (msg::value),
+                                 "{value} will be replaced by a command name",
+                                 "invalid command: {value}");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
                                  (),
                                  "",
                                  "Warning: passed --sendmetrics, but metrics are disabled.");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed,
-                                 (msg::email, msg::version, msg::error),
-                                 "",
+                                 (msg::email),
+                                 "{email} will be the email for the vcpkg team",
                                  R"(vcpkg.exe has crashed.
 Please send an email to:
     {email}
-containing a brief summary of what you were trying to do and the following data blob:
-
+containing a brief summary of what you were trying to do and the following data blob:)");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedDataBlob, (msg::version, msg::error), "{LOCKED}", R"(
 Version={version}
 EXCEPTION='{error}'
 CMD=)");
@@ -333,10 +336,9 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashed,
-                 msg::email = Commands::Contact::email(),
-                 msg::version = Commands::Version::version(),
-                 msg::error = exc_msg);
+    msg::println(msgVcpkgHasCrashed, msg::email = Commands::Contact::email());
+    fflush(stdout);
+    msg::println(msgVcpkgHasCrashedDataBlob, msg::version = Commands::Version::version(), msg::error = exc_msg);
     fflush(stdout);
     for (int x = 0; x < argc; ++x)
     {
