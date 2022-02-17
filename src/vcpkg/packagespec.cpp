@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
@@ -19,41 +20,11 @@ namespace vcpkg
         Strings::append(out, port(), '[', feature(), "]:", triplet());
     }
 
-    std::vector<FeatureSpec> FullPackageSpec::to_feature_specs(const std::vector<std::string>& default_features,
-                                                               const std::vector<std::string>& all_features) const
+    void FullPackageSpec::expand_fspecs_to(std::vector<FeatureSpec>& out) const
     {
-        std::vector<FeatureSpec> feature_specs;
-
-        if (Util::find(features, "*") != features.end())
+        for (auto&& feature : features)
         {
-            feature_specs.emplace_back(package_spec, "core");
-            for (const std::string& feature : all_features)
-            {
-                feature_specs.emplace_back(package_spec, feature);
-            }
-        }
-        else
-        {
-            bool core = false;
-            for (const std::string& feature : features)
-            {
-                feature_specs.emplace_back(package_spec, feature);
-
-                if (!core)
-                {
-                    core = feature == "core";
-                }
-            }
-
-            if (!core)
-            {
-                feature_specs.emplace_back(package_spec, "core");
-
-                for (const std::string& def : default_features)
-                {
-                    feature_specs.emplace_back(package_spec, def);
-                }
-            }
+            out.emplace_back(package_spec, feature);
         }
 
         return feature_specs;
@@ -109,13 +80,61 @@ namespace vcpkg
         return left.name() == right.name() && left.triplet() == right.triplet();
     }
 
-    ExpectedS<Features> Features::from_string(const std::string& name)
+    DECLARE_AND_REGISTER_MESSAGE(IllegalPlatformSpec,
+                                 (),
+                                 "",
+                                 "Error: Platform qualifier is not allowed in this context");
+    DECLARE_AND_REGISTER_MESSAGE(IllegalFeatures, (), "", "Error: List of features is not allowed in this contect");
+
+    static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
-        return parse_qualified_specifier(name).then([&](ParsedQualifiedSpecifier&& pqs) -> ExpectedS<Features> {
-            if (pqs.triplet) return "Error: triplet not allowed in this context: " + name + "\n";
-            if (pqs.platform) return "Error: platform specifier not allowed in this context: " + name + "\n";
-            return Features{pqs.name, pqs.features.value_or({})};
-        });
+        InternalFeatureSet ret;
+        bool core = false;
+        for (auto&& f : fs)
+        {
+            if (f == "core")
+            {
+                core = true;
+            }
+            ret.emplace_back(f);
+        }
+
+        if (!core)
+        {
+            ret.emplace_back("core");
+            if (id == ImplicitDefault::YES)
+            {
+                ret.emplace_back("default");
+            }
+        }
+        return ret;
+    }
+
+    ExpectedS<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet, ImplicitDefault id) const
+    {
+        if (platform)
+        {
+            return {msg::format(msgIllegalPlatformSpec).data(), expected_right_tag};
+        }
+
+        const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
+        const View<std::string> fs = !features.get() ? View<std::string>{} : *features.get();
+        return FullPackageSpec{{name, t}, normalize_feature_list(fs, id)};
+    }
+
+    ExpectedS<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet) const
+    {
+        if (platform)
+        {
+            return {msg::format(msgIllegalPlatformSpec).data(), expected_right_tag};
+        }
+        if (features)
+        {
+            return {msg::format(msgIllegalFeatures).data(), expected_right_tag};
+        }
+
+        const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
+        return PackageSpec{name, t};
     }
 
     static bool is_package_name_char(char32_t ch)
@@ -151,6 +170,12 @@ namespace vcpkg
         if (has_underscore || ParserBase::is_upper_alpha(ch))
         {
             parser.add_error("invalid character in feature name (must be lowercase, digits, '-')");
+            return nullopt;
+        }
+
+        if (ret == "default")
+        {
+            parser.add_error("'default' is a reserved feature name");
             return nullopt;
         }
 
@@ -283,7 +308,24 @@ namespace vcpkg
         if (lhs.value != rhs.value) return false;
         return lhs.port_version == rhs.port_version;
     }
-    bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
+
+    Optional<Version> DependencyConstraint::try_get_minimum_version() const
+    {
+        if (type == VersionConstraintKind::None)
+        {
+            return nullopt;
+        }
+
+        return Version{
+            value,
+            port_version,
+        };
+    }
+
+    FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
+    {
+        return FullPackageSpec{{name, host ? host_triplet : target}, normalize_feature_list(features, id)};
+    }
 
     FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet) const
     {
@@ -297,6 +339,7 @@ namespace vcpkg
         if (!structurally_equal(lhs.platform, rhs.platform)) return false;
         if (lhs.extra_info != rhs.extra_info) return false;
         if (lhs.constraint != rhs.constraint) return false;
+        if (lhs.host != rhs.host) return false;
 
         return true;
     }

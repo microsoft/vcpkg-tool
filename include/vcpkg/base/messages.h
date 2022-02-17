@@ -12,8 +12,6 @@
 
 namespace vcpkg::msg
 {
-    struct LocalizedString;
-
     namespace detail
     {
         template<class Tag, class Type>
@@ -47,7 +45,7 @@ namespace vcpkg::msg
         StringView get_localization_comment(::size_t index);
     }
 
-    // load from "locale_base/${language}.json"
+    // load from "locale_base/messages.${language}.json"
     void threadunsafe_initialize_context(const Filesystem& fs, StringView language, const Path& locale_base);
     // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
@@ -57,6 +55,7 @@ namespace vcpkg::msg
         LocalizedString() = default;
         operator StringView() const { return m_data; }
         const std::string& data() const { return m_data; }
+        std::string extract_data() { return std::exchange(m_data, ""); }
 
         static LocalizedString from_string_unchecked(std::string&& s)
         {
@@ -89,6 +88,8 @@ namespace vcpkg::msg
         }
     };
 
+    inline const char* to_printf_arg(const msg::LocalizedString& s) { return s.data().c_str(); }
+
     struct LocalizedStringMapLess
     {
         using is_transparent = void;
@@ -112,6 +113,16 @@ namespace vcpkg::msg
 
     inline void print(Color c, const LocalizedString& s) { write_unlocalized_text_to_stdout(c, s); }
     inline void print(const LocalizedString& s) { write_unlocalized_text_to_stdout(Color::none, s); }
+    inline void println(Color c, const LocalizedString& s)
+    {
+        write_unlocalized_text_to_stdout(c, s);
+        write_unlocalized_text_to_stdout(Color::none, "\n");
+    }
+    inline void println(const LocalizedString& s)
+    {
+        write_unlocalized_text_to_stdout(Color::none, s);
+        write_unlocalized_text_to_stdout(Color::none, "\n");
+    }
 
     template<class Message, class... Ts>
     void print(Message m, Ts... args)
@@ -155,14 +166,21 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(triplet);
     DECLARE_MSG_ARG(url);
     DECLARE_MSG_ARG(value);
+    DECLARE_MSG_ARG(expected);
+    DECLARE_MSG_ARG(actual);
+    DECLARE_MSG_ARG(elapsed);
     DECLARE_MSG_ARG(version);
     DECLARE_MSG_ARG(list);
+    DECLARE_MSG_ARG(output);
+    DECLARE_MSG_ARG(row);
+    DECLARE_MSG_ARG(column);
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of
 #define DECLARE_MESSAGE(NAME, ARGS, COMMENT, ...)                                                                      \
     constexpr struct NAME##_msg_t : decltype(::vcpkg::msg::detail::make_message_check_format_args ARGS)                \
     {                                                                                                                  \
+        using is_message_type = void;                                                                                  \
         static ::vcpkg::StringLiteral name() { return #NAME; }                                                         \
         static ::vcpkg::StringLiteral localization_comment() { return COMMENT; };                                      \
         static ::vcpkg::StringLiteral default_format_string() noexcept { return __VA_ARGS__; }                         \

@@ -167,6 +167,7 @@ namespace
     template<class Enumerator, class ExpectedGenerator>
     void do_filesystem_enumeration_test(Enumerator&& enumerator, ExpectedGenerator&& generate_expected)
     {
+        // Note: not seeded with random data, so this will always produce the same sequence of names
         urbg_t urbg;
 
         auto& fs = setup();
@@ -186,6 +187,8 @@ namespace
         const auto target_inside_directory = target_directory / "some-inner-directory";
         const auto target_inside_directory_symlink = target_directory / "symlink-to-some-inner-directory";
 
+        fs.remove_all(temp_dir, VCPKG_LINE_INFO);
+
         fs.create_directory(temp_dir, VCPKG_LINE_INFO);
         fs.create_directory(target_root, VCPKG_LINE_INFO);
         fs.create_directory(target_directory, VCPKG_LINE_INFO);
@@ -198,6 +201,7 @@ namespace
         fs.create_symlink(target_file, target_symlink, ec);
         if (ec)
         {
+            INFO(ec.message());
             REQUIRE(is_valid_symlink_failure(ec));
         }
         else
@@ -737,6 +741,23 @@ TEST_CASE ("get_files_recursive_symlinks", "[files]")
                 root / "some-directory" / "symlink-to-some-inner-directory",
                 root / "symlink-to-file.txt",
                 root / "symlink-to-some-directory",
+            };
+        });
+}
+
+TEST_CASE ("get_regular_files_recursive_proximate_symlinks", "[files]")
+{
+    do_filesystem_enumeration_test(
+        [](Filesystem& fs, const Path& root) {
+            return fs.get_regular_files_recursive_lexically_proximate(root, VCPKG_LINE_INFO);
+        },
+        [](const Path&) {
+            Path somedir{"some-directory"};
+            return std::vector<Path>{
+                "file.txt",
+                somedir / "file2.txt",
+                somedir / "symlink-to-file2.txt",
+                "symlink-to-file.txt",
             };
         });
 }

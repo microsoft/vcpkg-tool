@@ -92,6 +92,103 @@ namespace vcpkg::Unicode
         return count;
     }
 
+    std::pair<const char*, utf8_errc> utf8_decode_code_point(const char* first,
+                                                             const char* last,
+                                                             char32_t& out) noexcept
+    {
+        out = end_of_file;
+        if (first == last)
+        {
+            return {last, utf8_errc::NoError};
+        }
+
+        auto code_unit = *first;
+        auto kind = utf8_code_unit_kind(code_unit);
+        const int count = utf8_code_unit_count(kind);
+
+        const char* it = first + 1;
+
+        if (kind == Utf8CodeUnitKind::Invalid)
+        {
+            return {it, utf8_errc::InvalidCodeUnit};
+        }
+        else if (kind == Utf8CodeUnitKind::Continue)
+        {
+            return {it, utf8_errc::UnexpectedContinue};
+        }
+        else if (count > last - first)
+        {
+            return {last, utf8_errc::UnexpectedEof};
+        }
+
+        if (count == 1)
+        {
+            out = static_cast<char32_t>(code_unit);
+            return {it, utf8_errc::NoError};
+        }
+
+        // 2 -> 0b0001'1111, 6
+        // 3 -> 0b0000'1111, 12
+        // 4 -> 0b0000'0111, 18
+        const auto start_mask = static_cast<unsigned char>(0xFF >> (count + 1));
+        const int start_shift = 6 * (count - 1);
+        char32_t code_point = static_cast<char32_t>(code_unit & start_mask) << start_shift;
+
+        constexpr unsigned char continue_mask = 0b0011'1111;
+        for (int byte = 1; byte < count; ++byte)
+        {
+            code_unit = static_cast<unsigned char>(*it++);
+
+            kind = utf8_code_unit_kind(code_unit);
+            if (kind == Utf8CodeUnitKind::Invalid)
+            {
+                return {it, utf8_errc::InvalidCodeUnit};
+            }
+            else if (kind != Utf8CodeUnitKind::Continue)
+            {
+                return {it, utf8_errc::UnexpectedStart};
+            }
+
+            const int shift = 6 * (count - byte - 1);
+            code_point |= (code_unit & continue_mask) << shift;
+        }
+
+        if (code_point > 0x10'FFFF)
+        {
+            return {it, utf8_errc::InvalidCodePoint};
+        }
+
+        out = code_point;
+        return {it, utf8_errc::NoError};
+    }
+
+    // uses the C++20 definition
+    /*
+        [format.string.std]
+        * U+1100 - U+115F
+        * U+2329 - U+232A
+        * U+2E80 - U+303E
+        * U+3040 - U+A4CF
+        * U+AC00 - U+D7A3
+        * U+F900 - U+FAFF
+        * U+FE10 - U+FE19
+        * U+FE30 - U+FE6F
+        * U+FF00 - U+FF60
+        * U+FFE0 - U+FFE6
+        * U+1F300 - U+1F64F
+        * U+1F900 - U+1F9FF
+        * U+20000 - U+2FFFD
+        * U+30000 - U+3FFFD
+    */
+    bool is_double_width_code_point(char32_t ch) noexcept
+    {
+        return (ch >= 0x1100 && ch <= 0x115F) || (ch >= 0x2329 && ch <= 0x232A) || (ch >= 0x2E80 && ch <= 0x303E) ||
+               (ch >= 0x3040 && ch <= 0xA4CF) || (ch >= 0xAC00 && ch <= 0xD7A3) || (ch >= 0xF900 && ch <= 0xFAFF) ||
+               (ch >= 0xFE10 && ch <= 0xFE19) || (ch >= 0xFE30 && ch <= 0xFE6F) || (ch >= 0xFF00 && ch <= 0xFF60) ||
+               (ch >= 0xFFE0 && ch <= 0xFFE6) || (ch >= 0x1F300 && ch <= 0x1F64F) || (ch >= 0x1F900 && ch <= 0x1F9FF) ||
+               (ch >= 0x20000 && ch <= 0x2FFFD) || (ch >= 0x30000 && ch <= 0x3FFFD);
+    }
+
     bool utf8_is_valid_string(const char* first, const char* last) noexcept
     {
         utf8_errc err = utf8_errc::NoError;
@@ -179,76 +276,22 @@ namespace vcpkg::Unicode
             return utf8_errc::NoError;
         }
 
-        unsigned char code_unit = static_cast<unsigned char>(*next_++);
-
-        auto kind = utf8_code_unit_kind(code_unit);
-        if (kind == Utf8CodeUnitKind::Invalid)
+        char32_t code_point;
+        auto new_next = utf8_decode_code_point(next_, last_, code_point);
+        if (new_next.second != utf8_errc::NoError)
         {
             *this = sentinel();
-            return utf8_errc::InvalidCodeUnit;
+            return new_next.second;
         }
-        else if (kind == Utf8CodeUnitKind::Continue)
+
+        if (utf16_is_trailing_surrogate_code_point(code_point) && utf16_is_leading_surrogate_code_point(current_))
         {
             *this = sentinel();
-            return utf8_errc::UnexpectedContinue;
+            return utf8_errc::PairedSurrogates;
         }
 
-        const int count = utf8_code_unit_count(kind);
-        if (count == 1)
-        {
-            current_ = static_cast<char32_t>(code_unit);
-        }
-        else
-        {
-            // 2 -> 0b0001'1111, 6
-            // 3 -> 0b0000'1111, 12
-            // 4 -> 0b0000'0111, 18
-            const auto start_mask = static_cast<unsigned char>(0xFF >> (count + 1));
-            const int start_shift = 6 * (count - 1);
-            auto code_point = static_cast<char32_t>(code_unit & start_mask) << start_shift;
-
-            constexpr unsigned char continue_mask = 0b0011'1111;
-            for (int byte = 1; byte < count; ++byte)
-            {
-                if (next_ == last_)
-                {
-                    *this = sentinel();
-                    return utf8_errc::UnexpectedContinue;
-                }
-                code_unit = static_cast<unsigned char>(*next_++);
-
-                kind = utf8_code_unit_kind(code_unit);
-                if (kind == Utf8CodeUnitKind::Invalid)
-                {
-                    *this = sentinel();
-                    return utf8_errc::InvalidCodeUnit;
-                }
-                else if (kind != Utf8CodeUnitKind::Continue)
-                {
-                    *this = sentinel();
-                    return utf8_errc::UnexpectedStart;
-                }
-
-                const int shift = 6 * (count - byte - 1);
-                code_point |= (code_unit & continue_mask) << shift;
-            }
-
-            if (code_point > 0x10'FFFF)
-            {
-                *this = sentinel();
-                return utf8_errc::InvalidCodePoint;
-            }
-            else if (utf16_is_trailing_surrogate_code_point(code_point) &&
-                     utf16_is_leading_surrogate_code_point(current_))
-            {
-                *this = sentinel();
-                return utf8_errc::PairedSurrogates;
-            }
-            else
-            {
-                current_ = code_point;
-            }
-        }
+        next_ = new_next.first;
+        current_ = code_point;
         return utf8_errc::NoError;
     }
 

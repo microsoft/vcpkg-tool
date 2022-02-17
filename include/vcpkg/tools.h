@@ -18,6 +18,7 @@ namespace vcpkg
         static const std::string CMAKE = "cmake";
         static const std::string GIT = "git";
         static const std::string GSUTIL = "gsutil";
+        static const std::string AWSCLI = "aws";
         static const std::string MONO = "mono";
         static const std::string NINJA = "ninja";
         static const std::string POWERSHELL_CORE = "powershell-core";

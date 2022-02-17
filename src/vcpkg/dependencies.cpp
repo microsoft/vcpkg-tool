@@ -1,6 +1,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -128,11 +129,12 @@ namespace vcpkg::Dependencies
                 if (auto vars = maybe_vars.get())
                 {
                     // Qualified dependency resolution is available
-                    auto fullspec_list = filter_dependencies(*qualified_deps, m_spec.triplet(), host_triplet, *vars);
+                    auto fullspec_list = filter_dependencies(
+                        *qualified_deps, m_spec.triplet(), host_triplet, *vars, ImplicitDefault::YES);
 
                     for (auto&& fspec : fullspec_list)
                     {
-                        fspec.expand_to(dep_list, depend_defaults);
+                        fspec.expand_fspecs_to(dep_list, depend_defaults);
                     }
 
                     Util::sort_unique_erase(dep_list);
@@ -145,7 +147,8 @@ namespace vcpkg::Dependencies
                     {
                         if (dep.platform.is_empty())
                         {
-                            dep.to_full_spec(m_spec.triplet(), host_triplet).expand_to(dep_list, depend_defaults);
+                            dep.to_full_spec(m_spec.triplet(), host_triplet, ImplicitDefault::YES)
+                                .expand_fspecs_to(dep_list, depend_defaults);
                         }
                         else
                         {
@@ -308,7 +311,7 @@ namespace vcpkg::Dependencies
                     const SourceControlFileAndLocation* scfl = m_port_provider.get_control_file(spec.name()).get();
 
                     Checks::check_exit(VCPKG_LINE_INFO,
-                                       scfl,
+                                       scfl != nullptr,
                                        "Error: Cannot find definition for package `%s` while getting `%s`.",
                                        spec.name(),
                                        spec);
@@ -382,11 +385,11 @@ namespace vcpkg::Dependencies
         Strings::append(ret, s);
         if (scfl)
         {
-            Strings::append(ret, " -> ", scfl->to_versiont());
+            Strings::append(ret, " -> ", scfl->to_version());
         }
         else if (ipv)
         {
-            Strings::append(ret, " -> ", VersionT{ipv->core->package.version, ipv->core->package.port_version});
+            Strings::append(ret, " -> ", Version{ipv->core->package.version, ipv->core->package.port_version});
         }
         if (options.use_head_version == Build::UseHeadVersion::YES)
         {
@@ -678,74 +681,6 @@ namespace vcpkg::Dependencies
         m_graph->get(spec).request_type = RequestType::USER_REQUESTED;
     }
 
-    // `features` should have "default" instead of missing "core"
-    std::vector<FullPackageSpec> resolve_deps_as_top_level(const SourceControlFile& scf,
-                                                           Triplet triplet,
-                                                           Triplet host_triplet,
-                                                           std::vector<std::string> features,
-                                                           CMakeVars::CMakeVarProvider& var_provider)
-    {
-        PackageSpec spec{scf.core_paragraph->name, triplet};
-        std::map<PackageSpec, std::vector<std::string>> specs_to_features;
-
-        Optional<const PlatformExpression::Context&> ctx_storage = var_provider.get_dep_info_vars(spec);
-        auto ctx = [&]() -> const PlatformExpression::Context& {
-            if (!ctx_storage)
-            {
-                var_provider.load_dep_info_vars({&spec, 1}, host_triplet);
-                ctx_storage = var_provider.get_dep_info_vars(spec);
-            }
-            return ctx_storage.value_or_exit(VCPKG_LINE_INFO);
-        };
-
-        auto handle_deps = [&](View<Dependency> deps) {
-            for (auto&& dep : deps)
-            {
-                if (dep.platform.is_empty() || dep.platform.evaluate(ctx()))
-                {
-                    if (dep.name == spec.name())
-                        Util::Vectors::append(&features, dep.features);
-                    else
-                    {
-                        auto t = dep.host ? host_triplet : triplet;
-                        Util::Vectors::append(&specs_to_features[{dep.name, t}], dep.features);
-                    }
-                }
-            }
-        };
-
-        handle_deps(scf.core_paragraph->dependencies);
-        enum class State
-        {
-            NotVisited = 0,
-            Visited,
-        };
-        std::map<std::string, State> feature_state;
-        while (!features.empty())
-        {
-            auto feature = std::move(features.back());
-            features.pop_back();
-
-            if (feature_state[feature] == State::Visited) continue;
-            feature_state[feature] = State::Visited;
-            if (feature == "default")
-            {
-                Util::Vectors::append(&features, scf.core_paragraph->default_features);
-            }
-            else
-            {
-                auto it =
-                    Util::find_if(scf.feature_paragraphs, [&feature](const std::unique_ptr<FeatureParagraph>& ptr) {
-                        return ptr->name == feature;
-                    });
-                if (it != scf.feature_paragraphs.end()) handle_deps(it->get()->dependencies);
-            }
-        }
-        return Util::fmap(specs_to_features, [](std::pair<const PackageSpec, std::vector<std::string>>& p) {
-            return FullPackageSpec(p.first, Util::sort_unique_erase(std::move(p.second)));
-        });
-    }
-
     ActionPlan create_feature_install_plan(const PortFileProvider::PortFileProvider& port_provider,
                                            const CMakeVars::CMakeVarProvider& var_provider,
                                            View<FullPackageSpec> specs,
@@ -757,31 +692,11 @@ namespace vcpkg::Dependencies
         std::vector<FeatureSpec> feature_specs;
         for (const FullPackageSpec& spec : specs)
         {
-            auto maybe_scfl = port_provider.get_control_file(spec.package_spec.name());
-
-            Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                        maybe_scfl.has_value(),
-                                        "Error: while loading port `%s`: %s",
-                                        spec.package_spec.name(),
-                                        maybe_scfl.error());
-
-            const SourceControlFileAndLocation* scfl = maybe_scfl.get();
-
-            const std::vector<std::string> all_features =
-                Util::fmap(scfl->source_control_file->feature_paragraphs,
-                           [](auto&& feature_paragraph) { return feature_paragraph->name; });
-
-            auto fspecs =
-                spec.to_feature_specs(scfl->source_control_file->core_paragraph->default_features, all_features);
-            feature_specs.insert(
-                feature_specs.end(), std::make_move_iterator(fspecs.begin()), std::make_move_iterator(fspecs.end()));
+            pgraph.mark_user_requested(spec.package_spec);
+            spec.expand_fspecs_to(feature_specs);
         }
         Util::sort_unique_erase(feature_specs);
 
-        for (const FeatureSpec& spec : feature_specs)
-        {
-            pgraph.mark_user_requested(spec.spec());
-        }
         pgraph.install(feature_specs, options.unsupported_port_action);
 
         auto res = pgraph.serialize(options.randomizer);
@@ -829,12 +744,21 @@ namespace vcpkg::Dependencies
             while (!next_dependencies.empty())
             {
                 // Extract the top of the stack
-                FeatureSpec spec = std::move(next_dependencies.back());
+                const FeatureSpec spec = std::move(next_dependencies.back());
                 next_dependencies.pop_back();
 
                 // Get the cluster for the PackageSpec of the FeatureSpec we are adding to the install graph
                 Cluster& clust = m_graph->get(spec.spec());
-                spec = FeatureSpec{clust.m_spec, spec.feature()};
+
+                if (spec.feature() == "*")
+                {
+                    // Expand wildcard feature
+                    for (auto&& fpgh : clust.get_scfl_or_exit().source_control_file->feature_paragraphs)
+                    {
+                        next_dependencies.emplace_back(spec.spec(), fpgh->name);
+                    }
+                    continue;
+                }
 
                 // If this spec hasn't already had its qualified dependencies resolved
                 if (!m_var_provider.get_dep_info_vars(spec.spec()).has_value())
@@ -1121,7 +1045,7 @@ namespace vcpkg::Dependencies
                 auto p_installed = graph->get(dep).m_installed.get();
                 Checks::check_maybe_upgrade(
                     VCPKG_LINE_INFO,
-                    p_installed,
+                    p_installed != nullptr,
                     "Error: database corrupted. Package %s is installed but dependency %s is not.",
                     ipv.spec(),
                     dep);
@@ -1282,7 +1206,7 @@ namespace vcpkg::Dependencies
             {
             }
 
-            void add_override(const std::string& name, const Versions::Version& v);
+            void add_override(const std::string& name, const Version& v);
 
             void add_roots(View<Dependency> dep, const PackageSpec& toplevel);
 
@@ -1300,7 +1224,7 @@ namespace vcpkg::Dependencies
             struct DepSpec
             {
                 PackageSpec spec;
-                Versions::Version ver;
+                Version ver;
                 std::vector<std::string> features;
             };
 
@@ -1308,15 +1232,15 @@ namespace vcpkg::Dependencies
             // there we save an object for every version)
             struct VersionSchemeInfo
             {
-                Versions::Scheme scheme;
+                VersionScheme scheme;
                 const SourceControlFileAndLocation* scfl = nullptr;
-                Versions::Version version;
+                Version version;
                 // This tracks a list of constraint sources for debugging purposes
                 std::vector<std::string> origins;
                 // mapping from feature name -> dependencies of this feature
                 std::map<std::string, std::vector<FeatureSpec>> deps;
 
-                bool is_less_than(const Versions::Version& new_ver) const;
+                bool is_less_than(const Version& new_ver) const;
             };
 
             struct PackageNode
@@ -1332,26 +1256,25 @@ namespace vcpkg::Dependencies
                 //     "1.0.1": { "version": "1.0.2" },
                 //     "1.0.2": { "version": "1.0.2" }
                 //  }
-                std::map<Versions::Version, VersionSchemeInfo*, VersionTMapLess> vermap;
+                std::map<Version, VersionSchemeInfo*, VersionMapLess> vermap;
                 // We don't know how to compare "version-string" versions, so keep all the versions separately
                 std::map<std::string, VersionSchemeInfo> exacts;
-                // for each version type besides string (relaxed, semver, date), we only track the latest version
+                // for each version type besides string (relaxed-semver, date), we only track the latest version
                 // required
-                Optional<std::unique_ptr<VersionSchemeInfo>> relaxed;
-                Optional<std::unique_ptr<VersionSchemeInfo>> semver;
+                Optional<std::unique_ptr<VersionSchemeInfo>> relaxed_semver;
                 Optional<std::unique_ptr<VersionSchemeInfo>> date;
                 std::set<std::string> requested_features;
                 bool default_features;
                 bool user_requested = false;
 
-                VersionSchemeInfo* get_node(const Versions::Version& ver);
+                VersionSchemeInfo* get_node(const Version& ver);
                 // Adds the version to the version resolver:
                 //   - for string version schemes, just adds the newer version to the set
                 //   - for non-string version schemes:
                 //     - if the scheme doesn't exist in the set, adds the version to the set
                 //     - if the scheme already exists in the set, and the version is newer than the existing entry,
                 //     replaces the current entry for the scheme
-                VersionSchemeInfo& emplace_node(Versions::Scheme scheme, const Versions::Version& ver);
+                VersionSchemeInfo& emplace_node(VersionScheme scheme, const Version& ver);
 
                 explicit PackageNode(bool default_features) : default_features(default_features) { }
                 PackageNode(const PackageNode&) = delete;
@@ -1362,13 +1285,9 @@ namespace vcpkg::Dependencies
                 template<class F>
                 void foreach_vsi(F f)
                 {
-                    if (auto r = this->relaxed.get())
+                    if (auto r = this->relaxed_semver.get())
                     {
                         f(**r);
-                    }
-                    if (auto s = this->semver.get())
-                    {
-                        f(**s);
                     }
                     if (auto d = this->date.get())
                     {
@@ -1384,7 +1303,7 @@ namespace vcpkg::Dependencies
             // the roots of the dependency graph (given in the manifest file)
             std::vector<DepSpec> m_roots;
             // mapping from portname -> version. "overrides" field in manifest file
-            std::map<std::string, Versions::Version> m_overrides;
+            std::map<std::string, Version> m_overrides;
             // mapping from { package specifier -> node containing resolution information for that package }
             std::map<PackageSpec, PackageNode> m_graph;
 
@@ -1396,7 +1315,7 @@ namespace vcpkg::Dependencies
                                     bool depend_defaults,
                                     const std::string& origin);
             void require_port_version(std::pair<const PackageSpec, PackageNode>& graph_entry,
-                                      const Versions::Version& ver,
+                                      const Version& ver,
                                       const std::string& origin);
             void require_port_feature(std::pair<const PackageSpec, PackageNode>& ref,
                                       const std::string& feature,
@@ -1408,7 +1327,7 @@ namespace vcpkg::Dependencies
                                 VersionSchemeInfo& vsi,
                                 const std::string& feature);
 
-            Optional<Versions::Version> dep_to_version(const std::string& name, const DependencyConstraint& dc);
+            Optional<Version> dep_to_version(const std::string& name, const DependencyConstraint& dc);
 
             static std::string format_incomparable_versions_message(const PackageSpec& on,
                                                                     StringView from,
@@ -1418,42 +1337,30 @@ namespace vcpkg::Dependencies
             std::vector<std::string> m_errors;
         };
 
-        VersionedPackageGraph::VersionSchemeInfo& VersionedPackageGraph::PackageNode::emplace_node(
-            Versions::Scheme scheme, const Versions::Version& ver)
+        VersionedPackageGraph::VersionSchemeInfo& VersionedPackageGraph::PackageNode::emplace_node(VersionScheme scheme,
+                                                                                                   const Version& ver)
         {
             auto it = vermap.find(ver);
             if (it != vermap.end()) return *it->second;
 
             VersionSchemeInfo* vsi = nullptr;
-            if (scheme == Versions::Scheme::String)
+            if (scheme == VersionScheme::String)
             {
                 vsi = &exacts[ver.text()];
             }
-            else if (scheme == Versions::Scheme::Relaxed)
+            else if (scheme == VersionScheme::Relaxed || scheme == VersionScheme::Semver)
             {
-                if (auto p = relaxed.get())
+                if (auto p = relaxed_semver.get())
                 {
                     vsi = p->get();
                 }
                 else
                 {
-                    relaxed = std::make_unique<VersionSchemeInfo>();
-                    vsi = relaxed.get()->get();
+                    relaxed_semver = std::make_unique<VersionSchemeInfo>();
+                    vsi = relaxed_semver.get()->get();
                 }
             }
-            else if (scheme == Versions::Scheme::Semver)
-            {
-                if (auto p = semver.get())
-                {
-                    vsi = p->get();
-                }
-                else
-                {
-                    semver = std::make_unique<VersionSchemeInfo>();
-                    vsi = semver.get()->get();
-                }
-            }
-            else if (scheme == Versions::Scheme::Date)
+            else if (scheme == VersionScheme::Date)
             {
                 if (auto p = date.get())
                 {
@@ -1475,34 +1382,48 @@ namespace vcpkg::Dependencies
             return *vsi;
         }
 
-        VersionedPackageGraph::VersionSchemeInfo* VersionedPackageGraph::PackageNode::get_node(
-            const Versions::Version& ver)
+        VersionedPackageGraph::VersionSchemeInfo* VersionedPackageGraph::PackageNode::get_node(const Version& ver)
         {
             auto it = vermap.find(ver);
             return it == vermap.end() ? nullptr : it->second;
         }
 
-        using Versions::VerComp;
-
-        static VerComp compare_versions(Versions::Scheme sa,
-                                        const Versions::Version& a,
-                                        Versions::Scheme sb,
-                                        const Versions::Version& b)
+        static VerComp compare_version_texts(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)
         {
-            if (sa != sb) return VerComp::unk;
-
-            if (a.text() != b.text())
+            if (sa == VersionScheme::String && sb == VersionScheme::String)
             {
-                auto result = Versions::compare(a.text(), b.text(), sa);
-                if (result != VerComp::eq) return result;
+                return int_to_vercomp(a.text().compare(b.text()));
             }
 
-            if (a.port_version() < b.port_version()) return VerComp::lt;
-            if (a.port_version() > b.port_version()) return VerComp::gt;
-            return VerComp::eq;
+            if (sa == VersionScheme::Date && sb == VersionScheme::Date)
+            {
+                return compare(DateVersion::try_parse(a.text()).value_or_exit(VCPKG_LINE_INFO),
+                               DateVersion::try_parse(b.text()).value_or_exit(VCPKG_LINE_INFO));
+            }
+
+            if ((sa == VersionScheme::Semver || sa == VersionScheme::Relaxed) &&
+                (sb == VersionScheme::Semver || sb == VersionScheme::Relaxed))
+            {
+                return compare(DotVersion::try_parse(a.text(), sa).value_or_exit(VCPKG_LINE_INFO),
+                               DotVersion::try_parse(b.text(), sb).value_or_exit(VCPKG_LINE_INFO));
+            }
+
+            return VerComp::unk;
         }
 
-        bool VersionedPackageGraph::VersionSchemeInfo::is_less_than(const Versions::Version& new_ver) const
+        static VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)
+        {
+            const auto inner_compare = compare_version_texts(sa, a, sb, b);
+            if (inner_compare == VerComp::eq)
+            {
+                if (a.port_version() < b.port_version()) return VerComp::lt;
+                if (a.port_version() > b.port_version()) return VerComp::gt;
+            }
+
+            return inner_compare;
+        }
+
+        bool VersionedPackageGraph::VersionSchemeInfo::is_less_than(const Version& new_ver) const
         {
             Checks::check_exit(VCPKG_LINE_INFO, scfl);
             ASSUME(scfl != nullptr);
@@ -1510,28 +1431,6 @@ namespace vcpkg::Dependencies
             auto r = compare_versions(s, version, s, new_ver);
             Checks::check_exit(VCPKG_LINE_INFO, r != VerComp::unk);
             return r == VerComp::lt;
-        }
-
-        Versions::Version to_version(const SourceControlFile& scf)
-        {
-            return {
-                scf.core_paragraph->version,
-                scf.core_paragraph->port_version,
-            };
-        }
-        Optional<Versions::Version> to_version(const DependencyConstraint& dc)
-        {
-            if (dc.type == Versions::Constraint::Type::None)
-            {
-                return nullopt;
-            }
-            else
-            {
-                return Versions::Version{
-                    dc.value,
-                    dc.port_version,
-                };
-            }
         }
 
         void VersionedPackageGraph::add_feature_to(std::pair<const PackageSpec, PackageNode>& ref,
@@ -1601,21 +1500,20 @@ namespace vcpkg::Dependencies
                                                        bool depend_defaults,
                                                        const std::string& origin)
         {
-            auto maybe_overlay = m_o_provider.get_control_file(ref.first.name());
-            auto over_it = m_overrides.find(ref.first.name());
+            const auto maybe_overlay = m_o_provider.get_control_file(ref.first.name());
             if (auto p_overlay = maybe_overlay.get())
             {
-                auto overlay_version = to_version(*p_overlay->source_control_file);
+                const auto overlay_version = p_overlay->source_control_file->to_version();
                 require_port_version(ref, overlay_version, origin);
             }
-            else if (over_it != m_overrides.end())
+            else if (const auto over_it = m_overrides.find(ref.first.name()); over_it != m_overrides.end())
             {
                 require_port_version(ref, over_it->second, origin);
             }
             else
             {
-                auto base_ver = m_base_provider.get_baseline_version(dep.name);
-                auto dep_ver = to_version(dep.constraint);
+                const auto base_ver = m_base_provider.get_baseline_version(dep.name);
+                const auto dep_ver = dep.constraint.try_get_minimum_version();
 
                 if (auto dv = dep_ver.get())
                 {
@@ -1639,7 +1537,7 @@ namespace vcpkg::Dependencies
             }
         }
         void VersionedPackageGraph::require_port_version(std::pair<const PackageSpec, PackageNode>& graph_entry,
-                                                         const Versions::Version& version,
+                                                         const Version& version,
                                                          const std::string& origin)
         {
             ExpectedS<const vcpkg::SourceControlFileAndLocation&> maybe_scfl;
@@ -1648,7 +1546,7 @@ namespace vcpkg::Dependencies
             auto maybe_overlay = m_o_provider.get_control_file(graph_entry.first.name());
             if (auto p_overlay = maybe_overlay.get())
             {
-                auto overlay_version = to_version(*p_overlay->source_control_file);
+                const auto overlay_version = p_overlay->source_control_file->to_version();
                 // If the original request did not match the overlay version, restart this function to operate on the
                 // overlay version
                 if (version != overlay_version)
@@ -1691,7 +1589,7 @@ namespace vcpkg::Dependencies
                 if (replace)
                 {
                     versioned_graph_entry.scfl = p_scfl;
-                    versioned_graph_entry.version = to_version(*p_scfl->source_control_file);
+                    versioned_graph_entry.version = p_scfl->source_control_file->to_version();
                     versioned_graph_entry.deps.clear();
 
                     // add all dependencies to the graph
@@ -1739,6 +1637,10 @@ namespace vcpkg::Dependencies
                                                          const std::string& feature,
                                                          const std::string& origin)
         {
+            if (feature == "default")
+            {
+                return require_port_defaults(ref, origin);
+            }
             auto inserted = ref.second.requested_features.emplace(feature).second;
             if (inserted)
             {
@@ -1759,13 +1661,12 @@ namespace vcpkg::Dependencies
             return *it;
         }
 
-        Optional<Versions::Version> VersionedPackageGraph::dep_to_version(const std::string& name,
-                                                                          const DependencyConstraint& dc)
+        Optional<Version> VersionedPackageGraph::dep_to_version(const std::string& name, const DependencyConstraint& dc)
         {
             auto maybe_overlay = m_o_provider.get_control_file(name);
             if (auto p_overlay = maybe_overlay.get())
             {
-                return to_version(*p_overlay->source_control_file);
+                return p_overlay->source_control_file->to_version();
             }
 
             auto over_it = m_overrides.find(name);
@@ -1774,18 +1675,16 @@ namespace vcpkg::Dependencies
                 return over_it->second;
             }
 
-            auto maybe_cons = to_version(dc);
+            const auto maybe_cons = dc.try_get_minimum_version();
             if (maybe_cons)
             {
                 return maybe_cons;
             }
-            else
-            {
-                return m_base_provider.get_baseline_version(name);
-            }
+
+            return m_base_provider.get_baseline_version(name);
         }
 
-        void VersionedPackageGraph::add_override(const std::string& name, const Versions::Version& v)
+        void VersionedPackageGraph::add_override(const std::string& name, const Version& v)
         {
             m_overrides.emplace(name, v);
         }
@@ -1848,7 +1747,7 @@ namespace vcpkg::Dependencies
                 auto over_it = m_overrides.find(dep.name);
                 if (auto p_overlay = maybe_overlay.get())
                 {
-                    auto ver = to_version(*p_overlay->source_control_file);
+                    const auto ver = p_overlay->source_control_file->to_version();
                     m_roots.push_back(DepSpec{spec, ver, dep.features});
                     require_port_version(node, ver, toplevel.name());
                 }
@@ -1859,8 +1758,8 @@ namespace vcpkg::Dependencies
                 }
                 else
                 {
-                    auto dep_ver = to_version(dep.constraint);
-                    auto base_ver = m_base_provider.get_baseline_version(dep.name);
+                    const auto dep_ver = dep.constraint.try_get_minimum_version();
+                    const auto base_ver = m_base_provider.get_baseline_version(dep.name);
                     if (auto p_dep_ver = dep_ver.get())
                     {
                         m_roots.push_back(DepSpec{spec, *p_dep_ver, dep.features});
@@ -1953,8 +1852,9 @@ namespace vcpkg::Dependencies
         ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan(
             const PackageSpec& toplevel, UnsupportedPortAction unsupported_port_action)
         {
-            if (m_errors.size() > 0)
+            if (!m_errors.empty())
             {
+                Util::sort_unique_erase(m_errors);
                 return Strings::join("\n", m_errors);
             }
 
@@ -1972,7 +1872,7 @@ namespace vcpkg::Dependencies
             // Adds a new Frame to the stack if the spec was not already added
             auto push = [&emitted, this, &stack, unsupported_port_action, &ret](
                             const PackageSpec& spec,
-                            const Versions::Version& new_ver,
+                            const Version& new_ver,
                             const PackageSpec& origin,
                             View<std::string> features) -> Optional<std::string> {
                 auto&& node = emplace_package(spec).second;
@@ -1981,7 +1881,7 @@ namespace vcpkg::Dependencies
 
                 VersionedPackageGraph::VersionSchemeInfo* p_vnode;
                 if (auto p_overlay = overlay.get())
-                    p_vnode = node.get_node(to_version(*p_overlay->source_control_file));
+                    p_vnode = node.get_node(p_overlay->source_control_file->to_version());
                 else if (over_it != m_overrides.end())
                     p_vnode = node.get_node(over_it->second);
                 else
@@ -2018,6 +1918,7 @@ namespace vcpkg::Dependencies
                 for (auto&& f : features)
                 {
                     if (f == "core") continue;
+                    if (f == "default") continue;
                     auto feature = p_vnode->scfl->source_control_file->find_feature(f);
                     if (!feature)
                     {
@@ -2142,7 +2043,7 @@ namespace vcpkg::Dependencies
                         emitted[back.ipa.spec] =
                             emplace_package(back.ipa.spec)
                                 .second.get_node(
-                                    to_version(*back.ipa.source_control_file_and_location.get()->source_control_file));
+                                    back.ipa.source_control_file_and_location.get()->source_control_file->to_version());
                         ret.install_actions.push_back(std::move(back.ipa));
                         stack.pop_back();
                     }

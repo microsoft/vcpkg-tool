@@ -1,8 +1,10 @@
 #pragma once
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/view.h>
 
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
@@ -25,8 +27,6 @@ namespace vcpkg
     {
         PackageSpec() = default;
         PackageSpec(std::string name, Triplet triplet) : m_name(std::move(name)), m_triplet(triplet) { }
-
-        static std::vector<PackageSpec> to_package_specs(const std::vector<std::string>& ports, Triplet triplet);
 
         const std::string& name() const;
 
@@ -92,6 +92,12 @@ namespace vcpkg
         std::string m_feature;
     };
 
+    /// In an internal feature set, "default" represents default features and missing "core" has no semantic
+    struct InternalFeatureSet : std::vector<std::string>
+    {
+        using std::vector<std::string>::vector;
+    };
+
     ///
     /// <summary>
     /// Full specification of a package. Contains all information to reference
@@ -101,50 +107,27 @@ namespace vcpkg
     struct FullPackageSpec
     {
         PackageSpec package_spec;
-        std::vector<std::string> features;
+        InternalFeatureSet features;
 
         FullPackageSpec() = default;
-        explicit FullPackageSpec(PackageSpec spec, std::vector<std::string> features = {})
+        explicit FullPackageSpec(PackageSpec spec, InternalFeatureSet features)
             : package_spec(std::move(spec)), features(std::move(features))
         {
         }
 
-        std::vector<FeatureSpec> to_feature_specs(const std::vector<std::string>& default_features,
-                                                  const std::vector<std::string>& all_features) const;
+        /// Splats into individual FeatureSpec's
+        void expand_fspecs_to(std::vector<FeatureSpec>& oFut) const;
 
-        void to_feature_specs(std::vector<FeatureSpec>& out,
-                              const std::vector<std::string>& default_features,
-                              const std::vector<std::string>& all_features) const;
-
-        /// Splats out individual FeatureSpec's into out. If "core" is missing, adds "core".
-        /// @param with_defaults also add "default" if "core" is missing
-        void expand_to(std::vector<FeatureSpec>& out, bool with_defaults) const;
-
-        static ExpectedS<FullPackageSpec> from_string(const std::string& spec_as_string, Triplet default_triplet);
-
-        bool operator==(const FullPackageSpec& o) const
+        friend bool operator==(const FullPackageSpec& l, const FullPackageSpec& r)
         {
-            return package_spec == o.package_spec && features == o.features;
+            return l.package_spec == r.package_spec && l.features == r.features;
         }
-        bool operator!=(const FullPackageSpec& o) const { return !(*this == o); }
-    };
-
-    ///
-    /// <summary>
-    /// Contains all information to reference a collection of features in a single package by their names.
-    /// </summary>
-    ///
-    struct Features
-    {
-        std::string name;
-        std::vector<std::string> features;
-
-        static ExpectedS<Features> from_string(const std::string& input);
+        friend bool operator!=(const FullPackageSpec& l, const FullPackageSpec& r) { return !(l == r); }
     };
 
     struct DependencyConstraint
     {
-        Versions::Constraint::Type type = Versions::Constraint::Type::None;
+        VersionConstraintKind type = VersionConstraintKind::None;
         std::string value;
         int port_version = 0;
 
@@ -153,6 +136,14 @@ namespace vcpkg
         {
             return !(lhs == rhs);
         }
+
+        Optional<Version> try_get_minimum_version() const;
+    };
+
+    enum class ImplicitDefault : bool
+    {
+        NO,
+        YES,
     };
 
     struct Dependency
@@ -165,7 +156,8 @@ namespace vcpkg
 
         Json::Object extra_info;
 
-        FullPackageSpec to_full_spec(Triplet target, Triplet host) const;
+        /// @param id adds "default" if "core" not present.
+        FullPackageSpec to_full_spec(Triplet target, Triplet host, ImplicitDefault id) const;
 
         friend bool operator==(const Dependency& lhs, const Dependency& rhs);
         friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }
@@ -176,7 +168,7 @@ namespace vcpkg
         std::string name;
         std::string version;
         int port_version = 0;
-        Versions::Scheme version_scheme = Versions::Scheme::String;
+        VersionScheme version_scheme = VersionScheme::String;
 
         Json::Object extra_info;
 
@@ -190,6 +182,12 @@ namespace vcpkg
         Optional<std::vector<std::string>> features;
         Optional<std::string> triplet;
         Optional<PlatformExpression::Expr> platform;
+
+        /// @param id add "default" if "core" is not present
+        /// @return nullopt on success. On failure, caller should supplement returned string with more context.
+        ExpectedS<FullPackageSpec> to_full_spec(Triplet default_triplet, ImplicitDefault id) const;
+
+        ExpectedS<PackageSpec> to_package_spec(Triplet default_triplet) const;
     };
 
     Optional<std::string> parse_feature_name(Parse::ParserBase& parser);
@@ -198,28 +196,39 @@ namespace vcpkg
     Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(Parse::ParserBase& parser);
 }
 
-namespace std
+template<class Char>
+struct fmt::formatter<vcpkg::PackageSpec, Char>
 {
-    template<>
-    struct hash<vcpkg::PackageSpec>
+    constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
     {
-        size_t operator()(const vcpkg::PackageSpec& value) const
-        {
-            size_t hash = 17;
-            hash = hash * 31 + std::hash<std::string>()(value.name());
-            hash = hash * 31 + std::hash<vcpkg::Triplet>()(value.triplet());
-            return hash;
-        }
-    };
+        return vcpkg::basic_format_parse_impl(ctx);
+    }
+    template<class FormatContext>
+    auto format(const vcpkg::PackageSpec& spec, FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        return fmt::formatter<std::string, Char>{}.format(spec.to_string(), ctx);
+    }
+};
 
-    template<>
-    struct hash<vcpkg::FeatureSpec>
+template<>
+struct std::hash<vcpkg::PackageSpec>
+{
+    size_t operator()(const vcpkg::PackageSpec& value) const
     {
-        size_t operator()(const vcpkg::FeatureSpec& value) const
-        {
-            size_t hash = std::hash<vcpkg::PackageSpec>()(value.spec());
-            hash = hash * 31 + std::hash<std::string>()(value.feature());
-            return hash;
-        }
-    };
-}
+        size_t hash = 17;
+        hash = hash * 31 + std::hash<std::string>()(value.name());
+        hash = hash * 31 + std::hash<vcpkg::Triplet>()(value.triplet());
+        return hash;
+    }
+};
+
+template<>
+struct std::hash<vcpkg::FeatureSpec>
+{
+    size_t operator()(const vcpkg::FeatureSpec& value) const
+    {
+        size_t hash = std::hash<vcpkg::PackageSpec>()(value.spec());
+        hash = hash * 31 + std::hash<std::string>()(value.feature());
+        return hash;
+    }
+};

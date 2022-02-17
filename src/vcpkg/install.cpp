@@ -49,6 +49,7 @@ namespace vcpkg::Install
                            fs.exists(source_dir, IgnoreErrors{}),
                            Strings::concat("Source directory ", source_dir, "does not exist"));
         auto files = fs.get_files_recursive(source_dir, VCPKG_LINE_INFO);
+        Util::erase_remove_if(files, [](Path& path) { return path.filename() == ".DS_Store"; });
         install_files_and_write_listfile(fs, source_dir, files, destination_dir);
     }
     void install_files_and_write_listfile(Filesystem& fs,
@@ -177,7 +178,8 @@ namespace vcpkg::Install
 
     static SortedVector<std::string> build_list_of_package_files(const Filesystem& fs, const Path& package_dir)
     {
-        const std::vector<Path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
+        std::vector<Path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
+        Util::erase_remove_if(package_file_paths, [](Path& path) { return path.filename() == ".DS_Store"; });
         const size_t package_remove_char_count = package_dir.native().size() + 1; // +1 for the slash
         auto package_files = Util::fmap(package_file_paths, [package_remove_char_count](const Path& target) {
             return std::string(target.generic_u8string(), package_remove_char_count);
@@ -329,7 +331,7 @@ namespace vcpkg::Install
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
         {
             std::unique_ptr<BinaryControlFile> bcf;
-            auto restore = binary_cache.try_restore(paths, action);
+            auto restore = binary_cache.try_restore(action);
             if (restore == RestoreResult::restored)
             {
                 auto maybe_bcf = Paragraphs::try_load_cached_package(fs, paths.package_dir(action.spec), action.spec);
@@ -481,7 +483,7 @@ namespace vcpkg::Install
         }
 
         Build::compute_all_abis(paths, action_plan, var_provider, status_db);
-        binary_cache.prefetch(paths, action_plan.install_actions);
+        binary_cache.prefetch(action_plan.install_actions);
         for (auto&& action : action_plan.install_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
@@ -850,7 +852,7 @@ namespace vcpkg::Install
             }
             if (failure)
             {
-                msg::println(msgUsingManifestAt, msg::path = paths.manifest_root_dir / "vcpkg.json");
+                msg::println(msgUsingManifestAt, msg::path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO));
                 print2("\n");
                 print_usage(MANIFEST_COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -889,7 +891,7 @@ namespace vcpkg::Install
         BinaryCache binary_cache;
         if (!only_downloads)
         {
-            binary_cache.install_providers_for(args);
+            binary_cache.install_providers_for(args, paths);
         }
 
         auto& fs = paths.get_filesystem();
@@ -946,18 +948,19 @@ namespace vcpkg::Install
             {
                 features.insert(features.end(), manifest_feature_it->second.begin(), manifest_feature_it->second.end());
             }
-            auto core_it = Util::find(features, "core");
-            if (core_it == features.end() &&
-                !Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
+            if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
+            {
+                features.push_back("core");
+            }
+
+            auto core_it = std::remove(features.begin(), features.end(), "core");
+            if (core_it == features.end())
             {
                 const auto& default_features = manifest_scf.core_paragraph->default_features;
                 features.insert(features.end(), default_features.begin(), default_features.end());
             }
             else
             {
-                // remove "core" because resolve_deps_as_top_level uses default-inversion
-                // support multiple core features
-                core_it = std::remove(core_it, features.end(), "core");
                 features.erase(core_it, features.end());
             }
             Util::sort_unique_erase(features);
@@ -984,7 +987,7 @@ namespace vcpkg::Install
             }
 
             if (std::any_of(dependencies.begin(), dependencies.end(), [](const Dependency& dep) {
-                    return dep.constraint.type != Versions::Constraint::Type::None;
+                    return dep.constraint.type != VersionConstraintKind::None;
                 }))
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_version_constraint", "defined");
@@ -1052,13 +1055,8 @@ namespace vcpkg::Install
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return Input::check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
-
-        for (auto&& spec : specs)
-        {
-            Input::check_triplet(spec.package_spec.triplet(), paths);
-        }
 
         // create the plan
         print2("Computing installation plan...\n");
@@ -1278,9 +1276,8 @@ namespace vcpkg::Install
 
         for (auto&& install_action : plan.install_actions)
         {
-            auto&& version_as_string = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                           .to_versiont()
-                                           .to_string();
+            auto&& version_as_string =
+                install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version().to_string();
             if (!specs_string.empty()) specs_string.push_back(',');
             specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
                                             ":",

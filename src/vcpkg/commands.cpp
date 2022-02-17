@@ -30,6 +30,7 @@
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/commands.porthistory.h>
 #include <vcpkg/commands.portsdiff.h>
+#include <vcpkg/commands.regenerate.h>
 #include <vcpkg/commands.search.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/commands.upgrade.h>
@@ -99,6 +100,7 @@ namespace vcpkg::Commands
         static const Owns::OwnsCommand owns{};
         static const PortHistory::PortHistoryCommand porthistory{};
         static const PortsDiff::PortsDiffCommand portsdiff{};
+        static const RegenerateCommand regenerate{};
         static const SearchCommand search{};
         static const Update::UpdateCommand update{};
         static const UseCommand use{};
@@ -130,6 +132,7 @@ namespace vcpkg::Commands
             {"x-ci-verify-versions", &ci_verify_versions},
             {"x-history", &porthistory},
             {"x-package-info", &info},
+            {"x-regenerate", &regenerate},
             {"x-vsinstances", &vsinstances},
             {"z-ce", &ce},
         };

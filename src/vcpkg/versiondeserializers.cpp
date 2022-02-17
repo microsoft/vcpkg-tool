@@ -3,7 +3,6 @@
 #include <vcpkg/versiondeserializers.h>
 
 using namespace vcpkg;
-using namespace vcpkg::Versions;
 
 namespace
 {
@@ -63,12 +62,12 @@ namespace
         bool m_allow_hash_portversion;
     };
 
-    struct GenericVersionTDeserializer : Json::IDeserializer<VersionT>
+    struct GenericVersionDeserializer : Json::IDeserializer<Version>
     {
-        GenericVersionTDeserializer(StringLiteral version_field) : m_version_field(version_field) { }
+        GenericVersionDeserializer(StringLiteral version_field) : m_version_field(version_field) { }
         StringView type_name() const override { return "a version object"; }
 
-        Optional<VersionT> visit_object(Json::Reader& r, const Json::Object& obj) override
+        Optional<Version> visit_object(Json::Reader& r, const Json::Object& obj) override
         {
             std::pair<std::string, Optional<int>> version;
             int port_version = 0;
@@ -78,7 +77,7 @@ namespace
             r.required_object_field(type_name(), obj, m_version_field, version, version_deserializer);
             r.optional_object_field(obj, PORT_VERSION, port_version, Json::NaturalNumberDeserializer::instance);
 
-            return VersionT{std::move(version.first), port_version};
+            return Version{std::move(version.first), port_version};
         }
         StringLiteral m_version_field;
     };
@@ -91,7 +90,7 @@ namespace vcpkg
                                                                         const Json::Object& obj,
                                                                         bool allow_hash_portversion)
     {
-        Versions::Scheme version_scheme = Versions::Scheme::String;
+        VersionScheme version_scheme = VersionScheme::String;
         std::pair<std::string, Optional<int>> version;
 
         VersionDeserializer version_exact_deserializer{"an exact version string", allow_hash_portversion};
@@ -132,12 +131,12 @@ namespace vcpkg
         {
             if (has_exact)
             {
-                version_scheme = Versions::Scheme::String;
+                version_scheme = VersionScheme::String;
             }
             else if (has_relax)
             {
-                version_scheme = Versions::Scheme::Relaxed;
-                auto v = Versions::relaxed_from_string(version.first);
+                version_scheme = VersionScheme::Relaxed;
+                auto v = DotVersion::try_parse_relaxed(version.first);
                 if (!v.has_value())
                 {
                     r.add_generic_error(parent_type, "'version' text was not a relaxed version:\n", v.error());
@@ -145,8 +144,8 @@ namespace vcpkg
             }
             else if (has_semver)
             {
-                version_scheme = Versions::Scheme::Semver;
-                auto v = Versions::semver_from_string(version.first);
+                version_scheme = VersionScheme::Semver;
+                auto v = DotVersion::try_parse_semver(version.first);
                 if (!v.has_value())
                 {
                     r.add_generic_error(parent_type, "'version-semver' text was not a semantic version:\n", v.error());
@@ -154,8 +153,8 @@ namespace vcpkg
             }
             else if (has_date)
             {
-                version_scheme = Versions::Scheme::Date;
-                auto v = Versions::DateVersion::from_string(version.first);
+                version_scheme = VersionScheme::Date;
+                auto v = DateVersion::try_parse(version.first);
                 if (!v.has_value())
                 {
                     r.add_generic_error(parent_type, "'version-date' text was not a date version:\n", v.error());
@@ -167,7 +166,7 @@ namespace vcpkg
             }
         }
 
-        return SchemedVersion(version_scheme, VersionT{std::move(version.first), port_version});
+        return SchemedVersion{version_scheme, Version{std::move(version.first), port_version}};
     }
 
     SchemedVersion visit_required_schemed_deserializer(StringView parent_type,
@@ -194,18 +193,18 @@ namespace vcpkg
     }
 
     void serialize_schemed_version(Json::Object& out_obj,
-                                   Versions::Scheme scheme,
+                                   VersionScheme scheme,
                                    const std::string& version,
                                    int port_version,
                                    bool always_emit_port_version)
     {
-        auto version_field = [](Versions::Scheme version_scheme) {
+        auto version_field = [](VersionScheme version_scheme) {
             switch (version_scheme)
             {
-                case Versions::Scheme::String: return VERSION_STRING;
-                case Versions::Scheme::Semver: return VERSION_SEMVER;
-                case Versions::Scheme::Relaxed: return VERSION_RELAXED;
-                case Versions::Scheme::Date: return VERSION_DATE;
+                case VersionScheme::String: return VERSION_STRING;
+                case VersionScheme::Semver: return VERSION_SEMVER;
+                case VersionScheme::Relaxed: return VERSION_RELAXED;
+                case VersionScheme::Date: return VERSION_DATE;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         };
@@ -218,15 +217,15 @@ namespace vcpkg
         }
     }
 
-    Json::IDeserializer<VersionT>& get_versiont_deserializer_instance()
+    Json::IDeserializer<Version>& get_version_deserializer_instance()
     {
-        static GenericVersionTDeserializer deserializer(VERSION_STRING);
+        static GenericVersionDeserializer deserializer(VERSION_STRING);
         return deserializer;
     }
 
-    Json::IDeserializer<VersionT>& get_versiontag_deserializer_instance()
+    Json::IDeserializer<Version>& get_versiontag_deserializer_instance()
     {
-        static GenericVersionTDeserializer deserializer(BASELINE);
+        static GenericVersionDeserializer deserializer(BASELINE);
         return deserializer;
     }
 }

@@ -10,7 +10,7 @@
 #include <vcpkg/base/view.h>
 
 #include <vcpkg/versiondeserializers.h>
-#include <vcpkg/versiont.h>
+#include <vcpkg/versions.h>
 
 #include <map>
 #include <memory>
@@ -51,9 +51,9 @@ namespace vcpkg
 
     struct RegistryEntry
     {
-        virtual View<VersionT> get_port_versions() const = 0;
+        virtual View<Version> get_port_versions() const = 0;
 
-        virtual ExpectedS<Path> get_path_to_version(const VersionT& version) const = 0;
+        virtual ExpectedS<Path> get_path_to_version(const Version& version) const = 0;
 
         virtual ~RegistryEntry() = default;
     };
@@ -69,7 +69,7 @@ namespace vcpkg
         // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
         virtual void get_all_port_names(std::vector<std::string>& port_names) const = 0;
 
-        virtual Optional<VersionT> get_baseline_version(StringView port_name) const = 0;
+        virtual Optional<Version> get_baseline_version(StringView port_name) const = 0;
 
         virtual Optional<Path> get_path_to_baseline_version(StringView port_name) const;
 
@@ -110,7 +110,7 @@ namespace vcpkg
         // finds the correct registry for the port name
         // Returns the null pointer if there is no registry set up for that name
         const RegistryImplementation* registry_for_port(StringView port_name) const;
-        Optional<VersionT> baseline_for_port(StringView port_name) const;
+        Optional<Version> baseline_for_port(StringView port_name) const;
 
         View<Registry> registries() const { return registries_; }
 
@@ -141,14 +141,14 @@ namespace vcpkg
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name);
 
-    ExpectedS<std::map<std::string, VersionT, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
+    ExpectedS<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
 
     struct VersionDbEntry
     {
-        VersionT version;
-        Versions::Scheme scheme = Versions::Scheme::String;
+        Version version;
+        VersionScheme scheme = VersionScheme::String;
 
         // only one of these may be non-empty
         std::string git_tree;

@@ -6,7 +6,7 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
-#include <vcpkg/versiont.h>
+#include <vcpkg/versions.h>
 
 namespace vcpkg::Commands::List
 {
@@ -52,7 +52,7 @@ namespace vcpkg::Commands::List
 
     static void do_print(const StatusParagraph& pgh, const bool full_desc)
     {
-        auto full_version = VersionT(pgh.package.version, pgh.package.port_version).to_string();
+        auto full_version = Version(pgh.package.version, pgh.package.port_version).to_string();
         if (full_desc)
         {
             vcpkg::printf("%-50s %-16s %s\n",
