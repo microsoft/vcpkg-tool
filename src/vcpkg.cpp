@@ -36,10 +36,7 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand,
-                                 (msg::command_name),
-                                 "",
-                                 "invalid command: {command_name}");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
                                  (),
                                  "",
@@ -51,11 +48,17 @@ namespace
 Please send an email to:
     {email}
 containing a brief summary of what you were trying to do and the following data blob:)");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedDataBlob, (msg::version, msg::error), "{LOCKED}\nexample for {error} is 'unknown error(...)'", R"(
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedDataBlob,
+                                 (msg::version, msg::error),
+                                 "{LOCKED}\nexample for {error} is 'unknown error(...)'",
+                                 R"(
 Version={version}
 EXCEPTION='{error}'
 CMD=)");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{LOCKED}\nexample for {value} is 'install'", "{value}|");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument,
+                                 (msg::value),
+                                 "{LOCKED}\nexample for {value} is 'install'",
+                                 "{value}|");
 
     DECLARE_AND_REGISTER_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,

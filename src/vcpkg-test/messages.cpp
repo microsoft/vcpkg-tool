@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/messages.h>
+
 #include <vcpkg/commands.generate-message-map.h>
 
 using namespace vcpkg;

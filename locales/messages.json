@@ -26,7 +26,7 @@
   "ErrorMissingVcpkgRoot": "Error: Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of {url}.",
   "_ErrorMissingVcpkgRoot.comment": "example of {url} is 'https://github.com/microsoft/vcpkg'.\n",
   "ErrorNoVSInstance": "Error: in triplet {triplet}: Unable to find a valid Visual Studio instance",
-  "_ErrorNoVSInstance.comment": "Example of {triplet} is 'x64-windows'\nexample of {triplet} is 'x64-windows'.\n",
+  "_ErrorNoVSInstance.comment": "example of {triplet} is 'x64-windows'.\n",
   "ErrorNoVSInstanceAt": "     at \"{path}\"",
   "_ErrorNoVSInstanceAt.comment": "example of {path} is '/foo/bar'.\n",
   "ErrorNoVSInstanceFullVersion": "    with toolset version prefix {version}",

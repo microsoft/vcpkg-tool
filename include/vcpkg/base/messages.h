@@ -31,7 +31,7 @@ namespace vcpkg::msg
         template<class... Args>
         MessageCheckFormatArgs<Args...> make_message_check_format_args(const Args&... args);
 
-        template <class... Args>
+        template<class... Args>
         std::string get_examples_for_args(StringView extra, const MessageCheckFormatArgs<Args...>&)
         {
             std::string res(extra.begin(), extra.end());
@@ -157,11 +157,14 @@ namespace vcpkg::msg
 
 // these use `constexpr static` instead of `inline` in order to work with GCC 6;
 // they are trivial and empty, and their address does not matter, so this is not a problem
-#define DECLARE_MSG_ARG(NAME, EXAMPLE)                                                                                          \
+#define DECLARE_MSG_ARG(NAME, EXAMPLE)                                                                                 \
     constexpr static struct NAME##_t                                                                                   \
     {                                                                                                                  \
         constexpr static const char* name() { return #NAME; }                                                          \
-        constexpr static const char* comment() { return sizeof(EXAMPLE) > 1 ? "example of {" #NAME "} is '" EXAMPLE "'.\n" : ""; } \
+        constexpr static const char* comment()                                                                         \
+        {                                                                                                              \
+            return sizeof(EXAMPLE) > 1 ? "example of {" #NAME "} is '" EXAMPLE "'.\n" : "";                            \
+        }                                                                                                              \
         template<class T>                                                                                              \
         detail::MessageArgument<NAME##_t, T> operator=(const T& t) const noexcept                                      \
         {                                                                                                              \
@@ -202,27 +205,29 @@ namespace vcpkg::msg
     {                                                                                                                  \
         using is_message_type = void;                                                                                  \
         static ::vcpkg::StringLiteral name() { return #NAME; }                                                         \
-        static ::vcpkg::StringLiteral extra_comment() { return COMMENT; }                                      \
-        static ::std::string full_comment(); \
+        static ::vcpkg::StringLiteral extra_comment() { return COMMENT; }                                              \
+        static ::std::string full_comment();                                                                           \
         static ::vcpkg::StringLiteral default_format_string() noexcept { return __VA_ARGS__; }                         \
         static const ::size_t index;                                                                                   \
     } msg##NAME VCPKG_UNUSED = {}
 #define REGISTER_MESSAGE(NAME)                                                                                         \
-    ::std::string NAME##_msg_t::full_comment() { return ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment(), NAME##_msg_t{}); } \
-    const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(                              \
+    ::std::string NAME##_msg_t::full_comment()                                                                         \
+    {                                                                                                                  \
+        return ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment(), NAME##_msg_t{});             \
+    }                                                                                                                  \
+    const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(                               \
         NAME##_msg_t::name(), NAME##_msg_t::default_format_string(), NAME##_msg_t::full_comment())
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
     REGISTER_MESSAGE(NAME)
 
-    DECLARE_MESSAGE(SeeURL,
-                    (msg::url),
-                    "",
-                    "See {url} for more information.");
+    DECLARE_MESSAGE(SeeURL, (msg::url), "", "See {url} for more information.");
     DECLARE_MESSAGE(WarningMessage, (), "", "warning: ");
     DECLARE_MESSAGE(ErrorMessage, (), "", "error: ");
-    DECLARE_MESSAGE(BothYesAndNoOptionSpecifiedError, (msg::option), "",
-        "error: cannot specify both --no-{option} and --{option}.");
+    DECLARE_MESSAGE(BothYesAndNoOptionSpecifiedError,
+                    (msg::option),
+                    "",
+                    "error: cannot specify both --no-{option} and --{option}.");
 }
 
 namespace fmt

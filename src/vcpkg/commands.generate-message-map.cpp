@@ -7,10 +7,19 @@
 namespace
 {
     namespace msg = vcpkg::msg;
-    DECLARE_AND_REGISTER_MESSAGE(AllFormatArgsUnbalancedBraces, (msg::value), "example of {value} is 'foo bar {'", "unbalanced brace in format string \"{value}\"");
-    DECLARE_AND_REGISTER_MESSAGE(AllFormatArgsRawArgument, (msg::value), "example of {value} is 'foo {} bar'", "format string \"{value}\" contains a raw format argument");
+    DECLARE_AND_REGISTER_MESSAGE(AllFormatArgsUnbalancedBraces,
+                                 (msg::value),
+                                 "example of {value} is 'foo bar {'",
+                                 "unbalanced brace in format string \"{value}\"");
+    DECLARE_AND_REGISTER_MESSAGE(AllFormatArgsRawArgument,
+                                 (msg::value),
+                                 "example of {value} is 'foo {} bar'",
+                                 "format string \"{value}\" contains a raw format argument");
 
-    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs, (msg::value), "example of {value} 'GenerateMsgNoComment'", "error: parsing format string for {value}:");
+    DECLARE_AND_REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs,
+                                 (msg::value),
+                                 "example of {value} 'GenerateMsgNoComment'",
+                                 "error: parsing format string for {value}:");
 
     DECLARE_AND_REGISTER_MESSAGE(GenerateMsgIncorrectComment,
                                  (msg::value),
@@ -85,7 +94,8 @@ namespace vcpkg::Commands
             }
 
             // look for `{ {}`
-            auto open_brace_in_between = std::find(std::make_reverse_iterator(close_brace), std::make_reverse_iterator(it), '{').base();
+            auto open_brace_in_between =
+                std::find(std::make_reverse_iterator(close_brace), std::make_reverse_iterator(it), '{').base();
             if (open_brace_in_between != it)
             {
                 error = msg::format(msgAllFormatArgsUnbalancedBraces, msg::value = fstring);
@@ -166,7 +176,8 @@ namespace vcpkg::Commands
         {
             if (Util::Sets::contains(parsed_args.switches, OPTION_ALLOW_BAD_COMMENTS))
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_ALLOW_BAD_COMMENTS);
+                Checks::exit_with_message(
+                    VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_ALLOW_BAD_COMMENTS);
             }
             comments_msg_type = msg::format(msg::msgErrorMessage);
             comments_msg_color = Color::error;

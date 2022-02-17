@@ -1,8 +1,8 @@
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 
 #include <vcpkg/commands.interface.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/base/messages.h>
 
 namespace vcpkg::Commands
 {

@@ -136,7 +136,7 @@ namespace vcpkg::msg
             // }
             // requires: names.size() == default_strings.size() == localized_strings.size()
             std::vector<StringLiteral> names;
-            std::vector<StringLiteral> default_strings;       // const after startup
+            std::vector<StringLiteral> default_strings;     // const after startup
             std::vector<std::string> localization_comments; // const after startup
 
             bool initialized = false;

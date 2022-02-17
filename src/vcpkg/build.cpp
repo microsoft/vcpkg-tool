@@ -309,11 +309,12 @@ namespace vcpkg::Build
         "architecture was {arch}\n    "
         "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
 
-    DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
-                                 (msg::system_name),
-                                 "",
-                                 "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
-                                 "Supported system names are '', 'Windows' and 'WindowsStore'.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        UnsupportedSystemName,
+        (msg::system_name),
+        "",
+        "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
+        "Supported system names are '', 'Windows' and 'WindowsStore'.");
 
 #if defined(_WIN32)
     static CStringView to_vcvarsall_target(const std::string& cmake_system_name)

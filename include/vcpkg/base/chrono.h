@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vcpkg/base/cstringview.h>
-#include <vcpkg/base/optional.h>
 #include <vcpkg/base/format.h>
+#include <vcpkg/base/optional.h>
 
 #include <atomic>
 #include <chrono>

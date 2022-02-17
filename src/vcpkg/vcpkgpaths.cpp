@@ -1329,23 +1329,17 @@ namespace vcpkg
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstance,
                                  (msg::triplet),
-                                 "Example of {triplet} is 'x64-windows'",
+                                 "",
                                  "Error: in triplet {triplet}: Unable to find a valid Visual Studio instance");
 
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion,
-                                 (msg::version),
-                                 "",
-                                 "    with toolset version {version}");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "    with toolset version {version}");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion,
                                  (msg::version),
                                  "",
                                  "    with toolset version prefix {version}");
 
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt,
-                                 (msg::path),
-                                 "",
-                                 "     at \"{path}\"");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "     at \"{path}\"");
 
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)

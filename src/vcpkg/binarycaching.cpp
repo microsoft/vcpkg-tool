@@ -37,10 +37,7 @@ namespace
                                  (msg::count, msg::elapsed),
                                  "",
                                  "Restored {count} packages from AWS servers in {elapsed}");
-    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages,
-                                 (msg::count),
-                                 "",
-                                 "Uploaded binaries to {count} AWS servers");
+    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages, (msg::count), "", "Uploaded binaries to {count} AWS servers");
 
     using Parse::SourceLoc;
 
@@ -1232,9 +1229,7 @@ namespace
                 }
             }
 
-            msg::println(msgAwsRestoredPackages,
-                         msg::count = restored_count,
-                         msg::elapsed = timer.elapsed());
+            msg::println(msgAwsRestoredPackages, msg::count = restored_count, msg::elapsed = timer.elapsed());
         }
 
         RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override

@@ -61,7 +61,10 @@ namespace vcpkg::Commands
                 {
                     if (v->triplet)
                     {
-                        msg::println(Color::error, msgAddTripletExpressionNotAllowed, msg::package_name = v->name, msg::triplet = *v->triplet.get());
+                        msg::println(Color::error,
+                                     msgAddTripletExpressionNotAllowed,
+                                     msg::package_name = v->name,
+                                     msg::triplet = *v->triplet.get());
                     }
                     else
                     {
