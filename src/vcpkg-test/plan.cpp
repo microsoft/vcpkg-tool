@@ -764,18 +764,25 @@ TEST_CASE ("install with depend-defaults false", "[plan]")
     auto a_spec = spec_map.emplace("a", "b");
     auto b_spec = spec_map.emplace("b", "", {{"0", ""}}, {"0"});
     auto c_spec = spec_map.emplace("c", "", {{"0", "b"}}, {"0"});
+    auto d_spec = spec_map.emplace("d", "b");
+    spec_map.map["d"].source_control_file->core_paragraph->depend_defaults = false;
+    spec_map.map["d"].source_control_file->core_paragraph->dependencies[0].default_features = true;
 
     PortFileProvider::MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     std::vector<FullPackageSpec> full_package_specs{
-        FullPackageSpec{a_spec},
+        FullPackageSpec{a_spec, {"core"}},
         FullPackageSpec{b_spec, {"core"}},
     };
 
     std::vector<FullPackageSpec> full_package_specs2{
-        FullPackageSpec{c_spec},
+        FullPackageSpec{c_spec, {"default", "core"}},
         FullPackageSpec{b_spec, {"core"}},
+    };
+
+    std::vector<FullPackageSpec> full_package_specs_d{
+        FullPackageSpec{d_spec, {"core"}},
     };
 
     // Install "a" and then "b" _should_ install default features
@@ -793,6 +800,14 @@ TEST_CASE ("install with depend-defaults false", "[plan]")
         REQUIRE(install_plan.size() == 2);
         features_check(install_plan.install_actions.at(0), "b", {"0", "core"});
         features_check(install_plan.install_actions.at(1), "c", {"0", "core"});
+    }
+
+    SECTION ("depend-defaults false overridden from dependency")
+    {
+        auto install_plan = Dependencies::create_feature_install_plan(map_port, var_provider, full_package_specs_d, {});
+        REQUIRE(install_plan.size() == 2);
+        features_check(install_plan.install_actions.at(0), "b", {"0", "core"});
+        features_check(install_plan.install_actions.at(1), "d", {"core"});
     }
 
     // now, disable the implicit default dependency from `a` and `c[0]`

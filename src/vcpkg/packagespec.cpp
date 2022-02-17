@@ -26,44 +26,6 @@ namespace vcpkg
         {
             out.emplace_back(package_spec, feature);
         }
-
-        return feature_specs;
-    }
-
-    void FullPackageSpec::expand_to(std::vector<FeatureSpec>& out, bool with_defaults) const
-    {
-        bool core = false;
-        for (auto&& feature : features)
-        {
-            out.emplace_back(package_spec, feature);
-            core = core || feature == "core";
-        }
-        if (!core)
-        {
-            out.emplace_back(package_spec, "core");
-            if (with_defaults)
-            {
-                out.emplace_back(package_spec, "default");
-            }
-        }
-    }
-
-    ExpectedS<FullPackageSpec> FullPackageSpec::from_string(const std::string& spec_as_string, Triplet default_triplet)
-    {
-        return parse_qualified_specifier(spec_as_string)
-            .then([&](ParsedQualifiedSpecifier&& p) -> ExpectedS<FullPackageSpec> {
-                if (p.platform)
-                    return "Error: platform specifier not allowed in this context: " + spec_as_string + "\n";
-                auto triplet = p.triplet ? Triplet::from_canonical_name(std::move(*p.triplet.get())) : default_triplet;
-                return FullPackageSpec({p.name, triplet}, p.features.value_or({}));
-            });
-    }
-
-    std::vector<PackageSpec> PackageSpec::to_package_specs(const std::vector<std::string>& ports, Triplet triplet)
-    {
-        return Util::fmap(ports, [&](const std::string& spec_as_string) -> PackageSpec {
-            return {spec_as_string, triplet};
-        });
     }
 
     const std::string& PackageSpec::name() const { return this->m_name; }
@@ -86,7 +48,7 @@ namespace vcpkg
                                  "Error: Platform qualifier is not allowed in this context");
     DECLARE_AND_REGISTER_MESSAGE(IllegalFeatures, (), "", "Error: List of features is not allowed in this contect");
 
-    static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
+    static InternalFeatureSet normalize_feature_list(View<std::string> fs, bool implicit_default)
     {
         InternalFeatureSet ret;
         bool core = false;
@@ -102,7 +64,7 @@ namespace vcpkg
         if (!core)
         {
             ret.emplace_back("core");
-            if (id == ImplicitDefault::YES)
+            if (implicit_default)
             {
                 ret.emplace_back("default");
             }
@@ -119,7 +81,7 @@ namespace vcpkg
 
         const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
         const View<std::string> fs = !features.get() ? View<std::string>{} : *features.get();
-        return FullPackageSpec{{name, t}, normalize_feature_list(fs, id)};
+        return FullPackageSpec{{name, t}, normalize_feature_list(fs, id == ImplicitDefault::YES)};
     }
 
     ExpectedS<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet) const
@@ -324,12 +286,8 @@ namespace vcpkg
 
     FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
     {
-        return FullPackageSpec{{name, host ? host_triplet : target}, normalize_feature_list(features, id)};
-    }
-
-    FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet) const
-    {
-        return FullPackageSpec({name, host ? host_triplet : target}, features);
+        return FullPackageSpec{{name, host ? host_triplet : target},
+                               normalize_feature_list(features, default_features.value_or(id == ImplicitDefault::YES))};
     }
 
     bool operator==(const Dependency& lhs, const Dependency& rhs)

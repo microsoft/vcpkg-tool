@@ -153,6 +153,7 @@ namespace vcpkg
         PlatformExpression::Expr platform;
         DependencyConstraint constraint;
         bool host = false;
+        Optional<bool> default_features;
 
         Json::Object extra_info;
 

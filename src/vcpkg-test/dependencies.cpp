@@ -93,8 +93,6 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
 };
 
 using Dependencies::DependDefaults;
-using Versions::Constraint;
-using Versions::Scheme;
 
 template<class T>
 T unwrap(ExpectedS<T> e)
