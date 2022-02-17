@@ -335,8 +335,14 @@ namespace vcpkg::Build
         Checks::check_maybe_upgrade(
             VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architecture);
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
-        auto host_architectures = get_supported_host_architectures();
+        // Ask for an arm64 compiler when targeting arm64ec; arm64ec is selected with a different flag on the compiler
+        // command line.
+        if (target_arch == CPUArchitecture::ARM64EC)
+        {
+            target_arch = CPUArchitecture::ARM64;
+        }
 
+        auto host_architectures = get_supported_host_architectures();
         for (auto&& host : host_architectures)
         {
             const auto it = Util::find_if(toolset.supported_architectures, [&](const ToolsetArchOption& opt) {

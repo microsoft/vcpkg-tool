@@ -48,6 +48,7 @@ namespace vcpkg
         if (Strings::case_insensitive_ascii_equals(arch, "amd64")) return CPUArchitecture::X64;
         if (Strings::case_insensitive_ascii_equals(arch, "arm")) return CPUArchitecture::ARM;
         if (Strings::case_insensitive_ascii_equals(arch, "arm64")) return CPUArchitecture::ARM64;
+        if (Strings::case_insensitive_ascii_equals(arch, "arm64ec")) return CPUArchitecture::ARM64EC;
         if (Strings::case_insensitive_ascii_equals(arch, "s390x")) return CPUArchitecture::S390X;
         if (Strings::case_insensitive_ascii_equals(arch, "ppc64le")) return CPUArchitecture::PPC64LE;
         return nullopt;
@@ -61,6 +62,7 @@ namespace vcpkg
             case CPUArchitecture::X64: return "x64";
             case CPUArchitecture::ARM: return "arm";
             case CPUArchitecture::ARM64: return "arm64";
+            case CPUArchitecture::ARM64EC: return "arm64ec";
             case CPUArchitecture::S390X: return "s390x";
             case CPUArchitecture::PPC64LE: return "ppc64le";
             default: Checks::exit_with_message(VCPKG_LINE_INFO, "unexpected vcpkg::CPUArchitecture");
