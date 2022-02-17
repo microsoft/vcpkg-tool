@@ -76,14 +76,16 @@ namespace
                                  "AND, OR, and WITH are all keywords and should not be translated.",
                                  "Expected either AND or OR, found WITH (WITH is only allowed after license names, not "
                                  "parenthesized expressions).");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundOrWithFoundWord,
-                                 (msg::value),
-                                 "example of {value} is 'MIT'.\nAND, OR, and WITH are all keywords and should not be translated.",
-                                 "Expected either AND, OR, or WITH, found a license or exception name: '{value}'.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWord,
-                                 (msg::value),
-                                 "Example of {value} is 'MIT'.\nAND and OR are both keywords and should not be translated.",
-                                 "Expected either AND or OR, found a license or exception name: '{value}'.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        LicenseExpressionExpectCompoundOrWithFoundWord,
+        (msg::value),
+        "example of {value} is 'MIT'.\nAND, OR, and WITH are all keywords and should not be translated.",
+        "Expected either AND, OR, or WITH, found a license or exception name: '{value}'.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        LicenseExpressionExpectCompoundFoundWord,
+        (msg::value),
+        "Example of {value} is 'MIT'.\nAND and OR are both keywords and should not be translated.",
+        "Expected either AND or OR, found a license or exception name: '{value}'.");
     DECLARE_AND_REGISTER_MESSAGE(
         LicenseExpressionUnknownLicense,
         (msg::value),
