@@ -850,7 +850,7 @@ namespace vcpkg::Build
         }
         else if (cmake_system_name == "WindowsStore")
         {
-            // HACK: remove once we have fully shipped a uwp triplet
+            // HACK: remove once we have fully shipped a uwp toolchain
             static bool have_uwp_triplet =
                 m_paths.get_filesystem().exists(m_paths.scripts / "toolchains/uwp.cmake", IgnoreErrors{});
             if (have_uwp_triplet)
