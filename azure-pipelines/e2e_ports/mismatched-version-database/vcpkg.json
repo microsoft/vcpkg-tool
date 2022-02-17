@@ -1,0 +1,15 @@
+{
+  "name": "cycle-detected",
+  "version": "0.1.0",
+  "dependencies": [
+    "arrow",
+    "bloom-filter"
+  ],
+  "overrides": [
+    {
+      "name": "arrow",
+      "version": "6.0.0.20210925",
+      "port-version": 4
+    }
+  ]
+}

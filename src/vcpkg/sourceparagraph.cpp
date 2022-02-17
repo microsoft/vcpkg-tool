@@ -974,7 +974,7 @@ namespace vcpkg
                             next();
                             auto last = it().pointer_to_current();
                             add_error(msg::format(msgLicenseExpressionContainsUnicode,
-                                                  msg::value = ch,
+                                                  msg::value = static_cast<uint32_t>(ch),
                                                   msg::pretty_value = StringView{first, last}));
                             break;
                         }

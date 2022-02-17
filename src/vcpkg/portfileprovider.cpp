@@ -1,4 +1,5 @@
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 
 #include <vcpkg/configuration.h>
@@ -87,6 +88,12 @@ namespace vcpkg::PortFileProvider
         return Util::fmap(m, [](const auto& p) { return p.second; });
     }
 
+    DECLARE_AND_REGISTER_MESSAGE(VersionSpecMismatch,
+                                 (msg::path, msg::expected, msg::actual),
+                                 "",
+                                 "Error: Failed to load port because version specs did not match\n    Path: "
+                                 "{path}\n    Expected: {expected}\n    Actual: {actual}");
+
     namespace
     {
         struct BaselineProviderImpl : IBaselineProvider
@@ -172,18 +179,19 @@ namespace vcpkg::PortFileProvider
                         auto maybe_control_file = Paragraphs::try_load_port(m_fs, *path);
                         if (auto scf = maybe_control_file.get())
                         {
-                            if (scf->get()->core_paragraph->name == version_spec.port_name)
+                            auto scf_vspec = scf->get()->to_version_spec();
+                            if (scf_vspec == version_spec)
                             {
                                 return std::unique_ptr<SourceControlFileAndLocation>(
                                     new SourceControlFileAndLocation{std::move(*scf), std::move(*path)});
                             }
                             else
                             {
-                                return Strings::format("Error: Failed to load port from %s: names did "
-                                                       "not match: '%s' != '%s'",
-                                                       *path,
-                                                       version_spec.port_name,
-                                                       scf->get()->core_paragraph->name);
+                                return msg::format(msgVersionSpecMismatch,
+                                                   msg::path = *path,
+                                                   msg::expected = version_spec,
+                                                   msg::actual = scf_vspec)
+                                    .extract_data();
                             }
                         }
                         else

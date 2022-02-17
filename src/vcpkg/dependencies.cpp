@@ -1,6 +1,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -1836,8 +1837,9 @@ namespace vcpkg::Dependencies
         ExpectedS<ActionPlan> VersionedPackageGraph::finalize_extract_plan(
             const PackageSpec& toplevel, UnsupportedPortAction unsupported_port_action)
         {
-            if (m_errors.size() > 0)
+            if (!m_errors.empty())
             {
+                Util::sort_unique_erase(m_errors);
                 return Strings::join("\n", m_errors);
             }
 

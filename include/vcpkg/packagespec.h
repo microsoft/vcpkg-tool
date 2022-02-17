@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/view.h>
@@ -195,28 +196,39 @@ namespace vcpkg
     Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(Parse::ParserBase& parser);
 }
 
-namespace std
+template<class Char>
+struct fmt::formatter<vcpkg::PackageSpec, Char>
 {
-    template<>
-    struct hash<vcpkg::PackageSpec>
+    constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
     {
-        size_t operator()(const vcpkg::PackageSpec& value) const
-        {
-            size_t hash = 17;
-            hash = hash * 31 + std::hash<std::string>()(value.name());
-            hash = hash * 31 + std::hash<vcpkg::Triplet>()(value.triplet());
-            return hash;
-        }
-    };
+        return vcpkg::basic_format_parse_impl(ctx);
+    }
+    template<class FormatContext>
+    auto format(const vcpkg::PackageSpec& spec, FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        return fmt::formatter<std::string, Char>{}.format(spec.to_string(), ctx);
+    }
+};
 
-    template<>
-    struct hash<vcpkg::FeatureSpec>
+template<>
+struct std::hash<vcpkg::PackageSpec>
+{
+    size_t operator()(const vcpkg::PackageSpec& value) const
     {
-        size_t operator()(const vcpkg::FeatureSpec& value) const
-        {
-            size_t hash = std::hash<vcpkg::PackageSpec>()(value.spec());
-            hash = hash * 31 + std::hash<std::string>()(value.feature());
-            return hash;
-        }
-    };
-}
+        size_t hash = 17;
+        hash = hash * 31 + std::hash<std::string>()(value.name());
+        hash = hash * 31 + std::hash<vcpkg::Triplet>()(value.triplet());
+        return hash;
+    }
+};
+
+template<>
+struct std::hash<vcpkg::FeatureSpec>
+{
+    size_t operator()(const vcpkg::FeatureSpec& value) const
+    {
+        size_t hash = std::hash<vcpkg::PackageSpec>()(value.spec());
+        hash = hash * 31 + std::hash<std::string>()(value.feature());
+        return hash;
+    }
+};

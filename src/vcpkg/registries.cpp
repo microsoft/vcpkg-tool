@@ -1004,6 +1004,8 @@ namespace
 
 Optional<Path> RegistryImplementation::get_path_to_baseline_version(StringView port_name) const
 {
+    // This code does not defend against the files in the baseline not matching the declared baseline version.
+    // However, this is only used by `Paragraphs::try_load_all_registry_ports` so it is not high-impact
     const auto baseline_version = this->get_baseline_version(port_name);
     if (auto b = baseline_version.get())
     {
