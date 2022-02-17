@@ -510,6 +510,7 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_RECURSE = "recurse";
     static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
     static constexpr StringLiteral OPTION_EDITABLE = "editable";
+    static constexpr StringLiteral OPTION_CHECK_STAMP = "check-stamp";
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_USE_ARIA2 = "x-use-aria2";
     static constexpr StringLiteral OPTION_CLEAN_AFTER_BUILD = "clean-after-build";
@@ -523,7 +524,7 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 17> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 18> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
         {OPTION_USE_HEAD_VERSION,
          "Install the libraries on the command line using the latest upstream sources (classic mode)"},
@@ -534,6 +535,9 @@ namespace vcpkg::Install
         {OPTION_KEEP_GOING, "Continue installing packages on failure"},
         {OPTION_EDITABLE,
          "Disable source re-extraction and binary caching for libraries on the command line (classic mode)"},
+        {OPTION_CHECK_STAMP,
+         "If the configuration (triplets, manifest file, registries, selected features) is the same as the last time "
+         "install is skipped. Local port modifications are not detected anymore."},
 
         {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
         {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
@@ -795,6 +799,12 @@ namespace vcpkg::Install
                                  "",
                                  "Error: The option --{option} is not supported in manifest mode.");
 
+    DECLARE_AND_REGISTER_MESSAGE(StampNotChanged,
+                                 (msg::option),
+                                 "",
+                                 "Installation skipped. Everything seems to be installed. To disable this check, don't "
+                                 "pass the option `--{option}` to vcpkg.");
+
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
                           Triplet default_triplet,
@@ -810,6 +820,7 @@ namespace vcpkg::Install
         const bool no_build_missing = Util::Sets::contains(options.switches, OPTION_ONLY_BINARYCACHING);
         const bool is_recursive = Util::Sets::contains(options.switches, (OPTION_RECURSE));
         const bool is_editable = Util::Sets::contains(options.switches, (OPTION_EDITABLE)) || !args.cmake_args.empty();
+        const bool check_stamp = Util::Sets::contains(options.switches, (OPTION_CHECK_STAMP));
         const bool use_aria2 = Util::Sets::contains(options.switches, (OPTION_USE_ARIA2));
         const bool clean_after_build = Util::Sets::contains(options.switches, (OPTION_CLEAN_AFTER_BUILD));
         const bool clean_buildtrees_after_build =
@@ -867,6 +878,11 @@ namespace vcpkg::Install
             {
                 msg::println(
                     Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
+                failure = true;
+            }
+            if (Util::Sets::contains(options.switches, OPTION_CHECK_STAMP))
+            {
+                msg::println(Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_CHECK_STAMP);
                 failure = true;
             }
             if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
@@ -1003,6 +1019,50 @@ namespace vcpkg::Install
             {
                 extended_overlay_ports.push_back(paths.builtin_ports_directory().native());
             }
+
+            std::string hash;
+            {
+                auto timer = ElapsedTimer::create_started();
+                auto hasher = Hash::get_hasher_for(Hash::Algorithm::Sha256);
+                for (auto&& path : args.overlay_ports)
+                {
+                    for (auto&& file : fs.get_regular_files_recursive(path, VCPKG_LINE_INFO))
+                    {
+                        hasher->add_bytes(fs.read_contents(file, VCPKG_LINE_INFO));
+                    }
+                }
+                hasher->add_bytes(paths.get_configuration_hash());
+                hasher->add_bytes(Json::stringify(*manifest, Json::JsonStyle{}.with_spaces(0)));
+                hasher->add_bytes(default_triplet.to_string());
+                hasher->add_bytes(host_triplet.to_string());
+                hasher->add_bytes(fs.read_contents(paths.get_triplet_file_path(default_triplet), VCPKG_LINE_INFO));
+                hasher->add_bytes(fs.read_contents(paths.get_triplet_file_path(host_triplet), VCPKG_LINE_INFO));
+                hasher->add_bytes(fs.read_contents(paths.get_triplet_file_path(host_triplet), VCPKG_LINE_INFO));
+                for (const auto& feature : features)
+                {
+                    hasher->add_bytes(feature);
+                }
+                if (paths.get_registry_set().is_default_builtin_registry())
+                {
+                    auto maybe_git_sha = paths.get_current_git_sha();
+                    if (maybe_git_sha)
+                    {
+                        hasher->add_bytes(maybe_git_sha.value_or_exit(VCPKG_LINE_INFO));
+                    }
+                }
+                Debug::print("Time needed to compute hash for stamp: ", timer.elapsed().to_string(), "\n");
+                hash = hasher->get_hash();
+                if (fs.exists(paths.installed().hashfile_path(), VCPKG_LINE_INFO))
+                {
+                    if (check_stamp && fs.read_contents(paths.installed().hashfile_path(), VCPKG_LINE_INFO) == hash)
+                    {
+                        msg::println(msgStampNotChanged, msg::option = OPTION_CHECK_STAMP);
+                        Checks::exit_success(VCPKG_LINE_INFO);
+                    }
+                    fs.remove(paths.installed().hashfile_path(), VCPKG_LINE_INFO);
+                }
+            }
+
             auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
             PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
             auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
@@ -1015,6 +1075,7 @@ namespace vcpkg::Install
                                                                             host_triplet,
                                                                             unsupported_port_action)
                                     .value_or_exit(VCPKG_LINE_INFO);
+
             for (const auto& warning : install_plan.warnings)
             {
                 print2(Color::warning, warning, '\n');
@@ -1032,15 +1093,18 @@ namespace vcpkg::Install
 
             PortFileProvider::PathsPortFileProvider provider(paths, extended_overlay_ports);
 
-            Commands::SetInstalled::perform_and_exit_ex(args,
-                                                        paths,
-                                                        provider,
-                                                        binary_cache,
-                                                        var_provider,
-                                                        std::move(install_plan),
-                                                        dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
-                                                        pkgsconfig,
-                                                        host_triplet);
+            Commands::SetInstalled::perform_ex(args,
+                                               paths,
+                                               provider,
+                                               binary_cache,
+                                               var_provider,
+                                               std::move(install_plan),
+                                               dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
+                                               pkgsconfig,
+                                               host_triplet);
+
+            fs.write_contents_and_dirs(paths.installed().hashfile_path(), hash, VCPKG_LINE_INFO);
+            Checks::exit_success(VCPKG_LINE_INFO);
         }
 
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);

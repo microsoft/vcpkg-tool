@@ -91,6 +91,8 @@
   "_ProcessorArchitectureW6432Malformed.comment": "example of {arch} is 'x64'.\n",
   "SeeURL": "See {url} for more information.",
   "_SeeURL.comment": "example of {url} is 'https://github.com/microsoft/vcpkg'.\n",
+  "StampNotChanged": "Installation skipped. Everything seems to be installed. To disable this check, don't pass the option `--{option}` to vcpkg.",
+  "_StampNotChanged.comment": "example of {option} is 'editable'.\n",
   "UnsupportedSystemName": "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
   "_UnsupportedSystemName.comment": "example of {system_name} is 'Darwin'.\n",
   "UnsupportedToolchain": "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target architecture was {arch}\n    The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n",

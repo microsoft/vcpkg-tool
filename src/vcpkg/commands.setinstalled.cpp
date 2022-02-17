@@ -35,15 +35,15 @@ namespace vcpkg::Commands::SetInstalled
         nullptr,
     };
 
-    void perform_and_exit_ex(const VcpkgCmdArguments& args,
-                             const VcpkgPaths& paths,
-                             const PortFileProvider::PathsPortFileProvider& provider,
-                             BinaryCache& binary_cache,
-                             const CMakeVars::CMakeVarProvider& cmake_vars,
-                             Dependencies::ActionPlan action_plan,
-                             DryRun dry_run,
-                             const Optional<Path>& maybe_pkgsconfig,
-                             Triplet host_triplet)
+    void perform_ex(const VcpkgCmdArguments& args,
+                    const VcpkgPaths& paths,
+                    const PortFileProvider::PathsPortFileProvider& provider,
+                    BinaryCache& binary_cache,
+                    const CMakeVars::CMakeVarProvider& cmake_vars,
+                    Dependencies::ActionPlan action_plan,
+                    DryRun dry_run,
+                    const Optional<Path>& maybe_pkgsconfig,
+                    Triplet host_triplet)
     {
         auto& fs = paths.get_filesystem();
 
@@ -136,8 +136,6 @@ namespace vcpkg::Commands::SetInstalled
                 Install::print_usage_information(it->get()->package, printed_usages, fs, paths.installed());
             }
         }
-
-        Checks::exit_success(VCPKG_LINE_INFO);
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args,
@@ -178,15 +176,16 @@ namespace vcpkg::Commands::SetInstalled
             action.build_options = Build::default_build_package_options;
         }
 
-        perform_and_exit_ex(args,
-                            paths,
-                            provider,
-                            binary_cache,
-                            *cmake_vars,
-                            std::move(action_plan),
-                            dry_run ? DryRun::Yes : DryRun::No,
-                            pkgsconfig,
-                            host_triplet);
+        perform_ex(args,
+                   paths,
+                   provider,
+                   binary_cache,
+                   *cmake_vars,
+                   std::move(action_plan),
+                   dry_run ? DryRun::Yes : DryRun::No,
+                   pkgsconfig,
+                   host_triplet);
+        Checks::exit_success(VCPKG_LINE_INFO);
     }
 
     void SetInstalledCommand::perform_and_exit(const VcpkgCmdArguments& args,

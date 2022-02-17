@@ -17,6 +17,7 @@ namespace vcpkg::Hash
 
     struct Hasher
     {
+        void add_bytes(StringView data);
         virtual void add_bytes(const void* start, const void* end) noexcept = 0;
 
         // one may only call this once before calling `clear()` or the dtor
