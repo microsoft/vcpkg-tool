@@ -37,8 +37,6 @@ namespace
 
 namespace vcpkg::Commands
 {
-    using namespace msg;
-
     static constexpr StringLiteral OPTION_ALLOW_BAD_COMMENTS = "allow-incorrect-comments";
     static constexpr StringLiteral OPTION_NO_ALLOW_BAD_COMMENTS = "no-allow-incorrect-comments";
 
@@ -165,7 +163,7 @@ namespace vcpkg::Commands
 
         bool allow_bad_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_ALLOW_BAD_COMMENTS);
 
-        LocalizedString comments_msg_type;
+        msg::LocalizedString comments_msg_type;
         Color comments_msg_color;
         if (allow_bad_comments)
         {
@@ -195,14 +193,14 @@ namespace vcpkg::Commands
             bool operator()(const Message& lhs, const Message& rhs) const { return lhs.name < rhs.name; }
         };
 
-        const ::size_t size = detail::number_of_messages();
+        const ::size_t size = msg::detail::number_of_messages();
         std::vector<Message> messages(size);
         for (::size_t index = 0; index < size; ++index)
         {
             auto& msg = messages[index];
-            msg.name = detail::get_message_name(index).to_string();
-            msg.value = detail::get_default_format_string(index).to_string();
-            msg.comment = detail::get_localization_comment(index).to_string();
+            msg.name = msg::detail::get_message_name(index).to_string();
+            msg.value = msg::detail::get_default_format_string(index).to_string();
+            msg.comment = msg::detail::get_localization_comment(index).to_string();
         }
         std::sort(messages.begin(), messages.end(), MessageSorter{});
 
