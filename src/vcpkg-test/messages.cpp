@@ -68,7 +68,7 @@ TEST_CASE ("generate message get_format_arg_mismatches", "[messages]")
     CHECK(res.arguments_without_comment == std::vector<StringView>{"go", "ho"});
     CHECK(res.comments_without_argument == std::vector<StringView>{"blah"});
 
-    res = get_format_arg_mismatches("hey", "{LOCKED}", err);
+    res = get_format_arg_mismatches("hey {blah} {bloop}", "{Locked}", err);
     CHECK(err.data() == "");
     CHECK(res.arguments_without_comment == std::vector<StringView>{});
     CHECK(res.comments_without_argument == std::vector<StringView>{});

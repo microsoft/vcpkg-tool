@@ -116,6 +116,11 @@ namespace vcpkg::Commands
     {
         FormatArgMismatches res;
 
+        if (comment == "{Locked}")
+        {
+            return res;
+        }
+
         auto comment_args = get_all_format_args(comment, error);
         // ignore error; comments are allowed to be incorrect format strings
         auto value_args = get_all_format_args(value, error);
@@ -126,7 +131,7 @@ namespace vcpkg::Commands
 
         Util::sort_unique_erase(value_args);
         Util::sort_unique_erase(comment_args);
-        Util::erase_remove_if(comment_args, [](StringView sv) { return sv == "LOCKED"; });
+        Util::erase_remove_if(comment_args, [](StringView sv) { return sv == "Locked"; });
 
         auto value_it = value_args.begin();
         auto comment_it = comment_args.begin();

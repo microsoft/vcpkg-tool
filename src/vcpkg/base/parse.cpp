@@ -39,7 +39,7 @@ namespace vcpkg::Parse
 
     DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageLocation,
                                  (msg::path, msg::row, msg::column),
-                                 "{LOCKED}",
+                                 "{Locked}",
                                  "{path}:{row}:{column}: ");
     DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression,
                                  (msg::value),

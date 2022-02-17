@@ -11,7 +11,7 @@
 namespace vcpkg::Graphs
 {
     DECLARE_MESSAGE(GraphCycleDetected, (msg::package_name), "", "Cycle detected within graph at {package_name}:");
-    DECLARE_MESSAGE(GraphCycleDetectedElement, (msg::package_name), "{LOCKED}", "    {package_name}");
+    DECLARE_MESSAGE(GraphCycleDetectedElement, (msg::package_name), "{Locked}", "    {package_name}");
 
     enum class ExplorationStatus
     {
