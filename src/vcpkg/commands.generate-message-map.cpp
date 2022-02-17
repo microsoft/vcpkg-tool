@@ -85,13 +85,13 @@ namespace vcpkg::Commands
             }
 
             // look for `{ {}`
-            auto open_brace_in_between = std::find(it, close_brace, '{');
-            if (open_brace_in_between != close_brace)
+            auto open_brace_in_between = std::find(std::make_reverse_iterator(close_brace), std::make_reverse_iterator(it), '{').base();
+            if (open_brace_in_between != it)
             {
                 error = msg::format(msgAllFormatArgsUnbalancedBraces, msg::value = fstring);
                 if (open_brace_in_between != close_brace - 1)
                 {
-                    res.emplace_back(open_brace_in_between + 1, close_brace);
+                    res.emplace_back(open_brace_in_between, close_brace);
                 }
                 it = close_brace + 1;
                 continue;
@@ -143,14 +143,8 @@ namespace vcpkg::Commands
             }
         }
 
-        if (value_it != value_args.end())
-        {
-            res.arguments_without_comment.insert(res.arguments_without_comment.end(), value_it, value_args.end());
-        }
-        if (comment_it != comment_args.end())
-        {
-            res.comments_without_argument.insert(res.comments_without_argument.end(), comment_it, comment_args.end());
-        }
+        res.arguments_without_comment.insert(res.arguments_without_comment.end(), value_it, value_args.end());
+        res.comments_without_argument.insert(res.comments_without_argument.end(), comment_it, comment_args.end());
 
         return res;
     }
