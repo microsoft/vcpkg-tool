@@ -18,5 +18,5 @@ steps:
     isUseLfLineEndingsSelected: true
     gitHubPatVariable: '$(GitHubPat)'
     packageSourceAuth: patAuth
+    xLocConsoleLoggingLevel: debug
     patVariable: '$(PackageSourcePat)'
-    xLocCustomPowerShellScript: 'src/localization/Format-LocalizationFiles.ps1'

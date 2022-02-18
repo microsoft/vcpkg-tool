@@ -995,6 +995,14 @@ namespace vcpkg::Json
             {
                 StatsTimer t(g_json_parsing_stats);
 
+                if (Strings::starts_with(origin, "\xEF\xBB\xBF"))
+                {
+                    // remove byte-order mark from the beginning of the string
+                    // this is a workaround for our localization software giving us files with a BOM
+                    // TODO: figure out how to fix the loc software
+                    origin = origin.substr(3);
+                }
+
                 auto parser = Parser(json, origin);
 
                 auto val = parser.parse_value();
