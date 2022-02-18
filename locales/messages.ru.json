@@ -68,6 +68,5 @@
   "VcpkgInvalidCommand": "invalid command: {command_name}",
   "VcpkgSendMetricsButDisabled": "Warning: passed --sendmetrics, but metrics are disabled.",
   "VersionSpecMismatch": "error: Failed to load port because version specs did not match\n    Path: {path}\n    Expected: {expected_version}\n    Actual: {actual_version}",
-  "WarningMessage": "warning: ",
-  "TestMessage": "asdfasdf"
+  "WarningMessage": "warning: "
 }
