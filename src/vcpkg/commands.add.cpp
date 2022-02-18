@@ -26,10 +26,10 @@ namespace
     };
 
     DECLARE_AND_REGISTER_MESSAGE(AddTripletExpressionNotAllowed,
-                                 (),
+                                 (msg::package_name, msg::triplet),
                                  "",
                                  "Error: triplet expressions are not allowed here. You may want to change "
-                                 "`{name}:{triplet}` to `{name}` instead.");
+                                 "`{package_name}:{triplet}` to `{package_name}` instead.");
 
     DECLARE_AND_REGISTER_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
 }
@@ -61,7 +61,10 @@ namespace vcpkg::Commands
                 {
                     if (v->triplet)
                     {
-                        msg::println(Color::error, msgAddTripletExpressionNotAllowed);
+                        msg::println(Color::error,
+                                     msgAddTripletExpressionNotAllowed,
+                                     msg::package_name = v->name,
+                                     msg::triplet = *v->triplet.get());
                     }
                     else
                     {

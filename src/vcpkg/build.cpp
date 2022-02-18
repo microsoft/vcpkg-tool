@@ -303,11 +303,11 @@ namespace vcpkg::Build
 
     DECLARE_AND_REGISTER_MESSAGE(
         UnsupportedToolchain,
-        (msg::triplet, msg::value, msg::path, msg::list),
-        "",
+        (msg::triplet, msg::arch, msg::path, msg::list),
+        "example for {list} is 'x86, arm64'",
         "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
-        "architecture was {value}\n    "
-        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n"
+        "architecture was {arch}\n    "
+        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
         "Please check the required Visual Studio Components:\n"
         "C++:\n"
         "   Windows Universal C Runtime\n"
@@ -323,11 +323,12 @@ namespace vcpkg::Build
         "UWP:\n"
         "   Visual Studio Build tools for UWP\n");
 
-    DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
-                                 (msg::value),
-                                 "",
-                                 "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{value}' to a vcvarsall platform. "
-                                 "Supported system names are '', 'Windows' and 'WindowsStore'.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        UnsupportedSystemName,
+        (msg::system_name),
+        "",
+        "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
+        "Supported system names are '', 'Windows' and 'WindowsStore'.");
 
 #if defined(_WIN32)
     static CStringView to_vcvarsall_target(const std::string& cmake_system_name)
@@ -336,7 +337,7 @@ namespace vcpkg::Build
         if (cmake_system_name == "Windows") return "";
         if (cmake_system_name == "WindowsStore") return "store";
 
-        msg::println(Color::error, msgUnsupportedSystemName, msg::value = cmake_system_name);
+        msg::println(Color::error, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
 
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
@@ -349,8 +350,14 @@ namespace vcpkg::Build
         Checks::check_maybe_upgrade(
             VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architecture);
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
-        auto host_architectures = get_supported_host_architectures();
+        // Ask for an arm64 compiler when targeting arm64ec; arm64ec is selected with a different flag on the compiler
+        // command line.
+        if (target_arch == CPUArchitecture::ARM64EC)
+        {
+            target_arch = CPUArchitecture::ARM64;
+        }
 
+        auto host_architectures = get_supported_host_architectures();
         for (auto&& host : host_architectures)
         {
             const auto it = Util::find_if(toolset.supported_architectures, [&](const ToolsetArchOption& opt) {
@@ -364,7 +371,7 @@ namespace vcpkg::Build
 
         msg::println(msgUnsupportedToolchain,
                      msg::triplet = triplet,
-                     msg::value = target_architecture,
+                     msg::arch = target_architecture,
                      msg::path = toolset.visual_studio_root_path,
                      msg::list = toolset_list);
         msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
@@ -772,6 +779,7 @@ namespace vcpkg::Build
             {"_VCPKG_DOWNLOAD_TOOL", to_string(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
             {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
+            {"VCPKG_CHAINLOAD_TOOLCHAIN_FILE", action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
         };
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
@@ -861,7 +869,21 @@ namespace vcpkg::Build
         {
             return m_paths.scripts / "toolchains/mingw.cmake";
         }
-        else if (cmake_system_name.empty() || cmake_system_name == "Windows" || cmake_system_name == "WindowsStore")
+        else if (cmake_system_name == "WindowsStore")
+        {
+            // HACK: remove once we have fully shipped a uwp toolchain
+            static bool have_uwp_triplet =
+                m_paths.get_filesystem().exists(m_paths.scripts / "toolchains/uwp.cmake", IgnoreErrors{});
+            if (have_uwp_triplet)
+            {
+                return m_paths.scripts / "toolchains/uwp.cmake";
+            }
+            else
+            {
+                return m_paths.scripts / "toolchains/windows.cmake";
+            }
+        }
+        else if (cmake_system_name.empty() || cmake_system_name == "Windows")
         {
             return m_paths.scripts / "toolchains/windows.cmake";
         }

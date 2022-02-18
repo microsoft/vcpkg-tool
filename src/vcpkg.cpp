@@ -36,23 +36,26 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::value), "", "invalid command: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
                                  (),
                                  "",
                                  "Warning: passed --sendmetrics, but metrics are disabled.");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed,
-                                 (msg::email, msg::version, msg::error),
+                                 (msg::email),
                                  "",
                                  R"(vcpkg.exe has crashed.
 Please send an email to:
     {email}
-containing a brief summary of what you were trying to do and the following data blob:
-
+containing a brief summary of what you were trying to do and the following data blob:)");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedDataBlob,
+                                 (msg::version, msg::error),
+                                 "{Locked}",
+                                 R"(
 Version={version}
 EXCEPTION='{error}'
 CMD=)");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{LOCKED}", "{value}|");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{Locked}", "{value}|");
 
     DECLARE_AND_REGISTER_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
@@ -63,7 +66,7 @@ CMD=)");
 
 static void invalid_command(const std::string& cmd)
 {
-    msg::println(Color::error, msgVcpkgInvalidCommand, msg::value = cmd);
+    msg::println(Color::error, msgVcpkgInvalidCommand, msg::command_name = cmd);
     print_usage();
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
@@ -333,10 +336,9 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashed,
-                 msg::email = Commands::Contact::email(),
-                 msg::version = Commands::Version::version(),
-                 msg::error = exc_msg);
+    msg::println(msgVcpkgHasCrashed, msg::email = Commands::Contact::email());
+    fflush(stdout);
+    msg::println(msgVcpkgHasCrashedDataBlob, msg::version = Commands::Version::version(), msg::error = exc_msg);
     fflush(stdout);
     for (int x = 0; x < argc; ++x)
     {

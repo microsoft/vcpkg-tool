@@ -13,10 +13,11 @@
 
 namespace
 {
+    namespace msg = vcpkg::msg;
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed,
-                                 (vcpkg::msg::value),
+                                 (msg::arch),
                                  "",
-                                 "Failed to parse %PROCESSOR_ARCHITEW6432% ({value}) as a valid CPU architecture. "
+                                 "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. "
                                  "Falling back to %PROCESSOR_ARCHITECTURE%.");
 
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMissing,
@@ -25,9 +26,9 @@ namespace
                                  "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
 
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMalformed,
-                                 (vcpkg::msg::value),
+                                 (msg::arch),
                                  "",
-                                 "Failed to parse %PROCESSOR_ARCHITECTURE% ({value}) as a valid CPU architecture.");
+                                 "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.");
 }
 
 namespace vcpkg
@@ -48,6 +49,7 @@ namespace vcpkg
         if (Strings::case_insensitive_ascii_equals(arch, "amd64")) return CPUArchitecture::X64;
         if (Strings::case_insensitive_ascii_equals(arch, "arm")) return CPUArchitecture::ARM;
         if (Strings::case_insensitive_ascii_equals(arch, "arm64")) return CPUArchitecture::ARM64;
+        if (Strings::case_insensitive_ascii_equals(arch, "arm64ec")) return CPUArchitecture::ARM64EC;
         if (Strings::case_insensitive_ascii_equals(arch, "s390x")) return CPUArchitecture::S390X;
         if (Strings::case_insensitive_ascii_equals(arch, "ppc64le")) return CPUArchitecture::PPC64LE;
         return nullopt;
@@ -61,6 +63,7 @@ namespace vcpkg
             case CPUArchitecture::X64: return "x64";
             case CPUArchitecture::ARM: return "arm";
             case CPUArchitecture::ARM64: return "arm64";
+            case CPUArchitecture::ARM64EC: return "arm64ec";
             case CPUArchitecture::S390X: return "s390x";
             case CPUArchitecture::PPC64LE: return "ppc64le";
             default: Checks::exit_with_message(VCPKG_LINE_INFO, "unexpected vcpkg::CPUArchitecture");
@@ -89,7 +92,7 @@ namespace vcpkg
                 return *parsed;
             }
 
-            msg::print(Color::warning, msgProcessorArchitectureW6432Malformed, msg::value = *w6432);
+            msg::print(Color::warning, msgProcessorArchitectureW6432Malformed, msg::arch = *w6432);
         }
 
         const auto raw_processor_architecture = get_environment_variable("PROCESSOR_ARCHITECTURE");
@@ -106,7 +109,7 @@ namespace vcpkg
         }
 
         Checks::exit_with_message(
-            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::value = *processor_architecture);
+            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::arch = *processor_architecture);
 #else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(__APPLE__)

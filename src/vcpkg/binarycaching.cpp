@@ -26,18 +26,18 @@ using namespace vcpkg;
 namespace
 {
     DECLARE_AND_REGISTER_MESSAGE(AwsFailedToDownload,
-                                 (msg::value, msg::output),
+                                 (msg::exit_code),
                                  "",
-                                 "aws failed to download with exit code: {value}\n{output}");
+                                 "aws failed to download with exit code: {exit_code}");
     DECLARE_AND_REGISTER_MESSAGE(AwsAttemptingToFetchPackages,
-                                 (msg::value),
+                                 (msg::count),
                                  "",
-                                 "Attempting to fetch {value} packages from AWS");
+                                 "Attempting to fetch {count} packages from AWS");
     DECLARE_AND_REGISTER_MESSAGE(AwsRestoredPackages,
-                                 (msg::value, msg::elapsed),
+                                 (msg::count, msg::elapsed),
                                  "",
-                                 "Restored {value} packages from AWS servers in {elapsed}s");
-    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages, (msg::value), "", "Uploaded binaries to {value} AWS servers");
+                                 "Restored {count} packages from AWS servers in {elapsed}");
+    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages, (msg::count), "", "Uploaded binaries to {count} AWS servers");
 
     using Parse::SourceLoc;
 
@@ -1132,7 +1132,8 @@ namespace
             return true;
         }
 
-        msg::println(Color::warning, msgAwsFailedToDownload, msg::value = out.exit_code, msg::output = out.output);
+        msg::println(Color::warning, msgAwsFailedToDownload, msg::exit_code = out.exit_code);
+        msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
         return false;
     }
 
@@ -1149,7 +1150,8 @@ namespace
             return true;
         }
 
-        msg::println(Color::warning, msgAwsFailedToDownload, msg::value = out.exit_code, msg::output = out.output);
+        msg::println(Color::warning, msgAwsFailedToDownload, msg::exit_code = out.exit_code);
+        msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
         return false;
     }
 
@@ -1196,7 +1198,7 @@ namespace
 
                 if (url_paths.empty()) break;
 
-                msg::println(msgAwsAttemptingToFetchPackages, msg::value = url_paths.size());
+                msg::println(msgAwsAttemptingToFetchPackages, msg::count = url_paths.size());
 
                 std::vector<Command> jobs;
                 std::vector<size_t> idxs;
@@ -1227,9 +1229,7 @@ namespace
                 }
             }
 
-            msg::println(msgAwsRestoredPackages,
-                         msg::value = restored_count,
-                         msg::elapsed = timer.elapsed().as<std::chrono::seconds>().count());
+            msg::println(msgAwsRestoredPackages, msg::count = restored_count, msg::elapsed = timer.elapsed());
         }
 
         RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
@@ -1260,7 +1260,7 @@ namespace
                 }
             }
 
-            msg::println(msgAwsUploadedPackages, msg::value = upload_count);
+            msg::println(msgAwsUploadedPackages, msg::count = upload_count);
         }
 
         void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
