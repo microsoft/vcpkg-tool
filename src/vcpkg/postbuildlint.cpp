@@ -485,7 +485,6 @@ namespace vcpkg::PostBuildLint
         std::string actual_arch;
     };
 
-#if defined(_WIN32)
     static std::string get_actual_architecture(const MachineType& machine_type)
     {
         switch (machine_type)
@@ -499,7 +498,6 @@ namespace vcpkg::PostBuildLint
             default: return "Machine Type Code = " + std::to_string(static_cast<uint16_t>(machine_type));
         }
     }
-#endif
 
     static void print_invalid_architecture_files(const std::string& expected_architecture,
                                                  std::vector<FileAndArch> binaries_with_invalid_architecture)
@@ -552,60 +550,64 @@ namespace vcpkg::PostBuildLint
 #endif
 
     static LintStatus check_lib_architecture(const std::string& expected_architecture,
+                                             const std::string& cmake_system_name,
                                              const std::vector<Path>& files,
                                              const Filesystem& fs)
     {
         std::vector<FileAndArch> binaries_with_invalid_architecture;
-#if defined(_WIN32)
-        const auto check_lib = [&](const Path& file) {
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               Strings::case_insensitive_ascii_equals(file.extension(), ".lib"),
-                               "The file extension was not .lib: %s",
-                               file);
-            const auto machine_types = read_lib_machine_types(fs.open_for_read(file, VCPKG_LINE_INFO));
-
-            // This is zero for folly's debug library
-            // TODO: Why?
-            if (machine_types.empty()) return;
-
-            Checks::check_exit(
-                VCPKG_LINE_INFO, machine_types.size() == 1, "Found more than 1 architecture in file %s", file);
-
-            const std::string actual_architecture = get_actual_architecture(machine_types.front());
-            if (expected_architecture != actual_architecture)
+        if (cmake_system_name.empty() || cmake_system_name == "Windows" || cmake_system_name == "WindowsStore" ||
+            cmake_system_name == "MinGW")
+        {
+            for (const Path& file : files)
             {
-                binaries_with_invalid_architecture.push_back({file, actual_architecture});
+                Checks::check_exit(VCPKG_LINE_INFO,
+                                   Strings::case_insensitive_ascii_equals(file.extension(), ".lib"),
+                                   "The file extension was not .lib: %s",
+                                   file);
+                const auto machine_types = read_lib_machine_types(fs.open_for_read(file, VCPKG_LINE_INFO));
+
+                // This is zero for folly's debug library
+                // TODO: Why?
+                if (machine_types.empty()) break;
+
+                Checks::check_exit(
+                    VCPKG_LINE_INFO, machine_types.size() == 1, "Found more than 1 architecture in file %s", file);
+
+                const std::string actual_architecture = get_actual_architecture(machine_types.front());
+                if (expected_architecture != actual_architecture)
+                {
+                    binaries_with_invalid_architecture.push_back({file, actual_architecture});
+                }
             }
-        };
-#elif defined(__APPLE__)
-        const auto requested_arch = expected_architecture == "x64" ? "x86_64" : expected_architecture;
-        const auto check_lib = [&](const Path& file) {
-            auto cmd_line = Command("lipo").string_arg("-archs").path_arg(file);
-            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               ec_data.exit_code == 0,
-                               "Error: unable to determine the architectures of binary file %s. Running lipo failed "
-                               "with status code %d\n    %s",
-                               file,
-                               ec_data.exit_code,
-                               cmd_line.command_line());
-            if (!Util::Vectors::contains(Strings::split(Strings::trim(ec_data.output), ' '), requested_arch))
+        }
+        else if (cmake_system_name == "Darwin")
+        {
+            const auto requested_arch = expected_architecture == "x64" ? "x86_64" : expected_architecture;
+            for (const Path& file : files)
             {
-                binaries_with_invalid_architecture.push_back({file, ec_data.output});
+                auto cmd_line = Command("lipo").string_arg("-archs").path_arg(file);
+                ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
+                if (ec_data.exit_code != 0)
+                {
+                    printf(Color::warning,
+                           "Error: unable to determine the architectures of binary file %s. Running lipo failed "
+                           "with status code %d\n    %s",
+                           file,
+                           ec_data.exit_code,
+                           cmd_line.command_line());
+                }
+                else if (!Util::Vectors::contains(Strings::split(Strings::trim(ec_data.output), ' '), requested_arch))
+                {
+                    binaries_with_invalid_architecture.push_back({file, ec_data.output});
+                }
             }
-        };
-#else
-        const auto check_lib = [&](const Path&) {};
-#endif
-        for (const Path& file : files)
-            check_lib(file);
+        }
 
         if (!binaries_with_invalid_architecture.empty())
         {
             print_invalid_architecture_files(expected_architecture, binaries_with_invalid_architecture);
             return LintStatus::PROBLEM_DETECTED;
         }
-        (void)fs;
         return LintStatus::SUCCESS;
     }
 
@@ -1056,7 +1058,8 @@ namespace vcpkg::PostBuildLint
             std::vector<Path> libs;
             libs.insert(libs.cend(), debug_libs.cbegin(), debug_libs.cend());
             libs.insert(libs.cend(), release_libs.cbegin(), release_libs.cend());
-            error_count += check_lib_architecture(pre_build_info.target_architecture, libs, fs);
+            error_count +=
+                check_lib_architecture(pre_build_info.target_architecture, pre_build_info.cmake_system_name, libs, fs);
         }
 
         std::vector<Path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
