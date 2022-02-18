@@ -1,9 +1,11 @@
+Set-StrictMode -Latest
+
 $fileList = Get-Content $Env:XLocFileList
 
 $fileList | % {
     $fileName = $_
-    $fileContents = Get-Content $fileName
-    $fileContents = $fileContents -join "`n" # use LF, not CRLF
+    $fileContents = Get-Content -Raw $fileName
+    $fileContents = $fileContents -replace "`r`n","`n" # use LF, not CRLF
     if (-not $fileContents.EndsWith("`n"))
     {
         $fileContents += "`n" # add a trailing newline

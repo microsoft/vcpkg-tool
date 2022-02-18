@@ -1,4 +1,4 @@
-﻿{
+{
   "AddPortSucceded": "Succeeded in adding ports to vcpkg.json file.",
   "AddTripletExpressionNotAllowed": "Error: triplet expressions are not allowed here. You may want to change `{package_name}:{triplet}` to `{package_name}` instead.",
   "AllFormatArgsRawArgument": "format string \"{value}\" contains a raw format argument",
