@@ -23,13 +23,13 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsUnicode,
                                  (msg::value, msg::pretty_value),
-                                 "",
-                                 "SPDX license expression contains a unicode character (U+{value:04x} "
+                                 "example of {value:04X} is '22BB'\nexample of {pretty_value} is '⊻'",
+                                 "SPDX license expression contains a unicode character (U+{value:04X} "
                                  "'{pretty_value}'), but these expressions are ASCII-only.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsInvalidCharacter,
                                  (msg::value),
-                                 "",
-                                 "SPDX license expression contains an invalid character (0x{value:02x} '{value}').");
+                                 "example of {value:02X} is '7B'\nexample of {value} is '{'",
+                                 "SPDX license expression contains an invalid character (0x{value:02X} '{value}').");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus,
                                  (),
                                  "",
@@ -65,33 +65,35 @@ namespace
                                  "There was a close parenthesis without an opening parenthesis.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundCompound,
                                  (msg::value),
-                                 "",
+                                 "Example of {value} is 'AND'",
                                  "Expected a license name, found the compound {value}.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundCompound,
                                  (msg::value),
-                                 "",
+                                 "Example of {value} is 'AND'",
                                  "Expected an exception name, found the compound {value}.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWith,
                                  (),
-                                 "",
+                                 "AND, OR, and WITH are all keywords and should not be translated.",
                                  "Expected either AND or OR, found WITH (WITH is only allowed after license names, not "
                                  "parenthesized expressions).");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundOrWithFoundWord,
-                                 (msg::value),
-                                 "",
-                                 "Expected either AND, OR, or WITH, found a license or exception name: '{value}'.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWord,
-                                 (msg::value),
-                                 "",
-                                 "Expected either AND or OR, found a license or exception name: '{value}'.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        LicenseExpressionExpectCompoundOrWithFoundWord,
+        (msg::value),
+        "example of {value} is 'MIT'.\nAND, OR, and WITH are all keywords and should not be translated.",
+        "Expected either AND, OR, or WITH, found a license or exception name: '{value}'.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        LicenseExpressionExpectCompoundFoundWord,
+        (msg::value),
+        "Example of {value} is 'MIT'.\nAND and OR are both keywords and should not be translated.",
+        "Expected either AND or OR, found a license or exception name: '{value}'.");
     DECLARE_AND_REGISTER_MESSAGE(
         LicenseExpressionUnknownLicense,
         (msg::value),
-        "",
+        "Example of {value} is 'unknownlicense'",
         "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionUnknownException,
                                  (msg::value),
-                                 "",
+                                 "Example of {value} is 'unknownexception'",
                                  "Unknown license exception identifier '{value}'. Known values are listed at "
                                  "https://spdx.org/licenses/exceptions-index.html");
 } // anonymous namespace

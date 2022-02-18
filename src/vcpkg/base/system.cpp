@@ -13,10 +13,11 @@
 
 namespace
 {
+    namespace msg = vcpkg::msg;
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed,
-                                 (vcpkg::msg::value),
+                                 (msg::arch),
                                  "",
-                                 "Failed to parse %PROCESSOR_ARCHITEW6432% ({value}) as a valid CPU architecture. "
+                                 "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. "
                                  "Falling back to %PROCESSOR_ARCHITECTURE%.");
 
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMissing,
@@ -25,9 +26,9 @@ namespace
                                  "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
 
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMalformed,
-                                 (vcpkg::msg::value),
+                                 (msg::arch),
                                  "",
-                                 "Failed to parse %PROCESSOR_ARCHITECTURE% ({value}) as a valid CPU architecture.");
+                                 "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.");
 }
 
 namespace vcpkg
@@ -91,7 +92,7 @@ namespace vcpkg
                 return *parsed;
             }
 
-            msg::print(Color::warning, msgProcessorArchitectureW6432Malformed, msg::value = *w6432);
+            msg::print(Color::warning, msgProcessorArchitectureW6432Malformed, msg::arch = *w6432);
         }
 
         const auto raw_processor_architecture = get_environment_variable("PROCESSOR_ARCHITECTURE");
@@ -108,7 +109,7 @@ namespace vcpkg
         }
 
         Checks::exit_with_message(
-            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::value = *processor_architecture);
+            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::arch = *processor_architecture);
 #else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(__APPLE__)

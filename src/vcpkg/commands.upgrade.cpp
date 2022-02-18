@@ -21,30 +21,6 @@
 using namespace vcpkg;
 using Install::KeepGoing;
 
-namespace
-{
-    DECLARE_AND_REGISTER_MESSAGE(KeepGoingConflict,
-                                 (),
-                                 "",
-                                 "The switches 'keep-going' and 'no-keep-going' cannot both be used");
-
-    KeepGoing determine_keep_going(bool keep_going_set, bool no_keep_going_set)
-    {
-        Checks::check_exit(VCPKG_LINE_INFO, !(keep_going_set && no_keep_going_set), msgKeepGoingConflict);
-        if (keep_going_set)
-        {
-            return KeepGoing::YES;
-        }
-
-        if (no_keep_going_set)
-        {
-            return KeepGoing::NO;
-        }
-
-        return KeepGoing::YES;
-    }
-}
-
 namespace vcpkg::Commands::Upgrade
 {
     static constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
@@ -67,6 +43,25 @@ namespace vcpkg::Commands::Upgrade
         {INSTALL_SWITCHES, {}},
         nullptr,
     };
+
+    static KeepGoing determine_keep_going(bool keep_going_set, bool no_keep_going_set)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           !(keep_going_set && no_keep_going_set),
+                           msg::msgBothYesAndNoOptionSpecifiedError,
+                           msg::option = OPTION_KEEP_GOING);
+        if (keep_going_set)
+        {
+            return KeepGoing::YES;
+        }
+
+        if (no_keep_going_set)
+        {
+            return KeepGoing::NO;
+        }
+
+        return KeepGoing::YES;
+    }
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,

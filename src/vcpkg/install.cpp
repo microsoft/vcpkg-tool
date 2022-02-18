@@ -784,16 +784,16 @@ namespace vcpkg::Install
 
     DECLARE_AND_REGISTER_MESSAGE(
         ErrorInvalidClassicModeOption,
-        (msg::value),
+        (msg::option),
         "",
-        "Error: The option {value} is not supported in classic mode and no manifest was found.");
+        "Error: The option --{option} is not supported in classic mode and no manifest was found.");
 
     DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
-                                 (msg::value),
+                                 (msg::option),
                                  "",
-                                 "Error: The option {value} is not supported in manifest mode.");
+                                 "Error: The option --{option} is not supported in manifest mode.");
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
@@ -839,16 +839,12 @@ namespace vcpkg::Install
             }
             if (use_head_version)
             {
-                msg::println(Color::error,
-                             msgErrorInvalidManifestModeOption,
-                             msg::value = Strings::concat("--", OPTION_USE_HEAD_VERSION));
+                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_USE_HEAD_VERSION);
                 failure = true;
             }
             if (is_editable)
             {
-                msg::println(Color::error,
-                             msgErrorInvalidManifestModeOption,
-                             msg::value = Strings::concat("--", OPTION_EDITABLE));
+                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
                 failure = true;
             }
             if (failure)
@@ -869,16 +865,13 @@ namespace vcpkg::Install
             }
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
-                msg::println(Color::error,
-                             msgErrorInvalidClassicModeOption,
-                             msg::value = Strings::concat("--", OPTION_MANIFEST_NO_DEFAULT_FEATURES));
+                msg::println(
+                    Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
                 failure = true;
             }
             if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
             {
-                msg::println(Color::error,
-                             msgErrorInvalidClassicModeOption,
-                             msg::value = Strings::concat("--", OPTION_MANIFEST_FEATURE));
+                msg::println(Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
                 failure = true;
             }
             if (failure)
