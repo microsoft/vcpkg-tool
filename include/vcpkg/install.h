@@ -23,8 +23,6 @@ namespace vcpkg::Install
         YES
     };
 
-    inline KeepGoing to_keep_going(const bool value) { return value ? KeepGoing::YES : KeepGoing::NO; }
-
     struct SpecSummary
     {
         SpecSummary(const PackageSpec& spec, const Dependencies::InstallPlanAction* action);

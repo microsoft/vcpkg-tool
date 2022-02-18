@@ -32,6 +32,7 @@
   "_GraphCycleDetectedElement.comment": "{LOCKED}",
   "IllegalFeatures": "Error: List of features is not allowed in this contect",
   "IllegalPlatformSpec": "Error: Platform qualifier is not allowed in this context",
+  "KeepGoingConflict": "The switches 'keep-going' and 'no-keep-going' cannot both be used",
   "LicenseExpressionContainsExtraPlus": "SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.",
   "LicenseExpressionContainsInvalidCharacter": "SPDX license expression contains an invalid character (0x{value:02x} '{value}').",
   "LicenseExpressionContainsUnicode": "SPDX license expression contains a unicode character (U+{value:04x} '{pretty_value}'), but these expressions are ASCII-only.",
