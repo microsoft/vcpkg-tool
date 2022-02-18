@@ -46,7 +46,8 @@ namespace vcpkg::Commands
         {OPTION_ALLOW_BAD_COMMENTS, "Do not require message comments be correct (the default)."},
         {OPTION_NO_ALLOW_BAD_COMMENTS, "Require message comments to be correct; error if they are not."},
         {OPTION_OUTPUT_COMMENTS, "When generating the message map, include comments (the default)"},
-        {OPTION_NO_OUTPUT_COMMENTS, "When generating the message map, exclude comments (useful for generating the english localization file)"},
+        {OPTION_NO_OUTPUT_COMMENTS,
+         "When generating the message map, exclude comments (useful for generating the english localization file)"},
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -193,7 +194,8 @@ namespace vcpkg::Commands
 
         if (!output_comments && Util::Sets::contains(parsed_args.switches, OPTION_OUTPUT_COMMENTS))
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_OUTPUT_COMMENTS);
+            Checks::exit_with_message(
+                VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_OUTPUT_COMMENTS);
         }
 
         // in order to implement sorting, we create a vector of messages before converting into a JSON object
