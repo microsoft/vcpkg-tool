@@ -1,4 +1,4 @@
-{
+﻿{
   "AddPortSucceded": "Succeeded in adding ports to vcpkg.json file.",
   "AddTripletExpressionNotAllowed": "Error: triplet expressions are not allowed here. You may want to change `{package_name}:{triplet}` to `{package_name}` instead.",
   "AllFormatArgsRawArgument": "format string \"{value}\" contains a raw format argument",
@@ -68,5 +68,6 @@
   "VcpkgInvalidCommand": "invalid command: {command_name}",
   "VcpkgSendMetricsButDisabled": "Warning: passed --sendmetrics, but metrics are disabled.",
   "VersionSpecMismatch": "error: Failed to load port because version specs did not match\n    Path: {path}\n    Expected: {expected_version}\n    Actual: {actual_version}",
-  "WarningMessage": "warning: "
+  "WarningMessage": "warning: ",
+  "TestMessage": "asdfasdf"
 }
