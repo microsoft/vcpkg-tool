@@ -1,4 +1,4 @@
-Set-StrictMode -Latest
+$ErrorActionPreference = 'Stop'
 
 $fileList = Get-Content $Env:XLocFileList
 
