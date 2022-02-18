@@ -1,5 +1,5 @@
 trigger:
-- main
+- test-localization
 pr: none
 
 pool:
