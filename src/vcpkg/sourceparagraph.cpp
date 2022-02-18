@@ -1178,6 +1178,30 @@ namespace vcpkg
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
             }
 
+            // This ugly fixup is needed because Dependency is serving two roles: one as a parse tree (context
+            // dependent) and another as a context-free description of a package dependency. This fixup applies the
+            // context from the parent SourceControlFile onto all child Dependencies.
+            auto fixup_dependencies = [&spgh](Span<Dependency> deps) {
+                for (auto&& dep : deps)
+                {
+                    auto it = Util::find(dep.features, "core");
+                    if (it == dep.features.end())
+                    {
+                        dep.features.push_back("core");
+                        it = Util::find(dep.features, "default");
+                        if (dep.default_features.value_or(spgh->depend_defaults) && it == dep.features.end())
+                        {
+                            dep.features.push_back("default");
+                        }
+                    }
+                }
+            };
+            fixup_dependencies(spgh->dependencies);
+            for (auto&& fpgh : control_file->feature_paragraphs)
+            {
+                fixup_dependencies(fpgh->dependencies);
+            }
+
             return std::move(control_file); // gcc-7 bug workaround redundant move
         }
 

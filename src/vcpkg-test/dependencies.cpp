@@ -1548,11 +1548,41 @@ TEST_CASE ("version install default features", "[versionplan]")
     MockBaselineProvider bp;
     bp.v["a"] = {"1", 0};
 
-    auto install_plan =
-        unwrap(create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a"}}, {}, toplevel_spec()));
+    SECTION ("toplevel requires defaults")
+    {
+        auto install_plan =
+            unwrap(create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a"}}, {}, toplevel_spec()));
 
-    REQUIRE(install_plan.size() == 1);
-    check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    }
+
+    SECTION ("default-features false")
+    {
+        auto install_plan = unwrap(create_versioned_install_plan(
+            vp, bp, var_provider, {Dependency{"a", {"core"}, {}, {}, false, false}}, {}, toplevel_spec()));
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {});
+    }
+
+    SECTION ("default-features true")
+    {
+        auto install_plan = unwrap(create_versioned_install_plan(
+            vp, bp, var_provider, {Dependency{"a", {"core", "default"}, {}, {}, false, false}}, {}, toplevel_spec()));
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    }
+
+    SECTION ("default-features true 2")
+    {
+        auto install_plan = unwrap(create_versioned_install_plan(
+            vp, bp, var_provider, {Dependency{"a", {"core", "default"}, {}, {}, false, true}}, {}, toplevel_spec()));
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    }
 }
 
 TEST_CASE ("version install depend-defaults", "[versionplan]")

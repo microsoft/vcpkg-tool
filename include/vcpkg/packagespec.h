@@ -149,6 +149,9 @@ namespace vcpkg
     struct Dependency
     {
         std::string name;
+
+        // When created through parsing a manifest, `features` will be pre-normalized (containing 'core' and 'default'
+        // as appropriate)
         std::vector<std::string> features;
         PlatformExpression::Expr platform;
         DependencyConstraint constraint;
