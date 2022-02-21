@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/cstringview.h>
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/optional.h>
 
 #include <atomic>
@@ -82,3 +83,17 @@ namespace vcpkg
 
     tm get_current_date_time_local();
 }
+
+template<class Char>
+struct fmt::formatter<vcpkg::ElapsedTime, Char>
+{
+    constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
+    {
+        return vcpkg::basic_format_parse_impl(ctx);
+    }
+    template<class FormatContext>
+    auto format(const vcpkg::ElapsedTime& time, FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        return fmt::formatter<std::string, Char>{}.format(time.to_string(), ctx);
+    }
+};

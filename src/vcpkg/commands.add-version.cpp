@@ -30,10 +30,10 @@ namespace
     static constexpr StringLiteral OPTION_VERBOSE = "verbose";
 
     DECLARE_AND_REGISTER_MESSAGE(SuggestNewVersionScheme,
-                                 (msg::new_scheme, msg::old_scheme, msg::port_name, msg::option),
+                                 (msg::new_scheme, msg::old_scheme, msg::package_name, msg::option),
                                  "",
                                  "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
-                                 "\"{port_name}\".\nUse `--{option}` to disable this check.\n");
+                                 "\"{package_name}\".\nUse `--{option}` to disable this check.\n");
 
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
@@ -77,7 +77,7 @@ namespace
                            msgSuggestNewVersionScheme,
                            msg::new_scheme = VERSION_DATE,
                            msg::old_scheme = VERSION_STRING,
-                           msg::port_name = port_name,
+                           msg::package_name = port_name,
                            msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -87,7 +87,7 @@ namespace
                            msgSuggestNewVersionScheme,
                            msg::new_scheme = VERSION_RELAXED,
                            msg::old_scheme = VERSION_STRING,
-                           msg::port_name = port_name,
+                           msg::package_name = port_name,
                            msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }

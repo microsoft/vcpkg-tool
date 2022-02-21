@@ -7,6 +7,9 @@ namespace vcpkg::msg
     DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
 
     REGISTER_MESSAGE(SeeURL);
+    REGISTER_MESSAGE(WarningMessage);
+    REGISTER_MESSAGE(ErrorMessage);
+    REGISTER_MESSAGE(BothYesAndNoOptionSpecifiedError);
 
     // basic implementation - the write_unlocalized_text_to_stdout
 #if defined(_WIN32)
@@ -133,8 +136,8 @@ namespace vcpkg::msg
             // }
             // requires: names.size() == default_strings.size() == localized_strings.size()
             std::vector<StringLiteral> names;
-            std::vector<StringLiteral> default_strings;       // const after startup
-            std::vector<StringLiteral> localization_comments; // const after startup
+            std::vector<StringLiteral> default_strings;     // const after startup
+            std::vector<std::string> localization_comments; // const after startup
 
             bool initialized = false;
             std::vector<std::string> localized_strings;
@@ -250,13 +253,13 @@ namespace vcpkg::msg
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }
 
-    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment)
+    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment)
     {
         Messages& m = messages();
         const auto res = m.names.size();
         m.names.push_back(name);
         m.default_strings.push_back(format_string);
-        m.localization_comments.push_back(comment);
+        m.localization_comments.push_back(std::move(comment));
         return res;
     }
 
