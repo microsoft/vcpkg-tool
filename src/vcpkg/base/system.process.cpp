@@ -9,6 +9,7 @@
 
 #include <ctime>
 #include <future>
+#include <sstream>
 
 #if defined(__APPLE__)
 #include <mach-o/dyld.h>
@@ -385,6 +386,9 @@ namespace vcpkg
             new_path += Strings::format(";%s", extra_env.find("PATH")->second);
         env_cstr.append(Strings::to_utf16(new_path));
         env_cstr.push_back(L'\0');
+        // NOTE: we support VS's without the english language pack,
+        // but we still want to default to english just in case your specific
+        // non-standard build system doesn't support non-english
         env_cstr.append(L"VSLANG=1033");
         env_cstr.push_back(L'\0');
         env_cstr.append(L"VSCMD_SKIP_SENDTELEMETRY=1");
@@ -773,7 +777,11 @@ namespace vcpkg
                                     const Environment& env)
     {
         const auto timer = ElapsedTimer::create_started();
-
+        const auto thread_id = []() {
+            std::ostringstream ss;
+            ss << std::this_thread::get_id();
+            return ss.str();
+        }();
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
 
@@ -803,7 +811,7 @@ namespace vcpkg
                                   .extract();
         }
 
-        Debug::print("popen(", actual_cmd_line, ")\n");
+        Debug::print(thread_id, ": popen(", actual_cmd_line, ")\n");
         // Flush stdout before launching external process
         fflush(stdout);
 
@@ -824,11 +832,24 @@ namespace vcpkg
             return 1;
         }
 
-        const auto exit_code = pclose(pipe);
+        auto exit_code = pclose(pipe);
+        if (WIFEXITED(exit_code))
+        {
+            exit_code = WEXITSTATUS(exit_code);
+        }
+        else if (WIFSIGNALED(exit_code))
+        {
+            exit_code = WTERMSIG(exit_code);
+        }
+        else if (WIFSTOPPED(exit_code))
+        {
+            exit_code = WSTOPSIG(exit_code);
+        }
 #endif
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
-        Debug::print("cmd_execute_and_stream_data() returned ",
+        Debug::print(thread_id,
+                     ": cmd_execute_and_stream_data() returned ",
                      exit_code,
                      " after ",
                      Strings::format("%8llu", static_cast<unsigned long long>(elapsed)),

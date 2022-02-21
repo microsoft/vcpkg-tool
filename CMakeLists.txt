@@ -35,6 +35,10 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     list(APPEND LANGUAGES "C")
 endif()
 
+if(VCPKG_DEVELOPMENT_WARNINGS)
+    set(FMT_PEDANTIC ON CACHE BOOL "")
+endif()
+
 project(vcpkg
     DESCRIPTION "vcpkg helps you manage C and C++ libraries on Windows, Linux and MacOS."
     HOMEPAGE_URL "https://github.com/microsoft/vcpkg"

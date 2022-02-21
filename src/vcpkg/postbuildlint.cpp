@@ -498,6 +498,7 @@ namespace vcpkg::PostBuildLint
             case MachineType::ARM:
             case MachineType::ARMNT: return "arm";
             case MachineType::ARM64: return "arm64";
+            case MachineType::ARM64EC: return "arm64ec";
             default: return "Machine Type Code = " + std::to_string(static_cast<uint16_t>(machine_type));
         }
     }
@@ -961,7 +962,7 @@ namespace vcpkg::PostBuildLint
         std::vector<Path> misplaced_files = fs.get_regular_files_non_recursive(dir, IgnoreErrors{});
         Util::erase_remove_if(misplaced_files, [](const Path& target) {
             const auto filename = target.filename();
-            return filename == "CONTROL" || filename == "BUILD_INFO";
+            return filename == "CONTROL" || filename == "BUILD_INFO" || filename == ".DS_Store";
         });
 
         if (!misplaced_files.empty())

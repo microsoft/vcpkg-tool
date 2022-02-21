@@ -9,7 +9,7 @@ namespace vcpkg
         static constexpr StringLiteral registries_url =
             "https://github.com/Microsoft/vcpkg/tree/master/docs/users/registries.md";
         static constexpr StringLiteral manifests_url =
-            "https://github.com/Microsoft/vcpkg/tree/master/docs/users/manifest.md";
+            "https://github.com/Microsoft/vcpkg/tree/master/docs/users/manifests.md";
         static constexpr StringLiteral assetcaching_url =
             "https://github.com/Microsoft/vcpkg/tree/master/docs/users/assetcaching.md";
         static constexpr StringLiteral binarycaching_url =

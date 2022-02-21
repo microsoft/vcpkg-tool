@@ -6,7 +6,7 @@
 
 #include <vcpkg/commands.interface.h>
 #include <vcpkg/packagespec.h>
-#include <vcpkg/versiont.h>
+#include <vcpkg/versions.h>
 
 namespace vcpkg
 {

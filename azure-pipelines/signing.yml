@@ -19,12 +19,6 @@ parameters:
   default:
 
 variables:
-  - ${{ if eq(parameters.VcpkgBaseVersionOverride, '') }}:
-    - name: VCPKG_BASE_VERSION
-      value: $[format('{0:yyyy}-{0:MM}-{0:dd}', pipeline.startTime)]
-  - ${{ if ne(parameters.VcpkgBaseVersionOverride, '') }}:
-    - name: VCPKG_BASE_VERSION
-      value: ${{parameters.VcpkgBaseVersionOverride}}
   - name: TeamName
     value: vcpkg
   - group: vcpkg-dependency-source-blobs
@@ -47,15 +41,34 @@ variables:
 jobs:
   - job: arch_independent
     displayName: 'Build and Sign Arch-Independent Scripts and vcpkg-ce'
+    # The first job records VCPKG_INITIAL_BASE_VERSION as VCPKG_BASE_VERSION so that all subsequent stages agree
+    # on the value; AzureDevOps appears to repeat evaluation of variables such that crossing UTC's day start
+    # would make subsequent pipeline stages use a different day producing a broken build.
+    # Note that pipeline.startTime seems to refer to the start of the *job*, not the overall pipeline run.
+    variables:
+    - ${{ if eq(parameters.VcpkgBaseVersionOverride, '') }}:
+      - name: VCPKG_INITIAL_BASE_VERSION
+        value: $[format('{0:yyyy}-{0:MM}-{0:dd}', pipeline.startTime)]
+    - ${{ if ne(parameters.VcpkgBaseVersionOverride, '') }}:
+      - name: VCPKG_INITIAL_BASE_VERSION
+        value: ${{parameters.VcpkgBaseVersionOverride}}
     pool:
       name: 'VSEngSS-MicroBuild2022-1ES'
     steps:
+    - task: Powershell@2
+      displayName: 'Lock VCPKG_BASE_VERSION'
+      name: versions
+      inputs:
+        pwsh: true
+        targetType: 'inline'
+        script: |
+          Write-Host "##vso[task.setvariable variable=VCPKG_BASE_VERSION;isOutput=true]$env:VCPKG_INITIAL_BASE_VERSION"
     - task: Powershell@2
       displayName: 'Lock Installer Scripts Versions'
       inputs:
         pwsh: true
         filePath: vcpkg-init/lock-versions.ps1
-        arguments: '-Destination "$(Build.BinariesDirectory)" -VcpkgBaseVersion $(VCPKG_BASE_VERSION)'
+        arguments: '-Destination "$(Build.BinariesDirectory)" -VcpkgBaseVersion $(VCPKG_INITIAL_BASE_VERSION)'
     # Build and test vcpkg-ce
     - task: PowerShell@2
       displayName: 'Download vcpkg-ce sources'
@@ -174,6 +187,7 @@ jobs:
     variables:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
+      VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
     - task: CmdLine@2
       displayName: "Download fmt library"
@@ -207,6 +221,7 @@ jobs:
     variables:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
+      VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
     - task: CmdLine@2
       displayName: "Download fmt library"
@@ -241,6 +256,7 @@ jobs:
     variables:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
+      VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
     - task: CmdLine@2
       displayName: "Download fmt library"
@@ -280,6 +296,7 @@ jobs:
     variables:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
+      VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
     - task: PowerShell@2
       displayName: "Download fmt library"
@@ -423,7 +440,7 @@ jobs:
       displayName: Check for compliance errors
       # To avoid spurious warnings about missing logs, explicitly declare what we scanned.
       inputs:
-        BinSkim: false # Temporarily disabled due to failures in fmt.
+        BinSkim: true
         CredScan: true
         PoliCheck: true
     # Trust Services Automation (TSA) can automatically open bugs for compliance issues.
