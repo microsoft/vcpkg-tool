@@ -27,10 +27,10 @@ steps:
     packageSourceAuth: patAuth
     patVariable: '$(PackageSourcePatIndirect)'
 - script: |
-  git $(GitEmbeddedBotArgs) add locales
-  git $(GitEmbeddedBotArgs) commit -m "[localization][automated] update locale files
-  
-  [ci skip]"
+    git $(GitEmbeddedBotArgs) add locales
+    git $(GitEmbeddedBotArgs) commit -m "[localization][automated] update locale files
+    
+    [ci skip]"
 - task: DownloadSecureFile@1
   displayName: Download Deploy Key
   name: githubDeployKey
