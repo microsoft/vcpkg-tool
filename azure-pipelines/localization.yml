@@ -1,5 +1,5 @@
 trigger:
-- main
+- test-localization
 pr: none
 
 pool:
@@ -10,13 +10,6 @@ steps:
   inputs:
     locProj: 'LocProject.json'
     outDir: '$(Build.ArtifactStagingDirectory)'
-    isCreatePrSelected: true
-    isShouldReusePrSelected: true
-    repoType: 'gitHub'
-    prSourceBranchPrefix: 'locfiles'
-    isAutoCompletePrSelected: false
     isUseLfLineEndingsSelected: true
-    gitHubPatVariable: '$(GitHubPat)'
     packageSourceAuth: patAuth
-    xLocConsoleLoggingLevel: debug
     patVariable: '$(PackageSourcePat)'
