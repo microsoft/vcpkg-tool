@@ -3,6 +3,12 @@ trigger:
 pr: none
 
 variables:
+# this is silly, but we need the argument to patVariable to be exactly
+# "$(PackageSourcePat)"
+# however, if we actually put that there after PackageSourcePat is defined,
+# it replaces $(PackageSourcePat) with the value of PackageSourcePat
+- name: PackageSourcePatIndirect
+  value: '$(PackageSourcePat)'
 - group: vcpkg-localization
 - name: PackageSourcePat
   value: "$(vcpkg-ceapx-package-source-pat)"
@@ -17,4 +23,4 @@ steps:
     outDir: '$(Build.ArtifactStagingDirectory)'
     isUseLfLineEndingsSelected: true
     packageSourceAuth: patAuth
-    patVariable: 'PackageSourcePat'
+    patVariable: '$(PackageSourcePatIndirect)'
