@@ -12,6 +12,8 @@ variables:
 - group: vcpkg-localization
 - name: PackageSourcePat
   value: "$(vcpkg-ceapx-package-source-pat)"
+- name: GitEmbeddedBotArgs
+  value: '-C $(Build.SourcesDirectory) -c user.email=embeddedbot@microsoft.com -c user.name="Embedded Bot"'
 
 pool:
   name: 'VSEngSS-MicroBuild2022-1ES'
@@ -24,6 +26,11 @@ steps:
     isUseLfLineEndingsSelected: true
     packageSourceAuth: patAuth
     patVariable: '$(PackageSourcePatIndirect)'
+- script: |
+  git $(GitEmbeddedBotArgs) add locales
+  git $(GitEmbeddedBotArgs) commit -m "[localization][automated] update locale files
+  
+  [ci skip]"
 - task: DownloadSecureFile@1
   displayName: Download Deploy Key
   name: githubDeployKey
@@ -37,7 +44,7 @@ steps:
   # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 - script: mkdir %USERPROFILE%\.ssh && echo * ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==>>%USERPROFILE%\.ssh\known_hosts
   displayName: Store GitHub Public Key
-- script: git -c user.email=embeddedbot@microsoft.com -c user.name="Embedded Bot" push git@github.com:microsoft/vcpkg-tool HEAD:$(Build.SourceBranch)
+- script: git $(GitEmbeddedBotArgs) push git@github.com:microsoft/vcpkg-tool HEAD:$(Build.SourceBranch)
   env:
     GIT_SSH_COMMAND: ssh -i "$(githubDeployKey.secureFilePath)"
   displayName: Push Localization Files
