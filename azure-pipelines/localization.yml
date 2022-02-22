@@ -3,7 +3,7 @@ trigger:
 pr: none
 
 pool:
-  vmImage: windows-latest
+  name: 'VSEngSS-MicroBuild2022-1ES'
 
 steps:
 - task: OneLocBuild@2

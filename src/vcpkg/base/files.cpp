@@ -1893,6 +1893,12 @@ namespace vcpkg
                 }
             } while (!file.eof());
 
+            if (Strings::starts_with(output, "\xEF\xBB\xBF"))
+            {
+                // remove byte-order mark from the beginning of the string
+                output.erase(output.begin(), output.begin() + 3);
+            }
+
             return output;
         }
         virtual std::vector<std::string> read_lines(const Path& file_path, std::error_code& ec) const override
@@ -1921,7 +1927,13 @@ namespace vcpkg
                 }
             } while (!file.eof());
 
-            return output.extract();
+            auto res = output.extract();
+            if (res.size() > 0 && Strings::starts_with(res[0], "\xEF\xBB\xBF"))
+            {
+                // remove byte-order mark from the beginning of the string
+            }
+
+            return res;
         }
 
         virtual Path find_file_recursively_up(const Path& starting_dir,
