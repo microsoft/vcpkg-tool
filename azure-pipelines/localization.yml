@@ -28,7 +28,9 @@ steps:
     patVariable: '$(PackageSourcePatIndirect)'
 - task: Powershell@2
   displayName: Format messages.*.json files
-  filePath: azure-pipelines/Format-LocalizationFiles.ps1
+  inputs:
+    pwsh: true
+    filePath: azure-pipelines/Format-LocalizationFiles.ps1
 - script: |
     git $(GitEmbeddedBotArgs) add locales
     git $(GitEmbeddedBotArgs) commit -m "[localization][automated][ci skip] update locale files"
