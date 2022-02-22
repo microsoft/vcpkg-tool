@@ -307,7 +307,7 @@ namespace vcpkg::Build
         "example for {list} is 'x86, arm64'",
         "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
         "architecture was {arch}\n    "
-        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
+        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n"
         "Please check the required Visual Studio Components:\n"
         "C++:\n"
         "   Windows Universal C Runtime\n"
