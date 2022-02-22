@@ -2,6 +2,11 @@ trigger:
 - test-localization
 pr: none
 
+variables:
+- group: vcpkg-localization
+- name: PackageSourcePat
+  value: "$(vcpkg-ceapx-package-source-pat)"
+
 pool:
   name: 'VSEngSS-MicroBuild2022-1ES'
 
@@ -12,4 +17,4 @@ steps:
     outDir: '$(Build.ArtifactStagingDirectory)'
     isUseLfLineEndingsSelected: true
     packageSourceAuth: patAuth
-    patVariable: '$(PackageSourcePat)'
+    patVariable: 'PackageSourcePat'
