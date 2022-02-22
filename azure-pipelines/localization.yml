@@ -1,5 +1,5 @@
 trigger:
-- test-localization
+- main
 pr: none
 
 variables:
