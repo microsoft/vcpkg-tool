@@ -28,9 +28,8 @@ steps:
     patVariable: '$(PackageSourcePatIndirect)'
 - script: |
     git $(GitEmbeddedBotArgs) add locales
-    git $(GitEmbeddedBotArgs) commit -m "[localization][automated] update locale files
-    
-    [ci skip]"
+    git $(GitEmbeddedBotArgs) commit -m "[localization][automated][ci skip] update locale files"
+  displayName: Commit Changed Files
 - task: DownloadSecureFile@1
   displayName: Download Deploy Key
   name: githubDeployKey
