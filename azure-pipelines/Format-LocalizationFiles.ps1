@@ -7,6 +7,7 @@ Get-ChildItem "$Root/locales/messages.*.json" | ? {
   (Split-Path -Leaf $_) -ne 'messages.en.json'
 } | % {
     $fileName = $_
+    Write-Host "Formatting $fileName"
     $fileContents = Get-Content $fileName
     $fileContents = $fileContents -join "`n" # use LF, not CRLF
     if (-not $fileContents.EndsWith("`n"))
