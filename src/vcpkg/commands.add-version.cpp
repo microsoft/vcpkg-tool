@@ -33,7 +33,7 @@ namespace
                                  (msg::new_scheme, msg::old_scheme, msg::package_name, msg::option),
                                  "",
                                  "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
-                                 "\"{package_name}\".\nUse `--{option}` to disable this check.\n");
+                                 "\"{package_name}\".\nUse `--{option}` to disable this check.");
 
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
@@ -73,23 +73,21 @@ namespace
         {
             if (DateVersion::try_parse(version.version.text()))
             {
-                msg::print(Color::error,
-                           msgSuggestNewVersionScheme,
-                           msg::new_scheme = VERSION_DATE,
-                           msg::old_scheme = VERSION_STRING,
-                           msg::package_name = port_name,
-                           msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
-                Checks::exit_fail(VCPKG_LINE_INFO);
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          msgSuggestNewVersionScheme,
+                                          msg::new_scheme = VERSION_DATE,
+                                          msg::old_scheme = VERSION_STRING,
+                                          msg::package_name = port_name,
+                                          msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
             }
             if (DotVersion::try_parse_relaxed(version.version.text()))
             {
-                msg::print(Color::error,
-                           msgSuggestNewVersionScheme,
-                           msg::new_scheme = VERSION_RELAXED,
-                           msg::old_scheme = VERSION_STRING,
-                           msg::package_name = port_name,
-                           msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
-                Checks::exit_fail(VCPKG_LINE_INFO);
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          msgSuggestNewVersionScheme,
+                                          msg::new_scheme = VERSION_RELAXED,
+                                          msg::old_scheme = VERSION_STRING,
+                                          msg::package_name = port_name,
+                                          msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
             }
         }
     }
