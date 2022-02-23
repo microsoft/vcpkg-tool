@@ -28,7 +28,7 @@ steps:
     packageSourceAuth: patAuth
     patVariable: '$(PackageSourcePatIndirect)'
 - task: PublishBuildArtifacts@1
-  displayName: 'Publish LCL files to loc team'
+  displayName: 'Publish localization files'
   inputs:
     PathToPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
