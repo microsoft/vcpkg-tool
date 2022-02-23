@@ -3,15 +3,6 @@ trigger:
 pr: none
 
 variables:
-# this is silly, but we need the argument to patVariable to be exactly
-# "$(PackageSourcePat)"
-# however, if we actually put that there after PackageSourcePat is defined,
-# it replaces $(PackageSourcePat) with the value of PackageSourcePat
-- name: PackageSourcePatIndirect
-  value: '$(PackageSourcePat)'
-- group: vcpkg-localization
-- name: PackageSourcePat
-  value: "$(vcpkg-ceapx-package-source-pat)"
 - name: GitEmbeddedBotArgs
   value: '-C $(Build.SourcesDirectory) -c user.email=embeddedbot@microsoft.com -c user.name="Embedded Bot"'
 
@@ -20,12 +11,21 @@ pool:
 
 steps:
 - task: OneLocBuild@2
+  displayName: 'Build localization files'
+  env:
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
   inputs:
     locProj: 'LocProject.json'
     outDir: '$(Build.ArtifactStagingDirectory)'
     isUseLfLineEndingsSelected: true
-    packageSourceAuth: patAuth
-    patVariable: '$(PackageSourcePatIndirect)'
+    dependencyPackageSource: 'https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/vcpkg.localization/nuget/v3/index.json'
+    packageSourceAuth: 'patAuth'
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish localization files'
+  inputs:
+    PathToPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
 - task: Powershell@2
   displayName: Format messages.*.json files
   continueOnError: true
