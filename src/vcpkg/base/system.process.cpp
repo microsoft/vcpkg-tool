@@ -17,6 +17,7 @@
 
 #if defined(__FreeBSD__)
 #include <sys/sysctl.h>
+#include <sys/wait.h>
 #endif
 
 #if defined(_WIN32)
