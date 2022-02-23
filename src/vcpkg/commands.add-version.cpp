@@ -302,7 +302,6 @@ namespace
 
 namespace vcpkg::Commands::AddVersion
 {
-
     const CommandSwitch COMMAND_SWITCHES[] = {
         {OPTION_ALL, "Process versions for all ports."},
         {OPTION_OVERWRITE_VERSION, "Overwrite `git-tree` of an existing version."},
