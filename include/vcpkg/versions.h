@@ -22,7 +22,7 @@ namespace vcpkg
         // VersionMapLess is provided as a less than comparison for use in std::map.
         friend struct VersionMapLess;
 
-        const std::string text() const { return m_text; }
+        const std::string& text() const { return m_text; }
         int port_version() const { return m_port_version; }
 
     private:

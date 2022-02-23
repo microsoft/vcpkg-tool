@@ -199,6 +199,8 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(option, "editable");
     DECLARE_MSG_ARG(expected_version, "1.3.8");
     DECLARE_MSG_ARG(actual_version, "1.3.8");
+    DECLARE_MSG_ARG(new_scheme, "version");
+    DECLARE_MSG_ARG(old_scheme, "version-string");
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of

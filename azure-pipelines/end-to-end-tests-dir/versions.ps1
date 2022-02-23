@@ -57,7 +57,7 @@ $CurrentTest = "x-add-version fish (must fail)"
 $out = Run-Vcpkg @portsRedirectArgsIncomplete x-add-version fish
 Throw-IfNotFailed
 $CurrentTest = "x-add-version fish --overwrite-version"
-Run-Vcpkg @portsRedirectArgsIncomplete x-add-version fish --overwrite-version
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version fish --overwrite-version --skip-version-format-check
 Throw-IfFailed
 
 $CurrentTest = "x-add-version mouse"
