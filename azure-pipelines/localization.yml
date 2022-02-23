@@ -20,12 +20,19 @@ pool:
 
 steps:
 - task: OneLocBuild@2
+  displayName: 'Build localization files'
   inputs:
     locProj: 'LocProject.json'
     outDir: '$(Build.ArtifactStagingDirectory)'
     isUseLfLineEndingsSelected: true
     packageSourceAuth: patAuth
     patVariable: '$(PackageSourcePatIndirect)'
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish LCL files to loc team'
+  inputs:
+    PathToPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
 - task: Powershell@2
   displayName: Format messages.*.json files
   continueOnError: true
