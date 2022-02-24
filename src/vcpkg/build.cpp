@@ -736,11 +736,6 @@ namespace vcpkg::Build
                                                            const VcpkgPaths& paths,
                                                            const Dependencies::InstallPlanAction& action)
     {
-#if !defined(_WIN32)
-        // TODO: remove when vcpkg.exe is in charge for acquiring tools. Change introduced in vcpkg v0.0.107.
-        // bootstrap should have already downloaded ninja, but making sure it is present in case it was deleted.
-        (void)(paths.get_tool_exe(Tools::NINJA));
-#endif
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto& scf = *scfl.source_control_file;
 
