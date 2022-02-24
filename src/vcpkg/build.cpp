@@ -765,7 +765,6 @@ namespace vcpkg::Build
             {"_VCPKG_DOWNLOAD_TOOL", to_string(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
             {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
-            {"VCPKG_CHAINLOAD_TOOLCHAIN_FILE", action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
         };
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
@@ -855,21 +854,7 @@ namespace vcpkg::Build
         {
             return m_paths.scripts / "toolchains/mingw.cmake";
         }
-        else if (cmake_system_name == "WindowsStore")
-        {
-            // HACK: remove once we have fully shipped a uwp toolchain
-            static bool have_uwp_triplet =
-                m_paths.get_filesystem().exists(m_paths.scripts / "toolchains/uwp.cmake", IgnoreErrors{});
-            if (have_uwp_triplet)
-            {
-                return m_paths.scripts / "toolchains/uwp.cmake";
-            }
-            else
-            {
-                return m_paths.scripts / "toolchains/windows.cmake";
-            }
-        }
-        else if (cmake_system_name.empty() || cmake_system_name == "Windows")
+        else if (cmake_system_name.empty() || cmake_system_name == "Windows" || cmake_system_name == "WindowsStore")
         {
             return m_paths.scripts / "toolchains/windows.cmake";
         }
