@@ -181,26 +181,28 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(actual, "");
     DECLARE_MSG_ARG(list, "");
 
-    DECLARE_MSG_ARG(email, "vcpkg@microsoft.com");
-    DECLARE_MSG_ARG(path, "/foo/bar");
-    DECLARE_MSG_ARG(triplet, "x64-windows");
-    DECLARE_MSG_ARG(url, "https://github.com/microsoft/vcpkg");
-    DECLARE_MSG_ARG(elapsed, "3.532 min");
-    DECLARE_MSG_ARG(version, "1.3.8");
-    DECLARE_MSG_ARG(package_name, "zlib");
-    DECLARE_MSG_ARG(command_name, "install");
-    DECLARE_MSG_ARG(command_line, "vcpkg install zlib");
-    DECLARE_MSG_ARG(exit_code, "127");
-    DECLARE_MSG_ARG(count, "42");
-    DECLARE_MSG_ARG(row, "42");
-    DECLARE_MSG_ARG(column, "42");
-    DECLARE_MSG_ARG(arch, "x64");
-    DECLARE_MSG_ARG(system_name, "Darwin");
-    DECLARE_MSG_ARG(option, "editable");
-    DECLARE_MSG_ARG(expected_version, "1.3.8");
     DECLARE_MSG_ARG(actual_version, "1.3.8");
+    DECLARE_MSG_ARG(arch, "x64");
+    DECLARE_MSG_ARG(build_result, "One of the BuildResultXxx messages (such as BuildResultSucceeded/SUCCEEDED)");
+    DECLARE_MSG_ARG(column, "42");
+    DECLARE_MSG_ARG(command_line, "vcpkg install zlib");
+    DECLARE_MSG_ARG(command_name, "install");
+    DECLARE_MSG_ARG(count, "42");
+    DECLARE_MSG_ARG(elapsed, "3.532 min");
+    DECLARE_MSG_ARG(email, "vcpkg@microsoft.com");
+    DECLARE_MSG_ARG(exit_code, "127");
+    DECLARE_MSG_ARG(expected_version, "1.3.8");
     DECLARE_MSG_ARG(new_scheme, "version");
     DECLARE_MSG_ARG(old_scheme, "version-string");
+    DECLARE_MSG_ARG(option, "editable");
+    DECLARE_MSG_ARG(package_name, "zlib");
+    DECLARE_MSG_ARG(path, "/foo/bar");
+    DECLARE_MSG_ARG(row, "42");
+    DECLARE_MSG_ARG(spec, "zlib:x64-windows");
+    DECLARE_MSG_ARG(system_name, "Darwin");
+    DECLARE_MSG_ARG(triplet, "x64-windows");
+    DECLARE_MSG_ARG(url, "https://github.com/microsoft/vcpkg");
+    DECLARE_MSG_ARG(version, "1.3.8");
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of

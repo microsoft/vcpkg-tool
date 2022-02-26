@@ -54,6 +54,63 @@ namespace
     };
 
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultSummaryHeader,
+                                 (msg::triplet),
+                                 "Displayed before a list of a summary installation results.",
+                                 "SUMMARY FOR {triplet}");
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultSummaryLine,
+                                 (msg::build_result, msg::count),
+                                 "Displayed to show a count of results of a build_result in a summary.",
+                                 "    {build_result}: {count}");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildResultSucceeded,
+        (),
+        "Printed after the name of an installed entity to indicate that it was built and installed successfully.",
+        "SUCCEEDED");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultBuildFailed,
+                                 (),
+                                 "Printed after the name of an installed entity to indicate that it failed to build.",
+                                 "BUILD_FAILED");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildResultFileConflicts,
+        (),
+        "Printed after the name of an installed entity to indicate that it conflicts with something already installed",
+        "FILE_CONFLICTS");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultPostBuildChecksFailed,
+                                 (),
+                                 "Printed after the name of an installed entity to indicate that it built "
+                                 "successfully, but that it failed post build checks.",
+                                 "POST_BUILD_CHECKS_FAILED");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultCascadeDueToMissingDependencies,
+                                 (),
+                                 "Printed after the name of an installed entity to indicate that it could not attempt "
+                                 "to be installed because one of its transitive dependencies failed to install.",
+                                 "CASCADED_DUE_TO_MISSING_DEPENDENCIES");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultExcluded,
+                                 (),
+                                 "Printed after the name of an installed entity to indicate that the user explicitly "
+                                 "requested it not be installed.",
+                                 "EXCLUDED");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildResultCacheMissing,
+        (),
+        "Printed after the name of an installed entity to indicate that it was not present in the binary cache when "
+        "the user has requested that things may only be installed from the cache rather than built.",
+        "CACHE_MISSING");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultDownloaded,
+                                 (),
+                                 "Printed after the name of an installed entity to indicate that it was successfully "
+                                 "downloaded but no build or install was requested.",
+                                 "DOWNLOADED");
 }
 
 namespace vcpkg::Build
@@ -1335,36 +1392,92 @@ namespace vcpkg::Build
         return result;
     }
 
-    const std::string& to_string(const BuildResult build_result)
+    void BuildResultCounts::increment(const BuildResult build_result)
     {
-        static const std::string NULLVALUE_STRING = "vcpkg::Commands::Build::BuildResult_NULLVALUE";
-        static const std::string SUCCEEDED_STRING = "SUCCEEDED";
-        static const std::string BUILD_FAILED_STRING = "BUILD_FAILED";
-        static const std::string FILE_CONFLICTS_STRING = "FILE_CONFLICTS";
-        static const std::string POST_BUILD_CHECKS_FAILED_STRING = "POST_BUILD_CHECKS_FAILED";
-        static const std::string CASCADED_DUE_TO_MISSING_DEPENDENCIES_STRING = "CASCADED_DUE_TO_MISSING_DEPENDENCIES";
-        static const std::string EXCLUDED_STRING = "EXCLUDED";
-        static const std::string CACHE_MISSING_STRING = "CACHE_MISSING";
-        static const std::string DOWNLOADED_STRING = "DOWNLOADED";
-
         switch (build_result)
         {
-            case BuildResult::NULLVALUE: return NULLVALUE_STRING;
-            case BuildResult::SUCCEEDED: return SUCCEEDED_STRING;
-            case BuildResult::BUILD_FAILED: return BUILD_FAILED_STRING;
-            case BuildResult::POST_BUILD_CHECKS_FAILED: return POST_BUILD_CHECKS_FAILED_STRING;
-            case BuildResult::FILE_CONFLICTS: return FILE_CONFLICTS_STRING;
-            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: return CASCADED_DUE_TO_MISSING_DEPENDENCIES_STRING;
-            case BuildResult::EXCLUDED: return EXCLUDED_STRING;
-            case BuildResult::CACHE_MISSING: return CACHE_MISSING_STRING;
-            case BuildResult::DOWNLOADED: return DOWNLOADED_STRING;
+            case BuildResult::NULLVALUE: ++null_value; return;
+            case BuildResult::SUCCEEDED: ++succeeded; return;
+            case BuildResult::BUILD_FAILED: ++build_failed; return;
+            case BuildResult::POST_BUILD_CHECKS_FAILED: ++post_build_checks_failed; return;
+            case BuildResult::FILE_CONFLICTS: ++file_conflicts; return;
+            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: ++cascaded_due_to_missing_dependencies; return;
+            case BuildResult::EXCLUDED: ++excluded; return;
+            case BuildResult::CACHE_MISSING: ++cache_missing; return;
+            case BuildResult::DOWNLOADED: ++downloaded; return;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    void BuildResultCounts::println(const Triplet& triplet) const
+    {
+        msg::println(msgBuildResultSummaryHeader, msg::triplet = triplet);
+        // NULLVALUE intentionally not printed
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultSucceeded),
+                     msg::count = succeeded);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultBuildFailed),
+                     msg::count = build_failed);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultPostBuildChecksFailed),
+                     msg::count = post_build_checks_failed);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultFileConflicts),
+                     msg::count = file_conflicts);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultCascadeDueToMissingDependencies),
+                     msg::count = cascaded_due_to_missing_dependencies);
+        msg::println(
+            msgBuildResultSummaryLine, msg::build_result = msg::format(msgBuildResultExcluded), msg::count = excluded);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultCacheMissing),
+                     msg::count = cache_missing);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultDownloaded),
+                     msg::count = downloaded);
+    }
+
+    StringLiteral to_string_locale_invariant(const BuildResult build_result)
+    {
+        switch (build_result)
+        {
+            case BuildResult::NULLVALUE: return "vcpkg::Commands::Build::BuildResult_NULLVALUE";
+            case BuildResult::SUCCEEDED: return "SUCCEEDED";
+            case BuildResult::BUILD_FAILED: return "BUILD_FAILED";
+            case BuildResult::POST_BUILD_CHECKS_FAILED: return "POST_BUILD_CHECKS_FAILED";
+            case BuildResult::FILE_CONFLICTS: return "FILE_CONFLICTS";
+            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: return "CASCADED_DUE_TO_MISSING_DEPENDENCIES";
+            case BuildResult::EXCLUDED: return "EXCLUDED";
+            case BuildResult::CACHE_MISSING: return "CACHE_MISSING";
+            case BuildResult::DOWNLOADED: return "DOWNLOADED";
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    msg::LocalizedString to_string(const BuildResult build_result)
+    {
+        switch (build_result)
+        {
+            case BuildResult::NULLVALUE:
+                return msg::LocalizedString::from_string_unchecked(to_string_locale_invariant(BuildResult::NULLVALUE));
+            case BuildResult::SUCCEEDED: return msg::format(msgBuildResultSucceeded);
+            case BuildResult::BUILD_FAILED: return msg::format(msgBuildResultBuildFailed);
+            case BuildResult::POST_BUILD_CHECKS_FAILED: return msg::format(msgBuildResultPostBuildChecksFailed);
+            case BuildResult::FILE_CONFLICTS: return msg::format(msgBuildResultFileConflicts);
+            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+                return msg::format(msgBuildResultCascadeDueToMissingDependencies);
+            case BuildResult::EXCLUDED: return msg::format(msgBuildResultExcluded);
+            case BuildResult::CACHE_MISSING: return msg::format(msgBuildResultCacheMissing);
+            case BuildResult::DOWNLOADED: return msg::format(msgBuildResultDownloaded);
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
     std::string create_error_message(const BuildResult build_result, const PackageSpec& spec)
     {
-        return Strings::format("Error: Building package %s failed with: %s", spec, Build::to_string(build_result));
+        return Strings::format(
+            "Error: Building package %s failed with: %s", spec, Build::to_string_locale_invariant(build_result));
     }
 
     std::string create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
