@@ -58,7 +58,7 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    std::vector<StringView> get_all_format_args(StringView fstring, msg::LocalizedString& error)
+    std::vector<StringView> get_all_format_args(StringView fstring, LocalizedString& error)
     {
         error = {};
         std::vector<StringView> res;
@@ -117,7 +117,7 @@ namespace vcpkg::Commands
         return res;
     }
 
-    FormatArgMismatches get_format_arg_mismatches(StringView value, StringView comment, msg::LocalizedString& error)
+    FormatArgMismatches get_format_arg_mismatches(StringView value, StringView comment, LocalizedString& error)
     {
         FormatArgMismatches res;
 
@@ -172,7 +172,7 @@ namespace vcpkg::Commands
 
         bool allow_bad_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_ALLOW_BAD_COMMENTS);
 
-        msg::LocalizedString comments_msg_type;
+        LocalizedString comments_msg_type;
         Color comments_msg_color;
         if (allow_bad_comments)
         {
@@ -222,7 +222,7 @@ namespace vcpkg::Commands
         std::sort(messages.begin(), messages.end(), MessageSorter{});
 
         bool has_incorrect_comment = false;
-        msg::LocalizedString format_string_parsing_error;
+        LocalizedString format_string_parsing_error;
         Json::Object obj;
         for (Message& msg : messages)
         {

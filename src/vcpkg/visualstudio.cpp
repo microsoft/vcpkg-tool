@@ -365,9 +365,9 @@ namespace vcpkg::VisualStudio
 }
 namespace vcpkg
 {
-    msg::LocalizedString ToolsetsInformation::get_localized_debug_info() const
+    LocalizedString ToolsetsInformation::get_localized_debug_info() const
     {
-        msg::LocalizedString ret;
+        LocalizedString ret;
 
         if (toolsets.empty())
         {
@@ -378,7 +378,7 @@ namespace vcpkg
             ret.append(msg::format(msgVSExaminedInstances)).appendnl();
             for (const Toolset& toolset : toolsets)
             {
-                ret.append(msg::LocalizedString::from_string_unchecked(
+                ret.append(LocalizedString::from_string_unchecked(
                     Strings::concat("    ", toolset.visual_studio_root_path, '\n')));
             }
         }
@@ -388,7 +388,7 @@ namespace vcpkg
             ret.append(msg::format(msgVSExaminedPaths)).appendnl();
             for (const Path& examinee : paths_examined)
             {
-                ret.append(msg::LocalizedString::from_string_unchecked(Strings::concat("    ", examinee, '\n')));
+                ret.append(LocalizedString::from_string_unchecked(Strings::concat("    ", examinee, '\n')));
             }
         }
 
