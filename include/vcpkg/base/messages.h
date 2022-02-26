@@ -40,6 +40,36 @@ namespace vcpkg
 
         friend const char* to_printf_arg(const LocalizedString& s) { return s.data().c_str(); }
 
+        friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() == rhs.data();
+        }
+
+        friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() != rhs.data();
+        }
+
+        friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() < rhs.data();
+        }
+
+        friend bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() <= rhs.data();
+        }
+
+        friend bool operator>(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() > rhs.data();
+        }
+
+        friend bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() >= rhs.data();
+        }
+
     private:
         std::string m_data;
 
