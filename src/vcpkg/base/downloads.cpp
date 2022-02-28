@@ -659,7 +659,11 @@ namespace vcpkg
                                    }
                                }).value_or_exit(VCPKG_LINE_INFO);
 
-                    auto res = cmd_execute_and_capture_output(Command{}.raw_arg(cmd), get_clean_environment(), true);
+                    auto res = cmd_execute_and_capture_output(Command{}.raw_arg(cmd),
+                                                              default_working_directory,
+                                                              get_clean_environment(),
+                                                              Encoding::Utf8,
+                                                              EchoInDebug::Show);
                     if (res.exit_code == 0)
                     {
                         auto maybe_error =

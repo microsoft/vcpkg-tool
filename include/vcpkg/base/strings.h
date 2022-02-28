@@ -125,8 +125,9 @@ namespace vcpkg::Strings
     std::wstring to_utf16(StringView s);
 
     std::string to_utf8(const wchar_t* w);
-    std::string to_utf8(const wchar_t* w, size_t s);
-    inline std::string to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
+    std::string to_utf8(const wchar_t* w, size_t size_in_characters);
+    void to_utf8(std::string& output, const wchar_t* w, size_t size_in_characters);
+    std::string to_utf8(const std::wstring& ws);
 #endif
 
     std::string escape_string(std::string&& s, char char_to_escape, char escape_char);

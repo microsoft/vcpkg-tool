@@ -97,8 +97,9 @@ namespace vcpkg::Commands::PortsDiff
                        .string_arg("--")
                        .string_arg(checkout_this_dir)
                        .string_arg(".vcpkg-root");
-        cmd_execute_and_capture_output(cmd, get_clean_environment());
+        cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
         cmd_execute_and_capture_output(paths.git_cmd_builder(dot_git_dir, temp_checkout_path).string_arg("reset"),
+                                       default_working_directory,
                                        get_clean_environment());
         const auto ports_at_commit = Paragraphs::load_overlay_ports(fs, temp_checkout_path / ports_dir_name);
         std::map<std::string, Version> names_and_versions;
