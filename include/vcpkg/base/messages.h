@@ -12,6 +12,17 @@
 
 namespace vcpkg
 {
+    namespace msg::detail
+    {
+        template<class Tag, class Type>
+        struct MessageArgument;
+    }
+    namespace msg
+    {
+        template<class Message, class... Tags, class... Ts>
+        LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args);
+    }
+
     struct LocalizedString
     {
         LocalizedString() = default;
@@ -30,6 +41,11 @@ namespace vcpkg
         {
             m_data.append(s.m_data);
             return *this;
+        }
+        template<class Message, class... Args>
+        LocalizedString& append(Message m, const Args&... args)
+        {
+            return append(msg::format(m, args...));
         }
 
         LocalizedString& appendnl()
@@ -72,32 +88,19 @@ namespace vcpkg
 
     private:
         std::string m_data;
-
-        // to avoid lock-in on LocalizedString, these are free functions
-        // this allows us to convert to `std::string` in the future without changing All The Code
-        friend LocalizedString& append_newline(LocalizedString&);
-        friend LocalizedString&& append_newline(LocalizedString&& self) { return std::move(append_newline(self)); }
-        friend LocalizedString& appendnl(LocalizedString& self, const LocalizedString& to_append)
-        {
-            return append_newline(self.append(to_append));
-        }
     };
 }
 
-namespace fmt
+template<>
+struct fmt::formatter<vcpkg::LocalizedString> : fmt::formatter<vcpkg::StringView>
 {
-    template<>
-    struct formatter<vcpkg::LocalizedString> : formatter<vcpkg::StringView>
+    // parse is inherited from formatter<StringView>
+    template<class FormatContext>
+    auto format(const vcpkg::LocalizedString& s, FormatContext& ctx)
     {
-        // parse is inherited from formatter<StringView>
-        template<class FormatContext>
-        auto format(const vcpkg::LocalizedString& s, FormatContext& ctx)
-        {
-            return formatter<vcpkg::StringView>::format(s.data(), ctx);
-        }
-    };
-
-}
+        return formatter<vcpkg::StringView>::format(s.data(), ctx);
+    }
+};
 
 namespace vcpkg::msg
 {
@@ -183,7 +186,7 @@ namespace vcpkg::msg
     template<class Message, class... Ts>
     void println(Message m, Ts... args)
     {
-        print(append_newline(format(m, args...)));
+        print(format(m, args...).appendnl());
     }
 
     template<class Message, class... Ts>
@@ -194,7 +197,7 @@ namespace vcpkg::msg
     template<class Message, class... Ts>
     void println(Color c, Message m, Ts... args)
     {
-        print(c, append_newline(format(m, args...)));
+        print(c, format(m, args...).appendnl());
     }
 
 // these use `constexpr static` instead of `inline` in order to work with GCC 6;
@@ -243,6 +246,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(triplet, "x64-windows");
     DECLARE_MSG_ARG(url, "https://github.com/microsoft/vcpkg");
     DECLARE_MSG_ARG(version, "1.3.8");
+    DECLARE_MSG_ARG(vcpkg_line_info, "/a/b/foo.cpp(13)");
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of
@@ -268,8 +272,17 @@ namespace vcpkg::msg
     REGISTER_MESSAGE(NAME)
 
     DECLARE_MESSAGE(SeeURL, (msg::url), "", "See {url} for more information.");
+    DECLARE_MESSAGE(NoteMessage, (), "", "note: ");
     DECLARE_MESSAGE(WarningMessage, (), "", "warning: ");
     DECLARE_MESSAGE(ErrorMessage, (), "", "error: ");
+    DECLARE_MESSAGE(InternalErrorMessage, (), "", "internal error: ");
+    DECLARE_MESSAGE(
+        InternalErrorMessageContact,
+        (),
+        "",
+        "Please open an issue at "
+        "https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug "
+        "with detailed steps to reproduce the problem.");
     DECLARE_MESSAGE(BothYesAndNoOptionSpecifiedError,
                     (msg::option),
                     "",

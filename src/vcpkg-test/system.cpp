@@ -24,7 +24,7 @@ using vcpkg::set_environment_variable;
 using vcpkg::StringView;
 using vcpkg::to_cpu_architecture;
 using vcpkg::ZStringView;
-using vcpkg::Checks::check_exit;
+using vcpkg::Checks::msg_check_exit;
 
 namespace
 {

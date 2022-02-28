@@ -2,22 +2,16 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 
-namespace vcpkg
-{
-    LocalizedString& append_newline(LocalizedString& s)
-    {
-        s.m_data.push_back('\n');
-        return s;
-    }
-}
-
 namespace vcpkg::msg
 {
     DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
 
     REGISTER_MESSAGE(SeeURL);
+    REGISTER_MESSAGE(NoteMessage);
     REGISTER_MESSAGE(WarningMessage);
     REGISTER_MESSAGE(ErrorMessage);
+    REGISTER_MESSAGE(InternalErrorMessage);
+    REGISTER_MESSAGE(InternalErrorMessageContact);
     REGISTER_MESSAGE(BothYesAndNoOptionSpecifiedError);
 
     // basic implementation - the write_unlocalized_text_to_stdout
