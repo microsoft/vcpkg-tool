@@ -212,7 +212,7 @@ namespace vcpkg::Build
     };
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
-    msg::LocalizedString to_string(const BuildResult build_result);
+    LocalizedString to_string(const BuildResult build_result);
     std::string create_error_message(const BuildResult build_result, const PackageSpec& spec);
     std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
                                                     const VcpkgPaths& paths);

@@ -1455,12 +1455,12 @@ namespace vcpkg::Build
         }
     }
 
-    msg::LocalizedString to_string(const BuildResult build_result)
+    LocalizedString to_string(const BuildResult build_result)
     {
         switch (build_result)
         {
             case BuildResult::NULLVALUE:
-                return msg::LocalizedString::from_string_unchecked(to_string_locale_invariant(BuildResult::NULLVALUE));
+                return LocalizedString::from_string_unchecked(to_string_locale_invariant(BuildResult::NULLVALUE));
             case BuildResult::SUCCEEDED: return msg::format(msgBuildResultSucceeded);
             case BuildResult::BUILD_FAILED: return msg::format(msgBuildResultBuildFailed);
             case BuildResult::POST_BUILD_CHECKS_FAILED: return msg::format(msgBuildResultPostBuildChecksFailed);

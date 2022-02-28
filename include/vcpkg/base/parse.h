@@ -60,9 +60,9 @@ namespace vcpkg::Parse
     struct ParseMessage
     {
         SourceLoc location = {};
-        msg::LocalizedString message;
+        LocalizedString message;
 
-        msg::LocalizedString format(StringView origin, MessageKind kind) const;
+        LocalizedString format(StringView origin, MessageKind kind) const;
     };
 
     struct ParseMessages
@@ -131,11 +131,11 @@ namespace vcpkg::Parse
 
         void add_error(std::string message) { add_error(std::move(message), cur_loc()); }
         void add_error(std::string message, const SourceLoc& loc);
-        void add_error(msg::LocalizedString&& message) { add_error(message.extract_data(), cur_loc()); }
-        void add_error(msg::LocalizedString&& message, const SourceLoc& loc) { add_error(message.extract_data(), loc); }
+        void add_error(LocalizedString&& message) { add_error(message.extract_data(), cur_loc()); }
+        void add_error(LocalizedString&& message, const SourceLoc& loc) { add_error(message.extract_data(), loc); }
 
-        void add_warning(msg::LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
-        void add_warning(msg::LocalizedString&& message, const SourceLoc& loc);
+        void add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
+        void add_warning(LocalizedString&& message, const SourceLoc& loc);
 
         const IParseError* get_error() const { return m_messages.error.get(); }
         std::unique_ptr<IParseError> extract_error() { return std::move(m_messages.error); }
