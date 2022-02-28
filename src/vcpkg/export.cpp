@@ -179,7 +179,7 @@ namespace vcpkg::Export
             .path_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        const auto output = cmd_execute_and_capture_output(cmd, get_clean_environment());
+        const auto output = cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
         const auto exit_code = output.exit_code;
         if (exit_code != 0)
         {
@@ -243,7 +243,7 @@ namespace vcpkg::Export
             .string_arg("--")
             .path_arg(raw_exported_dir);
 
-        const int exit_code = cmd_execute_clean(cmd, InWorkingDirectory{raw_exported_dir.parent_path()});
+        const int exit_code = cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()});
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", exported_archive_path);
         return exported_archive_path;
     }

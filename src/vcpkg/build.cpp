@@ -716,6 +716,7 @@ namespace vcpkg::Build
                                        "Error occurred while writing '%s'",
                                        stdoutlog);
                 },
+                default_working_directory,
                 env);
         } // close out_file
 
@@ -939,6 +940,7 @@ namespace vcpkg::Build
                                        "Error occurred while writing '%s'",
                                        stdoutlog);
                 },
+                default_working_directory,
                 env);
         } // close out_file
 

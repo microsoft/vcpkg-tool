@@ -72,7 +72,10 @@ namespace
                     .string_arg("/qn")
                     // msiexec requires quotes to be after "TARGETDIR=":
                     //      TARGETDIR="C:\full\path\to\dest"
-                    .raw_arg(Strings::concat("TARGETDIR=", Command{to_path}.extract())));
+                    .raw_arg(Strings::concat("TARGETDIR=", Command{to_path}.extract())),
+                default_working_directory,
+                default_environment,
+                Encoding::Utf16);
 
             if (code_and_output.exit_code == 0)
             {
@@ -91,10 +94,13 @@ namespace
                     continue;
                 }
             }
-            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                      "msiexec failed while extracting '%s' with message:\n%s",
-                                      archive,
-                                      code_and_output.output);
+
+            Checks::exit_with_message(
+                VCPKG_LINE_INFO,
+                "msiexec failed while extracting '%s' with launch or exit code %lu with message:\n%s",
+                archive,
+                code_and_output.exit_code,
+                code_and_output.output);
         }
     }
 
@@ -140,7 +146,7 @@ namespace
         if (ext == ".zip")
         {
             const auto code =
-                cmd_execute(Command{"unzip"}.string_arg("-qqo").path_arg(archive), InWorkingDirectory{to_path});
+                cmd_execute(Command{"unzip"}.string_arg("-qqo").path_arg(archive), WorkingDirectory{to_path});
             Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", archive);
         }
 #endif
@@ -173,8 +179,7 @@ namespace vcpkg
 {
     void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path)
     {
-        const auto code =
-            cmd_execute(Command{tar_tool}.string_arg("xzf").path_arg(archive), InWorkingDirectory{to_path});
+        const auto code = cmd_execute(Command{tar_tool}.string_arg("xzf").path_arg(archive), WorkingDirectory{to_path});
         Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
     }
 
@@ -195,6 +200,7 @@ namespace vcpkg
 
         return cmd_execute_and_capture_output(
                    Command{seven_zip_exe}.string_arg("a").path_arg(destination).path_arg(source / "*"),
+                   default_working_directory,
                    get_clean_environment())
             .exit_code;
 
@@ -207,7 +213,7 @@ namespace vcpkg
                                      .string_arg("*")
                                      .string_arg("--exclude")
                                      .string_arg(".DS_Store"),
-                                 InWorkingDirectory{source});
+                                 WorkingDirectory{source});
 #endif
     }
 
@@ -230,7 +236,8 @@ namespace vcpkg
 
     std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs)
     {
-        auto results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+        auto results =
+            cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
 #ifdef __APPLE__
         int i = 0;
         for (auto& result : results)
