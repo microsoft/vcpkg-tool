@@ -245,7 +245,7 @@ namespace vcpkg
             if (result.exit_code == 127 && result.output.empty())
             {
                 Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
-                result = cmd_execute_and_capture_output(jobs[i], get_clean_environment());
+                result = cmd_execute_and_capture_output(jobs[i], default_working_directory, get_clean_environment());
             }
             ++i;
         }

@@ -677,8 +677,8 @@ namespace vcpkg
 
         auto process_info =
             windows_create_windowless_process(cmd_line.command_line(),
-                                              WorkingDirectory{},
-                                              {},
+                                              default_working_directory,
+                                              default_environment,
                                               CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
         if (!process_info.get())
         {
