@@ -10,6 +10,95 @@
 
 #include <string>
 
+namespace vcpkg
+{
+    struct LocalizedString
+    {
+        LocalizedString() = default;
+        operator StringView() const { return m_data; }
+        const std::string& data() const { return m_data; }
+        std::string extract_data() { return std::exchange(m_data, ""); }
+
+        static LocalizedString from_string_unchecked(std::string&& s)
+        {
+            LocalizedString res;
+            res.m_data = std::move(s);
+            return res;
+        }
+
+        LocalizedString& append(const LocalizedString& s)
+        {
+            m_data.append(s.m_data);
+            return *this;
+        }
+
+        LocalizedString& appendnl()
+        {
+            m_data.push_back('\n');
+            return *this;
+        }
+
+        friend const char* to_printf_arg(const LocalizedString& s) { return s.data().c_str(); }
+
+        friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() == rhs.data();
+        }
+
+        friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() != rhs.data();
+        }
+
+        friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() < rhs.data();
+        }
+
+        friend bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() <= rhs.data();
+        }
+
+        friend bool operator>(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() > rhs.data();
+        }
+
+        friend bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() >= rhs.data();
+        }
+
+    private:
+        std::string m_data;
+
+        // to avoid lock-in on LocalizedString, these are free functions
+        // this allows us to convert to `std::string` in the future without changing All The Code
+        friend LocalizedString& append_newline(LocalizedString&);
+        friend LocalizedString&& append_newline(LocalizedString&& self) { return std::move(append_newline(self)); }
+        friend LocalizedString& appendnl(LocalizedString& self, const LocalizedString& to_append)
+        {
+            return append_newline(self.append(to_append));
+        }
+    };
+}
+
+namespace fmt
+{
+    template<>
+    struct formatter<vcpkg::LocalizedString> : formatter<vcpkg::StringView>
+    {
+        // parse is inherited from formatter<StringView>
+        template<class FormatContext>
+        auto format(const vcpkg::LocalizedString& s, FormatContext& ctx)
+        {
+            return formatter<vcpkg::StringView>::format(s.data(), ctx);
+        }
+    };
+
+}
+
 namespace vcpkg::msg
 {
     namespace detail
@@ -61,55 +150,6 @@ namespace vcpkg::msg
     // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
 
-    struct LocalizedString
-    {
-        LocalizedString() = default;
-        operator StringView() const { return m_data; }
-        const std::string& data() const { return m_data; }
-        std::string extract_data() { return std::exchange(m_data, ""); }
-
-        static LocalizedString from_string_unchecked(std::string&& s)
-        {
-            LocalizedString res;
-            res.m_data = std::move(s);
-            return res;
-        }
-
-        LocalizedString& append(const LocalizedString& s)
-        {
-            m_data.append(s.m_data);
-            return *this;
-        }
-        LocalizedString& appendnl()
-        {
-            m_data.push_back('\n');
-            return *this;
-        }
-
-    private:
-        std::string m_data;
-
-        // to avoid lock-in on LocalizedString, these are free functions
-        // this allows us to convert to `std::string` in the future without changing All The Code
-        friend LocalizedString& append_newline(LocalizedString&);
-        friend LocalizedString&& append_newline(LocalizedString&& self) { return std::move(append_newline(self)); }
-        friend LocalizedString& appendnl(LocalizedString& self, const LocalizedString& to_append)
-        {
-            return append_newline(self.append(to_append));
-        }
-    };
-
-    inline const char* to_printf_arg(const msg::LocalizedString& s) { return s.data().c_str(); }
-
-    struct LocalizedStringMapLess
-    {
-        using is_transparent = void;
-        bool operator()(const LocalizedString& lhs, const LocalizedString& rhs) const
-        {
-            return lhs.data() < rhs.data();
-        }
-    };
-
     template<class Message, class... Tags, class... Ts>
     LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
     {
@@ -120,19 +160,19 @@ namespace vcpkg::msg
                                         fmt::make_format_args(fmt::arg(Tags::name(), *args.parameter)...));
     }
 
-    inline void println() { write_unlocalized_text_to_stdout(Color::none, "\n"); }
+    inline void println() { msg::write_unlocalized_text_to_stdout(Color::none, "\n"); }
 
-    inline void print(Color c, const LocalizedString& s) { write_unlocalized_text_to_stdout(c, s); }
-    inline void print(const LocalizedString& s) { write_unlocalized_text_to_stdout(Color::none, s); }
+    inline void print(Color c, const LocalizedString& s) { msg::write_unlocalized_text_to_stdout(c, s); }
+    inline void print(const LocalizedString& s) { msg::write_unlocalized_text_to_stdout(Color::none, s); }
     inline void println(Color c, const LocalizedString& s)
     {
-        write_unlocalized_text_to_stdout(c, s);
-        write_unlocalized_text_to_stdout(Color::none, "\n");
+        msg::write_unlocalized_text_to_stdout(c, s);
+        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
     inline void println(const LocalizedString& s)
     {
-        write_unlocalized_text_to_stdout(Color::none, s);
-        write_unlocalized_text_to_stdout(Color::none, "\n");
+        msg::write_unlocalized_text_to_stdout(Color::none, s);
+        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
 
     template<class Message, class... Ts>
@@ -232,19 +272,4 @@ namespace vcpkg::msg
                     (msg::option),
                     "",
                     "error: cannot specify both --no-{option} and --{option}.");
-}
-
-namespace fmt
-{
-    template<>
-    struct formatter<vcpkg::msg::LocalizedString> : formatter<vcpkg::StringView>
-    {
-        // parse is inherited from formatter<StringView>
-        template<class FormatContext>
-        auto format(const vcpkg::msg::LocalizedString& s, FormatContext& ctx)
-        {
-            return formatter<vcpkg::StringView>::format(s.data(), ctx);
-        }
-    };
-
 }

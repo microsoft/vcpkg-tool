@@ -2,6 +2,15 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 
+namespace vcpkg
+{
+    LocalizedString& append_newline(LocalizedString& s)
+    {
+        s.m_data.push_back('\n');
+        return s;
+    }
+}
+
 namespace vcpkg::msg
 {
     DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
@@ -150,12 +159,6 @@ namespace vcpkg::msg
             static Messages m;
             return m;
         }
-    }
-
-    LocalizedString& append_newline(LocalizedString& s)
-    {
-        s.m_data.push_back('\n');
-        return s;
     }
 
     void threadunsafe_initialize_context()
