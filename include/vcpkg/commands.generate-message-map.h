@@ -12,8 +12,8 @@ namespace vcpkg::Commands
         std::vector<StringView> comments_without_argument;
     };
 
-    std::vector<StringView> get_all_format_args(StringView fstring, msg::LocalizedString& error);
-    FormatArgMismatches get_format_arg_mismatches(StringView value, StringView comment, msg::LocalizedString& error);
+    std::vector<StringView> get_all_format_args(StringView fstring, LocalizedString& error);
+    FormatArgMismatches get_format_arg_mismatches(StringView value, StringView comment, LocalizedString& error);
 
     struct GenerateDefaultMessageMapCommand : BasicCommand
     {

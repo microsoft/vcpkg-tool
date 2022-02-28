@@ -3,6 +3,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
 
 #include <vcpkg/statusparagraph.h>
@@ -46,6 +47,12 @@ namespace Catch
     struct StringMaker<vcpkg::Triplet>
     {
         static const std::string& convert(const vcpkg::Triplet& triplet) { return triplet.canonical_name(); }
+    };
+
+    template<>
+    struct StringMaker<vcpkg::LocalizedString>
+    {
+        static const std::string convert(const vcpkg::LocalizedString& value) { return "LL\"" + value.data() + "\""; }
     };
 }
 
