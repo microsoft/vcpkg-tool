@@ -1,10 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<LCX SchemaVersion="6.0" Name="D:\a\_work\1\s\locales\messages.json" PsrId="306" SrcCul="en-US" xmlns="http://schemas.microsoft.com/locstudio/2006/6/lcx" TgtCul="pl-PL">
+<LCX SchemaVersion="6.0" Name="D:\a\_work\1\s\locales\messages.json" PsrId="306" FileType="1" SrcCul="en-US" TgtCul="pl-PL" xmlns="http://schemas.microsoft.com/locstudio/2006/6/lcx">
   <OwnedComments>
     <Cmt Name="Dev" />
     <Cmt Name="LcxAdmin" />
     <Cmt Name="Rccx" />
   </OwnedComments>
+  <Settings Name="@vsLocTools@\default.lss" Type="Lss" />
   <Item ItemId=";String Table" ItemType="0" PsrId="306" Leaf="false">
     <Disp Icon="Expand" Expand="true" Disp="true" LocTbl="false" />
     <Item ItemId=";Strings" ItemType="0" PsrId="306" Leaf="false">
@@ -12,564 +13,630 @@
       <Item ItemId=";AddPortSucceded" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Succeeded in adding ports to vcpkg.json file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pomyślnie dodano porty do pliku vcpkg.json.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddTripletExpressionNotAllowed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: triplet expressions are not allowed here. You may want to change `{package_name}:{triplet}` to `{package_name}` instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: potrójne wyrażenia są niedozwolone w tym miejscu. Zamiast tego możesz zmienić „{package_name}:{triplet}” na „{package_name}”.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {package_name} is 'zlib'.]A;example of {triplet} is 'x64-windows'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";AllFormatArgsRawArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[format string "{value}" contains a raw format argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ciąg formatu „{value}” zawiera argument formatu nieprzetworzonego]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {value} is 'foo {} bar']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";AllFormatArgsUnbalancedBraces" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unbalanced brace in format string "{value}"]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[niezrównoważony nawias klamrowy w ciągu formatu „{value}”]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {value} is 'foo bar {']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";AwsAttemptingToFetchPackages" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Attempting to fetch {count} packages from AWS]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Próba pobrania {count} pakietów z platformy AWS]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {count} is '42'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";AwsFailedToDownload" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[aws failed to download with exit code: {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nie można pobrać platformy aws z kodem zakończenia: {exit_code}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {exit_code} is '127'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";AwsRestoredPackages" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Restored {count} packages from AWS servers in {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Przywrócono {count} pakiety(-ów) z serwerów platformy AWS w ciągu {elapsed}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {count} is '42'.]A;example of {elapsed} is '3.532 min'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";AwsUploadedPackages" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Uploaded binaries to {count} AWS servers]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Przekazano pliki binarne do {count} serwerów platformy AWS]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {count} is '42'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";BothYesAndNoOptionSpecifiedError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error: cannot specify both --no-{option} and --{option}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[błąd: nie można jednocześnie określić opcji --no-{option} i --{option}.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {option} is 'editable'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";EmptyLicenseExpression" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[SPDX license expression was empty.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wyrażenie licencji SPDX było puste.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorIndividualPackagesUnsupported" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: In manifest mode, `vcpkg install` does not support individual package arguments.]A;To install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: w trybie manifestu element „vcpkg install” nie obsługuje poszczególnych argumentów pakietu.]A;Aby zainstalować dodatkowe pakiety, edytuj plik vcpkg.json, a następnie uruchom polecenie „vcpkg install” bez żadnych argumentów pakietu.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorInvalidClassicModeOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: The option --{option} is not supported in classic mode and no manifest was found.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: opcja --{option} nie jest obsługiwana w trybie klasycznym i nie znaleziono manifestu.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {option} is 'editable'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";ErrorInvalidManifestModeOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: The option --{option} is not supported in manifest mode.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: opcja --{option} nie jest obsługiwana w trybie manifestu.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {option} is 'editable'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";ErrorMessage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error: ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[błąd: ]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorMissingVcpkgRoot" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of {url}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: nie można wykryć elementu vcpkg-root. Jeśli próbujesz użyć kopii skompilowanego elementu vcpkg, musisz zdefiniować zmienną środowiskową VCPKG_ROOT, aby wskazać sklonowaną kopię adresu {url}.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {url} is 'https://github.com/microsoft/vcpkg'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";ErrorNoVSInstance" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: in triplet {triplet}: Unable to find a valid Visual Studio instance]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: w potrójnym pliku {triplet}: nie można odnaleźć prawidłowego wystąpienia programu Visual Studio]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {triplet} is 'x64-windows'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";ErrorNoVSInstanceAt" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[     at "{path}"]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[     w ścieżce „{path}”]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {path} is '/foo/bar'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";ErrorNoVSInstanceFullVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[    with toolset version prefix {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[    za pomocą prefiksu wersji zestawu narzędzi {version}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {version} is '1.3.8'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";ErrorNoVSInstanceVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[    with toolset version {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[    za pomocą wersji zestawu narzędzi {version}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {version} is '1.3.8'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";ErrorRequireBaseline" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: this vcpkg instance requires a manifest with a specified baseline in order to interact with ports. Please add 'builtin-baseline' to the manifest or add a 'vcpkg-configuration.json' that redefines the default registry.]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: to wystąpienie elementu vcpkg wymaga manifestu z określonym punktem odniesienia w celu interakcji z portami. Dodaj element „builtin-baseline” do manifestu lub dodaj element „vcpkg-configuration.json”, który ponownie definiuje rejestr domyślny.]A;]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorRequirePackagesList" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: `vcpkg install` requires a list of packages to install in classic mode.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: element „vcpkg install” wymaga listy pakietów do zainstalowania w trybie klasycznym.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorRequirePackagesToInstall" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: No packages were listed for installation and no manifest was found.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: nie wymieniono na liście żadnych pakietów do zainstalowania i nie znaleziono manifestu.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorVcvarsUnsupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.]A;Define 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: w potrójnym pliku {triplet}: używanie monitu dewelopera programu Visual Studio nie jest obsługiwane na hostach z systemem innym niż Windows.]A;Zdefiniuj element „VCPKG_CMAKE_SYSTEM_NAME” lub „VCPKG_CHAINLOAD_TOOLCHAIN_FILE” w pliku potrójnym.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {triplet} is 'x64-windows'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";ForceSystemBinariesOnWeirdPlatforms" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zmienna środowiskowa VCPKG_FORCE_SYSTEM_BINARIES musi być ustawiona na platformach arm, s390x i ppc64le.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";FormattedParseMessageExpression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[    on expression: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[    w przypadku wyrażenia: {value}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[Example of {value} is 'x64 & windows']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";FormattedParseMessageLocation" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{path}:{row}:{column}: ]]></Val>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[{Locked}]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";GenerateMsgErrorParsingFormatArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error: parsing format string for {value}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[błąd: analizowanie ciągu formatu dla wartości {value}:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {value} 'GenerateMsgNoComment']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";GenerateMsgIncorrectComment" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[message {value} has an incorrect comment:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[komunikat {value} ma niepoprawny komentarz:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {value} is 'GenerateMsgNoComment']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";GenerateMsgNoArgumentValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[    {{{value}}} was specified in a comment, but was not used in the message.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[    Wartość {{{value}}} została określona w komentarzu, ale nie została użyta w komunikacie.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {value} is 'arch']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";GenerateMsgNoCommentValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[    {{{value}}} was used in the message, but not commented.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[    Wartość {{{value}}} została użyta w komunikacie, ale nie została skomentowana.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {value} is 'arch']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";GraphCycleDetected" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Cycle detected within graph at {package_name}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wykryto cykl w grafie przy pakiecie {package_name}:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {package_name} is 'zlib'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";GraphCycleDetectedElement" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[    {package_name}]]></Val>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[{Locked}]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";IllegalFeatures" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error: List of features is not allowed in this contect]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[błąd: lista funkcji nie jest dozwolona w tej zawartości]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";IllegalPlatformSpec" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error: Platform qualifier is not allowed in this context]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[błąd: kwalifikator platformy jest niedozwolony w tym kontekście]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";LicenseExpressionContainsExtraPlus" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wyrażenie licencji SPDX zawiera dodatkowy znak „+”. Te znaki są tylko dozwolone bezpośrednio po identyfikatorze licencji.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";LicenseExpressionContainsInvalidCharacter" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[SPDX license expression contains an invalid character (0x{value:02X} '{value}').]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wyrażenie licencji SPDX zawiera nieprawidłową wartość (0x{value:02X} „{value}”).]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {value:02X} is '7B']A;example of {value} is '{']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";LicenseExpressionContainsUnicode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[SPDX license expression contains a unicode character (U+{value:04X} '{pretty_value}'), but these expressions are ASCII-only.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wyrażenie licencji SPDX zawiera znak Unicode (U+{value:04X} „{pretty_value}”), ale te wyrażenia są tylko w formacie ASCII.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {value:04X} is '22BB']A;example of {pretty_value} is '⊻']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";LicenseExpressionDocumentRefUnsupported" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The current implementation does not support DocumentRef- SPDX references.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bieżąca implementacja nie obsługuje odwołań DocumentRef- SPDX.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";LicenseExpressionExpectCompoundFoundParen" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected a compound or the end of the string, found a parenthesis.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Oczekiwano składnika lub końca ciągu, a znaleziono nawiasy.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";LicenseExpressionExpectCompoundFoundWith" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected either AND or OR, found WITH (WITH is only allowed after license names, not parenthesized expressions).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Oczekiwano instrukcji AND lub OR, a znalezionego instrukcję WITH (instrukcja WITH jest dozwolona tylko po nazwach licencji, a nie po wyrażeniach w nawiasach).]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[AND, OR, and WITH are all keywords and should not be translated.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";LicenseExpressionExpectCompoundFoundWord" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected either AND or OR, found a license or exception name: '{value}'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Oczekiwano instrukcji AND lub OR, a znaleziono nazwę licencji lub wyjątku: „{value}”.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[Example of {value} is 'MIT'.]A;AND and OR are both keywords and should not be translated.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";LicenseExpressionExpectCompoundOrWithFoundWord" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected either AND, OR, or WITH, found a license or exception name: '{value}'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Oczekiwano instrukcji AND, OR lub WITH, a znaleziono nazwę licencji lub wyjątku: „{value}”.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {value} is 'MIT'.]A;AND, OR, and WITH are all keywords and should not be translated.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";LicenseExpressionExpectExceptionFoundCompound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected an exception name, found the compound {value}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Oczekiwano nazwy wyjątku, a znaleziono składnik {value}.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[Example of {value} is 'AND']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";LicenseExpressionExpectExceptionFoundEof" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected an exception name, found the end of the string.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Oczekiwano nazwy wyjątku, a znaleziono koniec ciągu.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";LicenseExpressionExpectExceptionFoundParen" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected an exception name, found a parenthesis.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Oczekiwano nazwy wyjątku, a znaleziono nawiasy.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";LicenseExpressionExpectLicenseFoundCompound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected a license name, found the compound {value}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Oczekiwano nazwy licencji, a znaleziono składnik {value}.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[Example of {value} is 'AND']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";LicenseExpressionExpectLicenseFoundEof" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected a license name, found the end of the string.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Oczekiwano nazwy licencji, a znaleziono koniec ciągu.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";LicenseExpressionExpectLicenseFoundParen" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected a license name, found a parenthesis.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Oczekiwano nazwy licencji, a znaleziono nawiasy.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";LicenseExpressionImbalancedParens" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[There was a close parenthesis without an opening parenthesis.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wystąpił nawias zamykający bez nawiasu otwierającego.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";LicenseExpressionUnknownException" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unknown license exception identifier '{value}'. Known values are listed at https://spdx.org/licenses/exceptions-index.html]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nieznany identyfikator wyjątku licencji „{value}”. Znane wartości są wymienione na liście na stronie https://spdx.org/licenses/exceptions-index.html]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[Example of {value} is 'unknownexception']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";LicenseExpressionUnknownLicense" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nieznany identyfikator licencji „{value}”. Znane wartości są wyświetlane na liście na stronie https://spdx.org/licenses/]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[Example of {value} is 'unknownlicense']A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";NoLocalizationForMessages" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No localization for the following messages:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Brak lokalizacji dla następujących komunikatów:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ProcessorArchitectureMalformed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nie można przeanalizować %PROCESSOR_ARCHITECTURE% ({arch}) jako prawidłowej architektury procesora.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {arch} is 'x64'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";ProcessorArchitectureMissing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The required environment variable %PROCESSOR_ARCHITECTURE% is missing.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Brak wymaganej zmiennej środowiskowej %PROCESSOR_ARCHITECTURE%.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ProcessorArchitectureW6432Malformed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. Falling back to %PROCESSOR_ARCHITECTURE%.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nie można przeanalizować %PROCESSOR_ARCHITEW6432% ({arch}) jako prawidłowej architektury procesora. Powrót do %PROCESSOR_ARCHITECTURE%.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {arch} is 'x64'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";SeeURL" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[See {url} for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aby uzyskać więcej informacji, zobacz adres {url}.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {url} is 'https://github.com/microsoft/vcpkg'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";SuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use `--{option}` to disable this check.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Użyj schematu wersji „{new_scheme}” zamiast „{old_scheme}” w pakiecie portu „{package_name}”.]A;Użyj opcji „--{option}”, aby wyłączyć tę kontrolę.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {new_scheme} is 'version'.]A;example of {old_scheme} is 'version-string'.]A;example of {package_name} is 'zlib'.]A;example of {option} is 'editable'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";UnsupportedSystemName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: nie można zmapować VCPKG_CMAKE_SYSTEM_NAME „{system_name}” z platformą vcvarsall. Obsługiwane nazwy systemów to ", „Windows” i „WindowsStore”.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {system_name} is 'Darwin'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";UnsupportedToolchain" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: in triplet {triplet}: Unable to find a valid toolchain combination.]A;    The requested target architecture was {arch}]A;    The selected Visual Studio instance is at {path}]A;    The available toolchain combinations are {list}]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: w potrójnym pliku {triplet}: nie można odnaleźć prawidłowej kombinacji łańcucha narzędzi.]A;    Żądana architektura docelowa została {arch}]A;    Wybrane wystąpienie programu Visual Studio znajduje się w ścieżce {path}]A;    Dostępne kombinacje łańcucha narzędzi to {list}]A;]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example for {list} is 'x86, arm64']A;example of {triplet} is 'x64-windows'.]A;example of {arch} is 'x64'.]A;example of {path} is '/foo/bar'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";UsingManifestAt" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Using manifest file at {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Używanie pliku manifestu w ścieżce {path}.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {path} is '/foo/bar'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";VSExaminedInstances" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following Visual Studio instances were considered:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Brano pod uwagę następujące wystąpienia programu Visual Studio:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VSExaminedPaths" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following paths were examined for Visual Studio instances:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Następujące ścieżki zostały sprawdzone pod kątem wystąpień programu Visual Studio:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VSNoInstances" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not locate a complete Visual Studio instance]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nie można zlokalizować pełnego wystąpienia programu Visual Studio]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VcpkgDisallowedClassicMode" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: Could not locate a manifest (vcpkg.json) above the current working directory.]A;This vcpkg distribution does not have a classic mode instance.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Błąd: nie można zlokalizować manifestu (vcpkg.json) powyżej bieżącego katalogu roboczego.]A;Ta dystrybucja vcpkg nie ma wystąpienia trybu klasycznego.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VcpkgHasCrashed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg.exe has crashed.]A;Please send an email to:]A;    {email}]A;containing a brief summary of what you were trying to do and the following data blob:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Plik vcpkg.exe uległ awarii.]A;Wyślij wiadomość e-mail do:]A;    {email}]A;zawierającą krótkie podsumowanie tego, co próbowano wykonać, i następujący obiekt blob danych:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {email} is 'vcpkg@microsoft.com'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";VcpkgHasCrashedArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{value}|]]></Val>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[{Locked}]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";VcpkgHasCrashedDataBlob" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[]A;Version={version}]A;EXCEPTION='{error}']A;CMD=]]></Val>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[{Locked}]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";VcpkgInvalidCommand" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid command: {command_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowe polecenie: {command_name}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {command_name} is 'install'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";VcpkgSendMetricsButDisabled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Warning: passed --sendmetrics, but metrics are disabled.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ostrzeżenie: przekazano parametr --sendmetrics, ale metryki są wyłączone.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VersionSpecMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error: Failed to load port because version specs did not match]A;    Path: {path}]A;    Expected: {expected_version}]A;    Actual: {actual_version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[błąd: nie można załadować portu, ponieważ specyfikacje wersji nie są zgodne]A;    Ścieżka: {path}]A;    Oczekiwano: {expected_version}]A;    Wartość rzeczywista: {actual_version}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
-        <Cmts>
-          <Cmt Name="Dev"><![CDATA[example of {path} is '/foo/bar'.]A;example of {expected_version} is '1.3.8'.]A;example of {actual_version} is '1.3.8'.]A;]]></Cmt>
-        </Cmts>
       </Item>
       <Item ItemId=";WarningMessage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[warning: ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ostrzeżenie: ]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
     </Item>
   </Item>
-<Settings Name="@vsLocTools@\default.lss" Type="Lss" /></LCX>
+</LCX>
