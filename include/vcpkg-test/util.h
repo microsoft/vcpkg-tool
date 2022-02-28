@@ -3,8 +3,8 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/pragmas.h>
 
 #include <vcpkg/statusparagraph.h>
 
@@ -52,10 +52,7 @@ namespace Catch
     template<>
     struct StringMaker<vcpkg::LocalizedString>
     {
-        static const std::string convert(const vcpkg::LocalizedString& value)
-        {
-            return "LL\"" + value.data() + "\"";
-        }
+        static const std::string convert(const vcpkg::LocalizedString& value) { return "LL\"" + value.data() + "\""; }
     };
 }
 
