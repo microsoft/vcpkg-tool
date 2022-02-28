@@ -805,7 +805,7 @@ namespace vcpkg
     {
         const auto timer = ElapsedTimer::create_started();
 #if defined(_WIN32)
-        const auto thread_id = std::to_string(::GetCurrentThreadId());
+        const auto proc_id = std::to_string(::GetCurrentProcessId());
         using vcpkg::g_ctrl_c_state;
 
         g_ctrl_c_state.transition_to_spawn_process();
@@ -819,7 +819,7 @@ namespace vcpkg
         g_ctrl_c_state.transition_from_spawn_process();
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
-        const auto thread_id = std::to_string(::pthread_self());
+        const auto proc_id = std::to_string(::getpid());
         (void)env;
         std::string actual_cmd_line;
         if (wd.working_directory.empty())
@@ -874,7 +874,7 @@ namespace vcpkg
 
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
-        Debug::print(thread_id,
+        Debug::print(proc_id,
                      ": cmd_execute_and_stream_data() returned ",
                      exit_code,
                      " after ",
