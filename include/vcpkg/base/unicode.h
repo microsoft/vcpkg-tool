@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/checks.h>
+
 #include <stddef.h>
 
 namespace vcpkg::Unicode
