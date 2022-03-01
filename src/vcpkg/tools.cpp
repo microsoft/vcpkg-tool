@@ -788,6 +788,17 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
                 if (tool == Tools::TAR)
                 {
                     auto tars = paths.get_filesystem().find_from_PATH("tar");
+#if defined(_WIN32)
+                    Util::erase_remove_if(tars, [](auto& elem) { 
+                        if (vcpkg::Strings::contains(elem,"\\system32\\tar.exe"))  {
+                            return false; 
+                        }
+                        else if (vcpkg::Strings::contains(elem,"\\usr\\bin\\tar.exe")) {
+                            return true;
+                        }
+                        return false;
+                    } );
+#endif
                     if (tars.empty())
                     {
                         Checks::exit_with_message(VCPKG_LINE_INFO,

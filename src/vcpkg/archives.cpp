@@ -141,6 +141,17 @@ namespace
                  Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
             auto tars = paths.get_filesystem().find_from_PATH("tar");
+#if defined(_WIN32)
+            Util::erase_remove_if(tars, [](auto& elem) {
+                if (vcpkg::Strings::contains(elem,"\\system32\\tar.exe"))  {
+                    return false; 
+                }
+                else if (vcpkg::Strings::contains(elem,"\\usr\\bin\\tar.exe")) {
+                    return true;
+                }
+                return false;
+            });
+#endif
             if (tars.empty())
             {
                 win32_extract_with_seven_zip(paths, archive, to_path);
