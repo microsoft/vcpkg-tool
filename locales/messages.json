@@ -120,6 +120,8 @@
   "_LicenseExpressionUnknownException.comment": "Example of {value} is 'unknownexception'\n",
   "LicenseExpressionUnknownLicense": "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/",
   "_LicenseExpressionUnknownLicense.comment": "Example of {value} is 'unknownlicense'\n",
+  "MsiexecFailedToExtract": "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:",
+  "_MsiexecFailedToExtract.comment": "example of {path} is '/foo/bar'.\nexample of {exit_code} is '127'.\n",
   "NoLocalizationForMessages": "No localization for the following messages:",
   "NoteMessage": "note: ",
   "ProcessorArchitectureMalformed": "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.",

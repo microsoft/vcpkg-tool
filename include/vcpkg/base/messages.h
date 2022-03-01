@@ -30,13 +30,18 @@ namespace vcpkg
         const std::string& data() const { return m_data; }
         std::string extract_data() { return std::exchange(m_data, ""); }
 
-        static LocalizedString from_string_unchecked(std::string&& s)
+        static LocalizedString from_raw(std::string&& s)
         {
             LocalizedString res;
             res.m_data = std::move(s);
             return res;
         }
 
+        LocalizedString& append_raw(StringView s)
+        {
+            m_data.append(s.begin(), s.end());
+            return *this;
+        }
         LocalizedString& append(const LocalizedString& s)
         {
             m_data.append(s.m_data);
@@ -51,6 +56,12 @@ namespace vcpkg
         LocalizedString& appendnl()
         {
             m_data.push_back('\n');
+            return *this;
+        }
+        LocalizedString& append_indent()
+        {
+            static const char indent[] = "    ";
+            m_data.append(indent, indent + sizeof(indent) - 1);
             return *this;
         }
 

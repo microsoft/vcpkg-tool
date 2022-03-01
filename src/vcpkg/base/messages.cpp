@@ -297,6 +297,6 @@ namespace vcpkg::msg
     LocalizedString detail::internal_vformat(::size_t index, fmt::format_args args)
     {
         auto fmt_string = get_format_string(index);
-        return LocalizedString::from_string_unchecked(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
+        return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
     }
 }

@@ -71,6 +71,7 @@
   "LicenseExpressionImbalancedParens": "There was a close parenthesis without an opening parenthesis.",
   "LicenseExpressionUnknownException": "Unknown license exception identifier '{value}'. Known values are listed at https://spdx.org/licenses/exceptions-index.html",
   "LicenseExpressionUnknownLicense": "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/",
+  "MsiexecFailedToExtract": "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:",
   "NoLocalizationForMessages": "No localization for the following messages:",
   "NoteMessage": "note: ",
   "ProcessorArchitectureMalformed": "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.",
