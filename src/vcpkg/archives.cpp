@@ -140,7 +140,15 @@ namespace
                  Strings::case_insensitive_ascii_equals(ext, ".7z") ||
                  Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
-            win32_extract_with_seven_zip(paths, archive, to_path);
+            auto tars = paths.get_filesystem().find_from_PATH("tar");
+            if (tars.empty())
+            {
+                win32_extract_with_seven_zip(paths, archive, to_path);
+            }
+            else
+            {
+                vcpkg::extract_tar(paths.get_tool_exe(Tools::TAR), archive, to_path);
+            }
         }
 #else
         if (ext == ".zip")
