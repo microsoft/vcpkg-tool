@@ -473,6 +473,42 @@ jobs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\drop'
         ArtifactName: 'Drop'
         publishLocation: 'Container'
+    - task: CopyFiles@2
+      displayName: 'Copy Packaging Solution to Staging Area'
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)/azure-pipelines/vs-insertion'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/vs-insertion/staging'
+        Contents: 'vcpkg.nuspec'
+        CleanTargetFolder: true
+    - task: CopyFiles@2
+      displayName: 'Copy vcpkg drop to Staging Area'
+      inputs:
+        SourceFolder: '$(Build.ArtifactStagingDirectory)/drop'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/vs-insertion/staging'
+        Contents: |
+          vcpkg-standalone-bundle.tar.gz
+          vcpkg.exe
+    - task: PowerShell@2
+      displayName: 'Extract vcpkg standalone bundle'
+      inputs:
+        targetType: 'inline'
+        script: |
+          tar.exe -C $(Build.ArtifactStagingDirectory)/vs-insertion/staging/ -xf $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg-standalone-bundle.tar.gz
+          rm $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg-standalone-bundle.tar.gz
+        pwsh: true
+    - task: NuGetCommand@2
+      displayName: 'NuGet pack for VS Insertion'
+      inputs:
+        command: pack
+        packagesToPack: '$(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec'
+        packDestination: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop'
+        buildProperties: 'version=$(VCPKG_BASE_VERSION)'
+    - task: NuGetCommand@2
+      displayName: 'NuGet publish for VS Insertion'
+      inputs:
+        command: push
+        packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.x86.1.0.0-$(VCPKG_BASE_VERSION).nupkg'
+        publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
     - task: DownloadSecureFile@1
       displayName: Download Deploy Key
       name: githubDeployKey
