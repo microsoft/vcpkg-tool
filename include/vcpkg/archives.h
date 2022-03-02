@@ -9,6 +9,8 @@
 
 namespace vcpkg
 {
+    // Extract the 7z archive part of a self extracting 7z installer
+    void extract_self_extracting_7z(const VcpkgPaths& paths, const Path& archive, const Path& to_path);
     // Extract `archive` to `to_path` using `tar_tool`.
     void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path);
     // Extract `archive` to `to_path`, deleting `to_path` first.
