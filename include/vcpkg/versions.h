@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/base/expected.h>
 
@@ -89,6 +90,8 @@ namespace vcpkg
 
     struct DotVersion
     {
+        DotVersion() { } // intentionally disable making this type an aggregate
+
         std::string original_string;
         std::string version_string;
         std::string prerelease_string;
@@ -103,15 +106,19 @@ namespace vcpkg
         friend bool operator>=(const DotVersion& lhs, const DotVersion& rhs) { return !(lhs < rhs); }
         friend bool operator<=(const DotVersion& lhs, const DotVersion& rhs) { return !(rhs < lhs); }
 
-        static ExpectedS<DotVersion> try_parse(const std::string& str, VersionScheme target_scheme);
-        static ExpectedS<DotVersion> try_parse_relaxed(const std::string& str);
-        static ExpectedS<DotVersion> try_parse_semver(const std::string& str);
+        static ExpectedL<DotVersion> try_parse(StringView str, VersionScheme target_scheme);
+        static ExpectedL<DotVersion> try_parse_relaxed(StringView str);
+        static ExpectedL<DotVersion> try_parse_relaxed_lz(StringView str);
+        static ExpectedL<DotVersion> try_parse_semver(StringView str);
+        static DotVersion from_values(uint64_t major, uint64_t minor, uint64_t revision);
     };
 
     VerComp compare(const DotVersion& a, const DotVersion& b);
 
     struct DateVersion
     {
+        DateVersion() { } // intentionally disable making this type an aggregate
+
         std::string original_string;
         std::string version_string;
         std::vector<uint64_t> identifiers;
@@ -123,7 +130,7 @@ namespace vcpkg
         friend bool operator>=(const DateVersion& lhs, const DateVersion& rhs) { return !(lhs < rhs); }
         friend bool operator<=(const DateVersion& lhs, const DateVersion& rhs) { return !(rhs < lhs); }
 
-        static ExpectedS<DateVersion> try_parse(const std::string& str);
+        static ExpectedL<DateVersion> try_parse(const std::string& str);
     };
 
     VerComp compare(const DateVersion& a, const DateVersion& b);

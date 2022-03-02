@@ -29,6 +29,7 @@ namespace vcpkg
 
         constexpr const char* data() const { return m_cstr; }
         constexpr size_t size() const { return m_size; }
+        constexpr bool empty() const { return m_size == 0; }
         constexpr char operator[](ptrdiff_t off) const { return m_cstr[off]; }
 
         constexpr const char* c_str() const { return m_cstr; }
@@ -40,6 +41,7 @@ namespace vcpkg
         void to_string(std::string& out) const { out.append(m_cstr, m_size); }
 
         constexpr operator StringView() const { return StringView(m_cstr, m_size); }
+        explicit operator std::string() const { return std::string(m_cstr, m_size); }
 
     private:
         size_t m_size;

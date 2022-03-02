@@ -30,6 +30,7 @@ namespace vcpkg
         Command() = default;
         explicit Command(const Path& p) { path_arg(p); }
         explicit Command(StringView s) { string_arg(s); }
+        explicit Command(StringLiteral s) { string_arg(s); }
         explicit Command(const std::string& s) { string_arg(s); }
         explicit Command(const char* s) { string_arg({s, ::strlen(s)}); }
 

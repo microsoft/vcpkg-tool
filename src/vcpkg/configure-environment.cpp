@@ -18,7 +18,7 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
         auto& download_manager = paths.get_download_manager();
-        auto node_path = paths.get_tool_exe(Tools::NODE);
+        auto node_path = paths.get_required_tool_exe(Tools::NODE);
         Path node_root = node_path.parent_path();
         auto node_modules = paths.root / "node_modules";
         auto ce_path = node_modules / "vcpkg-ce";

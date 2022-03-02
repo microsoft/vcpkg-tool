@@ -1,8 +1,14 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
+
+#include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/stringliteral.h>
+
+#include <vcpkg/versions.h>
 
 #include <string>
 #include <utility>
@@ -11,39 +17,41 @@ namespace vcpkg
 {
     namespace Tools
     {
-        static const std::string SEVEN_ZIP = "7zip";
-        static const std::string SEVEN_ZIP_ALT = "7z";
-        static const std::string TAR = "tar";
-        static const std::string MAVEN = "mvn";
-        static const std::string CMAKE = "cmake";
-        static const std::string GIT = "git";
-        static const std::string GSUTIL = "gsutil";
-        static const std::string AWSCLI = "aws";
-        static const std::string MONO = "mono";
-        static const std::string NINJA = "ninja";
-        static const std::string POWERSHELL_CORE = "powershell-core";
-        static const std::string NUGET = "nuget";
-        static const std::string ARIA2 = "aria2";
-        static const std::string NODE = "node";
-        static const std::string IFW_INSTALLER_BASE = "ifw_installerbase";
-        static const std::string IFW_BINARYCREATOR = "ifw_binarycreator";
-        static const std::string IFW_REPOGEN = "ifw_repogen";
+        constexpr StringLiteral SEVEN_ZIP = "7zip";
+        constexpr StringLiteral SEVEN_ZIP_ALT = "7z";
+        constexpr StringLiteral TAR = "tar";
+        constexpr StringLiteral MAVEN = "mvn";
+        constexpr StringLiteral CMAKE = "cmake";
+        constexpr StringLiteral GIT = "git";
+        constexpr StringLiteral GSUTIL = "gsutil";
+        constexpr StringLiteral AWSCLI = "aws";
+        constexpr StringLiteral MONO = "mono";
+        constexpr StringLiteral NINJA = "ninja";
+        constexpr StringLiteral POWERSHELL_CORE = "powershell-core";
+        constexpr StringLiteral NUGET = "nuget";
+        constexpr StringLiteral ARIA2 = "aria2";
+        constexpr StringLiteral NODE = "node";
+        constexpr StringLiteral IFW_INSTALLER_BASE = "ifw_installerbase";
+        constexpr StringLiteral IFW_BINARYCREATOR = "ifw_binarycreator";
+        constexpr StringLiteral IFW_REPOGEN = "ifw_repogen";
     }
 
-    enum class RequireExactVersions
+    struct PathAndVersion
     {
-        YES,
-        NO,
+        Path path;
+        DotVersion version;
     };
 
     struct ToolCache
     {
-        virtual ~ToolCache() { }
+        virtual ~ToolCache();
 
-        virtual const Path& get_tool_path_from_system(const Filesystem& fs, const std::string& tool) const = 0;
-        virtual const Path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const = 0;
-        virtual const std::string& get_tool_version(const VcpkgPaths& paths, const std::string& tool) const = 0;
+        virtual const ExpectedL<Path>& get_tool_path_from_system(const Filesystem& fs, StringView tool) const = 0;
+        virtual const ExpectedL<Path>& get_tool_path(const VcpkgPaths& paths, StringView tool) const = 0;
+        virtual const ExpectedL<PathAndVersion>& get_tool_versioned(const VcpkgPaths& paths, StringView tool) const = 0;
     };
+
+    ExpectedL<DotVersion> parse_git_version(StringView git_version);
 
     std::unique_ptr<ToolCache> get_tool_cache(RequireExactVersions abiToolVersionHandling);
 }

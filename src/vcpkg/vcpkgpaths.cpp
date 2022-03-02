@@ -9,6 +9,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/build.h>
@@ -896,18 +897,24 @@ namespace vcpkg
             });
     }
 
-    const Path& VcpkgPaths::get_tool_exe(const std::string& tool) const
+    const Path& VcpkgPaths::get_required_tool_exe(StringView tool) const
+    {
+        return m_pimpl->m_tool_cache->get_tool_path(*this, tool).value_or_exit(VCPKG_LINE_INFO);
+    }
+    const ExpectedL<Path>& VcpkgPaths::get_optional_tool_exe(StringView tool) const
     {
         return m_pimpl->m_tool_cache->get_tool_path(*this, tool);
     }
-    const std::string& VcpkgPaths::get_tool_version(const std::string& tool) const
+    const DotVersion& VcpkgPaths::get_required_tool_version(StringView tool) const
     {
-        return m_pimpl->m_tool_cache->get_tool_version(*this, tool);
+        return m_pimpl->m_tool_cache->get_tool_versioned(*this, tool)
+            .map([](const PathAndVersion& pv) { return pv.version; })
+            .value_or_exit(VCPKG_LINE_INFO);
     }
 
     Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
     {
-        Command ret(get_tool_exe(Tools::GIT));
+        Command ret(get_required_tool_exe(Tools::GIT));
         if (!dot_git_dir.empty())
         {
             ret.string_arg(Strings::concat("--git-dir=", dot_git_dir));
@@ -1086,17 +1093,7 @@ namespace vcpkg
                     expected_right_tag};
         }
 
-        auto extract_cmd_builder =
-            Command{this->get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").path_arg(
-                destination_tar);
-
-        const auto extract_output =
-            cmd_execute_and_capture_output(extract_cmd_builder, WorkingDirectory{destination_tmp});
-        if (extract_output.exit_code != 0)
-        {
-            return {Strings::concat(PRELUDE, "Error: Failed to extract port directory\n", extract_output.output),
-                    expected_right_tag};
-        }
+        extract_tar_cmake(this->get_required_tool_exe(Tools::CMAKE), destination_tar, destination_tmp);
         fs.remove(destination_tar, ec);
         if (ec)
         {
@@ -1261,24 +1258,17 @@ namespace vcpkg
                     expected_right_tag};
         }
 
-        auto untar = Command{get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").path_arg(
-            git_tree_temp_tar);
-
-        auto untar_output = cmd_execute_and_capture_output(untar, WorkingDirectory{git_tree_temp});
+        extract_tar_cmake(get_required_tool_exe(Tools::CMAKE), git_tree_temp_tar, git_tree_temp);
         // Attempt to remove temporary files, though non-critical.
         fs.remove(git_tree_temp_tar, IgnoreErrors{});
-        if (untar_output.exit_code != 0)
-        {
-            return {Strings::format("cmake's untar failed with message:\n%s", untar_output.output), expected_right_tag};
-        }
 
         std::error_code ec;
-        fs.rename(git_tree_temp, git_tree_final, ec);
-
+        fs.rename_with_retry(git_tree_temp, git_tree_final, ec);
         if (fs.exists(git_tree_final, IgnoreErrors{}))
         {
             return git_tree_final;
         }
+
         if (ec)
         {
             return {Strings::format("rename to %s failed with message:\n%s", git_tree_final, ec.message()),

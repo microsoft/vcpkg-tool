@@ -41,6 +41,7 @@ namespace vcpkg
 
         std::string to_string() const;
         void to_string(std::string& out) const;
+        explicit operator std::string() const { return std::string(m_ptr, m_size); }
 
         StringView substr(size_t pos, size_t count = std::numeric_limits<size_t>::max()) const noexcept;
 
@@ -51,6 +52,7 @@ namespace vcpkg
         size_t m_size = 0;
     };
 
+    // intentionally not hidden friends
     bool operator==(StringView lhs, StringView rhs) noexcept;
     bool operator!=(StringView lhs, StringView rhs) noexcept;
     bool operator<(StringView lhs, StringView rhs) noexcept;

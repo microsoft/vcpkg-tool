@@ -9,6 +9,8 @@
 #include <vcpkg/base/stringliteral.h>
 
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace vcpkg
 {
@@ -19,12 +21,8 @@ namespace vcpkg
         const std::string& data() const { return m_data; }
         std::string extract_data() { return std::exchange(m_data, ""); }
 
-        static LocalizedString from_string_unchecked(std::string&& s)
-        {
-            LocalizedString res;
-            res.m_data = std::move(s);
-            return res;
-        }
+        static LocalizedString from_string_unchecked(const std::string& s) { return LocalizedString(s); }
+        static LocalizedString from_string_unchecked(std::string&& s) { return LocalizedString(s); }
 
         LocalizedString& append(const LocalizedString& s)
         {
@@ -37,6 +35,8 @@ namespace vcpkg
             m_data.push_back('\n');
             return *this;
         }
+
+        friend LocalizedString join_newlines(const std::vector<LocalizedString>&);
 
         friend const char* to_printf_arg(const LocalizedString& s) { return s.data().c_str(); }
 
@@ -72,6 +72,9 @@ namespace vcpkg
 
     private:
         std::string m_data;
+
+        explicit LocalizedString(const std::string& data) : m_data(data) { }
+        explicit LocalizedString(std::string&& data) : m_data(std::move(data)) { }
 
         // to avoid lock-in on LocalizedString, these are free functions
         // this allows us to convert to `std::string` in the future without changing All The Code
@@ -240,6 +243,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(row, "42");
     DECLARE_MSG_ARG(spec, "zlib:x64-windows");
     DECLARE_MSG_ARG(system_name, "Darwin");
+    DECLARE_MSG_ARG(tool, "tar");
     DECLARE_MSG_ARG(triplet, "x64-windows");
     DECLARE_MSG_ARG(url, "https://github.com/microsoft/vcpkg");
     DECLARE_MSG_ARG(version, "1.3.8");

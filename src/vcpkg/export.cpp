@@ -172,7 +172,7 @@ namespace vcpkg::Export
 #ifndef _WIN32
         cmd.path_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-        cmd.path_arg(paths.get_tool_exe(Tools::NUGET))
+        cmd.path_arg(paths.get_required_tool_exe(Tools::NUGET))
             .string_arg("pack")
             .path_arg(nuspec_file_path)
             .string_arg("-OutputDirectory")
@@ -227,7 +227,7 @@ namespace vcpkg::Export
                                   const Path& output_dir,
                                   const ArchiveFormat& format)
     {
-        const Path& cmake_exe = paths.get_tool_exe(Tools::CMAKE);
+        const Path& cmake_exe = paths.get_required_tool_exe(Tools::CMAKE);
 
         const auto exported_dir_filename = raw_exported_dir.filename();
         const auto exported_archive_filename = Strings::format("%s.%s", exported_dir_filename, format.extension());

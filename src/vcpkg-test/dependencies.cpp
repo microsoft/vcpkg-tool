@@ -92,8 +92,8 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
     }
 };
 
-template<class T>
-T unwrap(ExpectedS<T> e)
+template<class T, class E>
+T unwrap(ExpectedT<T, E> e)
 {
     if (!e.has_value())
     {
@@ -135,7 +135,7 @@ static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
     }
 }
 
-static void check_semver_version(const ExpectedS<DotVersion>& maybe_version,
+static void check_semver_version(const ExpectedL<DotVersion>& maybe_version,
                                  const std::string& version_string,
                                  const std::string& prerelease_string,
                                  uint64_t major,
@@ -153,7 +153,7 @@ static void check_semver_version(const ExpectedS<DotVersion>& maybe_version,
     CHECK(actual_version.identifiers == identifiers);
 }
 
-static void check_relaxed_version(const ExpectedS<DotVersion>& maybe_version,
+static void check_relaxed_version(const ExpectedL<DotVersion>& maybe_version,
                                   const std::vector<uint64_t>& version,
                                   const std::vector<std::string>& identifiers = {})
 {
@@ -162,7 +162,7 @@ static void check_relaxed_version(const ExpectedS<DotVersion>& maybe_version,
     CHECK(actual_version.identifiers == identifiers);
 }
 
-static void check_date_version(const ExpectedS<DateVersion>& maybe_version,
+static void check_date_version(const ExpectedL<DateVersion>& maybe_version,
                                const std::string& version_string,
                                const std::vector<uint64_t>& identifiers)
 {
@@ -693,6 +693,23 @@ TEST_CASE ("version parse relaxed", "[versionplan]")
 
     CHECK(!DotVersion::try_parse_relaxed("1.1a.2").has_value());
     CHECK(!DotVersion::try_parse_relaxed("01.002.003").has_value());
+    CHECK(!DotVersion::try_parse_relaxed("1.0.0-").has_value());
+    CHECK(!DotVersion::try_parse_relaxed("1.0.0+extra+other").has_value());
+}
+
+TEST_CASE ("version parse relaxed with leading zeroes", "[versionplan]")
+{
+    check_relaxed_version(DotVersion::try_parse_relaxed_lz("1.2.3"), {1, 2, 3});
+    check_relaxed_version(DotVersion::try_parse_relaxed_lz("1"), {1});
+    check_relaxed_version(
+        DotVersion::try_parse_relaxed_lz("1.20.300.4000.50000.6000000.70000000.80000000.18446744073709551610"),
+        {1, 20, 300, 4000, 50000, 6000000, 70000000, 80000000, 18446744073709551610u});
+    check_relaxed_version(DotVersion::try_parse_relaxed_lz("1.0.0.0-alpha"), {1, 0, 0, 0}, {"alpha"});
+    check_relaxed_version(DotVersion::try_parse_relaxed_lz("1.0.0.0-alpha-0.1"), {1, 0, 0, 0}, {"alpha-0", "1"});
+    check_relaxed_version(DotVersion::try_parse_relaxed_lz("1.0.0.0-alpha+build-ok"), {1, 0, 0, 0}, {"alpha"});
+
+    CHECK(!DotVersion::try_parse_relaxed("1.1a.2").has_value());
+    check_relaxed_version(DotVersion::try_parse_relaxed_lz("01.002.003"), {1, 2, 3});
     CHECK(!DotVersion::try_parse_relaxed("1.0.0-").has_value());
     CHECK(!DotVersion::try_parse_relaxed("1.0.0+extra+other").has_value());
 }

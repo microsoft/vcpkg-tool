@@ -1,7 +1,39 @@
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/versions.h>
+
+namespace
+{
+    using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(VersionInvalidRelaxed,
+                                 (msg::version),
+                                 "",
+                                 "Error: String `{version}` is not a valid Relaxed version string (semver with "
+                                 "arbitrary numeric element count)");
+
+    DECLARE_AND_REGISTER_MESSAGE(VersionInvalidRelaxedLz,
+                                 (msg::version),
+                                 "",
+                                 "Error: String `{version}` is not a valid Relaxed with leading zeroes version string "
+                                 "(semver with arbitrary numeric element count and leading zeroes)");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        VersionInvalidSemver,
+        (msg::version),
+        "",
+        "Error: String `{version}` is not a valid Semantic Version string, consult https://semver.org");
+
+    DECLARE_AND_REGISTER_MESSAGE(VersionInvalidDate,
+                                 (msg::version),
+                                 "",
+                                 "Error: String `{version}` is not a valid date version."
+                                 "Date section must follow the format YYYY-MM-DD and disambiguators must be "
+                                 "dot-separated positive integer values without leading zeroes.");
+}
 
 namespace vcpkg
 {
@@ -113,6 +145,24 @@ namespace vcpkg
         return s + i;
     }
 
+    static const char* parse_skip_number_lz(const char* s, uint64_t* const n)
+    {
+        if (*s == '0')
+        {
+            do
+            {
+                ++s;
+            } while (*s == '0');
+
+            if (!Parse::ParserBase::is_ascii_digit(*s))
+            {
+                return s;
+            }
+        }
+
+        return parse_skip_number(s, n);
+    }
+
     // 0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*
     static const char* skip_prerelease_identifier(const char* const s)
     {
@@ -144,29 +194,31 @@ namespace vcpkg
         return nullptr;
     }
 
-    static Optional<DotVersion> try_parse_dot_version(const std::string& str)
+    static ExpectedL<DotVersion> try_parse_dot_version(StringView str,
+                                                       const char* (*number_parser)(const char* const s,
+                                                                                    uint64_t* const n))
     {
         // Suggested regex by semver.org
-        // ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
+        // ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)   (this part replaced here with dotted number parsing)
         // (?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]
         // *[a-zA-Z-][0-9a-zA-Z-]*))*))?
         // (?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
 
         DotVersion ret;
-        ret.original_string = str;
+        ret.original_string.assign(str.data(), str.size());
 
         // (0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
         int idx = 0;
-        const char* cur = str.c_str();
+        const char* cur = ret.original_string.c_str();
         for (;; ++idx)
         {
             ret.version.push_back(0);
-            cur = parse_skip_number(cur, ret.version.data() + idx);
+            cur = number_parser(cur, ret.version.data() + idx);
             if (!cur || *cur != '.') break;
             ++cur;
         }
-        if (!cur) return nullopt;
-        ret.version_string.assign(str.c_str(), cur);
+        if (!cur) return LocalizedString{};
+        ret.version_string.assign(ret.original_string.c_str(), cur);
         if (*cur == 0) return ret;
 
         // pre-release
@@ -180,7 +232,7 @@ namespace vcpkg
                 cur = skip_prerelease_identifier(cur);
                 if (!cur)
                 {
-                    return nullopt;
+                    return LocalizedString{};
                 }
                 ret.identifiers.emplace_back(start_identifier, cur);
                 if (*cur != '.') break;
@@ -191,12 +243,12 @@ namespace vcpkg
         if (*cur == 0) return ret;
 
         // build
-        if (*cur != '+') return nullopt;
+        if (*cur != '+') return LocalizedString{};
         ++cur;
         for (;;)
         {
             // Require non-empty identifier element
-            if (!Parse::ParserBase::is_alphanumdash(*cur)) return nullopt;
+            if (!Parse::ParserBase::is_alphanumdash(*cur)) return LocalizedString{};
             ++cur;
             while (Parse::ParserBase::is_alphanumdash(*cur))
             {
@@ -209,7 +261,7 @@ namespace vcpkg
             }
             else
             {
-                return nullopt;
+                return LocalizedString{};
             }
         }
     }
@@ -217,7 +269,7 @@ namespace vcpkg
     bool operator==(const DotVersion& lhs, const DotVersion& rhs) { return compare(lhs, rhs) == VerComp::eq; }
     bool operator<(const DotVersion& lhs, const DotVersion& rhs) { return compare(lhs, rhs) == VerComp::lt; }
 
-    ExpectedS<DotVersion> DotVersion::try_parse(const std::string& str, VersionScheme scheme)
+    ExpectedL<DotVersion> DotVersion::try_parse(StringView str, VersionScheme scheme)
     {
         switch (scheme)
         {
@@ -227,22 +279,23 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<DotVersion> DotVersion::try_parse_relaxed(const std::string& str)
+    ExpectedL<DotVersion> DotVersion::try_parse_relaxed(StringView str)
     {
-        auto x = try_parse_dot_version(str);
-        if (auto p = x.get())
-        {
-            return std::move(*p);
-        }
-
-        return Strings::format(
-            "Error: String `%s` is not a valid Relaxed version string (semver with arbitrary numeric identifiers)",
-            str);
+        return try_parse_dot_version(str, parse_skip_number).map_error([&] {
+            return msg::format(msgVersionInvalidRelaxed, msg::version = str);
+        });
     }
 
-    ExpectedS<DotVersion> DotVersion::try_parse_semver(const std::string& str)
+    ExpectedL<DotVersion> DotVersion::try_parse_relaxed_lz(StringView str)
     {
-        auto x = try_parse_dot_version(str);
+        return try_parse_dot_version(str, parse_skip_number_lz).map_error([&] {
+            return msg::format(msgVersionInvalidRelaxedLz, msg::version = str);
+        });
+    }
+
+    ExpectedL<DotVersion> DotVersion::try_parse_semver(StringView str)
+    {
+        auto x = try_parse_dot_version(str, parse_skip_number);
         if (auto p = x.get())
         {
             if (p->version.size() == 3)
@@ -251,8 +304,19 @@ namespace vcpkg
             }
         }
 
-        return Strings::format("Error: String `%s` is not a valid Semantic Version string, consult https://semver.org",
-                               str);
+        return msg::format(msgVersionInvalidSemver, msg::version = str);
+    }
+
+    DotVersion DotVersion::from_values(uint64_t major, uint64_t minor, uint64_t revision)
+    {
+        DotVersion ret;
+        ret.version_string = fmt::format("{}.{}.{}", major, minor, revision);
+        ret.original_string = ret.version_string;
+        ret.version.resize(3);
+        ret.version[0] = major;
+        ret.version[1] = minor;
+        ret.version[2] = revision;
+        return ret;
     }
 
     static int uint64_comp(uint64_t a, uint64_t b) { return (a > b) - (a < b); }
@@ -301,20 +365,12 @@ namespace vcpkg
     bool operator==(const DateVersion& lhs, const DateVersion& rhs) { return compare(lhs, rhs) == VerComp::eq; }
     bool operator<(const DateVersion& lhs, const DateVersion& rhs) { return compare(lhs, rhs) == VerComp::lt; }
 
-    static std::string format_invalid_date_version(const std::string& str)
-    {
-        return Strings::format("Error: String `%s` is not a valid date version."
-                               "Date section must follow the format YYYY-MM-DD and disambiguators must be "
-                               "dot-separated positive integer values without leading zeroes.",
-                               str);
-    }
-
-    ExpectedS<DateVersion> DateVersion::try_parse(const std::string& str)
+    ExpectedL<DateVersion> DateVersion::try_parse(const std::string& str)
     {
         DateVersion ret;
         ret.original_string = str;
 
-        if (str.size() < 10) return format_invalid_date_version(str);
+        if (str.size() < 10) return msg::format(msgVersionInvalidDate, msg::version = str);
 
         bool valid = Parse::ParserBase::is_ascii_digit(str[0]);
         valid |= Parse::ParserBase::is_ascii_digit(str[1]);
@@ -326,7 +382,7 @@ namespace vcpkg
         valid |= str[7] != '-';
         valid |= Parse::ParserBase::is_ascii_digit(str[8]);
         valid |= Parse::ParserBase::is_ascii_digit(str[9]);
-        if (!valid) return format_invalid_date_version(str);
+        if (!valid) return msg::format(msgVersionInvalidDate, msg::version = str);
         ret.version_string.assign(str.c_str(), 10);
 
         const char* cur = str.c_str() + 10;
@@ -335,9 +391,9 @@ namespace vcpkg
         {
             ret.identifiers.push_back(0);
             cur = parse_skip_number(cur + 1, &ret.identifiers.back());
-            if (!cur) return format_invalid_date_version(str);
+            if (!cur) return msg::format(msgVersionInvalidDate, msg::version = str);
         }
-        if (*cur != 0) return format_invalid_date_version(str);
+        if (*cur != 0) return msg::format(msgVersionInvalidDate, msg::version = str);
 
         return ret;
     }

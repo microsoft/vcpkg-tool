@@ -544,7 +544,7 @@ namespace vcpkg::Build
         });
 
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
-            const Path& powershell_exe_path = paths.get_tool_exe("powershell-core");
+            const Path& powershell_exe_path = paths.get_required_tool_exe("powershell-core");
             auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
             if (build_env_cmd.empty())
                 return clean_env;
@@ -703,7 +703,7 @@ namespace vcpkg::Build
                               });
         if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
         {
-            const Path& git_exe_path = paths.get_tool_exe(Tools::GIT);
+            const Path& git_exe_path = paths.get_required_tool_exe(Tools::GIT);
             out_vars.push_back({"GIT", git_exe_path});
         }
     }
@@ -828,7 +828,7 @@ namespace vcpkg::Build
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
-            variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2)});
+            variables.push_back({"ARIA2", paths.get_required_tool_exe(Tools::ARIA2)});
         }
 
         for (auto cmake_arg : args.cmake_args)
@@ -1180,10 +1180,10 @@ namespace vcpkg::Build
             }
         }
 
-        abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE));
+        abi_tag_entries.emplace_back("cmake", paths.get_required_tool_version(Tools::CMAKE).version_string);
 
 #if defined(_WIN32)
-        abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core"));
+        abi_tag_entries.emplace_back("powershell", paths.get_required_tool_version("powershell-core").version_string);
 #endif
 
         auto& helpers = paths.get_cmake_script_hashes();

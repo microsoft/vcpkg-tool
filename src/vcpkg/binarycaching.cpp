@@ -698,7 +698,7 @@ namespace
             print2("Attempting to fetch ", attempts.size(), " packages from nuget.\n");
 
             auto packages_config = paths.buildtrees() / "packages.config";
-            const auto& nuget_exe = paths.get_tool_exe("nuget");
+            const auto& nuget_exe = paths.get_required_tool_exe("nuget");
             std::vector<Command> cmdlines;
 
             if (!m_read_sources.empty())
@@ -831,7 +831,7 @@ namespace
             fs.write_contents(
                 nuspec_path, generate_nuspec(paths.package_dir(spec), action, nuget_ref), VCPKG_LINE_INFO);
 
-            const auto& nuget_exe = paths.get_tool_exe("nuget");
+            const auto& nuget_exe = paths.get_required_tool_exe("nuget");
             Command cmdline;
 #ifndef _WIN32
             cmdline.path_arg(paths.get_tool_exe(Tools::MONO));
@@ -1117,15 +1117,18 @@ namespace
 
     bool awscli_stat(const VcpkgPaths& paths, const std::string& url)
     {
-        const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("ls").string_arg(url);
+        const auto cmd =
+            Command{paths.get_required_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("ls").string_arg(url);
         return cmd_execute(cmd) == 0;
     }
 
     bool awscli_upload_file(const VcpkgPaths& paths, const std::string& aws_object, const Path& archive)
     {
-        const auto cmd =
-            Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("cp").path_arg(archive).string_arg(
-                aws_object);
+        const auto cmd = Command{paths.get_required_tool_exe(Tools::AWSCLI)}
+                             .string_arg("s3")
+                             .string_arg("cp")
+                             .path_arg(archive)
+                             .string_arg(aws_object);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
@@ -1139,7 +1142,7 @@ namespace
 
     bool awscli_download_file(const VcpkgPaths& paths, const std::string& aws_object, const Path& archive)
     {
-        const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
+        const auto cmd = Command{paths.get_required_tool_exe(Tools::AWSCLI)}
                              .string_arg("s3")
                              .string_arg("cp")
                              .string_arg(aws_object)

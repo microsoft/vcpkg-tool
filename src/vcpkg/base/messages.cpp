@@ -9,6 +9,11 @@ namespace vcpkg
         s.m_data.push_back('\n');
         return s;
     }
+
+    LocalizedString join_newlines(const std::vector<LocalizedString>& strings)
+    {
+        return LocalizedString(Strings::join("\n", strings, [](const LocalizedString& ls) { return ls.m_data; }));
+    }
 }
 
 namespace vcpkg::msg
