@@ -48,15 +48,8 @@ namespace vcpkg::Commands
 
         auto tool_cache = get_tool_cache(RequireExactVersions::NO);
         const auto maybeTar = tool_cache->get_tool_path_from_system(fs, Tools::TAR);
-        if (maybeTar.has_value())
-        {
-            extract_tar(maybeTar.value_or_exit(VCPKG_LINE_INFO), bundle_tarball, vcpkg_root);
-            fs.remove(bundle_tarball, VCPKG_LINE_INFO);
-            Checks::exit_success(VCPKG_LINE_INFO);
-        }
-        else
-        {
-            Checks::exit_with_message(VCPKG_LINE_INFO, maybeTar.error());
-        }
+        extract_tar(maybeTar.value_or_exit(VCPKG_LINE_INFO), bundle_tarball, vcpkg_root);
+        fs.remove(bundle_tarball, VCPKG_LINE_INFO);
+        Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

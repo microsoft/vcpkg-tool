@@ -281,14 +281,14 @@ namespace vcpkg
 
     ExpectedL<DotVersion> DotVersion::try_parse_relaxed(StringView str)
     {
-        return try_parse_dot_version(str, parse_skip_number).map_error([&] {
+        return try_parse_dot_version(str, parse_skip_number).replace_error([&] {
             return msg::format(msgVersionInvalidRelaxed, msg::version = str);
         });
     }
 
     ExpectedL<DotVersion> DotVersion::try_parse_relaxed_lz(StringView str)
     {
-        return try_parse_dot_version(str, parse_skip_number_lz).map_error([&] {
+        return try_parse_dot_version(str, parse_skip_number_lz).replace_error([&] {
             return msg::format(msgVersionInvalidRelaxedLz, msg::version = str);
         });
     }

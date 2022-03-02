@@ -235,7 +235,7 @@ namespace vcpkg
         }
 
         template<class F>
-        ExpectedT& map_error(F&& specific_error_generator)
+        ExpectedT& replace_error(F&& specific_error_generator)
         {
             if (m_s.has_error())
             {
