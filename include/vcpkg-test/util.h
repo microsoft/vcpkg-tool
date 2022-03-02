@@ -55,7 +55,10 @@ namespace Catch
     {
         static const std::string convert(const vcpkg::LocalizedString& value) { return "LL\"" + value.data() + "\""; }
     };
+}
 
+namespace vcpkg
+{
     inline std::ostream& operator<<(std::ostream& os, const vcpkg::LocalizedString& value)
     {
         return os << "LL" << std::quoted(value.data());

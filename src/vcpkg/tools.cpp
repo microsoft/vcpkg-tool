@@ -442,7 +442,7 @@ Type 'NuGet help <command>' for help on a specific command.
 [[[List of available commands follows]]]
                 */
             return DotVersion::try_parse_relaxed(
-                Strings::find_exactly_one_enclosed(rc.output, "NuGet Version: ", "\n"));
+                Strings::trim(Strings::find_exactly_one_enclosed(rc.output, "NuGet Version: ", "\n")));
         }
     };
 
