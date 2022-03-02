@@ -152,8 +152,6 @@ namespace vcpkg
         if (!has_tool_entry)
         {
             auto error = msg::format(msgVcpkgToolsMissingTool, msg::tool = tool, msg::system_name = OS_STRING);
-
-            StringLiteral add_info = "";
             if (tool == Tools::MONO)
             {
 #if defined(__APPLE__)
@@ -418,7 +416,7 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
         {
             Command cmd;
 #ifndef _WIN32
-            cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+            cmd.path_arg(paths.get_required_tool_exe(Tools::MONO));
 #else
             (void)paths;
 #endif
@@ -429,7 +427,7 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
 #ifndef _WIN32
                 return msg::format(msgMonoNotFoundUnix, msg::path = exe_path)
                     .appendnl()
-                    .append(std::move(rc.output))
+                    .append(LocalizedString::from_string_unchecked(std::move(rc.output)))
                     .appendnl();
 #else
                 return format_tool_version_not_found(exe_path, std::move(rc.output));

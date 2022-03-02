@@ -908,7 +908,7 @@ namespace vcpkg
     const DotVersion& VcpkgPaths::get_required_tool_version(StringView tool) const
     {
         return m_pimpl->m_tool_cache->get_tool_versioned(*this, tool)
-            .map([](const PathAndVersion& pv) { return pv.version; })
+            .map([](const PathAndVersion& pv) -> const DotVersion& { return pv.version; })
             .value_or_exit(VCPKG_LINE_INFO);
     }
 

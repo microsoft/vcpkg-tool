@@ -706,7 +706,7 @@ namespace
                 // First check using all sources
                 Command cmdline;
 #ifndef _WIN32
-                cmdline.path_arg(paths.get_tool_exe(Tools::MONO));
+                cmdline.path_arg(paths.get_required_tool_exe(Tools::MONO));
 #endif
                 cmdline.path_arg(nuget_exe)
                     .string_arg("install")
@@ -739,7 +739,7 @@ namespace
                 // Then check using each config
                 Command cmdline;
 #ifndef _WIN32
-                cmdline.path_arg(paths.get_tool_exe(Tools::MONO));
+                cmdline.path_arg(paths.get_required_tool_exe(Tools::MONO));
 #endif
                 cmdline.path_arg(nuget_exe)
                     .string_arg("install")
@@ -834,7 +834,7 @@ namespace
             const auto& nuget_exe = paths.get_required_tool_exe("nuget");
             Command cmdline;
 #ifndef _WIN32
-            cmdline.path_arg(paths.get_tool_exe(Tools::MONO));
+            cmdline.path_arg(paths.get_required_tool_exe(Tools::MONO));
 #endif
             cmdline.path_arg(nuget_exe)
                 .string_arg("pack")
@@ -860,7 +860,7 @@ namespace
             {
                 Command cmd;
 #ifndef _WIN32
-                cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+                cmd.path_arg(paths.get_required_tool_exe(Tools::MONO));
 #endif
                 cmd.path_arg(nuget_exe)
                     .string_arg("push")
@@ -887,7 +887,7 @@ namespace
             {
                 Command cmd;
 #ifndef _WIN32
-                cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+                cmd.path_arg(paths.get_required_tool_exe(Tools::MONO));
 #endif
                 cmd.path_arg(nuget_exe)
                     .string_arg("push")

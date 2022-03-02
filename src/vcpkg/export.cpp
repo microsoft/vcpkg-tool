@@ -170,7 +170,7 @@ namespace vcpkg::Export
         // -NoDefaultExcludes is needed for ".vcpkg-root"
         Command cmd;
 #ifndef _WIN32
-        cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+        cmd.path_arg(paths.get_required_tool_exe(Tools::MONO));
 #endif
         cmd.path_arg(paths.get_required_tool_exe(Tools::NUGET))
             .string_arg("pack")
