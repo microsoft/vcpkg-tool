@@ -264,6 +264,8 @@ namespace vcpkg
     {
         static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
+        const size_t start_size = out->size();
+
         Command cmd;
         cmd.string_arg("curl")
             .string_arg("--head")
@@ -278,13 +280,35 @@ namespace vcpkg
         {
             cmd.string_arg(url);
         }
-        auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
+
+        std::vector<std::string> lines;
+
+        auto res = cmd_execute_and_stream_lines(cmd, [out, &lines](StringView line) {
+            lines.push_back(line.to_string());
             if (Strings::starts_with(line, guid_marker))
             {
                 out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
             }
         });
         Checks::check_exit(VCPKG_LINE_INFO, res == 0, "curl failed to execute with exit code: %d", res);
+
+        if (out->size() != start_size + urls.size())
+        {
+            // Invariant violation
+            print2(
+                Color::error,
+                "Error: vcpkg has encountered an internal invariant violation and cannot continue.\nPlease review the "
+                "following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix "
+                "this problem!\n");
+
+            print2("cmd: ", cmd.command_line(), '\n');
+            print2("=== curl output ===\n");
+            for (auto&& line : lines)
+                print2(line, '\n');
+            print2("=== end curl output ===\n");
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
     }
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers)
     {
