@@ -606,13 +606,8 @@ Expected result: 2.17.1.2
             /* Sample output:
 Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50 UTC 2020)
                 */
-            const auto idx = rc.output.find("Mono JIT compiler version ");
-            if (idx == std::string::npos)
-            {
-                return format_tool_version_ill_formed(exe_path, "--version", std::move(rc.output));
-            }
-
-            return DotVersion::try_parse_relaxed(rc.output.substr(idx));
+            return DotVersion::try_parse_relaxed(
+                Strings::find_exactly_one_enclosed(rc.output, "Mono JIT compiler version ", " "));
         }
     };
 
@@ -664,13 +659,7 @@ gsutil version: 4.58
 aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
                 */
 
-            const auto idx = rc.output.find("aws-cli/");
-            if (idx == std::string::npos)
-            {
-                return format_tool_version_ill_formed(exe_path, "--version", std::move(rc.output));
-            }
-
-            return DotVersion::try_parse_relaxed(rc.output.substr(idx));
+            return DotVersion::try_parse_relaxed(Strings::find_exactly_one_enclosed(rc.output, "aws-cli/", " "));
         }
     };
 
