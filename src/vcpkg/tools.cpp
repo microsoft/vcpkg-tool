@@ -25,7 +25,7 @@ namespace
 
     DECLARE_AND_REGISTER_MESSAGE(
         VcpkgToolsMissingTool,
-        (msg::path, msg::tool, msg::system_name),
+        (msg::tool, msg::system_name),
         "",
         "Could not automatically acquire {tool} because there is no entry in {tool} for os={system_name}. You "
         "may be able to install {tool} via your system package manager");
@@ -151,8 +151,7 @@ namespace vcpkg
         const bool has_tool_entry = std::regex_search(XML.cbegin(), XML.cend(), match_tool_entry, tool_regex);
         if (!has_tool_entry)
         {
-            auto error = msg::format(
-                msgVcpkgToolsMissingTool, msg::path = XML_PATH, msg::tool = tool, msg::system_name = OS_STRING);
+            auto error = msg::format(msgVcpkgToolsMissingTool, msg::tool = tool, msg::system_name = OS_STRING);
 
             StringLiteral add_info = "";
             if (tool == Tools::MONO)
