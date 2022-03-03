@@ -187,7 +187,8 @@ namespace vcpkg
         constexpr static const char header_7z[] =
             {'7', 'z', 0xbc, 0xaf, 0x27, 0x1c};
         
-        const auto subextension = Path(archive.stem()).extension();
+        const Path stem(archive.stem());
+        const auto subextension = stem.extension();
         Checks::check_exit(VCPKG_LINE_INFO,
                            Strings::case_insensitive_ascii_equals(subextension, ".7z"),
                            "Unable to extract 7z archive from Installer %s. Missing '.7z.exe' extension.",
