@@ -128,6 +128,9 @@ namespace
     {
         const auto ext = archive.extension();
 #if defined(_WIN32)
+        const Path filename = archive.filename();
+        const Path stem = filename.stem();
+        const Path subext = stem.extension();
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
             win32_extract_nupkg(paths, archive, to_path);
@@ -136,16 +139,18 @@ namespace
         {
             win32_extract_msi(archive, to_path);
         }
+        else if (Strings::case_insensitive_ascii_equals(ext, ".exe") &&
+                 Strings::case_insensitive_ascii_equals(subext, ".7z"))
+        {
+            const Path to_archive = Path(archive.parent_path()) / stem;
+            extract_self_extracting_7z(paths, archive, to_archive);
+            extract_archive_to_empty(paths, to_archive, to_path);
+        }
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
                  Strings::case_insensitive_ascii_equals(ext, ".7z") ||
                  Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
-            win32_extract_with_seven_zip(paths, archive, to_path);
-            if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
-            {
-                extract_self_extracting_7z(paths, archive, archive.stem()); //Just for testing move somewhere else 
-            }
-               
+            win32_extract_with_seven_zip(paths, archive, to_path);            
         }
 #else
         if (ext == ".zip")
@@ -183,14 +188,14 @@ namespace
 namespace vcpkg
 {
     void extract_self_extracting_7z(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
-    {        
-        constexpr static const char header_7z[] =
-            {'7', 'z', 0xbc, 0xaf, 0x27, 0x1c};
+    {
+        // static_cast due to Warning C4309
+        constexpr static const char header_7z[] = {'7', 'z', static_cast<char>(0xbc), static_cast<char>(0xaf), 0x27, 0x1c };
         
         const Path stem(archive.stem());
-        const auto subextension = stem.extension();
+        const auto subext = stem.extension();
         Checks::check_exit(VCPKG_LINE_INFO,
-                           Strings::case_insensitive_ascii_equals(subextension, ".7z"),
+                           Strings::case_insensitive_ascii_equals(subext, ".7z"),
                            "Unable to extract 7z archive from Installer %s. Missing '.7z.exe' extension.",
                            archive);  
 
