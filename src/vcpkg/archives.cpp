@@ -190,10 +190,9 @@ namespace vcpkg
     void extract_self_extracting_7z(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
         // static_cast due to Warning C4309
-        constexpr static const char header_7z[] = {
-            '7', 'z', static_cast<char>(0xbc), static_cast<char>(0xaf), 0x27, 0x1c};
+        constexpr static const char header_7z[] = "7z\xBC\xAF\x27\x1C";
 
-        const Path stem(archive.stem());
+        const Path stem = archive.stem();
         const auto subext = stem.extension();
         Checks::check_exit(VCPKG_LINE_INFO,
                            Strings::case_insensitive_ascii_equals(subext, ".7z"),
@@ -202,9 +201,9 @@ namespace vcpkg
 
         Filesystem& fs = paths.get_filesystem();
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
-        auto pos = Strings::search(contents, header_7z);
+        auto pos = contents.find(header_7z);
         Checks::check_exit(VCPKG_LINE_INFO,
-                           pos != StringView(contents).end(),
+                           pos != std::string::npos,
                            "Unable to extract 7z archive from Installer %s. Unable to find 7z header.",
                            archive);
         auto distance = std::distance(StringView(contents).begin(), pos);
