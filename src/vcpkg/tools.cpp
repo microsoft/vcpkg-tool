@@ -668,8 +668,6 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
         }
     };
 
-    ToolCache::~ToolCache() = default;
-
     struct ToolCacheImpl final : ToolCache
     {
         RequireExactVersions abiToolVersionHandling;

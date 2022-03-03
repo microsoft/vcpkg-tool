@@ -33,7 +33,7 @@ namespace vcpkg
 
     struct ToolCache
     {
-        virtual ~ToolCache();
+        virtual ~ToolCache() = default;
 
         virtual const Path& get_tool_path_from_system(const Filesystem& fs, const std::string& tool) const = 0;
         virtual const Path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const = 0;

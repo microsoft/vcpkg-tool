@@ -292,7 +292,7 @@ namespace vcpkg
 
     const ExpectedS<Path>& get_system32() noexcept
     {
-        static const ExpectedS<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "system32"; });
+        static const ExpectedS<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "System32"; });
         return s_system32;
     }
 #else
