@@ -493,9 +493,9 @@ namespace vcpkg
 
 #if defined(_WIN32)
         Command builder;
-        builder.path_arg(temp_folder_path_exe);
+        builder.string_arg(temp_folder_path_exe);
         builder.string_arg("x-upload-metrics");
-        builder.path_arg(vcpkg_metrics_txt_path);
+        builder.string_arg(vcpkg_metrics_txt_path);
         cmd_execute_background(builder);
 #else
         // TODO: convert to cmd_execute_background or something.
@@ -512,7 +512,7 @@ namespace vcpkg
                         .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
                         .raw_arg(">/dev/null")
                         .raw_arg("2>&1");
-        auto remove = Command("rm").path_arg(vcpkg_metrics_txt_path);
+        auto remove = Command("rm").string_arg(vcpkg_metrics_txt_path);
         Command cmd_line;
         cmd_line.raw_arg("(").raw_arg(curl.command_line()).raw_arg(";").raw_arg(remove.command_line()).raw_arg(") &");
         cmd_execute_clean(cmd_line);

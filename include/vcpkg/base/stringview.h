@@ -41,6 +41,7 @@ namespace vcpkg
 
         std::string to_string() const;
         void to_string(std::string& out) const;
+        explicit operator std::string() const { return to_string(); }
 
         StringView substr(size_t pos, size_t count = std::numeric_limits<size_t>::max()) const noexcept;
 

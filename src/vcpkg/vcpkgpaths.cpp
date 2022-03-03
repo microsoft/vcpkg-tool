@@ -1006,7 +1006,7 @@ namespace vcpkg
         const auto local_repo = this->root / ".git";
         const auto git_cmd = git_cmd_builder({}, {})
                                  .string_arg("-C")
-                                 .path_arg(this->builtin_ports_directory())
+                                 .string_arg(this->builtin_ports_directory())
                                  .string_arg("ls-tree")
                                  .string_arg("-d")
                                  .string_arg("HEAD")
@@ -1078,7 +1078,7 @@ namespace vcpkg
                                    .string_arg("archive")
                                    .string_arg(git_tree)
                                    .string_arg("-o")
-                                   .path_arg(destination_tar);
+                                   .string_arg(destination_tar);
         const auto tar_output = cmd_execute_and_capture_output(tar_cmd_builder);
         if (tar_output.exit_code != 0)
         {
@@ -1087,7 +1087,7 @@ namespace vcpkg
         }
 
         auto extract_cmd_builder =
-            Command{this->get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").path_arg(
+            Command{this->get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").string_arg(
                 destination_tar);
 
         const auto extract_output =
@@ -1253,7 +1253,7 @@ namespace vcpkg
                                   .string_arg("tar")
                                   .string_arg(object)
                                   .string_arg("--output")
-                                  .path_arg(git_tree_temp_tar);
+                                  .string_arg(git_tree_temp_tar);
         auto git_archive_output = cmd_execute_and_capture_output(git_archive);
         if (git_archive_output.exit_code != 0)
         {
@@ -1261,7 +1261,7 @@ namespace vcpkg
                     expected_right_tag};
         }
 
-        auto untar = Command{get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").path_arg(
+        auto untar = Command{get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").string_arg(
             git_tree_temp_tar);
 
         auto untar_output = cmd_execute_and_capture_output(untar, WorkingDirectory{git_tree_temp});

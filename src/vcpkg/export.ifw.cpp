@@ -341,7 +341,7 @@ namespace vcpkg::Export::IFW
                                failure_point);
 
             auto cmd_line =
-                Command(repogen_exe).string_arg("--packages").path_arg(packages_dir).path_arg(repository_dir);
+                Command(repogen_exe).string_arg("--packages").string_arg(packages_dir).string_arg(repository_dir);
 
             const int exit_code =
                 cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
@@ -368,19 +368,19 @@ namespace vcpkg::Export::IFW
                 cmd_line = Command(binarycreator_exe)
                                .string_arg("--online-only")
                                .string_arg("--config")
-                               .path_arg(config_file)
+                               .string_arg(config_file)
                                .string_arg("--repository")
-                               .path_arg(repository_dir)
-                               .path_arg(installer_file);
+                               .string_arg(repository_dir)
+                               .string_arg(installer_file);
             }
             else
             {
                 cmd_line = Command(binarycreator_exe)
                                .string_arg("--config")
-                               .path_arg(config_file)
+                               .string_arg(config_file)
                                .string_arg("--packages")
-                               .path_arg(packages_dir)
-                               .path_arg(installer_file);
+                               .string_arg(packages_dir)
+                               .string_arg(installer_file);
             }
 
             const int exit_code =
