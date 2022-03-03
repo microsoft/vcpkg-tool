@@ -136,9 +136,23 @@ namespace
         {
             win32_extract_msi(archive, to_path);
         }
-        else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
-                 Strings::case_insensitive_ascii_equals(ext, ".7z") ||
-                 Strings::case_insensitive_ascii_equals(ext, ".exe"))
+        else if (Strings::case_insensitive_ascii_equals(ext, ".zip"))
+        {
+            const auto tar_path = get_system32().value_or_exit(VCPKG_LINE_INFO) / "tar.exe";
+            if (paths.get_filesystem().exists(tar_path, IgnoreErrors{}))
+            {
+                extract_tar(tar_path, archive, to_path);
+            }
+            else
+            {
+                win32_extract_with_seven_zip(paths, archive, to_path);
+            }
+        }
+        else if (Strings::case_insensitive_ascii_equals(ext, ".7z"))
+        {
+            extract_tar_cmake(paths.get_tool_exe(Tools::CMAKE), archive, to_path);
+        }
+        else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
             win32_extract_with_seven_zip(paths, archive, to_path);
         }
@@ -180,6 +194,15 @@ namespace vcpkg
     void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path)
     {
         const auto code = cmd_execute(Command{tar_tool}.string_arg("xzf").path_arg(archive), WorkingDirectory{to_path});
+        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+    }
+
+    void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
+    {
+        // Note that CMake's built in tar can extract more archive types than many system tars; e.g. 7z
+        const auto code =
+            cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").path_arg(archive),
+                        WorkingDirectory{to_path});
         Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
     }
 

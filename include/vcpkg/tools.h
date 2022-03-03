@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/files.h>
@@ -30,15 +31,9 @@ namespace vcpkg
         static const std::string IFW_REPOGEN = "ifw_repogen";
     }
 
-    enum class RequireExactVersions
-    {
-        YES,
-        NO,
-    };
-
     struct ToolCache
     {
-        virtual ~ToolCache() { }
+        virtual ~ToolCache() = default;
 
         virtual const Path& get_tool_path_from_system(const Filesystem& fs, const std::string& tool) const = 0;
         virtual const Path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const = 0;
