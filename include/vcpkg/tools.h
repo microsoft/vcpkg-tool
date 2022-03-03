@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/files.h>
 
+#include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/stringliteral.h>
@@ -32,15 +33,9 @@ namespace vcpkg
         static constexpr StringLiteral IFW_REPOGEN = "ifw_repogen";
     }
 
-    enum class RequireExactVersions
-    {
-        YES,
-        NO,
-    };
-
     struct ToolCache
     {
-        virtual ~ToolCache() { }
+        virtual ~ToolCache() = default;
 
         virtual const Path& get_tool_path_from_system(const Filesystem& fs, StringView tool) const = 0;
         virtual const Path& get_tool_path(const VcpkgPaths& paths, StringView tool) const = 0;

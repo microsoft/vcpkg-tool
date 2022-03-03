@@ -273,6 +273,28 @@ namespace vcpkg
         }();
         return s_home;
     }
+
+    const ExpectedS<Path>& get_system_root() noexcept
+    {
+        static const ExpectedS<Path> s_system_root = []() -> ExpectedS<Path> {
+            auto env = get_environment_variable("SystemRoot");
+            if (const auto p = env.get())
+            {
+                return Path(std::move(*p));
+            }
+            else
+            {
+                return std::string("Expected the SystemRoot environment variable to be always set on Windows.");
+            }
+        }();
+        return s_system_root;
+    }
+
+    const ExpectedS<Path>& get_system32() noexcept
+    {
+        static const ExpectedS<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "System32"; });
+        return s_system32;
+    }
 #else
     static const ExpectedS<Path>& get_xdg_cache_home() noexcept
     {
