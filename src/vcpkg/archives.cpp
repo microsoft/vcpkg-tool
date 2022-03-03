@@ -54,16 +54,6 @@ namespace
     void win32_extract_7z_installer(const Path& archive, const Path& to_path)
     {
         // Silently extracts 7z Installer without admin privleges.
-
-        // Requires the following in vcpkgTools.xml
-        //<tool name="7zip" os="windows">
-        //<version>21.07</version>
-        //<exeRelativePath>7z.exe</exeRelativePath>
-        //<url>https://7-zip.org/a/7z2107-x64.exe</url>
-        //<sha512>4d406ddd257a28ab1521e0e28c20699a764d7a3d3c3651e9b080cbdb6dae2f7c348452b2946a1e16b00424f67b769fe44c54a9b94e9124fa219bbe2a544ee82b</sha512>
-        //<archiveName>7z2107-x64.exe</archiveName>
-        //</tool>
-
         auto env_7z{default_environment}; // Where is default_environment even initialized?
         if (!env_7z.m_env_data.empty())
         {
