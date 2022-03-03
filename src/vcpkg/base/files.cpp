@@ -383,7 +383,7 @@ namespace
         // bug in MSVC considers h_file uninitialized:
         // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
         VCPKG_MSVC_WARNING(push)
-        VCPKG_MSVC_WARNING(disable: 6001)
+        VCPKG_MSVC_WARNING(disable : 6001)
         ~FileHandle()
         {
             if (h_file != INVALID_HANDLE_VALUE)

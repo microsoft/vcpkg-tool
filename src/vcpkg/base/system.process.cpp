@@ -552,7 +552,7 @@ namespace vcpkg
 
         // Leaking process information handle 'process_info.proc_info.hProcess'
         // /analyze can't tell that we transferred ownership here
-        VCPKG_MSVC_WARNING(suppress: 6335)
+        VCPKG_MSVC_WARNING(suppress : 6335)
         bool succeeded = TRUE == CreateProcessW(nullptr,
                                                 Strings::to_utf16(cmd_line).data(),
                                                 nullptr,
