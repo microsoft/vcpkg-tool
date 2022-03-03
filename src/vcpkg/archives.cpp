@@ -150,7 +150,7 @@ namespace
                  Strings::case_insensitive_ascii_equals(ext, ".7z") ||
                  Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
-            win32_extract_with_seven_zip(paths, archive, to_path);            
+            win32_extract_with_seven_zip(paths, archive, to_path);
         }
 #else
         if (ext == ".zip")
@@ -190,20 +190,23 @@ namespace vcpkg
     void extract_self_extracting_7z(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
         // static_cast due to Warning C4309
-        constexpr static const char header_7z[] = {'7', 'z', static_cast<char>(0xbc), static_cast<char>(0xaf), 0x27, 0x1c };
-        
+        constexpr static const char header_7z[] = {
+            '7', 'z', static_cast<char>(0xbc), static_cast<char>(0xaf), 0x27, 0x1c};
+
         const Path stem(archive.stem());
         const auto subext = stem.extension();
         Checks::check_exit(VCPKG_LINE_INFO,
                            Strings::case_insensitive_ascii_equals(subext, ".7z"),
                            "Unable to extract 7z archive from Installer %s. Missing '.7z.exe' extension.",
-                           archive);  
+                           archive);
 
         Filesystem& fs = paths.get_filesystem();
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
         auto pos = Strings::search(contents, header_7z);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, pos != StringView(contents).end(), "Unable to extract 7z archive from Installer %s. Unable to find 7z header.", archive);
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           pos != StringView(contents).end(),
+                           "Unable to extract 7z archive from Installer %s. Unable to find 7z header.",
+                           archive);
         auto distance = std::distance(StringView(contents).begin(), pos);
         contents = contents.substr(distance);
         fs.write_contents(to_path, contents, VCPKG_LINE_INFO);
