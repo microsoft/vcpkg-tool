@@ -280,7 +280,7 @@ namespace vcpkg
             auto env = get_environment_variable("SystemRoot");
             if (const auto p = env.get())
             {
-                return std::move(*p);
+                return Path(std::move(*p));
             }
             else
             {
