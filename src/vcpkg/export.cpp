@@ -458,12 +458,6 @@ namespace vcpkg::Export
             }
         };
 
-#if defined(_MSC_VER) && _MSC_VER <= 1900
-// there's a bug in VS 2015 that causes a bunch of "unreferenced local variable" warnings
-#pragma warning(push)
-#pragma warning(disable : 4189)
-#endif
-
         options_implies(OPTION_NUGET,
                         ret.nuget,
                         {
@@ -499,9 +493,6 @@ namespace vcpkg::Export
                             {OPTION_CHOCOLATEY_VERSION_SUFFIX, ret.chocolatey_options.maybe_version_suffix},
                         });
 
-#if defined(_MSC_VER) && _MSC_VER <= 1900
-#pragma warning(pop)
-#endif
         return ret;
     }
 
