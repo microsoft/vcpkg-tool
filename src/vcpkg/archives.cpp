@@ -51,10 +51,11 @@ namespace
                            code_and_output.output);
     }
 
-    void win32_extract_7z_installer(const Path& archive, const Path& to_path) {
-        // Silently extracts 7z Installer without admin privleges. 
-     
-        //Requires the following in vcpkgTools.xml
+    void win32_extract_7z_installer(const Path& archive, const Path& to_path)
+    {
+        // Silently extracts 7z Installer without admin privleges.
+
+        // Requires the following in vcpkgTools.xml
         //<tool name="7zip" os="windows">
         //<version>21.07</version>
         //<exeRelativePath>7z.exe</exeRelativePath>
@@ -63,7 +64,7 @@ namespace
         //<archiveName>7z2107-x64.exe</archiveName>
         //</tool>
 
-        auto env_7z {default_environment}; // Where is default_environment even initialized?
+        auto env_7z{default_environment}; // Where is default_environment even initialized?
         if (!env_7z.m_env_data.empty())
         {
             env_7z.m_env_data.push_back(L'\0');
@@ -72,9 +73,7 @@ namespace
         env_7z.m_env_data.push_back(L'\0');
 
         const auto code_and_output = cmd_execute_and_capture_output(
-            Command{archive}
-                .string_arg("/S")
-                .raw_arg(Strings::concat("/D=", Command{to_path}.extract())),
+            Command{archive}.string_arg("/S").raw_arg(Strings::concat("/D=", Command{to_path}.extract())),
             default_working_directory,
             env_7z);
 
@@ -86,7 +85,6 @@ namespace
                                       code_and_output.exit_code,
                                       code_and_output.output);
         }
-
     }
 
     void win32_extract_msi(const Path& archive, const Path& to_path)
@@ -175,8 +173,8 @@ namespace
         {
             win32_extract_msi(archive, to_path);
         }
-        else if (Strings::case_insensitive_ascii_equals(ext, ".exe") && Strings::starts_with(filename,"7z"))
-        {   
+        else if (Strings::case_insensitive_ascii_equals(ext, ".exe") && Strings::starts_with(filename, "7z"))
+        {
             win32_extract_7z_installer(archive, to_path);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
