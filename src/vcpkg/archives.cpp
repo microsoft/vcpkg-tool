@@ -51,6 +51,44 @@ namespace
                            code_and_output.output);
     }
 
+    void win32_extract_7z_installer(const Path& archive, const Path& to_path) {
+        // Silently extracts 7z Installer without admin privleges. 
+     
+        //Requires the following in vcpkgTools.xml
+        //<tool name="7zip" os="windows">
+        //<version>21.07</version>
+        //<exeRelativePath>7z.exe</exeRelativePath>
+        //<url>https://7-zip.org/a/7z2107-x64.exe</url>
+        //<sha512>4d406ddd257a28ab1521e0e28c20699a764d7a3d3c3651e9b080cbdb6dae2f7c348452b2946a1e16b00424f67b769fe44c54a9b94e9124fa219bbe2a544ee82b</sha512>
+        //<archiveName>7z2107-x64.exe</archiveName>
+        //</tool>
+
+        auto env_7z {default_environment}; // Where is default_environment even initialized?
+        if (!env_7z.m_env_data.empty())
+        {
+            env_7z.m_env_data.push_back(L'\0');
+        }
+        env_7z.m_env_data.append(L"__COMPAT_LAYER=RUNASINVOKER");
+        env_7z.m_env_data.push_back(L'\0');
+
+        const auto code_and_output = cmd_execute_and_capture_output(
+            Command{archive}
+                .string_arg("/S")
+                .raw_arg(Strings::concat("/D=", Command{to_path}.extract())),
+            default_working_directory,
+            env_7z);
+
+        if (code_and_output.exit_code != 0)
+        {
+            Checks::exit_with_message(VCPKG_LINE_INFO,
+                                      "7z Installer '%s' failed with exit code %lu and message:\n%s",
+                                      archive,
+                                      code_and_output.exit_code,
+                                      code_and_output.output);
+        }
+
+    }
+
     void win32_extract_msi(const Path& archive, const Path& to_path)
     {
         // MSI installation sometimes requires a global lock and fails if another installation is concurrent. Loop
@@ -127,6 +165,7 @@ namespace
     void extract_archive_to_empty(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
         const auto ext = archive.extension();
+        const auto filename = archive.filename();
 #if defined(_WIN32)
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
@@ -135,6 +174,10 @@ namespace
         else if (Strings::case_insensitive_ascii_equals(ext, ".msi"))
         {
             win32_extract_msi(archive, to_path);
+        }
+        else if (Strings::case_insensitive_ascii_equals(ext, ".exe") && Strings::starts_with(filename,"7z"))
+        {   
+            win32_extract_7z_installer(archive, to_path);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
                  Strings::case_insensitive_ascii_equals(ext, ".7z") ||
