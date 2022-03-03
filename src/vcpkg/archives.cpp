@@ -163,8 +163,8 @@ namespace
     void extract_archive_to_empty(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
         const auto ext = archive.extension();
-        const auto filename = archive.filename();
 #if defined(_WIN32)
+        const auto filename = archive.filename();
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
             win32_extract_nupkg(paths, archive, to_path);
