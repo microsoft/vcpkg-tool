@@ -380,11 +380,6 @@ namespace
             }
         }
 
-        // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
-#if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 6001)
-#endif // ^^^ _MSC_VER
         ~FileHandle()
         {
             if (h_file != INVALID_HANDLE_VALUE)
@@ -392,9 +387,6 @@ namespace
                 Checks::check_exit(VCPKG_LINE_INFO, ::CloseHandle(h_file));
             }
         }
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif // ^^^ _MSC_VER
     };
 
     struct RemoveAllErrorInfo

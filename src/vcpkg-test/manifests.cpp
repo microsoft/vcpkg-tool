@@ -11,10 +11,6 @@
 
 #include <vcpkg-test/util.h>
 
-#if defined(_MSC_VER)
-#pragma warning(disable : 6237)
-#endif
-
 using namespace vcpkg;
 using namespace vcpkg::Paragraphs;
 using namespace vcpkg::Test;
