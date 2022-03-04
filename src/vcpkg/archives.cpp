@@ -190,7 +190,7 @@ namespace vcpkg
         fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
         const auto tar_path = get_system32().value_or_exit(VCPKG_LINE_INFO) / "tar.exe";
-        if (paths.get_filesystem().exists(tar_path, IgnoreErrors{}))
+        if (fs.exists(tar_path, IgnoreErrors{}))
         {
             // On Windows 10, tar.exe is in the box.
 

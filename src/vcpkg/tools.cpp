@@ -207,7 +207,7 @@ namespace vcpkg
         if (tool_data.is_archive)
         {
             print2("Extracting ", tool_name, "...\n");
-#ifdef _WIN32
+#if defined(_WIN32)
             if (tool_name == "cmake")
             {
                 // We use cmake as the core extractor on Windows, so we need to perform a special dance when
@@ -215,12 +215,11 @@ namespace vcpkg
                 win32_extract_bootstrap_zip(paths, tool_data.download_path, tool_data.tool_dir_path);
             }
             else
+#endif // ^^^ _WIN32
             {
                 extract_archive(paths, tool_data.download_path, tool_data.tool_dir_path);
             }
-#else
-            extract_archive(paths, tool_data.download_path, tool_data.tool_dir_path);
-#endif
+
         }
         else
         {
