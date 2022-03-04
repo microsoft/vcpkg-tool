@@ -219,7 +219,6 @@ namespace vcpkg
             {
                 extract_archive(paths, tool_data.download_path, tool_data.tool_dir_path);
             }
-
         }
         else
         {
