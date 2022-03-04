@@ -1,12 +1,21 @@
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$False)]
 Param(
-    [Parameter(Mandatory = $true)]
-    [string]$DestinationTarballName,
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$AdditionalFiles,
     [Parameter()]
-    [string]$TempPath
+    [string]$DestinationTarballName,
+    [Parameter()]
+    [string]$DestinationDir,
+    [Parameter(Mandatory)]
+    [string]$TempPath,
+    [Parameter()]
+    [switch]$readonly,
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$AdditionalFiles
 )
+
+if (-not ($DestinationTarballName -or $DestinationDir)) {
+    Write-Error "Either DestinationTarballName or DestinationDir must be set."
+    throw
+}
 
 $AdditionalFilesNames = New-Object string[] $AdditionalFiles.Length
 for ($idx = 0; $idx -ne $AdditionalFiles.Length; $idx++) {
@@ -72,16 +81,23 @@ try {
     }
 
     $bundleConfig = @{
-        'readonly' = $False;
+        'readonly' = $readonly.isPresent;
         'usegitregistry' = $True;
         'embeddedsha' = $sha
     }
+    New-Item -Path "out/.vcpkg-root" -ItemType "File"
 
     Set-Content -Path "out/vcpkg-bundle.json" `
         -Value (ConvertTo-Json -InputObject $bundleConfig) `
         -Encoding Ascii
-
-    tar czf $DestinationTarballName -C out *
+    if ($DestinationDir) {
+        if (-not (Test-Path $DestinationDir)) {
+            mkdir $DestinationDir
+        }
+        Copy-Item -Recurse out/* $DestinationDir
+    } else {
+        tar czf $DestinationTarballName -C out *
+    }
 }
 finally {
     popd

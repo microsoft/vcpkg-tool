@@ -485,24 +485,18 @@ jobs:
       inputs:
         SourceFolder: '$(Build.ArtifactStagingDirectory)/drop'
         TargetFolder: '$(Build.ArtifactStagingDirectory)/vs-insertion/staging'
-        Contents: |
-          vcpkg-standalone-bundle.tar.gz
-          vcpkg.exe
-    - task: PowerShell@2
-      displayName: 'Extract vcpkg standalone bundle'
+        Contents: 'vcpkg.exe'
+    - task: Powershell@2
+      displayName: 'Mint readonly standalone bundle'
       inputs:
-        targetType: 'inline'
-        script: |
-          tar.exe -C $(Build.ArtifactStagingDirectory)/vs-insertion/staging/ -xf $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg-standalone-bundle.tar.gz
-          rm $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg-standalone-bundle.tar.gz
         pwsh: true
+        filePath: vcpkg-init/mint-standalone-bundle.ps1
+        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging/" -readonly -TempPath standalone-temp'
     - task: NuGetCommand@2
       displayName: 'NuGet pack for VS Insertion'
       inputs:
-        command: pack
-        packagesToPack: '$(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec'
-        packDestination: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop'
-        buildProperties: 'version=$(VCPKG_BASE_VERSION)'
+        command: custom
+        arguments: 'pack $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec -NoDefaultExcludes -OutputDirectory "$(Build.ArtifactStagingDirectory)/vs-insertion/drop" -Properties version=$(VCPKG_BASE_VERSION)'
     - task: NuGetCommand@2
       displayName: 'NuGet publish for VS Insertion'
       inputs:
