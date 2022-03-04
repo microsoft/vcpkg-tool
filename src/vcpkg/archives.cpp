@@ -128,9 +128,6 @@ namespace
     {
         const auto ext = archive.extension();
 #if defined(_WIN32)
-        const Path filename = archive.filename();
-        const Path stem = filename.stem();
-        const Path subext = stem.extension();
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
             win32_extract_nupkg(paths, archive, to_path);
@@ -151,20 +148,17 @@ namespace
                 win32_extract_with_seven_zip(paths, archive, to_path);
             }
         }
-        else if (Strings::case_insensitive_ascii_equals(ext, ".exe") &&
-                 Strings::case_insensitive_ascii_equals(subext, ".7z"))
-        {
-            const Path to_archive = Path(archive.parent_path()) / stem;
-            extract_self_extracting_7z(paths, archive, to_archive);
-            extract_archive_to_empty(paths, to_archive, to_path);
-        }
         else if (Strings::case_insensitive_ascii_equals(ext, ".7z"))
         {
             extract_tar_cmake(paths.get_tool_exe(Tools::CMAKE), archive, to_path);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
-            win32_extract_with_seven_zip(paths, archive, to_path);
+            const Path filename = archive.filename();
+            const Path stem = filename.stem();
+            const Path to_archive = Path(archive.parent_path()) / stem;
+            extract_self_extracting_7z(paths, archive, to_archive);
+            extract_archive_to_empty(paths, to_archive, to_path);
         }
 #else
         if (ext == ".zip")
