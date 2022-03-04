@@ -46,10 +46,10 @@ namespace vcpkg::Commands::Upgrade
 
     static KeepGoing determine_keep_going(bool keep_going_set, bool no_keep_going_set)
     {
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           !(keep_going_set && no_keep_going_set),
-                           msg::msgBothYesAndNoOptionSpecifiedError,
-                           msg::option = OPTION_KEEP_GOING);
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               !(keep_going_set && no_keep_going_set),
+                               msg::msgBothYesAndNoOptionSpecifiedError,
+                               msg::option = OPTION_KEEP_GOING);
         if (keep_going_set)
         {
             return KeepGoing::YES;

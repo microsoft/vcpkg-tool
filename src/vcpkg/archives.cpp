@@ -11,6 +11,12 @@ namespace
 {
     using namespace vcpkg;
 
+    DECLARE_AND_REGISTER_MESSAGE(
+        MsiexecFailedToExtract,
+        (msg::path, msg::exit_code),
+        "",
+        "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
+
 #if defined(_WIN32)
     void win32_extract_nupkg(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
@@ -94,13 +100,11 @@ namespace
                     continue;
                 }
             }
-
-            Checks::exit_with_message(
+            Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
-                "msiexec failed while extracting '%s' with launch or exit code %lu with message:\n%s",
-                archive,
-                code_and_output.exit_code,
-                code_and_output.output);
+                msg::format(msgMsiexecFailedToExtract, msg::path = archive, msg::exit_code = code_and_output.exit_code)
+                    .appendnl()
+                    .append_raw(code_and_output.output));
         }
     }
 

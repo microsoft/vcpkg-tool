@@ -73,21 +73,21 @@ namespace
         {
             if (DateVersion::try_parse(version.version.text()))
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          msgSuggestNewVersionScheme,
-                                          msg::new_scheme = VERSION_DATE,
-                                          msg::old_scheme = VERSION_STRING,
-                                          msg::package_name = port_name,
-                                          msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgSuggestNewVersionScheme,
+                                              msg::new_scheme = VERSION_DATE,
+                                              msg::old_scheme = VERSION_STRING,
+                                              msg::package_name = port_name,
+                                              msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
             }
             if (DotVersion::try_parse_relaxed(version.version.text()))
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          msgSuggestNewVersionScheme,
-                                          msg::new_scheme = VERSION_RELAXED,
-                                          msg::old_scheme = VERSION_STRING,
-                                          msg::package_name = port_name,
-                                          msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgSuggestNewVersionScheme,
+                                              msg::new_scheme = VERSION_RELAXED,
+                                              msg::old_scheme = VERSION_STRING,
+                                              msg::package_name = port_name,
+                                              msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
             }
         }
     }
