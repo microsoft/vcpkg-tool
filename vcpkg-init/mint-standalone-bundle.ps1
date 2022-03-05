@@ -1,19 +1,19 @@
-[CmdletBinding(PositionalBinding=$False)]
+[CmdletBinding(PositionalBinding = $False)]
 Param(
     [Parameter()]
-    [string]$DestinationTarballName,
+    [string]$DestinationTarball,
     [Parameter()]
     [string]$DestinationDir,
-    [Parameter(Mandatory)]
-    [string]$TempPath,
+    [Parameter(Mandatory = $True)]
+    [string]$TempDir,
     [Parameter()]
-    [switch]$readonly,
+    [switch]$ReadOnly,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$AdditionalFiles
 )
 
-if (-not ($DestinationTarballName -or $DestinationDir)) {
-    Write-Error "Either DestinationTarballName or DestinationDir must be set."
+if (-not ($DestinationTarball -or $DestinationDir)) {
+    Write-Error "Either DestinationTarball or DestinationDir must be set."
     throw
 }
 
@@ -52,12 +52,12 @@ $scripts_dependencies = @(
     'vcpkgTools.xml'
 )
 
-if (Test-Path $TempPath) {
-    rm -Recurse $TempPath
+if (Test-Path $TempDir) {
+    rm -Recurse $TempDir
 }
 
-mkdir $TempPath
-pushd $TempPath
+mkdir $TempDir
+pushd $TempDir
 try {
     $target = "https://github.com/microsoft/vcpkg/archive/$sha.zip"
     Write-Host $target
@@ -81,26 +81,30 @@ try {
     }
 
     $bundleConfig = @{
-        'readonly' = $readonly.isPresent;
+        'readonly'       = [bool]$ReadOnly;
         'usegitregistry' = $True;
-        'embeddedsha' = $sha
+        'embeddedsha'    = $sha
     }
     New-Item -Path "out/.vcpkg-root" -ItemType "File"
 
     Set-Content -Path "out/vcpkg-bundle.json" `
         -Value (ConvertTo-Json -InputObject $bundleConfig) `
         -Encoding Ascii
+
+    if ($DestinationTarball) {
+        tar czf $DestinationTarball -C out *
+    }
+
     if ($DestinationDir) {
-        if (-not (Test-Path $DestinationDir)) {
-            mkdir $DestinationDir
+        if (Test-Path $DestinationDir) {
+            rm -Recurse $DestinationDir
         }
-        Copy-Item -Recurse out/* $DestinationDir
-    } else {
-        tar czf $DestinationTarballName -C out *
+
+        mv out $DestinationDir
     }
 }
 finally {
     popd
 }
 
-rm -Recurse $TempPath
+rm -Recurse $TempDir
