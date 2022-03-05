@@ -1,8 +1,6 @@
 {
   "AddArtifactOnlyOne": "'{command_line}' can only add one artifact at a time.",
   "_AddArtifactOnlyOne.comment": "example of {command_line} is 'vcpkg install zlib'.\n",
-  "AddFailedToWriteManifest": "Failed to write manifest file {path}: {error}",
-  "_AddFailedToWriteManifest.comment": "example of {error} is 'no such file or directory'\nexample of {path} is '/foo/bar'.\n",
   "AddFirstArgument": "The first argument to '{command_line}' must be 'artifact' or 'port'.\n",
   "_AddFirstArgument.comment": "example of {command_line} is 'vcpkg install zlib'.\n",
   "AddPortRequiresManifest": "'{command_line}' requires an active manifest file.",
