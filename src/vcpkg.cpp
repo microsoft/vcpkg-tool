@@ -261,7 +261,7 @@ int main(const int argc, const char* const* const argv)
     !defined(_WIN32) && !defined(__APPLE__)
     if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
     {
-        Checks::exit_with_message(VCPKG_LINE_INFO, msgForceSystemBinariesOnWeirdPlatforms);
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgForceSystemBinariesOnWeirdPlatforms);
     }
 #endif
 

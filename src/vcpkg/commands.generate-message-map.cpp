@@ -39,13 +39,18 @@ namespace vcpkg::Commands
 {
     static constexpr StringLiteral OPTION_ALLOW_BAD_COMMENTS = "allow-incorrect-comments";
     static constexpr StringLiteral OPTION_NO_ALLOW_BAD_COMMENTS = "no-allow-incorrect-comments";
+    static constexpr StringLiteral OPTION_OUTPUT_COMMENTS = "output-comments";
+    static constexpr StringLiteral OPTION_NO_OUTPUT_COMMENTS = "no-output-comments";
 
     static constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
         {OPTION_ALLOW_BAD_COMMENTS, "Do not require message comments be correct (the default)."},
         {OPTION_NO_ALLOW_BAD_COMMENTS, "Require message comments to be correct; error if they are not."},
+        {OPTION_OUTPUT_COMMENTS, "When generating the message map, include comments (the default)"},
+        {OPTION_NO_OUTPUT_COMMENTS,
+         "When generating the message map, exclude comments (useful for generating the english localization file)"},
     };
 
-    const static CommandStructure COMMAND_STRUCTURE = {
+    const CommandStructure COMMAND_STRUCTURE = {
         create_example_string(R"###(x-generate-default-message-map locales/messages.json)###"),
         1,
         1,
@@ -53,7 +58,7 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    std::vector<StringView> get_all_format_args(StringView fstring, msg::LocalizedString& error)
+    std::vector<StringView> get_all_format_args(StringView fstring, LocalizedString& error)
     {
         error = {};
         std::vector<StringView> res;
@@ -112,7 +117,7 @@ namespace vcpkg::Commands
         return res;
     }
 
-    FormatArgMismatches get_format_arg_mismatches(StringView value, StringView comment, msg::LocalizedString& error)
+    FormatArgMismatches get_format_arg_mismatches(StringView value, StringView comment, LocalizedString& error)
     {
         FormatArgMismatches res;
 
@@ -167,7 +172,7 @@ namespace vcpkg::Commands
 
         bool allow_bad_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_ALLOW_BAD_COMMENTS);
 
-        msg::LocalizedString comments_msg_type;
+        LocalizedString comments_msg_type;
         Color comments_msg_color;
         if (allow_bad_comments)
         {
@@ -178,11 +183,19 @@ namespace vcpkg::Commands
         {
             if (Util::Sets::contains(parsed_args.switches, OPTION_ALLOW_BAD_COMMENTS))
             {
-                Checks::exit_with_message(
+                Checks::msg_exit_with_message(
                     VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_ALLOW_BAD_COMMENTS);
             }
             comments_msg_type = msg::format(msg::msgErrorMessage);
             comments_msg_color = Color::error;
+        }
+
+        const bool output_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);
+
+        if (!output_comments && Util::Sets::contains(parsed_args.switches, OPTION_OUTPUT_COMMENTS))
+        {
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_OUTPUT_COMMENTS);
         }
 
         // in order to implement sorting, we create a vector of messages before converting into a JSON object
@@ -209,7 +222,7 @@ namespace vcpkg::Commands
         std::sort(messages.begin(), messages.end(), MessageSorter{});
 
         bool has_incorrect_comment = false;
-        msg::LocalizedString format_string_parsing_error;
+        LocalizedString format_string_parsing_error;
         Json::Object obj;
         for (Message& msg : messages)
         {
@@ -217,7 +230,7 @@ namespace vcpkg::Commands
             if (!format_string_parsing_error.data().empty())
             {
                 msg::println(msgGenerateMsgErrorParsingFormatArgs, msg::value = msg.name);
-                Checks::exit_with_message(VCPKG_LINE_INFO, format_string_parsing_error);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, format_string_parsing_error);
             }
 
             if (!mismatches.arguments_without_comment.empty() || !mismatches.comments_without_argument.empty())
@@ -237,7 +250,7 @@ namespace vcpkg::Commands
             }
 
             obj.insert(msg.name, Json::Value::string(std::move(msg.value)));
-            if (!msg.comment.empty())
+            if (output_comments && !msg.comment.empty())
             {
                 obj.insert(fmt::format("_{}.comment", msg.name), Json::Value::string(std::move(msg.comment)));
             }

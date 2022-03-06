@@ -30,8 +30,26 @@ namespace
                                  "",
                                  "Error: triplet expressions are not allowed here. You may want to change "
                                  "`{package_name}:{triplet}` to `{package_name}` instead.");
+    DECLARE_AND_REGISTER_MESSAGE(AddFailedToWriteManifest,
+                                 (msg::path, msg::error),
+                                 "example of {error} is 'no such file or directory'",
+                                 "Failed to write manifest file {path}: {error}");
+    DECLARE_AND_REGISTER_MESSAGE(AddFirstArgument,
+                                 (msg::command_line),
+                                 "",
+                                 "The first argument to '{command_line}' must be 'artifact' or 'port'.\n");
 
     DECLARE_AND_REGISTER_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
+    DECLARE_AND_REGISTER_MESSAGE(AddPortRequiresManifest,
+                                 (msg::command_line),
+                                 "",
+                                 "'{command_line}' requires an active manifest file.");
+
+    DECLARE_AND_REGISTER_MESSAGE(AddArtifactOnlyOne,
+                                 (msg::command_line),
+                                 "",
+                                 "'{command_line}' can only add one artifact at a time.");
+
 }
 
 namespace vcpkg::Commands
@@ -42,8 +60,10 @@ namespace vcpkg::Commands
         auto&& selector = args.command_arguments[0];
         if (selector == "artifact")
         {
-            Checks::check_exit(
-                VCPKG_LINE_INFO, args.command_arguments.size() > 2, "You can only add one artifact at the time.\n");
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   args.command_arguments.size() > 2,
+                                   msgAddArtifactOnlyOne,
+                                   msg::command_line = "vcpkg add artifact");
             std::string ce_args[] = {"add", args.command_arguments[1]};
             Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
         }
@@ -53,7 +73,8 @@ namespace vcpkg::Commands
             auto manifest = paths.get_manifest().get();
             if (!manifest)
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "add port requires an active manifest file.\n");
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO, msgAddPortRequiresManifest, msg::command_line = "vcpkg add port");
             }
             const std::vector<ParsedQualifiedSpecifier> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
                 ExpectedS<ParsedQualifiedSpecifier> value = parse_qualified_specifier(std::string(arg));
@@ -114,13 +135,14 @@ namespace vcpkg::Commands
                 manifest_path, Json::stringify(serialize_manifest(manifest_scf), {}), ec);
             if (ec)
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "Failed to write manifest file %s: %s\n", manifest_path, ec.message());
+                msg::print(Color::error, msg::msgErrorMessage);
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO, msgAddFailedToWriteManifest, msg::path = manifest_path, msg::error = ec.message());
             }
             msg::println(msgAddPortSucceded);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        Checks::exit_with_message(VCPKG_LINE_INFO, "The first parmaeter to add must be 'artifact' or 'port'.\n");
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgAddFirstArgument, msg::command_line = "vcpkg add");
     }
 }

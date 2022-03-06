@@ -53,7 +53,7 @@ namespace vcpkg
             cmd_provision.string_arg("--scripts-prepend-node-path=true");
             cmd_provision.string_arg("--silent");
             cmd_provision.path_arg(ce_tarball);
-            const auto provision_status = cmd_execute(cmd_provision, InWorkingDirectory{paths.root}, env);
+            const auto provision_status = cmd_execute(cmd_provision, WorkingDirectory{paths.root}, env);
             fs.remove(ce_tarball, VCPKG_LINE_INFO);
             if (provision_status != 0)
             {
@@ -67,7 +67,7 @@ namespace vcpkg
         cmd_run.path_arg(ce_path);
         cmd_run.forwarded_args(args);
         cmd_run.string_arg("--from-vcpkg");
-        return cmd_execute(cmd_run, InWorkingDirectory{paths.original_cwd});
+        return cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd});
     }
 
     int run_configure_environment_command(const VcpkgPaths& paths, StringView arg0, View<std::string> args)

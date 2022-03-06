@@ -99,7 +99,7 @@ namespace vcpkg
         const auto processor_architecture = raw_processor_architecture.get();
         if (!processor_architecture)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, msgProcessorArchitectureMissing);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgProcessorArchitectureMissing);
         }
 
         const auto raw_parsed_processor_architecture = to_cpu_architecture(*processor_architecture);
@@ -108,7 +108,7 @@ namespace vcpkg
             return *parsed_processor_architecture;
         }
 
-        Checks::exit_with_message(
+        Checks::msg_exit_with_message(
             VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::arch = *processor_architecture);
 #else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
 #if defined(__x86_64__) || defined(_M_X64)
@@ -272,6 +272,28 @@ namespace vcpkg
             return {std::move(p), ExpectedLeftTag{}};
         }();
         return s_home;
+    }
+
+    const ExpectedS<Path>& get_system_root() noexcept
+    {
+        static const ExpectedS<Path> s_system_root = []() -> ExpectedS<Path> {
+            auto env = get_environment_variable("SystemRoot");
+            if (const auto p = env.get())
+            {
+                return Path(std::move(*p));
+            }
+            else
+            {
+                return std::string("Expected the SystemRoot environment variable to be always set on Windows.");
+            }
+        }();
+        return s_system_root;
+    }
+
+    const ExpectedS<Path>& get_system32() noexcept
+    {
+        static const ExpectedS<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "System32"; });
+        return s_system32;
     }
 #else
     static const ExpectedS<Path>& get_xdg_cache_home() noexcept

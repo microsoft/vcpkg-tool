@@ -1091,7 +1091,7 @@ namespace vcpkg
                 destination_tar);
 
         const auto extract_output =
-            cmd_execute_and_capture_output(extract_cmd_builder, InWorkingDirectory{destination_tmp});
+            cmd_execute_and_capture_output(extract_cmd_builder, WorkingDirectory{destination_tmp});
         if (extract_output.exit_code != 0)
         {
             return {Strings::concat(PRELUDE, "Error: Failed to extract port directory\n", extract_output.output),
@@ -1264,7 +1264,7 @@ namespace vcpkg
         auto untar = Command{get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").path_arg(
             git_tree_temp_tar);
 
-        auto untar_output = cmd_execute_and_capture_output(untar, InWorkingDirectory{git_tree_temp});
+        auto untar_output = cmd_execute_and_capture_output(untar, WorkingDirectory{git_tree_temp});
         // Attempt to remove temporary files, though non-critical.
         fs.remove(git_tree_temp_tar, IgnoreErrors{});
         if (untar_output.exit_code != 0)

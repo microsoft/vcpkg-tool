@@ -3,6 +3,8 @@
 
 namespace vcpkg::Unicode
 {
+    REGISTER_MESSAGE(Utf8DecoderDereferencedAtEof);
+
     Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept
     {
         if (code_unit < 0b1000'0000)

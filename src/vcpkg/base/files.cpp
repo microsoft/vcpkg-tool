@@ -380,11 +380,10 @@ namespace
             }
         }
 
+        // bug in MSVC considers h_file uninitialized:
         // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
-#if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 6001)
-#endif // ^^^ _MSC_VER
+        VCPKG_MSVC_WARNING(push)
+        VCPKG_MSVC_WARNING(disable : 6001)
         ~FileHandle()
         {
             if (h_file != INVALID_HANDLE_VALUE)
@@ -392,9 +391,7 @@ namespace
                 Checks::check_exit(VCPKG_LINE_INFO, ::CloseHandle(h_file));
             }
         }
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif // ^^^ _MSC_VER
+        VCPKG_MSVC_WARNING(pop)
     };
 
     struct RemoveAllErrorInfo
@@ -1893,6 +1890,12 @@ namespace vcpkg
                 }
             } while (!file.eof());
 
+            if (Strings::starts_with(output, "\xEF\xBB\xBF"))
+            {
+                // remove byte-order mark from the beginning of the string
+                output.erase(output.begin(), output.begin() + 3);
+            }
+
             return output;
         }
         virtual std::vector<std::string> read_lines(const Path& file_path, std::error_code& ec) const override
@@ -1921,7 +1924,13 @@ namespace vcpkg
                 }
             } while (!file.eof());
 
-            return output.extract();
+            auto res = output.extract();
+            if (res.size() > 0 && Strings::starts_with(res[0], "\xEF\xBB\xBF"))
+            {
+                // remove byte-order mark from the beginning of the string
+            }
+
+            return res;
         }
 
         virtual Path find_file_recursively_up(const Path& starting_dir,
