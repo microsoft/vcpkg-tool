@@ -792,10 +792,11 @@ namespace vcpkg::Commands::CI
                         case Build::BuildResult::FILE_CONFLICTS:
                             if (expected_failures.find(port_result.spec) == expected_failures.end())
                             {
-                                std::cerr << "    REGRESSION: " << port_result.spec.to_string() << " failed with "
-                                          << Build::to_string(port_result.build_result.code) << ". If expected, add "
-                                          << port_result.spec.to_string() << "=fail to " << baseline_iter->second
-                                          << std::endl;
+                                std::cerr
+                                    << "    REGRESSION: " << port_result.spec.to_string() << " failed with "
+                                    << Build::to_string_locale_invariant(port_result.build_result.code).to_string()
+                                    << ". If expected, add " << port_result.spec.to_string() << "=fail to "
+                                    << baseline_iter->second << std::endl;
                             }
                             break;
                         case Build::BuildResult::SUCCEEDED:
