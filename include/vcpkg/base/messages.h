@@ -10,6 +10,109 @@
 
 #include <string>
 
+namespace vcpkg
+{
+    namespace msg::detail
+    {
+        template<class Tag, class Type>
+        struct MessageArgument;
+    }
+    namespace msg
+    {
+        template<class Message, class... Tags, class... Ts>
+        LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args);
+    }
+
+    struct LocalizedString
+    {
+        LocalizedString() = default;
+        operator StringView() const { return m_data; }
+        const std::string& data() const { return m_data; }
+        std::string extract_data() { return std::exchange(m_data, ""); }
+
+        static LocalizedString from_raw(std::string&& s)
+        {
+            LocalizedString res;
+            res.m_data = std::move(s);
+            return res;
+        }
+
+        LocalizedString& append_raw(StringView s)
+        {
+            m_data.append(s.begin(), s.end());
+            return *this;
+        }
+        LocalizedString& append(const LocalizedString& s)
+        {
+            m_data.append(s.m_data);
+            return *this;
+        }
+        template<class Message, class... Args>
+        LocalizedString& append(Message m, const Args&... args)
+        {
+            return append(msg::format(m, args...));
+        }
+
+        LocalizedString& appendnl()
+        {
+            m_data.push_back('\n');
+            return *this;
+        }
+        LocalizedString& append_indent()
+        {
+            static const char indent[] = "    ";
+            m_data.append(indent, indent + sizeof(indent) - 1);
+            return *this;
+        }
+
+        friend const char* to_printf_arg(const LocalizedString& s) { return s.data().c_str(); }
+
+        friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() == rhs.data();
+        }
+
+        friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() != rhs.data();
+        }
+
+        friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() < rhs.data();
+        }
+
+        friend bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() <= rhs.data();
+        }
+
+        friend bool operator>(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() > rhs.data();
+        }
+
+        friend bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs)
+        {
+            return lhs.data() >= rhs.data();
+        }
+
+    private:
+        std::string m_data;
+    };
+}
+
+template<>
+struct fmt::formatter<vcpkg::LocalizedString> : fmt::formatter<vcpkg::StringView>
+{
+    // parse is inherited from formatter<StringView>
+    template<class FormatContext>
+    auto format(const vcpkg::LocalizedString& s, FormatContext& ctx)
+    {
+        return formatter<vcpkg::StringView>::format(s.data(), ctx);
+    }
+};
+
 namespace vcpkg::msg
 {
     namespace detail
@@ -61,55 +164,6 @@ namespace vcpkg::msg
     // initialize without any localized messages (use default messages only)
     void threadunsafe_initialize_context();
 
-    struct LocalizedString
-    {
-        LocalizedString() = default;
-        operator StringView() const { return m_data; }
-        const std::string& data() const { return m_data; }
-        std::string extract_data() { return std::exchange(m_data, ""); }
-
-        static LocalizedString from_string_unchecked(std::string&& s)
-        {
-            LocalizedString res;
-            res.m_data = std::move(s);
-            return res;
-        }
-
-        LocalizedString& append(const LocalizedString& s)
-        {
-            m_data.append(s.m_data);
-            return *this;
-        }
-        LocalizedString& appendnl()
-        {
-            m_data.push_back('\n');
-            return *this;
-        }
-
-    private:
-        std::string m_data;
-
-        // to avoid lock-in on LocalizedString, these are free functions
-        // this allows us to convert to `std::string` in the future without changing All The Code
-        friend LocalizedString& append_newline(LocalizedString&);
-        friend LocalizedString&& append_newline(LocalizedString&& self) { return std::move(append_newline(self)); }
-        friend LocalizedString& appendnl(LocalizedString& self, const LocalizedString& to_append)
-        {
-            return append_newline(self.append(to_append));
-        }
-    };
-
-    inline const char* to_printf_arg(const msg::LocalizedString& s) { return s.data().c_str(); }
-
-    struct LocalizedStringMapLess
-    {
-        using is_transparent = void;
-        bool operator()(const LocalizedString& lhs, const LocalizedString& rhs) const
-        {
-            return lhs.data() < rhs.data();
-        }
-    };
-
     template<class Message, class... Tags, class... Ts>
     LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
     {
@@ -120,19 +174,19 @@ namespace vcpkg::msg
                                         fmt::make_format_args(fmt::arg(Tags::name(), *args.parameter)...));
     }
 
-    inline void println() { write_unlocalized_text_to_stdout(Color::none, "\n"); }
+    inline void println() { msg::write_unlocalized_text_to_stdout(Color::none, "\n"); }
 
-    inline void print(Color c, const LocalizedString& s) { write_unlocalized_text_to_stdout(c, s); }
-    inline void print(const LocalizedString& s) { write_unlocalized_text_to_stdout(Color::none, s); }
+    inline void print(Color c, const LocalizedString& s) { msg::write_unlocalized_text_to_stdout(c, s); }
+    inline void print(const LocalizedString& s) { msg::write_unlocalized_text_to_stdout(Color::none, s); }
     inline void println(Color c, const LocalizedString& s)
     {
-        write_unlocalized_text_to_stdout(c, s);
-        write_unlocalized_text_to_stdout(Color::none, "\n");
+        msg::write_unlocalized_text_to_stdout(c, s);
+        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
     inline void println(const LocalizedString& s)
     {
-        write_unlocalized_text_to_stdout(Color::none, s);
-        write_unlocalized_text_to_stdout(Color::none, "\n");
+        msg::write_unlocalized_text_to_stdout(Color::none, s);
+        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
 
     template<class Message, class... Ts>
@@ -143,7 +197,7 @@ namespace vcpkg::msg
     template<class Message, class... Ts>
     void println(Message m, Ts... args)
     {
-        print(append_newline(format(m, args...)));
+        print(format(m, args...).appendnl());
     }
 
     template<class Message, class... Ts>
@@ -154,7 +208,7 @@ namespace vcpkg::msg
     template<class Message, class... Ts>
     void println(Color c, Message m, Ts... args)
     {
-        print(c, append_newline(format(m, args...)));
+        print(c, format(m, args...).appendnl());
     }
 
 // these use `constexpr static` instead of `inline` in order to work with GCC 6;
@@ -181,26 +235,31 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(actual, "");
     DECLARE_MSG_ARG(list, "");
 
+    DECLARE_MSG_ARG(actual_version, "1.3.8");
+    DECLARE_MSG_ARG(arch, "x64");
+    DECLARE_MSG_ARG(build_result, "One of the BuildResultXxx messages (such as BuildResultSucceeded/SUCCEEDED)");
+    DECLARE_MSG_ARG(column, "42");
+    DECLARE_MSG_ARG(command_line, "vcpkg install zlib");
+    DECLARE_MSG_ARG(command_name, "install");
+    DECLARE_MSG_ARG(count, "42");
+    DECLARE_MSG_ARG(elapsed, "3.532 min");
     DECLARE_MSG_ARG(email, "vcpkg@microsoft.com");
+    DECLARE_MSG_ARG(exit_code, "127");
+    DECLARE_MSG_ARG(expected_version, "1.3.8");
+    DECLARE_MSG_ARG(new_scheme, "version");
+    DECLARE_MSG_ARG(old_scheme, "version-string");
+    DECLARE_MSG_ARG(option, "editable");
+    DECLARE_MSG_ARG(package_name, "zlib");
     DECLARE_MSG_ARG(path, "/foo/bar");
     DECLARE_MSG_ARG(paths, "/foo/bar, /foo/bar2");
     DECLARE_MSG_ARG(absolute_paths, "/foo/bar, /foo/bar2");
+    DECLARE_MSG_ARG(row, "42");
+    DECLARE_MSG_ARG(spec, "zlib:x64-windows");
+    DECLARE_MSG_ARG(system_name, "Darwin");
     DECLARE_MSG_ARG(triplet, "x64-windows");
     DECLARE_MSG_ARG(url, "https://github.com/microsoft/vcpkg");
-    DECLARE_MSG_ARG(elapsed, "3.532 min");
     DECLARE_MSG_ARG(version, "1.3.8");
-    DECLARE_MSG_ARG(package_name, "zlib");
-    DECLARE_MSG_ARG(command_name, "install");
-    DECLARE_MSG_ARG(command_line, "vcpkg install zlib");
-    DECLARE_MSG_ARG(exit_code, "127");
-    DECLARE_MSG_ARG(count, "42");
-    DECLARE_MSG_ARG(row, "42");
-    DECLARE_MSG_ARG(column, "42");
-    DECLARE_MSG_ARG(arch, "x64");
-    DECLARE_MSG_ARG(system_name, "Darwin");
-    DECLARE_MSG_ARG(option, "editable");
-    DECLARE_MSG_ARG(expected_version, "1.3.8");
-    DECLARE_MSG_ARG(actual_version, "1.3.8");
+    DECLARE_MSG_ARG(vcpkg_line_info, "/a/b/foo.cpp(13)");
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of
@@ -226,25 +285,19 @@ namespace vcpkg::msg
     REGISTER_MESSAGE(NAME)
 
     DECLARE_MESSAGE(SeeURL, (msg::url), "", "See {url} for more information.");
+    DECLARE_MESSAGE(NoteMessage, (), "", "note: ");
     DECLARE_MESSAGE(WarningMessage, (), "", "warning: ");
     DECLARE_MESSAGE(ErrorMessage, (), "", "error: ");
+    DECLARE_MESSAGE(InternalErrorMessage, (), "", "internal error: ");
+    DECLARE_MESSAGE(
+        InternalErrorMessageContact,
+        (),
+        "",
+        "Please open an issue at "
+        "https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug "
+        "with detailed steps to reproduce the problem.");
     DECLARE_MESSAGE(BothYesAndNoOptionSpecifiedError,
                     (msg::option),
                     "",
                     "error: cannot specify both --no-{option} and --{option}.");
-}
-
-namespace fmt
-{
-    template<>
-    struct formatter<vcpkg::msg::LocalizedString> : formatter<vcpkg::StringView>
-    {
-        // parse is inherited from formatter<StringView>
-        template<class FormatContext>
-        auto format(const vcpkg::msg::LocalizedString& s, FormatContext& ctx)
-        {
-            return formatter<vcpkg::StringView>::format(s.data(), ctx);
-        }
-    };
-
 }

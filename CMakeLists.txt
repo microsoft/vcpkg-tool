@@ -229,6 +229,16 @@ if(VCPKG_PDB_SUFFIX)
     set_property(TARGET vcpkg PROPERTY PDB_NAME "vcpkg${VCPKG_PDB_SUFFIX}")
 endif()
 
+# === Target: generate-message-map ===
+
+add_custom_target(generate-message-map
+   COMMAND vcpkg x-generate-default-message-map --no-allow-incorrect-comments locales/messages.json
+   COMMAND vcpkg x-generate-default-message-map --no-output-comments locales/messages.en.json
+   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+   COMMENT "Update locales/messages.json"
+   VERBATIM
+)
+
 # === Target: vcpkg-test ===
 
 if (BUILD_TESTING)

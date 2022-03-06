@@ -24,6 +24,16 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+namespace
+{
+    using namespace vcpkg;
+    DECLARE_AND_REGISTER_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_AND_REGISTER_MESSAGE(ResultsLine,
+                                 (msg::spec, msg::build_result, msg::elapsed),
+                                 "A single instalation result.",
+                                 "    {spec}: {build_result}: {elapsed}");
+}
+
 namespace vcpkg::Install
 {
     using namespace vcpkg;
@@ -405,28 +415,27 @@ namespace vcpkg::Install
 
     void InstallSummary::print() const
     {
-        print2("RESULTS\n");
+        msg::println(msgResultsHeader);
 
         for (const SpecSummary& result : this->results)
         {
-            vcpkg::printf("    %s: %s: %s\n", result.spec, Build::to_string(result.build_result.code), result.timing);
+            msg::println(msgResultsLine,
+                         msg::spec = result.spec,
+                         msg::build_result = Build::to_string(result.build_result.code),
+                         msg::elapsed = result.timing);
         }
 
-        std::map<BuildResult, int> summary;
-        for (const BuildResult& v : Build::BUILD_RESULT_VALUES)
-        {
-            summary[v] = 0;
-        }
-
+        std::map<Triplet, Build::BuildResultCounts> summary;
         for (const SpecSummary& r : this->results)
         {
-            summary[r.build_result.code]++;
+            summary[r.spec.triplet()].increment(r.build_result.code);
         }
 
-        print2("\nSUMMARY\n");
-        for (const std::pair<const BuildResult, int>& entry : summary)
+        msg::println();
+
+        for (auto&& entry : summary)
         {
-            vcpkg::printf("    %s: %d\n", Build::to_string(entry.first), entry.second);
+            entry.second.println(entry.first);
         }
     }
 
@@ -1215,13 +1224,13 @@ namespace vcpkg::Install
             case BuildResult::BUILD_FAILED:
             case BuildResult::CACHE_MISSING:
                 result_string = "Fail";
-                message_block =
-                    Strings::format("<failure><message><![CDATA[%s]]></message></failure>", to_string(code));
+                message_block = Strings::format("<failure><message><![CDATA[%s]]></message></failure>",
+                                                to_string_locale_invariant(code));
                 break;
             case BuildResult::EXCLUDED:
             case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
                 result_string = "Skip";
-                message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string(code));
+                message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string_locale_invariant(code));
                 break;
             case BuildResult::SUCCEEDED: result_string = "Pass"; break;
             default: Checks::unreachable(VCPKG_LINE_INFO);

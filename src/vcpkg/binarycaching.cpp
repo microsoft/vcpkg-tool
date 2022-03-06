@@ -1211,7 +1211,8 @@ namespace
                     idxs.push_back(idx);
                 }
 
-                const auto job_results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+                const auto job_results =
+                    cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
 
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
