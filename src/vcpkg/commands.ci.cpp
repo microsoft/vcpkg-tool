@@ -165,7 +165,8 @@ namespace vcpkg::Commands::CI
     static constexpr std::array<CommandSwitch, 3> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
         {OPTION_RANDOMIZE, "Randomize the install order"},
-        {OPTION_ALLOW_UNEXPECTED_PASSING, "Indicates that 'Passing, remove from fail list' results should not be emitted."},
+        {OPTION_ALLOW_UNEXPECTED_PASSING,
+         "Indicates that 'Passing, remove from fail list' results should not be emitted."},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
