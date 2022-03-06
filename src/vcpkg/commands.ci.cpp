@@ -78,39 +78,51 @@ namespace
         Path base_path;
     };
 
-    enum class CiBaselineValue
+    enum class CiBaselineState
     {
         Skip,
-        Fail
+        Fail,
     };
 
-    template<typename F>
-    void parse_ci_baseline(View<std::string> lines, F&& callback)
+    struct CiBaselineLine
     {
-        for (auto&& line : lines)
+        std::string port_name;
+        std::string triplet_name;
+        CiBaselineState state;
+    };
+
+    std::vector<CiBaselineLine> parse_ci_baseline(View<std::string> lines)
+    {
+        std::vector<CiBaselineLine> result;
+        for (auto& line : lines)
         {
             if (line.empty() || line[0] == '#') continue;
-            auto colon_sign = line.find(':');
-            Checks::check_exit(VCPKG_LINE_INFO, colon_sign != std::string::npos, "Line '%s' must contain a ':'", line);
-            auto equal_sign = line.find('=', colon_sign + 1);
-            Checks::check_exit(VCPKG_LINE_INFO, equal_sign != std::string::npos, "Line '%s' must contain a '='", line);
-            auto port = Strings::trim(StringView(line.c_str(), colon_sign));
-            auto triplet = Strings::trim(StringView(line.c_str() + colon_sign + 1, equal_sign - colon_sign - 1));
-            auto baseline_value =
-                Strings::trim(StringView(line.c_str() + equal_sign + 1, line.size() - equal_sign - 1));
+            CiBaselineLine parsed_line;
+
+            auto colon_loc = line.find(':');
+            Checks::check_exit(VCPKG_LINE_INFO, colon_loc != std::string::npos, "Line '%s' must contain a ':'", line);
+            parsed_line.port_name = Strings::trim(StringView{line.data(), line.data() + colon_loc}).to_string();
+
+            auto equal_loc = line.find('=', colon_loc + 1);
+            Checks::check_exit(VCPKG_LINE_INFO, equal_loc != std::string::npos, "Line '%s' must contain a '='", line);
+            parsed_line.triplet_name =
+                Strings::trim(StringView{line.data() + colon_loc + 1, line.data() + equal_loc}).to_string();
+
+            auto baseline_value = Strings::trim(StringView{line.data() + equal_loc + 1, line.data() + line.size()});
             if (baseline_value == "fail")
             {
-                callback(port, triplet, CiBaselineValue::Fail);
+                parsed_line.state = CiBaselineState::Fail;
             }
             else if (baseline_value == "skip")
             {
-                callback(port, triplet, CiBaselineValue::Skip);
+                parsed_line.state = CiBaselineState::Skip;
             }
             else
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown value '%s'", baseline_value);
             }
         }
+        return result;
     }
 }
 
@@ -132,7 +144,7 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_CI_BASELINE = "ci-baseline";
-    static constexpr StringLiteral OPTION_PASSING_IS_PASSING = "passing-is-passing";
+    static constexpr StringLiteral OPTION_ALLOW_UNEXPECTED_PASSING = "allow-unexpected-passing";
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
@@ -153,7 +165,7 @@ namespace vcpkg::Commands::CI
     static constexpr std::array<CommandSwitch, 3> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
         {OPTION_RANDOMIZE, "Randomize the install order"},
-        {OPTION_PASSING_IS_PASSING, "Indicates that 'Passing, remove from fail list' results should not be emitted."},
+        {OPTION_ALLOW_UNEXPECTED_PASSING, "Indicates that 'Passing, remove from fail list' results should not be emitted."},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -530,37 +542,46 @@ namespace vcpkg::Commands::CI
         auto exclusions = parse_exclusions(settings, OPTION_EXCLUDE);
         auto host_exclusions = parse_exclusions(settings, OPTION_HOST_EXCLUDE);
         auto baseline_iter = settings.find(OPTION_CI_BASELINE);
-        const bool passing_is_passing = Util::Sets::contains(options.switches, OPTION_PASSING_IS_PASSING);
+        const bool allow_unexpected_passing = Util::Sets::contains(options.switches, OPTION_ALLOW_UNEXPECTED_PASSING);
         std::set<PackageSpec> expected_failures;
         if (baseline_iter != settings.end())
         {
-            parse_ci_baseline(paths.get_filesystem().read_lines(baseline_iter->second, VCPKG_LINE_INFO),
-                              [&,
-                               target_triplet_string = args.command_arguments[0],
-                               host_triplet_string = host_triplet.canonical_name()](
-                                  StringView port, StringView triplet, CiBaselineValue value) {
-                                  if (triplet == target_triplet_string)
-                                  {
-                                      if (value == CiBaselineValue::Skip)
-                                          exclusions.insert(port.to_string());
-                                      else if (value == CiBaselineValue::Fail)
-                                          expected_failures.emplace(port.to_string(), target_triplet);
-                                  }
-                                  else if (triplet == host_triplet_string)
-                                  {
-                                      if (value == CiBaselineValue::Skip)
-                                          host_exclusions.insert(port.to_string());
-                                      else if (value == CiBaselineValue::Fail)
-                                          expected_failures.emplace(port.to_string(), host_triplet);
-                                  }
-                              });
+            auto baseline =
+                parse_ci_baseline(paths.get_filesystem().read_lines(baseline_iter->second, VCPKG_LINE_INFO));
+            auto target_triplet_string = args.command_arguments[0];
+            auto host_triplet_string = host_triplet.canonical_name();
+            for (auto& line : baseline)
+            {
+                if (line.triplet_name == target_triplet_string)
+                {
+                    if (line.state == CiBaselineState::Skip)
+                    {
+                        exclusions.insert(line.port_name);
+                    }
+                    else if (line.state == CiBaselineState::Fail)
+                    {
+                        expected_failures.emplace(line.port_name, target_triplet);
+                    }
+                }
+                else if (line.triplet_name == host_triplet_string)
+                {
+                    if (line.state == CiBaselineState::Skip)
+                    {
+                        host_exclusions.insert(line.port_name);
+                    }
+                    else if (line.state == CiBaselineState::Fail)
+                    {
+                        expected_failures.emplace(line.port_name, host_triplet);
+                    }
+                }
+            }
         }
         else
         {
             Checks::check_exit(VCPKG_LINE_INFO,
-                               !passing_is_passing,
+                               !allow_unexpected_passing,
                                Strings::concat("--",
-                                               OPTION_PASSING_IS_PASSING,
+                                               OPTION_ALLOW_UNEXPECTED_PASSING,
                                                " can only be used if a ci baseline is provided via --",
                                                OPTION_CI_BASELINE));
         }
@@ -777,7 +798,7 @@ namespace vcpkg::Commands::CI
                             }
                             break;
                         case Build::BuildResult::SUCCEEDED:
-                            if (!passing_is_passing &&
+                            if (!allow_unexpected_passing &&
                                 expected_failures.find(port_result.spec) != expected_failures.end())
                             {
                                 std::cerr << "    PASSING, REMOVE FROM FAIL LIST: " << port_result.spec.to_string()
