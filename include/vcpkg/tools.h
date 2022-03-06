@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/files.h>
@@ -18,6 +19,7 @@ namespace vcpkg
         static const std::string CMAKE = "cmake";
         static const std::string GIT = "git";
         static const std::string GSUTIL = "gsutil";
+        static const std::string AWSCLI = "aws";
         static const std::string MONO = "mono";
         static const std::string NINJA = "ninja";
         static const std::string POWERSHELL_CORE = "powershell-core";
@@ -27,17 +29,13 @@ namespace vcpkg
         static const std::string IFW_INSTALLER_BASE = "ifw_installerbase";
         static const std::string IFW_BINARYCREATOR = "ifw_binarycreator";
         static const std::string IFW_REPOGEN = "ifw_repogen";
+        // This duplicate of 7zip uses msiexec to unpack, which is a fallback for Windows 7.
+        static const std::string SEVEN_ZIP_MSI = "7zip_msi";
     }
-
-    enum class RequireExactVersions
-    {
-        YES,
-        NO,
-    };
 
     struct ToolCache
     {
-        virtual ~ToolCache() { }
+        virtual ~ToolCache() = default;
 
         virtual const Path& get_tool_path_from_system(const Filesystem& fs, const std::string& tool) const = 0;
         virtual const Path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const = 0;

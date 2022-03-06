@@ -3,6 +3,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
 
 #include <vcpkg/statusparagraph.h>
@@ -34,9 +35,24 @@ namespace Catch
     };
 
     template<>
+    struct StringMaker<vcpkg::FeatureSpec>
+    {
+        static std::string convert(vcpkg::FeatureSpec const& value)
+        {
+            return vcpkg::Strings::concat(value.spec().name(), '[', value.feature(), "]:", value.spec().triplet());
+        }
+    };
+
+    template<>
     struct StringMaker<vcpkg::Triplet>
     {
         static const std::string& convert(const vcpkg::Triplet& triplet) { return triplet.canonical_name(); }
+    };
+
+    template<>
+    struct StringMaker<vcpkg::LocalizedString>
+    {
+        static const std::string convert(const vcpkg::LocalizedString& value) { return "LL\"" + value.data() + "\""; }
     };
 }
 
@@ -105,6 +121,19 @@ namespace vcpkg::Test
     {
         REQUIRE(opt.has_value());
         return std::move(*opt.get());
+    }
+
+    inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv, Triplet t = X86_WINDOWS)
+    {
+        std::vector<FullPackageSpec> ret;
+        Parse::ParserBase parser(sv, "test");
+        while (!parser.at_eof())
+        {
+            auto opt = parse_qualified_specifier(parser);
+            REQUIRE(opt.has_value());
+            ret.push_back(unwrap(opt.get()->to_full_spec(t, ImplicitDefault::YES)));
+        }
+        return ret;
     }
 
     template<class R1, class R2>

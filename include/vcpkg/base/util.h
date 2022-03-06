@@ -153,7 +153,17 @@ namespace vcpkg::Util
     {
         using std::begin;
         using std::end;
-        return std::find_if(begin(cont), end(cont), pred);
+        // allow cont.begin() to not have the same type as cont.end()
+        auto it = begin(cont);
+        auto last = end(cont);
+        for (; it != last; ++it)
+        {
+            if (pred(*it))
+            {
+                break;
+            }
+        }
+        return it;
     }
 
     template<class Container, class Pred>

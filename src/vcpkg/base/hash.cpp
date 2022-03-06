@@ -17,6 +17,8 @@
 
 namespace vcpkg::Hash
 {
+    REGISTER_MESSAGE(HashFileFailureToRead);
+
     using uchar = unsigned char;
 
     Optional<Algorithm> algorithm_from_string(StringView sv) noexcept

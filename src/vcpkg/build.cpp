@@ -54,6 +54,63 @@ namespace
     };
 
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultSummaryHeader,
+                                 (msg::triplet),
+                                 "Displayed before a list of a summary installation results.",
+                                 "SUMMARY FOR {triplet}");
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultSummaryLine,
+                                 (msg::build_result, msg::count),
+                                 "Displayed to show a count of results of a build_result in a summary.",
+                                 "    {build_result}: {count}");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildResultSucceeded,
+        (),
+        "Printed after the name of an installed entity to indicate that it was built and installed successfully.",
+        "SUCCEEDED");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultBuildFailed,
+                                 (),
+                                 "Printed after the name of an installed entity to indicate that it failed to build.",
+                                 "BUILD_FAILED");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildResultFileConflicts,
+        (),
+        "Printed after the name of an installed entity to indicate that it conflicts with something already installed",
+        "FILE_CONFLICTS");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultPostBuildChecksFailed,
+                                 (),
+                                 "Printed after the name of an installed entity to indicate that it built "
+                                 "successfully, but that it failed post build checks.",
+                                 "POST_BUILD_CHECKS_FAILED");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultCascadeDueToMissingDependencies,
+                                 (),
+                                 "Printed after the name of an installed entity to indicate that it could not attempt "
+                                 "to be installed because one of its transitive dependencies failed to install.",
+                                 "CASCADED_DUE_TO_MISSING_DEPENDENCIES");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultExcluded,
+                                 (),
+                                 "Printed after the name of an installed entity to indicate that the user explicitly "
+                                 "requested it not be installed.",
+                                 "EXCLUDED");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildResultCacheMissing,
+        (),
+        "Printed after the name of an installed entity to indicate that it was not present in the binary cache when "
+        "the user has requested that things may only be installed from the cache rather than built.",
+        "CACHE_MISSING");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildResultDownloaded,
+                                 (),
+                                 "Printed after the name of an installed entity to indicate that it was successfully "
+                                 "downloaded but no build or install was requested.",
+                                 "DOWNLOADED");
 }
 
 namespace vcpkg::Build
@@ -107,7 +164,7 @@ namespace vcpkg::Build
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         auto action_plan = Dependencies::create_feature_install_plan(
-            provider, var_provider, std::vector<FullPackageSpec>{full_spec}, status_db, {host_triplet});
+            provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
@@ -183,11 +240,9 @@ namespace vcpkg::Build
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         std::string first_arg = args.command_arguments[0];
 
-        BinaryCache binary_cache{args};
+        BinaryCache binary_cache{args, paths};
         const FullPackageSpec spec = Input::check_and_get_full_package_spec(
-            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text);
-
-        Input::check_triplet(spec.package_spec.triplet(), paths);
+            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
         PathsPortFileProvider provider(paths, args.overlay_ports);
         const auto port_name = spec.package_spec.name();
@@ -305,17 +360,18 @@ namespace vcpkg::Build
 
     DECLARE_AND_REGISTER_MESSAGE(
         UnsupportedToolchain,
-        (msg::triplet, msg::value, msg::path, msg::list),
-        "",
+        (msg::triplet, msg::arch, msg::path, msg::list),
+        "example for {list} is 'x86, arm64'",
         "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
-        "architecture was {value}\n    "
+        "architecture was {arch}\n    "
         "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
 
-    DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
-                                 (msg::value),
-                                 "",
-                                 "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{value}' to a vcvarsall platform. "
-                                 "Supported system names are '', 'Windows' and 'WindowsStore'.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        UnsupportedSystemName,
+        (msg::system_name),
+        "",
+        "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
+        "Supported system names are '', 'Windows' and 'WindowsStore'.");
 
 #if defined(_WIN32)
     static CStringView to_vcvarsall_target(const std::string& cmake_system_name)
@@ -324,7 +380,7 @@ namespace vcpkg::Build
         if (cmake_system_name == "Windows") return "";
         if (cmake_system_name == "WindowsStore") return "store";
 
-        msg::println(Color::error, msgUnsupportedSystemName, msg::value = cmake_system_name);
+        msg::println(Color::error, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
 
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
@@ -337,8 +393,14 @@ namespace vcpkg::Build
         Checks::check_maybe_upgrade(
             VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architecture);
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
-        auto host_architectures = get_supported_host_architectures();
+        // Ask for an arm64 compiler when targeting arm64ec; arm64ec is selected with a different flag on the compiler
+        // command line.
+        if (target_arch == CPUArchitecture::ARM64EC)
+        {
+            target_arch = CPUArchitecture::ARM64;
+        }
 
+        auto host_architectures = get_supported_host_architectures();
         for (auto&& host : host_architectures)
         {
             const auto it = Util::find_if(toolset.supported_architectures, [&](const ToolsetArchOption& opt) {
@@ -352,7 +414,7 @@ namespace vcpkg::Build
 
         msg::println(msgUnsupportedToolchain,
                      msg::triplet = triplet,
-                     msg::value = target_architecture,
+                     msg::arch = target_architecture,
                      msg::path = toolset.visual_studio_root_path,
                      msg::list = toolset_list);
         msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
@@ -711,6 +773,7 @@ namespace vcpkg::Build
                                        "Error occurred while writing '%s'",
                                        stdoutlog);
                 },
+                default_working_directory,
                 env);
         } // close out_file
 
@@ -760,6 +823,7 @@ namespace vcpkg::Build
             {"_VCPKG_DOWNLOAD_TOOL", to_string(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
             {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
+            {"Z_VCPKG_CHAINLOAD_TOOLCHAIN_FILE", action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
         };
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
@@ -849,7 +913,21 @@ namespace vcpkg::Build
         {
             return m_paths.scripts / "toolchains/mingw.cmake";
         }
-        else if (cmake_system_name.empty() || cmake_system_name == "Windows" || cmake_system_name == "WindowsStore")
+        else if (cmake_system_name == "WindowsStore")
+        {
+            // HACK: remove once we have fully shipped a uwp toolchain
+            static bool have_uwp_triplet =
+                m_paths.get_filesystem().exists(m_paths.scripts / "toolchains/uwp.cmake", IgnoreErrors{});
+            if (have_uwp_triplet)
+            {
+                return m_paths.scripts / "toolchains/uwp.cmake";
+            }
+            else
+            {
+                return m_paths.scripts / "toolchains/windows.cmake";
+            }
+        }
+        else if (cmake_system_name.empty() || cmake_system_name == "Windows")
         {
             return m_paths.scripts / "toolchains/windows.cmake";
         }
@@ -919,6 +997,7 @@ namespace vcpkg::Build
                                        "Error occurred while writing '%s'",
                                        stdoutlog);
                 },
+                default_working_directory,
                 env);
         } // close out_file
 
@@ -1084,14 +1163,22 @@ namespace vcpkg::Build
         // just mark the port as no-hash
         const int max_port_file_count = 100;
 
+        std::string portfile_cmake_contents;
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
         size_t port_file_count = 0;
         for (auto& port_file : fs.get_regular_files_recursive(port_dir, VCPKG_LINE_INFO))
         {
+            if (port_file.filename() == ".DS_Store")
+            {
+                continue;
+            }
             abi_tag_entries.emplace_back(
                 port_file.filename(),
                 vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, port_file, Hash::Algorithm::Sha256));
-
+            if (port_file.extension() == ".cmake")
+            {
+                portfile_cmake_contents += fs.read_contents(port_file, VCPKG_LINE_INFO);
+            }
             ++port_file_count;
             if (port_file_count > max_port_file_count)
             {
@@ -1107,10 +1194,9 @@ namespace vcpkg::Build
 #endif
 
         auto& helpers = paths.get_cmake_script_hashes();
-        auto portfile_contents = fs.read_contents(port_dir / "portfile.cmake", VCPKG_LINE_INFO);
         for (auto&& helper : helpers)
         {
-            if (Strings::case_insensitive_ascii_contains(portfile_contents, helper.first))
+            if (Strings::case_insensitive_ascii_contains(portfile_cmake_contents, helper.first))
             {
                 abi_tag_entries.emplace_back(helper.first, helper.second);
             }
@@ -1118,8 +1204,21 @@ namespace vcpkg::Build
 
         abi_tag_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back("post_build_checks", "2");
-        std::vector<std::string> sorted_feature_list = action.feature_list;
-        Util::sort(sorted_feature_list);
+        InternalFeatureSet sorted_feature_list = action.feature_list;
+        // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
+        // a package ABI, so the "default" should not have made it here.
+        static constexpr auto default_literal = StringLiteral{"default"};
+        const bool has_no_pseudo_features = std::none_of(
+            sorted_feature_list.begin(), sorted_feature_list.end(), [](StringView s) { return s == default_literal; });
+        Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
+        Util::sort_unique_erase(sorted_feature_list);
+
+        // Check that the "core" feature is present. After resolution into InternalFeatureSet "core" meaning "not
+        // default" should have already been handled so "core" should be here.
+        Checks::check_exit(
+            VCPKG_LINE_INFO,
+            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), StringLiteral{"core"}));
+
         abi_tag_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
 
         Util::sort(abi_tag_entries);
@@ -1296,42 +1395,98 @@ namespace vcpkg::Build
 
         if (result.code == BuildResult::SUCCEEDED)
         {
-            binary_cache.push_success(paths, action);
+            binary_cache.push_success(action);
         }
 
         return result;
     }
 
-    const std::string& to_string(const BuildResult build_result)
+    void BuildResultCounts::increment(const BuildResult build_result)
     {
-        static const std::string NULLVALUE_STRING = "vcpkg::Commands::Build::BuildResult_NULLVALUE";
-        static const std::string SUCCEEDED_STRING = "SUCCEEDED";
-        static const std::string BUILD_FAILED_STRING = "BUILD_FAILED";
-        static const std::string FILE_CONFLICTS_STRING = "FILE_CONFLICTS";
-        static const std::string POST_BUILD_CHECKS_FAILED_STRING = "POST_BUILD_CHECKS_FAILED";
-        static const std::string CASCADED_DUE_TO_MISSING_DEPENDENCIES_STRING = "CASCADED_DUE_TO_MISSING_DEPENDENCIES";
-        static const std::string EXCLUDED_STRING = "EXCLUDED";
-        static const std::string CACHE_MISSING_STRING = "CACHE_MISSING";
-        static const std::string DOWNLOADED_STRING = "DOWNLOADED";
-
         switch (build_result)
         {
-            case BuildResult::NULLVALUE: return NULLVALUE_STRING;
-            case BuildResult::SUCCEEDED: return SUCCEEDED_STRING;
-            case BuildResult::BUILD_FAILED: return BUILD_FAILED_STRING;
-            case BuildResult::POST_BUILD_CHECKS_FAILED: return POST_BUILD_CHECKS_FAILED_STRING;
-            case BuildResult::FILE_CONFLICTS: return FILE_CONFLICTS_STRING;
-            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: return CASCADED_DUE_TO_MISSING_DEPENDENCIES_STRING;
-            case BuildResult::EXCLUDED: return EXCLUDED_STRING;
-            case BuildResult::CACHE_MISSING: return CACHE_MISSING_STRING;
-            case BuildResult::DOWNLOADED: return DOWNLOADED_STRING;
+            case BuildResult::NULLVALUE: ++null_value; return;
+            case BuildResult::SUCCEEDED: ++succeeded; return;
+            case BuildResult::BUILD_FAILED: ++build_failed; return;
+            case BuildResult::POST_BUILD_CHECKS_FAILED: ++post_build_checks_failed; return;
+            case BuildResult::FILE_CONFLICTS: ++file_conflicts; return;
+            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: ++cascaded_due_to_missing_dependencies; return;
+            case BuildResult::EXCLUDED: ++excluded; return;
+            case BuildResult::CACHE_MISSING: ++cache_missing; return;
+            case BuildResult::DOWNLOADED: ++downloaded; return;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    void BuildResultCounts::println(const Triplet& triplet) const
+    {
+        msg::println(msgBuildResultSummaryHeader, msg::triplet = triplet);
+        // NULLVALUE intentionally not printed
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultSucceeded),
+                     msg::count = succeeded);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultBuildFailed),
+                     msg::count = build_failed);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultPostBuildChecksFailed),
+                     msg::count = post_build_checks_failed);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultFileConflicts),
+                     msg::count = file_conflicts);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultCascadeDueToMissingDependencies),
+                     msg::count = cascaded_due_to_missing_dependencies);
+        msg::println(
+            msgBuildResultSummaryLine, msg::build_result = msg::format(msgBuildResultExcluded), msg::count = excluded);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultCacheMissing),
+                     msg::count = cache_missing);
+        msg::println(msgBuildResultSummaryLine,
+                     msg::build_result = msg::format(msgBuildResultDownloaded),
+                     msg::count = downloaded);
+    }
+
+    StringLiteral to_string_locale_invariant(const BuildResult build_result)
+    {
+        switch (build_result)
+        {
+            case BuildResult::NULLVALUE: return "vcpkg::Commands::Build::BuildResult_NULLVALUE";
+            case BuildResult::SUCCEEDED: return "SUCCEEDED";
+            case BuildResult::BUILD_FAILED: return "BUILD_FAILED";
+            case BuildResult::POST_BUILD_CHECKS_FAILED: return "POST_BUILD_CHECKS_FAILED";
+            case BuildResult::FILE_CONFLICTS: return "FILE_CONFLICTS";
+            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: return "CASCADED_DUE_TO_MISSING_DEPENDENCIES";
+            case BuildResult::EXCLUDED: return "EXCLUDED";
+            case BuildResult::CACHE_MISSING: return "CACHE_MISSING";
+            case BuildResult::DOWNLOADED: return "DOWNLOADED";
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    LocalizedString to_string(const BuildResult build_result)
+    {
+        switch (build_result)
+        {
+            case BuildResult::NULLVALUE:
+                return LocalizedString::from_raw(to_string_locale_invariant(BuildResult::NULLVALUE));
+            case BuildResult::SUCCEEDED: return msg::format(msgBuildResultSucceeded);
+            case BuildResult::BUILD_FAILED: return msg::format(msgBuildResultBuildFailed);
+            case BuildResult::POST_BUILD_CHECKS_FAILED: return msg::format(msgBuildResultPostBuildChecksFailed);
+            case BuildResult::FILE_CONFLICTS: return msg::format(msgBuildResultFileConflicts);
+            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+                return msg::format(msgBuildResultCascadeDueToMissingDependencies);
+            case BuildResult::EXCLUDED: return msg::format(msgBuildResultExcluded);
+            case BuildResult::CACHE_MISSING: return msg::format(msgBuildResultCacheMissing);
+            case BuildResult::DOWNLOADED: return msg::format(msgBuildResultDownloaded);
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
     std::string create_error_message(const BuildResult build_result, const PackageSpec& spec)
     {
-        return Strings::format("Error: Building package %s failed with: %s", spec, Build::to_string(build_result));
+        return Strings::format(
+            "Error: Building package %s failed with: %s", spec, Build::to_string_locale_invariant(build_result));
     }
 
     std::string create_github_issue(const VcpkgCmdArguments& args,
@@ -1380,7 +1535,7 @@ namespace vcpkg::Build
             "Package: ",
             action.displayname(),
             " -> ",
-            action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_versiont(),
+            action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
             "\n**Host Environment**",
             "\n- Host: ",
             to_zstring_view(get_host_processor()),
@@ -1416,7 +1571,7 @@ namespace vcpkg::Build
         std::string package = action.displayname();
         if (auto scfl = action.source_control_file_and_location.get())
         {
-            Strings::append(package, " -> ", scfl->to_versiont());
+            Strings::append(package, " -> ", scfl->to_version());
         }
         return Strings::format(
             "Please ensure you're using the latest portfiles with `git pull` and `%s update`.\n"

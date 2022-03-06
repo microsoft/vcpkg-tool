@@ -155,13 +155,13 @@ namespace vcpkg::Commands::Integrate
 #if defined(_WIN32)
     static Path get_appdata_targets_path()
     {
-        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg/vcpkg.user.targets";
+        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg\\vcpkg.user.targets";
     }
 #endif
 #if defined(_WIN32)
     static Path get_appdata_props_path()
     {
-        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg/vcpkg.user.props";
+        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg\\vcpkg.user.props";
     }
 #endif
 
@@ -246,8 +246,8 @@ namespace vcpkg::Commands::Integrate
         {
             std::error_code ec;
             const auto tmp_dir = paths.buildsystems / "tmp";
-            fs.create_directory(paths.buildsystems, ec);
-            fs.create_directory(tmp_dir, ec);
+            fs.create_directory(paths.buildsystems, VCPKG_LINE_INFO);
+            fs.create_directory(tmp_dir, VCPKG_LINE_INFO);
 
             integrate_install_msbuild14(fs, tmp_dir);
 
@@ -255,6 +255,9 @@ namespace vcpkg::Commands::Integrate
             fs.write_contents(
                 appdata_src_path, create_appdata_shortcut(paths.buildsystems_msbuild_targets), VCPKG_LINE_INFO);
             auto appdata_dst_path = get_appdata_targets_path();
+
+            const auto vcpkg_appdata_local = get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg";
+            fs.create_directory(vcpkg_appdata_local, VCPKG_LINE_INFO);
 
             fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, ec);
             if (ec)
@@ -365,7 +368,8 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
                             .path_arg(buildsystems_dir)
                             .path_arg(nuspec_file_path);
 
-        const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
+        const int exit_code =
+            cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
 
         const auto nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
         Checks::check_exit(

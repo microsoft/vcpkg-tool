@@ -179,7 +179,7 @@ namespace vcpkg::Export
             .path_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        const auto output = cmd_execute_and_capture_output(cmd, get_clean_environment());
+        const auto output = cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
         const auto exit_code = output.exit_code;
         if (exit_code != 0)
         {
@@ -243,7 +243,7 @@ namespace vcpkg::Export
             .string_arg("--")
             .path_arg(raw_exported_dir);
 
-        const int exit_code = cmd_execute_clean(cmd, InWorkingDirectory{raw_exported_dir.parent_path()});
+        const int exit_code = cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()});
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", exported_archive_path);
         return exported_archive_path;
     }
@@ -421,7 +421,7 @@ namespace vcpkg::Export
             // input sanitization
             ret.specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
                 return Input::check_and_get_package_spec(
-                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text);
+                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
             });
         }
 
@@ -458,12 +458,6 @@ namespace vcpkg::Export
             }
         };
 
-#if defined(_MSC_VER) && _MSC_VER <= 1900
-// there's a bug in VS 2015 that causes a bunch of "unreferenced local variable" warnings
-#pragma warning(push)
-#pragma warning(disable : 4189)
-#endif
-
         options_implies(OPTION_NUGET,
                         ret.nuget,
                         {
@@ -499,9 +493,6 @@ namespace vcpkg::Export
                             {OPTION_CHOCOLATEY_VERSION_SUFFIX, ret.chocolatey_options.maybe_version_suffix},
                         });
 
-#if defined(_MSC_VER) && _MSC_VER <= 1900
-#pragma warning(pop)
-#endif
         return ret;
     }
 
@@ -630,8 +621,6 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         }
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
-        for (auto&& spec : opts.specs)
-            Input::check_triplet(spec.triplet(), paths);
 
         // Load ports from ports dirs
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);

@@ -24,11 +24,10 @@ namespace vcpkg::Commands::BuildExternal
     {
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        BinaryCache binary_cache{args};
+        BinaryCache binary_cache{args, paths};
 
         const FullPackageSpec spec = Input::check_and_get_full_package_spec(
-            std::string(args.command_arguments.at(0)), default_triplet, COMMAND_STRUCTURE.example_text);
-        Input::check_triplet(spec.package_spec.triplet(), paths);
+            std::string(args.command_arguments.at(0)), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
         auto overlays = args.overlay_ports;
         overlays.insert(overlays.begin(), args.command_arguments.at(1));

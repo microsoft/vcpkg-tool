@@ -144,31 +144,39 @@ std::wstring Strings::to_utf16(StringView s)
 #if defined(_WIN32)
 std::string Strings::to_utf8(const wchar_t* w) { return Strings::to_utf8(w, wcslen(w)); }
 
-std::string Strings::to_utf8(const wchar_t* w, size_t s)
+std::string Strings::to_utf8(const wchar_t* w, size_t size_in_characters)
 {
     std::string output;
-    if (s != 0)
-    {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, s <= INT_MAX);
-        const int size = WideCharToMultiByte(CP_UTF8, 0, w, static_cast<int>(s), nullptr, 0, nullptr, nullptr);
-        if (size <= 0)
-        {
-            unsigned long last_error = ::GetLastError();
-            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                      "Failed to convert to UTF-8. %08lX %s",
-                                      last_error,
-                                      std::system_category().message(static_cast<int>(last_error)));
-        }
-
-        output.resize(size);
-        vcpkg::Checks::check_exit(
-            VCPKG_LINE_INFO,
-            size == WideCharToMultiByte(
-                        CP_UTF8, 0, w, static_cast<int>(s), output.data(), static_cast<int>(size), nullptr, nullptr));
-    }
-
+    to_utf8(output, w, size_in_characters);
     return output;
 }
+
+void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_characters)
+{
+    if (size_in_characters == 0)
+    {
+        output.clear();
+        return;
+    }
+
+    vcpkg::Checks::check_exit(VCPKG_LINE_INFO, size_in_characters <= INT_MAX);
+    const int s_clamped = static_cast<int>(size_in_characters);
+    const int size = WideCharToMultiByte(CP_UTF8, 0, w, s_clamped, nullptr, 0, nullptr, nullptr);
+    if (size <= 0)
+    {
+        unsigned long last_error = ::GetLastError();
+        Checks::exit_with_message(VCPKG_LINE_INFO,
+                                  "Failed to convert to UTF-8. %08lX %s",
+                                  last_error,
+                                  std::system_category().message(static_cast<int>(last_error)));
+    }
+
+    output.resize(size);
+    vcpkg::Checks::check_exit(
+        VCPKG_LINE_INFO, size == WideCharToMultiByte(CP_UTF8, 0, w, s_clamped, output.data(), size, nullptr, nullptr));
+}
+
+std::string Strings::to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
 #endif
 
 std::string Strings::escape_string(std::string&& s, char char_to_escape, char escape_char)
