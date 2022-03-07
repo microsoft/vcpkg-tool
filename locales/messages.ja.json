@@ -1,6 +1,5 @@
 {
   "AddArtifactOnlyOne": "'{command_line}' は一度に 1 つの成果物のみを追加できます。",
-  "AddFailedToWriteManifest": "マニフェスト ファイル {path} を書き込めませんでした: {error}",
   "AddFirstArgument": "'{command_line}' の最初の引数は 'artifact' または 'port' である必要があります。\n",
   "AddPortRequiresManifest": "'{command_line}' にはアクティブなマニフェスト ファイルが必要です。",
   "AddPortSucceded": "vcpkg.json ファイルへのポートの追加に成功しました。",

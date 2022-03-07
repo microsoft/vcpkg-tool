@@ -1,6 +1,5 @@
 {
   "AddArtifactOnlyOne": "“{command_line}” 一次只能添加一个项目。",
-  "AddFailedToWriteManifest": "未能写入清单文件 {path}: {error}",
   "AddFirstArgument": "“{command_line}”的第一个参数必须是 “artifact” 或 “port”。\n",
   "AddPortRequiresManifest": "“{command_line}”需要活动清单文件。",
   "AddPortSucceded": "已成功将端口添加到 vcpkg.json 文件。",

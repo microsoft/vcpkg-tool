@@ -1,6 +1,5 @@
 {
   "AddArtifactOnlyOne": "'{command_line}'은(는) 한 번에 하나의 아티팩트만 추가할 수 있습니다.",
-  "AddFailedToWriteManifest": "매니페스트 파일 {path} 쓰기 실패: {error}",
   "AddFirstArgument": "'{command_line}'에 대한 첫 번째 인수는 'artifact' 또는 'port'여야 합니다.\n",
   "AddPortRequiresManifest": "'{command_line}'에는 활성 매니페스트 파일이 필요합니다.",
   "AddPortSucceded": "vcpkg.json 파일에 포트 추가에 성공했습니다.",

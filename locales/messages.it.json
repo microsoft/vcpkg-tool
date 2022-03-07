@@ -1,6 +1,5 @@
 {
   "AddArtifactOnlyOne": "'{command_line}' può aggiungere un solo artefatto alla volta.",
-  "AddFailedToWriteManifest": "Non è stato possibile scrivere il file manifesto {path}: {error}",
   "AddFirstArgument": "Il primo argomento di '{command_line}' deve essere 'artifact' o 'port'.\n",
   "AddPortRequiresManifest": "'{command_line}' richiede un file manifesto attivo.",
   "AddPortSucceded": "Aggiunta delle porte al file vcpkg.json completata.",

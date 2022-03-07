@@ -30,10 +30,6 @@ namespace
                                  "",
                                  "Error: triplet expressions are not allowed here. You may want to change "
                                  "`{package_name}:{triplet}` to `{package_name}` instead.");
-    DECLARE_AND_REGISTER_MESSAGE(AddFailedToWriteManifest,
-                                 (msg::path, msg::error),
-                                 "example of {error} is 'no such file or directory'",
-                                 "Failed to write manifest file {path}: {error}");
     DECLARE_AND_REGISTER_MESSAGE(AddFirstArgument,
                                  (msg::command_line),
                                  "",
@@ -61,7 +57,7 @@ namespace vcpkg::Commands
         if (selector == "artifact")
         {
             Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   args.command_arguments.size() > 2,
+                                   args.command_arguments.size() <= 2,
                                    msgAddArtifactOnlyOne,
                                    msg::command_line = "vcpkg add artifact");
             std::string ce_args[] = {"add", args.command_arguments[1]};
@@ -76,28 +72,24 @@ namespace vcpkg::Commands
                 Checks::msg_exit_with_message(
                     VCPKG_LINE_INFO, msgAddPortRequiresManifest, msg::command_line = "vcpkg add port");
             }
-            const std::vector<ParsedQualifiedSpecifier> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-                ExpectedS<ParsedQualifiedSpecifier> value = parse_qualified_specifier(std::string(arg));
-                if (auto v = value.get())
+
+            std::vector<ParsedQualifiedSpecifier> specs;
+            specs.reserve(args.command_arguments.size() - 1);
+            for (std::size_t idx = 1; idx < args.command_arguments.size(); ++idx)
+            {
+                ParsedQualifiedSpecifier value =
+                    parse_qualified_specifier(args.command_arguments[idx]).value_or_exit(VCPKG_LINE_INFO);
+                if (const auto t = value.triplet.get())
                 {
-                    if (v->triplet)
-                    {
-                        msg::println(Color::error,
-                                     msgAddTripletExpressionNotAllowed,
-                                     msg::package_name = v->name,
-                                     msg::triplet = *v->triplet.get());
-                    }
-                    else
-                    {
-                        return std::move(*v);
-                    }
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msgAddTripletExpressionNotAllowed,
+                                                  msg::package_name = value.name,
+                                                  msg::triplet = *t);
                 }
-                else
-                {
-                    print2(Color::error, value.error());
-                }
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            });
+
+                specs.push_back(std::move(value));
+            }
+
             const auto& manifest_path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO);
             auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest_path, *manifest);
             if (!maybe_manifest_scf)
@@ -130,15 +122,9 @@ namespace vcpkg::Commands
                     }
                 }
             }
-            std::error_code ec;
+
             paths.get_filesystem().write_contents(
-                manifest_path, Json::stringify(serialize_manifest(manifest_scf), {}), ec);
-            if (ec)
-            {
-                msg::print(Color::error, msg::msgErrorMessage);
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msgAddFailedToWriteManifest, msg::path = manifest_path, msg::error = ec.message());
-            }
+                manifest_path, Json::stringify(serialize_manifest(manifest_scf), {}), VCPKG_LINE_INFO);
             msg::println(msgAddPortSucceded);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
