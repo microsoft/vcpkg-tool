@@ -1029,7 +1029,7 @@ TEST_CASE ("win32_fix_path_case", "[files]")
     CHECK(win32_fix_path_case("\\WiNdOws") == "\\Windows");
     CHECK(win32_fix_path_case("\\WiNdOws") == "\\Windows");
     CHECK(win32_fix_path_case("c:WiNdOws") == "C:Windows");
-    CHECK(win32_fix_path_case("c:WiNdOws/system32") == "C:\\Windows\\system32");
+    CHECK(win32_fix_path_case("c:WiNdOws/system32") == "C:Windows\\System32");
     fs.current_path(original_cwd, VCPKG_LINE_INFO);
 
     fs.create_directories("SuB/Dir/Ectory", VCPKG_LINE_INFO);
