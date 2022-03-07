@@ -12,11 +12,11 @@ export function artifactIdentity(registryName: string, identity: string, alias?:
   if (alias) {
     return `${registryName}:${identity.substr(0, identity.length - alias.length)}${yellowBright(alias)}`;
   }
-  return yellowBright(identity);
+  return registryName ? `${registryName}:${yellowBright(identity)}` : yellowBright(identity);
 }
 
 export function artifactReference(registryName: string, identity: string, version: string) {
-  return `${artifactIdentity(registryName, identity)}-v${gray(version)}`;
+  return version && version !== '*' ? `${artifactIdentity(registryName, identity)}-v${gray(version)}` : artifactIdentity(registryName, identity);
 }
 
 export function heading(text: string, level = 1) {

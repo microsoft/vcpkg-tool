@@ -120,7 +120,7 @@ export abstract class ArtifactRegistry implements Registry {
     }
 
     if (criteria?.keyword) {
-      query.summary.contains(criteria.keyword);
+      query.id.contains(criteria.keyword);
     }
 
     return [...(await this.openArtifacts(query.items, parent)).entries()].map(each => [this, ...each]);

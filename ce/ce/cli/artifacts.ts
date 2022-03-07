@@ -40,6 +40,15 @@ export async function selectArtifacts(selections: Selections, registries: Regist
 
     if (!artifact) {
       error(`Unable to resolve artifact: ${artifactReference('', identity, version)}`);
+
+      const results = await registries.search({ keyword: identity, version: version });
+      if (results.length) {
+        log('\nPossible matches:');
+        for (const [reg, key, arts] of results) {
+          log(`  ${artifactReference(registries.getRegistryName(reg), key, '')}`);
+        }
+      }
+
       return false;
     }
 
