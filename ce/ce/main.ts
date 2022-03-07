@@ -146,11 +146,18 @@ async function main() {
     }
 
     error(e);
-    return process.exitCode = 1;
+
+    if (session.telemetryEnabled) {
+      flushTelemetry();
+    }
+    return process.exit(result ? 0 : 1);
   } finally {
-    flushTelemetry();
+    if (session.telemetryEnabled) {
+      flushTelemetry();
+    }
   }
-  return process.exitCode = (result ? 0 : 1);
+
+  return process.exit(result ? 0 : 1);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
