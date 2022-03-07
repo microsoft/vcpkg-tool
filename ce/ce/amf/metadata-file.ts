@@ -75,9 +75,10 @@ export class MetadataFile extends BaseMap implements Profile {
 
   get seeAlso() { return this.demandBlock.seeAlso; }
   get requires() { return this.demandBlock.requires; }
-  get settings() { return this.demandBlock.settings; }
+  get exports() { return this.demandBlock.exports; }
   get install() { return this.demandBlock.install; }
   get unless() { return this.demandBlock.unless; }
+  get apply() { return this.demandBlock.apply; }
 
   setActivation(activation: Activation): void {
     this.demandBlock.setActivation(activation);
@@ -201,7 +202,7 @@ export class MetadataFile extends BaseMap implements Profile {
     yield* this.install.validate();
     yield* this.registries.validate();
     yield* this.contacts.validate();
-    yield* this.settings.validate();
+    yield* this.exports.validate();
     yield* this.globalSettings.validate();
     yield* this.requires.validate();
     yield* this.seeAlso.validate();

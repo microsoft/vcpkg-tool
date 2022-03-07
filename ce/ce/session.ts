@@ -415,9 +415,9 @@ export class Session {
     }
 
     // for now.
-    if (activation.defines.size > 0) {
-      this.addPostscript('DEFINES', activation.Defines.map(([define, value]) => `${define}=${value}`).join(' '));
-    }
+    // if (activation.defines.size > 0) {
+    // this.addPostscript('DEFINES', activation.Defines.map(([define, value]) => `${define}=${value}`).join(' '));
+    //}
 
     if (backupEnvironment) {
       // create the environment backup file
@@ -436,6 +436,9 @@ export class Session {
         case 'ps1':
           // update environment variables. (powershell)
           content += [...entries(this.#postscript)].map((k, v) => { return `$\{ENV:${k[0]}}="${k[1]}"`; }).join('\n');
+
+          // add aliases
+
           break;
 
         case 'cmd':

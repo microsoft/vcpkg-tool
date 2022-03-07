@@ -218,7 +218,7 @@ export class Artifact extends ArtifactBase {
     const l = this.targetLocation.toString().length + 1;
     const allPaths = (await this.targetLocation.readDirectory(undefined, { recursive: true })).select(([name, stat]) => name.toString().substr(l));
 
-    for (const settingBlock of this.applicableDemands.settings) {
+    for (const settingBlock of this.applicableDemands.exports) {
       // **** defines ****
       // eslint-disable-next-line prefer-const
       for (let [key, value] of settingBlock.defines) {
@@ -276,7 +276,7 @@ export class Artifact extends ArtifactBase {
       }
 
       // **** variables ****
-      for (const [key, value] of settingBlock.variables) {
+      for (const [key, value] of settingBlock.environment) {
         const envKey = activation.environment.getOrDefault(key, []);
         envKey.push(...value);
       }

@@ -17,11 +17,12 @@ import { cmdlineToArray, execute } from '../util/exec-cmd';
 import { createSandbox } from '../util/safeEval';
 import { Entity } from '../yaml/Entity';
 import { EntityMap } from '../yaml/EntityMap';
+import { ScalarMap } from '../yaml/ScalarMap';
 import { Strings } from '../yaml/strings';
 import { Primitive, Yaml, YAMLDictionary } from '../yaml/yaml-types';
+import { Exports } from './exports';
 import { Installs } from './installer';
 import { Requires } from './Requires';
-import { Settings } from './settings';
 
 /** sandboxed eval function for evaluating expressions */
 const safeEval: <T>(code: string, context?: any) => T = createSandbox();
@@ -105,18 +106,23 @@ export class DemandBlock extends Entity {
     return this.usingAlternative ? this.unless.requires : this._requires;
   }
 
-  get settings(): Settings {
-    return this.usingAlternative ? this.unless.settings : this._settings;
+  get exports(): Exports {
+    return this.usingAlternative ? this.unless.exports : this._exports;
   }
 
   get install(): Installs {
     return this.usingAlternative ? this.unless.install : this._install;
   }
 
+  get apply(): ScalarMap<string> {
+    return this.usingAlternative ? this.unless.apply : this._apply;
+  }
+
   protected readonly _seeAlso = new Requires(undefined, this, 'seeAlso');
   protected readonly _requires = new Requires(undefined, this, 'requires');
-  protected readonly _settings = new Settings(undefined, this, 'settings');
+  protected readonly _exports = new Exports(undefined, this, 'exports');
   protected readonly _install = new Installs(undefined, this, 'install');
+  protected readonly _apply = new ScalarMap<string>(undefined, this, 'apply');
 
   readonly unless!: Unless;
 
@@ -148,7 +154,7 @@ export class DemandBlock extends Entity {
   override *validate(): Iterable<ValidationError> {
     yield* super.validate();
     if (this.exists()) {
-      yield* this.settings.validate();
+      yield* this.exports.validate();
       yield* this.requires.validate();
       yield* this.seeAlso.validate();
       yield* this.install.validate();
@@ -341,8 +347,8 @@ export class Unless extends DemandBlock implements AlternativeFulfillment {
     return this._requires;
   }
 
-  override get settings(): Settings {
-    return this._settings;
+  override get exports(): Exports {
+    return this._exports;
   }
 
   override get install(): Installs {

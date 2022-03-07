@@ -4,10 +4,14 @@
 
 import { delimiter } from 'path';
 import { Session } from '../session';
-import { linq } from '../util/linq';
+import { Dictionary, linq } from '../util/linq';
 import { Uri } from '../util/uri';
 import { toXml } from '../util/xml';
 import { Artifact } from './artifact';
+
+export function undoActivation(originalEnvironment: Record<string, string>, undoData: any) {
+  const newEnvironment = { ...originalEnvironment };
+}
 
 export class Activation {
   #session: Session;
@@ -77,6 +81,95 @@ export class Activation {
     return toXml(msbuildFile);
   }
 
+  protected generateCmdScript(artifacts: Iterable<Artifact>): string {
+    return '';
+  }
+
+  protected generatedPowerShellScript(artifacts: Iterable<Artifact>): string {
+    return '';
+  }
+
+  protected generatePosixScript(artifacts: Iterable<Artifact>): string {
+    return '';
+  }
+
+  protected generateEnvironmentVariables(originalEnvironment: Record<string, string>): Dictionary<string> {
+    const output = <any>{
+      original: { ...originalEnvironment },
+      modified: {},
+      added: {},
+      result: {},
+    }
+
+
+    for (const [variable, values] of [... this.paths.entries()].filter(([k, v]) => v.length > 0)) {
+      // add new values at the beginning;
+      const elements = new Set(values.map(each => each.fsPath));
+
+      // add any remaining entries from existing environment
+      const originalVariable = originalEnvironment[variable];
+      if (originalVariable) {
+        for (const p of originalVariable.split(delimiter)) {
+          if (p) {
+            elements.add(p);
+          }
+        }
+
+        // compose the final value
+        output.result[variable] = [...elements.values()].join(delimiter);
+
+        // set the undo data
+      }
+
+
+      // combine environment variables with multiple values with spaces (uses: CFLAGS, etc)
+      for (const [key, values] of this.environment) {
+        result[key] = values.join(' ');
+      }
+
+      // .tools get defined as environent variables too.
+      for (const [key, value] of this.tools) {
+        result[key] = value;
+      }
+
+      // .defines get compiled into a single environment variable.
+      if (this.defines.size > 0) {
+        const defines = linq.entries(this.defines).select(([key, value]) => value !== undefined && value !== '' ? `-D ${key}=${value}` : `-D ${key}`).join(' ');
+        if (defines) {
+          result['DEFINES'] = defines;
+        }
+      }
+
+      return result;
+    }
+
+  protected generateUndoData(originalEnvironment: Record<string, string>): string {
+    const data = <any>{
+      removed: {},
+      added: {},
+      modified: {}
+    };
+
+
+    // variables we removed
+    // variables we added
+    // variables we altered
+
+
+    return JSON.stringify(data, undefined, 2);
+  }
+
+  protected generateUndo(artifacts: Iterable<Artifact>): string {
+
+    return '';
+  }
+
+  generateActivation(artifacts: Iterable<Artifact>, originalEnvironment: Record<string, string>, shellScriptFile: Uri | undefined, undoScriptFile: Uri | undefined, msbuildFile: Uri | undefined) {
+    this.generateEnvironmentVariables();
+
+
+  }
+
   /** a collection of #define declarations that would assumably be applied to all compiler calls. */
   defines = new Map<string, string>();
 
@@ -119,16 +212,8 @@ export class Activation {
     return result;
   }
 
-  get Defines(): Array<[string, string]> {
-    return linq.entries(this.defines).toArray();
-  }
-
   get Locations(): Array<[string, string]> {
     return linq.entries(this.locations).select(([k, v]) => <[string, string]>[k, v.fsPath]).where(([k, v]) => v.length > 0).toArray();
-  }
-
-  get Properties(): Array<[string, Array<string>]> {
-    return linq.entries(this.properties).toArray();
   }
 
   /** produces an environment block that can be passed to child processes to leverage dependent artifacts during installtion/activation. */

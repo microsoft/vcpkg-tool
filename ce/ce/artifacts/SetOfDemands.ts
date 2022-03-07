@@ -58,8 +58,8 @@ export class SetOfDemands {
   get messages() {
     return linq.values(this._demands).selectNonNullable(d => d.message).toArray();
   }
-  get settings() {
-    return linq.values(this._demands).selectNonNullable(d => d.settings).toArray();
+  get exports() {
+    return linq.values(this._demands).selectNonNullable(d => d.exports).toArray();
   }
   get seeAlso() {
     return linq.values(this._demands).selectNonNullable(d => d.seeAlso).toArray();
