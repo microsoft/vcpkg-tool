@@ -1,6 +1,5 @@
 {
   "AddArtifactOnlyOne": "'{command_line}'一次只能新增一個成品。",
-  "AddFailedToWriteManifest": "無法寫入資訊清單檔案{path}: {error}",
   "AddFirstArgument": "'{command_line}'的第一個引數必須是 'artifact' 或 'port'。\n",
   "AddPortRequiresManifest": "'{command_line}' 需要使用中的資訊清單檔案。",
   "AddPortSucceded": "已成功將連接埠新增到 vcpkg.json 檔案。",

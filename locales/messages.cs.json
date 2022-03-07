@@ -1,6 +1,5 @@
 {
   "AddArtifactOnlyOne": "{command_line} může v jednu chvíli přidat jen jeden artefakt.",
-  "AddFailedToWriteManifest": "Nepovedlo se zapsat soubor manifestu {path}: {error}",
   "AddFirstArgument": "První argument k {command_line} musí být artefakt nebo port: \n",
   "AddPortRequiresManifest": "'{command_line}' vyžaduje aktivní soubor manifestu.",
   "AddPortSucceded": "Porty se úspěšně přidaly do souboru vcpkg.json.",

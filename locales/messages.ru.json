@@ -1,6 +1,5 @@
 {
   "AddArtifactOnlyOne": "\"{command_line}\" может добавлять только один артефакт за раз.",
-  "AddFailedToWriteManifest": "Не удалось записать файл манифеста {path}: {error}",
   "AddFirstArgument": "Первым аргументом для \"{command_line}\" должен быть artifact или port.\n",
   "AddPortRequiresManifest": "\"{command_line}\" требуется активный файл манифеста.",
   "AddPortSucceded": "Порты успешно добавлены в файл vcpkg.json.",
