@@ -29,6 +29,8 @@ namespace vcpkg
         static const std::string IFW_INSTALLER_BASE = "ifw_installerbase";
         static const std::string IFW_BINARYCREATOR = "ifw_binarycreator";
         static const std::string IFW_REPOGEN = "ifw_repogen";
+        // This duplicate of 7zip uses msiexec to unpack, which is a fallback for Windows 7.
+        static const std::string SEVEN_ZIP_MSI = "7zip_msi";
     }
 
     struct ToolCache

@@ -11,6 +11,12 @@ namespace
 {
     using namespace vcpkg;
 
+    DECLARE_AND_REGISTER_MESSAGE(
+        MsiexecFailedToExtract,
+        (msg::path, msg::exit_code),
+        "",
+        "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
+
 #if defined(_WIN32)
     void win32_extract_nupkg(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
@@ -94,22 +100,19 @@ namespace
                     continue;
                 }
             }
-
-            Checks::exit_with_message(
+            Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
-                "msiexec failed while extracting '%s' with launch or exit code %lu with message:\n%s",
-                archive,
-                code_and_output.exit_code,
-                code_and_output.output);
+                msg::format(msgMsiexecFailedToExtract, msg::path = archive, msg::exit_code = code_and_output.exit_code)
+                    .appendnl()
+                    .append_raw(code_and_output.output));
         }
     }
 
-    void win32_extract_with_seven_zip(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    void win32_extract_with_seven_zip(const Path& seven_zip, const Path& archive, const Path& to_path)
     {
         static bool recursion_limiter_sevenzip = false;
         Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
         recursion_limiter_sevenzip = true;
-        const auto seven_zip = paths.get_tool_exe(Tools::SEVEN_ZIP);
         const auto code_and_output = cmd_execute_and_capture_output(Command{seven_zip}
                                                                         .string_arg("x")
                                                                         .path_arg(archive)
@@ -136,19 +139,8 @@ namespace
         {
             win32_extract_msi(archive, to_path);
         }
-        else if (Strings::case_insensitive_ascii_equals(ext, ".zip"))
-        {
-            const auto tar_path = get_system32().value_or_exit(VCPKG_LINE_INFO) / "tar.exe";
-            if (paths.get_filesystem().exists(tar_path, IgnoreErrors{}))
-            {
-                extract_tar(tar_path, archive, to_path);
-            }
-            else
-            {
-                win32_extract_with_seven_zip(paths, archive, to_path);
-            }
-        }
-        else if (Strings::case_insensitive_ascii_equals(ext, ".7z"))
+        else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
+                 Strings::case_insensitive_ascii_equals(ext, ".7z"))
         {
             extract_tar_cmake(paths.get_tool_exe(Tools::CMAKE), archive, to_path);
         }
@@ -157,7 +149,7 @@ namespace
             const Path filename = archive.filename();
             const Path stem = filename.stem();
             const Path to_archive = Path(archive.parent_path()) / stem;
-            extract_self_extracting_7z(paths, archive, to_archive);
+            win32_extract_self_extracting_7z(paths, archive, to_archive);
             extract_archive_to_empty(paths, to_archive, to_path);
         }
 #else
@@ -195,7 +187,8 @@ namespace
 
 namespace vcpkg
 {
-    void extract_self_extracting_7z(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+#ifdef _WIN32
+    void win32_extract_self_extracting_7z(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
         constexpr static const char header_7z[] = "7z\xBC\xAF\x27\x1C";
 
@@ -216,6 +209,35 @@ namespace vcpkg
         contents = contents.substr(pos);
         fs.write_contents(to_path, std::move(contents), VCPKG_LINE_INFO);
     }
+
+    void win32_extract_bootstrap_zip(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    {
+        Filesystem& fs = paths.get_filesystem();
+        fs.remove_all(to_path, VCPKG_LINE_INFO);
+        Path to_path_partial = to_path + ".partial." + std::to_string(GetCurrentProcessId());
+
+        fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
+        fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
+        const auto tar_path = get_system32().value_or_exit(VCPKG_LINE_INFO) / "tar.exe";
+        if (fs.exists(tar_path, IgnoreErrors{}))
+        {
+            // On Windows 10, tar.exe is in the box.
+
+            // Example:
+            // tar unpacks cmake unpacks 7zip unpacks git
+            extract_tar(tar_path, archive, to_path_partial);
+        }
+        else
+        {
+            // On Windows <10, we attempt to use msiexec to unpack 7zip.
+
+            // Example:
+            // msiexec unpacks 7zip_msi unpacks cmake unpacks 7zip unpacks git
+            win32_extract_with_seven_zip(paths.get_tool_exe(Tools::SEVEN_ZIP_MSI), archive, to_path_partial);
+        }
+        fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
+    }
+#endif
 
     void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path)
     {
