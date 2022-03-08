@@ -225,13 +225,14 @@ namespace vcpkg::Commands::CI
                 case BuildResult::FILE_CONFLICTS:
                 case BuildResult::BUILD_FAILED:
                     result_string = "Fail";
-                    message_block =
-                        Strings::format("<failure><message><![CDATA[%s]]></message></failure>", to_string(test.result));
+                    message_block = Strings::format("<failure><message><![CDATA[%s]]></message></failure>",
+                                                    to_string_locale_invariant(test.result));
                     break;
                 case BuildResult::EXCLUDED:
                 case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
                     result_string = "Skip";
-                    message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string(test.result));
+                    message_block =
+                        Strings::format("<reason><![CDATA[%s]]></reason>", to_string_locale_invariant(test.result));
                     break;
                 case BuildResult::SUCCEEDED: result_string = "Pass"; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);

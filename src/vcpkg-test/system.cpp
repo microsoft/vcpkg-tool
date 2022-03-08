@@ -11,10 +11,6 @@
 
 #include <string>
 
-#if defined(_MSC_VER)
-#pragma warning(disable : 6237)
-#endif
-
 using vcpkg::CPUArchitecture;
 using vcpkg::get_environment_variable;
 using vcpkg::guess_visual_studio_prompt_target_architecture;
@@ -24,7 +20,6 @@ using vcpkg::set_environment_variable;
 using vcpkg::StringView;
 using vcpkg::to_cpu_architecture;
 using vcpkg::ZStringView;
-using vcpkg::Checks::check_exit;
 
 namespace
 {

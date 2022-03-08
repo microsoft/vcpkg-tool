@@ -11,6 +11,8 @@ namespace vcpkg
 {
     // Extract `archive` to `to_path` using `tar_tool`.
     void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path);
+    // Extract `archive` to `to_path` using `cmake_tool`. (CMake's built in tar)
+    void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path);
     // Extract `archive` to `to_path`, deleting `to_path` first.
     void extract_archive(const VcpkgPaths& paths, const Path& archive, const Path& to_path);
 
@@ -18,6 +20,12 @@ namespace vcpkg
                                   const Path& zip_file,
                                   View<StringView> files,
                                   const Path& destination_dir);
+
+#ifdef _WIN32
+    // Extract `archive` to `to_path`, deleting `to_path` first. `archive` must be a zip file.
+    // This function will use potentially less performant tools that are reliably available on any machine.
+    void win32_extract_bootstrap_zip(const VcpkgPaths& paths, const Path& archive, const Path& to_path);
+#endif
 
     // Compress the source directory into the destination file.
     int compress_directory_to_zip(const VcpkgPaths& paths, const Path& source, const Path& destination);

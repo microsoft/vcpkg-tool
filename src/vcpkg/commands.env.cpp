@@ -108,7 +108,7 @@ namespace vcpkg::Commands::Env
 #ifdef _WIN32
         enter_interactive_subprocess();
 #endif
-        auto rc = cmd_execute(cmd, env);
+        auto rc = cmd_execute(cmd, default_working_directory, env);
 #ifdef _WIN32
         exit_interactive_subprocess();
 #endif

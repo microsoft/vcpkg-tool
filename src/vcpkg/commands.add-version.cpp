@@ -23,6 +23,18 @@ namespace
     constexpr StringLiteral VERSION_DATE = "version-date";
     constexpr StringLiteral VERSION_STRING = "version-string";
 
+    static constexpr StringLiteral OPTION_ALL = "all";
+    static constexpr StringLiteral OPTION_OVERWRITE_VERSION = "overwrite-version";
+    static constexpr StringLiteral OPTION_SKIP_FORMATTING_CHECK = "skip-formatting-check";
+    static constexpr StringLiteral OPTION_SKIP_VERSION_FORMAT_CHECK = "skip-version-format-check";
+    static constexpr StringLiteral OPTION_VERBOSE = "verbose";
+
+    DECLARE_AND_REGISTER_MESSAGE(SuggestNewVersionScheme,
+                                 (msg::new_scheme, msg::old_scheme, msg::package_name, msg::option),
+                                 "",
+                                 "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
+                                 "\"{package_name}\".\nUse `--{option}` to disable this check.");
+
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
     void insert_version_to_json_object(Json::Object& obj, const Version& version, StringLiteral version_field)
@@ -53,6 +65,31 @@ namespace
             return insert_version_to_json_object(obj, version.version, VERSION_STRING);
         }
         Checks::unreachable(VCPKG_LINE_INFO);
+    }
+
+    void check_used_version_scheme(const SchemedVersion& version, const std::string& port_name)
+    {
+        if (version.scheme == VersionScheme::String)
+        {
+            if (DateVersion::try_parse(version.version.text()))
+            {
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgSuggestNewVersionScheme,
+                                              msg::new_scheme = VERSION_DATE,
+                                              msg::old_scheme = VERSION_STRING,
+                                              msg::package_name = port_name,
+                                              msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
+            }
+            if (DotVersion::try_parse_relaxed(version.version.text()))
+            {
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgSuggestNewVersionScheme,
+                                              msg::new_scheme = VERSION_RELAXED,
+                                              msg::old_scheme = VERSION_STRING,
+                                              msg::package_name = port_name,
+                                              msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
+            }
+        }
     }
 
     static Json::Object serialize_baseline(const std::map<std::string, Version, std::less<>>& baseline)
@@ -154,11 +191,16 @@ namespace
                                        const Path& version_db_file_path,
                                        bool overwrite_version,
                                        bool print_success,
-                                       bool keep_going)
+                                       bool keep_going,
+                                       bool skip_version_format_check)
     {
         auto& fs = paths.get_filesystem();
         if (!fs.exists(version_db_file_path, VCPKG_LINE_INFO))
         {
+            if (!skip_version_format_check)
+            {
+                check_used_version_scheme(port_version, port_name);
+            }
             std::vector<VersionGitTree> new_entry{{port_version, git_tree}};
             write_versions_file(fs, new_entry, version_db_file_path);
             if (print_success)
@@ -236,6 +278,11 @@ namespace
                 versions->insert(versions->begin(), std::make_pair(port_version, git_tree));
             }
 
+            if (!skip_version_format_check)
+            {
+                check_used_version_scheme(port_version, port_name);
+            }
+
             write_versions_file(fs, *versions, version_db_file_path);
             if (print_success)
             {
@@ -255,15 +302,11 @@ namespace
 
 namespace vcpkg::Commands::AddVersion
 {
-    static constexpr StringLiteral OPTION_ALL = "all";
-    static constexpr StringLiteral OPTION_OVERWRITE_VERSION = "overwrite-version";
-    static constexpr StringLiteral OPTION_SKIP_FORMATTING_CHECK = "skip-formatting-check";
-    static constexpr StringLiteral OPTION_VERBOSE = "verbose";
-
     const CommandSwitch COMMAND_SWITCHES[] = {
         {OPTION_ALL, "Process versions for all ports."},
         {OPTION_OVERWRITE_VERSION, "Overwrite `git-tree` of an existing version."},
         {OPTION_SKIP_FORMATTING_CHECK, "Skips the formatting check of vcpkg.json files."},
+        {OPTION_SKIP_VERSION_FORMAT_CHECK, "Skips the version format check."},
         {OPTION_VERBOSE, "Print success messages instead of just errors."},
     };
 
@@ -281,6 +324,8 @@ namespace vcpkg::Commands::AddVersion
         const bool add_all = Util::Sets::contains(parsed_args.switches, OPTION_ALL);
         const bool overwrite_version = Util::Sets::contains(parsed_args.switches, OPTION_OVERWRITE_VERSION);
         const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_FORMATTING_CHECK);
+        const bool skip_version_format_check =
+            Util::Sets::contains(parsed_args.switches, OPTION_SKIP_VERSION_FORMAT_CHECK);
         const bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
 
         auto& fs = paths.get_filesystem();
@@ -383,8 +428,15 @@ namespace vcpkg::Commands::AddVersion
 
             char prefix[] = {port_name[0], '-', '\0'};
             auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
-            update_version_db_file(
-                paths, port_name, schemed_version, git_tree, port_versions_path, overwrite_version, verbose, add_all);
+            update_version_db_file(paths,
+                                   port_name,
+                                   schemed_version,
+                                   git_tree,
+                                   port_versions_path,
+                                   overwrite_version,
+                                   verbose,
+                                   add_all,
+                                   skip_version_format_check);
             update_baseline_version(paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
         }
         Checks::exit_success(VCPKG_LINE_INFO);

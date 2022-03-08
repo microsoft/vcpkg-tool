@@ -12,6 +12,12 @@ namespace
 {
     using namespace vcpkg;
 
+    DECLARE_AND_REGISTER_MESSAGE(
+        MsiexecFailedToExtract,
+        (msg::path, msg::exit_code),
+        "",
+        "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
+
 #if defined(_WIN32)
     void win32_extract_nupkg(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
@@ -63,6 +69,9 @@ namespace
             const auto code_and_output = cmd_execute_and_capture_output(
                 Command{"cmd"}
                     .string_arg("/c")
+                    .string_arg("start")
+                    .string_arg("/wait")
+                    .string_arg("(no title)")
                     .string_arg("msiexec")
                     // "/a" is administrative mode, which unpacks without modifying the system
                     .string_arg("/a")
@@ -70,7 +79,10 @@ namespace
                     .string_arg("/qn")
                     // msiexec requires quotes to be after "TARGETDIR=":
                     //      TARGETDIR="C:\full\path\to\dest"
-                    .raw_arg(Strings::concat("TARGETDIR=", Command{to_path}.extract())));
+                    .raw_arg(Strings::concat("TARGETDIR=", Command{to_path}.extract())),
+                default_working_directory,
+                default_environment,
+                Encoding::Utf16);
 
             if (code_and_output.exit_code == 0)
             {
@@ -89,19 +101,19 @@ namespace
                     continue;
                 }
             }
-            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                      "msiexec failed while extracting '%s' with message:\n%s",
-                                      archive,
-                                      code_and_output.output);
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO,
+                msg::format(msgMsiexecFailedToExtract, msg::path = archive, msg::exit_code = code_and_output.exit_code)
+                    .appendnl()
+                    .append_raw(code_and_output.output));
         }
     }
 
-    void win32_extract_with_seven_zip(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    void win32_extract_with_seven_zip(const Path& seven_zip, const Path& archive, const Path& to_path)
     {
         static bool recursion_limiter_sevenzip = false;
         Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
         recursion_limiter_sevenzip = true;
-        const auto seven_zip = paths.get_tool_exe(Tools::SEVEN_ZIP);
         const auto code_and_output = cmd_execute_and_capture_output(Command{seven_zip}
                                                                         .string_arg("x")
                                                                         .path_arg(archive)
@@ -129,16 +141,19 @@ namespace
             win32_extract_msi(archive, to_path);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
-                 Strings::case_insensitive_ascii_equals(ext, ".7z") ||
-                 Strings::case_insensitive_ascii_equals(ext, ".exe"))
+                 Strings::case_insensitive_ascii_equals(ext, ".7z"))
         {
-            win32_extract_with_seven_zip(paths, archive, to_path);
+            extract_tar_cmake(paths.get_tool_exe(Tools::CMAKE), archive, to_path);
+        }
+        else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
+        {
+            win32_extract_with_seven_zip(paths.get_tool_exe(Tools::SEVEN_ZIP), archive, to_path);
         }
 #else
         if (ext == ".zip")
         {
             const auto code =
-                cmd_execute(Command{"unzip"}.string_arg("-qqo").path_arg(archive), InWorkingDirectory{to_path});
+                cmd_execute(Command{"unzip"}.string_arg("-qqo").path_arg(archive), WorkingDirectory{to_path});
             Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", archive);
         }
 #endif
@@ -169,10 +184,49 @@ namespace
 
 namespace vcpkg
 {
+
+#ifdef _WIN32
+    void win32_extract_bootstrap_zip(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    {
+        Filesystem& fs = paths.get_filesystem();
+        fs.remove_all(to_path, VCPKG_LINE_INFO);
+        Path to_path_partial = to_path + ".partial." + std::to_string(GetCurrentProcessId());
+
+        fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
+        fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
+        const auto tar_path = get_system32().value_or_exit(VCPKG_LINE_INFO) / "tar.exe";
+        if (fs.exists(tar_path, IgnoreErrors{}))
+        {
+            // On Windows 10, tar.exe is in the box.
+
+            // Example:
+            // tar unpacks cmake unpacks 7zip unpacks git
+            extract_tar(tar_path, archive, to_path_partial);
+        }
+        else
+        {
+            // On Windows <10, we attempt to use msiexec to unpack 7zip.
+
+            // Example:
+            // msiexec unpacks 7zip_msi unpacks cmake unpacks 7zip unpacks git
+            win32_extract_with_seven_zip(paths.get_tool_exe(Tools::SEVEN_ZIP_MSI), archive, to_path_partial);
+        }
+        fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
+    }
+#endif
+
     void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path)
     {
+        const auto code = cmd_execute(Command{tar_tool}.string_arg("xzf").path_arg(archive), WorkingDirectory{to_path});
+        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+    }
+
+    void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
+    {
+        // Note that CMake's built in tar can extract more archive types than many system tars; e.g. 7z
         const auto code =
-            cmd_execute(Command{tar_tool}.string_arg("xzf").path_arg(archive), InWorkingDirectory{to_path});
+            cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").path_arg(archive),
+                        WorkingDirectory{to_path});
         Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
     }
 
@@ -219,6 +273,7 @@ namespace vcpkg
 
         return cmd_execute_and_capture_output(
                    Command{seven_zip_exe}.string_arg("a").path_arg(destination).path_arg(source / "*"),
+                   default_working_directory,
                    get_clean_environment())
             .exit_code;
 
@@ -231,7 +286,7 @@ namespace vcpkg
                                      .string_arg("*")
                                      .string_arg("--exclude")
                                      .string_arg(".DS_Store"),
-                                 InWorkingDirectory{source});
+                                 WorkingDirectory{source});
 #endif
     }
 
@@ -254,7 +309,8 @@ namespace vcpkg
 
     std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs)
     {
-        auto results = cmd_execute_and_capture_output_parallel(jobs, get_clean_environment());
+        auto results =
+            cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
 #ifdef __APPLE__
         int i = 0;
         for (auto& result : results)
@@ -262,7 +318,7 @@ namespace vcpkg
             if (result.exit_code == 127 && result.output.empty())
             {
                 Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
-                result = cmd_execute_and_capture_output(jobs[i], get_clean_environment());
+                result = cmd_execute_and_capture_output(jobs[i], default_working_directory, get_clean_environment());
             }
             ++i;
         }

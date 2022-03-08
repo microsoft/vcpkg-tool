@@ -260,7 +260,9 @@ endfunction()
 
         std::vector<std::string> lines;
         auto const exit_code = cmd_execute_and_stream_lines(
-            cmd_launch_cmake, [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); });
+            cmd_launch_cmake,
+            [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
+            default_working_directory);
 
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, exit_code == 0 ? "" : Strings::join("\n", lines));
 

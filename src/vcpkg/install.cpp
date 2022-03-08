@@ -24,6 +24,16 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+namespace
+{
+    using namespace vcpkg;
+    DECLARE_AND_REGISTER_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_AND_REGISTER_MESSAGE(ResultsLine,
+                                 (msg::spec, msg::build_result, msg::elapsed),
+                                 "A single instalation result.",
+                                 "    {spec}: {build_result}: {elapsed}");
+}
+
 namespace vcpkg::Install
 {
     using namespace vcpkg;
@@ -405,28 +415,27 @@ namespace vcpkg::Install
 
     void InstallSummary::print() const
     {
-        print2("RESULTS\n");
+        msg::println(msgResultsHeader);
 
         for (const SpecSummary& result : this->results)
         {
-            vcpkg::printf("    %s: %s: %s\n", result.spec, Build::to_string(result.build_result.code), result.timing);
+            msg::println(msgResultsLine,
+                         msg::spec = result.spec,
+                         msg::build_result = Build::to_string(result.build_result.code),
+                         msg::elapsed = result.timing);
         }
 
-        std::map<BuildResult, int> summary;
-        for (const BuildResult& v : Build::BUILD_RESULT_VALUES)
-        {
-            summary[v] = 0;
-        }
-
+        std::map<Triplet, Build::BuildResultCounts> summary;
         for (const SpecSummary& r : this->results)
         {
-            summary[r.build_result.code]++;
+            summary[r.spec.triplet()].increment(r.build_result.code);
         }
 
-        print2("\nSUMMARY\n");
-        for (const std::pair<const BuildResult, int>& entry : summary)
+        msg::println();
+
+        for (auto&& entry : summary)
         {
-            vcpkg::printf("    %s: %d\n", Build::to_string(entry.first), entry.second);
+            entry.second.println(entry.first);
         }
     }
 
@@ -784,16 +793,16 @@ namespace vcpkg::Install
 
     DECLARE_AND_REGISTER_MESSAGE(
         ErrorInvalidClassicModeOption,
-        (msg::value),
+        (msg::option),
         "",
-        "Error: The option {value} is not supported in classic mode and no manifest was found.");
+        "Error: The option --{option} is not supported in classic mode and no manifest was found.");
 
     DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
-                                 (msg::value),
+                                 (msg::option),
                                  "",
-                                 "Error: The option {value} is not supported in manifest mode.");
+                                 "Error: The option --{option} is not supported in manifest mode.");
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
@@ -818,8 +827,9 @@ namespace vcpkg::Install
             Util::Sets::contains(options.switches, (OPTION_CLEAN_PACKAGES_AFTER_BUILD));
         const bool clean_downloads_after_build =
             Util::Sets::contains(options.switches, (OPTION_CLEAN_DOWNLOADS_AFTER_BUILD));
-        const KeepGoing keep_going =
-            to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads);
+        const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
+                                         ? KeepGoing::YES
+                                         : KeepGoing::NO;
         const bool prohibit_backcompat_features =
             Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES)) ||
             Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
@@ -838,16 +848,12 @@ namespace vcpkg::Install
             }
             if (use_head_version)
             {
-                msg::println(Color::error,
-                             msgErrorInvalidManifestModeOption,
-                             msg::value = Strings::concat("--", OPTION_USE_HEAD_VERSION));
+                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_USE_HEAD_VERSION);
                 failure = true;
             }
             if (is_editable)
             {
-                msg::println(Color::error,
-                             msgErrorInvalidManifestModeOption,
-                             msg::value = Strings::concat("--", OPTION_EDITABLE));
+                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
                 failure = true;
             }
             if (failure)
@@ -868,16 +874,13 @@ namespace vcpkg::Install
             }
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
-                msg::println(Color::error,
-                             msgErrorInvalidClassicModeOption,
-                             msg::value = Strings::concat("--", OPTION_MANIFEST_NO_DEFAULT_FEATURES));
+                msg::println(
+                    Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
                 failure = true;
             }
             if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
             {
-                msg::println(Color::error,
-                             msgErrorInvalidClassicModeOption,
-                             msg::value = Strings::concat("--", OPTION_MANIFEST_FEATURE));
+                msg::println(Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
                 failure = true;
             }
             if (failure)
@@ -1221,13 +1224,13 @@ namespace vcpkg::Install
             case BuildResult::BUILD_FAILED:
             case BuildResult::CACHE_MISSING:
                 result_string = "Fail";
-                message_block =
-                    Strings::format("<failure><message><![CDATA[%s]]></message></failure>", to_string(code));
+                message_block = Strings::format("<failure><message><![CDATA[%s]]></message></failure>",
+                                                to_string_locale_invariant(code));
                 break;
             case BuildResult::EXCLUDED:
             case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
                 result_string = "Skip";
-                message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string(code));
+                message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string_locale_invariant(code));
                 break;
             case BuildResult::SUCCEEDED: result_string = "Pass"; break;
             default: Checks::unreachable(VCPKG_LINE_INFO);

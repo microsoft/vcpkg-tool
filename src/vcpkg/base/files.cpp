@@ -380,11 +380,10 @@ namespace
             }
         }
 
+        // bug in MSVC considers h_file uninitialized:
         // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
-#if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 6001)
-#endif // ^^^ _MSC_VER
+        VCPKG_MSVC_WARNING(push)
+        VCPKG_MSVC_WARNING(disable : 6001)
         ~FileHandle()
         {
             if (h_file != INVALID_HANDLE_VALUE)
@@ -392,9 +391,7 @@ namespace
                 Checks::check_exit(VCPKG_LINE_INFO, ::CloseHandle(h_file));
             }
         }
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif // ^^^ _MSC_VER
+        VCPKG_MSVC_WARNING(pop)
     };
 
     struct RemoveAllErrorInfo
@@ -402,12 +399,12 @@ namespace
         std::error_code ec;
         Path failure_point;
 
-        bool check_ec(const std::error_code& ec_arg, const stdfs::directory_entry& current_entry)
+        bool check_ec(const std::error_code& ec_arg, const stdfs::path& current_entry_path)
         {
             if (ec_arg)
             {
                 ec = ec_arg;
-                failure_point = from_stdfs_path(current_entry.path());
+                failure_point = from_stdfs_path(current_entry_path);
                 return true;
             }
 
@@ -440,6 +437,7 @@ namespace
     // Custom implementation of stdfs::remove_all intended to be resilient to transient issues
     void vcpkg_remove_all_impl(const stdfs::directory_entry& current_entry, RemoveAllErrorInfo& err)
     {
+        const auto& current_entry_path = current_entry.path();
         std::error_code ec;
         const auto path_status = current_entry.symlink_status(ec);
         if (path_status.type() == stdfs::file_type::not_found)
@@ -447,35 +445,50 @@ namespace
             return;
         }
 
-        if (err.check_ec(ec, current_entry))
+        if (err.check_ec(ec, current_entry_path))
         {
             return;
         }
 
         if ((path_status.permissions() & stdfs::perms::owner_write) != stdfs::perms::owner_write)
         {
-            remove_file_attribute_readonly(current_entry, ec);
-            if (err.check_ec(ec, current_entry)) return;
+            remove_file_attribute_readonly(current_entry_path, ec);
+            if (err.check_ec(ec, current_entry_path)) return;
         }
 
         if (stdfs::is_directory(path_status))
         {
-            for (const auto& entry : stdfs::directory_iterator(current_entry.path()))
+            stdfs::directory_iterator last;
+            for (stdfs::directory_iterator first(current_entry_path, ec);; first.increment(ec))
             {
-                vcpkg_remove_all_impl(entry, err);
-                if (err.ec) return;
+                if (err.check_ec(ec, current_entry_path))
+                {
+                    return;
+                }
+
+                if (first == last)
+                {
+                    if (RemoveDirectoryW(current_entry_path.c_str()))
+                    {
+                        ec.clear();
+                        return;
+                    }
+
+                    ec.assign(GetLastError(), std::system_category());
+                    err.failure_point = from_stdfs_path(current_entry_path);
+                    return;
+                }
+
+                vcpkg_remove_all_impl(*first, err);
+                if (err.check_ec(ec, current_entry_path))
+                {
+                    return;
+                }
             }
-            if (!RemoveDirectoryW(current_entry.path().c_str()))
-            {
-                ec.assign(GetLastError(), std::system_category());
-            }
-        }
-        else
-        {
-            stdfs::remove(current_entry.path(), ec);
         }
 
-        err.check_ec(ec, current_entry);
+        stdfs::remove(current_entry_path, ec);
+        err.check_ec(ec, current_entry_path);
     }
 
     void vcpkg_remove_all(const stdfs::directory_entry& current_entry, std::error_code& ec, Path& failure_point)
@@ -1877,6 +1890,12 @@ namespace vcpkg
                 }
             } while (!file.eof());
 
+            if (Strings::starts_with(output, "\xEF\xBB\xBF"))
+            {
+                // remove byte-order mark from the beginning of the string
+                output.erase(output.begin(), output.begin() + 3);
+            }
+
             return output;
         }
         virtual std::vector<std::string> read_lines(const Path& file_path, std::error_code& ec) const override
@@ -1905,7 +1924,13 @@ namespace vcpkg
                 }
             } while (!file.eof());
 
-            return output.extract();
+            auto res = output.extract();
+            if (res.size() > 0 && Strings::starts_with(res[0], "\xEF\xBB\xBF"))
+            {
+                // remove byte-order mark from the beginning of the string
+            }
+
+            return res;
         }
 
         virtual Path find_file_recursively_up(const Path& starting_dir,
