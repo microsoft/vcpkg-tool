@@ -40,6 +40,7 @@
   "ErrorRequirePackagesList": "Error: `vcpkg install` requires a list of packages to install in classic mode.",
   "ErrorRequirePackagesToInstall": "Error: No packages were listed for installation and no manifest was found.",
   "ErrorVcvarsUnsupported": "Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.",
+  "FilesContainAbsolutePath": "The following files contain an absolute path ('{absolute_paths}'): {paths}\nThere should be no absolute paths in the installed package, only relative ones.\n\n",
   "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.",
   "FormattedParseMessageExpression": "    on expression: {value}",
   "FormattedParseMessageLocation": "{path}:{row}:{column}: ",
