@@ -16,6 +16,13 @@ using vcpkg::Build::PreBuildInfo;
 
 namespace vcpkg::PostBuildLint
 {
+    constexpr static const StringLiteral windows_system_names[] = {
+        "",
+        "Windows",
+        "WindowsStore",
+        "MinGW",
+    };
+
     enum class LintStatus
     {
         SUCCESS = 0,
@@ -556,8 +563,7 @@ namespace vcpkg::PostBuildLint
                                              const Filesystem& fs)
     {
         std::vector<FileAndArch> binaries_with_invalid_architecture;
-        if (cmake_system_name.empty() || cmake_system_name == "Windows" || cmake_system_name == "WindowsStore" ||
-            cmake_system_name == "MinGW")
+        if (Util::Vectors::contains(windows_system_names, cmake_system_name))
         {
             for (const Path& file : files)
             {
@@ -1033,18 +1039,15 @@ namespace vcpkg::PostBuildLint
         const auto debug_bin_dir = package_dir / "debug" / "bin";
         const auto release_bin_dir = package_dir / "bin";
 
-        const auto lib_filter = [&pre_build_info]() {
-            if (pre_build_info.cmake_system_name.empty() || pre_build_info.cmake_system_name == "Windows" ||
-                pre_build_info.cmake_system_name == "WindowsStore")
-            {
-                return NotExtensionsCaseInsensitive{{".lib"}};
-            }
-            if (pre_build_info.cmake_system_name == "MinGW")
-            {
-                return NotExtensionsCaseInsensitive{{".lib", ".a"}};
-            }
-            return NotExtensionsCaseInsensitive{{".so", ".a", ".dylib"}};
-        }();
+        NotExtensionsCaseInsensitive lib_filter;
+        if (Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name))
+        {
+            lib_filter = NotExtensionsCaseInsensitive{{".lib"}};
+        }
+        else
+        {
+            lib_filter = NotExtensionsCaseInsensitive{{".so", ".a", ".dylib"}};
+        }
 
         std::vector<Path> debug_libs = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
         Util::erase_remove_if(debug_libs, lib_filter);
