@@ -13,19 +13,6 @@
 #include <string>
 #include <vector>
 
-namespace
-{
-    constexpr struct
-    {
-        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
-    } tolower_char;
-
-    constexpr struct
-    {
-        bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
-    } icase_eq;
-}
-
 vcpkg::ExpectedS<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
                                                                      void (*cb)(void*, std::string&, StringView),
                                                                      void* user)
@@ -187,14 +174,14 @@ std::string Strings::escape_string(std::string&& s, char char_to_escape, char es
     return ret;
 }
 
-static const char* case_insensitive_ascii_find(StringView s, StringView pattern)
+const char* Strings::case_insensitive_ascii_search(StringView s, StringView pattern)
 {
     return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
 bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
 {
-    return case_insensitive_ascii_find(s, pattern) != s.end();
+    return case_insensitive_ascii_search(s, pattern) != s.end();
 }
 
 bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)

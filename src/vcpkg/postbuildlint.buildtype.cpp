@@ -2,70 +2,70 @@
 
 #include <vcpkg/postbuildlint.buildtype.h>
 
-using vcpkg::Build::ConfigurationType;
-
 namespace vcpkg::PostBuildLint
 {
-    BuildType BuildType::value_of(const ConfigurationType& config, const Build::LinkageType& linkage)
+    BuildType BuildType::VALUES[4] = {
+        BuildType{Build::ConfigurationType::DEBUG, Build::LinkageType::STATIC},
+        BuildType{Build::ConfigurationType::DEBUG, Build::LinkageType::DYNAMIC},
+        BuildType{Build::ConfigurationType::RELEASE, Build::LinkageType::STATIC},
+        BuildType{Build::ConfigurationType::RELEASE, Build::LinkageType::DYNAMIC},
+    };
+
+
+    bool BuildType::has_crt_linker_option(StringView sv) const
     {
-        if (config == ConfigurationType::DEBUG && linkage == Build::LinkageType::STATIC)
+        // "/DEFAULTLIB:LIBCMTD";
+        // "/DEFAULTLIB:MSVCRTD";
+        // "/DEFAULTLIB:LIBCMT[^D]";
+        // "/DEFAULTLIB:LIBCMT[^D]";
+
+        constexpr static const StringLiteral static_crt = "/DEFAULTLIB:LIBCMT";
+        constexpr static const StringLiteral dynamic_crt = "/DEFAULTLIB:MSVCRT";
+
+        StringView option = linkage == Build::LinkageType::STATIC ? static_crt : dynamic_crt;
+
+        auto found = Strings::case_insensitive_ascii_search(sv, option);
+        if (found == sv.end())
         {
-            return BuildTypeC::DEBUG_STATIC;
+            return false;
         }
 
-        if (config == ConfigurationType::DEBUG && linkage == Build::LinkageType::DYNAMIC)
+        auto option_end = found + option.size();
+        if (config == Build::ConfigurationType::DEBUG)
         {
-            return BuildTypeC::DEBUG_DYNAMIC;
+            if (option_end == sv.end() || !Strings::icase_eq(*option_end, 'd'))
+            {
+                return false;
+            }
+            ++option_end;
         }
 
-        if (config == ConfigurationType::RELEASE && linkage == Build::LinkageType::STATIC)
-        {
-            return BuildTypeC::RELEASE_STATIC;
-        }
-
-        if (config == ConfigurationType::RELEASE && linkage == Build::LinkageType::DYNAMIC)
-        {
-            return BuildTypeC::RELEASE_DYNAMIC;
-        }
-
-        Checks::unreachable(VCPKG_LINE_INFO);
+        return option_end == sv.end() || Parse::ParserBase::is_whitespace(*option_end);
     }
 
-    const ConfigurationType& BuildType::config() const { return this->m_config; }
-
-    const Build::LinkageType& BuildType::linkage() const { return this->m_linkage; }
-
-    const std::regex& BuildType::crt_regex() const
+    StringLiteral BuildType::to_string() const
     {
-        static const std::regex REGEX_DEBUG_STATIC(R"(/DEFAULTLIB:LIBCMTD)", std::regex_constants::icase);
-        static const std::regex REGEX_DEBUG_DYNAMIC(R"(/DEFAULTLIB:MSVCRTD)", std::regex_constants::icase);
-        static const std::regex REGEX_RELEASE_STATIC(R"(/DEFAULTLIB:LIBCMT[^D])", std::regex_constants::icase);
-        static const std::regex REGEX_RELEASE_DYNAMIC(R"(/DEFAULTLIB:MSVCRT[^D])", std::regex_constants::icase);
-
-        switch (backing_enum)
+        if (config == Build::ConfigurationType::DEBUG)
         {
-            case BuildTypeC::DEBUG_STATIC: return REGEX_DEBUG_STATIC;
-            case BuildTypeC::DEBUG_DYNAMIC: return REGEX_DEBUG_DYNAMIC;
-            case BuildTypeC::RELEASE_STATIC: return REGEX_RELEASE_STATIC;
-            case BuildTypeC::RELEASE_DYNAMIC: return REGEX_RELEASE_DYNAMIC;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
+            if (linkage == Build::LinkageType::STATIC)
+            {
+                return "Debug,Static";
+            }
+            else
+            {
+                return "Debug,Dynamic";
+            }
         }
-    }
-
-    const std::string& BuildType::to_string() const
-    {
-        static const std::string NAME_DEBUG_STATIC("Debug,Static");
-        static const std::string NAME_DEBUG_DYNAMIC("Debug,Dynamic");
-        static const std::string NAME_RELEASE_STATIC("Release,Static");
-        static const std::string NAME_RELEASE_DYNAMIC("Release,Dynamic");
-
-        switch (backing_enum)
+        else
         {
-            case BuildTypeC::DEBUG_STATIC: return NAME_DEBUG_STATIC;
-            case BuildTypeC::DEBUG_DYNAMIC: return NAME_DEBUG_DYNAMIC;
-            case BuildTypeC::RELEASE_STATIC: return NAME_RELEASE_STATIC;
-            case BuildTypeC::RELEASE_DYNAMIC: return NAME_RELEASE_DYNAMIC;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
+            if (linkage == Build::LinkageType::STATIC)
+            {
+                return "Release,Static";
+            }
+            else
+            {
+                return "Release,Dynamic";
+            }
         }
     }
 }

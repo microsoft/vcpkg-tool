@@ -5,61 +5,32 @@
 #include <vcpkg/build.h>
 
 #include <array>
-#include <regex>
 
 namespace vcpkg::PostBuildLint
 {
     struct BuildType
     {
-        enum class BackingEnum
-        {
-            DEBUG_STATIC = 1,
-            DEBUG_DYNAMIC,
-            RELEASE_STATIC,
-            RELEASE_DYNAMIC
-        };
-
-        static BuildType value_of(const Build::ConfigurationType& config, const Build::LinkageType& linkage);
-
         BuildType() = delete;
 
-        constexpr BuildType(const BackingEnum backing_enum,
-                            const Build::ConfigurationType config,
-                            const Build::LinkageType linkage)
-            : backing_enum(backing_enum), m_config(config), m_linkage(linkage)
+        constexpr BuildType(Build::ConfigurationType c, Build::LinkageType l)
+            : config(c), linkage(l)
         {
         }
 
-        constexpr operator BackingEnum() const { return backing_enum; }
+        bool has_crt_linker_option(StringView sv) const;
+        StringLiteral to_string() const;
 
-        const Build::ConfigurationType& config() const;
-        const Build::LinkageType& linkage() const;
-        const std::regex& crt_regex() const;
-        const std::string& to_string() const;
+        static BuildType VALUES[4];
+        Build::ConfigurationType config;
+        Build::LinkageType linkage;
 
-    private:
-        BackingEnum backing_enum;
-        Build::ConfigurationType m_config;
-        Build::LinkageType m_linkage;
+        friend bool operator==(const BuildType& lhs, const BuildType& rhs)
+        {
+            return lhs.config == rhs.config && lhs.linkage == rhs.linkage;
+        }
+        friend bool operator!=(const BuildType& lhs, const BuildType& rhs)
+        {
+            return !(lhs == rhs);
+        }
     };
-
-    namespace BuildTypeC
-    {
-        using Build::LinkageType;
-        using BE = BuildType::BackingEnum;
-
-        static constexpr CStringView ENUM_NAME = "vcpkg::PostBuildLint::BuildType";
-
-        static constexpr BuildType DEBUG_STATIC = {
-            BE::DEBUG_STATIC, Build::ConfigurationType::DEBUG, LinkageType::STATIC};
-        static constexpr BuildType DEBUG_DYNAMIC = {
-            BE::DEBUG_DYNAMIC, Build::ConfigurationType::DEBUG, LinkageType::DYNAMIC};
-        static constexpr BuildType RELEASE_STATIC = {
-            BE::RELEASE_STATIC, Build::ConfigurationType::RELEASE, LinkageType::STATIC};
-        static constexpr BuildType RELEASE_DYNAMIC = {
-            BE::RELEASE_DYNAMIC, Build::ConfigurationType::RELEASE, LinkageType::DYNAMIC};
-
-        static constexpr std::array<BuildType, 4> VALUES = {
-            DEBUG_STATIC, DEBUG_DYNAMIC, RELEASE_STATIC, RELEASE_DYNAMIC};
-    }
 }

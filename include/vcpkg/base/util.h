@@ -130,6 +130,11 @@ namespace vcpkg::Util
         return ret;
     }
 
+    template<class Container, class T>
+    void erase_remove(Container& cont, const T& el)
+    {
+        cont.erase(std::remove(cont.begin(), cont.end(), el), cont.end());
+    }
     template<class Container, class Pred>
     void erase_remove_if(Container& cont, Pred pred)
     {

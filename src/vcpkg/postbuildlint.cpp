@@ -889,9 +889,8 @@ namespace vcpkg::PostBuildLint
                                                 const std::vector<Path>& libs,
                                                 const Path& dumpbin_exe)
     {
-        std::vector<BuildType> bad_build_types(BuildTypeC::VALUES.cbegin(), BuildTypeC::VALUES.cend());
-        bad_build_types.erase(std::remove(bad_build_types.begin(), bad_build_types.end(), expected_build_type),
-                              bad_build_types.end());
+        std::vector<BuildType> bad_build_types(std::begin(BuildType::VALUES), std::end(BuildType::VALUES));
+        Util::erase_remove(bad_build_types, expected_build_type);
 
         std::vector<BuildTypeAndFile> libs_with_invalid_crt;
 
@@ -907,7 +906,7 @@ namespace vcpkg::PostBuildLint
 
             for (const BuildType& bad_build_type : bad_build_types)
             {
-                if (std::regex_search(ec_data.output.cbegin(), ec_data.output.cend(), bad_build_type.crt_regex()))
+                if (bad_build_type.has_crt_linker_option(ec_data.output))
                 {
                     libs_with_invalid_crt.push_back({lib, bad_build_type});
                     break;
@@ -1114,12 +1113,12 @@ namespace vcpkg::PostBuildLint
                     if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
                     {
                         error_count += check_crt_linkage_of_libs(
-                            BuildType::value_of(Build::ConfigurationType::DEBUG, build_info.crt_linkage),
+                            BuildType(Build::ConfigurationType::DEBUG, build_info.crt_linkage),
                             debug_libs,
                             toolset.dumpbin);
                     }
                     error_count += check_crt_linkage_of_libs(
-                        BuildType::value_of(Build::ConfigurationType::RELEASE, build_info.crt_linkage),
+                        BuildType(Build::ConfigurationType::RELEASE, build_info.crt_linkage),
                         release_libs,
                         toolset.dumpbin);
                 }
