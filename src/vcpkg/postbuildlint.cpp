@@ -556,8 +556,7 @@ namespace vcpkg::PostBuildLint
                                              const Filesystem& fs)
     {
         std::vector<FileAndArch> binaries_with_invalid_architecture;
-        if (cmake_system_name.empty() || cmake_system_name == "Windows" || cmake_system_name == "WindowsStore" ||
-            cmake_system_name == "MinGW")
+        if (cmake_system_name.empty() || cmake_system_name == "Windows" || cmake_system_name == "WindowsStore")
         {
             for (const Path& file : files)
             {
