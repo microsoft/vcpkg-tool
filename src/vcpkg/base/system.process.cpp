@@ -260,9 +260,8 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path)
     {
-        static const std::string system_root_env =
-            get_environment_variable("SystemRoot").value_or_exit(VCPKG_LINE_INFO);
-        static const std::string system32_env = system_root_env + R"(\system32)";
+        const std::string& system_root_env = get_system_root().value_or_exit(VCPKG_LINE_INFO).native();
+        const std::string& system32_env = get_system32().value_or_exit(VCPKG_LINE_INFO).native();
         std::string new_path = "PATH=";
         if (!prepend_to_path.empty())
         {
@@ -549,10 +548,11 @@ namespace vcpkg
                 Strings::to_utf16(get_real_filesystem().absolute(wd.working_directory, VCPKG_LINE_INFO));
         }
 
-        VCPKG_MSVC_WARNING(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
-                                            // /analyze can't tell that we transferred ownership here
         auto environment_block = env.m_env_data;
-#pragma warning(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
+
+        // Leaking process information handle 'process_info.proc_info.hProcess'
+        // /analyze can't tell that we transferred ownership here
+        VCPKG_MSVC_WARNING(suppress : 6335)
         bool succeeded = TRUE == CreateProcessW(nullptr,
                                                 Strings::to_utf16(cmd_line).data(),
                                                 nullptr,
