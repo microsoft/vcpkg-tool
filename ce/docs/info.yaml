@@ -1,0 +1,138 @@
+## Metadata Format:
+
+# At the top level, you can have 
+
+info: # see INFO
+contacts:
+catalogs:
+
+# And a set of 'demands' that are applicable to all consumers regardless of host/context settings
+# the set 
+requires:
+see-also:
+settings:
+contents: 
+error:
+warning:
+message: 
+
+# any other top-level kets are considered "Conditional Host/Context Query" strings that have a set of Demands under them:
+# the format for the Conditional Host/Context Query is based off of the w3c MediaQuery format 
+# basically, it's an expression of 'feature' or 'feature:value' combinations that can be evaluated
+# there are a few predefined 'features' but it's really open ended
+windows:
+  # demands: any of 'requires', 'see-also', 'settings', 'error', 'warning', 'message'
+
+
+## INFO BLOCK
+# the info block has the following fields:
+info:                 # REQUIRED
+  id: foo/bar/bin     # REQUIRED the package identity 
+  version: 1.2.3      # REQUIRED a semver version 
+  summary: text       # REQUIRED a one-line short string with a small description
+  description: text   # a longer description text (may be multiple lines)
+  options: [insertable,template] # dependencyOnly, etc
+
+## CONTACTS BLOCK
+# you can have zero or more contacts associated with the metadata file
+contacts:
+  Garrett Serack:     # REQUIRED nodes in the contact blocks are the names 
+    email: a@x.com    # you can have an email
+    role: text        # you can have a single role as a string
+                      # or specify an array of roles 
+
+  Bob Smith:
+    email: bob@b.com
+    role:
+      - developer               # an example of multiple roles
+      - author                  # for a single contact
+      - all-around-awesome-guy  # 
+
+## CATALOGS BLOCK
+# catalog list any metadata sources that you are pulling from 
+# (other than the default, which is built-in, and not-removeable)
+catalogs: 
+  myget:                                # REQUIRED nodes in the sources block are the cosmetic name of the source
+    nuget: https://myget.org/api/v3/    # the key is the type (one of 'nuget', 'git', 'path') -- the future could have things like 'rpm', 'dpkg', 'npm' ... etc
+                                        # the value is the Location (may be a single string or an array of strings for mirrors)
+                                        # a nuget source would be implemented with an adapter that translates nuget repositories into a ce-style metadata
+
+  bobs-source:                          # an example of a local repository that is just a bunch of metadata files in a folder tree
+    path: \\server\share\myfolder       
+
+  nxp:
+    git: https://github.com/NXP/repo    # an example of a source that is implemented as a git repo (same as the official repo)
+
+
+# DEMANDS block
+requires:                               # artifacts required to be installed to fulfill this
+  compilers/microsoft/msvc: 1.2.3       # requires is one or more pkg-identity: version-range keypairs
+  tools/cmake: ~3.0.0                   # a semver version range (this means 3.0.*)
+  nxp:some/package/from/there: 2.3.4    # a package from an alternative source
+
+see-also:                               # you can think of 'see-also' as a set of  'optional' packages 
+  tools/mylinker: 1.0.0
+
+settings:                               # settigns are the things that describe the configuration environment
+  paths:                                # folders that get added as paths in the environment (may be a string or an array of strings)
+    path: tools/bin                      # adds to the PATH
+    lib: libraries                      # adds to the LIBPATH
+    include:
+      - some/headers/include            # adds to the INCLUDE path 
+      - some/other/include      
+
+  tools:                                # tools by refernce 
+    CC: bin/avr-gcc                     # paths that are relative to the root of the unpacked artifact
+    CXX: bin/avr-cpp
+    AS: tools/bin/avr-as
+
+  variables:                            # key-value pairs of variables that get used (used as environment variables or in constructing the cmake settigns, etc)
+    CXXFLAGS: 
+      - fno-rtti                        # values can be a string or strings
+      - fno-exceptions
+      - mcpu=arm7
+
+    DEBUG_MODE: true
+
+  defines:                              # very c/c++ specific -- #defines that should be used
+    MYINT: long long
+    MYCHAR: WCHAR_T
+
+                                        # the last three are means that an artifact can communicate with the user 
+                                        # at install time, either as an error (which stops the install), a warning
+                                        # which warns the user of something, or a message, which is just to note
+                                        # some information (could be 'use of this package indicates acceptacnce of the EULA... etc')
+
+apply: # used when we want to insert/copy contents from the artifact into the target project when they aren't there.
+  c: 
+    src/board.c: project_template/board.c
+    src/board.cpp: project_template/board.cpp
+
+  header: 
+    src/include/board.h: project_template/board.h
+  
+  assembler: 
+    src/asm/startup.s: Device/ARM/ARMCM3/Source/IAR/startup_ARMCM3.s
+
+  linker: 
+    src/linker/gcc_arm.ld: Device/ARM/ARMCM3/Source/GCC/gcc_arm.ld
+
+  project:
+    project.cmake: project_template/project.cmake
+
+  documentation: # lists places docs can be launched from. https:// required if not in the pack.
+    Cortex-M3 Device Generic Users Guide: CMSIS/Documentation/NN/html/index.html
+  
+        
+error: -|  # multiline error string
+  You must specify a target architecture 
+  or this won't work                                   
+
+warning: This requires a runtime component that is installed separately
+
+message: -|   # multiline string
+  The use of this package indicates the acceptance of the license
+  DWYW license 
+  You can do anything with this, I don't care 
+
+

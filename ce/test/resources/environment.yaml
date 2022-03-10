@@ -1,0 +1,10 @@
+# Environment configuration
+info:
+  id: NAME
+  version: 1.0.0
+  summary: My Project
+
+requires:
+  compilers/arm/gcc: 2020.10.0
+  tools/kitware/cmake: 3.20.1
+  
