@@ -16,22 +16,34 @@ namespace
         (msg::path, msg::exit_code),
         "",
         "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
+    DECLARE_AND_REGISTER_MESSAGE(
+        CouldNotDeduceNugetIdAndVersion,
+        (msg::path),
+        "",
+        "Could not deduce nuget id and version from filename: {path}");
 
 #if defined(_WIN32)
     void win32_extract_nupkg(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
         const auto nuget_exe = paths.get_tool_exe(Tools::NUGET);
 
-        const auto stem = archive.stem().to_string();
+        const auto stem = archive.stem();
+
         // assuming format of [name].[version in the form d.d.d]
         // This assumption may not always hold
-        std::smatch match;
-        const bool has_match = std::regex_match(stem, match, std::regex{R"###(^(.+)\.(\d+\.\d+\.\d+)$)###"});
-        Checks::check_exit(
-            VCPKG_LINE_INFO, has_match, "Could not deduce nuget id and version from filename: %s", archive);
+        auto dot_after_name = Util::find_nth_from_last(stem, '.', 2);
 
-        const std::string nugetid = match[1];
-        const std::string version = match[2];
+        auto is_digit_or_dot = [](char ch) {
+            return ch == '.' || Parse::ParserBase::is_ascii_digit(ch);
+        };
+        if (dot_after_name == stem.end() || !std::for_each(dot_after_name, stem.end(), is_digit_or_dot))
+        {
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO, msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);
+        }
+
+        auto nugetid = StringView{stem.begin(), dot_after_name};
+        auto version = StringView{dot_after_name + 1, stem.end()};
 
         Command nuget_command{nuget_exe};
         nuget_command.string_arg("install")

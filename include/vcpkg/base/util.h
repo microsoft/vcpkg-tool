@@ -141,6 +141,46 @@ namespace vcpkg::Util
         cont.erase(std::remove_if(cont.begin(), cont.end(), pred), cont.end());
     }
 
+    // 0th is the first occurence
+    // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
+    // returns the 1 before the 4
+    template <class R, class V>
+    auto find_nth(R&& r, const V& v, size_t n)
+    {
+        using std::begin;
+        using std::end;
+
+        auto last = end(r);
+        auto current = std::find(begin(r), last, v);
+
+        for (size_t i = 0; i < n && current != last; ++i)
+        {
+            current = std::find(current + 1, last, v);
+        }
+
+        return current;
+    }
+
+    // 0th is the last occurence
+    // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
+    // returns the 1 before the 2
+    template <class R, class V>
+    auto find_nth_from_last(R&& r, const V& v, size_t n)
+    {
+        using std::rbegin;
+        using std::rend;
+
+        auto last = rend(r);
+        auto current = std::find(rbegin(r), last, v);
+
+        for (size_t i = 0; i < n && current != last; ++i)
+        {
+            current = std::find(current + 1, last, v);
+        }
+
+        return current.base() - 1;
+    }
+
     template<class Container, class V>
     auto find(Container&& cont, V&& v)
     {
