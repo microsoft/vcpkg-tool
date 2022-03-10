@@ -1,6 +1,8 @@
 #pragma once
 
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 
 #include <string>
 
@@ -30,13 +32,19 @@ namespace vcpkg::Hash
     std::string get_bytes_hash(const void* first, const void* last, Algorithm algo) noexcept;
     std::string get_string_hash(StringView s, Algorithm algo) noexcept;
     std::string get_file_hash(const Filesystem& fs, const Path& target, Algorithm algo, std::error_code& ec) noexcept;
+
+    DECLARE_MESSAGE(HashFileFailureToRead,
+                    (msg::path, msg::error),
+                    "example of {error} is 'no such file or directory'",
+                    "failed to read file '{path}' for hashing: {error}");
     inline std::string get_file_hash(LineInfo li, const Filesystem& fs, const Path& target, Algorithm algo) noexcept
     {
         std::error_code ec;
         const auto result = get_file_hash(fs, target, algo, ec);
         if (ec)
         {
-            Checks::exit_with_message(li, "Failure to read file '%s' for hashing: %s", target, ec.message());
+            msg::print(Color::error, msg::msgErrorMessage);
+            Checks::msg_exit_with_message(li, msgHashFileFailureToRead, msg::path = target, msg::error = ec.message());
         }
 
         return result;

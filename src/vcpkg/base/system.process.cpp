@@ -548,10 +548,11 @@ namespace vcpkg
                 Strings::to_utf16(get_real_filesystem().absolute(wd.working_directory, VCPKG_LINE_INFO));
         }
 
-        VCPKG_MSVC_WARNING(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
-                                            // /analyze can't tell that we transferred ownership here
         auto environment_block = env.m_env_data;
-#pragma warning(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
+
+        // Leaking process information handle 'process_info.proc_info.hProcess'
+        // /analyze can't tell that we transferred ownership here
+        VCPKG_MSVC_WARNING(suppress : 6335)
         bool succeeded = TRUE == CreateProcessW(nullptr,
                                                 Strings::to_utf16(cmd_line).data(),
                                                 nullptr,

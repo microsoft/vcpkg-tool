@@ -371,24 +371,23 @@ namespace vcpkg
 
         if (toolsets.empty())
         {
-            ret.append(msg::format(msgVSNoInstances)).appendnl();
+            ret.append(msgVSNoInstances).appendnl();
         }
         else
         {
-            ret.append(msg::format(msgVSExaminedInstances)).appendnl();
+            ret.append(msgVSExaminedInstances).appendnl();
             for (const Toolset& toolset : toolsets)
             {
-                ret.append(LocalizedString::from_string_unchecked(
-                    Strings::concat("    ", toolset.visual_studio_root_path, '\n')));
+                ret.append_indent().append_raw(toolset.visual_studio_root_path).appendnl();
             }
         }
 
         if (!paths_examined.empty())
         {
-            ret.append(msg::format(msgVSExaminedPaths)).appendnl();
+            ret.append(msgVSExaminedPaths).appendnl();
             for (const Path& examinee : paths_examined)
             {
-                ret.append(LocalizedString::from_string_unchecked(Strings::concat("    ", examinee, '\n')));
+                ret.append_indent().append_raw(examinee).appendnl();
             }
         }
 
