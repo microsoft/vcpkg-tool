@@ -1275,13 +1275,6 @@ packages:
       strnum: 1.0.5
     dev: false
 
-  /fast-xml-parser/4.0.6:
-    resolution: {integrity: sha512-RHz47iX/DKT6BQwYQUmKG/1fuC5g2s/TibpxNvE+0ysnpSJxePFzsJvRDtfGhLRg3zdKMzO6EJn8n7+AJ6pSHg==}
-    hasBin: true
-    dependencies:
-      strnum: 1.0.5
-    dev: false
-
   /fastq/1.13.0:
     resolution: {integrity: sha512-YpkpUnK8od0o1hmeSc7UUs/eB/vIPWJYjKck2QKIzAf71Vm1AAQ3EbuZB3g2JIy+pg+ERD0vqI79KyZiB2e2Nw==}
     dependencies:
@@ -2779,7 +2772,7 @@ packages:
     dev: false
 
   file:projects/vcpkg-ce.tgz:
-    resolution: {integrity: sha512-cRJkpW/kqsnJrUhFzTHtdA2wccsR06hO2ydj0OxBvZFT39B39Ww97mXKLTUgvXS6pvIGCuyoYtOl2StlR657Pg==, tarball: file:projects/vcpkg-ce.tgz}
+    resolution: {integrity: sha512-w5KSYh3XmlMetgClCJl9yaqPTwWOiuUZ91yXM/L3SUkpH8RL3Ti49xC7ma7Jq2/UaJVWSpu2o74mnvjE5P/xQg==, tarball: file:projects/vcpkg-ce.tgz}
     name: '@rush-temp/vcpkg-ce'
     version: 0.0.0
     dependencies:
@@ -2801,7 +2794,7 @@ packages:
       eslint: 8.8.0
       eslint-plugin-notice: 0.9.10_eslint@8.8.0
       fast-glob: 3.2.11
-      fast-xml-parser: 4.0.6
+      fast-xml-parser: 4.0.3
       got: 11.8.3
       marked: 4.0.12
       marked-terminal: 5.1.1_marked@4.0.12
