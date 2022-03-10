@@ -32,39 +32,33 @@ namespace vcpkg::PostBuildLint
     struct OutdatedDynamicCrt
     {
         std::string name;
-        std::regex regex;
-
-        OutdatedDynamicCrt(const std::string& name, const std::string& regex_as_string)
-            : name(name), regex(std::regex(regex_as_string, std::regex_constants::icase))
-        {
-        }
     };
 
     static Span<const OutdatedDynamicCrt> get_outdated_dynamic_crts(const Optional<std::string>& toolset_version)
     {
         static const std::vector<OutdatedDynamicCrt> V_NO_120 = {
-            {"msvcp100.dll", R"(msvcp100\.dll)"},
-            {"msvcp100d.dll", R"(msvcp100d\.dll)"},
-            {"msvcp110.dll", R"(msvcp110\.dll)"},
-            {"msvcp110_win.dll", R"(msvcp110_win\.dll)"},
-            {"msvcp60.dll", R"(msvcp60\.dll)"},
-            {"msvcp60.dll", R"(msvcp60\.dll)"},
+            {"msvcp100.dll"},
+            {"msvcp100d.dll"},
+            {"msvcp110.dll"},
+            {"msvcp110_win.dll"},
+            {"msvcp60.dll"},
+            {"msvcp60.dll"},
 
-            {"msvcrt.dll", R"(msvcrt\.dll)"},
-            {"msvcr100.dll", R"(msvcr100\.dll)"},
-            {"msvcr100d.dll", R"(msvcr100d\.dll)"},
-            {"msvcr100_clr0400.dll", R"(msvcr100_clr0400\.dll)"},
-            {"msvcr110.dll", R"(msvcr110\.dll)"},
-            {"msvcrt20.dll", R"(msvcrt20\.dll)"},
-            {"msvcrt40.dll", R"(msvcrt40\.dll)"},
+            {"msvcrt.dll"},
+            {"msvcr100.dll"},
+            {"msvcr100d.dll"},
+            {"msvcr100_clr0400.dll"},
+            {"msvcr110.dll"},
+            {"msvcrt20.dll"},
+            {"msvcrt40.dll"},
         };
 
         static const std::vector<OutdatedDynamicCrt> V_NO_MSVCRT = [&]() {
             auto ret = V_NO_120;
-            ret.push_back({"msvcp120.dll", R"(msvcp120\.dll)"});
-            ret.push_back({"msvcp120_clr0400.dll", R"(msvcp120_clr0400\.dll)"});
-            ret.push_back({"msvcr120.dll", R"(msvcr120\.dll)"});
-            ret.push_back({"msvcr120_clr0400.dll", R"(msvcr120_clr0400\.dll)"});
+            ret.push_back({"msvcp120.dll"});
+            ret.push_back({"msvcp120_clr0400.dll"});
+            ret.push_back({"msvcr120.dll"});
+            ret.push_back({"msvcr120_clr0400.dll"});
             return ret;
         }();
 
@@ -956,7 +950,7 @@ namespace vcpkg::PostBuildLint
 
             for (const OutdatedDynamicCrt& outdated_crt : get_outdated_dynamic_crts(pre_build_info.platform_toolset))
             {
-                if (std::regex_search(ec_data.output.cbegin(), ec_data.output.cend(), outdated_crt.regex))
+                if (Strings::case_insensitive_ascii_contains(ec_data.output, outdated_crt.name))
                 {
                     dlls_with_outdated_crt.push_back({dll, outdated_crt});
                     break;
