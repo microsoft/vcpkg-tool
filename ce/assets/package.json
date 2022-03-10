@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Microsoft/vcpkg-ce.git"
+    "url": "git+https://github.com/Microsoft/vcpkg-tool.git"
   },
   "files": [
     "**/*"
@@ -32,8 +32,8 @@
   "author": "Microsoft",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Microsoft/vcpkg-ce/issues"
+    "url": "https://github.com/Microsoft/vcpkg/issues"
   },
-  "homepage": "https://github.com/Microsoft/vcpkg-ce#readme",
-  "readme": "https://github.com/Microsoft/vcpkg-ce/blob/master/readme.md"
+  "homepage": "https://github.com/Microsoft/vcpkg#readme",
+  "readme": "https://github.com/Microsoft/vcpkg/blob/master/readme.md"
 }
