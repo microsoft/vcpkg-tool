@@ -16,7 +16,7 @@
   "projectFolderMaxDepth": 5,
   "gitPolicy": {},
   "repository": {
-    "url": "https://github.com/microsoft/vcpkg-ce"
+    "url": "https://github.com/microsoft/vcpkg-tool"
   },
   /**
    * Event hooks are customized script actions that Rush executes when specific events occur
