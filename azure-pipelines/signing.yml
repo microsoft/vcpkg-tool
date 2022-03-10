@@ -145,7 +145,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationTarballName "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempPath standalone-temp "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init"'
+        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init"'
     - script: npm pack
       displayName: Create vcpkg-ce Pack
       workingDirectory: $(Build.BinariesDirectory)/vcpkg-ce
@@ -333,6 +333,12 @@ jobs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
         SigningCert: '8020'
         MacAppName: 'vcpkg'
+    - task: Powershell@2
+      displayName: 'Mint VS Insertion standalone bundle'
+      inputs:
+        pwsh: true
+        filePath: vcpkg-init/mint-standalone-bundle.ps1
+        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -readonly -TempDir standalone-temp'
     - task: CmdLine@2
       displayName: 'Arrange Drop'
       inputs:
@@ -349,6 +355,8 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
 
           move "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
+          copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.exe"
+
           move "$(Build.BinariesDirectory)\x86\vcpkg.pdb" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.pdb"
           move "$(Build.BinariesDirectory)\x86\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe"
           move "$(Build.BinariesDirectory)\x86\tls12-download.pdb" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.pdb"
@@ -360,6 +368,8 @@ jobs:
           mkdir "$(Build.ArtifactStagingDirectory)\staging\macos"
           tar.exe -C "$(Build.ArtifactStagingDirectory)\staging\macos" -xf "$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip"
           move "$(Build.ArtifactStagingDirectory)\staging\macos\vcpkg" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-macos"
+
+          copy "$(Build.SourcesDirectory)\azure-pipelines\vs-insertion\vcpkg.nuspec" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.nuspec"
     - task: CmdLine@2
       displayName: 'Add Drop PGP Signatures (real sign only)'
       condition: and(eq(variables.SignType, 'real'), succeeded())
@@ -369,6 +379,12 @@ jobs:
           move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.sig"
           move "$(Build.BinariesDirectory)\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc.sig"
           move "$(Build.BinariesDirectory)\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc.sig"
+    # Create NuGet package.
+    - task: NuGetCommand@2
+      displayName: 'NuGet pack for VS Insertion'
+      inputs:
+        command: custom
+        arguments: 'pack $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec -NoDefaultExcludes -OutputDirectory "$(Build.ArtifactStagingDirectory)/vs-insertion/drop" -Properties version=$(VCPKG_BASE_VERSION)'
     # Do compliance checks.
     - task: BinSkim@3
       inputs:
@@ -414,43 +430,21 @@ jobs:
         uploadRoslyn: false
         uploadTSLint: false
       condition: eq(variables['Build.SourceBranchName'], 'main')
-    # Publish everything to a Drop and to a GitHub Release
+    # Publish everything to a Drop
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Drop'
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\drop'
         ArtifactName: 'Drop'
         publishLocation: 'Container'
-    - task: CopyFiles@2
-      displayName: 'Copy Packaging Solution to Staging Area'
-      inputs:
-        SourceFolder: '$(Build.SourcesDirectory)/azure-pipelines/vs-insertion'
-        TargetFolder: '$(Build.ArtifactStagingDirectory)/vs-insertion/staging'
-        Contents: 'vcpkg.nuspec'
-        CleanTargetFolder: true
-    - task: CopyFiles@2
-      displayName: 'Copy vcpkg drop to Staging Area'
-      inputs:
-        SourceFolder: '$(Build.ArtifactStagingDirectory)/drop'
-        TargetFolder: '$(Build.ArtifactStagingDirectory)/vs-insertion/staging'
-        Contents: 'vcpkg.exe'
-    - task: Powershell@2
-      displayName: 'Mint readonly standalone bundle'
-      inputs:
-        pwsh: true
-        filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging/" -readonly -TempPath standalone-temp'
-    - task: NuGetCommand@2
-      displayName: 'NuGet pack for VS Insertion'
-      inputs:
-        command: custom
-        arguments: 'pack $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec -NoDefaultExcludes -OutputDirectory "$(Build.ArtifactStagingDirectory)/vs-insertion/drop" -Properties version=$(VCPKG_BASE_VERSION)'
+    # Publish everything to VS Insertion
     - task: NuGetCommand@2
       displayName: 'NuGet publish for VS Insertion'
       inputs:
         command: push
         packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.x86.1.0.0-$(VCPKG_BASE_VERSION).nupkg'
         publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
+    # Publish everything to a GitHub Release
     - task: DownloadSecureFile@1
       displayName: Download Deploy Key
       name: githubDeployKey
