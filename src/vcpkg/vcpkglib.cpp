@@ -224,7 +224,20 @@ namespace vcpkg
     std::string shorten_text(const std::string& desc, const size_t length)
     {
         Checks::check_exit(VCPKG_LINE_INFO, length >= 3);
-        auto simple_desc = std::regex_replace(desc, std::regex("\\s+"), " ");
+        std::string simple_desc;
+
+        auto first = desc.begin();
+        auto last = desc.end();
+        for (;;)
+        {
+            auto next_ws = std::find_if(first, last, Parse::ParserBase::is_whitespace);
+            simple_desc.append(first, next_ws);
+            if (next_ws == last) break;
+
+            simple_desc.push_back(' ');
+            first = std::find_if_not(first, last, Parse::ParserBase::is_whitespace);
+        }
+
         return simple_desc.size() <= length ? simple_desc : simple_desc.substr(0, length - 3) + "...";
     }
 }
