@@ -21,7 +21,7 @@
                  Exclude="$(IntermediateOutputPath)\ce\common\temp\node_modules\.pnpm\**\node_modules\fast-xml-parser\src\xmlbuilder\prettifyJs2Xml.js">
       <Authenticode>3PartyScriptsSHA2</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\init.ps1">
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-init.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
   </ItemGroup>
