@@ -166,6 +166,6 @@ describe('Amf', () => {
     strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
 
     SuiteLocal.log(doc.validationErrors);
-    strict.equal(doc.validationErrors.length, 2, `Expecting two errors, found: ${JSON.stringify(doc.validationErrors, null, 2)}`);
+    strict.equal(doc.validationErrors.length, 7, `Expecting two errors, found: ${JSON.stringify(doc.validationErrors, null, 2)}`);
   });
 });

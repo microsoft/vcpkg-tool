@@ -2,16 +2,66 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { delimiter } from 'path';
+import { delimiter, extname } from 'path';
+import { undo as undoVariableName } from '../constants';
+import { i } from '../i18n';
 import { Session } from '../session';
 import { Dictionary, linq } from '../util/linq';
 import { Uri } from '../util/uri';
 import { toXml } from '../util/xml';
 import { Artifact } from './artifact';
 
-export function undoActivation(originalEnvironment: Record<string, string>, undoData: any) {
-  const newEnvironment = { ...originalEnvironment };
+
+function generateCmdScript(variables: Dictionary<string>, aliases: Dictionary<string>): string {
+  return linq.entries(variables).select(([k, v]) => { return v ? `set ${k}=${v}` : `set ${k}=`; }).join('\r\n') +
+    '\r\n' +
+    linq.entries(aliases).select(([k, v]) => { return v ? `doskey ${k}=${v} $*` : `doskey ${k}=`; }).join('\r\n') +
+    '\r\n';
 }
+
+function generatedPowerShellScript(variables: Dictionary<string>, aliases: Dictionary<string>): string {
+  return linq.entries(variables).select(([k, v]) => { return v ? `$\{ENV:${k}}="${v}"` : `$\{ENV:${k}}=$null`; }).join('\n') +
+    '\n' +
+    linq.entries(aliases).select(([k, v]) => { return v ? `function global:${k} { ${v} @args }` : `remove-item -ea 0 "function:${k}"`; }).join('\n') +
+    '\n';
+}
+
+function generatePosixScript(variables: Dictionary<string>, aliases: Dictionary<string>): string {
+  return linq.entries(variables).select(([k, v]) => { return v ? `export ${k}="${v}"` : `unset ${k[0]}`; }).join('\n') +
+    '\n' +
+    linq.entries(aliases).select(([k, v]) => { return v ? `${k}() {\n  ${v} $* \n}` : `unset -f ${v} > /dev/null 2>&1`; }).join('\n') +
+    '\n';
+}
+
+function generateScriptContent(kind: string, variables: Dictionary<string>, aliases: Dictionary<string>) {
+  switch (kind) {
+    case '.ps1':
+      return generatedPowerShellScript(variables, aliases);
+    case '.cmd':
+      return generateCmdScript(variables, aliases);
+    case '.sh':
+      return generatePosixScript(variables, aliases);
+  }
+  return '';
+}
+
+export async function deactivate(shellScriptFile: Uri, variables: Dictionary<string>, aliases: Dictionary<string>) {
+  const kind = extname(shellScriptFile.fsPath);
+  await shellScriptFile.writeUTF8(generateScriptContent(kind, variables, aliases));
+}
+
+function undoActivation(currentEnvironment: Dictionary<string | undefined>, variables: Dictionary<string>) {
+  const result = { ...currentEnvironment };
+  for (const [key, value] of linq.entries(variables)) {
+    if (value) {
+      result[key] = value;
+    } else {
+      delete result[key];
+    }
+  }
+  return result;
+}
+
 
 export class Activation {
   #session: Session;
@@ -25,9 +75,9 @@ export class Activation {
       defines: Object.fromEntries(this.defines),
       locations: Object.fromEntries([... this.locations.entries()].map(([k, v]) => [k, v.fsPath])),
       properties: Object.fromEntries([... this.properties.entries()].map(([k, v]) => [k, v.join(',')])),
-      environment: { ...process.env, ...Object.fromEntries([... this.environment.entries()].map(([k, v]) => [k, v.join(' ')])) },
+      environment: { ...process.env, ...Object.fromEntries([... this.environment.entries()].map(([k, v]) => [k, linq.join(v, ' ')])) },
       tools: Object.fromEntries(this.tools),
-      paths: Object.fromEntries([...this.paths.entries()].map(([k, v]) => [k, v.map(each => each.fsPath).join(delimiter)])),
+      paths: Object.fromEntries([...this.paths.entries()].map(([k, v]) => [k, linq.values(v).select(each => each.fsPath).join(delimiter)])),
       aliases: Object.fromEntries(this.aliases)
     };
   }
@@ -57,7 +107,7 @@ export class Activation {
     }
 
     if (this.paths.size) {
-      msbuildFile.Project.PropertyGroup.push({ $Label: 'Paths', ...linq.entries(this.paths).toObject(([key, value]) => [key, value.map(each => each.fsPath).join(';')]) });
+      msbuildFile.Project.PropertyGroup.push({ $Label: 'Paths', ...linq.entries(this.paths).toObject(([key, value]) => [key, linq.values(value).select(each => each.fsPath).join(';')]) });
     }
 
     if (this.defines.size) {
@@ -81,30 +131,17 @@ export class Activation {
     return toXml(msbuildFile);
   }
 
-  protected generateCmdScript(artifacts: Iterable<Artifact>): string {
-    return '';
-  }
+  protected generateEnvironmentVariables(originalEnvironment: Dictionary<string | undefined>): [Dictionary<string>, Dictionary<string>] {
 
-  protected generatedPowerShellScript(artifacts: Iterable<Artifact>): string {
-    return '';
-  }
+    const undo = new Dictionary<string>();
+    const env = new Dictionary<string>();
 
-  protected generatePosixScript(artifacts: Iterable<Artifact>): string {
-    return '';
-  }
-
-  protected generateEnvironmentVariables(originalEnvironment: Record<string, string>): Dictionary<string> {
-    const output = <any>{
-      original: { ...originalEnvironment },
-      modified: {},
-      added: {},
-      result: {},
-    }
-
-
-    for (const [variable, values] of [... this.paths.entries()].filter(([k, v]) => v.length > 0)) {
+    for (const [variable, values] of this.paths.entries()) {
       // add new values at the beginning;
-      const elements = new Set(values.map(each => each.fsPath));
+      const elements = new Set();
+      for (const each of values) {
+        elements.add(each.fsPath);
+      }
 
       // add any remaining entries from existing environment
       const originalVariable = originalEnvironment[variable];
@@ -116,120 +153,197 @@ export class Activation {
         }
 
         // compose the final value
-        output.result[variable] = [...elements.values()].join(delimiter);
+        env[variable] = linq.join(elements, delimiter);
 
         // set the undo data
+        undo[variable] = originalVariable || '';
       }
-
 
       // combine environment variables with multiple values with spaces (uses: CFLAGS, etc)
-      for (const [key, values] of this.environment) {
-        result[key] = values.join(' ');
+      for (const [variable, values] of this.environment) {
+        env[variable] = linq.join(values, ' ');
+        undo[variable] = originalEnvironment[variable] || '';
       }
 
-      // .tools get defined as environent variables too.
-      for (const [key, value] of this.tools) {
-        result[key] = value;
+      // .tools get defined as environment variables too.
+      for (const [variable, value] of this.tools) {
+        env[variable] = value;
+        undo[variable] = originalEnvironment[variable] || '';
       }
 
       // .defines get compiled into a single environment variable.
       if (this.defines.size > 0) {
         const defines = linq.entries(this.defines).select(([key, value]) => value !== undefined && value !== '' ? `-D ${key}=${value}` : `-D ${key}`).join(' ');
         if (defines) {
-          result['DEFINES'] = defines;
+          env['DEFINES'] = defines;
+          undo['DEFINES'] = originalEnvironment['DEFINES'] || '';
         }
       }
+    }
+    return [env, undo];
+  }
 
-      return result;
+  async activate(artifacts: Iterable<Artifact>, currentEnvironment: Dictionary<string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined) {
+    let undoDeactivation = '';
+    const scriptKind = extname(shellScriptFile?.fsPath || '');
+
+    // load previous activation undo data
+    const previous = currentEnvironment[undoVariableName];
+    if (previous && undoEnvironmentFile) {
+      const deactivationDataFile = this.#session.parseUri(previous);
+      if (deactivationDataFile.scheme === 'file' && await deactivationDataFile.exists()) {
+        const deactivatationData = JSON.parse(await deactivationDataFile.readUTF8());
+        currentEnvironment = undoActivation(currentEnvironment, deactivatationData.environment || {});
+        delete currentEnvironment[undoVariableName];
+        undoDeactivation = generateScriptContent(scriptKind, deactivatationData.environment || {}, deactivatationData.aliases || {});
+      }
     }
 
-  protected generateUndoData(originalEnvironment: Record<string, string>): string {
-    const data = <any>{
-      removed: {},
-      added: {},
-      modified: {}
-    };
+    const [variables, undo] = this.generateEnvironmentVariables(currentEnvironment);
+    const aliases = linq.entries(this.aliases).toObject(each => each);
 
+    // generate undo file if requested
+    if (undoEnvironmentFile) {
+      const undoContents = {
+        environment: undo,
+        aliases: linq.keys(aliases).select(each => <[string, string]>[each, '']).toObject(each => each)
+      };
 
-    // variables we removed
-    // variables we added
-    // variables we altered
+      // make a note of the location
+      variables[undoVariableName] = undoEnvironmentFile.fsPath;
 
+      // create the file on disk
+      await undoEnvironmentFile.writeUTF8(JSON.stringify(undoContents, (k, v) => this.#session.serializer(k, v), 2));
+    }
 
-    return JSON.stringify(data, undefined, 2);
-  }
+    // generate shell script if requested
+    if (shellScriptFile) {
+      await shellScriptFile.writeUTF8(undoDeactivation + generateScriptContent(scriptKind, variables, aliases));
+    }
 
-  protected generateUndo(artifacts: Iterable<Artifact>): string {
-
-    return '';
-  }
-
-  generateActivation(artifacts: Iterable<Artifact>, originalEnvironment: Record<string, string>, shellScriptFile: Uri | undefined, undoScriptFile: Uri | undefined, msbuildFile: Uri | undefined) {
-    this.generateEnvironmentVariables();
-
-
+    // generate msbuild props file if requested
+    if (msbuildFile) {
+      await msbuildFile.writeUTF8(this.generateMSBuild(artifacts));
+    }
   }
 
   /** a collection of #define declarations that would assumably be applied to all compiler calls. */
-  defines = new Map<string, string>();
+  private defines = new Map<string, string>();
+  addDefine(name: string, value: string) {
+    const v = this.defines.get(name);
+    if (v && v !== value) {
+      // conflict. todo: what do we want to do?
+      this.#session.channels.warning(i`Duplicate define ${name} during activation. New value will replace old.`);
+    }
+    this.defines.set(name, value);
+  }
 
   /** a collection of tool definitions from artifacts (think shell 'aliases')  */
-  tools = new Map<string, string>();
+  private tools = new Map<string, string>();
+  addTool(name: string, value: string) {
+    if (this.tools.has(name)) {
+      this.#session.channels.error(i`Duplicate tool declared ${name} during activation.  New value will replace old.`);
+    }
+    this.tools.set(name, value);
+  }
+
+  findTool(name: string): string | undefined {
+    return linq.find(this.tools, name);
+  }
 
   /** Aliases are tools that get exposed to the user as shell aliases */
-  aliases = new Map<string, string>();
+  private aliases = new Map<string, string>();
+  addAlias(name: string, value: string) {
+    if (this.aliases.has(name)) {
+      this.#session.channels.error(i`Duplicate alias declared ${name} during activation.  New value will replace old.`);
+    }
+    this.aliases.set(name, value);
+  }
+
+  finaAlias(name: string): string | undefined {
+    return linq.find(this.aliases, name);
+  }
 
   /** a collection of 'published locations' from artifacts. useful for msbuild */
-  locations = new Map<string, Uri>();
+  private locations = new Map<string, Uri>();
+  addLocation(name: string, location: Uri) {
+    if (!name) {
+      return;
+    }
+
+    if (this.locations.has(name)) {
+      this.#session.channels.error(i`Duplicate location declared ${name} during activation. New value will replace old.`);
+    }
+    this.locations.set(name, location);
+  }
+
 
   /** a collection of environment variables from artifacts that are intended to be combinined into variables that have PATH delimiters */
-  paths = new Map<string, Array<Uri>>();
+  private paths = new Map<string, Set<Uri>>();
+  addPath(name: string, location: Uri | Array<Uri> | undefined) {
+    if (!name || !location) {
+      return;
+    }
+
+    let set = this.paths.get(name);
+    if (!set) {
+      set = new Set<Uri>();
+      this.paths.set(name, set);
+    }
+    if (Array.isArray(location)) {
+      for (const l of location) {
+        set.add(l);
+      }
+    } else {
+      set.add(location);
+    }
+  }
 
   /** environment variables from artifacts */
-  environment = new Map<string, Array<string>>();
+  private environment = new Map<string, Set<string>>();
+  addEnvironmentVariable(name: string, value: string | Iterable<string>) {
+    if (!name) {
+      return;
+    }
+    const s = this.environment.getOrDefault(name, new Set());
+    if (typeof value === 'string') {
+      s.add(value);
+    } else {
+      for (const each of value) {
+        s.add(each);
+      }
+    }
+  }
 
   /** a collection of arbitrary properties from artifacts. useful for msbuild */
-  properties = new Map<string, Array<string>>();
-
-  get Paths() {
-    // return just paths that have contents.
-    return [... this.paths.entries()].filter(([k, v]) => v.length > 0);
-  }
-
-  get Variables() {
-    // tools + environment
-    const result = new Array<[string, string]>();
-
-    // combine variables with spaces
-    for (const [key, values] of this.environment) {
-      result.push([key, values.join(' ')]);
+  private properties = new Map<string, Array<string>>();
+  addProperty(name: string, value: string | Iterable<string>) {
+    if (!name) {
+      return;
     }
 
-    // add tools to the list
-    for (const [key, value] of this.tools) {
-      result.push([key, value]);
+    if (typeof value === 'string') {
+      this.properties.getOrDefault(name, []).push(value);
+    } else {
+      this.properties.getOrDefault(name, []).push(...value);
     }
-    return result;
-  }
-
-  get Locations(): Array<[string, string]> {
-    return linq.entries(this.locations).select(([k, v]) => <[string, string]>[k, v.fsPath]).where(([k, v]) => v.length > 0).toArray();
   }
 
   /** produces an environment block that can be passed to child processes to leverage dependent artifacts during installtion/activation. */
   get environmentBlock(): NodeJS.ProcessEnv {
-    const result = this.#session.environment;
+    const result = { ... this.#session.environment };
 
     // add environment variables
-    for (const [k, v] of this.Variables) {
-      result[k] = v;
+    for (const [k, v] of linq.entries(this.environment)) {
+      result[k] = linq.join(v, ' ');
     }
 
+
     // update environment paths
-    for (const [variable, values] of this.Paths) {
-      if (values.length) {
-        const s = new Set(values.map(each => each.fsPath));
-        const originalVariable = result[variable] || '';
+    for (const [pathVariable, items] of this.paths) {
+      if (items.size) {
+        const s = new Set(...linq.values(items).select(each => each.fsPath));
+        const originalVariable = result[pathVariable] || '';
         if (originalVariable) {
           for (const p of originalVariable.split(delimiter)) {
             if (p) {
@@ -237,7 +351,7 @@ export class Activation {
             }
           }
         }
-        result[variable] = originalVariable;
+        result[pathVariable] = linq.join(s, delimiter);
       }
     }
 

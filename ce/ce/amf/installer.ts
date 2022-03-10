@@ -7,6 +7,7 @@ import { Installer as IInstaller } from '../interfaces/metadata/installers/Insta
 import { NupkgInstaller } from '../interfaces/metadata/installers/nupkg';
 import { UnTarInstaller } from '../interfaces/metadata/installers/tar';
 import { UnZipInstaller } from '../interfaces/metadata/installers/zip';
+import { ValidationError } from '../interfaces/validation-error';
 import { Entity } from '../yaml/Entity';
 import { EntitySequence } from '../yaml/EntitySequence';
 import { Flags } from '../yaml/Flags';
@@ -46,12 +47,22 @@ export class Installs extends EntitySequence<Installer> {
     }
     throw new Error('Unsupported node type');
   }
-}
 
+  override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+    for (const each of this) {
+      yield* each.validate();
+    }
+  }
+}
 
 export class Installer extends Entity implements IInstaller {
   get installerKind(): string {
     throw new Error('abstract type, should not get here.');
+  }
+
+  override get fullName(): string {
+    return `${super.fullName}.${this.installerKind}`;
   }
 
   get lang() {
@@ -60,6 +71,12 @@ export class Installer extends Entity implements IInstaller {
 
   get nametag() {
     return this.asString(this.getMember('nametag'));
+  }
+
+  override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+    yield* this.validateChild('lang', 'string');
+    yield* this.validateChild('nametag', 'string');
   }
 }
 
@@ -89,17 +106,32 @@ abstract class FileInstallerNode extends Installer {
   }
 
   readonly transform = new Strings(undefined, this, 'transform');
+
+  override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+    yield* this.validateChild('strip', 'number');
+    yield* this.validateChild('sha256', 'string');
+    yield* this.validateChild('sha512', 'string');
+  }
+
 }
 class UnzipNode extends FileInstallerNode implements UnZipInstaller {
   override get installerKind() { return 'unzip'; }
 
   readonly location = new Strings(undefined, this, 'unzip');
+  override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+    yield* this.validateChildKeys(['unzip', 'sha256', 'sha512', 'strip', 'transform', 'lang', 'nametag']);
+  }
 
 }
 class UnTarNode extends FileInstallerNode implements UnTarInstaller {
   override get installerKind() { return 'untar'; }
   location = new Strings(undefined, this, 'untar');
-
+  override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+    yield* this.validateChildKeys(['untar', 'sha256', 'sha512', 'strip', 'transform']);
+  }
 }
 class NupkgNode extends Installer implements NupkgInstaller {
   get location() {
@@ -137,6 +169,10 @@ class NupkgNode extends Installer implements NupkgInstaller {
   }
 
   readonly transform = new Strings(undefined, this, 'transform');
+  override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+    yield* this.validateChildKeys(['nupkg', 'sha256', 'sha512', 'strip', 'transform', 'lang', 'nametag']);
+  }
 
 }
 class GitCloneNode extends Installer implements GitInstaller {
@@ -190,5 +226,10 @@ class GitCloneNode extends Installer implements GitInstaller {
 
   set espidf(value: boolean) {
     this.flags.set('espidf', value);
+  }
+  override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+    yield* this.validateChildKeys(['git']);
+    yield* this.validateChild('commit', 'string');
   }
 }

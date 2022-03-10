@@ -52,7 +52,9 @@ export class MetadataFile extends BaseMap implements Profile {
       content = '{\n}';
     }
     const doc = parseDocument(content, { prettyErrors: false, lineCounter: lc, strict: true });
-    return new MetadataFile(doc, filename, lc, registry).init(session);
+    const result = new MetadataFile(doc, filename, lc, registry).init(session);
+    (await result).validationErrors;
+    return result;
   }
 
   info = new Info(undefined, this, 'info');
@@ -172,6 +174,7 @@ export class MetadataFile extends BaseMap implements Profile {
   /** @internal */
   override *validate(): Iterable<ValidationError> {
     yield* super.validate();
+    yield* this.validateChildKeys(['info', 'contacts', 'registries', 'global', 'demands', 'apply', 'exports', 'requires', 'install', 'seeAlso', 'unless']);
 
     // verify that we have info
     if (!this.document.has('info')) {

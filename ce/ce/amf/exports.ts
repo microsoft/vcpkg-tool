@@ -21,7 +21,8 @@ export class Exports extends BaseMap implements IExports {
 
   /** @internal */
   override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+    yield* this.validateChildKeys(['paths', 'locations', 'properties', 'environment', 'tools', 'defines', 'aliases', 'contents']);
     // todo: what validations do we need?
-
   }
 }

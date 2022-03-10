@@ -16,19 +16,19 @@ install:
   nupkg: Microsoft.Windows.SDK.cpp/10.0.19041.5
   sha256: fluffyKittenBunnies
   # https://www.nuget.org/api/v2/package/Microsoft.Windows.SDK.CPP/10.0.19041.5
+demands:
+  windows and target:x64:
+    requires: 
+      sdks/microsoft/windows/x64: 10.0.19041
 
-windows and target:x64:
-  requires: 
-    sdks/microsoft/windows/x64: 10.0.19041
+  windows and target:x86:
+    requires: 
+      sdks/microsoft/windows/x86: 10.0.19041
+    
+  windows and target:arm:
+    requires: 
+      sdks/microsoft/windows/arm: 10.0.19041
 
-windows and target:x86:
-  requires: 
-    sdks/microsoft/windows/x86: 10.0.19041
-  
-windows and target:arm:
-  requires: 
-    sdks/microsoft/windows/arm: 10.0.19041
-
-windows and target:arm64:
-  requires: 
-    sdks/microsoft/windows/arm64: 10.0.19041
+  windows and target:arm64:
+    requires: 
+      sdks/microsoft/windows/arm64: 10.0.19041

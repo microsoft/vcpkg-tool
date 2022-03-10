@@ -174,6 +174,7 @@ export const linq = {
   keys: _keys,
   find: _find,
   startsWith: _startsWith,
+  join: _join,
 };
 
 /** returns an IterableWithLinq<> for values in the collection
@@ -220,6 +221,9 @@ function _startsWith<K, T, TSrc extends (Array<T> | Dictionary<T> | Map<K, T> | 
   return _entries(source).first(([key,]) => key.toString().toLowerCase().startsWith(match))?.[1];
 }
 
+function _join<K, T>(source: (Array<T> | Dictionary<T> | Map<K, T> | Set<T> | Iterable<T>) | null | undefined, delimiter: string): string {
+  return source ? _values(source).join(delimiter) : '';
+}
 
 export function length<T, K>(source?: string | Iterable<T> | Dictionary<T> | Array<T> | Map<K, T> | Set<T>): number {
   if (source) {

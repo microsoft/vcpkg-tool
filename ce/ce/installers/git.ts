@@ -7,11 +7,10 @@ import { i } from '../i18n';
 import { InstallEvents, InstallOptions } from '../interfaces/events';
 import { CloneSettings, GitInstaller } from '../interfaces/metadata/installers/git';
 import { Session } from '../session';
-import { linq } from '../util/linq';
 import { Uri } from '../util/uri';
 
 export async function installGit(session: Session, activation: Activation, name: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
-  const gitPath = linq.find(activation.tools, 'git');
+  const gitPath = activation.findTool('git');
 
   if (!gitPath) {
     throw new Error(i`Git is not installed`);

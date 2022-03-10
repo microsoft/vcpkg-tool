@@ -152,8 +152,14 @@ export class DemandBlock extends Entity {
 
   /** @internal */
   override *validate(): Iterable<ValidationError> {
+    yield* this.validateChildKeys(['error', 'warning', 'message', 'seeAlso', 'requires', 'exports', 'install', 'apply', 'unless']);
+
     yield* super.validate();
     if (this.exists()) {
+      yield* this.validateChild('error', 'string');
+      yield* this.validateChild('warning', 'string');
+      yield* this.validateChild('message', 'string');
+
       yield* this.exports.validate();
       yield* this.requires.validate();
       yield* this.seeAlso.validate();

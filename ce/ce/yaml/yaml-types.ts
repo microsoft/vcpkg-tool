@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { isCollection, isMap, isScalar, isSeq, Scalar, YAMLMap, YAMLSeq } from 'yaml';
+import { ErrorKind } from '../interfaces/error-kind';
 import { ValidationError } from '../interfaces/validation-error';
 import { isNullish } from '../util/checks';
 
@@ -20,9 +21,17 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
     }
   }
 
+  get fullName(): string {
+    return !this.node ? '' : this.parent ? this.key ? `${this.parent.fullName}.${this.key}` : this.parent.fullName : this.key || '$';
+  }
+
   /** returns the current node as a JSON string */
   toString(): string {
     return this.node?.toJSON() ?? '';
+  }
+
+  get keys(): Array<string> {
+    return this.exists() && isMap(this.node) ? this.node.items.map(each => this.asString(each.key)!) : [];
   }
 
   /**
@@ -141,7 +150,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
     }
     if (key !== undefined) {
       if ((isMap(this.node) || isSeq(this.node))) {
-        const node = <Node>this.node.get(<any>key);
+        const node = <Node>this.node.get(<any>key, true);
         if (node) {
           return node.range || undefined;
         }
@@ -263,6 +272,74 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
   *validate(): Iterable<ValidationError> {
     // shh.
   }
+
+  protected *validateChildKeys(keys: Array<string>): Iterable<ValidationError> {
+    if (isMap(this.node)) {
+      for (const key of this.keys) {
+        if (keys.indexOf(key) === -1) {
+          yield {
+            message: `Unexpected '${key}' found in object`,
+            range: this.sourcePosition(key),
+            category: ErrorKind.InvalidChild,
+          };
+        }
+      }
+    }
+  }
+
+  protected *validateIsObject(): Iterable<ValidationError> {
+    if (this.node && !isMap(this.node)) {
+      yield {
+        message: `'${this.fullName}' is not an object`,
+        range: this,
+        category: ErrorKind.IncorrectType
+      };
+    }
+  }
+  protected *validateIsSequence(): Iterable<ValidationError> {
+    if (this.node && !isSeq(this.node)) {
+      yield {
+        message: `'${this.fullName}' is not an object`,
+        range: this,
+        category: ErrorKind.IncorrectType
+      };
+    }
+  }
+
+  protected *validateIsSequenceOrPrimitive(): Iterable<ValidationError> {
+    if (this.node && (!isSeq(this.node) && !isScalar(this.node))) {
+      yield {
+        message: `'${this.fullName}' is not a sequence or value`,
+        range: this,
+        category: ErrorKind.IncorrectType
+      };
+    }
+  }
+
+  protected *validateIsObjectOrPrimitive(): Iterable<ValidationError> {
+    if (this.node && (!isMap(this.node) && !isScalar(this.node))) {
+      yield {
+        message: `'${this.fullName}' is not an object or value`,
+        range: this,
+        category: ErrorKind.IncorrectType
+      };
+    }
+  }
+
+  protected *validateChild(child: string, kind: 'string' | 'boolean' | 'number'): Iterable<ValidationError> {
+    if (this.node && isMap(this.node)) {
+      if (this.node.has(child)) {
+        const c = <Node>this.node.get(child, true);
+        if (!isScalar(c) || typeof c.value !== kind) {
+          yield {
+            message: `'${this.fullName}.${child}' is not a ${kind} value`,
+            range: c.range!,
+            category: ErrorKind.IncorrectType
+          };
+        }
+      }
+    }
+  }
 }
 
 export /** @internal */ interface EntityFactory<TNode extends Node, TEntity extends Yaml = Yaml<TNode>> extends NodeFactory<TNode> {
@@ -272,4 +349,3 @@ export /** @internal */ interface EntityFactory<TNode extends Node, TEntity exte
 export /** @internal */ interface NodeFactory<TNode extends Node> extends Function {
   /**@internal*/ create(): TNode;
 }
-

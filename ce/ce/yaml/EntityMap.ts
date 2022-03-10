@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { Dictionary } from '../interfaces/collections';
+import { ValidationError } from '../interfaces/validation-error';
 import { BaseMap } from './BaseMap';
 import { EntityFactory, Node, Yaml, YAMLDictionary } from './yaml-types';
 
@@ -24,6 +25,11 @@ export /** @internal */ abstract class EntityMap<TNode extends Node, TElement ex
         }
       }
     }
+  }
+
+  override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+    yield* this.validateIsObject();
   }
 
   add(key: string): TElement {

@@ -11,4 +11,5 @@ export enum ErrorKind {
   HostOnly = 'HostOnly',
   MissingHash = 'MissingHashValue',
   InvalidDefinition = 'InvalidDefinition',
+  InvalidChild = 'InvalidChild',
 }

@@ -17,7 +17,7 @@ describe('Evaluator', () => {
 
   it('evaluates', () => {
     const activation = new Activation(session);
-    activation.environment.set('foo', ['bar']);
+    activation.addEnvironmentVariable('foo', ['bar']);
     const e = new Evaluator({ $0: 'c:/foo/bar/python.exe' }, process.env, activation.output);
 
     // handle expressions that use the artifact data

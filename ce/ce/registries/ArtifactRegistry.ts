@@ -72,7 +72,7 @@ export abstract class ArtifactRegistry implements Registry {
 
         if (!amf.isValid) {
           for (const err of amf.validationErrors) {
-            repo.session.channels.warning(`Validation errors in metadata file ${err}}`);
+            repo.session.channels.warning(err);
           }
           throw new Error('invalid manifest');
         }

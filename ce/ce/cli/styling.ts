@@ -52,8 +52,8 @@ export function indent(text: string | Array<string>): string | Array<string> {
 
 function md(text = '', session?: Session): string {
   if (text) {
-    text = marked.marked(`${text}`.replace(/\\\./g, '\\\\.')); // work around md messing up paths with .\ in them.
-
+    //text = marked.marked(`${text}`.replace(/\\\./g, '\\\\.')); // work around md messing up paths with .\ in them.
+    text = `${text}`.replace(/\\\./g, '\\\\.');
     // rewrite file:// urls to be locl filesystem urls.
     return (!!text && !!session) ? text.replace(/(file:\/\/\S*)/g, (s, a) => yellow.dim(session.parseUri(a).fsPath)) : text;
   }

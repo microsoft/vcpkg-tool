@@ -17,6 +17,7 @@ export /** @internal */ class EntitySequence<TElement extends Yaml<YAMLDictionar
     return new YAMLDictionary();
   }
 
+
   get length(): number {
     if (this.node) {
       if (isSeq(this.node)) {

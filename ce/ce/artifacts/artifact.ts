@@ -225,13 +225,7 @@ export class Artifact extends ArtifactBase {
         if (value === 'true') {
           value = '1';
         }
-
-        const v = activation.defines.get(key);
-        if (v && v !== value) {
-          // conflict. todo: what do we want to do?
-          this.session.channels.warning(i`Duplicate define ${key} during activation. New value will replace old `);
-        }
-        activation.defines.set(key, value);
+        activation.addDefine(key, value);
       }
 
       // **** paths ****
@@ -241,35 +235,23 @@ export class Artifact extends ArtifactBase {
         }
 
         const pathEnvVariable = key.toUpperCase();
-        const p = activation.paths.getOrDefault(pathEnvVariable, []);
         const l = settingBlock.paths.get(key);
-        const uris = new Set<Uri>();
 
         for (const location of l ?? []) {
           // check that each path is an actual path.
-          const path = await this.sanitizeAndValidatePath(location);
-          if (path && !uris.has(path)) {
-            uris.add(path);
-            p.push(path);
-          }
+          activation.addPath(pathEnvVariable, await this.sanitizeAndValidatePath(location));
         }
       }
 
       // **** tools ****
       for (const key of settingBlock.tools.keys) {
-        const envVariable = key.toUpperCase();
-
-        if (activation.tools.has(envVariable)) {
-          this.session.channels.error(i`Duplicate tool declared ${key} during activation. Probably not a good thing?`);
-        }
-
-        const p = settingBlock.tools.get(key) || '';
-        const uri = await this.sanitizeAndValidatePath(p);
+        const value = settingBlock.tools.get(key) || '';
+        const uri = await this.sanitizeAndValidatePath(value);
         if (uri) {
-          activation.tools.set(envVariable, uri.fsPath);
+          activation.addTool(key, uri.fsPath);
         } else {
-          if (p) {
-            activation.tools.set(envVariable, p);
+          if (value) {
+            activation.addTool(key, value);
             // this.session.channels.warning(i`Invalid tool path '${p}'`);
           }
         }
@@ -277,27 +259,26 @@ export class Artifact extends ArtifactBase {
 
       // **** variables ****
       for (const [key, value] of settingBlock.environment) {
-        const envKey = activation.environment.getOrDefault(key, []);
-        envKey.push(...value);
+        activation.addEnvironmentVariable(key, value);
       }
 
       // **** properties ****
       for (const [key, value] of settingBlock.properties) {
-        const envKey = activation.properties.getOrDefault(key, []);
-        envKey.push(...value);
+        activation.addProperty(key, value);
       }
 
       // **** locations ****
       for (const locationName of settingBlock.locations.keys) {
-        if (activation.locations.has(locationName)) {
-          this.session.channels.error(i`Duplicate location declared ${locationName} during activation. Probably not a good thing?`);
-        }
-
         const p = settingBlock.locations.get(locationName) || '';
         const uri = await this.sanitizeAndValidatePath(p);
         if (uri) {
-          activation.locations.set(locationName, uri);
+          activation.addLocation(locationName, uri);
         }
+      }
+
+      // **** aliases ****
+      for (const [key, value] of settingBlock.aliases) {
+        activation.addAlias(key, value);
       }
     }
   }

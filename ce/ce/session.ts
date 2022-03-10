@@ -2,9 +2,8 @@
 // Licensed under the MIT License.
 
 import { strict } from 'assert';
-import { delimiter } from 'path';
 import { MetadataFile } from './amf/metadata-file';
-import { Activation } from './artifacts/activation';
+import { Activation, deactivate } from './artifacts/activation';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
 import { Registry } from './artifacts/registry';
 import { defaultConfig, globalConfigurationFile, postscriptVarible, profileNames, registryIndexFile, undo, vcpkgDownloadFolder } from './constants';
@@ -26,7 +25,7 @@ import { Registries } from './registries/registries';
 import { RemoteRegistry } from './registries/RemoteRegistry';
 import { isIndexFile, isMetadataFile } from './registries/standard-registry';
 import { Channels, Stopwatch } from './util/channels';
-import { Dictionary, entries } from './util/linq';
+import { Dictionary } from './util/linq';
 import { Queue } from './util/promise';
 import { isFilePath, Uri } from './util/uri';
 import { isYAML } from './yaml/yaml';
@@ -327,137 +326,20 @@ export class Session {
     return undefined;
   }
 
-  #postscript = new Dictionary<string>();
-  addPostscript(variableName: string, value: string) {
-    this.#postscript[variableName] = value;
-  }
-
   async deactivate() {
-    // get the deactivation information
-    const lastEnv = this.environment[undo];
+    const previous = this.environment[undo];
+    if (previous && this.postscriptFile) {
+      const deactivationDataFile = this.parseUri(previous);
+      if (deactivationDataFile.scheme === 'file' && await deactivationDataFile.exists()) {
 
-    // remove the variable first.
-    delete this.environment[undo];
-    this.addPostscript(undo, '');
-
-    if (lastEnv) {
-      const fileUri = this.parseUri(lastEnv);
-      if (await fileUri.exists()) {
-        const contents = await fileUri.readUTF8();
-        await fileUri.delete();
-
-        if (contents) {
-          try {
-            const original = <BackupFile>JSON.parse(contents, (k, v) => this.deserializer(k, v));
-
-            // reset the environment variables
-            // and queue them up in the postscript
-            for (const [variable, value] of entries(original.environment)) {
-              if (value) {
-                this.environment[variable] = value;
-                this.addPostscript(variable, value);
-              } else {
-                delete this.environment[variable];
-                this.addPostscript(variable, '');
-              }
-            }
-
-            // in the paths, let's remove all the entries
-            for (const [variable, uris] of original.activation.paths.entries()) {
-              let pathLikeVariable = this.environment[variable];
-              if (pathLikeVariable) {
-                for (const uri of uris) {
-                  pathLikeVariable = pathLikeVariable.replace(uri.fsPath, '');
-                }
-                const rx = new RegExp(`${delimiter}+`, 'g');
-                pathLikeVariable = pathLikeVariable.replace(rx, delimiter).replace(/^;|;$/g, '');
-                // persist that.
-                this.environment[variable] = pathLikeVariable;
-                this.addPostscript(variable, pathLikeVariable);
-              }
-            }
-          } catch {
-            // file not valid, bail.
-          }
-        }
+        const deactivatationData = JSON.parse(await deactivationDataFile.readUTF8());
+        delete deactivatationData.environment[undo];
+        await deactivate(this.postscriptFile, deactivatationData.environment || {}, deactivatationData.aliases || {});
+        await deactivationDataFile.delete();
       }
     }
   }
 
-  async setActivationInPostscript(activation: Activation, backupEnvironment = true) {
-
-    // capture any variables that we set.
-    const contents = <BackupFile>{ environment: {}, activation };
-
-    // build PATH style variable for the environment
-    for (const [variable, values] of activation.Paths) {
-
-      if (values.length) {
-        // add the new values first; existing values are added after.
-        const s = new Set(values.map(each => each.fsPath));
-        const originalVariable = this.environment[variable] || '';
-        if (originalVariable) {
-          for (const p of originalVariable.split(delimiter)) {
-            if (p) {
-              s.add(p);
-            }
-          }
-        }
-        contents.environment[variable] = originalVariable;
-        this.addPostscript(variable, [...s.values()].join(delimiter));
-      }
-      // for path activations, we undo specific entries, so we don't store the variable here (in case the path is modified after)
-    }
-
-    for (const [variable, value] of activation.Variables) {
-      this.addPostscript(variable, value);
-      contents.environment[variable] = this.environment[variable] || ''; // track the original value
-    }
-
-    // for now.
-    // if (activation.defines.size > 0) {
-    // this.addPostscript('DEFINES', activation.Defines.map(([define, value]) => `${define}=${value}`).join(' '));
-    //}
-
-    if (backupEnvironment) {
-      // create the environment backup file
-      const backupFile = this.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`);
-
-      await backupFile.writeUTF8(JSON.stringify(contents, (k, v) => this.serializer(k, v), 2));
-      this.addPostscript(undo, backupFile.toString());
-    }
-  }
-
-  async writePostscript() {
-    let content = '';
-    const psf = this.postscriptFile;
-    if (psf) {
-      switch (psf?.fsPath.substr(-3)) {
-        case 'ps1':
-          // update environment variables. (powershell)
-          content += [...entries(this.#postscript)].map((k, v) => { return `$\{ENV:${k[0]}}="${k[1]}"`; }).join('\n');
-
-          // add aliases
-
-          break;
-
-        case 'cmd':
-          // update environment variables. (cmd)
-          content += [...entries(this.#postscript)].map((k) => { return `set ${k[0]}=${k[1]}`; }).join('\r\n');
-          break;
-
-        case '.sh':
-          // update environment variables. (posix)'
-          content += [...entries(this.#postscript)].map((k, v) => {
-            return k[1] ? `export ${k[0]}="${k[1]}"` : `unset ${k[0]}`;
-          }).join('\n');
-      }
-
-      if (content) {
-        await psf.writeUTF8(content);
-      }
-    }
-  }
 
   setupLogging() {
     // at this point, we can subscribe to the events in the export * from './lib/version';FileSystem and Channels
