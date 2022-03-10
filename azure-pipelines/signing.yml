@@ -440,6 +440,7 @@ jobs:
     # Publish everything to VS Insertion
     - task: NuGetCommand@2
       displayName: 'NuGet publish for VS Insertion'
+      condition: and(eq(variables.SignType, 'real'), succeeded())
       inputs:
         command: push
         packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.x86.1.0.0-$(VCPKG_BASE_VERSION).nupkg'

@@ -85,7 +85,7 @@ try {
         -Value (ConvertTo-Json -InputObject $bundleConfig) `
         -Encoding Ascii
 
-    if ($DestinationTarball) {
+    if (-not [String]::IsNullOrEmpty($DestinationTarball)) {
         & tar czf $DestinationTarball -C out *
     }
 
