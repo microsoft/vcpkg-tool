@@ -68,9 +68,6 @@ namespace
             const auto code_and_output = cmd_execute_and_capture_output(
                 Command{"cmd"}
                     .string_arg("/c")
-                    .string_arg("start")
-                    .string_arg("/wait")
-                    .string_arg("(no title)")
                     .string_arg("msiexec")
                     // "/a" is administrative mode, which unpacks without modifying the system
                     .string_arg("/a")
