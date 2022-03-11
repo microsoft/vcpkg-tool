@@ -235,7 +235,7 @@ namespace vcpkg
             if (next_ws == last) break;
 
             simple_desc.push_back(' ');
-            first = std::find_if_not(first, last, Parse::ParserBase::is_whitespace);
+            first = std::find_if_not(next_ws + 1, last, Parse::ParserBase::is_whitespace);
         }
 
         return simple_desc.size() <= length ? simple_desc : simple_desc.substr(0, length - 3) + "...";
