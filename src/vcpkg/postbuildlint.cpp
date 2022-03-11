@@ -1111,10 +1111,10 @@ namespace vcpkg::PostBuildLint
                             debug_libs,
                             toolset.dumpbin);
                     }
-                    error_count += check_crt_linkage_of_libs(
-                        BuildType(Build::ConfigurationType::RELEASE, build_info.crt_linkage),
-                        release_libs,
-                        toolset.dumpbin);
+                    error_count +=
+                        check_crt_linkage_of_libs(BuildType(Build::ConfigurationType::RELEASE, build_info.crt_linkage),
+                                                  release_libs,
+                                                  toolset.dumpbin);
                 }
                 break;
             }

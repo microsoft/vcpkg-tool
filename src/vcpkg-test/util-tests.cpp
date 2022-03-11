@@ -20,7 +20,6 @@ TEST_CASE ("find_nth", "[util]")
     CHECK(Util::find_nth(v, 1, 1) == v.begin() + 2);
     CHECK(Util::find_nth(v, 1, 2) == v.begin() + 4);
     CHECK(Util::find_nth(v, 1, 3) == v.end());
-
 }
 
 TEST_CASE ("find_nth_from_last", "[util]")

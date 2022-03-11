@@ -12,10 +12,7 @@ namespace vcpkg::PostBuildLint
     {
         BuildType() = delete;
 
-        constexpr BuildType(Build::ConfigurationType c, Build::LinkageType l)
-            : config(c), linkage(l)
-        {
-        }
+        constexpr BuildType(Build::ConfigurationType c, Build::LinkageType l) : config(c), linkage(l) { }
 
         bool has_crt_linker_option(StringView sv) const;
         StringLiteral to_string() const;
@@ -28,9 +25,6 @@ namespace vcpkg::PostBuildLint
         {
             return lhs.config == rhs.config && lhs.linkage == rhs.linkage;
         }
-        friend bool operator!=(const BuildType& lhs, const BuildType& rhs)
-        {
-            return !(lhs == rhs);
-        }
+        friend bool operator!=(const BuildType& lhs, const BuildType& rhs) { return !(lhs == rhs); }
     };
 }

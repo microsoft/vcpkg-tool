@@ -16,11 +16,10 @@ namespace
         (msg::path, msg::exit_code),
         "",
         "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
-    DECLARE_AND_REGISTER_MESSAGE(
-        CouldNotDeduceNugetIdAndVersion,
-        (msg::path),
-        "",
-        "Could not deduce nuget id and version from filename: {path}");
+    DECLARE_AND_REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion,
+                                 (msg::path),
+                                 "",
+                                 "Could not deduce nuget id and version from filename: {path}");
 
 #if defined(_WIN32)
     void win32_extract_nupkg(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
@@ -33,13 +32,10 @@ namespace
         // This assumption may not always hold
         auto dot_after_name = Util::find_nth_from_last(stem, '.', 2);
 
-        auto is_digit_or_dot = [](char ch) {
-            return ch == '.' || Parse::ParserBase::is_ascii_digit(ch);
-        };
+        auto is_digit_or_dot = [](char ch) { return ch == '.' || Parse::ParserBase::is_ascii_digit(ch); };
         if (dot_after_name == stem.end() || !std::all_of(dot_after_name, stem.end(), is_digit_or_dot))
         {
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO, msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);
         }
 
         auto nugetid = StringView{stem.begin(), dot_after_name};

@@ -11,7 +11,6 @@ namespace vcpkg::PostBuildLint
         BuildType{Build::ConfigurationType::RELEASE, Build::LinkageType::DYNAMIC},
     };
 
-
     bool BuildType::has_crt_linker_option(StringView sv) const
     {
         // "/DEFAULTLIB:LIBCMTD";
