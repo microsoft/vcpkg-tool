@@ -35,6 +35,9 @@ namespace vcpkg
         const Value& get_lazy(const KeyIsh& k, F&& f) const
         {
             auto it = m_cache.lower_bound(k);
+            // lower_bound returns the first iterator such that next(it)->first is greater than k,
+            // so k must be less than or equal to it->first. If k is not less than it->first, then
+            // it must be equal so we have a cache hit.
             if (it != m_cache.end() && !(m_cache.key_comp()(k, it->first)))
             {
                 return it->second;
