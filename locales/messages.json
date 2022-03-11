@@ -155,6 +155,12 @@
   "VcpkgInvalidCommand": "invalid command: {command_name}",
   "_VcpkgInvalidCommand.comment": "example of {command_name} is 'install'.\n",
   "VcpkgSendMetricsButDisabled": "Warning: passed --sendmetrics, but metrics are disabled.",
+  "VersionInvalidDate": "Error: String `{version}` is not a valid date version.Date section must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
+  "_VersionInvalidDate.comment": "example of {version} is '1.3.8'.\n",
+  "VersionInvalidRelaxed": "Error: String `{version}` is not a valid Relaxed version string (semver with arbitrary numeric element count)",
+  "_VersionInvalidRelaxed.comment": "example of {version} is '1.3.8'.\n",
+  "VersionInvalidSemver": "Error: String `{version}` is not a valid Semantic Version string, consult https://semver.org",
+  "_VersionInvalidSemver.comment": "example of {version} is '1.3.8'.\n",
   "VersionSpecMismatch": "error: Failed to load port because version specs did not match\n    Path: {path}\n    Expected: {expected_version}\n    Actual: {actual_version}",
   "_VersionSpecMismatch.comment": "example of {path} is '/foo/bar'.\nexample of {expected_version} is '1.3.8'.\nexample of {actual_version} is '1.3.8'.\n",
   "WarningMessage": "warning: "
