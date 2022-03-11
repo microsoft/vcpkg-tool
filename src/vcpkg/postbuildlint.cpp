@@ -592,7 +592,7 @@ namespace vcpkg::PostBuildLint
             const auto requested_arch = expected_architecture == "x64" ? "x86_64" : expected_architecture;
             for (const Path& file : files)
             {
-                auto cmd_line = Command("lipo").string_arg("-archs").path_arg(file);
+                auto cmd_line = Command("lipo").string_arg("-archs").string_arg(file);
                 ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
                 if (ec_data.exit_code != 0)
                 {
