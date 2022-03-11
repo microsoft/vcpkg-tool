@@ -93,6 +93,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "잘못된 명령: {command_name}",
   "VcpkgSendMetricsButDisabled": "경고: --sendmetrics를 전달했지만 메트릭이 사용되지 않도록 설정되었습니다.",
+  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
+  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
+  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
   "VersionSpecMismatch": "오류: 버전 사양이 일치하지 않아 포트를 로드하지 못했습니다.\n    경로: {path}\n    예상: {expected_version}\n    실제: {actual_version}",
   "WarningMessage": "경고: "
 }

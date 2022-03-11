@@ -93,6 +93,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "无效命令: {command_name}",
   "VcpkgSendMetricsButDisabled": "警告: 已通过 --sendmetrics，但指标已禁用。",
+  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
+  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
+  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
   "VersionSpecMismatch": "错误: 加载端口失败，因为版本规范不匹配\n   路径: {path}\n   应为: {expected_version}\n   实际: {actual_version}",
   "WarningMessage": "警告:"
 }

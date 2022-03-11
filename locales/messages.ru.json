@@ -93,6 +93,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "недопустимая команда: {command_name}",
   "VcpkgSendMetricsButDisabled": "Внимание! Передан параметр --sendmetrics, но метрики отключены.",
+  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
+  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
+  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
   "VersionSpecMismatch": "ошибка: не удалось загрузить порт, так как спецификации версии не совпадают\n    Путь: {path}\n    Ожидается: {expected_version}\n    Фактически: {actual_version}",
   "WarningMessage": "Предупреждение: "
 }

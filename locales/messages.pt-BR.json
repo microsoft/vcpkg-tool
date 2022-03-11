@@ -93,6 +93,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "comando inválido: {command_name}",
   "VcpkgSendMetricsButDisabled": "Aviso: --sendmetrics aprovados, mas as métricas estão desabilitadas.",
+  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
+  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
+  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
   "VersionSpecMismatch": "erro: Falha ao carregar a porta porque as especificações da versão não correspondem\n    Caminho: {path}\n    Esperado: {expected_version}\n    Real: {actual_version}",
   "WarningMessage": "aviso: "
 }

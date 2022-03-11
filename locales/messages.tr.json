@@ -93,6 +93,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "geçersiz komut: {command_name}",
   "VcpkgSendMetricsButDisabled": "Uyarı: --sendmetrics geçirildi, ancak ölçümler devre dışı bırakıldı.",
+  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
+  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
+  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
   "VersionSpecMismatch": "hata: Sürüm belirtimleri eşleşmediğinden bağlantı noktası yüklenemedi\n    Yol: {path}\n    Beklenen: {expected_version}\n    Gerçek: {actual_version}",
   "WarningMessage": "uyarı: "
 }
