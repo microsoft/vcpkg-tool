@@ -1065,7 +1065,7 @@ namespace vcpkg::Json
                 return false; // we're a reserved identifier
             }
             if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
-                sv.byte_at_index(3) >= '1' && sv.byte_at_index(3) <= '9')
+                sv[3] >= '1' && sv[3] <= '9')
             {
                 return false; // we're a reserved identifier
             }
