@@ -130,10 +130,53 @@ namespace vcpkg::Util
         return ret;
     }
 
+    template<class Container, class T>
+    void erase_remove(Container& cont, const T& el)
+    {
+        cont.erase(std::remove(cont.begin(), cont.end(), el), cont.end());
+    }
     template<class Container, class Pred>
     void erase_remove_if(Container& cont, Pred pred)
     {
         cont.erase(std::remove_if(cont.begin(), cont.end(), pred), cont.end());
+    }
+
+    // 0th is the first occurence
+    // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
+    // returns the 1 before the 4
+    template<class InputIt, class V>
+    auto find_nth(InputIt first, InputIt last, const V& v, size_t n)
+    {
+        first = std::find(first, last, v);
+        for (size_t i = 0; i < n && first != last; ++i)
+        {
+            ++first;
+            first = std::find(first, last, v);
+        }
+
+        return first;
+    }
+    template<class R, class V>
+    auto find_nth(R& r, const V& v, size_t n)
+    {
+        using std::begin;
+        using std::end;
+
+        return find_nth(begin(r), end(r), v, n);
+    }
+
+    // 0th is the last occurence
+    // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
+    // returns the 1 before the 2
+    template<class R, class V>
+    auto find_nth_from_last(R& r, const V& v, size_t n)
+    {
+        using std::end;
+        using std::rbegin;
+        using std::rend;
+
+        auto res = find_nth(rbegin(r), rend(r), v, n);
+        return res == rend(r) ? end(r) : res.base() - 1;
     }
 
     template<class Container, class V>

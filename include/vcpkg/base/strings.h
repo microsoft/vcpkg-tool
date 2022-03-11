@@ -74,6 +74,16 @@ namespace vcpkg::Strings::details
 
 namespace vcpkg::Strings
 {
+    constexpr struct
+    {
+        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
+    } tolower_char;
+
+    constexpr struct
+    {
+        bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
+    } icase_eq;
+
     template<class Arg>
     std::string& append(std::string& into, const Arg& a)
     {
@@ -132,8 +142,8 @@ namespace vcpkg::Strings
 
     std::string escape_string(std::string&& s, char char_to_escape, char escape_char);
 
+    const char* case_insensitive_ascii_search(StringView s, StringView pattern);
     bool case_insensitive_ascii_contains(StringView s, StringView pattern);
-
     bool case_insensitive_ascii_equals(StringView left, StringView right);
 
     void ascii_to_lowercase(char* first, char* last);
