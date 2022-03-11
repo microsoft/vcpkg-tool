@@ -39,9 +39,9 @@ namespace
             .string_arg("-Version")
             .string_arg(version)
             .string_arg("-OutputDirectory")
-            .path_arg(to_path)
+            .string_arg(to_path)
             .string_arg("-Source")
-            .path_arg(paths.downloads)
+            .string_arg(paths.downloads)
             .string_arg("-nocache")
             .string_arg("-DirectDownload")
             .string_arg("-NonInteractive")
@@ -74,7 +74,7 @@ namespace
                     .string_arg("msiexec")
                     // "/a" is administrative mode, which unpacks without modifying the system
                     .string_arg("/a")
-                    .path_arg(archive)
+                    .string_arg(archive)
                     .string_arg("/qn")
                     // msiexec requires quotes to be after "TARGETDIR=":
                     //      TARGETDIR="C:\full\path\to\dest"
@@ -115,7 +115,7 @@ namespace
         recursion_limiter_sevenzip = true;
         const auto code_and_output = cmd_execute_and_capture_output(Command{seven_zip}
                                                                         .string_arg("x")
-                                                                        .path_arg(archive)
+                                                                        .string_arg(archive)
                                                                         .string_arg(Strings::format("-o%s", to_path))
                                                                         .string_arg("-y"));
         Checks::check_exit(VCPKG_LINE_INFO,
@@ -152,7 +152,7 @@ namespace
         if (ext == ".zip")
         {
             const auto code =
-                cmd_execute(Command{"unzip"}.string_arg("-qqo").path_arg(archive), WorkingDirectory{to_path});
+                cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path});
             Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", archive);
         }
 #endif
@@ -216,7 +216,8 @@ namespace vcpkg
 
     void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path)
     {
-        const auto code = cmd_execute(Command{tar_tool}.string_arg("xzf").path_arg(archive), WorkingDirectory{to_path});
+        const auto code =
+            cmd_execute(Command{tar_tool}.string_arg("xzf").string_arg(archive), WorkingDirectory{to_path});
         Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
     }
 
@@ -224,7 +225,7 @@ namespace vcpkg
     {
         // Note that CMake's built in tar can extract more archive types than many system tars; e.g. 7z
         const auto code =
-            cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").path_arg(archive),
+            cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive),
                         WorkingDirectory{to_path});
         Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
     }
@@ -245,7 +246,7 @@ namespace vcpkg
         auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
 
         return cmd_execute_and_capture_output(
-                   Command{seven_zip_exe}.string_arg("a").path_arg(destination).path_arg(source / "*"),
+                   Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
                    default_working_directory,
                    get_clean_environment())
             .exit_code;
@@ -255,7 +256,7 @@ namespace vcpkg
                                      .string_arg("--quiet")
                                      .string_arg("-y")
                                      .string_arg("-r")
-                                     .path_arg(destination)
+                                     .string_arg(destination)
                                      .string_arg("*")
                                      .string_arg("--exclude")
                                      .string_arg(".DS_Store"),
@@ -268,14 +269,14 @@ namespace vcpkg
         Command cmd;
 #if defined(_WIN32)
         auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
-        cmd.path_arg(seven_zip_exe)
+        cmd.string_arg(seven_zip_exe)
             .string_arg("x")
-            .path_arg(archive_path)
+            .string_arg(archive_path)
             .string_arg("-o" + dst.native())
             .string_arg("-y");
 #else
         (void)paths;
-        cmd.string_arg("unzip").string_arg("-qq").path_arg(archive_path).string_arg("-d" + dst.native());
+        cmd.string_arg("unzip").string_arg("-qq").string_arg(archive_path).string_arg("-d" + dst.native());
 #endif
         return cmd;
     }

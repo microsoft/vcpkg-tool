@@ -706,13 +706,13 @@ namespace
                 // First check using all sources
                 Command cmdline;
 #ifndef _WIN32
-                cmdline.path_arg(paths.get_tool_exe(Tools::MONO));
+                cmdline.string_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-                cmdline.path_arg(nuget_exe)
+                cmdline.string_arg(nuget_exe)
                     .string_arg("install")
-                    .path_arg(packages_config)
+                    .string_arg(packages_config)
                     .string_arg("-OutputDirectory")
-                    .path_arg(paths.packages())
+                    .string_arg(paths.packages())
                     .string_arg("-Source")
                     .string_arg(Strings::join(";", m_read_sources))
                     .string_arg("-ExcludeVersion")
@@ -739,15 +739,15 @@ namespace
                 // Then check using each config
                 Command cmdline;
 #ifndef _WIN32
-                cmdline.path_arg(paths.get_tool_exe(Tools::MONO));
+                cmdline.string_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-                cmdline.path_arg(nuget_exe)
+                cmdline.string_arg(nuget_exe)
                     .string_arg("install")
-                    .path_arg(packages_config)
+                    .string_arg(packages_config)
                     .string_arg("-OutputDirectory")
-                    .path_arg(paths.packages())
+                    .string_arg(paths.packages())
                     .string_arg("-ConfigFile")
-                    .path_arg(cfg)
+                    .string_arg(cfg)
                     .string_arg("-ExcludeVersion")
                     .string_arg("-PreRelease")
                     .string_arg("-PackageSaveMode")
@@ -834,13 +834,13 @@ namespace
             const auto& nuget_exe = paths.get_tool_exe("nuget");
             Command cmdline;
 #ifndef _WIN32
-            cmdline.path_arg(paths.get_tool_exe(Tools::MONO));
+            cmdline.string_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-            cmdline.path_arg(nuget_exe)
+            cmdline.string_arg(nuget_exe)
                 .string_arg("pack")
-                .path_arg(nuspec_path)
+                .string_arg(nuspec_path)
                 .string_arg("-OutputDirectory")
-                .path_arg(paths.buildtrees())
+                .string_arg(paths.buildtrees())
                 .string_arg("-NoDefaultExcludes")
                 .string_arg("-ForceEnglishOutput");
 
@@ -860,11 +860,11 @@ namespace
             {
                 Command cmd;
 #ifndef _WIN32
-                cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+                cmd.string_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-                cmd.path_arg(nuget_exe)
+                cmd.string_arg(nuget_exe)
                     .string_arg("push")
-                    .path_arg(nupkg_path)
+                    .string_arg(nupkg_path)
                     .string_arg("-ForceEnglishOutput")
                     .string_arg("-Timeout")
                     .string_arg(m_timeout)
@@ -887,16 +887,16 @@ namespace
             {
                 Command cmd;
 #ifndef _WIN32
-                cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+                cmd.string_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-                cmd.path_arg(nuget_exe)
+                cmd.string_arg(nuget_exe)
                     .string_arg("push")
-                    .path_arg(nupkg_path)
+                    .string_arg(nupkg_path)
                     .string_arg("-ForceEnglishOutput")
                     .string_arg("-Timeout")
                     .string_arg(m_timeout)
                     .string_arg("-ConfigFile")
-                    .path_arg(write_cfg);
+                    .string_arg(write_cfg);
                 if (!m_interactive)
                 {
                     cmd.string_arg("-NonInteractive");
@@ -941,7 +941,7 @@ namespace
     bool gsutil_upload_file(const std::string& gcs_object, const Path& archive)
     {
         Command cmd;
-        cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").path_arg(archive).string_arg(gcs_object);
+        cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").string_arg(archive).string_arg(gcs_object);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
@@ -955,7 +955,7 @@ namespace
     bool gsutil_download_file(const std::string& gcs_object, const Path& archive)
     {
         Command cmd;
-        cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").string_arg(gcs_object).path_arg(archive);
+        cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").string_arg(gcs_object).string_arg(archive);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
@@ -1124,7 +1124,7 @@ namespace
     bool awscli_upload_file(const VcpkgPaths& paths, const std::string& aws_object, const Path& archive)
     {
         const auto cmd =
-            Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("cp").path_arg(archive).string_arg(
+            Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("cp").string_arg(archive).string_arg(
                 aws_object);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
@@ -1143,7 +1143,7 @@ namespace
                              .string_arg("s3")
                              .string_arg("cp")
                              .string_arg(aws_object)
-                             .path_arg(archive);
+                             .string_arg(archive);
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
