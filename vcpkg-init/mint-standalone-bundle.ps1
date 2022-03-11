@@ -1,11 +1,15 @@
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding = $False, DefaultParameterSetName = 'Tarball')]
 Param(
-    [Parameter(Mandatory = $true)]
-    [string]$DestinationTarballName,
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$AdditionalFiles,
+    [Parameter(Mandatory = $True, ParameterSetName = 'Tarball')]
+    [string]$DestinationTarball,
+    [Parameter(Mandatory = $True, ParameterSetName = 'Directory')]
+    [string]$DestinationDir,
+    [Parameter(Mandatory = $True)]
+    [string]$TempDir,
     [Parameter()]
-    [string]$TempPath
+    [switch]$ReadOnly,
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$AdditionalFiles
 )
 
 $AdditionalFilesNames = New-Object string[] $AdditionalFiles.Length
@@ -43,48 +47,63 @@ $scripts_dependencies = @(
     'vcpkgTools.xml'
 )
 
-if (Test-Path $TempPath) {
-    rm -Recurse $TempPath
+if (Test-Path $TempDir) {
+    Remove-Item -Recurse $TempDir
 }
 
-mkdir $TempPath
-pushd $TempPath
+New-Item -Path $TempDir -ItemType 'Directory' -Force
+Push-Location $TempDir
 try {
     $target = "https://github.com/microsoft/vcpkg/archive/$sha.zip"
     Write-Host $target
-    curl.exe -L -o repo.zip $target
-    tar xf repo.zip
-    mkdir out
-    mkdir 'out/scripts'
-    pushd "vcpkg-$sha"
+    & curl.exe -L -o repo.zip $target
+    & tar xf repo.zip
+    New-Item -Path 'out/scripts' -ItemType 'Directory' -Force
+    Push-Location "vcpkg-$sha"
     try {
-        mv 'triplets' '../out/triplets'
+        Move-Item 'triplets' '../out/triplets'
         foreach ($dep in $scripts_dependencies) {
-            mv "scripts/$dep" "../out/scripts/$dep"
+            Move-Item "scripts/$dep" "../out/scripts/$dep"
         }
     }
     finally {
-        popd
+        Pop-Location
     }
 
     for ($idx = 0; $idx -ne $AdditionalFiles.Length; $idx++) {
-        cp $AdditionalFiles[$idx] "out/$($AdditionalFilesNames[$idx])"
+        Copy-Item -Path $AdditionalFiles[$idx] -Destination "out/$($AdditionalFilesNames[$idx])"
     }
 
     $bundleConfig = @{
-        'readonly' = $False;
+        'readonly'       = [bool]$ReadOnly;
         'usegitregistry' = $True;
-        'embeddedsha' = $sha
+        'embeddedsha'    = $sha
     }
 
+    New-Item -Path "out/.vcpkg-root" -ItemType "File"
     Set-Content -Path "out/vcpkg-bundle.json" `
         -Value (ConvertTo-Json -InputObject $bundleConfig) `
         -Encoding Ascii
 
-    tar czf $DestinationTarballName -C out *
+    if (-not [String]::IsNullOrEmpty($DestinationTarball)) {
+        & tar czf $DestinationTarball -C out *
+    }
+
+    if (-not [String]::IsNullOrEmpty($DestinationDir)) {
+        if (Test-Path $DestinationDir) {
+            Remove-Item -Recurse $DestinationDir
+        }
+
+        $parent = [System.IO.Path]::GetDirectoryName($DestinationDir)
+        if (-not [String]::IsNullOrEmpty($parent)) {
+            New-Item -Path $parent -ItemType 'Directory' -Force
+        }
+
+        Move-Item out $DestinationDir
+    }
 }
 finally {
-    popd
+    Pop-Location
 }
 
-rm -Recurse $TempPath
+Remove-Item -Recurse $TempDir
