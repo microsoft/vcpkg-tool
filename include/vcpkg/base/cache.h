@@ -34,9 +34,13 @@ namespace vcpkg
                                          int>::type = 0>
         const Value& get_lazy(const KeyIsh& k, F&& f) const
         {
-            auto it = m_cache.find(k);
-            if (it != m_cache.end()) return it->second;
-            return m_cache.emplace(k, static_cast<F&&>(f)()).first->second;
+            auto it = m_cache.lower_bound(k);
+            if (it != m_cache.end() && !(m_cache.key_comp()(k, it->first)))
+            {
+                return it->second;
+            }
+
+            return m_cache.emplace_hint(it, k, static_cast<F&&>(f)())->second;
         }
 
     private:
