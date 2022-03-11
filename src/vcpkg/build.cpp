@@ -714,11 +714,6 @@ namespace vcpkg::Build
         print2("Detecting compiler hash for triplet ", triplet, "...\n");
         auto buildpath = paths.buildtrees() / "detect_compiler";
 
-#if !defined(_WIN32)
-        // TODO: remove when vcpkg.exe is in charge for acquiring tools. Change introduced in vcpkg v0.0.107.
-        // bootstrap should have already downloaded ninja, but making sure it is present in case it was deleted.
-        (void)(paths.get_tool_exe(Tools::NINJA));
-#endif
         std::vector<CMakeVariable> cmake_args{
             {"CURRENT_PORT_DIR", paths.scripts / "detect_compiler"},
             {"CURRENT_BUILDTREES_DIR", buildpath},
@@ -799,11 +794,6 @@ namespace vcpkg::Build
                                                            const VcpkgPaths& paths,
                                                            const Dependencies::InstallPlanAction& action)
     {
-#if !defined(_WIN32)
-        // TODO: remove when vcpkg.exe is in charge for acquiring tools. Change introduced in vcpkg v0.0.107.
-        // bootstrap should have already downloaded ninja, but making sure it is present in case it was deleted.
-        (void)(paths.get_tool_exe(Tools::NINJA));
-#endif
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto& scf = *scfl.source_control_file;
 
