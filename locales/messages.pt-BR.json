@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "código inacessível atingido",
   "ChecksUpdateVcpkg": "atualizar vcpkg executando novamente bootstrap-vcpkg pode resolver essa falha.",
+  "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "EmptyLicenseExpression": "A expressão da licença SPDX estava vazia.",
   "ErrorIndividualPackagesUnsupported": "Erro: No modo manifesto, `vcpkg install` não suporta argumentos de pacotes individuais.\nPara instalar pacotes adicionais, edite o vcpkg.json e execute `vcpkg install` sem nenhum argumento de pacote.",
   "ErrorInvalidClassicModeOption": "Erro: a opção --{option} não é suportada no modo clássico e nenhum manifesto foi encontrado.",

@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "已連線到無法連線的代碼",
   "ChecksUpdateVcpkg": "重新執行 bootstrap-vcpkg 來更新 vcpkg 或許可以解決此失敗問題。",
+  "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "EmptyLicenseExpression": "SPDX 授權運算式是空的。",
   "ErrorIndividualPackagesUnsupported": "錯誤: 在資訊清單模式中，'vcpkg install' 不支援個別套件引數。\n若要安裝其他套件，請編輯 vcpkg.json，然後執行不含任何套件引數的 'vcpkg install'。",
   "ErrorInvalidClassicModeOption": "錯誤: 傳統模式不支援選項 --{option}，且找不到任何資訊清單。",

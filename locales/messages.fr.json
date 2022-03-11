@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "code inaccessible atteint",
   "ChecksUpdateVcpkg": "la mise à jour de vcpkg en réexécutant bootstrap-vcpkg peut résoudre cet échec.",
+  "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "EmptyLicenseExpression": "L’expression de licence SPDX était vide.",
   "ErrorIndividualPackagesUnsupported": "Erreur : En mode manifeste, `vcpkg install` ne supporte pas les arguments individuels des paquets. \nPour installer des paquets supplémentaires, éditez vcpkg.json et exécutez ensuite `vcpkg install` sans aucun argument de paquet.",
   "ErrorInvalidClassicModeOption": "Erreur : l’option --{option} n’est pas prise en charge en mode classique et aucun manifeste n’a été trouvé.",

@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "nedosažitelný kód byl dosažen",
   "ChecksUpdateVcpkg": "aktualizace vcpkg opětovným spuštěním bootstrap-vcpkg může tuto chybu vyřešit.",
+  "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "EmptyLicenseExpression": "Výraz licence SPDX byl prázdný.",
   "ErrorIndividualPackagesUnsupported": "Chyba: V režimu manifestu nepodporuje příkaz vcpkg install jednotlivé argumenty balíčku.\nPokud chcete nainstalovat další balíčky, upravte soubor vcpkg.json a spusťte příkaz vcpkg install bez argumentů balíčku.",
   "ErrorInvalidClassicModeOption": "Chyba: Možnost --{option} není v klasickém režimu podporována a nebyl nalezen žádný manifest.",

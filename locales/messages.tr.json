@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "ulaşılamayan koda ulaşıldı",
   "ChecksUpdateVcpkg": "vcpkg’nin bootstrap-vcpkg’nin yeniden çalıştırılarak güncelleştirilmesi bu hatayı çözebilir.",
+  "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "EmptyLicenseExpression": "SPDX lisans ifadesi boştu.",
   "ErrorIndividualPackagesUnsupported": "Hata: Bildirim modunda `vcpkg install`, paket bağımsız değişkenlerini tek tek desteklemez.\nEk paketleri yüklemek için vcpkg.json dosyasını düzenleyin ve paket bağımsız değişkenleri olmadan `vcpkg install` komutunu çalıştırın.",
   "ErrorInvalidClassicModeOption": "Hata: --{option} seçeneği klasik modda desteklenmiyor ve bildirim bulunamadı.",

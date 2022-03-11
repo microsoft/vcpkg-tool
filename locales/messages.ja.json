@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "到達できないコードに達しました",
   "ChecksUpdateVcpkg": "bootstrap-vcpkg を再実行して vcpkg を更新すると、このエラーが解決される可能性があります。",
+  "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "EmptyLicenseExpression": "SPDX ライセンス式が空でした。",
   "ErrorIndividualPackagesUnsupported": "エラー: マニフェスト モードでは、`vcpkg install` は個々のパッケージ引数をサポートしていません。\n追加のパッケージをインストールするには、vcpkg.json を編集し、パッケージ引数を指定せずに `vcpkg install` を実行してください。",
   "ErrorInvalidClassicModeOption": "エラー: オプション --{option} はクラシック モードではサポートされていないため、マニフェストが見つかりませんでした。",

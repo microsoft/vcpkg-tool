@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "достигнут недостижимый код",
   "ChecksUpdateVcpkg": "обновление vcpkg путем повторного запуска bootstrap-vcpkg может устранить этот сбой.",
+  "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "EmptyLicenseExpression": "Выражение лицензии SPDX было пустым.",
   "ErrorIndividualPackagesUnsupported": "Ошибка: в режиме манифеста \"vcpkg install\" не поддерживает отдельные аргументы пакета.\nЧтобы установить дополнительные пакеты, измените vcpkg.json, а затем выполните команду \"vcpkg install\" без аргументов пакета.",
   "ErrorInvalidClassicModeOption": "Ошибка: параметр --{option} не поддерживается в классическом режиме, и манифест не найден.",

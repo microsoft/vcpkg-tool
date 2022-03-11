@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "已访问无法访问的代码",
   "ChecksUpdateVcpkg": "通过重新运行 bootstrap-vcpkg 更新 vcpkg 可能会解决此故障。",
+  "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "EmptyLicenseExpression": "SPDX 许可证表达式为空。",
   "ErrorIndividualPackagesUnsupported": "错误: 在清单模式下，`vcpkg install` 不支持单个包参数。\n若要安装其他包，请编辑 vcpkg.json，然后在没有任何包参数的情况下运行 `vcpkg install`。",
   "ErrorInvalidClassicModeOption": "错误: 在经典模式下不支持选项 --{option}，未找到任何清单。",
