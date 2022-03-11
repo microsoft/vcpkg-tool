@@ -9,7 +9,14 @@
 
 namespace vcpkg
 {
-    std::string reformat_version(const std::string& version, const std::string& abi_tag);
+    // Turns:
+    // - <XXXX>-<YY>-<ZZ><whatever> -> <X>.<Y>.<Z>-vcpkg<abitag>
+    // - v?<X> -> <X>.0.0-vcpkg<abitag>
+    //   - this avoids turning 20-01-01 into 20.0.0-vcpkg<abitag>
+    // - v?<X>.<Y><whatever> -> <X>.<Y>.0-vcpkg<abitag>
+    // - v?<X>.<Y>.<Z><whatever> -> <X>.<Y>.<Z>-vcpkg<abitag>
+    // - anything else -> 0.0.0-vcpkg<abitag>
+    std::string reformat_version(StringView version, StringView abi_tag);
 
     struct NugetReference
     {
