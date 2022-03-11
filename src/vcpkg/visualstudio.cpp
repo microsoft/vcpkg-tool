@@ -269,15 +269,15 @@ namespace vcpkg::VisualStudio
                         // unknown toolset
                         continue;
                     }
-                    else if (toolset_version_prefix.byte_at_index(3) == '1')
+                    else if (toolset_version_prefix[3] == '1')
                     {
                         toolset_version = V_141;
                     }
-                    else if (toolset_version_prefix.byte_at_index(3) == '2')
+                    else if (toolset_version_prefix[3] == '2')
                     {
                         toolset_version = V_142;
                     }
-                    else if (toolset_version_prefix.byte_at_index(3) == '3')
+                    else if (toolset_version_prefix[3] == '3')
                     {
                         toolset_version = V_143;
                     }

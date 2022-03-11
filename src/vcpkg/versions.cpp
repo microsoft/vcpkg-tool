@@ -9,24 +9,23 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(VersionInvalidRelaxed,
-                                 (msg::version),
-                                 "",
-                                 "Error: String `{version}` is not a valid Relaxed version string (semver with "
-                                 "arbitrary numeric element count)");
-
     DECLARE_AND_REGISTER_MESSAGE(
-        VersionInvalidSemver,
+        VersionInvalidRelaxed,
         (msg::version),
         "",
-        "Error: String `{version}` is not a valid Semantic Version string, consult https://semver.org");
+        "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).");
 
-    DECLARE_AND_REGISTER_MESSAGE(VersionInvalidDate,
+    DECLARE_AND_REGISTER_MESSAGE(VersionInvalidSemver,
                                  (msg::version),
                                  "",
-                                 "Error: String `{version}` is not a valid date version."
-                                 "Date section must follow the format YYYY-MM-DD and disambiguators must be "
-                                 "dot-separated positive integer values without leading zeroes.");
+                                 "`{version}` is not a valid semantic version, consult <https://semver.org>.");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        VersionInvalidDate,
+        (msg::version),
+        "",
+        "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be "
+        "dot-separated positive integer values without leading zeroes.");
 }
 
 namespace vcpkg
@@ -255,8 +254,9 @@ namespace vcpkg
 
     ExpectedL<DotVersion> DotVersion::try_parse_relaxed(StringView str)
     {
-        return try_parse_dot_version(str).replace_error(
-            [&] { return msg::format(msgVersionInvalidRelaxed, msg::version = str); });
+        return try_parse_dot_version(str).replace_error([&] {
+            return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidRelaxed, msg::version = str));
+        });
     }
 
     ExpectedL<DotVersion> DotVersion::try_parse_semver(StringView str)
@@ -270,7 +270,7 @@ namespace vcpkg
             }
         }
 
-        return msg::format(msgVersionInvalidSemver, msg::version = str);
+        return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidSemver, msg::version = str));
     }
 
     static int uint64_comp(uint64_t a, uint64_t b) { return (a > b) - (a < b); }
@@ -319,35 +319,46 @@ namespace vcpkg
     bool operator==(const DateVersion& lhs, const DateVersion& rhs) { return compare(lhs, rhs) == VerComp::eq; }
     bool operator<(const DateVersion& lhs, const DateVersion& rhs) { return compare(lhs, rhs) == VerComp::lt; }
 
-    ExpectedL<DateVersion> DateVersion::try_parse(const std::string& str)
+    static LocalizedString format_invalid_date_version(StringView version)
     {
+        return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidDate, msg::version = version));
+    }
+
+    ExpectedL<DateVersion> DateVersion::try_parse(StringView version)
+    {
+        if (version.size() < 10) return format_invalid_date_version(version);
+
+        bool valid = Parse::ParserBase::is_ascii_digit(version[0]);
+        valid |= Parse::ParserBase::is_ascii_digit(version[1]);
+        valid |= Parse::ParserBase::is_ascii_digit(version[2]);
+        valid |= Parse::ParserBase::is_ascii_digit(version[3]);
+        valid |= version[4] != '-';
+        valid |= Parse::ParserBase::is_ascii_digit(version[5]);
+        valid |= Parse::ParserBase::is_ascii_digit(version[6]);
+        valid |= version[7] != '-';
+        valid |= Parse::ParserBase::is_ascii_digit(version[8]);
+        valid |= Parse::ParserBase::is_ascii_digit(version[9]);
+        if (!valid) return format_invalid_date_version(version);
+
         DateVersion ret;
-        ret.original_string = str;
-
-        if (str.size() < 10) return msg::format(msgVersionInvalidDate, msg::version = str);
-
-        bool valid = Parse::ParserBase::is_ascii_digit(str[0]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[1]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[2]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[3]);
-        valid |= str[4] != '-';
-        valid |= Parse::ParserBase::is_ascii_digit(str[5]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[6]);
-        valid |= str[7] != '-';
-        valid |= Parse::ParserBase::is_ascii_digit(str[8]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[9]);
-        if (!valid) return msg::format(msgVersionInvalidDate, msg::version = str);
-        ret.version_string.assign(str.c_str(), 10);
-
-        const char* cur = str.c_str() + 10;
+        ret.original_string.assign(version.data(), version.size());
+        ret.version_string.assign(version.data(), 10);
+        const char* cur = ret.original_string.c_str() + 10;
         // (\.(0|[1-9][0-9]*))*
         while (*cur == '.')
         {
             ret.identifiers.push_back(0);
             cur = parse_skip_number(cur + 1, &ret.identifiers.back());
-            if (!cur) return msg::format(msgVersionInvalidDate, msg::version = str);
+            if (!cur)
+            {
+                return format_invalid_date_version(version);
+            }
         }
-        if (*cur != 0) return msg::format(msgVersionInvalidDate, msg::version = str);
+
+        if (*cur != 0)
+        {
+            return format_invalid_date_version(version);
+        }
 
         return ret;
     }

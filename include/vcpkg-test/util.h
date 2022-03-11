@@ -59,7 +59,7 @@ namespace Catch
 
 namespace vcpkg
 {
-    inline std::ostream& operator<<(std::ostream& os, const vcpkg::LocalizedString& value)
+    inline std::ostream& operator<<(std::ostream& os, const LocalizedString& value)
     {
         return os << "LL" << std::quoted(value.data());
     }

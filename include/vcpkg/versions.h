@@ -128,7 +128,7 @@ namespace vcpkg
         friend bool operator>=(const DateVersion& lhs, const DateVersion& rhs) { return !(lhs < rhs); }
         friend bool operator<=(const DateVersion& lhs, const DateVersion& rhs) { return !(rhs < lhs); }
 
-        static ExpectedL<DateVersion> try_parse(const std::string& str);
+        static ExpectedL<DateVersion> try_parse(StringView version);
     };
 
     VerComp compare(const DateVersion& a, const DateVersion& b);
