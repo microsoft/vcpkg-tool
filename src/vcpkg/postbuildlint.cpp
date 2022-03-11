@@ -883,7 +883,12 @@ namespace vcpkg::PostBuildLint
                                                 const std::vector<Path>& libs,
                                                 const Path& dumpbin_exe)
     {
-        std::vector<BuildType> bad_build_types(std::begin(BuildType::VALUES), std::end(BuildType::VALUES));
+        auto bad_build_types = std::vector<BuildType>({
+            {Build::ConfigurationType::DEBUG, Build::LinkageType::STATIC},
+            {Build::ConfigurationType::DEBUG, Build::LinkageType::DYNAMIC},
+            {Build::ConfigurationType::RELEASE, Build::LinkageType::STATIC},
+            {Build::ConfigurationType::RELEASE, Build::LinkageType::DYNAMIC},
+        });
         Util::erase_remove(bad_build_types, expected_build_type);
 
         std::vector<BuildTypeAndFile> libs_with_invalid_crt;

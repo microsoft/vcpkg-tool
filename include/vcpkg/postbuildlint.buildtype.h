@@ -17,7 +17,6 @@ namespace vcpkg::PostBuildLint
         bool has_crt_linker_option(StringView sv) const;
         StringLiteral to_string() const;
 
-        static BuildType VALUES[4];
         Build::ConfigurationType config;
         Build::LinkageType linkage;
 
