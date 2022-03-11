@@ -23,7 +23,7 @@ namespace vcpkg::Commands::Autocomplete
         Checks::exit_success(line_info);
     }
 
-    static std::vector<std::string> combine_port_with_triplets(const std::string& port,
+    static std::vector<std::string> combine_port_with_triplets(StringView port,
                                                                const std::vector<std::string>& triplets)
     {
         return Util::fmap(triplets,
@@ -33,15 +33,15 @@ namespace vcpkg::Commands::Autocomplete
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         LockGuardPtr<Metrics>(g_metrics)->set_send_metrics(false);
-        const std::string to_autocomplete = Strings::join(" ", args.command_arguments);
-        const std::vector<std::string> tokens = Strings::split(to_autocomplete, ' ');
-
-        std::smatch match;
 
         // Handles vcpkg <command>
-        if (std::regex_match(to_autocomplete, match, std::regex{R"###(^(\S*)$)###"}))
+        if (args.command_arguments.size() <= 1)
         {
-            const std::string requested_command = match[1].str();
+            StringView requested_command = "";
+            if (args.command_arguments.size() == 1)
+            {
+                requested_command = args.command_arguments[0];
+            }
 
             // First try public commands
             std::vector<std::string> public_commands = {"install",
@@ -87,71 +87,73 @@ namespace vcpkg::Commands::Autocomplete
             output_sorted_results_and_exit(VCPKG_LINE_INFO, std::move(private_commands));
         }
 
+        // args.command_arguments.size() >= 2
+        const auto& command_name = args.command_arguments[0];
+
         // Handles vcpkg install package:<triplet>
-        if (std::regex_match(to_autocomplete, match, std::regex{R"###(^install(.*|)\s([^:]+):(\S*)$)###"}))
+        if (command_name == "install")
         {
-            const auto port_name = match[2].str();
-            const auto triplet_prefix = match[3].str();
-
-            // TODO: Support autocomplete for ports in --overlay-ports
-            auto maybe_port =
-                Paragraphs::try_load_port(paths.get_filesystem(), paths.builtin_ports_directory() / port_name);
-            if (maybe_port.error())
+            StringView last_arg = args.command_arguments.back();
+            auto colon = Util::find(last_arg, ':');
+            if (colon != last_arg.end())
             {
-                Checks::exit_success(VCPKG_LINE_INFO);
+                auto port_name = StringView{last_arg.begin(), colon};
+                auto triplet_prefix = StringView{colon + 1, last_arg.end()};
+                // TODO: Support autocomplete for ports in --overlay-ports
+                auto maybe_port =
+                    Paragraphs::try_load_port(paths.get_filesystem(), paths.builtin_ports_directory() / port_name);
+                if (maybe_port.error())
+                {
+                    Checks::exit_success(VCPKG_LINE_INFO);
+                }
+
+                std::vector<std::string> triplets = paths.get_available_triplets_names();
+                Util::erase_remove_if(triplets, [&](const std::string& s) {
+                    return !Strings::case_insensitive_ascii_starts_with(s, triplet_prefix);
+                });
+
+                auto result = combine_port_with_triplets(port_name, triplets);
+
+                output_sorted_results_and_exit(VCPKG_LINE_INFO, std::move(result));
             }
-
-            std::vector<std::string> triplets = paths.get_available_triplets_names();
-            Util::erase_remove_if(triplets, [&](const std::string& s) {
-                return !Strings::case_insensitive_ascii_starts_with(s, triplet_prefix);
-            });
-
-            auto result = combine_port_with_triplets(port_name, triplets);
-
-            output_sorted_results_and_exit(VCPKG_LINE_INFO, std::move(result));
         }
 
         struct CommandEntry
         {
-            constexpr CommandEntry(const CStringView& name, const CStringView& regex, const CommandStructure& structure)
-                : name(name), regex(regex), structure(structure)
-            {
-            }
-
             CStringView name;
-            CStringView regex;
             const CommandStructure& structure;
         };
 
         static constexpr CommandEntry COMMANDS[] = {
-            CommandEntry{"install", R"###(^install\s(.*\s|)(\S*)$)###", Install::COMMAND_STRUCTURE},
-            CommandEntry{"edit", R"###(^edit\s(.*\s|)(\S*)$)###", Edit::COMMAND_STRUCTURE},
-            CommandEntry{"remove", R"###(^remove\s(.*\s|)(\S*)$)###", Remove::COMMAND_STRUCTURE},
-            CommandEntry{"integrate", R"###(^integrate(\s+)(\S*)$)###", Integrate::COMMAND_STRUCTURE},
-            CommandEntry{"upgrade", R"###(^upgrade(\s+)(\S*)$)###", Upgrade::COMMAND_STRUCTURE},
+            CommandEntry{"install", Install::COMMAND_STRUCTURE},
+            CommandEntry{"edit", Edit::COMMAND_STRUCTURE},
+            CommandEntry{"remove", Remove::COMMAND_STRUCTURE},
+            CommandEntry{"integrate", Integrate::COMMAND_STRUCTURE},
+            CommandEntry{"upgrade", Upgrade::COMMAND_STRUCTURE},
         };
 
         for (auto&& command : COMMANDS)
         {
-            if (std::regex_match(to_autocomplete, match, std::regex{command.regex.c_str()}))
+            if (command_name == command.name)
             {
-                const auto prefix = match[2].str();
+                StringView prefix = args.command_arguments.back();
                 std::vector<std::string> results;
 
                 const bool is_option = Strings::starts_with(prefix, "-");
                 if (is_option)
                 {
-                    results = Util::fmap(command.structure.options.switches, [](const CommandSwitch& s) -> std::string {
-                        return Strings::format("--%s", s.name.to_string());
-                    });
-
-                    auto settings = Util::fmap(command.structure.options.settings,
-                                               [](auto&& s) { return Strings::format("--%s", s.name); });
-                    results.insert(results.end(), settings.begin(), settings.end());
-
-                    auto multisettings = Util::fmap(command.structure.options.multisettings,
-                                                    [](auto&& s) { return Strings::format("--%s", s.name); });
-                    results.insert(results.end(), multisettings.begin(), multisettings.end());
+                    for (const auto& s : command.structure.options.switches)
+                    {
+                        results.push_back(Strings::concat("--", s.name));
+                    }
+                    for (const auto& s : command.structure.options.settings)
+                    {
+                        results.push_back(Strings::concat("--", s.name));
+                    }
+                    for (const auto& s : command.structure.options.multisettings)
+                    {
+                        results.push_back(Strings::concat("--", s.name));
+                    }
                 }
                 else
                 {
