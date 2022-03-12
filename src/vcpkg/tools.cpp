@@ -25,25 +25,57 @@ namespace vcpkg
         std::string sha512;
     };
 
-    static Optional<std::array<int, 3>> parse_version_string(const std::string& version_as_string)
+    // /\d+\.\d+(\.\d+)?/
+    static Optional<std::array<int, 3>> parse_version_string(StringView string_version)
     {
-        static const std::regex RE(R"###((\d+)\.(\d+)(\.(\d+))?)###");
+        using P = Parse::ParserBase;
 
-        std::match_results<std::string::const_iterator> match;
-        const auto found = std::regex_search(version_as_string, match, RE);
-        if (!found)
+        // first, find the beginning of the version
+        auto first = string_version.begin();
+        auto last = string_version.end();
+
+        // we're looking for the first instance of `<digits>.<digits>`
+        for (;;)
+        {
+            first = std::find_if(first, last, P::is_ascii_digit);
+            auto end_of_field = std::find_if_not(first, last, P::is_ascii_digit);
+            if (end_of_field == last)
+            {
+                break;
+            }
+            if (*end_of_field == '.')
+            {
+                ++end_of_field;
+                if (end_of_field != last && P::is_ascii_digit(*end_of_field))
+                {
+                    break;
+                }
+            }
+            first = end_of_field;
+        }
+
+        ParsedExternalVersion parsed_version;
+        if (!try_parse_external_dot_version(parsed_version, StringView{first, last}))
         {
             return {};
         }
+        parsed_version.normalize();
 
-        const int d1 = atoi(match[1].str().c_str());
-        const int d2 = atoi(match[2].str().c_str());
-        const int d3 = [&] {
-            if (match[4].str().empty()) return 0;
-            return atoi(match[4].str().c_str());
-        }();
-        const std::array<int, 3> result = {d1, d2, d3};
-        return result;
+        std::string buffer;
+
+        buffer.assign(parsed_version.major.begin(), parsed_version.major.end());
+        auto d1 = Strings::strto<int>(buffer);
+        if (!d1.has_value()) return {};
+
+        buffer.assign(parsed_version.minor.begin(), parsed_version.minor.end());
+        auto d2 = Strings::strto<int>(buffer);
+        if (!d2.has_value()) return {};
+
+        buffer.assign(parsed_version.patch.begin(), parsed_version.patch.end());
+        auto d3 = Strings::strto<int>(buffer);
+        if (!d3.has_value()) return {};
+
+        return std::array<int, 3>{*d1.get(), *d2.get(), *d3.get()};
     }
 
     static ExpectedT<ToolData, std::string> parse_tool_data_from_xml(const VcpkgPaths& paths, StringView tool)

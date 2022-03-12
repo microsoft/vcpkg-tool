@@ -409,4 +409,98 @@ namespace vcpkg
 
         return static_cast<VerComp>(Util::range_lexcomp(a.identifiers, b.identifiers, uint64_comp));
     }
+
+    StringView normalize_external_version_zeros(StringView sv)
+    {
+        if (sv.empty()) return "0";
+
+        auto it = std::find_if_not(sv.begin(), sv.end(), [](char ch) { return ch == '0'; });
+        if (it == sv.end())
+        {
+            // all zeroes - just return "0"
+            return StringView{sv.end() - 1, sv.end()};
+        }
+        else
+        {
+            return StringView{it, sv.end()};
+        }
+    }
+
+    void ParsedExternalVersion::normalize()
+    {
+        major = normalize_external_version_zeros(major);
+        minor = normalize_external_version_zeros(minor);
+        patch = normalize_external_version_zeros(patch);
+    }
+
+    // /(\d\d\d\d)-(\d\d)-(\d\d).*/
+    bool try_parse_external_date_version(ParsedExternalVersion& out, StringView version)
+    {
+        using P = vcpkg::Parse::ParserBase;
+        // a b c d - e f - g h <end>
+        // 0 1 2 3 4 5 6 7 8 9 10
+        if (version.size() < 10) return false;
+        auto first = version.begin();
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (*first++ != '-') return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (*first++ != '-') return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+
+        first = version.begin();
+        out.major = StringView{first, first + 4};
+        out.minor = StringView{first + 5, first + 7};
+        out.patch = StringView{first + 8, first + 10};
+
+        return true;
+    }
+
+    // /(\d+)(\.\d+|$)(\.\d+)?.*/
+    bool try_parse_external_dot_version(ParsedExternalVersion& out, StringView version)
+    {
+        using P = vcpkg::Parse::ParserBase;
+        auto first = version.begin();
+        auto last = version.end();
+
+        out.major = out.minor = out.patch = StringView{};
+
+        if (first == last) return false;
+        if (*first == 'v') ++first;
+        if (first == last) return false;
+
+        auto major_last = std::find_if_not(first, last, P::is_ascii_digit);
+        out.major = StringView{first, major_last};
+        if (major_last == last)
+        {
+            return true;
+        }
+        else if (*major_last != '.')
+        {
+            return false;
+        }
+
+        auto minor_last = std::find_if_not(major_last + 1, last, P::is_ascii_digit);
+        if (minor_last == major_last + 1)
+        {
+            return false;
+        }
+        out.minor = StringView{major_last + 1, minor_last};
+        if (minor_last == last || *minor_last != '.')
+        {
+            return true;
+        }
+
+        auto patch_last = std::find_if_not(minor_last + 1, last, P::is_ascii_digit);
+        if (minor_last == major_last + 1)
+        {
+            return false;
+        }
+        out.patch = StringView{minor_last + 1, patch_last};
+        return true;
+    }
 }

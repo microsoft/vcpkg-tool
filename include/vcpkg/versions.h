@@ -138,6 +138,23 @@ namespace vcpkg
         None,
         Minimum
     };
+
+    // this is for version parsing that isn't in vcpkg ports
+    // stuff like tools, nuget, etc.
+    struct ParsedExternalVersion
+    {
+        StringView major;
+        StringView minor;
+        StringView patch;
+
+        void normalize();
+    };
+
+    StringView normalize_external_version_zeros(StringView sv);
+    // /(\d\d\d\d)-(\d\d)-(\d\d).*/
+    bool try_parse_external_date_version(ParsedExternalVersion& out, StringView version);
+    // /(\d+)(\.\d+|$)(\.\d+)?.*/
+    bool try_parse_external_dot_version(ParsedExternalVersion& out, StringView version);
 }
 
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionSpec);
