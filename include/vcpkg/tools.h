@@ -5,6 +5,7 @@
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringliteral.h>
 
 #include <string>
@@ -43,6 +44,8 @@ namespace vcpkg
         virtual const Path& get_tool_path(const VcpkgPaths& paths, StringView tool) const = 0;
         virtual const std::string& get_tool_version(const VcpkgPaths& paths, StringView tool) const = 0;
     };
+
+    Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version);
 
     std::unique_ptr<ToolCache> get_tool_cache(RequireExactVersions abiToolVersionHandling);
 }

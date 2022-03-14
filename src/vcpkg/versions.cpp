@@ -326,19 +326,11 @@ namespace vcpkg
 
     ExpectedL<DateVersion> DateVersion::try_parse(StringView version)
     {
-        if (version.size() < 10) return format_invalid_date_version(version);
-
-        bool valid = Parse::ParserBase::is_ascii_digit(version[0]);
-        valid |= Parse::ParserBase::is_ascii_digit(version[1]);
-        valid |= Parse::ParserBase::is_ascii_digit(version[2]);
-        valid |= Parse::ParserBase::is_ascii_digit(version[3]);
-        valid |= version[4] != '-';
-        valid |= Parse::ParserBase::is_ascii_digit(version[5]);
-        valid |= Parse::ParserBase::is_ascii_digit(version[6]);
-        valid |= version[7] != '-';
-        valid |= Parse::ParserBase::is_ascii_digit(version[8]);
-        valid |= Parse::ParserBase::is_ascii_digit(version[9]);
-        if (!valid) return format_invalid_date_version(version);
+        ParsedExternalVersion parsed;
+        if (!try_parse_external_date_version(parsed, version))
+        {
+            return format_invalid_date_version(version);
+        }
 
         DateVersion ret;
         ret.original_string.assign(version.data(), version.size());
@@ -470,8 +462,6 @@ namespace vcpkg
         out.major = out.minor = out.patch = StringView{};
 
         if (first == last) return false;
-        if (*first == 'v') ++first;
-        if (first == last) return false;
 
         auto major_last = std::find_if_not(first, last, P::is_ascii_digit);
         out.major = StringView{first, major_last};
@@ -485,22 +475,15 @@ namespace vcpkg
         }
 
         auto minor_last = std::find_if_not(major_last + 1, last, P::is_ascii_digit);
-        if (minor_last == major_last + 1)
-        {
-            return false;
-        }
         out.minor = StringView{major_last + 1, minor_last};
-        if (minor_last == last || *minor_last != '.')
+        if (minor_last == last || minor_last == major_last + 1 || *minor_last != '.')
         {
             return true;
         }
 
         auto patch_last = std::find_if_not(minor_last + 1, last, P::is_ascii_digit);
-        if (minor_last == major_last + 1)
-        {
-            return false;
-        }
         out.patch = StringView{minor_last + 1, patch_last};
+
         return true;
     }
 }

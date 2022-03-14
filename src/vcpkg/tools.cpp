@@ -26,39 +26,33 @@ namespace vcpkg
     };
 
     // /\d+\.\d+(\.\d+)?/
-    static Optional<std::array<int, 3>> parse_version_string(StringView string_version)
+    Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version)
     {
         using P = Parse::ParserBase;
 
         // first, find the beginning of the version
         auto first = string_version.begin();
-        auto last = string_version.end();
+        const auto last = string_version.end();
 
         // we're looking for the first instance of `<digits>.<digits>`
+        ParsedExternalVersion parsed_version{};
         for (;;)
         {
             first = std::find_if(first, last, P::is_ascii_digit);
-            auto end_of_field = std::find_if_not(first, last, P::is_ascii_digit);
-            if (end_of_field == last)
+            if (first == last)
+            {
+                return nullopt;
+            }
+
+            if (try_parse_external_dot_version(parsed_version, StringView{first, last}) &&
+                !parsed_version.minor.empty())
             {
                 break;
             }
-            if (*end_of_field == '.')
-            {
-                ++end_of_field;
-                if (end_of_field != last && P::is_ascii_digit(*end_of_field))
-                {
-                    break;
-                }
-            }
-            first = end_of_field;
+
+            first = std::find_if_not(first, last, P::is_ascii_digit);
         }
 
-        ParsedExternalVersion parsed_version;
-        if (!try_parse_external_dot_version(parsed_version, StringView{first, last}))
-        {
-            return {};
-        }
         parsed_version.normalize();
 
         std::string buffer;
@@ -144,7 +138,7 @@ namespace vcpkg
         const std::string sha512 = Strings::find_exactly_one_enclosed(tool_data, "<sha512>", "</sha512>").to_string();
         auto archive_name = Strings::find_at_most_one_enclosed(tool_data, "<archiveName>", "</archiveName>");
 
-        const Optional<std::array<int, 3>> version = parse_version_string(version_as_string);
+        const Optional<std::array<int, 3>> version = parse_tool_version_string(version_as_string);
         Checks::check_exit(VCPKG_LINE_INFO,
                            version.has_value(),
                            "Could not parse version for tool %s. Version string was: %s",
@@ -197,7 +191,7 @@ namespace vcpkg
             auto maybe_version = tool_provider.get_version(paths, candidate);
             const auto version = maybe_version.get();
             if (!version) continue;
-            const auto parsed_version = parse_version_string(*version);
+            const auto parsed_version = parse_tool_version_string(*version);
             if (!parsed_version) continue;
             auto& actual_version = *parsed_version.get();
             if (!accept_version(actual_version)) continue;
