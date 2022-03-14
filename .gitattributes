@@ -3,7 +3,6 @@
 ce/pnpm-lock.yaml               merge=binary
 ce/shrinkwrap.yaml              merge=binary
 ce/npm-shrinkwrap.json          merge=binary
-ce/yarn.lock                    merge=binary
 
 
 # Disable line ending smudges entirely.
