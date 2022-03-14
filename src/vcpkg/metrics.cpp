@@ -19,6 +19,69 @@ namespace vcpkg
 {
     LockGuarded<Metrics> g_metrics;
 
+    Optional<StringView> find_first_nonzero_mac(StringView sv)
+    {
+        constexpr static auto is_hex_digit = [](char ch) {
+            return Parse::ParserBase::is_ascii_digit(ch) || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
+        };
+
+        auto first = sv.begin();
+        auto last = sv.end();
+
+        while (first != last)
+        {
+            // XX-XX-XX-XX-XX-XX
+            // 1  2  3  4  5  6
+            // size = 6 * 2 + 5 = 17
+            first = std::find_if(first, last, is_hex_digit);
+            if (last - first < 17)
+            {
+                break;
+            }
+
+            bool is_first = true;
+            bool is_valid = true;
+            auto end_of_mac = first;
+            for (int i = 0; is_valid && i < 6; ++i)
+            {
+                if (!is_first)
+                {
+                    if (*end_of_mac != '-')
+                    {
+                        is_valid = false;
+                        break;
+                    }
+                    ++end_of_mac;
+                }
+                is_first = false;
+
+                if (!is_hex_digit(*end_of_mac))
+                {
+                    is_valid = false;
+                    break;
+                }
+                ++end_of_mac;
+
+                if (!is_hex_digit(*end_of_mac))
+                {
+                    is_valid = false;
+                    break;
+                }
+                ++end_of_mac;
+            }
+            if (is_valid && StringView{first, end_of_mac} != "00-00-00-00-00-00")
+            {
+                return StringView{first, end_of_mac};
+            }
+            else
+            {
+                first = end_of_mac;
+            }
+        }
+
+        return nullopt;
+    }
+
     static std::string get_current_date_time_string()
     {
         auto maybe_time = CTime::get_current_date_time();
@@ -262,21 +325,15 @@ namespace vcpkg
 
         if (getmac.exit_code != 0) return "0";
 
-        std::regex mac_regex("([a-fA-F0-9]{2}(-[a-fA-F0-9]{2}){5})");
-        std::sregex_iterator next(getmac.output.begin(), getmac.output.end(), mac_regex);
-        std::sregex_iterator last;
-
-        while (next != last)
+        auto found_mac = find_first_nonzero_mac(getmac.output);
+        if (auto p = found_mac.get())
         {
-            const auto match = *next;
-            if (match[0] != "00-00-00-00-00-00")
-            {
-                return vcpkg::Hash::get_string_hash(match[0].str(), Hash::Algorithm::Sha256);
-            }
-            ++next;
+            return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
         }
-
-        return "0";
+        else
+        {
+            return "0";
+        }
     }
 #endif
 
