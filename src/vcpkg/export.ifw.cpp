@@ -23,12 +23,8 @@ namespace vcpkg::Export::IFW
         // - `<numbers, letters, or _>;`
         // (basically, an HTML character entity reference)
         using P = Parse::ParserBase;
-        constexpr static auto is_word = [](char ch)
-        {
-            return P::is_alphanum(ch) || ch == '_';
-        };
-        constexpr static auto is_hex_digit = [](char ch)
-        {
+        constexpr static auto is_word = [](char ch) { return P::is_alphanum(ch) || ch == '_'; };
+        constexpr static auto is_hex_digit = [](char ch) {
             return P::is_ascii_digit(ch) || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
         };
         constexpr static char escaped_amp[] = "&amp;";
