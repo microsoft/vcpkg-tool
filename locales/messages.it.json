@@ -25,7 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "è stato raggiunto il codice non raggiungibile",
   "ChecksUpdateVcpkg": "l'aggiornamento di vcpkg eseguendo di nuovo bootstrap-vcpkg può risolvere questo errore.",
-  "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
+  "CouldNotDeduceNugetIdAndVersion": "Non è stato possibile dedurre l'ID NuGet e la versione dal nome file: {path}",
   "EmptyLicenseExpression": "L'espressione di licenza SPDX è vuota.",
   "ErrorIndividualPackagesUnsupported": "Errore: in modalità manifesto 'vcpkg install' non supporta singoli argomenti del pacchetto.\nPer installare pacchetti aggiuntivi, modificare vcpkg.json ed eseguire 'vcpkg install' senza argomenti del pacchetto.",
   "ErrorInvalidClassicModeOption": "Errore: l'opzione --{option} non è supportata nella modalità classica e non è stato trovato alcun manifesto.",
@@ -94,9 +94,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "comando non valido: {command_name}",
   "VcpkgSendMetricsButDisabled": "Avviso: passato --sendmetrics, ma le metriche sono disabilitate.",
-  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
-  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
-  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
+  "VersionInvalidDate": "'{version}' non è una versione di data valida. Le date devono essere nel formato AAAA-MM-GG e i disambiguatori devono essere valori interi positivi separati da punti senza zeri iniziali.",
+  "VersionInvalidRelaxed": "'{version}' non è una versione di tipo relaxed valida (semver con conteggio arbitrario di elementi numerici).",
+  "VersionInvalidSemver": "'{version}' non è una versione semantica valida. Consultare <https://semver.org>.",
   "VersionSpecMismatch": "errore: impossibile caricare la porta perché le specifiche di versione non corrispondono\n    Percorso: {path}\n    Previsto: {expected_version}\n    Effettivo: {actual_version}",
   "WarningMessage": "avviso: "
 }
