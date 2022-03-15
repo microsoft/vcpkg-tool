@@ -104,8 +104,7 @@ TEST_CASE ("Prefab::to_version", "[export]")
     CHECK(*result.get() == Prefab::NdkVersion{20, 180, 2134324});
 
     result = Prefab::to_version("1.2.3 ");
-    REQUIRE(result.has_value());
-    CHECK(*result.get() == Prefab::NdkVersion{1, 2, 3});
+    CHECK_FALSE(result.has_value());
 
     result = Prefab::to_version(" 1.2.3");
     CHECK_FALSE(result.has_value());

@@ -244,14 +244,14 @@ namespace vcpkg::Strings
         T ret;
         auto res = std::from_chars(sv.begin(), sv.end(), ret, 10);
 
-        if (res.ptr == sv.begin())
+        if (res.ptr != sv.end())
         {
-            // no digits
+            // contains non-digits
             return nullopt;
         }
-        if (res.ec == std::errc::result_out_of_range)
+        if (res.ec != std::errc{})
         {
-            // out of bounds
+            // out of bounds, or invalid input
             return nullopt;
         }
 
@@ -267,15 +267,14 @@ namespace vcpkg::Strings
         errno = 0;
         char* endptr = nullptr;
         double res = strtod(with_nul_terminator.c_str(), &endptr);
-        if (endptr == with_nul_terminator.c_str())
+        if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
         {
-            // no digits
+            // contains invalid characters
             return nullopt;
         }
         // else, we may have HUGE_VAL but we expect the caller to deal with that
         return res;
     }
-
 
     const char* search(StringView haystack, StringView needle);
 
