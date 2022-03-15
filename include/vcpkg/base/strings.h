@@ -10,6 +10,7 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <charconv>
 #include <vector>
 
 namespace vcpkg::Strings::details
@@ -236,15 +237,37 @@ namespace vcpkg::Strings
 
     // Equivalent to one of the `::strto[T]` functions. Returns `nullopt` if there is an error.
     template<class T>
-    Optional<T> strto(CStringView sv);
-
-    template<>
-    inline Optional<double> strto<double>(CStringView sv)
+    Optional<T> strto(StringView sv)
     {
+        static_assert(std::is_integral_v<T>, "the default strto only works for integral types");
+
+        T ret;
+        auto res = std::from_chars(sv.begin(), sv.end(), ret, 10);
+
+        if (res.ptr == sv.begin())
+        {
+            // no digits
+            return nullopt;
+        }
+        if (res.ec == std::errc::result_out_of_range)
+        {
+            // out of bounds
+            return nullopt;
+        }
+
+        return ret;
+    }
+
+    // not every implementation has from_chars(double)
+    template<>
+    inline Optional<double> strto<double>(StringView sv)
+    {
+        auto with_nul_terminator = sv.to_string();
+
         errno = 0;
         char* endptr = nullptr;
-        double res = strtod(sv.c_str(), &endptr);
-        if (endptr == sv.c_str())
+        double res = strtod(with_nul_terminator.c_str(), &endptr);
+        if (endptr == with_nul_terminator.c_str())
         {
             // no digits
             return nullopt;
@@ -253,60 +276,6 @@ namespace vcpkg::Strings
         return res;
     }
 
-    template<>
-    inline Optional<long> strto<long>(CStringView sv)
-    {
-        errno = 0;
-        char* endptr = nullptr;
-        long res = strtol(sv.c_str(), &endptr, 10);
-        if (endptr == sv.c_str())
-        {
-            // no digits
-            return nullopt;
-        }
-        if (errno == ERANGE)
-        {
-            // out of bounds
-            return nullopt;
-        }
-
-        return res;
-    }
-
-    template<>
-    inline Optional<long long> strto<long long>(CStringView sv)
-    {
-        errno = 0;
-        char* endptr = nullptr;
-        long long res = strtoll(sv.c_str(), &endptr, 10);
-        if (endptr == sv.c_str())
-        {
-            // no digits
-            return nullopt;
-        }
-        if (errno == ERANGE)
-        {
-            // out of bounds
-            return nullopt;
-        }
-
-        return res;
-    }
-
-    template<>
-    inline Optional<int> strto<int>(CStringView sv)
-    {
-        auto res = strto<long>(sv);
-        if (auto r = res.get())
-        {
-            if (*r < INT_MIN || *r > INT_MAX)
-            {
-                return nullopt;
-            }
-            return static_cast<int>(*r);
-        }
-        return nullopt;
-    }
 
     const char* search(StringView haystack, StringView needle);
 

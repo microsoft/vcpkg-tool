@@ -192,7 +192,7 @@ namespace vcpkg::Export::Prefab
         for (auto first = version.begin(), last = version.end(); first != last;)
         {
             auto next = std::find(first, last, '.');
-            auto parsed = Strings::strto<int>(std::string(first, next));
+            auto parsed = Strings::strto<int>(StringView{first, next});
             if (auto p = parsed.get())
             {
                 fragments.push_back(*p);

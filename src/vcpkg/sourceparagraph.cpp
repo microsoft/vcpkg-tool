@@ -584,7 +584,7 @@ namespace vcpkg
                 auto h = dep.constraint.value.find('#');
                 if (h != std::string::npos)
                 {
-                    auto opt = Strings::strto<int>(dep.constraint.value.c_str() + h + 1);
+                    auto opt = Strings::strto<int>(StringView{dep.constraint.value.c_str() + h + 1});
                     auto v = opt.get();
                     if (v && *v > 0)
                     {

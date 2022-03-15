@@ -55,18 +55,13 @@ namespace vcpkg
 
         parsed_version.normalize();
 
-        std::string buffer;
-
-        buffer.assign(parsed_version.major.begin(), parsed_version.major.end());
-        auto d1 = Strings::strto<int>(buffer);
+        auto d1 = Strings::strto<int>(parsed_version.major);
         if (!d1.has_value()) return {};
 
-        buffer.assign(parsed_version.minor.begin(), parsed_version.minor.end());
-        auto d2 = Strings::strto<int>(buffer);
+        auto d2 = Strings::strto<int>(parsed_version.minor);
         if (!d2.has_value()) return {};
 
-        buffer.assign(parsed_version.patch.begin(), parsed_version.patch.end());
-        auto d3 = Strings::strto<int>(buffer);
+        auto d3 = Strings::strto<int>(parsed_version.patch);
         if (!d3.has_value()) return {};
 
         return std::array<int, 3>{*d1.get(), *d2.get(), *d3.get()};
