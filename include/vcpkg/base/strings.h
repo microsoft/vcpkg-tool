@@ -241,6 +241,7 @@ namespace vcpkg::Strings
     template<>
     inline Optional<double> strto<double>(CStringView sv)
     {
+        errno = 0;
         char* endptr = nullptr;
         double res = strtod(sv.c_str(), &endptr);
         if (endptr == sv.c_str())
@@ -255,6 +256,7 @@ namespace vcpkg::Strings
     template<>
     inline Optional<long> strto<long>(CStringView sv)
     {
+        errno = 0;
         char* endptr = nullptr;
         long res = strtol(sv.c_str(), &endptr, 10);
         if (endptr == sv.c_str())
@@ -274,6 +276,7 @@ namespace vcpkg::Strings
     template<>
     inline Optional<long long> strto<long long>(CStringView sv)
     {
+        errno = 0;
         char* endptr = nullptr;
         long long res = strtoll(sv.c_str(), &endptr, 10);
         if (endptr == sv.c_str())
