@@ -237,44 +237,16 @@ namespace vcpkg::Strings
 
     // Equivalent to one of the `::strto[T]` functions. Returns `nullopt` if there is an error.
     template<class T>
-    Optional<T> strto(StringView sv)
-    {
-        static_assert(std::is_integral_v<T>, "the default strto only works for integral types");
+    Optional<T> strto(StringView sv);
 
-        T ret;
-        auto res = std::from_chars(sv.begin(), sv.end(), ret, 10);
-
-        if (res.ptr != sv.end())
-        {
-            // contains non-digits
-            return nullopt;
-        }
-        if (res.ec != std::errc{})
-        {
-            // out of bounds, or invalid input
-            return nullopt;
-        }
-
-        return ret;
-    }
-
-    // not every implementation has from_chars(double)
+    template <>
+    Optional<int> strto<int>(StringView);
+    template <>
+    Optional<long> strto<long>(StringView);
+    template <>
+    Optional<long long> strto<long long>(StringView);
     template<>
-    inline Optional<double> strto<double>(StringView sv)
-    {
-        auto with_nul_terminator = sv.to_string();
-
-        errno = 0;
-        char* endptr = nullptr;
-        double res = strtod(with_nul_terminator.c_str(), &endptr);
-        if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
-        {
-            // contains invalid characters
-            return nullopt;
-        }
-        // else, we may have HUGE_VAL but we expect the caller to deal with that
-        return res;
-    }
+    Optional<double> strto<double>(StringView);
 
     const char* search(StringView haystack, StringView needle);
 
