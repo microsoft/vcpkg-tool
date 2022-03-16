@@ -23,6 +23,12 @@ namespace vcpkg
             return std::chrono::duration_cast<TimeUnit>(m_duration);
         }
 
+        ElapsedTime& operator+=(const ElapsedTime& other)
+        {
+            m_duration += other.m_duration;
+            return *this;
+        }
+
         std::string to_string() const;
         void to_string(std::string& into) const;
 
@@ -78,6 +84,8 @@ namespace vcpkg
     private:
         mutable tm m_tm;
     };
+
+    Optional<tm> to_utc_time(const std::time_t& t);
 
     tm get_current_date_time();
 

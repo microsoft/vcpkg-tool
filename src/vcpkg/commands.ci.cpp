@@ -158,97 +158,92 @@ namespace vcpkg::Commands::CI
     struct XunitTestResults
     {
     public:
-        XunitTestResults() { m_assembly_run_datetime = CTime::get_current_date_time(); }
-
-        void add_test_results(const std::string& spec,
-                              const Build::BuildResult& build_result,
+        void add_test_results(const PackageSpec& spec,
+                              Build::BuildResult build_result,
                               const ElapsedTime& elapsed_time,
+                              const std::chrono::system_clock::time_point& start_time,
                               const std::string& abi_tag,
                               const std::vector<std::string>& features)
         {
-            m_collections.back().tests.push_back({spec, build_result, elapsed_time, abi_tag, features});
+            m_tests[spec.name()].push_back(
+                {spec.to_string(),
+                 Strings::concat(spec.name(), '[', Strings::join(",", features), "]:", spec.triplet()),
+                 spec.triplet().to_string(),
+                 build_result,
+                 elapsed_time,
+                 start_time,
+                 abi_tag,
+                 features});
         }
 
-        // Starting a new test collection
-        void push_collection(const std::string& name) { m_collections.push_back({name}); }
-
-        void collection_time(const vcpkg::ElapsedTime& time) { m_collections.back().time = time; }
-
-        const std::string& build_xml()
+        std::string build_xml(Triplet controlling_triplet)
         {
-            m_xml.clear();
-            xml_start_assembly();
-
-            for (const auto& collection : m_collections)
+            std::string xml;
+            xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            xml.append("<assemblies>\n");
+            for (const auto& test_group : m_tests)
             {
-                xml_start_collection(collection);
-                for (const auto& test : collection.tests)
+                const auto& port_name = test_group.first;
+                const auto& port_results = test_group.second;
+
+                ElapsedTime elapsed_sum{};
+                for (auto&& port_result : port_results)
                 {
-                    xml_test(test);
+                    elapsed_sum += port_result.time;
                 }
-                xml_finish_collection();
+
+                const auto elapsed_seconds = elapsed_sum.as<std::chrono::seconds>().count();
+
+                auto earliest_start_time = std::min_element(port_results.begin(),
+                                                            port_results.end(),
+                                                            [](const XunitTest& lhs, const XunitTest& rhs) {
+                                                                return lhs.start_time < rhs.start_time;
+                                                            })
+                                               ->start_time;
+
+                const auto as_time_t = std::chrono::system_clock::to_time_t(earliest_start_time);
+                const auto as_tm = to_utc_time(as_time_t).value_or_exit(VCPKG_LINE_INFO);
+                char run_date_time[80];
+                strftime(run_date_time, sizeof(run_date_time), "%Y-%m-%d%H:%M:%S", &as_tm);
+
+                StringView run_date{run_date_time, 10};
+                StringView run_time{run_date_time + 10, 8};
+
+                xml.append(fmt::format("  <assembly name=\"{}\" run-date=\"{}\" run-time=\"{}\" time=\"{}\">\n",
+                                       port_name,
+                                       run_date,
+                                       run_time,
+                                       elapsed_seconds));
+                xml.append(fmt::format("    <collection name=\"{}\" time=\"{}\">\n",
+                                       controlling_triplet.canonical_name(),
+                                       elapsed_seconds));
+                for (const auto& port_result : port_results)
+                {
+                    xml_test(xml, port_result);
+                }
+
+                xml.append("    </collection>\n");
+                xml.append("  </assembly>\n");
             }
 
-            xml_finish_assembly();
-            return m_xml;
+            xml.append("</assemblies>\n");
+            return xml;
         }
-
-        void assembly_time(const vcpkg::ElapsedTime& assembly_time) { m_assembly_time = assembly_time; }
 
     private:
         struct XunitTest
         {
             std::string name;
+            std::string method;
+            std::string owner;
             vcpkg::Build::BuildResult result;
             vcpkg::ElapsedTime time;
+            std::chrono::system_clock::time_point start_time;
             std::string abi_tag;
             std::vector<std::string> features;
         };
 
-        struct XunitCollection
-        {
-            std::string name;
-            vcpkg::ElapsedTime time;
-            std::vector<XunitTest> tests;
-        };
-
-        void xml_start_assembly()
-        {
-            std::string datetime;
-            if (m_assembly_run_datetime)
-            {
-                auto rawDateTime = m_assembly_run_datetime.get()->to_string();
-                // The expected format is "yyyy-mm-ddThh:mm:ss.0Z"
-                //                         0123456789012345678901
-                datetime = Strings::format(
-                    R"(run-date="%s" run-time="%s")", rawDateTime.substr(0, 10), rawDateTime.substr(11, 8));
-            }
-
-            std::string time = Strings::format(R"(time="%lld")", m_assembly_time.as<std::chrono::seconds>().count());
-
-            m_xml += Strings::format(R"(<assemblies>)"
-                                     "\n"
-                                     R"(  <assembly name="vcpkg" %s %s>)"
-                                     "\n",
-                                     datetime,
-                                     time);
-        }
-        void xml_finish_assembly()
-        {
-            m_xml += "  </assembly>\n"
-                     "</assemblies>\n";
-        }
-
-        void xml_start_collection(const XunitCollection& collection)
-        {
-            m_xml += Strings::format(R"(    <collection name="%s" time="%lld">)"
-                                     "\n",
-                                     collection.name,
-                                     collection.time.as<std::chrono::seconds>().count());
-        }
-        void xml_finish_collection() { m_xml += "    </collection>\n"; }
-
-        void xml_test(const XunitTest& test)
+        static void xml_test(std::string& xml, const XunitTest& test)
         {
             std::string message_block;
             const char* result_string = "";
@@ -258,60 +253,43 @@ namespace vcpkg::Commands::CI
                 case BuildResult::FILE_CONFLICTS:
                 case BuildResult::BUILD_FAILED:
                     result_string = "Fail";
-                    message_block = Strings::format("<failure><message><![CDATA[%s]]></message></failure>",
-                                                    to_string_locale_invariant(test.result));
+                    message_block = fmt::format("        <failure><message><![CDATA[{}]]></message></failure>\n",
+                                                to_string_locale_invariant(test.result));
                     break;
                 case BuildResult::EXCLUDED:
                 case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
                     result_string = "Skip";
-                    message_block =
-                        Strings::format("<reason><![CDATA[%s]]></reason>", to_string_locale_invariant(test.result));
+                    message_block = fmt::format("        <reason><![CDATA[{}]]></reason>\n",
+                                                to_string_locale_invariant(test.result));
                     break;
                 case BuildResult::SUCCEEDED: result_string = "Pass"; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            std::string traits_block;
+            xml.append(fmt::format("      <test name=\"{}\" method=\"{}\" time=\"{}\" result=\"{}\">\n",
+                                   test.name,
+                                   test.method,
+                                   test.time.as<std::chrono::seconds>().count(),
+                                   result_string));
+            xml.append("        <traits>\n");
             if (!test.abi_tag.empty())
             {
-                traits_block += Strings::format(R"(<trait name="abi_tag" value="%s" />)", test.abi_tag);
+                xml.append(fmt::format("          <trait name=\"abi_tag\" value=\"{}\" />\n", test.abi_tag));
             }
 
             if (!test.features.empty())
             {
-                std::string feature_list;
-                for (const auto& feature : test.features)
-                {
-                    if (!feature_list.empty())
-                    {
-                        feature_list += ", ";
-                    }
-                    feature_list += feature;
-                }
-
-                traits_block += Strings::format(R"(<trait name="features" value="%s" />)", feature_list);
+                xml.append(fmt::format("          <trait name=\"features\" value=\"{}\" />\n",
+                                       Strings::join(", ", test.features)));
             }
 
-            if (!traits_block.empty())
-            {
-                traits_block = "<traits>" + traits_block + "</traits>";
-            }
+            xml.append(fmt::format("          <trait name=\"owner\" value=\"{}\" />\n", test.owner));
 
-            m_xml += Strings::format(R"(      <test name="%s" method="%s" time="%lld" result="%s">%s%s</test>)"
-                                     "\n",
-                                     test.name,
-                                     test.name,
-                                     test.time.as<std::chrono::seconds>().count(),
-                                     result_string,
-                                     traits_block,
-                                     message_block);
+            xml.append("        </traits>\n");
+            xml.append("      </test>\n");
         }
 
-        Optional<vcpkg::CTime> m_assembly_run_datetime;
-        vcpkg::ElapsedTime m_assembly_time;
-        std::vector<XunitCollection> m_collections;
-
-        std::string m_xml;
+        std::map<std::string, std::vector<XunitTest>> m_tests;
     };
 
     struct UnknownCIPortsResults
@@ -492,27 +470,27 @@ namespace vcpkg::Commands::CI
         output.appendnl();
         for (auto&& port_result : result.summary.results)
         {
-            switch (port_result.build_result.code)
+            auto& build_result = port_result.build_result.value_or_exit(VCPKG_LINE_INFO);
+            switch (build_result.code)
             {
                 case Build::BuildResult::BUILD_FAILED:
                 case Build::BuildResult::POST_BUILD_CHECKS_FAILED:
                 case Build::BuildResult::FILE_CONFLICTS:
-                    if (!expected_failures.contains(port_result.spec))
+                    if (!expected_failures.contains(port_result.get_spec()))
                     {
-                        output.append(msg::format(
-                            msgCiBaselineRegression,
-                            msg::spec = port_result.spec.to_string(),
-                            msg::build_result =
-                                Build::to_string_locale_invariant(port_result.build_result.code).to_string(),
-                            msg::path = ci_baseline_file_name));
+                        output.append(msg::format(msgCiBaselineRegression,
+                                                  msg::spec = port_result.get_spec().to_string(),
+                                                  msg::build_result =
+                                                      Build::to_string_locale_invariant(build_result.code).to_string(),
+                                                  msg::path = ci_baseline_file_name));
                         output.appendnl();
                     }
                     break;
                 case Build::BuildResult::SUCCEEDED:
-                    if (!allow_unexpected_passing && expected_failures.contains(port_result.spec))
+                    if (!allow_unexpected_passing && expected_failures.contains(port_result.get_spec()))
                     {
                         output.append(msg::format(msgCiBaselineUnexpectedPass,
-                                                  msg::spec = port_result.spec.to_string(),
+                                                  msg::spec = port_result.get_spec().to_string(),
                                                   msg::path = ci_baseline_file_name));
                         output.appendnl();
                     }
@@ -591,9 +569,6 @@ namespace vcpkg::Commands::CI
 
         std::vector<TripletAndSummary> results;
         auto timer = ElapsedTimer::create_started();
-
-        xunitTestResults.push_collection(target_triplet.canonical_name());
-
         std::vector<std::string> all_port_names =
             Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         // Install the default features for every package
@@ -715,9 +690,10 @@ namespace vcpkg::Commands::CI
             {
                 auto& port_features = split_specs->features.at(result.get_spec());
                 split_specs->known.erase(result.get_spec());
-                xunitTestResults.add_test_results(result.get_spec().to_string(),
+                xunitTestResults.add_test_results(result.get_spec(),
                                                   result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
                                                   result.timing,
+                                                  result.start_time,
                                                   split_specs->abi_map.at(result.get_spec()),
                                                   port_features);
             }
@@ -726,9 +702,10 @@ namespace vcpkg::Commands::CI
             for (auto&& port : split_specs->known)
             {
                 auto& port_features = split_specs->features.at(port.first);
-                xunitTestResults.add_test_results(port.first.to_string(),
+                xunitTestResults.add_test_results(port.first,
                                                   port.second,
                                                   ElapsedTime{},
+                                                  std::chrono::system_clock::time_point{},
                                                   split_specs->abi_map.at(port.first),
                                                   port_features);
             }
@@ -736,11 +713,7 @@ namespace vcpkg::Commands::CI
             all_known_results.emplace_back(std::move(split_specs->known));
 
             results.push_back({target_triplet, std::move(summary)});
-
-            xunitTestResults.collection_time(collection_time_elapsed);
         }
-
-        xunitTestResults.assembly_time(timer.elapsed());
 
         for (auto&& result : results)
         {
@@ -757,7 +730,7 @@ namespace vcpkg::Commands::CI
         auto it_xunit = settings.find(OPTION_XUNIT);
         if (it_xunit != settings.end())
         {
-            filesystem.write_contents(it_xunit->second, xunitTestResults.build_xml(), VCPKG_LINE_INFO);
+            filesystem.write_contents(it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

@@ -152,11 +152,8 @@ namespace vcpkg::Remove
 
         switch (action.plan_type)
         {
-            case RemovePlanType::NOT_INSTALLED:
-                break;
-            case RemovePlanType::REMOVE:
-                remove_package(fs, paths.installed(), action.spec, status_db);
-                break;
+            case RemovePlanType::NOT_INSTALLED: break;
+            case RemovePlanType::REMOVE: remove_package(fs, paths.installed(), action.spec, status_db); break;
             case RemovePlanType::UNKNOWN:
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }

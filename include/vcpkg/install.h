@@ -12,6 +12,7 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <chrono>
 #include <set>
 #include <string>
 #include <vector>
@@ -34,6 +35,7 @@ namespace vcpkg::Install
         bool is_user_requested_install() const;
         Optional<Build::ExtendedBuildResult> build_result;
         vcpkg::ElapsedTime timing;
+        std::chrono::system_clock::time_point start_time;
 
     private:
         const Dependencies::InstallPlanAction* m_install_action;

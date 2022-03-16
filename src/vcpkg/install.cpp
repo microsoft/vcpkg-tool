@@ -342,8 +342,7 @@ namespace vcpkg::Install
         if (plan_type == InstallPlanType::ALREADY_INSTALLED)
         {
             if (use_head_version && is_user_requested)
-                vcpkg::printf(
-                    Color::warning, "%s is already installed -- not building from HEAD\n", display_name);
+                vcpkg::printf(Color::warning, "%s is already installed -- not building from HEAD\n", display_name);
             else
                 vcpkg::printf(Color::success, "%s is already installed\n", display_name);
             return ExtendedBuildResult{BuildResult::SUCCEEDED};
@@ -781,8 +780,7 @@ namespace vcpkg::Install
                     };
 
                     const auto name = cmakeify(bpgh.spec.name());
-                    auto msg = Strings::concat(
-                        bpgh.spec.name(), " is header only and can be used from CMake via:\n\n");
+                    auto msg = Strings::concat(bpgh.spec.name(), " is header only and can be used from CMake via:\n\n");
                     Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
                     Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
 
@@ -1246,12 +1244,20 @@ namespace vcpkg::Install
     }
 
     SpecSummary::SpecSummary(const Dependencies::InstallPlanAction* action)
-        : build_result(), timing(), m_install_action(action), m_spec(action->spec)
+        : build_result()
+        , timing()
+        , start_time(std::chrono::system_clock::now())
+        , m_install_action(action)
+        , m_spec(action->spec)
     {
     }
 
     SpecSummary::SpecSummary(const Dependencies::RemovePlanAction* action)
-        : build_result(), timing(), m_install_action(nullptr), m_spec(action->spec)
+        : build_result()
+        , timing()
+        , start_time(std::chrono::system_clock::now())
+        , m_install_action(nullptr)
+        , m_spec(action->spec)
     {
     }
 
