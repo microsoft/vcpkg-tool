@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/zstringview.h>
 
 #include <errno.h>
 #include <inttypes.h>
@@ -236,10 +236,10 @@ namespace vcpkg::Strings
 
     // Equivalent to one of the `::strto[T]` functions. Returns `nullopt` if there is an error.
     template<class T>
-    Optional<T> strto(CStringView sv);
+    Optional<T> strto(ZStringView sv);
 
     template<>
-    inline Optional<double> strto<double>(CStringView sv)
+    inline Optional<double> strto<double>(ZStringView sv)
     {
         char* endptr = nullptr;
         double res = strtod(sv.c_str(), &endptr);
@@ -253,7 +253,7 @@ namespace vcpkg::Strings
     }
 
     template<>
-    inline Optional<long> strto<long>(CStringView sv)
+    inline Optional<long> strto<long>(ZStringView sv)
     {
         char* endptr = nullptr;
         long res = strtol(sv.c_str(), &endptr, 10);
@@ -272,7 +272,7 @@ namespace vcpkg::Strings
     }
 
     template<>
-    inline Optional<long long> strto<long long>(CStringView sv)
+    inline Optional<long long> strto<long long>(ZStringView sv)
     {
         char* endptr = nullptr;
         long long res = strtoll(sv.c_str(), &endptr, 10);
@@ -291,7 +291,7 @@ namespace vcpkg::Strings
     }
 
     template<>
-    inline Optional<int> strto<int>(CStringView sv)
+    inline Optional<int> strto<int>(ZStringView sv)
     {
         auto res = strto<long>(sv);
         if (auto r = res.get())

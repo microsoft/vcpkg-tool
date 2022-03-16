@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vcpkg/base/cstringview.h>
+#include <vcpkg/base/stringview.h>
 
 #include <vcpkg/build.h>
 

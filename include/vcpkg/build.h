@@ -4,10 +4,10 @@
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
 
-#include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/zstringview.h>
 
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/packagespec.h>
@@ -293,7 +293,7 @@ namespace vcpkg::Build
     extern const std::array<BuildPolicy, size_t(BuildPolicy::COUNT)> ALL_POLICIES;
 
     const std::string& to_string(BuildPolicy policy);
-    CStringView to_cmake_variable(BuildPolicy policy);
+    ZStringView to_cmake_variable(BuildPolicy policy);
 
     struct BuildPolicies
     {

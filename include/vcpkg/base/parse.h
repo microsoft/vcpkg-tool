@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
+#include <vcpkg/base/zstringview.h>
 
 #include <vcpkg/textrowcol.h>
 
