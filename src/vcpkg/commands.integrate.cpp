@@ -14,6 +14,36 @@
 
 namespace vcpkg::Commands::Integrate
 {
+    Optional<int> find_targets_file_version(StringView contents)
+    {
+        constexpr static StringLiteral VERSION_START = "<!-- version ";
+        constexpr static StringLiteral VERSION_END = " -->";
+
+        auto first = contents.begin();
+        const auto last = contents.end();
+        for (;;)
+        {
+            first = std::search(first, last, VERSION_START.begin(), VERSION_START.end());
+            if (first == last)
+            {
+                break;
+            }
+            first += VERSION_START.size();
+            auto version_end = std::search(first, last, VERSION_END.begin(), VERSION_END.end());
+            if (version_end == last)
+            {
+                break;
+            }
+            auto ver = Strings::strto<int>({first, version_end});
+            if (ver.has_value() && *ver.get() >= 0)
+            {
+                return ver;
+                break;
+            }
+        }
+        return nullopt;
+    }
+
 #if defined(_WIN32)
     static std::string create_appdata_shortcut(StringView target_path) noexcept
     {
@@ -199,15 +229,12 @@ namespace vcpkg::Commands::Integrate
         bool should_install_system = true;
         std::error_code ec;
         std::string system_wide_file_contents = fs.read_contents(SYSTEM_WIDE_TARGETS_FILE, ec);
-        static const std::regex RE(R"###(<!-- version (\d+) -->)###");
         if (!ec)
         {
-            std::match_results<std::string::const_iterator> match;
-            const auto found = std::regex_search(system_wide_file_contents, match, RE);
-            if (found)
+            auto opt = find_targets_file_version(system_wide_file_contents);
+            if (opt.value_or(0) >= 1)
             {
-                const int ver = atoi(match[1].str().c_str());
-                if (ver >= 1) should_install_system = false;
+                should_install_system = false;
             }
         }
 
@@ -443,8 +470,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         std::vector<std::string> matches;
         for (auto&& line : bashrc_content)
         {
-            std::smatch match;
-            if (std::regex_match(line, match, std::regex{R"###(source.*scripts/vcpkg_completion.bash)###"}))
+            if (Strings::starts_with(line, "source") && Strings::ends_with(line, "scripts/vcpkg_completion.bash"))
             {
                 matches.push_back(line);
             }
@@ -484,21 +510,44 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         bool has_autoload_bashcompinit = false;
         bool has_bashcompinit = false;
         std::vector<std::string> matches;
-        for (auto&& line : zshrc_content)
+        for (StringView line : zshrc_content)
         {
-            std::smatch match;
-            if (std::regex_match(line, match, std::regex{R"###(source.*scripts/vcpkg_completion.zsh)###"}))
+            constexpr static StringLiteral BASHCOMPINIT = "bashcompinit";
+
+            line = Strings::trim(line);
+            auto first = line.begin();
+            auto last = line.end();
+            if (Strings::starts_with(line, "source") && Strings::ends_with(line, "scripts/vcpkg_completion.zsh"))
             {
-                matches.push_back(line);
+                matches.emplace_back(first, last);
             }
-            else if (std::regex_search(line, std::regex{R"###(^ *autoload[ a-zA-Z0-9-]+bashcompinit)###"}),
-                     std::regex_constants::match_any)
+            else if (Strings::starts_with(line, "autoload"))
             {
-                has_autoload_bashcompinit = true;
+                // autoload[ a-zA-Z0-9-]+bashcompinit
+                auto after_autoload = first + 8;
+                auto bashcompinit = std::search(after_autoload, last, BASHCOMPINIT.begin(), BASHCOMPINIT.end());
+                if (bashcompinit != last && std::for_all(after_autoload, bashcompinit, [](char ch) {
+                        return Parse::ParserBase::is_word_char(ch) || ch == ' ';
+                    }))
+                {
+                    has_autoload_bashcompinit = true;
+                }
             }
-            if (std::regex_match(line, std::regex{R"###(^ *([^#]*&& *)?bashcompinit)###"}))
+
+            auto bashcompinit = std::search(first, last, BASHCOMPINIT.begin(), BASHCOMPINIT.end());
+            if (bashcompinit != last)
             {
-                has_bashcompinit = true;
+                // check this is not commented out
+                if (Util::contains(StringView{first, bashcompinit}, '#'))
+                {
+                    continue;
+                }
+                // check that this is the first element after a && or the beginning
+                auto line_before_bashcompinit = Strings::trim(StringView{first, bashcompinit});
+                if (line_before_bashcompinit.empty() || Strings::ends_with(line_before_bashcompinit, "&&"))
+                {
+                    has_bashcompinit = true;
+                }
             }
         }
 

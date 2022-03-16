@@ -10,6 +10,8 @@ namespace vcpkg::Commands::Integrate
     void append_helpstring(HelpTableFormatter& table);
     std::string get_helpstring();
 
+    Optional<int> find_targets_file_version(StringView contents);
+
     struct IntegrateCommand : PathsCommand
     {
         virtual void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;

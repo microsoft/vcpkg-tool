@@ -787,16 +787,13 @@ namespace vcpkg::Install
 
                     if (targets.size() <= 4)
                     {
-                        Strings::append(msg,
-                                        "    target_link_libraries(main PRIVATE ",
-                                        Strings::join(" ", targets),
-                                        ")\n\n");
+                        Strings::append(
+                            msg, "    target_link_libraries(main PRIVATE ", Strings::join(" ", targets), ")\n\n");
                     }
                     else
                     {
                         auto omitted = targets.size() - 4;
-                        library_target_pair.second.erase(targets.begin() + 4,
-                                                         targets.end());
+                        library_target_pair.second.erase(targets.begin() + 4, targets.end());
                         msg += Strings::format("    # Note: %zd target(s) were omitted.\n"
                                                "    target_link_libraries(main PRIVATE %s)\n\n",
                                                omitted,
