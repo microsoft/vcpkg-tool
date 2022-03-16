@@ -229,7 +229,7 @@ class GitCloneNode extends Installer implements GitInstaller {
   }
   override *validate(): Iterable<ValidationError> {
     yield* super.validate();
-    yield* this.validateChildKeys(['git']);
+    yield* this.validateChildKeys(['git', 'commit', 'subdirectory', 'options', 'lang', 'nametag']);
     yield* this.validateChild('commit', 'string');
   }
 }
