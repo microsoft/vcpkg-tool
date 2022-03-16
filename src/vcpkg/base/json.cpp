@@ -482,23 +482,14 @@ namespace vcpkg::Json
                 return Parse::ParserBase::next();
             }
 
-            static constexpr bool is_digit(char32_t code_point) noexcept
-            {
-                return code_point >= '0' && code_point <= '9';
-            }
-            static constexpr bool is_hex_digit(char32_t code_point) noexcept
-            {
-                return is_digit(code_point) || (code_point >= 'a' && code_point <= 'f') ||
-                       (code_point >= 'A' && code_point <= 'F');
-            }
             static bool is_number_start(char32_t code_point) noexcept
             {
-                return code_point == '-' || is_digit(code_point);
+                return code_point == '-' || is_ascii_digit(code_point);
             }
 
             static unsigned char from_hex_digit(char32_t code_point) noexcept
             {
-                if (is_digit(code_point))
+                if (is_ascii_digit(code_point))
                 {
                     return static_cast<unsigned char>(code_point) - '0';
                 }
@@ -664,7 +655,7 @@ namespace vcpkg::Json
                         floating = true;
                         current = next();
                     }
-                    else if (is_digit(current))
+                    else if (is_ascii_digit(current))
                     {
                         add_error("Unexpected digits after a leading zero");
                         return Value();
@@ -682,7 +673,7 @@ namespace vcpkg::Json
                     }
                 }
 
-                while (is_digit(current))
+                while (is_ascii_digit(current))
                 {
                     number_to_parse.push_back(static_cast<char>(current));
                     current = next();
@@ -692,12 +683,12 @@ namespace vcpkg::Json
                     floating = true;
                     number_to_parse.push_back('.');
                     current = next();
-                    if (!is_digit(current))
+                    if (!is_ascii_digit(current))
                     {
                         add_error("Expected digits after the decimal point");
                         return Value();
                     }
-                    while (is_digit(current))
+                    while (is_ascii_digit(current))
                     {
                         number_to_parse.push_back(static_cast<char>(current));
                         current = next();

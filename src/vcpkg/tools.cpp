@@ -25,25 +25,44 @@ namespace vcpkg
         std::string sha512;
     };
 
-    static Optional<std::array<int, 3>> parse_version_string(const std::string& version_as_string)
+    // /\d+\.\d+(\.\d+)?/
+    Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version)
     {
-        static const std::regex RE(R"###((\d+)\.(\d+)(\.(\d+))?)###");
+        // first, find the beginning of the version
+        auto first = string_version.begin();
+        const auto last = string_version.end();
 
-        std::match_results<std::string::const_iterator> match;
-        const auto found = std::regex_search(version_as_string, match, RE);
-        if (!found)
+        // we're looking for the first instance of `<digits>.<digits>`
+        ParsedExternalVersion parsed_version{};
+        for (;;)
         {
-            return {};
+            first = std::find_if(first, last, Parse::ParserBase::is_ascii_digit);
+            if (first == last)
+            {
+                return nullopt;
+            }
+
+            if (try_extract_external_dot_version(parsed_version, StringView{first, last}) &&
+                !parsed_version.minor.empty())
+            {
+                break;
+            }
+
+            first = std::find_if_not(first, last, Parse::ParserBase::is_ascii_digit);
         }
 
-        const int d1 = atoi(match[1].str().c_str());
-        const int d2 = atoi(match[2].str().c_str());
-        const int d3 = [&] {
-            if (match[4].str().empty()) return 0;
-            return atoi(match[4].str().c_str());
-        }();
-        const std::array<int, 3> result = {d1, d2, d3};
-        return result;
+        parsed_version.normalize();
+
+        auto d1 = Strings::strto<int>(parsed_version.major);
+        if (!d1.has_value()) return {};
+
+        auto d2 = Strings::strto<int>(parsed_version.minor);
+        if (!d2.has_value()) return {};
+
+        auto d3 = Strings::strto<int>(parsed_version.patch);
+        if (!d3.has_value()) return {};
+
+        return std::array<int, 3>{*d1.get(), *d2.get(), *d3.get()};
     }
 
     static ExpectedT<ToolData, std::string> parse_tool_data_from_xml(const VcpkgPaths& paths, StringView tool)
@@ -112,7 +131,7 @@ namespace vcpkg
         const std::string sha512 = Strings::find_exactly_one_enclosed(tool_data, "<sha512>", "</sha512>").to_string();
         auto archive_name = Strings::find_at_most_one_enclosed(tool_data, "<archiveName>", "</archiveName>");
 
-        const Optional<std::array<int, 3>> version = parse_version_string(version_as_string);
+        const Optional<std::array<int, 3>> version = parse_tool_version_string(version_as_string);
         Checks::check_exit(VCPKG_LINE_INFO,
                            version.has_value(),
                            "Could not parse version for tool %s. Version string was: %s",
@@ -165,7 +184,7 @@ namespace vcpkg
             auto maybe_version = tool_provider.get_version(paths, candidate);
             const auto version = maybe_version.get();
             if (!version) continue;
-            const auto parsed_version = parse_version_string(*version);
+            const auto parsed_version = parse_tool_version_string(*version);
             if (!parsed_version) continue;
             auto& actual_version = *parsed_version.get();
             if (!accept_version(actual_version)) continue;

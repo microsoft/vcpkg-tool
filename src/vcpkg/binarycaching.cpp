@@ -2156,117 +2156,27 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     return providers;
 }
 
-namespace
-{
-    struct ReformatParsedVersion
-    {
-        StringView major;
-        StringView minor;
-        StringView patch;
-    };
-
-    StringView remove_leading_zeroes(StringView sv)
-    {
-        if (sv.empty()) return "0";
-
-        auto it = std::find_if_not(sv.begin(), sv.end(), [](char ch) { return ch == '0'; });
-        if (it == sv.end())
-        {
-            // all zeroes - just return "0"
-            return StringView{sv.begin(), sv.begin() + 1};
-        }
-        else
-        {
-            return StringView{it, sv.end()};
-        }
-    }
-
-    // /(\d\d\d\d)-(\d\d)-(\d\d).*/
-    bool try_parse_reformat_date_version(ReformatParsedVersion& out, StringView version)
-    {
-        using P = vcpkg::Parse::ParserBase;
-        // a b c d - e f - g h <end>
-        // 0 1 2 3 4 5 6 7 8 9 10
-        if (version.size() < 10) return false;
-        auto first = version.begin();
-        if (!P::is_ascii_digit(*first++)) return false;
-        if (!P::is_ascii_digit(*first++)) return false;
-        if (!P::is_ascii_digit(*first++)) return false;
-        if (!P::is_ascii_digit(*first++)) return false;
-        if (*first++ != '-') return false;
-        if (!P::is_ascii_digit(*first++)) return false;
-        if (!P::is_ascii_digit(*first++)) return false;
-        if (*first++ != '-') return false;
-        if (!P::is_ascii_digit(*first++)) return false;
-        if (!P::is_ascii_digit(*first++)) return false;
-
-        first = version.begin();
-        out.major = remove_leading_zeroes(StringView{first, first + 4});
-        out.minor = remove_leading_zeroes(StringView{first + 5, first + 7});
-        out.patch = remove_leading_zeroes(StringView{first + 8, first + 10});
-
-        return true;
-    }
-
-    // /v?(\d+)(\.\d+|$)(\.\d+)?.*/
-    bool try_parse_reformat_dot_version(ReformatParsedVersion& out, StringView version)
-    {
-        using P = vcpkg::Parse::ParserBase;
-        auto first = version.begin();
-        auto last = version.end();
-
-        out.major = out.minor = out.patch = "0";
-
-        if (first == last) return false;
-        if (*first == 'v') ++first;
-        if (first == last) return false;
-
-        auto major_last = std::find_if_not(first, last, P::is_ascii_digit);
-        out.major = remove_leading_zeroes(StringView{first, major_last});
-        if (major_last == last)
-        {
-            return true;
-        }
-        else if (*major_last != '.')
-        {
-            return false;
-        }
-
-        auto minor_last = std::find_if_not(major_last + 1, last, P::is_ascii_digit);
-        if (minor_last == major_last + 1)
-        {
-            return false;
-        }
-        out.minor = remove_leading_zeroes(StringView{major_last + 1, minor_last});
-        if (minor_last == last || *minor_last != '.')
-        {
-            return true;
-        }
-
-        auto patch_last = std::find_if_not(minor_last + 1, last, P::is_ascii_digit);
-        if (minor_last == major_last + 1)
-        {
-            return false;
-        }
-        out.patch = remove_leading_zeroes(StringView{minor_last + 1, patch_last});
-        return true;
-    }
-}
-
-std::string vcpkg::reformat_version(StringView version, StringView abi_tag)
+std::string vcpkg::format_version_for_nugetref(StringView version, StringView abi_tag)
 {
     // this cannot use DotVersion::try_parse or DateVersion::try_parse,
     // since this is a subtly different algorithm
     // and ignores random extra stuff from the end
 
-    ReformatParsedVersion parsed_version;
-    if (try_parse_reformat_date_version(parsed_version, version))
+    ParsedExternalVersion parsed_version;
+    if (try_extract_external_date_version(parsed_version, version))
     {
+        parsed_version.normalize();
         return fmt::format(
             "{}.{}.{}-vcpkg{}", parsed_version.major, parsed_version.minor, parsed_version.patch, abi_tag);
     }
-    if (try_parse_reformat_dot_version(parsed_version, version))
+
+    if (!version.empty() && version[0] == 'v')
     {
+        version = version.substr(1);
+    }
+    if (try_extract_external_dot_version(parsed_version, version))
+    {
+        parsed_version.normalize();
         return fmt::format(
             "{}.{}.{}-vcpkg{}", parsed_version.major, parsed_version.minor, parsed_version.patch, abi_tag);
     }
