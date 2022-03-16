@@ -239,11 +239,11 @@ namespace vcpkg::Strings
     template<class T>
     Optional<T> strto(StringView sv);
 
-    template <>
+    template<>
     Optional<int> strto<int>(StringView);
-    template <>
+    template<>
     Optional<long> strto<long>(StringView);
-    template <>
+    template<>
     Optional<long long> strto<long long>(StringView);
     template<>
     Optional<double> strto<double>(StringView);

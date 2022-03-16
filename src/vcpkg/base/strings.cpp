@@ -447,7 +447,7 @@ size_t Strings::byte_edit_distance(StringView a, StringView b)
     return d[sa - 1];
 }
 
-template <>
+template<>
 Optional<int> Strings::strto<int>(StringView sv)
 {
     auto opt = strto<long>(sv);
@@ -461,7 +461,7 @@ Optional<int> Strings::strto<int>(StringView sv)
     return nullopt;
 }
 
-template <>
+template<>
 Optional<long> Strings::strto<long>(StringView sv)
 {
     // disallow initial whitespace
@@ -488,7 +488,7 @@ Optional<long> Strings::strto<long>(StringView sv)
     return res;
 }
 
-template <>
+template<>
 Optional<long long> Strings::strto<long long>(StringView sv)
 {
     // disallow initial whitespace
@@ -536,7 +536,6 @@ Optional<double> Strings::strto<double>(StringView sv)
     // else, we may have HUGE_VAL but we expect the caller to deal with that
     return res;
 }
-
 
 namespace vcpkg::Strings
 {
