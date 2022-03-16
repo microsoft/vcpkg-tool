@@ -155,10 +155,9 @@ namespace vcpkg::Export::Prefab
 
     Optional<StringView> find_ndk_version(StringView content)
     {
-        using P = Parse::ParserBase;
         constexpr static StringLiteral pkg_revision = "Pkg.Revision";
 
-        constexpr static auto is_version_character = [](char ch) { return ch == '.' || P::is_ascii_digit(ch); };
+        constexpr static auto is_version_character = [](char ch) { return ch == '.' || Parse::ParserBase::is_ascii_digit(ch); };
 
         auto first = content.begin();
         auto last = content.end();
@@ -169,13 +168,13 @@ namespace vcpkg::Export::Prefab
             if (first == last) break;
 
             first += pkg_revision.size();
-            first = std::find_if_not(first, last, P::is_whitespace);
+            first = std::find_if_not(first, last, Parse::ParserBase::is_whitespace);
             if (first == last) break;
             if (*first != '=') continue;
 
             // Pkg.Revision = x.y.z
             ++first; // skip =
-            first = std::find_if_not(first, last, P::is_whitespace);
+            first = std::find_if_not(first, last, Parse::ParserBase::is_whitespace);
             auto end_of_version = std::find_if_not(first, last, is_version_character);
             if (first == end_of_version) continue;
             return StringView{first, end_of_version};

@@ -28,8 +28,6 @@ namespace vcpkg
     // /\d+\.\d+(\.\d+)?/
     Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version)
     {
-        using P = Parse::ParserBase;
-
         // first, find the beginning of the version
         auto first = string_version.begin();
         const auto last = string_version.end();
@@ -38,7 +36,7 @@ namespace vcpkg
         ParsedExternalVersion parsed_version{};
         for (;;)
         {
-            first = std::find_if(first, last, P::is_ascii_digit);
+            first = std::find_if(first, last, Parse::ParserBase::is_ascii_digit);
             if (first == last)
             {
                 return nullopt;
@@ -50,7 +48,7 @@ namespace vcpkg
                 break;
             }
 
-            first = std::find_if_not(first, last, P::is_ascii_digit);
+            first = std::find_if_not(first, last, Parse::ParserBase::is_ascii_digit);
         }
 
         parsed_version.normalize();

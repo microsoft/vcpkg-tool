@@ -49,7 +49,6 @@ namespace vcpkg::Export::IFW
         // - '#x<hex numbers>;`
         // - `<numbers, letters, or _>;`
         // (basically, an HTML character entity reference)
-        using P = Parse::ParserBase;
         constexpr static StringLiteral escaped_amp = "&amp;";
 
         auto first = text.begin();
