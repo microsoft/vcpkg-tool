@@ -1,10 +1,13 @@
+/* eslint-disable prefer-const */
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 import { fail } from 'assert';
-import { resolve } from 'path';
+import { match } from 'micromatch';
+import { delimiter, resolve } from 'path';
 import { MetadataFile } from '../amf/metadata-file';
 import { gitArtifact, gitUniqueIdPrefix, latestVersion } from '../constants';
+import { FileType } from '../fs/filesystem';
 import { i } from '../i18n';
 import { InstallEvents } from '../interfaces/events';
 import { Registries } from '../registries/registries';
@@ -14,6 +17,7 @@ import { Uri } from '../util/uri';
 import { Activation } from './activation';
 import { Registry } from './registry';
 import { SetOfDemands } from './SetOfDemands';
+
 
 export type Selections = Map<string, string>;
 export type UID = string;
@@ -100,6 +104,7 @@ class ArtifactBase {
 
 export class Artifact extends ArtifactBase {
   isPrimary = false;
+  allPaths: Array<string> = [];
 
   constructor(session: Session, metadata: MetadataFile, public shortName: string = '', public targetLocation: Uri, public readonly registryId: string, public readonly registryUri: Uri) {
     super(session, metadata);
@@ -132,25 +137,15 @@ export class Artifact extends ArtifactBase {
       const applicableDemands = this.applicableDemands;
       applicableDemands.setActivation(activation);
 
-      let isFailing = false;
-      for (const error of applicableDemands.errors) {
-        this.session.channels.error(error);
-        isFailing = true;
-      }
+      this.session.channels.error(applicableDemands.errors);
 
-      if (isFailing) {
+      if (applicableDemands.errors.length) {
         throw Error('errors present');
       }
 
-      // warnings
-      for (const warning of applicableDemands.warnings) {
-        this.session.channels.warning(warning);
-      }
+      this.session.channels.warning(applicableDemands.warnings);
+      this.session.channels.message(applicableDemands.messages);
 
-      // messages
-      for (const message of applicableDemands.messages) {
-        this.session.channels.message(message);
-      }
 
       if (await this.isInstalled && !options.force) {
         await this.loadActivationSettings(activation);
@@ -209,43 +204,71 @@ export class Artifact extends ArtifactBase {
     await this.targetLocation.delete({ recursive: true, useTrash: false });
   }
 
+  matchFilesInArtifact(glob: string) {
+    const results = match(this.allPaths, glob.trim(), { dot: true, cwd: this.targetLocation.fsPath, unescape: true });
+    if (results.length === 0) {
+      this.session.channels.warning(i`Unable to resolve '${glob}' to files in the artifact folder`);
+      return [];
+    }
+    return results;
+  }
+
+  resolveBraces(text: string, mustBeSingle = false) {
+    return text.replace(/\{(.*?)\}/g, (m, e) => {
+      const results = this.matchFilesInArtifact(e);
+      if (mustBeSingle && results.length > 1) {
+        this.session.channels.warning(i`Glob ${m} resolved to multiple locations. Using first location.`);
+        return results[0];
+      }
+      return results.join(delimiter);
+    });
+  }
+
+  resolveBracesAndSplit(text: string): Array<string> {
+    return this.resolveBraces(text).split(delimiter);
+  }
+
+  isGlob(path: string) {
+    return path.indexOf('*') !== -1 || path.indexOf('?') !== -1;
+  }
+
   async loadActivationSettings(activation: Activation) {
     // construct paths (bin, lib, include, etc.)
     // construct tools
     // compose variables
     // defines
 
-    const l = this.targetLocation.toString().length + 1;
-    const allPaths = (await this.targetLocation.readDirectory(undefined, { recursive: true })).select(([name, stat]) => name.toString().substr(l));
+    // record all the files in the artifact
+    this.allPaths = (await this.targetLocation.readDirectory(undefined, { recursive: true })).select(([name, stat]) => stat === FileType.Directory ? name.fsPath + '/' : name.fsPath);
 
-    for (const settingBlock of this.applicableDemands.exports) {
+    for (const exportsBlock of this.applicableDemands.exports) {
       // **** defines ****
       // eslint-disable-next-line prefer-const
-      for (let [key, value] of settingBlock.defines) {
+      for (let [key, value] of exportsBlock.defines) {
         if (value === 'true') {
           value = '1';
         }
-        activation.addDefine(key, value);
+        activation.addDefine(key, this.resolveBraces(value, true));
       }
 
       // **** paths ****
-      for (const key of settingBlock.paths.keys) {
-        if (!key) {
+      for (const [key, values] of exportsBlock.paths) {
+        if (!key || !values) {
           continue;
         }
 
-        const pathEnvVariable = key.toUpperCase();
-        const l = settingBlock.paths.get(key);
-
-        for (const location of l ?? []) {
+        for (const each of values) {
           // check that each path is an actual path.
-          activation.addPath(pathEnvVariable, await this.sanitizeAndValidatePath(location));
+          const locations = this.resolveBracesAndSplit(each);
+          for (const location of locations) {
+            activation.addPath(key, await this.sanitizeAndValidatePath(location));
+          }
         }
       }
 
       // **** tools ****
-      for (const key of settingBlock.tools.keys) {
-        const value = settingBlock.tools.get(key) || '';
+      for (let [key, value] of exportsBlock.tools) {
+        value = this.resolveBraces(value, true);
         const uri = await this.sanitizeAndValidatePath(value);
         if (uri) {
           activation.addTool(key, uri.fsPath);
@@ -258,27 +281,30 @@ export class Artifact extends ArtifactBase {
       }
 
       // **** variables ****
-      for (const [key, value] of settingBlock.environment) {
-        activation.addEnvironmentVariable(key, value);
+      for (const [key, values] of exportsBlock.environment) {
+        for (const value of values) {
+          activation.addEnvironmentVariable(key, this.resolveBraces(value));
+        }
       }
 
       // **** properties ****
-      for (const [key, value] of settingBlock.properties) {
-        activation.addProperty(key, value);
+      for (const [key, values] of exportsBlock.properties) {
+        for (const value of values) {
+          activation.addProperty(key, this.resolveBraces(value));
+        }
       }
 
       // **** locations ****
-      for (const locationName of settingBlock.locations.keys) {
-        const p = settingBlock.locations.get(locationName) || '';
-        const uri = await this.sanitizeAndValidatePath(p);
+      for (const [locationName, location] of exportsBlock.locations) {
+        const uri = await this.sanitizeAndValidatePath(this.resolveBraces(location, true));
         if (uri) {
           activation.addLocation(locationName, uri);
         }
       }
 
       // **** aliases ****
-      for (const [key, value] of settingBlock.aliases) {
-        activation.addAlias(key, value);
+      for (const [key, value] of exportsBlock.aliases) {
+        activation.addAlias(key, this.resolveBraces(value, true));
       }
     }
   }
@@ -334,6 +360,6 @@ export class ProjectManifest extends ArtifactBase {
 
 export class InstalledArtifact extends Artifact {
   constructor(session: Session, metadata: MetadataFile) {
-    super(session, metadata, '', Uri.invalid, 'OnDisk?', Uri.invalid); /* fixme ? */
+    super(session, metadata, '', Uri.invalid, 'OnDisk?', Uri.invalid);
   }
 }

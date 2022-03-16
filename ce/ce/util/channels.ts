@@ -43,17 +43,17 @@ export class Channels extends EventEmitter<ChannelEvents> {
   /** @internal */
   readonly stopwatch: Stopwatch;
 
-  warning(text: string, context?: any) {
-    this.emit('warning', text, context, this.stopwatch.total);
+  warning(text: string | Array<string>, context?: any) {
+    typeof text === 'string' ? this.emit('warning', text, context, this.stopwatch.total) : text.forEach(t => this.emit('warning', t, context, this.stopwatch.total));
   }
-  error(text: string, context?: any) {
-    this.emit('error', text, context, this.stopwatch.total);
+  error(text: string | Array<string>, context?: any) {
+    typeof text === 'string' ? this.emit('error', text, context, this.stopwatch.total) : text.forEach(t => this.emit('error', t, context, this.stopwatch.total));
   }
-  message(text: string, context?: any) {
-    this.emit('message', text, context, this.stopwatch.total);
+  message(text: string | Array<string>, context?: any) {
+    typeof text === 'string' ? this.emit('message', text, context, this.stopwatch.total) : text.forEach(t => this.emit('message', t, context, this.stopwatch.total));
   }
-  debug(text: string, context?: any) {
-    this.emit('debug', text, context, this.stopwatch.total);
+  debug(text: string | Array<string>, context?: any) {
+    typeof text === 'string' ? this.emit('debug', text, context, this.stopwatch.total) : text.forEach(t => this.emit('debug', t, context, this.stopwatch.total));
   }
   constructor(session: Session) {
     super();

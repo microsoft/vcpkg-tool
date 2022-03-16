@@ -21,7 +21,7 @@ export /** @internal */ abstract class EntityMap<TNode extends Node, TElement ex
       for (const each of this.node.items) {
         const k = this.asString(each.key);
         if (k) {
-          yield [k, new this.factory(each.value)];
+          yield [k, new this.factory(each.value, this, k)];
         }
       }
     }

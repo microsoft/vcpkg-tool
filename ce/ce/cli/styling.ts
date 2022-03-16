@@ -1,14 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { blue, cyan, gray, green, red, white, yellow } from 'chalk';
-import * as renderer from 'marked-terminal';
+import { cyan, red, yellow } from 'chalk';
 import { argv } from 'process';
 import { Session } from '../session';
 import { CommandLine } from './command-line';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const marked = require('marked');
 
 function formatTime(t: number) {
   return (
@@ -16,30 +12,6 @@ function formatTime(t: number) {
       t < 86400000 ? [Math.floor(t / 3600000) % 24, Math.floor(t / 60000) % 60, Math.floor(t / 1000) % 60, t % 1000] :
         [Math.floor(t / 86400000), Math.floor(t / 3600000) % 24, Math.floor(t / 60000) % 60, Math.floor(t / 1000) % 60, t % 1000]).map(each => each.toString().padStart(2, '0')).join(':').replace(/(.*):(\d)/, '$1.$2');
 }
-
-// setup markdown renderer
-marked.setOptions({
-  renderer: new renderer({
-    tab: 2,
-    emoji: true,
-    showSectionPrefix: false,
-    firstHeading: green.underline.bold,
-    heading: green.underline,
-    codespan: white.bold,
-    link: blue.bold,
-    href: blue.bold.underline,
-    code: gray,
-    tableOptions: {
-      chars: {
-        'top': '', 'top-mid': '', 'top-left': '', 'top-right': ''
-        , 'bottom': '', 'bottom-mid': '', 'bottom-left': '', 'bottom-right': ''
-        , 'left': '', 'left-mid': '', 'mid': '', 'mid-mid': ''
-        , 'right': '', 'right-mid': '', 'middle': ''
-      }
-    }
-  }),
-  gfm: true,
-});
 
 export function indent(text: string): string
 export function indent(text: Array<string>): Array<string>
@@ -50,10 +22,10 @@ export function indent(text: string | Array<string>): string | Array<string> {
   return `  ${text}`;
 }
 
-function md(text = '', session?: Session): string {
+function reformatText(text = '', session?: Session): string {
   if (text) {
-    //text = marked.marked(`${text}`.replace(/\\\./g, '\\\\.')); // work around md messing up paths with .\ in them.
     text = `${text}`.replace(/\\\./g, '\\\\.');
+
     // rewrite file:// urls to be locl filesystem urls.
     return (!!text && !!session) ? text.replace(/(file:\/\/\S*)/g, (s, a) => yellow.dim(session.parseUri(a).fsPath)) : text;
   }
@@ -81,10 +53,10 @@ export function writeException(e: any) {
 }
 
 export function initStyling(commandline: CommandLine, session: Session) {
-  log = (text) => stdout((md(text, session).trim()));
-  error = (text) => stdout(`${red.bold('ERROR: ')}${md(text, session).trim()}`);
-  warning = (text) => stdout(`${yellow.bold('WARNING: ')}${md(text, session).trim()}`);
-  debug = (text) => { if (commandline.debug) { stdout(`${cyan.bold('DEBUG: ')}${md(text, session).trim()}`); } };
+  log = (text) => stdout((reformatText(text, session).trim()));
+  error = (text) => stdout(`${red.bold('ERROR: ')}${reformatText(text, session).trim()}`);
+  warning = (text) => stdout(`${yellow.bold('WARNING: ')}${reformatText(text, session).trim()}`);
+  debug = (text) => { if (commandline.debug) { stdout(`${cyan.bold('DEBUG: ')}${reformatText(text, session).trim()}`); } };
 
   session.channels.on('message', (text: string, context: any, msec: number) => {
     log(text);
@@ -95,7 +67,7 @@ export function initStyling(commandline: CommandLine, session: Session) {
   });
 
   session.channels.on('debug', (text: string, context: any, msec: number) => {
-    debug(`${cyan.bold(`[${formatTime(msec)}]`)} ${md(text, session)}`);
+    debug(`${cyan.bold(`[${formatTime(msec)}]`)} ${reformatText(text, session)}`);
   });
 
   session.channels.on('warning', (text: string, context: any, msec: number) => {

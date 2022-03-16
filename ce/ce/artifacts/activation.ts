@@ -19,7 +19,7 @@ function generateCmdScript(variables: Dictionary<string>, aliases: Dictionary<st
     '\r\n';
 }
 
-function generatedPowerShellScript(variables: Dictionary<string>, aliases: Dictionary<string>): string {
+function generatePowerShellScript(variables: Dictionary<string>, aliases: Dictionary<string>): string {
   return linq.entries(variables).select(([k, v]) => { return v ? `$\{ENV:${k}}="${v}"` : `$\{ENV:${k}}=$null`; }).join('\n') +
     '\n' +
     linq.entries(aliases).select(([k, v]) => { return v ? `function global:${k} { ${v} @args }` : `remove-item -ea 0 "function:${k}"`; }).join('\n') +
@@ -36,7 +36,7 @@ function generatePosixScript(variables: Dictionary<string>, aliases: Dictionary<
 function generateScriptContent(kind: string, variables: Dictionary<string>, aliases: Dictionary<string>) {
   switch (kind) {
     case '.ps1':
-      return generatedPowerShellScript(variables, aliases);
+      return generatePowerShellScript(variables, aliases);
     case '.cmd':
       return generateCmdScript(variables, aliases);
     case '.sh':

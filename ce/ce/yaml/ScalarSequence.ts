@@ -102,9 +102,10 @@ export /** @internal */ class ScalarSequence<TElement extends Primitive> extends
       return yield <any>this.asPrimitive(this.node.value);
     }
     if (isSeq(this.node)) {
+
       for (const each of this.node.items.values()) {
         const v = this.asPrimitive(each);
-        if (v) {
+        if (v !== undefined) {
           yield <any>v;
         }
       }

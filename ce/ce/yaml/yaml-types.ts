@@ -278,7 +278,7 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
       for (const key of this.keys) {
         if (keys.indexOf(key) === -1) {
           yield {
-            message: `Unexpected '${key}' found in object`,
+            message: `Unexpected '${key}' found in ${this.fullName}`,
             range: this.sourcePosition(key),
             category: ErrorKind.InvalidChild,
           };

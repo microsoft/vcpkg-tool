@@ -14,7 +14,7 @@ import { parseQuery } from '../mediaquery/media-query';
 import { Session } from '../session';
 import { Evaluator } from '../util/evaluator';
 import { cmdlineToArray, execute } from '../util/exec-cmd';
-import { createSandbox } from '../util/safeEval';
+import { safeEval } from '../util/safeEval';
 import { Entity } from '../yaml/Entity';
 import { EntityMap } from '../yaml/EntityMap';
 import { ScalarMap } from '../yaml/ScalarMap';
@@ -24,8 +24,6 @@ import { Exports } from './exports';
 import { Installs } from './installer';
 import { Requires } from './Requires';
 
-/** sandboxed eval function for evaluating expressions */
-const safeEval: <T>(code: string, context?: any) => T = createSandbox();
 const hostFeatures = new Set<string>(['x64', 'x86', 'arm', 'arm64', 'windows', 'linux', 'osx', 'freebsd']);
 
 const ignore = new Set<string>(['info', 'contacts', 'error', 'message', 'warning', 'requires', 'see-also']);
@@ -95,7 +93,7 @@ export class DemandBlock extends Entity {
   get warning(): string | undefined { return this.usingAlternative ? this.unless.warning : this.asString(this.getMember('warning')); }
   set warning(value: string | undefined) { this.setMember('warning', value); }
 
-  get message(): string | undefined { return this.usingAlternative ? this.unless.warning : this.asString(this.getMember('message')); }
+  get message(): string | undefined { return this.usingAlternative ? this.unless.message : this.asString(this.getMember('message')); }
   set message(value: string | undefined) { this.setMember('message', value); }
 
   get seeAlso(): Requires {
@@ -194,32 +192,6 @@ export class DemandBlock extends Entity {
   }
 }
 
-/** Expands string variables in a string */
-function expandStrings(sandboxData: Record<string, any>, value: string) {
-  let n = undefined;
-
-  // allow $PATH instead of ${PATH} -- simplifies YAML strings
-  value = value.replace(/\$([a-zA-Z0-9.]+)/g, '${$1}');
-
-  const parts = value.split(/(\${\S+?})/g).filter(each => each).map((each, i) => {
-    const v = each.replace(/^\${(.*)}$/, (m, match) => safeEval(match, sandboxData) ?? each);
-
-    if (v.indexOf(delimiter) !== -1) {
-      n = i;
-    }
-
-    return v;
-  });
-
-  if (n === undefined) {
-    return parts.join('');
-  }
-
-  const front = parts.slice(0, n).join('');
-  const back = parts.slice(n + 1).join('');
-
-  return parts[n].split(delimiter).filter(each => each).map(each => `${front}${each}${back}`).join(delimiter);
-}
 
 /** filters output and produces a sandbox context object */
 function filter(expression: string, content: string) {
@@ -275,8 +247,8 @@ export class Unless extends DemandBlock implements AlternativeFulfillment {
       this.usingAlternative = false;
       if (this.from.length > 0 && this.where.length > 0) {
         // we're doing some kind of check.
-        const locations = [...this.from].map(each => expandStrings(this.evaluationBlock, each).split(delimiter)).flat();
-        const binaries = [...this.where].map(each => expandStrings(this.evaluationBlock, each));
+        const locations = [...this.from].map(each => this.evaluationBlock.expandPathLikeVariableExpressions(each, delimiter)).flat();
+        const binaries = [...this.where];
 
         const search = locations.map(location => binaries.map(binary => join(location, binary).replace(/\\/g, '/'))).flat();
 
