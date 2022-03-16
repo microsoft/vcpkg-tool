@@ -152,9 +152,9 @@ namespace vcpkg
 
     StringView normalize_external_version_zeros(StringView sv);
     // /(\d\d\d\d)-(\d\d)-(\d\d).*/
-    bool try_parse_external_date_version(ParsedExternalVersion& out, StringView version);
+    bool try_extract_external_date_version(ParsedExternalVersion& out, StringView version);
     // /(\d+)(\.\d+|$)(\.\d+)?.*/
-    bool try_parse_external_dot_version(ParsedExternalVersion& out, StringView version);
+    bool try_extract_external_dot_version(ParsedExternalVersion& out, StringView version);
 }
 
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionSpec);

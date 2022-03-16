@@ -21,19 +21,17 @@ namespace vcpkg
 
     Optional<StringView> find_first_nonzero_mac(StringView sv)
     {
-        constexpr static auto is_hex_digit = [](char ch) {
-            return Parse::ParserBase::is_ascii_digit(ch) || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
-        };
+        static constexpr StringLiteral ZERO_MAC = "00-00-00-00-00-00";
 
         auto first = sv.begin();
-        auto last = sv.end();
+        const auto last = sv.end();
 
         while (first != last)
         {
             // XX-XX-XX-XX-XX-XX
             // 1  2  3  4  5  6
             // size = 6 * 2 + 5 = 17
-            first = std::find_if(first, last, is_hex_digit);
+            first = std::find_if(first, last, Parse::ParserBase::is_hex_digit);
             if (last - first < 17)
             {
                 break;
@@ -55,21 +53,21 @@ namespace vcpkg
                 }
                 is_first = false;
 
-                if (!is_hex_digit(*end_of_mac))
+                if (!Parse::ParserBase::is_hex_digit(*end_of_mac))
                 {
                     is_valid = false;
                     break;
                 }
                 ++end_of_mac;
 
-                if (!is_hex_digit(*end_of_mac))
+                if (!Parse::ParserBase::is_hex_digit(*end_of_mac))
                 {
                     is_valid = false;
                     break;
                 }
                 ++end_of_mac;
             }
-            if (is_valid && StringView{first, end_of_mac} != "00-00-00-00-00-00")
+            if (is_valid && StringView{first, end_of_mac} != ZERO_MAC)
             {
                 return StringView{first, end_of_mac};
             }

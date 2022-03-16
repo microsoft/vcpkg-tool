@@ -327,7 +327,7 @@ namespace vcpkg
     ExpectedL<DateVersion> DateVersion::try_parse(StringView version)
     {
         ParsedExternalVersion parsed;
-        if (!try_parse_external_date_version(parsed, version))
+        if (!try_extract_external_date_version(parsed, version))
         {
             return format_invalid_date_version(version);
         }
@@ -426,7 +426,7 @@ namespace vcpkg
     }
 
     // /(\d\d\d\d)-(\d\d)-(\d\d).*/
-    bool try_parse_external_date_version(ParsedExternalVersion& out, StringView version)
+    bool try_extract_external_date_version(ParsedExternalVersion& out, StringView version)
     {
         using P = vcpkg::Parse::ParserBase;
         // a b c d - e f - g h <end>
@@ -453,7 +453,7 @@ namespace vcpkg
     }
 
     // /(\d+)(\.\d+|$)(\.\d+)?.*/
-    bool try_parse_external_dot_version(ParsedExternalVersion& out, StringView version)
+    bool try_extract_external_dot_version(ParsedExternalVersion& out, StringView version)
     {
         using P = vcpkg::Parse::ParserBase;
         auto first = version.begin();

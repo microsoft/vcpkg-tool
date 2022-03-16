@@ -44,7 +44,7 @@ namespace vcpkg
                 return nullopt;
             }
 
-            if (try_parse_external_dot_version(parsed_version, StringView{first, last}) &&
+            if (try_extract_external_dot_version(parsed_version, StringView{first, last}) &&
                 !parsed_version.minor.empty())
             {
                 break;

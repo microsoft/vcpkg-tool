@@ -2163,7 +2163,7 @@ std::string vcpkg::format_version_for_nugetref(StringView version, StringView ab
     // and ignores random extra stuff from the end
 
     ParsedExternalVersion parsed_version;
-    if (try_parse_external_date_version(parsed_version, version))
+    if (try_extract_external_date_version(parsed_version, version))
     {
         parsed_version.normalize();
         return fmt::format(
@@ -2174,7 +2174,7 @@ std::string vcpkg::format_version_for_nugetref(StringView version, StringView ab
     {
         version = version.substr(1);
     }
-    if (try_parse_external_dot_version(parsed_version, version))
+    if (try_extract_external_dot_version(parsed_version, version))
     {
         parsed_version.normalize();
         return fmt::format(

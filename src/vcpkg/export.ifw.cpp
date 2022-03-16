@@ -15,6 +15,33 @@ namespace vcpkg::Export::IFW
     using Dependencies::ExportPlanType;
     using Install::InstallDir;
 
+    // requires: after_prefix <= semi
+    // requires: *semi == ';'
+    static bool is_character_ref(const char* after_prefix, const char* semi)
+    {
+        if (after_prefix == semi)
+        {
+            return false;
+        }
+
+        if (*after_prefix == '#')
+        {
+            ++after_prefix;
+            if (*after_prefix == 'x')
+            {
+                ++after_prefix;
+                // hex character escape: &#xABC;
+                return after_prefix != semi && std::all_of(after_prefix, semi, Parse::ParserBase::is_hex_digit);
+            }
+
+            // decimal character escape: &#123;
+            return after_prefix != semi && std::all_of(after_prefix, semi, Parse::ParserBase::is_ascii_digit);
+        }
+
+        // word character escape: &amp;
+        return std::all_of(after_prefix, semi, Parse::ParserBase::is_word_char);
+    }
+
     std::string safe_rich_from_plain_text(StringView text)
     {
         // looking for `&`, not followed by:
@@ -23,14 +50,10 @@ namespace vcpkg::Export::IFW
         // - `<numbers, letters, or _>;`
         // (basically, an HTML character entity reference)
         using P = Parse::ParserBase;
-        constexpr static auto is_word = [](char ch) { return P::is_alphanum(ch) || ch == '_'; };
-        constexpr static auto is_hex_digit = [](char ch) {
-            return P::is_ascii_digit(ch) || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
-        };
-        constexpr static char escaped_amp[] = "&amp;";
+        constexpr static StringLiteral escaped_amp = "&amp;";
 
         auto first = text.begin();
-        auto last = text.end();
+        const auto last = text.end();
 
         std::string result;
         for (;;)
@@ -38,7 +61,10 @@ namespace vcpkg::Export::IFW
             auto amp = std::find(first, last, '&');
             result.append(first, amp);
             first = amp;
-            if (first == last) break;
+            if (first == last)
+            {
+                break;
+            }
 
             ++first; // skip amp
             if (first == last)
@@ -46,49 +72,19 @@ namespace vcpkg::Export::IFW
                 result.append(escaped_amp);
                 break;
             }
-            else if (*first == '#')
-            {
-                // &#123;
-                ++first; // skip hash
-                auto semi = std::find(first, last, ';');
-                bool is_char_ref = false;
-                if (semi != last && semi != first)
-                {
-                    if (*first == 'x' && semi != first + 1 && std::all_of(first + 1, semi, is_hex_digit))
-                    {
-                        is_char_ref = true;
-                    }
-                    else if (std::all_of(first, semi, P::is_ascii_digit))
-                    {
-                        is_char_ref = true;
-                    }
-                }
-
-                if (is_char_ref)
-                {
-                    result.append(amp, semi);
-                }
-                else
-                {
-                    result.append(escaped_amp);
-                    result.push_back('#');
-                    result.append(first, semi);
-                }
-                first = semi;
-            }
             else
             {
-                // &lt;
                 auto semi = std::find(first, last, ';');
-                if (semi != last && semi != first && std::all_of(first, semi, is_word))
+
+                if (semi != last && is_character_ref(first, semi))
                 {
-                    result.append(amp, semi);
+                    first = amp;
                 }
                 else
                 {
-                    result.append(escaped_amp);
-                    result.append(first, semi);
+                    result.append(escaped_amp.begin(), escaped_amp.end());
                 }
+                result.append(first, semi);
                 first = semi;
             }
         }

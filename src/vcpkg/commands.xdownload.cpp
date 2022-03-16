@@ -41,9 +41,7 @@ namespace vcpkg::Commands::X_Download
 
     static bool is_hex(StringView sha)
     {
-        return std::all_of(sha.begin(), sha.end(), [](char ch) {
-            return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
-        });
+        return std::all_of(sha.begin(), sha.end(), Parse::ParserBase::is_hex_digit);
     }
     static bool is_sha512(StringView sha) { return sha.size() == 128 && is_hex(sha); }
 

@@ -10,7 +10,6 @@
 #include <limits.h>
 
 #include <algorithm>
-#include <charconv>
 #include <vector>
 
 namespace vcpkg::Strings::details
