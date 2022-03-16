@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "código inacessível atingido",
   "ChecksUpdateVcpkg": "atualizar vcpkg executando novamente bootstrap-vcpkg pode resolver essa falha.",
+  "CouldNotDeduceNugetIdAndVersion": "Não foi possível deduzir a ID e a versão do nuget do nome de arquivo: {path}",
   "EmptyLicenseExpression": "A expressão da licença SPDX estava vazia.",
   "ErrorIndividualPackagesUnsupported": "Erro: No modo manifesto, `vcpkg install` não suporta argumentos de pacotes individuais.\nPara instalar pacotes adicionais, edite o vcpkg.json e execute `vcpkg install` sem nenhum argumento de pacote.",
   "ErrorInvalidClassicModeOption": "Erro: a opção --{option} não é suportada no modo clássico e nenhum manifesto foi encontrado.",
@@ -93,9 +94,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "comando inválido: {command_name}",
   "VcpkgSendMetricsButDisabled": "Aviso: --sendmetrics aprovados, mas as métricas estão desabilitadas.",
-  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
-  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
-  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
+  "VersionInvalidDate": "`{version}` não é uma versão de data válida. As datas devem seguir o formato AAAA-MM-DD e os desambiguadores devem ser valores inteiros positivos separados por ponto sem zeros à esquerda.",
+  "VersionInvalidRelaxed": "`{version}` não é uma versão relaxada válida (semver com contagem de elementos numéricos arbitrários).",
+  "VersionInvalidSemver": "`{version}` não é uma versão semântica válida, consulte <https://semver.org>.",
   "VersionSpecMismatch": "erro: Falha ao carregar a porta porque as especificações da versão não correspondem\n    Caminho: {path}\n    Esperado: {expected_version}\n    Real: {actual_version}",
   "WarningMessage": "aviso: "
 }

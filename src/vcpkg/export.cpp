@@ -201,19 +201,19 @@ namespace vcpkg::Export
 
         constexpr ArchiveFormat() = delete;
 
-        constexpr ArchiveFormat(BackingEnum backing_enum, const char* extension, const char* cmake_option)
+        constexpr ArchiveFormat(BackingEnum backing_enum, ZStringView extension, ZStringView cmake_option)
             : backing_enum(backing_enum), m_extension(extension), m_cmake_option(cmake_option)
         {
         }
 
         constexpr operator BackingEnum() const { return backing_enum; }
-        constexpr CStringView extension() const { return this->m_extension; }
-        constexpr CStringView cmake_option() const { return this->m_cmake_option; }
+        constexpr ZStringView extension() const { return this->m_extension; }
+        constexpr ZStringView cmake_option() const { return this->m_cmake_option; }
 
     private:
         BackingEnum backing_enum;
-        const char* m_extension;
-        const char* m_cmake_option;
+        ZStringView m_extension;
+        ZStringView m_cmake_option;
     };
 
     namespace ArchiveFormatC

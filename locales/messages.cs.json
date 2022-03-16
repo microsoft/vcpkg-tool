@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "nedosažitelný kód byl dosažen",
   "ChecksUpdateVcpkg": "aktualizace vcpkg opětovným spuštěním bootstrap-vcpkg může tuto chybu vyřešit.",
+  "CouldNotDeduceNugetIdAndVersion": "Nepovedlo se odvodit ID a verzi NuGet z názvu souboru: {path}",
   "EmptyLicenseExpression": "Výraz licence SPDX byl prázdný.",
   "ErrorIndividualPackagesUnsupported": "Chyba: V režimu manifestu nepodporuje příkaz vcpkg install jednotlivé argumenty balíčku.\nPokud chcete nainstalovat další balíčky, upravte soubor vcpkg.json a spusťte příkaz vcpkg install bez argumentů balíčku.",
   "ErrorInvalidClassicModeOption": "Chyba: Možnost --{option} není v klasickém režimu podporována a nebyl nalezen žádný manifest.",
@@ -93,9 +94,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "neplatný příkaz: {command_name}",
   "VcpkgSendMetricsButDisabled": "Upozornění: proběhla --sendmetrics, ale metriky jsou zakázané.",
-  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
-  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
-  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
+  "VersionInvalidDate": "{version} není platná verze data. Data musí být ve formátu RRRR-MM-DD a zpřesňující prvky musí být kladné hodnoty integer oddělené tečkami bez úvodních nul.",
+  "VersionInvalidRelaxed": "{version} není platná uvolněná verze (semver s počtem libovolných numerických prvků)",
+  "VersionInvalidSemver": "{version} není platná sémantická verze, řiďte se <https://semver.org>.",
   "VersionSpecMismatch": "chyba: Nepovedlo se načíst port, protože se neshodovaly specifikace verze.\n    Cesta: {path}\n    Očekáváno: {expected_version}\n    Skutečnost: {actual_version}",
   "WarningMessage": "upozornění: "
 }

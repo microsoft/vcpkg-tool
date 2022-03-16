@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "osiągnięto nieosiągalny kod",
   "ChecksUpdateVcpkg": "zaktualizowanie pakietu vcpkg przez ponowne uruchomienie pakietu bootstrap-vcpkg może rozwiązać ten problem.",
+  "CouldNotDeduceNugetIdAndVersion": "Nie można wywnioskować identyfikatora NuGet i wersji z nazwy pliku: {path}",
   "EmptyLicenseExpression": "Wyrażenie licencji SPDX było puste.",
   "ErrorIndividualPackagesUnsupported": "Błąd: w trybie manifestu element „vcpkg install” nie obsługuje poszczególnych argumentów pakietu.\nAby zainstalować dodatkowe pakiety, edytuj plik vcpkg.json, a następnie uruchom polecenie „vcpkg install” bez żadnych argumentów pakietu.",
   "ErrorInvalidClassicModeOption": "Błąd: opcja --{option} nie jest obsługiwana w trybie klasycznym i nie znaleziono manifestu.",
@@ -93,9 +94,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "nieprawidłowe polecenie: {command_name}",
   "VcpkgSendMetricsButDisabled": "Ostrzeżenie: przekazano parametr --sendmetrics, ale metryki są wyłączone.",
-  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
-  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
-  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
+  "VersionInvalidDate": "„{version}“ nie jest prawidłową wersją daty. Daty muszą być zgodne z formatem RRRR-MM-DD, a uściślacze muszą być dodatnimi wartościami całkowitymi, rozdzielonymi kropkami, bez zer wiodących.",
+  "VersionInvalidRelaxed": "„{version}“ nie jest prawidłową wersją swobodną (serwer z dowolną liczbą elementów liczbowych).",
+  "VersionInvalidSemver": "„{version}“ nie jest prawidłową wersją semantyczną. Zapoznaj się z <https://semver.org>.",
   "VersionSpecMismatch": "błąd: nie można załadować portu, ponieważ specyfikacje wersji nie są zgodne\n    Ścieżka: {path}\n    Oczekiwano: {expected_version}\n    Wartość rzeczywista: {actual_version}",
   "WarningMessage": "ostrzeżenie: "
 }

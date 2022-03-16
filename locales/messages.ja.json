@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "到達できないコードに達しました",
   "ChecksUpdateVcpkg": "bootstrap-vcpkg を再実行して vcpkg を更新すると、このエラーが解決される可能性があります。",
+  "CouldNotDeduceNugetIdAndVersion": "ファイル名 {path} から nuget ID とバージョンを推測できませんでした",
   "EmptyLicenseExpression": "SPDX ライセンス式が空でした。",
   "ErrorIndividualPackagesUnsupported": "エラー: マニフェスト モードでは、`vcpkg install` は個々のパッケージ引数をサポートしていません。\n追加のパッケージをインストールするには、vcpkg.json を編集し、パッケージ引数を指定せずに `vcpkg install` を実行してください。",
   "ErrorInvalidClassicModeOption": "エラー: オプション --{option} はクラシック モードではサポートされていないため、マニフェストが見つかりませんでした。",
@@ -93,9 +94,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "無効なコマンド: {command_name}",
   "VcpkgSendMetricsButDisabled": "警告: --sendmetrics が渡されましたが、メトリックは無効になっています。",
-  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
-  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
-  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
+  "VersionInvalidDate": "'{version}' は有効な日付バージョンではありません。日付は YYYY-MM-DD の形式に従う必要があり、disambiguator は先頭にゼロを付けずにドット区切りの正の整数値にする必要があります。",
+  "VersionInvalidRelaxed": "'{version}' は有効な緩やかなバージョンではありません (任意の数値要素数を持つ semver)。",
+  "VersionInvalidSemver": "'{version}' は有効なセマンティック バージョンではありません。<https://semver.org> を参照してください。",
   "VersionSpecMismatch": "エラー: バージョン指定が\n    Path: {path}\n    と一致しなかったため、ポートを読み込めませんでした: {expected_version}\n    実績: {actual_version}",
   "WarningMessage": "警告: "
 }

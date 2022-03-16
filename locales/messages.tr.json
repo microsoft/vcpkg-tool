@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "ulaşılamayan koda ulaşıldı",
   "ChecksUpdateVcpkg": "vcpkg’nin bootstrap-vcpkg’nin yeniden çalıştırılarak güncelleştirilmesi bu hatayı çözebilir.",
+  "CouldNotDeduceNugetIdAndVersion": "{path} dosya adından NuGet kimliği ve sürümü çıkarılamadı",
   "EmptyLicenseExpression": "SPDX lisans ifadesi boştu.",
   "ErrorIndividualPackagesUnsupported": "Hata: Bildirim modunda `vcpkg install`, paket bağımsız değişkenlerini tek tek desteklemez.\nEk paketleri yüklemek için vcpkg.json dosyasını düzenleyin ve paket bağımsız değişkenleri olmadan `vcpkg install` komutunu çalıştırın.",
   "ErrorInvalidClassicModeOption": "Hata: --{option} seçeneği klasik modda desteklenmiyor ve bildirim bulunamadı.",
@@ -93,9 +94,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "geçersiz komut: {command_name}",
   "VcpkgSendMetricsButDisabled": "Uyarı: --sendmetrics geçirildi, ancak ölçümler devre dışı bırakıldı.",
-  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
-  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
-  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
+  "VersionInvalidDate": "'{version}' geçerli bir tarih sürümü değil. Tarihler YYYY-AA-GG biçiminde olmalıdır ve belirsizlik gidericiler, başında sıfırlar olmadan noktayla ayrılmış pozitif tamsayı değerleri olmalıdır.",
+  "VersionInvalidRelaxed": "'{version}' geçerli bir esnek sürüm değil (rasgele sayısal öğe sayısına sahip semver).",
+  "VersionInvalidSemver": "'{version}' geçerli bir anlamsal sürüm değil, <https://semver.org> adresine başvurun.",
   "VersionSpecMismatch": "hata: Sürüm belirtimleri eşleşmediğinden bağlantı noktası yüklenemedi\n    Yol: {path}\n    Beklenen: {expected_version}\n    Gerçek: {actual_version}",
   "WarningMessage": "uyarı: "
 }

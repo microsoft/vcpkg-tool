@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "достигнут недостижимый код",
   "ChecksUpdateVcpkg": "обновление vcpkg путем повторного запуска bootstrap-vcpkg может устранить этот сбой.",
+  "CouldNotDeduceNugetIdAndVersion": "Не удалось определить идентификатор nuget и версию по имени файла: {path}",
   "EmptyLicenseExpression": "Выражение лицензии SPDX было пустым.",
   "ErrorIndividualPackagesUnsupported": "Ошибка: в режиме манифеста \"vcpkg install\" не поддерживает отдельные аргументы пакета.\nЧтобы установить дополнительные пакеты, измените vcpkg.json, а затем выполните команду \"vcpkg install\" без аргументов пакета.",
   "ErrorInvalidClassicModeOption": "Ошибка: параметр --{option} не поддерживается в классическом режиме, и манифест не найден.",
@@ -93,9 +94,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "недопустимая команда: {command_name}",
   "VcpkgSendMetricsButDisabled": "Внимание! Передан параметр --sendmetrics, но метрики отключены.",
-  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
-  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
-  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
+  "VersionInvalidDate": "\"{version}\" не является допустимой версией даты. Даты должны быть в формате ГГГГ-ММ-ДД, а неоднозначные значения должны быть положительными целыми числами с разделителями-точками без начальных нулей.",
+  "VersionInvalidRelaxed": "\"{version}\" не является допустимой нестрогой версией (semver с произвольным количеством числовых элементов).",
+  "VersionInvalidSemver": "\"{version}\" не является допустимой семантической версией, см. <https://semver.org>.",
   "VersionSpecMismatch": "ошибка: не удалось загрузить порт, так как спецификации версии не совпадают\n    Путь: {path}\n    Ожидается: {expected_version}\n    Фактически: {actual_version}",
   "WarningMessage": "Предупреждение: "
 }

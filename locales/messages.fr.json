@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "code inaccessible atteint",
   "ChecksUpdateVcpkg": "la mise à jour de vcpkg en réexécutant bootstrap-vcpkg peut résoudre cet échec.",
+  "CouldNotDeduceNugetIdAndVersion": "Impossible de déduire l’ID nuget et la version à partir du nom de fichier : {path}",
   "EmptyLicenseExpression": "L’expression de licence SPDX était vide.",
   "ErrorIndividualPackagesUnsupported": "Erreur : En mode manifeste, `vcpkg install` ne supporte pas les arguments individuels des paquets. \nPour installer des paquets supplémentaires, éditez vcpkg.json et exécutez ensuite `vcpkg install` sans aucun argument de paquet.",
   "ErrorInvalidClassicModeOption": "Erreur : l’option --{option} n’est pas prise en charge en mode classique et aucun manifeste n’a été trouvé.",
@@ -93,9 +94,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "commande non valide : {command_name}",
   "VcpkgSendMetricsButDisabled": "Avertissement : réussite de --sendmetrics, mais les métriques sont désactivées.",
-  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
-  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
-  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
+  "VersionInvalidDate": "«{version}» n’est pas une version de date valide. Les dates doivent suivre le format AAAA-MM-JJ et les désambiguïsateurs doivent être des valeurs entières positives séparées par des points sans zéros non significatifs.",
+  "VersionInvalidRelaxed": "«{version}» n’est pas une version souple valide (semver avec un nombre d’éléments numériques arbitraire).",
+  "VersionInvalidSemver": "«{version}» n’est pas une version sémantique valide, consultez <https://semver.org>.",
   "VersionSpecMismatch": "erreur : échec du chargement du port, car les spécifications de version ne correspondent pas\n    Chemin d’accès : {path}\n    Attendu : {expected_version}\n    Réel : {actual_version}",
   "WarningMessage": "avertissement : "
 }

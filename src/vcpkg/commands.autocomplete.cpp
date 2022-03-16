@@ -120,7 +120,7 @@ namespace vcpkg::Commands::Autocomplete
 
         struct CommandEntry
         {
-            CStringView name;
+            ZStringView name;
             const CommandStructure& structure;
         };
 

@@ -602,6 +602,7 @@ namespace vcpkg
             {
                 while (ReadFile(child_stdout, static_cast<void*>(buf), buffer_size, &bytes_read, nullptr))
                 {
+                    std::replace(buf, buf + bytes_read, '\0', '?');
                     f(StringView{buf, static_cast<size_t>(bytes_read)});
                 }
             }

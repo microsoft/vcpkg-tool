@@ -43,16 +43,35 @@ namespace vcpkg
 
         constexpr operator StringView() const { return StringView(m_cstr, m_size); }
 
+        // Note that only the 1 parameter version of substr is provided to preserve null termination
+        ZStringView substr(std::size_t prefix_length) const
+        {
+            if (prefix_length < m_size)
+            {
+                return ZStringView{m_cstr + prefix_length, m_size - prefix_length};
+            }
+
+            return ZStringView{};
+        }
+
+        friend bool operator==(ZStringView l, ZStringView r)
+        {
+            return std::equal(l.begin(), l.end(), r.begin(), r.end());
+        }
+        friend bool operator!=(ZStringView l, ZStringView r)
+        {
+            return !std::equal(l.begin(), l.end(), r.begin(), r.end());
+        }
+
+        friend bool operator==(const char* l, ZStringView r) { return strcmp(l, r.c_str()) == 0; }
+        friend bool operator==(ZStringView l, const char* r) { return strcmp(l.c_str(), r) == 0; }
+
+        friend std::string operator+(std::string&& l, const ZStringView& r) { return std::move(l) + r.c_str(); }
+
     private:
         size_t m_size;
         const char* m_cstr;
     };
-
-    inline bool operator==(ZStringView l, ZStringView r) { return std::equal(l.begin(), l.end(), r.begin(), r.end()); }
-    inline bool operator!=(ZStringView l, ZStringView r) { return !std::equal(l.begin(), l.end(), r.begin(), r.end()); }
-
-    inline bool operator==(const char* l, ZStringView r) { return strcmp(l, r.c_str()) == 0; }
-    inline bool operator==(ZStringView l, const char* r) { return strcmp(l.c_str(), r) == 0; }
 }
 
 VCPKG_FORMAT_AS(vcpkg::ZStringView, vcpkg::StringView);
