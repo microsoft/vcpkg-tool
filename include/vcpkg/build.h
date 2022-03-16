@@ -31,7 +31,6 @@ namespace vcpkg::Build
 {
     enum class BuildResult
     {
-        NULLVALUE = 0,
         SUCCEEDED,
         BUILD_FAILED,
         POST_BUILD_CHECKS_FAILED,
@@ -197,7 +196,6 @@ namespace vcpkg::Build
 
     struct BuildResultCounts
     {
-        int null_value = 0;
         int succeeded = 0;
         int build_failed = 0;
         int post_build_checks_failed = 0;
@@ -255,7 +253,7 @@ namespace vcpkg::Build
 
     struct ExtendedBuildResult
     {
-        ExtendedBuildResult(BuildResult code);
+        explicit ExtendedBuildResult(BuildResult code);
         ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps);
         ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 

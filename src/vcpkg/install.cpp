@@ -343,10 +343,10 @@ namespace vcpkg::Install
         {
             if (use_head_version && is_user_requested)
                 vcpkg::printf(
-                    Color::warning, "Package %s is already installed -- not building from HEAD\n", display_name);
+                    Color::warning, "%s is already installed -- not building from HEAD\n", display_name);
             else
-                vcpkg::printf(Color::success, "Package %s is already installed\n", display_name);
-            return BuildResult::SUCCEEDED;
+                vcpkg::printf(Color::success, "%s is already installed\n", display_name);
+            return ExtendedBuildResult{BuildResult::SUCCEEDED};
         }
 
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
@@ -360,20 +360,20 @@ namespace vcpkg::Install
             }
             else if (action.build_options.build_missing == Build::BuildMissing::NO)
             {
-                return BuildResult::CACHE_MISSING;
+                return ExtendedBuildResult{BuildResult::CACHE_MISSING};
             }
             else
             {
                 if (use_head_version)
-                    vcpkg::printf("Building package %s from HEAD...\n", display_name_with_features);
+                    vcpkg::printf("Building %s from HEAD...\n", display_name_with_features);
                 else
-                    vcpkg::printf("Building package %s...\n", display_name_with_features);
+                    vcpkg::printf("Building %s...\n", display_name_with_features);
 
                 auto result = Build::build_package(args, paths, action, binary_cache, build_logs_recorder, status_db);
 
                 if (BuildResult::DOWNLOADED == result.code)
                 {
-                    print2(Color::success, "Downloaded sources for package ", display_name_with_features, "\n");
+                    print2(Color::success, "Downloaded sources for ", display_name_with_features, "\n");
                     return result;
                 }
 
@@ -388,7 +388,6 @@ namespace vcpkg::Install
             // Build or restore succeeded and `bcf` is populated with the control file.
             Checks::check_exit(VCPKG_LINE_INFO, bcf != nullptr);
 
-            vcpkg::printf("Installing package %s...\n", display_name_with_features);
             const auto install_result = install_package(paths, *bcf, &status_db);
             BuildResult code;
             switch (install_result)
@@ -417,8 +416,8 @@ namespace vcpkg::Install
 
         if (plan_type == InstallPlanType::EXCLUDED)
         {
-            vcpkg::printf(Color::warning, "Package %s is excluded\n", display_name);
-            return BuildResult::EXCLUDED;
+            vcpkg::printf(Color::warning, "%s is excluded\n", display_name);
+            return ExtendedBuildResult{BuildResult::EXCLUDED};
         }
 
         Checks::unreachable(VCPKG_LINE_INFO);
@@ -431,15 +430,15 @@ namespace vcpkg::Install
         for (const SpecSummary& result : this->results)
         {
             msg::println(msgResultsLine,
-                         msg::spec = result.spec,
-                         msg::build_result = Build::to_string(result.build_result.code),
+                         msg::spec = result.get_spec().to_string(),
+                         msg::build_result = Build::to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code),
                          msg::elapsed = result.timing);
         }
 
         std::map<Triplet, Build::BuildResultCounts> summary;
         for (const SpecSummary& r : this->results)
         {
-            summary[r.spec.triplet()].increment(r.build_result.code);
+            summary[r.get_spec().triplet()].increment(r.build_result.value_or_exit(VCPKG_LINE_INFO).code);
         }
 
         msg::println();
@@ -458,18 +457,28 @@ namespace vcpkg::Install
         TrackedPackageInstallGuard(const size_t action_index,
                                    const size_t action_count,
                                    std::vector<SpecSummary>& results,
-                                   const PackageSpec& spec)
+                                   const Dependencies::InstallPlanAction* action)
         {
-            results.emplace_back(spec, nullptr);
+            results.emplace_back(action);
             current_summary = &results.back();
-            vcpkg::printf("Starting package %zd/%zd: %s\n", action_index, action_count, spec.to_string());
+            vcpkg::printf("Installing %s (%zd/%zd)...\n", action->spec.to_string(), action_index, action_count);
+        }
+
+        TrackedPackageInstallGuard(const size_t action_index,
+                                   const size_t action_count,
+                                   std::vector<SpecSummary>& results,
+                                   const Dependencies::RemovePlanAction* action)
+        {
+            results.emplace_back(action);
+            current_summary = &results.back();
+            vcpkg::printf("Removing %s (%zd/%zd)...\n", action->spec.to_string(), action_index, action_count);
         }
 
         ~TrackedPackageInstallGuard()
         {
             current_summary->timing = build_timer.elapsed();
             vcpkg::printf(
-                "Elapsed time for package %s: %s\n", current_summary->spec.to_string(), current_summary->timing);
+                "Elapsed time for %s: %s\n", current_summary->get_spec().to_string(), current_summary->timing);
         }
 
         TrackedPackageInstallGuard(const TrackedPackageInstallGuard&) = delete;
@@ -491,22 +500,22 @@ namespace vcpkg::Install
 
         for (auto&& action : action_plan.remove_actions)
         {
-            TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
+            TrackedPackageInstallGuard this_install(action_index++, action_count, results, &action);
             Remove::perform_remove_plan_action(paths, action, Remove::Purge::YES, &status_db);
         }
 
         for (auto&& action : action_plan.already_installed)
         {
-            results.emplace_back(action.spec, &action);
-            results.back().build_result =
-                perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
+            results.emplace_back(&action);
+            results.back().build_result.emplace(
+                perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder));
         }
 
         Build::compute_all_abis(paths, action_plan, var_provider, status_db);
         binary_cache.prefetch(action_plan.install_actions);
         for (auto&& action : action_plan.install_actions)
         {
-            TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
+            TrackedPackageInstallGuard this_install(action_index++, action_count, results, &action);
             auto result =
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
@@ -515,8 +524,7 @@ namespace vcpkg::Install
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            this_install.current_summary->action = &action;
-            this_install.current_summary->build_result = std::move(result);
+            this_install.current_summary->build_result.emplace(std::move(result));
         }
 
         return InstallSummary{std::move(results)};
@@ -774,7 +782,7 @@ namespace vcpkg::Install
 
                     const auto name = cmakeify(bpgh.spec.name());
                     auto msg = Strings::concat(
-                        "The package ", bpgh.spec.name(), " is header only and can be used from CMake via:\n\n");
+                        bpgh.spec.name(), " is header only and can be used from CMake via:\n\n");
                     Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
                     Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
 
@@ -783,7 +791,7 @@ namespace vcpkg::Install
             }
             else
             {
-                auto msg = Strings::concat("The package ", bpgh.spec.name(), " provides CMake targets:\n\n");
+                auto msg = Strings::concat(bpgh.spec.name(), " provides CMake targets:\n\n");
 
                 for (auto&& library_target_pair : library_targets)
                 {
@@ -1219,9 +1227,9 @@ namespace vcpkg::Install
         std::set<std::string> printed_usages;
         for (auto&& result : summary.results)
         {
-            if (!result.action) continue;
-            if (result.action->request_type != RequestType::USER_REQUESTED) continue;
+            if (!result.is_user_requested_install()) continue;
             auto bpgh = result.get_binary_paragraph();
+            assert(bpgh);
             if (!bpgh) continue;
             print_usage_information(*bpgh, printed_usages, fs, paths.installed());
         }
@@ -1237,27 +1245,43 @@ namespace vcpkg::Install
         Install::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
-    SpecSummary::SpecSummary(const PackageSpec& spec, const Dependencies::InstallPlanAction* action)
-        : spec(spec), build_result{BuildResult::NULLVALUE, nullptr}, action(action)
+    SpecSummary::SpecSummary(const Dependencies::InstallPlanAction* action)
+        : build_result(), timing(), m_install_action(action), m_spec(action->spec)
+    {
+    }
+
+    SpecSummary::SpecSummary(const Dependencies::RemovePlanAction* action)
+        : build_result(), timing(), m_install_action(nullptr), m_spec(action->spec)
     {
     }
 
     const BinaryParagraph* SpecSummary::get_binary_paragraph() const
     {
-        if (build_result.binary_control_file)
+        // if we actually built this package, the build result will contain the BinaryParagraph for what we built.
+        if (const auto br = build_result.get())
         {
-            return &build_result.binary_control_file->core_paragraph;
+            if (br->binary_control_file)
+            {
+                return &br->binary_control_file->core_paragraph;
+            }
         }
 
-        if (action)
+        // if the package was already installed, the installed_package record will contain the BinaryParagraph for what
+        // was built before.
+        if (m_install_action)
         {
-            if (auto p_status = action->installed_package.get())
+            if (auto p_status = m_install_action->installed_package.get())
             {
                 return &p_status->core->package;
             }
         }
 
         return nullptr;
+    }
+
+    bool SpecSummary::is_user_requested_install() const
+    {
+        return m_install_action && m_install_action->request_type == RequestType::USER_REQUESTED;
     }
 
     static std::string xunit_result(const PackageSpec& spec, ElapsedTime time, BuildResult code)
@@ -1297,7 +1321,8 @@ namespace vcpkg::Install
         std::string xunit_doc;
         for (auto&& result : results)
         {
-            xunit_doc += xunit_result(result.spec, result.timing, result.build_result.code);
+            xunit_doc +=
+                xunit_result(result.get_spec(), result.timing, result.build_result.value_or_exit(VCPKG_LINE_INFO).code);
         }
 
         return xunit_doc;

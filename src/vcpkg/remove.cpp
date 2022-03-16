@@ -153,10 +153,8 @@ namespace vcpkg::Remove
         switch (action.plan_type)
         {
             case RemovePlanType::NOT_INSTALLED:
-                vcpkg::printf(Color::success, "Package %s is not installed\n", display_name);
                 break;
             case RemovePlanType::REMOVE:
-                vcpkg::printf("Removing package %s...\n", display_name);
                 remove_package(fs, paths.installed(), action.spec, status_db);
                 break;
             case RemovePlanType::UNKNOWN:
@@ -305,8 +303,11 @@ namespace vcpkg::Remove
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        for (const RemovePlanAction& action : remove_plan)
+        // note that we try to "remove" things that aren't installed to trigger purge actions
+        for (std::size_t idx = 0; idx < remove_plan.size(); ++idx)
         {
+            const RemovePlanAction& action = remove_plan[idx];
+            vcpkg::printf("Removing %s (%zu/%zu)...\n", action.spec.to_string(), idx + 1, remove_plan.size());
             perform_remove_plan_action(paths, action, purge, &status_db);
         }
 

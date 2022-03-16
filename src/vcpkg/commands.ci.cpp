@@ -713,12 +713,12 @@ namespace vcpkg::Commands::CI
             // Adding results for ports that were built or pulled from an archive
             for (auto&& result : summary.results)
             {
-                auto& port_features = split_specs->features.at(result.spec);
-                split_specs->known.erase(result.spec);
-                xunitTestResults.add_test_results(result.spec.to_string(),
-                                                  result.build_result.code,
+                auto& port_features = split_specs->features.at(result.get_spec());
+                split_specs->known.erase(result.get_spec());
+                xunitTestResults.add_test_results(result.get_spec().to_string(),
+                                                  result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
                                                   result.timing,
-                                                  split_specs->abi_map.at(result.spec),
+                                                  split_specs->abi_map.at(result.get_spec()),
                                                   port_features);
             }
 
