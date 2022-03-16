@@ -113,13 +113,13 @@ namespace vcpkg::Commands::Autocomplete
 
         struct CommandEntry
         {
-            constexpr CommandEntry(const CStringView& name, const CStringView& regex, const CommandStructure& structure)
+            constexpr CommandEntry(const ZStringView& name, const ZStringView& regex, const CommandStructure& structure)
                 : name(name), regex(regex), structure(structure)
             {
             }
 
-            CStringView name;
-            CStringView regex;
+            ZStringView name;
+            ZStringView regex;
             const CommandStructure& structure;
         };
 

@@ -312,7 +312,7 @@ namespace vcpkg::Build
         }
     }
 
-    CStringView to_cmake_variable(BuildPolicy policy)
+    ZStringView to_cmake_variable(BuildPolicy policy)
     {
         switch (policy)
         {
@@ -374,7 +374,7 @@ namespace vcpkg::Build
         "Supported system names are '', 'Windows' and 'WindowsStore'.");
 
 #if defined(_WIN32)
-    static CStringView to_vcvarsall_target(const std::string& cmake_system_name)
+    static ZStringView to_vcvarsall_target(const std::string& cmake_system_name)
     {
         if (cmake_system_name.empty()) return "";
         if (cmake_system_name == "Windows") return "";
@@ -385,7 +385,7 @@ namespace vcpkg::Build
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
 
-    static CStringView to_vcvarsall_toolchain(const std::string& target_architecture,
+    static ZStringView to_vcvarsall_toolchain(const std::string& target_architecture,
                                               const Toolset& toolset,
                                               Triplet triplet)
     {
