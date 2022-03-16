@@ -157,7 +157,9 @@ namespace vcpkg::Export::Prefab
     {
         constexpr static StringLiteral pkg_revision = "Pkg.Revision";
 
-        constexpr static auto is_version_character = [](char ch) { return ch == '.' || Parse::ParserBase::is_ascii_digit(ch); };
+        constexpr static auto is_version_character = [](char ch) {
+            return ch == '.' || Parse::ParserBase::is_ascii_digit(ch);
+        };
 
         auto first = content.begin();
         auto last = content.end();
