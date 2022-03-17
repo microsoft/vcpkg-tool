@@ -9,12 +9,12 @@ TEST_CASE ("find_targets_file_version", "[integrate]")
 {
     constexpr static StringLiteral DEFAULT_TARGETS_FILE = R"xml(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- version 1 -->
-  <PropertyGroup>
-    <VCLibPackagePath Condition="'$(VCLibPackagePath)' == ''">$(LOCALAPPDATA)\vcpkg\vcpkg.user</VCLibPackagePath>
-  </PropertyGroup>
-  <Import Condition="'$(VCLibPackagePath)' != '' and Exists('$(VCLibPackagePath).props')" Project="$(VCLibPackagePath).props" />
-  <Import Condition="'$(VCLibPackagePath)' != '' and Exists('$(VCLibPackagePath).targets')" Project="$(VCLibPackagePath).targets" />
+    <!-- version 1 -->
+    <PropertyGroup>
+        <VCLibPackagePath Condition="'$(VCLibPackagePath)' == ''">$(LOCALAPPDATA)\vcpkg\vcpkg.user</VCLibPackagePath>
+    </PropertyGroup>
+    <Import Condition="'$(VCLibPackagePath)' != '' and Exists('$(VCLibPackagePath).props')" Project="$(VCLibPackagePath).props" />
+    <Import Condition="'$(VCLibPackagePath)' != '' and Exists('$(VCLibPackagePath).targets')" Project="$(VCLibPackagePath).targets" />
 </Project>
 )xml";
 
@@ -53,4 +53,12 @@ TEST_CASE ("find_targets_file_version", "[integrate]")
 
     res = Integrate::find_targets_file_version("<!-- ver 1 -->");
     CHECK_FALSE(res.has_value());
+}
+
+TEST_CASE ("get_bash_source_completion_lines", "[integrate]")
+{
+}
+
+TEST_CASE ("get_zsh_autocomplete_data", "[integrate]")
+{
 }
