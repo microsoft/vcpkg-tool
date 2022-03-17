@@ -17,7 +17,7 @@ describe('Evaluator', () => {
 
   it('evaluates', () => {
     const activation = new Activation(session);
-    activation.addEnvironmentVariable('foo', ['bar']);
+    activation.addEnvironmentVariable('foo', 'bar');
     const e = new Evaluator({ $0: 'c:/foo/bar/python.exe' }, process.env, activation.output);
 
     // handle expressions that use the artifact data
@@ -31,6 +31,7 @@ describe('Evaluator', () => {
     strict(pathVar);
     strictEqual(e.evaluate(`$host.${pathVar}`), process.env[pathVar], 'Should be able to get environment variables from host');
 
+    console.log(activation.output);
     // handle expressions that use the activation's output
     strictEqual(e.evaluate('$environment.foo'), 'bar', 'Should be able to get environment variables from activation');
   });
