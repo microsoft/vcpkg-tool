@@ -526,7 +526,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                 // autoload[ a-zA-Z0-9-]+bashcompinit
                 auto after_autoload = first + 8;
                 auto bashcompinit = std::search(after_autoload, last, BASHCOMPINIT.begin(), BASHCOMPINIT.end());
-                if (bashcompinit != last && std::for_all(after_autoload, bashcompinit, [](char ch) {
+                if (bashcompinit != last && std::all_of(after_autoload, bashcompinit, [](char ch) {
                         return Parse::ParserBase::is_word_char(ch) || ch == ' ';
                     }))
                 {
@@ -538,7 +538,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
             if (bashcompinit != last)
             {
                 // check this is not commented out
-                if (Util::contains(StringView{first, bashcompinit}, '#'))
+                if (Strings::contains(StringView{first, bashcompinit}, '#'))
                 {
                     continue;
                 }
