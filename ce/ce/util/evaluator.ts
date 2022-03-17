@@ -42,15 +42,15 @@ function proxifyObject(obj: Record<string, any>): any {
 }
 
 export class Evaluator {
-  private activation: any;
+  private activationSnapshot: any;
   private host: any;
 
   constructor(private artifactData: Record<string, string>, host: Record<string, any>, activation: Record<string, any>) {
     this.host = proxifyObject(host);
-    this.activation = proxifyObject(activation);
+    this.activationSnapshot = proxifyObject(activation);
   }
 
-  private resolve(expression: string) {
+  private resolve(expression: string): string | undefined {
     const quick = `$${expression}`;
     if (this.artifactData[quick] !== undefined) {
       return this.artifactData[quick];
@@ -62,7 +62,7 @@ export class Evaluator {
     }
 
     // otherwise, assume it is a property on the activation object
-    return safeEval(expression, this.activation) || undefined;
+    return safeEval(expression, this.activationSnapshot) || undefined;
   }
 
   private replaceVariables(text: string): string {

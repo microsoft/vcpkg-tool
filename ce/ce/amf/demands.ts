@@ -14,7 +14,7 @@ import { parseQuery } from '../mediaquery/media-query';
 import { Session } from '../session';
 import { Evaluator } from '../util/evaluator';
 import { cmdlineToArray, execute } from '../util/exec-cmd';
-import { safeEval } from '../util/safeEval';
+import { safeEval, valiadateExpression } from '../util/safeEval';
 import { Entity } from '../yaml/Entity';
 import { EntityMap } from '../yaml/EntityMap';
 import { ScalarMap } from '../yaml/ScalarMap';
@@ -74,6 +74,7 @@ export class DemandBlock extends Entity {
 
   setActivation(activation?: Activation) {
     this.#activation = activation;
+    this.unless?.setActivation(activation);
   }
 
   setData(data: Record<string, string>) {
@@ -162,6 +163,9 @@ export class DemandBlock extends Entity {
       yield* this.requires.validate();
       yield* this.seeAlso.validate();
       yield* this.install.validate();
+      if (this.unless) {
+        yield* this.unless.validate();
+      }
     }
   }
 
@@ -230,14 +234,23 @@ export class Unless extends DemandBlock implements AlternativeFulfillment {
 
   /** @internal */
   override *validate(): Iterable<ValidationError> {
-    // todo: what other validations do we need?
-    yield* super.validate();
-    if (this.has('unless')) {
-      yield {
-        message: '"unless" is not supported in an unless block',
-        range: this.sourcePosition('unless'),
-        category: ErrorKind.InvalidDefinition
-      };
+    if (this.exists()) {
+      // todo: what other validations do we need?
+      //  yield* super.validate();
+      if (this.has('unless')) {
+        yield {
+          message: i`"unless" is not supported in an unless block`,
+          range: this.sourcePosition('unless'),
+          category: ErrorKind.InvalidDefinition
+        };
+      }
+      if (this.matches && !valiadateExpression(this.matches)) {
+        yield {
+          message: i`'is' expression ("${this.matches}") is not a valid comparison expression.`,
+          range: this.sourcePosition('is'),
+          category: ErrorKind.InvalidExpression
+        };
+      }
     }
   }
 

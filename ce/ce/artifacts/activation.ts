@@ -230,7 +230,8 @@ export class Activation {
   /** a collection of #define declarations that would assumably be applied to all compiler calls. */
   private defines = new Map<string, string>();
   addDefine(name: string, value: string) {
-    const v = this.defines.get(name);
+    const v = process.platform === 'win32' ? linq.find(this.defines, name) : this.defines.get(name);
+
     if (v && v !== value) {
       // conflict. todo: what do we want to do?
       this.#session.channels.warning(i`Duplicate define ${name} during activation. New value will replace old.`);
@@ -241,7 +242,8 @@ export class Activation {
   /** a collection of tool definitions from artifacts (think shell 'aliases')  */
   private tools = new Map<string, string>();
   addTool(name: string, value: string) {
-    if (this.tools.has(name)) {
+    const t = process.platform === 'win32' ? linq.find(this.tools, name) : this.tools.get(name);
+    if (t && t !== value) {
       this.#session.channels.error(i`Duplicate tool declared ${name} during activation.  New value will replace old.`);
     }
     this.tools.set(name, value);
@@ -254,7 +256,8 @@ export class Activation {
   /** Aliases are tools that get exposed to the user as shell aliases */
   private aliases = new Map<string, string>();
   addAlias(name: string, value: string) {
-    if (this.aliases.has(name)) {
+    const a = process.platform === 'win32' ? linq.find(this.aliases, name) : this.aliases.get(name);
+    if (a && a !== value) {
       this.#session.channels.error(i`Duplicate alias declared ${name} during activation.  New value will replace old.`);
     }
     this.aliases.set(name, value);
@@ -270,8 +273,8 @@ export class Activation {
     if (!name) {
       return;
     }
-
-    if (this.locations.has(name)) {
+    const l = process.platform === 'win32' ? linq.find(this.locations, name) : this.locations.get(name);
+    if (l && l.fsPath !== location.fsPath) {
       this.#session.channels.error(i`Duplicate location declared ${name} during activation. New value will replace old.`);
     }
     this.locations.set(name, location);
@@ -285,7 +288,7 @@ export class Activation {
       return;
     }
 
-    let set = this.paths.get(name);
+    let set = process.platform === 'win32' ? linq.find(this.paths, name) : this.paths.get(name);
     if (!set) {
       set = new Set<Uri>();
       this.paths.set(name, set);
@@ -305,12 +308,18 @@ export class Activation {
     if (!name) {
       return;
     }
-    const s = this.environment.getOrDefault(name, new Set());
+
+    let v = process.platform === 'win32' ? linq.find(this.environment, name) : this.environment.get(name);
+    if (!v) {
+      v = new Set<string>();
+      this.environment.set(name, v);
+    }
+
     if (typeof value === 'string') {
-      s.add(value);
+      v.add(value);
     } else {
       for (const each of value) {
-        s.add(each);
+        v.add(each);
       }
     }
   }

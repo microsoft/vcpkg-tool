@@ -12,4 +12,5 @@ export enum ErrorKind {
   MissingHash = 'MissingHashValue',
   InvalidDefinition = 'InvalidDefinition',
   InvalidChild = 'InvalidChild',
+  InvalidExpression = 'InvalidExpression',
 }
