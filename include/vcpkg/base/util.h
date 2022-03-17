@@ -27,7 +27,9 @@ namespace vcpkg::Util
         template<class Vec, class Key>
         bool contains(const Vec& container, const Key& item)
         {
-            return std::find(container.begin(), container.end(), item) != container.end();
+            using std::begin;
+            using std::end;
+            return std::find(begin(container), end(container), item) != end(container);
         }
         template<class T>
         std::vector<T> concat(View<T> r1, View<T> r2)
@@ -128,6 +130,11 @@ namespace vcpkg::Util
         return ret;
     }
 
+    template<class Container, class T>
+    void erase_remove(Container& cont, const T& el)
+    {
+        cont.erase(std::remove(cont.begin(), cont.end(), el), cont.end());
+    }
     template<class Container, class Pred>
     void erase_remove_if(Container& cont, Pred pred)
     {
@@ -138,6 +145,44 @@ namespace vcpkg::Util
     void transform(Range& r, F f)
     {
         std::transform(r.begin(), r.end(), r.begin(), f);
+    }
+
+    // 0th is the first occurence
+    // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
+    // returns the 1 before the 4
+    template<class InputIt, class V>
+    auto find_nth(InputIt first, InputIt last, const V& v, size_t n)
+    {
+        first = std::find(first, last, v);
+        for (size_t i = 0; i < n && first != last; ++i)
+        {
+            ++first;
+            first = std::find(first, last, v);
+        }
+
+        return first;
+    }
+    template<class R, class V>
+    auto find_nth(R& r, const V& v, size_t n)
+    {
+        using std::begin;
+        using std::end;
+
+        return find_nth(begin(r), end(r), v, n);
+    }
+
+    // 0th is the last occurence
+    // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
+    // returns the 1 before the 2
+    template<class R, class V>
+    auto find_nth_from_last(R& r, const V& v, size_t n)
+    {
+        using std::end;
+        using std::rbegin;
+        using std::rend;
+
+        auto res = find_nth(rbegin(r), rend(r), v, n);
+        return res == rend(r) ? end(r) : res.base() - 1;
     }
 
     template<class Container, class V>

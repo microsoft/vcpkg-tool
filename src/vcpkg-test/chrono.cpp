@@ -6,7 +6,7 @@ using namespace vcpkg;
 
 TEST_CASE ("parse time", "[chrono]")
 {
-    auto timestring = "1990-02-03T04:05:06.0Z";
+    static constexpr StringLiteral timestring = "1990-02-03T04:05:06.0Z";
     auto maybe_time = CTime::parse(timestring);
 
     REQUIRE(maybe_time.has_value());

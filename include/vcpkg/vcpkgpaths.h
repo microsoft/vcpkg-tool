@@ -23,7 +23,7 @@ namespace vcpkg
 {
     struct ToolsetArchOption
     {
-        CStringView name;
+        ZStringView name;
         CPUArchitecture host_arch;
         CPUArchitecture target_arch;
     };
@@ -34,7 +34,7 @@ namespace vcpkg
         Path dumpbin;
         Path vcvarsall;
         std::vector<std::string> vcvarsall_options;
-        CStringView version;
+        ZStringView version;
         std::string full_version;
         std::vector<ToolsetArchOption> supported_architectures;
     };

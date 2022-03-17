@@ -1,9 +1,12 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
+
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/files.h>
+#include <vcpkg/base/optional.h>
+#include <vcpkg/base/stringliteral.h>
 
 #include <string>
 #include <utility>
@@ -12,35 +15,37 @@ namespace vcpkg
 {
     namespace Tools
     {
-        static const std::string SEVEN_ZIP = "7zip";
-        static const std::string SEVEN_ZIP_ALT = "7z";
-        static const std::string TAR = "tar";
-        static const std::string MAVEN = "mvn";
-        static const std::string CMAKE = "cmake";
-        static const std::string GIT = "git";
-        static const std::string GSUTIL = "gsutil";
-        static const std::string AWSCLI = "aws";
-        static const std::string MONO = "mono";
-        static const std::string NINJA = "ninja";
-        static const std::string POWERSHELL_CORE = "powershell-core";
-        static const std::string NUGET = "nuget";
-        static const std::string ARIA2 = "aria2";
-        static const std::string NODE = "node";
-        static const std::string IFW_INSTALLER_BASE = "ifw_installerbase";
-        static const std::string IFW_BINARYCREATOR = "ifw_binarycreator";
-        static const std::string IFW_REPOGEN = "ifw_repogen";
+        static constexpr StringLiteral SEVEN_ZIP = "7zip";
+        static constexpr StringLiteral SEVEN_ZIP_ALT = "7z";
+        static constexpr StringLiteral TAR = "tar";
+        static constexpr StringLiteral MAVEN = "mvn";
+        static constexpr StringLiteral CMAKE = "cmake";
+        static constexpr StringLiteral GIT = "git";
+        static constexpr StringLiteral GSUTIL = "gsutil";
+        static constexpr StringLiteral AWSCLI = "aws";
+        static constexpr StringLiteral MONO = "mono";
+        static constexpr StringLiteral NINJA = "ninja";
+        static constexpr StringLiteral POWERSHELL_CORE = "powershell-core";
+        static constexpr StringLiteral NUGET = "nuget";
+        static constexpr StringLiteral ARIA2 = "aria2";
+        static constexpr StringLiteral NODE = "node";
+        static constexpr StringLiteral IFW_INSTALLER_BASE = "ifw_installerbase";
+        static constexpr StringLiteral IFW_BINARYCREATOR = "ifw_binarycreator";
+        static constexpr StringLiteral IFW_REPOGEN = "ifw_repogen";
         // This duplicate of 7zip uses msiexec to unpack, which is a fallback for Windows 7.
-        static const std::string SEVEN_ZIP_MSI = "7zip_msi";
+        static constexpr StringLiteral SEVEN_ZIP_MSI = "7zip_msi";
     }
 
     struct ToolCache
     {
         virtual ~ToolCache() = default;
 
-        virtual const Path& get_tool_path_from_system(const Filesystem& fs, const std::string& tool) const = 0;
-        virtual const Path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const = 0;
-        virtual const std::string& get_tool_version(const VcpkgPaths& paths, const std::string& tool) const = 0;
+        virtual const Path& get_tool_path_from_system(const Filesystem& fs, StringView tool) const = 0;
+        virtual const Path& get_tool_path(const VcpkgPaths& paths, StringView tool) const = 0;
+        virtual const std::string& get_tool_version(const VcpkgPaths& paths, StringView tool) const = 0;
     };
+
+    Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version);
 
     std::unique_ptr<ToolCache> get_tool_cache(RequireExactVersions abiToolVersionHandling);
 }

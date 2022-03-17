@@ -24,10 +24,6 @@ variables:
   - group: vcpkg-dependency-source-blobs
   - name: FMT_TARBALL_URL
     value: "$(fmt-tarball-url)"
-  - name: FMT_TARBALL_SHA
-    value: "$(fmt-tarball-sha)"
-  - name: FMT_TARBALL_DIRNAME
-    value: "$(fmt-tarball-dirname)"
   # If the user didn't override the signing type, then only real-sign on main.
   - ${{ if ne(parameters.SignTypeOverride, 'default') }}:
     - name: SignType
@@ -149,7 +145,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationTarballName "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempPath standalone-temp "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init"'
+        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init"'
     - script: npm pack
       displayName: Create vcpkg-ce Pack
       workingDirectory: $(Build.BinariesDirectory)/vcpkg-ce
@@ -190,21 +186,11 @@ jobs:
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
     - task: CmdLine@2
-      displayName: "Download fmt library"
-      inputs:
-        failOnStderr: true
-        workingDirectory: "$(Build.BinariesDirectory)"
-        script: |
-          curl -sSL "$FMT_TARBALL_URL" --output ./fmtlib.tar.gz
-          printf "$FMT_TARBALL_SHA *./fmtlib.tar.gz\n" >checksum
-          shasum -c ./checksum -a 512 || exit 1
-          tar -xf ./fmtlib.tar.gz
-    - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
         failOnStderr: true
         script: |
-          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION -DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA -DVCPKG_CE_SHA=$VCPKG_CE_SHA -B "$(Build.BinariesDirectory)/build"
+          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" "-DVCPKG_FMT_URL=$FMT_TARBALL_URL" -DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION -DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA -DVCPKG_CE_SHA=$VCPKG_CE_SHA -B "$(Build.BinariesDirectory)/build"
           make -j 8 -C "$(Build.BinariesDirectory)/build"
           zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/build/vcpkg"
     - task: PublishBuildArtifacts@1
@@ -224,22 +210,11 @@ jobs:
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
     - task: CmdLine@2
-      displayName: "Download fmt library"
-      inputs:
-        failOnStderr: true
-        workingDirectory: "$(Build.BinariesDirectory)"
-        script: |
-          curl -sSL "$FMT_TARBALL_URL" --output "./fmtlib.tar.gz"
-          printf "$FMT_TARBALL_SHA *./fmtlib.tar.gz\n" >checksum
-          # shasum doesn't exist on rhel
-          sha512sum -c ./checksum || exit 1
-          tar -xf ./fmtlib.tar.gz
-    - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
         failOnStderr: true
         script: |
-          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" -DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION -DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA -DVCPKG_CE_SHA=$VCPKG_CE_SHA -B "$(Build.BinariesDirectory)/build"'
+          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" "-DVCPKG_FMT_URL=$FMT_TARBALL_URL" -DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION -DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA -DVCPKG_CE_SHA=$VCPKG_CE_SHA -B "$(Build.BinariesDirectory)/build"'
           make -j 4 -C "$(Build.BinariesDirectory)/build"
           mv "$(Build.BinariesDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
     - task: PublishBuildArtifacts@1
@@ -259,22 +234,11 @@ jobs:
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
     - task: CmdLine@2
-      displayName: "Download fmt library"
-      inputs:
-        failOnStderr: true
-        workingDirectory: "$(Build.BinariesDirectory)"
-        script: |
-          curl -sSL "$FMT_TARBALL_URL" --output "./fmtlib.tar.gz"
-          printf "$FMT_TARBALL_SHA *./fmtlib.tar.gz\n" >checksum
-          shasum -c ./checksum -a 512 || exit 1
-          tar -xf ./fmtlib.tar.gz
-    - task: CmdLine@2
       displayName: "Build vcpkg in Alpine"
       inputs:
         failOnStderr: true
         script: |
-          mv "$(Build.BinariesDirectory)/$FMT_TARBALL_DIRNAME" external-fmtlib
-          docker build -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile .
+          docker build --build-arg "VCPKG_FMT_URL=$FMT_TARBALL_URL" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile .
           docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh
           docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
           docker container rm vcpkg-muslc-container
@@ -298,22 +262,6 @@ jobs:
       VCPKG_CE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_CE_SHA'] ]
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
-    - task: PowerShell@2
-      displayName: "Download fmt library"
-      inputs:
-        targetType: 'inline'
-        pwsh: true
-        failOnStderr: true
-        workingDirectory: "$(Build.BinariesDirectory)"
-        script: |
-          curl.exe -sSL "$env:FMT_TARBALL_URL" --output ./fmtlib.tar.gz
-          $hash = (Get-FileHash -Algorithm SHA512 -Path ./fmtlib.tar.gz).Hash
-          if ($hash -ne "$env:FMT_TARBALL_SHA") {
-            throw "Unexpected hash for fmtlib download;
-            expected: $env:FMT_TARBALL_SHA
-            found   : $hash"
-          }
-          tar.exe -xf ./fmtlib.tar.gz
     - task: CmdLine@2
       displayName: "Build vcpkg x86 with CMake"
       inputs:
@@ -321,7 +269,7 @@ jobs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
           cmake.exe --version
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -DVCPKG_STANDALONE_BUNDLE_SHA=%VCPKG_STANDALONE_BUNDLE_SHA% -DVCPKG_CE_SHA=%VCPKG_CE_SHA% -B "$(Build.BinariesDirectory)\x86"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=%FMT_TARBALL_URL%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -DVCPKG_STANDALONE_BUNDLE_SHA=%VCPKG_STANDALONE_BUNDLE_SHA% -DVCPKG_CE_SHA=%VCPKG_CE_SHA% -B "$(Build.BinariesDirectory)\x86"
           ninja.exe -C "$(Build.BinariesDirectory)\x86"
     - task: CmdLine@2
       displayName: "Build vcpkg arm64 with CMake"
@@ -330,7 +278,7 @@ jobs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=x86
           cmake.exe --version
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" -DFETCHCONTENT_FULLY_DISCONNECTED=ON "-DFETCHCONTENT_SOURCE_DIR_FMT=$(Build.BinariesDirectory)\%FMT_TARBALL_DIRNAME%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -DVCPKG_STANDALONE_BUNDLE_SHA=%VCPKG_STANDALONE_BUNDLE_SHA% -DVCPKG_CE_SHA=%VCPKG_CE_SHA% -B "$(Build.BinariesDirectory)\arm64"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=%FMT_TARBALL_URL%" -DVCPKG_BASE_VERSION=%VCPKG_BASE_VERSION% -DVCPKG_STANDALONE_BUNDLE_SHA=%VCPKG_STANDALONE_BUNDLE_SHA% -DVCPKG_CE_SHA=%VCPKG_CE_SHA% -B "$(Build.BinariesDirectory)\arm64"
           ninja.exe -C "$(Build.BinariesDirectory)\arm64"
     - task: MicroBuildSigningPlugin@3
       displayName: Install MicroBuild Signing
@@ -385,6 +333,12 @@ jobs:
         SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
         SigningCert: '8020'
         MacAppName: 'vcpkg'
+    - task: Powershell@2
+      displayName: 'Mint VS Insertion standalone bundle'
+      inputs:
+        pwsh: true
+        filePath: vcpkg-init/mint-standalone-bundle.ps1
+        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -readonly -TempDir standalone-temp'
     - task: CmdLine@2
       displayName: 'Arrange Drop'
       inputs:
@@ -401,6 +355,8 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
 
           move "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
+          copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.exe"
+
           move "$(Build.BinariesDirectory)\x86\vcpkg.pdb" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.pdb"
           move "$(Build.BinariesDirectory)\x86\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe"
           move "$(Build.BinariesDirectory)\x86\tls12-download.pdb" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.pdb"
@@ -412,6 +368,8 @@ jobs:
           mkdir "$(Build.ArtifactStagingDirectory)\staging\macos"
           tar.exe -C "$(Build.ArtifactStagingDirectory)\staging\macos" -xf "$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip"
           move "$(Build.ArtifactStagingDirectory)\staging\macos\vcpkg" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-macos"
+
+          copy "$(Build.SourcesDirectory)\azure-pipelines\vs-insertion\vcpkg.nuspec" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.nuspec"
     - task: CmdLine@2
       displayName: 'Add Drop PGP Signatures (real sign only)'
       condition: and(eq(variables.SignType, 'real'), succeeded())
@@ -421,6 +379,12 @@ jobs:
           move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.sig"
           move "$(Build.BinariesDirectory)\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc.sig"
           move "$(Build.BinariesDirectory)\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc.sig"
+    # Create NuGet package.
+    - task: NuGetCommand@2
+      displayName: 'NuGet pack for VS Insertion'
+      inputs:
+        command: custom
+        arguments: 'pack $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec -NoDefaultExcludes -OutputDirectory "$(Build.ArtifactStagingDirectory)/vs-insertion/drop" -Properties version=$(VCPKG_BASE_VERSION)'
     # Do compliance checks.
     - task: BinSkim@3
       inputs:
@@ -466,13 +430,22 @@ jobs:
         uploadRoslyn: false
         uploadTSLint: false
       condition: eq(variables['Build.SourceBranchName'], 'main')
-    # Publish everything to a Drop and to a GitHub Release
+    # Publish everything to a Drop
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Drop'
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\drop'
         ArtifactName: 'Drop'
         publishLocation: 'Container'
+    # Publish everything to VS Insertion
+    - task: NuGetCommand@2
+      displayName: 'NuGet publish for VS Insertion'
+      condition: and(eq(variables.SignType, 'real'), succeeded())
+      inputs:
+        command: push
+        packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.x86.1.0.0-$(VCPKG_BASE_VERSION).nupkg'
+        publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
+    # Publish everything to a GitHub Release
     - task: DownloadSecureFile@1
       displayName: Download Deploy Key
       name: githubDeployKey

@@ -18,15 +18,15 @@ namespace vcpkg::Commands::InitRegistry
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const Path path_argument = args.command_arguments.front();
-        const auto path = fs.current_path(VCPKG_LINE_INFO) / path_argument;
+        const Path string_argument = args.command_arguments.front();
+        const auto path = fs.current_path(VCPKG_LINE_INFO) / string_argument;
         if (!fs.exists(path / ".git", IgnoreErrors{}))
         {
             vcpkg::printf(Color::error,
                           "Could not create registry at %s because this is not a git repository root.\n"
                           "Use `git init %s` to create a git repository in this folder.\n",
                           path,
-                          path_argument);
+                          string_argument);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         const auto ports = path / "ports";

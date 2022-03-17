@@ -293,7 +293,8 @@ namespace vcpkg
 
     const ExpectedS<Path>& get_system32() noexcept
     {
-        static const ExpectedS<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "System32"; });
+        // This needs to be lowercase or msys-ish tools break. See https://github.com/microsoft/vcpkg-tool/pull/418/
+        static const ExpectedS<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "system32"; });
         return s_system32;
     }
 #else

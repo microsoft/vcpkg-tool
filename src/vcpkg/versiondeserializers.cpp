@@ -34,7 +34,7 @@ namespace
                 }
                 else if (pv.size() > 1)
                 {
-                    ret.second = Strings::strto<int>(pv.substr(1).to_string());
+                    ret.second = Strings::strto<int>(pv.substr(1));
                     if (ret.second.value_or(-1) < 0)
                     {
                         r.add_generic_error(type_name(),
