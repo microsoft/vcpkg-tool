@@ -180,7 +180,7 @@ alias -g kill-gpg='gpgconf --kill gpg-agent'
     CHECK(!res.has_bashcompinit);
     CHECK(res.has_autoload_bashcompinit);
 
-    res = Integrate::get_zsh_autocomplete_data("autoloadoasdoifhaoshgfiaqwenrlan hasdoifhaodfbashcompinit");
+    res = Integrate::get_zsh_autocomplete_data("autoloadoasdoif--ha------oshgfiaqwenrlan hasdoifhaodfbashcompinit");
     CHECK(res.source_completion_lines == std::vector<std::string>{});
     CHECK(!res.has_bashcompinit);
     CHECK(res.has_autoload_bashcompinit);
