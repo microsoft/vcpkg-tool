@@ -263,7 +263,7 @@ export class Activation {
     this.aliases.set(name, value);
   }
 
-  finaAlias(name: string): string | undefined {
+  findAlias(name: string): string | undefined {
     return linq.find(this.aliases, name);
   }
 

@@ -9,6 +9,7 @@ import { MetadataFile } from '../amf/metadata-file';
 import { gitArtifact, gitUniqueIdPrefix, latestVersion } from '../constants';
 import { FileType } from '../fs/filesystem';
 import { i } from '../i18n';
+import { activateEspIdf, installEspIdf } from '../installers/espidf';
 import { InstallEvents } from '../interfaces/events';
 import { Registries } from '../registries/registries';
 import { Session } from '../session';
@@ -148,7 +149,7 @@ export class Artifact extends ArtifactBase {
 
 
       if (await this.isInstalled && !options.force) {
-        await this.loadActivationSettings(activation);
+        await this.loadActivationSettings(activation, events);
         return false;
       }
       installing = true;
@@ -176,7 +177,7 @@ export class Artifact extends ArtifactBase {
 
       // after we unpack it, write out the installed manifest
       await this.writeManifest();
-      await this.loadActivationSettings(activation);
+      await this.loadActivationSettings(activation, events);
       return true;
     } catch (err) {
       if (installing) {
@@ -232,7 +233,7 @@ export class Artifact extends ArtifactBase {
     return path.indexOf('*') !== -1 || path.indexOf('?') !== -1;
   }
 
-  async loadActivationSettings(activation: Activation) {
+  async loadActivationSettings(activation: Activation, events: Partial<InstallEvents>) {
     // construct paths (bin, lib, include, etc.)
     // construct tools
     // compose variables
@@ -306,6 +307,24 @@ export class Artifact extends ArtifactBase {
       for (const [key, value] of exportsBlock.aliases) {
         activation.addAlias(key, this.resolveBraces(value, true));
       }
+    }
+
+    // if espressif
+    console.log('TESTING FOR ESPRESSIF');
+    if (this.metadata.info.flags.has('espidf')) {
+      console.log('HAS ESPIDF FLAG');
+      console.log(this.targetLocation.toString());
+      // check for some file that espressif installs to see if it's installed.
+      // if not
+      // install
+      if (!await this.targetLocation.exists('.espressif')) {
+        console.log('INSTALLING');
+        await installEspIdf(events, this.targetLocation, activation);
+      }
+
+
+      // activate
+      await activateEspIdf(this.session, this.targetLocation, activation);
     }
   }
 

@@ -15,7 +15,8 @@ export async function installEspIdf(events: Partial<InstallEvents>, targetLocati
   // create the .espressif folder for the espressif installation
   await targetLocation.createDirectory('.espressif');
 
-  const pythonPath = activation.tools.get('PYTHON');
+  console.log('INSTALL ESPIDF METHOD');
+  const pythonPath = activation.findAlias('python');
   if (!pythonPath) {
     throw new Error(i`Python is not installed`);
   }
@@ -68,21 +69,14 @@ export async function installEspIdf(events: Partial<InstallEvents>, targetLocati
 }
 
 export async function activateEspIdf(session: Session, targetLocation: Uri, activation: Activation) {
-  const pythonPath = activation.tools.get('PYTHON');
+  console.log('ACTIVATE ESPIDF METHOD');
+
+  const pythonPath = activation.findAlias('python');
   if (!pythonPath) {
     throw new Error(i`Python is not installed`);
   }
 
   const directoryLocation = await isFilePath(targetLocation) ? targetLocation.fsPath : targetLocation.toString();
-
-  activation.environment.set('IDF_PATH', [directoryLocation]);
-  activation.environment.set('IDF_TOOLS_PATH', [`${directoryLocation}\\.espressif`]);
-  const paths = activation.paths.getOrDefault('PATH', []);
-  paths.push(targetLocation.join('components', 'esptool_py', 'esptool'));
-  paths.push(targetLocation.join('components', 'app_update'));
-  paths.push(targetLocation.join('components', 'espcoredump'));
-  paths.push(targetLocation.join('components', 'partition_table'));
-  paths.push(targetLocation.join('.espressif'));
 
   const activateIdf = await execute(pythonPath, [
     `${directoryLocation}/tools/idf_tools.py`,
@@ -96,14 +90,16 @@ export async function activateEspIdf(session: Session, targetLocation: Uri, acti
         const splitLine = line.split('=');
         if (splitLine[0]) {
           if (splitLine[0] !== 'PATH') {
-            activation.environment.set(splitLine[0].trim(), [splitLine[1].trim()]);
+            console.log({envVariable: splitLine[0].trim(), value: splitLine[1].trim()});
+            activation.addEnvironmentVariable(splitLine[0].trim(), [splitLine[1].trim()]);
           }
           else {
+            console.log('PATH test');
             const pathValues = splitLine[1].split(delimiter);
-            const paths = activation.paths.getOrDefault(splitLine[0].trim(), []);
             for (const path of pathValues) {
               if (path.trim() !== '%PATH%' && path.trim() !== '$PATH') {
-                paths.push(session.fileSystem.file(path));
+                console.log({envVariable: splitLine[0].trim(), value: splitLine[1].trim()});
+                activation.addPath(splitLine[0].trim(), session.fileSystem.file(path));
               }
             }
           }
@@ -117,15 +113,18 @@ export async function activateEspIdf(session: Session, targetLocation: Uri, acti
     return false;
   }
 
+  /*
+  activation.findAlias;
+  activation.addAlias('idf.py', `${activation.environment.get('IDF_PYTHON_ENV_PATH')}\\Scripts\\python.exe ${activation.environment.get('IDF_PATH')}\\tools\\idf.py`);
   activation.tools.set('idf.py', `${activation.environment.get('IDF_PYTHON_ENV_PATH')}\\Scripts\\python.exe ${activation.environment.get('IDF_PATH')}\\tools\\idf.py`);
   activation.tools.set('esptool.py', `${activation.environment.get('IDF_PYTHON_ENV_PATH')}\\Scripts\\python.exe ${activation.environment.get('IDF_PATH')}\\components\\esptool_py\\esptool\\esptool.py`);
   activation.tools.set('espefuse.py', `${activation.environment.get('IDF_PYTHON_ENV_PATH')}\\Scripts\\python.exe ${activation.environment.get('IDF_PATH')}\\components\\esptool_py\\esptool\\espefuse.py`);
   activation.tools.set('otatool.py', `${activation.environment.get('IDF_PYTHON_ENV_PATH')}\\Scripts\\python.exe ${activation.environment.get('IDF_PATH')}\\components\\app_update\\otatool.py`);
   activation.tools.set('parttool.py', `${activation.environment.get('IDF_PYTHON_ENV_PATH')}\\Scripts\\python.exe ${activation.environment.get('IDF_PATH')}\\components\\partition_table\\parttool.py`);
-
+  */
 
   // does this work? Or are there limitations to overriding system variables
-  activation.tools.set('PYTHON', `${activation.environment.get('IDF_PYTHON_ENV_PATH')}\\Scripts\\python.exe`);
+  // activation.tools.set('PYTHON', `${activation.environment.get('IDF_PYTHON_ENV_PATH')}\\Scripts\\python.exe`);
 
   return true;
 }

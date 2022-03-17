@@ -150,13 +150,3 @@ export async function installArtifacts(session: Session, artifacts: Iterable<Art
   }
   return [true, installed, activation];
 }
-
-export async function activateArtifacts(session: Session, artifacts: Iterable<Artifact>) {
-  const activation = new Activation(session);
-  for (const artifact of artifacts) {
-    if (await artifact.isInstalled) {
-      await artifact.loadActivationSettings(activation);
-    }
-  }
-  return activation;
-}
