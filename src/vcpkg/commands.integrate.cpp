@@ -93,13 +93,10 @@ namespace vcpkg::Commands::Integrate
                 else
                 {
                     auto line_before_bashcompinit = Strings::trim(StringView{first, bashcompinit});
-                    // check this is not commented out
-                    if (Strings::contains(line_before_bashcompinit, '#'))
-                    {
-                        continue;
-                    }
-                    // check that this is the first element after a && or the beginning
-                    if (line_before_bashcompinit.empty() || Strings::ends_with(line_before_bashcompinit, "&&"))
+                    // check this is not commented out,
+                    // and that it is either the first element after a && or the beginning
+                    if (!Strings::contains(line_before_bashcompinit, '#') &&
+                        (line_before_bashcompinit.empty() || Strings::ends_with(line_before_bashcompinit, "&&")))
                     {
                         res.has_bashcompinit = true;
                     }
