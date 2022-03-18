@@ -25,6 +25,8 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "unreachable code was reached",
   "ChecksUpdateVcpkg": "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.",
+  "CmakeTargetLinkLibraries": "    target_link_libraries(main PRIVATE {list})",
+  "CmakeTargetsExcluded": "    # note: {count} targets were omitted.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "EmptyLicenseExpression": "SPDX license expression was empty.",
   "ErrorIndividualPackagesUnsupported": "Error: In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.",
