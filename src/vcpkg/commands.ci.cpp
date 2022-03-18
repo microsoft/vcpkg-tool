@@ -11,6 +11,7 @@
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/build.h>
+#include <vcpkg/ci-baseline.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.ci.h>
 #include <vcpkg/dependencies.h>
@@ -76,19 +77,6 @@ namespace
 
     private:
         Path base_path;
-    };
-
-    enum class CiBaselineState
-    {
-        Skip,
-        Fail,
-    };
-
-    struct CiBaselineLine
-    {
-        std::string port_name;
-        std::string triplet_name;
-        CiBaselineState state;
     };
 
     std::vector<CiBaselineLine> parse_ci_baseline(View<std::string> lines)

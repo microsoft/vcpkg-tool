@@ -105,7 +105,7 @@ namespace vcpkg
             return nullptr;
         }
         size_t i = 1;
-        while (Parse::ParserBase::is_ascii_digit(s[i]))
+        while (ParserBase::is_ascii_digit(s[i]))
         {
             ++i;
         }
@@ -117,18 +117,18 @@ namespace vcpkg
     static const char* skip_prerelease_identifier(const char* const s)
     {
         auto cur = s;
-        while (Parse::ParserBase::is_ascii_digit(*cur))
+        while (ParserBase::is_ascii_digit(*cur))
         {
             ++cur;
         }
         const char ch = *cur;
-        if (Parse::ParserBase::is_alphadash(ch))
+        if (ParserBase::is_alphadash(ch))
         {
             // matched alpha identifier
             do
             {
                 ++cur;
-            } while (Parse::ParserBase::is_alphanumdash(*cur));
+            } while (ParserBase::is_alphanumdash(*cur));
             return cur;
         }
         if (*s == '0')
@@ -196,9 +196,9 @@ namespace vcpkg
         for (;;)
         {
             // Require non-empty identifier element
-            if (!Parse::ParserBase::is_alphanumdash(*cur)) return nullopt;
+            if (!ParserBase::is_alphanumdash(*cur)) return nullopt;
             ++cur;
-            while (Parse::ParserBase::is_alphanumdash(*cur))
+            while (ParserBase::is_alphanumdash(*cur))
             {
                 ++cur;
             }
@@ -316,16 +316,16 @@ namespace vcpkg
 
         if (str.size() < 10) return format_invalid_date_version(str);
 
-        bool valid = Parse::ParserBase::is_ascii_digit(str[0]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[1]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[2]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[3]);
+        bool valid = ParserBase::is_ascii_digit(str[0]);
+        valid |= ParserBase::is_ascii_digit(str[1]);
+        valid |= ParserBase::is_ascii_digit(str[2]);
+        valid |= ParserBase::is_ascii_digit(str[3]);
         valid |= str[4] != '-';
-        valid |= Parse::ParserBase::is_ascii_digit(str[5]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[6]);
+        valid |= ParserBase::is_ascii_digit(str[5]);
+        valid |= ParserBase::is_ascii_digit(str[6]);
         valid |= str[7] != '-';
-        valid |= Parse::ParserBase::is_ascii_digit(str[8]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[9]);
+        valid |= ParserBase::is_ascii_digit(str[8]);
+        valid |= ParserBase::is_ascii_digit(str[9]);
         if (!valid) return format_invalid_date_version(str);
         ret.version_string.assign(str.c_str(), 10);
 

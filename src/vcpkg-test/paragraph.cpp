@@ -7,7 +7,7 @@
 #include <vcpkg-test/util.h>
 
 namespace Strings = vcpkg::Strings;
-using vcpkg::Parse::Paragraph;
+using vcpkg::Paragraph;
 
 namespace
 {
@@ -18,7 +18,7 @@ namespace
         {
             pghs.emplace_back();
             for (auto&& kv : p)
-                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::Parse::TextRowCol{}));
+                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
         }
         return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));
     }
@@ -27,7 +27,7 @@ namespace
     {
         Paragraph pgh;
         for (auto&& kv : v)
-            pgh.emplace(kv.first, std::make_pair(kv.second, vcpkg::Parse::TextRowCol{}));
+            pgh.emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
 
         return vcpkg::BinaryParagraph(std::move(pgh));
     }

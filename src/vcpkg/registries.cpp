@@ -252,14 +252,14 @@ namespace
             Checks::exit_fail(li);
         }
 
-        const Parse::ParseExpected<SourceControlFile>& get_scf(const Path& path) const
+        const ParseExpected<SourceControlFile>& get_scf(const Path& path) const
         {
             return m_scfs.get_lazy(path, [this, &path]() { return Paragraphs::try_load_port(m_fs, path); });
         }
 
         const Filesystem& m_fs;
         const Path m_builtin_ports_directory;
-        Cache<Path, Parse::ParseExpected<SourceControlFile>> m_scfs;
+        Cache<Path, ParseExpected<SourceControlFile>> m_scfs;
     };
     constexpr StringLiteral BuiltinFilesRegistry::s_kind;
 

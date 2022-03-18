@@ -712,7 +712,7 @@ namespace vcpkg::Install
                 {
                     static auto cmakeify = [](std::string name) {
                         auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
-                        if (n.empty() || Parse::ParserBase::is_ascii_digit(n[0]))
+                        if (n.empty() || ParserBase::is_ascii_digit(n[0]))
                         {
                             n.insert(n.begin(), '_');
                         }

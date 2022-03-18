@@ -101,7 +101,7 @@ namespace vcpkg
 
     static bool is_package_name_char(char32_t ch)
     {
-        return Parse::ParserBase::is_lower_alpha(ch) || Parse::ParserBase::is_ascii_digit(ch) || ch == '-';
+        return ParserBase::is_lower_alpha(ch) || ParserBase::is_ascii_digit(ch) || ch == '-';
     }
 
     static bool is_feature_name_char(char32_t ch)
@@ -114,16 +114,15 @@ namespace vcpkg
 
     ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
     {
-        auto parser = Parse::ParserBase(input, "<unknown>");
+        auto parser = ParserBase(input, "<unknown>");
         auto maybe_pqs = parse_qualified_specifier(parser);
         if (!parser.at_eof()) parser.add_error("expected eof");
         if (auto e = parser.get_error()) return e->format();
         return std::move(maybe_pqs).value_or_exit(VCPKG_LINE_INFO);
     }
 
-    Optional<std::string> parse_feature_name(Parse::ParserBase& parser)
+    Optional<std::string> parse_feature_name(ParserBase& parser)
     {
-        using Parse::ParserBase;
         auto ret = parser.match_zero_or_more(is_feature_name_char).to_string();
         auto ch = parser.cur();
 
@@ -148,9 +147,8 @@ namespace vcpkg
         }
         return ret;
     }
-    Optional<std::string> parse_package_name(Parse::ParserBase& parser)
+    Optional<std::string> parse_package_name(ParserBase& parser)
     {
-        using Parse::ParserBase;
         auto ret = parser.match_zero_or_more(is_package_name_char).to_string();
         auto ch = parser.cur();
         if (ParserBase::is_upper_alpha(ch) || ch == '_')
@@ -166,9 +164,8 @@ namespace vcpkg
         return ret;
     }
 
-    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(Parse::ParserBase& parser)
+    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(ParserBase& parser)
     {
-        using Parse::ParserBase;
         ParsedQualifiedSpecifier ret;
         auto name = parse_package_name(parser);
         if (auto n = name.get())
@@ -209,7 +206,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    if (skipped_space.size() > 0 || Parse::ParserBase::is_lineend(parser.cur()))
+                    if (skipped_space.size() > 0 || ParserBase::is_lineend(parser.cur()))
                         parser.add_error("expected ',' or ']' in feature list");
                     else
                         parser.add_error("invalid character in feature name (must be lowercase, digits, '-', or '*')");
