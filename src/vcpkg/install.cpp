@@ -528,6 +528,7 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_WRITE_PACKAGES_CONFIG = "x-write-nuget-packages-config";
     static constexpr StringLiteral OPTION_MANIFEST_NO_DEFAULT_FEATURES = "x-no-default-features";
     static constexpr StringLiteral OPTION_MANIFEST_FEATURE = "x-feature";
+    static constexpr StringLiteral OPTION_HEAD_PORT = "x-head-port";
     static constexpr StringLiteral OPTION_PROHIBIT_BACKCOMPAT_FEATURES = "x-prohibit-backcompat-features";
     static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
@@ -564,8 +565,9 @@ namespace vcpkg::Install
          "binarycaching` for more information."},
     }};
 
-    static constexpr std::array<CommandMultiSetting, 1> INSTALL_MULTISETTINGS = {{
+    static constexpr std::array<CommandMultiSetting, 2> INSTALL_MULTISETTINGS = {{
         {OPTION_MANIFEST_FEATURE, "Additional feature from the top-level manifest to install (manifest mode)."},
+        {OPTION_HEAD_PORT, "Install the specified ports using the latest upstream sources."},
     }};
 
     static std::vector<std::string> get_all_port_names(const VcpkgPaths& paths)
@@ -837,6 +839,14 @@ namespace vcpkg::Install
                                                  ? Dependencies::UnsupportedPortAction::Warn
                                                  : Dependencies::UnsupportedPortAction::Error;
 
+        std::vector<std::string> head_version_ports;
+        auto head_version_ports_it = options.multisettings.find(OPTION_HEAD_PORT);
+        if (head_version_ports_it != options.multisettings.end())
+        {
+            head_version_ports.insert(
+                head_version_ports.end(), head_version_ports_it->second.begin(), head_version_ports_it->second.end());
+        }
+
         if (paths.manifest_mode_enabled())
         {
             bool failure = false;
@@ -1031,8 +1041,14 @@ namespace vcpkg::Install
             for (InstallPlanAction& action : install_plan.install_actions)
             {
                 action.build_options = install_plan_options;
-                action.build_options.use_head_version = Build::UseHeadVersion::NO;
                 action.build_options.editable = Build::Editable::NO;
+
+                action.build_options.use_head_version = Build::UseHeadVersion::NO;
+                if (action.spec.triplet() == default_triplet &&
+                    Util::Vectors::contains(head_version_ports, action.spec.name()))
+                {
+                    action.build_options.use_head_version = Build::UseHeadVersion::YES;
+                }
             }
 
             // If the manifest refers to itself, it will be added to the install plan.
@@ -1078,6 +1094,11 @@ namespace vcpkg::Install
             {
                 action.build_options.use_head_version = Build::UseHeadVersion::NO;
                 action.build_options.editable = Build::Editable::NO;
+            }
+
+            if (Util::Vectors::contains(head_version_ports, action.spec.name()))
+            {
+                action.build_options.use_head_version = Build::UseHeadVersion::YES;
             }
         }
 
