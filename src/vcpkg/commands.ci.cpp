@@ -125,9 +125,9 @@ namespace vcpkg::Commands::CI
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("ci x64-windows"),
-        1,
-        1,
+        create_example_string("ci --triplet=x64-windows"),
+        0,
+        0,
         {CI_SWITCHES, CI_SETTINGS},
         nullptr,
     };
@@ -460,7 +460,10 @@ namespace vcpkg::Commands::CI
         return result;
     }
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet, Triplet host_triplet)
+    void perform_and_exit(const VcpkgCmdArguments& args,
+                          const VcpkgPaths& paths,
+                          Triplet target_triplet,
+                          Triplet host_triplet)
     {
         vcpkg::print2(Color::warning,
                       "'vcpkg ci' is an internal command which will change incompatibly or be removed at any time.\n");
@@ -469,7 +472,6 @@ namespace vcpkg::Commands::CI
         const auto& settings = options.settings;
 
         BinaryCache binary_cache{args, paths};
-        Triplet target_triplet = Triplet::from_canonical_name(args.command_arguments[0]);
 
         ExclusionsMap exclusions_map;
         parse_exclusions(settings, OPTION_EXCLUDE, target_triplet, exclusions_map);
