@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/base/expected.h>
 
@@ -89,6 +90,8 @@ namespace vcpkg
 
     struct DotVersion
     {
+        DotVersion() { } // intentionally disable making this type an aggregate
+
         std::string original_string;
         std::string version_string;
         std::string prerelease_string;
@@ -103,15 +106,17 @@ namespace vcpkg
         friend bool operator>=(const DotVersion& lhs, const DotVersion& rhs) { return !(lhs < rhs); }
         friend bool operator<=(const DotVersion& lhs, const DotVersion& rhs) { return !(rhs < lhs); }
 
-        static ExpectedS<DotVersion> try_parse(const std::string& str, VersionScheme target_scheme);
-        static ExpectedS<DotVersion> try_parse_relaxed(const std::string& str);
-        static ExpectedS<DotVersion> try_parse_semver(const std::string& str);
+        static ExpectedL<DotVersion> try_parse(StringView str, VersionScheme target_scheme);
+        static ExpectedL<DotVersion> try_parse_relaxed(StringView str);
+        static ExpectedL<DotVersion> try_parse_semver(StringView str);
     };
 
     VerComp compare(const DotVersion& a, const DotVersion& b);
 
     struct DateVersion
     {
+        DateVersion() { } // intentionally disable making this type an aggregate
+
         std::string original_string;
         std::string version_string;
         std::vector<uint64_t> identifiers;
@@ -123,7 +128,7 @@ namespace vcpkg
         friend bool operator>=(const DateVersion& lhs, const DateVersion& rhs) { return !(lhs < rhs); }
         friend bool operator<=(const DateVersion& lhs, const DateVersion& rhs) { return !(rhs < lhs); }
 
-        static ExpectedS<DateVersion> try_parse(const std::string& str);
+        static ExpectedL<DateVersion> try_parse(StringView version);
     };
 
     VerComp compare(const DateVersion& a, const DateVersion& b);
@@ -133,6 +138,23 @@ namespace vcpkg
         None,
         Minimum
     };
+
+    // this is for version parsing that isn't in vcpkg ports
+    // stuff like tools, nuget, etc.
+    struct ParsedExternalVersion
+    {
+        StringView major;
+        StringView minor;
+        StringView patch;
+
+        void normalize();
+    };
+
+    StringView normalize_external_version_zeros(StringView sv);
+    // /(\d\d\d\d)-(\d\d)-(\d\d).*/
+    bool try_extract_external_date_version(ParsedExternalVersion& out, StringView version);
+    // /(\d+)(\.\d+|$)(\.\d+)?.*/
+    bool try_extract_external_dot_version(ParsedExternalVersion& out, StringView version);
 }
 
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionSpec);

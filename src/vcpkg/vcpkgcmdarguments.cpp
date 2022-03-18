@@ -189,7 +189,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            if (arg.byte_at_index(option.size()) == '=')
+            if (arg[option.size()] == '=')
             {
                 parser(arg.substr(option.size() + 1), option, place);
                 return TryParseArgumentResult::Found;

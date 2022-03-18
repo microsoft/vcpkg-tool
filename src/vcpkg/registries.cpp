@@ -880,7 +880,7 @@ namespace
 
     Path relative_path_to_versions(StringView port_name)
     {
-        char prefix[] = {port_name.byte_at_index(0), '-', '\0'};
+        char prefix[] = {port_name[0], '-', '\0'};
         return Path(prefix) / port_name.to_string() + ".json";
     }
 

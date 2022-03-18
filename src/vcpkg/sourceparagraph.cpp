@@ -579,10 +579,11 @@ namespace vcpkg
             if (has_ge_constraint)
             {
                 dep.constraint.type = VersionConstraintKind::Minimum;
-                auto h = dep.constraint.value.find('#');
+                const auto& constraint_value = dep.constraint.value;
+                auto h = constraint_value.find('#');
                 if (h != std::string::npos)
                 {
-                    auto opt = Strings::strto<int>(dep.constraint.value.c_str() + h + 1);
+                    auto opt = Strings::strto<int>(ZStringView{constraint_value}.substr(h + 1));
                     auto v = opt.get();
                     if (v && *v > 0)
                     {

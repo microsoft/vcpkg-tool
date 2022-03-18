@@ -1,6 +1,5 @@
 {
   "AddArtifactOnlyOne": "'{command_line}' can only add one artifact at a time.",
-  "AddFailedToWriteManifest": "Failed to write manifest file {path}: {error}",
   "AddFirstArgument": "The first argument to '{command_line}' must be 'artifact' or 'port'.\n",
   "AddPortRequiresManifest": "'{command_line}' requires an active manifest file.",
   "AddPortSucceded": "Succeeded in adding ports to vcpkg.json file.",
@@ -26,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "unreachable code was reached",
   "ChecksUpdateVcpkg": "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.",
+  "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "EmptyLicenseExpression": "SPDX license expression was empty.",
   "ErrorIndividualPackagesUnsupported": "Error: In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.",
   "ErrorInvalidClassicModeOption": "Error: The option --{option} is not supported in classic mode and no manifest was found.",
@@ -94,6 +94,9 @@
   "VcpkgHasCrashedDataBlob": "\nVersion={version}\nEXCEPTION='{error}'\nCMD=",
   "VcpkgInvalidCommand": "invalid command: {command_name}",
   "VcpkgSendMetricsButDisabled": "Warning: passed --sendmetrics, but metrics are disabled.",
+  "VersionInvalidDate": "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.",
+  "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
+  "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
   "VersionSpecMismatch": "error: Failed to load port because version specs did not match\n    Path: {path}\n    Expected: {expected_version}\n    Actual: {actual_version}",
   "WarningMessage": "warning: "
 }

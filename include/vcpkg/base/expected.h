@@ -72,6 +72,27 @@ namespace vcpkg
         std::error_code m_err;
     };
 
+    template<>
+    struct ErrorHolder<LocalizedString>
+    {
+        ErrorHolder() : m_is_error(false) { }
+        template<class U>
+        ErrorHolder(U&& err) : m_is_error(true), m_err(std::forward<U>(err))
+        {
+        }
+
+        bool has_error() const { return m_is_error; }
+
+        const LocalizedString& error() const { return m_err; }
+        LocalizedString& error() { return m_err; }
+
+        const std::string& to_string() const { return m_err.data(); }
+
+    private:
+        bool m_is_error;
+        LocalizedString m_err;
+    };
+
     struct ExpectedLeftTag
     {
     };
@@ -211,6 +232,17 @@ namespace vcpkg
             {
                 return ExpectedT<move_map_t<F>, S>{std::move(m_s)};
             }
+        }
+
+        template<class F>
+        ExpectedT& replace_error(F&& specific_error_generator)
+        {
+            if (m_s.has_error())
+            {
+                m_s.error() = std::forward<F>(specific_error_generator)();
+            }
+
+            return *this;
         }
 
         template<class F, class... Args>

@@ -10,6 +10,33 @@
     <Disp Icon="Expand" Expand="true" Disp="true" LocTbl="false" />
     <Item ItemId=";Strings" ItemType="0" PsrId="306" Leaf="false">
       <Disp Icon="Str" Disp="true" LocTbl="false" />
+      <Item ItemId=";AddArtifactOnlyOne" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA['{command_line}' can only add one artifact at a time.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{command_line}“ kann jeweils nur ein Artefakt auf einmal hinzufügen.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddFirstArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Das erste Argument für „{command_line}“ muss „artifact“ oder „port“ sein.]A;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddPortRequiresManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA['{command_line}' requires an active manifest file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{command_line}“ erfordert eine aktive Manifestdatei.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AddPortSucceded" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Succeeded in adding ports to vcpkg.json file.]]></Val>
@@ -23,7 +50,7 @@
         <Str Cat="Text">
           <Val><![CDATA[Error: triplet expressions are not allowed here. You may want to change `{package_name}:{triplet}` to `{package_name}` instead.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler: Tripelausdrücke sind hier nicht zulässig. Erwägen Sie, „{package_name}:{triplet}“ in „{package_name}“ zu ändern.]]></Val>
+            <Val><![CDATA[Fehler: Tripelausdrücke sind hier nicht zulässig. Ziehen Sie in Erwägung, "{package_name}:{triplet}" in "{package_name}" zu ändern.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -59,7 +86,7 @@
         <Str Cat="Text">
           <Val><![CDATA[aws failed to download with exit code: {exit_code}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[AWS konnte nicht herunterladen, Exitcode: {exit_code}]]></Val>
+            <Val><![CDATA[Konnte nicht von AWS heruntergeladen werden, Exitcode: {exit_code}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -68,7 +95,7 @@
         <Str Cat="Text">
           <Val><![CDATA[Restored {count} packages from AWS servers in {elapsed}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{count} Pakete von AWS-Servern wurden in {elapsed} wiederhergestellt.]]></Val>
+            <Val><![CDATA[{count} Pakete wurden von AWS-Servern in {elapsed} wiederhergestellt.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -181,6 +208,48 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ChecksFailedCheck" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg has crashed; no additional details are available.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„vcpkg“ ist abgestürzt; es sind keine weiteren Details verfügbar.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ChecksLineInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{vcpkg_line_info}: ]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ChecksUnreachableCode" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unreachable code was reached]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nicht erreichbarer Code wurde erreicht.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ChecksUpdateVcpkg" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Das Aktualisieren von vcpkg durch erneutes Ausführen von „bootstrap-vcpkg“ kann diesen Fehler möglicherweise beheben.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Die NuGet-ID und die Version konnten nicht aus dem Dateinamen abgeleitet werden: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";EmptyLicenseExpression" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[SPDX license expression was empty.]]></Val>
@@ -266,7 +335,7 @@
         <Str Cat="Text">
           <Val><![CDATA[    with toolset version {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[    mit der Toolsetversion {version}]]></Val>
+            <Val><![CDATA[    mit Toolsetversion {version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -302,7 +371,7 @@
         <Str Cat="Text">
           <Val><![CDATA[Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.]A;Define 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler: im Tripel {triplet}: Die Verwendung der Entwickleraufforderung von Visual Studio wird auf Nicht-Windows-Hosts nicht unterstützt.]A;Definieren Sie „VCPKG_CMAKE_SYSTEM_NAME“ oder „VCPKG_CHAINLOAD_TOOLCHAIN_FILE“ in der Tripeldatei.]]></Val>
+            <Val><![CDATA[Fehler: im Tripel {triplet}: Die Verwendung der Entwickleraufforderung von Visual Studio wird auf Nicht-Windows-Hosts nicht unterstützt.]A;Definieren Sie in der Tripeldatei 'VCPKG_CMAKE_SYSTEM_NAME' oder 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE'.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -371,7 +440,7 @@
         <Str Cat="Text">
           <Val><![CDATA[Cycle detected within graph at {package_name}:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Zyklus innerhalb des Diagramms erkannt bei {package_name}:]]></Val>
+            <Val><![CDATA[Zyklische Abhängigkeit im Graphen erkannt bei {package_name}:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -379,6 +448,15 @@
       <Item ItemId=";GraphCycleDetectedElement" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[    {package_name}]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HashFileFailureToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to read file '{path}' for hashing: {error}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Fehler beim Lesen der Datei „{path}“ für Hashing: {error}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -396,6 +474,24 @@
           <Val><![CDATA[error: Platform qualifier is not allowed in this context]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Fehler: Der Plattformqualifizierer ist in diesem Kontext nicht zulässig.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InternalErrorMessage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[internal error: ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Interner Fehler: ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InternalErrorMessageContact" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Geben Sie unter „https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug“ das Problem mit detaillierten Schritten an, um das Problem zu reproduzieren.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -553,6 +649,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MsiexecFailedToExtract" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[msiexec-Fehler beim Extrahieren von „{path}“ mit Start- oder Exitcode {exit_code} und Meldung:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoLocalizationForMessages" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No localization for the following messages:]]></Val>
@@ -562,11 +667,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoteMessage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[note: ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hinweis: ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ProcessorArchitectureMalformed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler beim Analysieren von %PROCESSOR_ARCHITECTURE% ({arch}) als eine gültige CPU-Architektur.]]></Val>
+            <Val><![CDATA[%PROCESSOR_ARCHITECTURE% ({arch}) konnte nicht als gültige CPU-Architektur geparst werden.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -584,7 +698,7 @@
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. Falling back to %PROCESSOR_ARCHITECTURE%.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler beim Analysieren von %PROCESSOR_ARCHITEW6432% ({arch}) als eine gültige CPU-Architektur. Fallback auf %PROCESSOR_ARCHITECTURE% wird durchgeführt.]]></Val>
+            <Val><![CDATA[%PROCESSOR_ARCHITEW6432% ({arch}) konnte nicht als gültige CPU-Architektur geparst werden. Fallback auf %PROCESSOR_ARCHITECTURE% wird durchgeführt.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -629,7 +743,7 @@
         <Str Cat="Text">
           <Val><![CDATA[Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler: VCPKG_CMAKE_SYSTEM_NAME „{system_name}“ konnte keiner vcvarsall-Plattform zugeordnet werden. Unterstützte Systemnamen sind „,“, „Windows“ und „WindowsStore“.]]></Val>
+            <Val><![CDATA[Fehler: VCPKG_CMAKE_SYSTEM_NAME '{system_name}' konnte keiner vcvarsall-Plattform zugeordnet werden. Unterstützte Systemnamen sind '', 'Windows' and 'WindowsStore'.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -648,6 +762,15 @@
           <Val><![CDATA[Using manifest file at {path}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Die Manifestdatei unter {path} wird verwendet.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Utf8DecoderDereferencedAtEof" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[dereferenced Utf8Decoder at the end of a string.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dereferenzierter Utf8Decoder am Ende einer Zeichenfolge.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -683,7 +806,7 @@
         <Str Cat="Text">
           <Val><![CDATA[Error: Could not locate a manifest (vcpkg.json) above the current working directory.]A;This vcpkg distribution does not have a classic mode instance.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler: Es wurde kein Manifest (vcpkg.json) oberhalb des aktuellen Arbeitsverzeichnisses gefunden.]A;Diese vcpkg-Verteilung verfügt nicht über eine Instanz im klassischen Modus.]]></Val>
+            <Val><![CDATA[Fehler: Es wurde kein Manifest (vcpkg.json) oberhalb des aktuellen Arbeitsverzeichnisses gefunden.]A;Diese vcpkg-Installation verfügt nicht über eine Instanz im klassischen Modus.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -727,11 +850,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionInvalidDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{version}“ ist keine gültige Datumsversion. Datumsangaben müssen dem Format „JJJJ-MM-TT“ entsprechen, und Disambiguatoren müssen durch Punkte getrennte positive ganzzahlige Werte ohne führende Nullen sein.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionInvalidRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{version}“ ist keine gültige gelockerte Version (SemVer mit beliebiger numerischer Elementanzahl).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionInvalidSemver" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[`{version}` is not a valid semantic version, consult <https://semver.org>.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{version}“ ist keine gültige semantische Version. Weitere Informationen finden Sie unter <https://semver.org>.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionSpecMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error: Failed to load port because version specs did not match]A;    Path: {path}]A;    Expected: {expected_version}]A;    Actual: {actual_version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler: Fehler beim Laden des Ports, weil die Versionsspezifikationen nicht übereinstimmen]A;    Pfad: {path}]A;    Erwartet: {expected_version}]A;    Tatsächlich: {actual_version}]]></Val>
+            <Val><![CDATA[Fehler: Fehler: Fehler beim Laden des Ports, weil Versionsspezifikationen nicht übereinstimmen]A;    Pfad: {path}]A;    Erwartet: {expected_version}]A;    Tatsächlich: {actual_version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

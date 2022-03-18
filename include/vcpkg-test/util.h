@@ -8,6 +8,7 @@
 
 #include <vcpkg/statusparagraph.h>
 
+#include <iomanip>
 #include <memory>
 
 #define CHECK_EC(ec)                                                                                                   \
@@ -54,6 +55,14 @@ namespace Catch
     {
         static const std::string convert(const vcpkg::LocalizedString& value) { return "LL\"" + value.data() + "\""; }
     };
+}
+
+namespace vcpkg
+{
+    inline std::ostream& operator<<(std::ostream& os, const LocalizedString& value)
+    {
+        return os << "LL" << std::quoted(value.data());
+    }
 }
 
 namespace vcpkg::Test
