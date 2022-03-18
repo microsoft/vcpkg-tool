@@ -1103,17 +1103,28 @@ namespace
         std::vector<std::string> m_write_prefixes;
     };
 
-    bool awscli_stat(const VcpkgPaths& paths, const std::string& url)
+    bool awscli_stat(const VcpkgPaths& paths, const std::string& url, const bool no_sign_request)
     {
-        const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("ls").string_arg(url);
+        auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("ls").string_arg(url);
+        if (no_sign_request)
+        {
+            cmd.string_arg("--no-sign-request");
+        }
         return cmd_execute(cmd) == 0;
     }
 
-    bool awscli_upload_file(const VcpkgPaths& paths, const std::string& aws_object, const Path& archive)
+    bool awscli_upload_file(const VcpkgPaths& paths,
+                            const std::string& aws_object,
+                            const Path& archive,
+                            const bool no_sign_request)
     {
-        const auto cmd =
+        auto cmd =
             Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("cp").string_arg(archive).string_arg(
                 aws_object);
+        if (no_sign_request)
+        {
+            cmd.string_arg("--no-sign-request");
+        }
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
@@ -1125,13 +1136,20 @@ namespace
         return false;
     }
 
-    bool awscli_download_file(const VcpkgPaths& paths, const std::string& aws_object, const Path& archive)
+    bool awscli_download_file(const VcpkgPaths& paths,
+                              const std::string& aws_object,
+                              const Path& archive,
+                              const bool no_sign_request)
     {
-        const auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
-                             .string_arg("s3")
-                             .string_arg("cp")
-                             .string_arg(aws_object)
-                             .string_arg(archive);
+        auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
+                       .string_arg("s3")
+                       .string_arg("cp")
+                       .string_arg(aws_object)
+                       .string_arg(archive);
+        if (no_sign_request)
+        {
+            cmd.string_arg("--no-sign-request");
+        }
         const auto out = cmd_execute_and_capture_output(cmd);
         if (out.exit_code == 0)
         {
@@ -1147,8 +1165,12 @@ namespace
     {
         AwsBinaryProvider(const VcpkgPaths& paths,
                           std::vector<std::string>&& read_prefixes,
-                          std::vector<std::string>&& write_prefixes)
-            : paths(paths), m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
+                          std::vector<std::string>&& write_prefixes,
+                          const bool no_sign_request)
+            : paths(paths)
+            , m_read_prefixes(std::move(read_prefixes))
+            , m_write_prefixes(std::move(write_prefixes))
+            , m_no_sign_request(no_sign_request)
         {
         }
 
@@ -1194,7 +1216,7 @@ namespace
                 {
                     auto&& action = actions[url_indices[idx]];
                     auto&& url_path = url_paths[idx];
-                    if (!awscli_download_file(paths, url_path.first, url_path.second)) continue;
+                    if (!awscli_download_file(paths, url_path.first, url_path.second, m_no_sign_request)) continue;
                     jobs.push_back(decompress_zip_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
                     idxs.push_back(idx);
                 }
@@ -1243,7 +1265,7 @@ namespace
             size_t upload_count = 0;
             for (const auto& prefix : m_write_prefixes)
             {
-                if (awscli_upload_file(paths, make_aws_path(prefix, abi), tmp_archive_path))
+                if (awscli_upload_file(paths, make_aws_path(prefix, abi), tmp_archive_path, m_no_sign_request))
                 {
                     ++upload_count;
                 }
@@ -1266,7 +1288,7 @@ namespace
                         continue;
                     }
 
-                    if (awscli_stat(paths, make_aws_path(prefix, abi)))
+                    if (awscli_stat(paths, make_aws_path(prefix, abi), m_no_sign_request))
                     {
                         actions_availability[idx] = CacheAvailability::available;
                         cache_status[idx]->mark_available(this);
@@ -1289,6 +1311,8 @@ namespace
 
         std::vector<std::string> m_read_prefixes;
         std::vector<std::string> m_write_prefixes;
+
+        bool m_no_sign_request;
     };
 }
 
@@ -1545,6 +1569,7 @@ namespace vcpkg
         gcs_write_prefixes.clear();
         aws_read_prefixes.clear();
         aws_write_prefixes.clear();
+        aws_no_sign_request = false;
         sources_to_read.clear();
         sources_to_write.clear();
         configs_to_read.clear();
@@ -1852,6 +1877,26 @@ namespace
 
                 handle_readwrite(state->aws_read_prefixes, state->aws_write_prefixes, std::move(p), segments, 2);
             }
+            else if (segments[0].second == "x-aws-config")
+            {
+                if (segments.size() != 2)
+                {
+                    return add_error(
+                        "expected arguments: binary config 'x-aws-config' expects a single string argument");
+                }
+
+                auto no_sign_request = false;
+                if (segments[1].second == "no-sign-request")
+                {
+                    no_sign_request = true;
+                }
+                else
+                {
+                    return add_error("unexpected argument", segments[1].first);
+                }
+
+                state->aws_no_sign_request = no_sign_request;
+            }
             else
             {
                 return add_error(
@@ -2122,7 +2167,7 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
     {
         providers.push_back(std::make_unique<AwsBinaryProvider>(
-            paths, std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes)));
+            paths, std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes), s.aws_no_sign_request));
     }
 
     if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.azblob_templates_to_put.empty())
@@ -2364,6 +2409,11 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
                "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
                "Uses the aws CLI for uploads and downloads. Prefix should include s3:// scheme and be suffixed "
                "with a `/`.");
+    tbl.format(
+        "x-aws-config,<parameter>",
+        "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
+        "Adds an AWS configuration; currently supports only 'no-sign-request' parameter that is an equivalent to the "
+        "'--no-sign-request parameter of the AWS cli.");
     tbl.format("interactive", "Enables interactive credential management for some source types");
     tbl.blank();
     tbl.text("The `<rw>` optional parameter for certain strings controls whether they will be consulted for "
