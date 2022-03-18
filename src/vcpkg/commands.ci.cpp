@@ -2,6 +2,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/lockguarded.h>
+#include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -78,40 +79,6 @@ namespace
     private:
         Path base_path;
     };
-
-    std::vector<CiBaselineLine> parse_ci_baseline(View<std::string> lines)
-    {
-        std::vector<CiBaselineLine> result;
-        for (auto& line : lines)
-        {
-            if (line.empty() || line[0] == '#') continue;
-            CiBaselineLine parsed_line;
-
-            auto colon_loc = line.find(':');
-            Checks::check_exit(VCPKG_LINE_INFO, colon_loc != std::string::npos, "Line '%s' must contain a ':'", line);
-            parsed_line.port_name = Strings::trim(StringView{line.data(), line.data() + colon_loc}).to_string();
-
-            auto equal_loc = line.find('=', colon_loc + 1);
-            Checks::check_exit(VCPKG_LINE_INFO, equal_loc != std::string::npos, "Line '%s' must contain a '='", line);
-            parsed_line.triplet_name =
-                Strings::trim(StringView{line.data() + colon_loc + 1, line.data() + equal_loc}).to_string();
-
-            auto baseline_value = Strings::trim(StringView{line.data() + equal_loc + 1, line.data() + line.size()});
-            if (baseline_value == "fail")
-            {
-                parsed_line.state = CiBaselineState::Fail;
-            }
-            else if (baseline_value == "skip")
-            {
-                parsed_line.state = CiBaselineState::Skip;
-            }
-            else
-            {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown value '%s'", baseline_value);
-            }
-        }
-        return result;
-    }
 }
 
 namespace vcpkg::Commands::CI
@@ -345,28 +312,6 @@ namespace vcpkg::Commands::CI
         return supports_expression.evaluate(context);
     }
 
-    struct ExclusionPredicate
-    {
-        std::set<std::string> exclusions;
-        std::set<std::string> host_exclusions;
-        Triplet target_triplet;
-        Triplet host_triplet;
-
-        bool operator()(const PackageSpec& spec) const
-        {
-            bool excluded = false;
-            if (spec.triplet() == host_triplet)
-            {
-                excluded = excluded || Util::Sets::contains(host_exclusions, spec.name());
-            }
-            if (spec.triplet() == target_triplet)
-            {
-                excluded = excluded || Util::Sets::contains(exclusions, spec.name());
-            }
-            return excluded;
-        }
-    };
-
     static Dependencies::ActionPlan compute_full_plan(const VcpkgPaths& paths,
                                                       const PortFileProvider::PortFileProvider& provider,
                                                       const CMakeVars::CMakeVarProvider& var_provider,
@@ -397,7 +342,7 @@ namespace vcpkg::Commands::CI
     }
 
     static std::unique_ptr<UnknownCIPortsResults> compute_action_statuses(
-        const ExclusionPredicate& is_excluded,
+        ExclusionPredicate is_excluded,
         const CMakeVars::CMakeVarProvider& var_provider,
         const std::vector<CacheAvailability>& precheck_results,
         const Dependencies::ActionPlan& action_plan)
@@ -486,19 +431,16 @@ namespace vcpkg::Commands::CI
         });
     }
 
-    static std::set<std::string> parse_exclusions(const std::unordered_map<std::string, std::string>& settings,
-                                                  StringLiteral opt)
+    static void parse_exclusions(const std::unordered_map<std::string, std::string>& settings,
+                                 StringLiteral opt,
+                                 Triplet triplet,
+                                 ExclusionsMap& exclusions_map)
     {
-        std::set<std::string> exclusions_set;
         auto it_exclusions = settings.find(opt);
         if (it_exclusions != settings.end())
         {
-            auto exclusions = Strings::split(it_exclusions->second, ',');
-            exclusions_set.insert(std::make_move_iterator(exclusions.begin()),
-                                  std::make_move_iterator(exclusions.end()));
+            exclusions_map.insert(triplet, SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
         }
-
-        return exclusions_set;
     }
 
     static Optional<int> parse_skipped_cascade_count(const std::unordered_map<std::string, std::string>& settings)
@@ -529,42 +471,16 @@ namespace vcpkg::Commands::CI
         BinaryCache binary_cache{args, paths};
         Triplet target_triplet = Triplet::from_canonical_name(args.command_arguments[0]);
 
-        auto exclusions = parse_exclusions(settings, OPTION_EXCLUDE);
-        auto host_exclusions = parse_exclusions(settings, OPTION_HOST_EXCLUDE);
+        ExclusionsMap exclusions_map;
+        parse_exclusions(settings, OPTION_EXCLUDE, target_triplet, exclusions_map);
+        parse_exclusions(settings, OPTION_HOST_EXCLUDE, host_triplet, exclusions_map);
         auto baseline_iter = settings.find(OPTION_CI_BASELINE);
         const bool allow_unexpected_passing = Util::Sets::contains(options.switches, OPTION_ALLOW_UNEXPECTED_PASSING);
-        std::set<PackageSpec> expected_failures;
+        SortedVector<PackageSpec> expected_failures;
         if (baseline_iter != settings.end())
         {
-            auto baseline =
-                parse_ci_baseline(paths.get_filesystem().read_lines(baseline_iter->second, VCPKG_LINE_INFO));
-            auto target_triplet_string = args.command_arguments[0];
-            auto host_triplet_string = host_triplet.canonical_name();
-            for (auto& line : baseline)
-            {
-                if (line.triplet_name == target_triplet_string)
-                {
-                    if (line.state == CiBaselineState::Skip)
-                    {
-                        exclusions.insert(line.port_name);
-                    }
-                    else if (line.state == CiBaselineState::Fail)
-                    {
-                        expected_failures.emplace(line.port_name, target_triplet);
-                    }
-                }
-                else if (line.triplet_name == host_triplet_string)
-                {
-                    if (line.state == CiBaselineState::Skip)
-                    {
-                        host_exclusions.insert(line.port_name);
-                    }
-                    else if (line.state == CiBaselineState::Fail)
-                    {
-                        expected_failures.emplace(line.port_name, host_triplet);
-                    }
-                }
-            }
+            expected_failures = parse_and_apply_ci_baseline(
+                paths.get_filesystem().read_lines(baseline_iter->second, VCPKG_LINE_INFO), exclusions_map);
         }
         else
         {
@@ -575,12 +491,7 @@ namespace vcpkg::Commands::CI
                                                " can only be used if a ci baseline is provided via --",
                                                OPTION_CI_BASELINE));
         }
-        ExclusionPredicate is_excluded{
-            exclusions,
-            host_exclusions,
-            target_triplet,
-            host_triplet,
-        };
+
         auto skipped_cascade_count = parse_skipped_cascade_count(settings);
 
         const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
@@ -611,8 +522,6 @@ namespace vcpkg::Commands::CI
 
         std::vector<TripletAndSummary> results;
         auto timer = ElapsedTimer::create_started();
-
-        Input::check_triplet(target_triplet, paths);
 
         xunitTestResults.push_collection(target_triplet.canonical_name());
 
@@ -649,7 +558,8 @@ namespace vcpkg::Commands::CI
 
         auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
-        auto split_specs = compute_action_statuses(is_excluded, var_provider, precheck_results, action_plan);
+        auto split_specs =
+            compute_action_statuses(ExclusionPredicate{&exclusions_map}, var_provider, precheck_results, action_plan);
 
         {
             std::string msg;
@@ -779,7 +689,7 @@ namespace vcpkg::Commands::CI
                         case Build::BuildResult::BUILD_FAILED:
                         case Build::BuildResult::POST_BUILD_CHECKS_FAILED:
                         case Build::BuildResult::FILE_CONFLICTS:
-                            if (expected_failures.find(port_result.spec) == expected_failures.end())
+                            if (!expected_failures.contains(port_result.spec))
                             {
                                 std::cerr
                                     << "    REGRESSION: " << port_result.spec.to_string() << " failed with "
@@ -789,8 +699,7 @@ namespace vcpkg::Commands::CI
                             }
                             break;
                         case Build::BuildResult::SUCCEEDED:
-                            if (!allow_unexpected_passing &&
-                                expected_failures.find(port_result.spec) != expected_failures.end())
+                            if (!allow_unexpected_passing && expected_failures.contains(port_result.spec))
                             {
                                 std::cerr << "    PASSING, REMOVE FROM FAIL LIST: " << port_result.spec.to_string()
                                           << " (" << baseline_iter->second << ")" << std::endl;
