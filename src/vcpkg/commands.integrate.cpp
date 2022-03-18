@@ -23,13 +23,12 @@ namespace vcpkg::Commands::Integrate
         const auto last = contents.end();
         for (;;)
         {
-            first = std::search(first, last, VERSION_START.begin(), VERSION_START.end());
+            first = Util::search_and_skip(first, last, VERSION_START);
             if (first == last)
             {
                 break;
             }
-            first += VERSION_START.size();
-            auto version_end = std::search(first, last, VERSION_END.begin(), VERSION_END.end());
+            auto version_end = Util::search(first, last, VERSION_END);
             if (version_end == last)
             {
                 break;
@@ -54,7 +53,7 @@ namespace vcpkg::Commands::Integrate
             const auto line = Strings::trim(StringView{first, end_of_line});
             if (Strings::starts_with(line, "source") && Strings::ends_with(line, "scripts/vcpkg_completion.bash"))
             {
-                matches.emplace_back(line.begin(), line.end());
+                matches.emplace_back(line.data(), line.size());
             }
             first = end_of_line == last ? last : end_of_line + 1;
         }
@@ -76,7 +75,7 @@ namespace vcpkg::Commands::Integrate
 
             if (Strings::starts_with(line, "source") && Strings::ends_with(line, "scripts/vcpkg_completion.zsh"))
             {
-                res.source_completion_lines.emplace_back(line.begin(), line.end());
+                res.source_completion_lines.emplace_back(line.data(), line.size());
             }
             else if (bashcompinit != line.end())
             {

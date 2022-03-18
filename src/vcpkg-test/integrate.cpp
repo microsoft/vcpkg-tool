@@ -51,6 +51,10 @@ TEST_CASE ("find_targets_file_version", "[integrate]")
     REQUIRE(res.has_value());
     CHECK(*res.get() == 1);
 
+    res = Integrate::find_targets_file_version("<!-- version unexpected --> <!-- version 1 -->");
+    REQUIRE(res.has_value());
+    CHECK(*res.get() == 1);
+
     res = Integrate::find_targets_file_version("<!-- ver 1 -->");
     CHECK_FALSE(res.has_value());
 }

@@ -24,14 +24,25 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <iterator>
+
 namespace
 {
     using namespace vcpkg;
     DECLARE_AND_REGISTER_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
     DECLARE_AND_REGISTER_MESSAGE(ResultsLine,
                                  (msg::spec, msg::build_result, msg::elapsed),
-                                 "A single instalation result.",
+                                 "{Locked}",
                                  "    {spec}: {build_result}: {elapsed}");
+
+    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetsExcluded,
+                                 (msg::count),
+                                 "keep the indentation and the `#` mark",
+                                 "    # note: {count} targets were omitted.");
+    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetLinkLibraries,
+                                 (msg::list),
+                                 "{Locked}",
+                                 "    target_link_libraries(main PRIVATE {list})");
 }
 
 namespace vcpkg::Install
@@ -621,16 +632,20 @@ namespace vcpkg::Install
         }
     }
 
-    static constexpr StringLiteral ADD_LIBRARY_CALL = "add_library(";
-
-    static const char* find_add_library(const char* real_first, const char* first, const char* last)
+    static const char* find_skip_add_library(const char* real_first, const char* first, const char* last)
     {
+        static constexpr StringLiteral ADD_LIBRARY_CALL = "add_library(";
+
         for (;;)
         {
-            first = std::search(first, last, ADD_LIBRARY_CALL.begin(), ADD_LIBRARY_CALL.end());
-            if (first == real_first || first == last || !Parse::ParserBase::is_word_char(*(first - 1)))
+            first = Util::search(first, last, ADD_LIBRARY_CALL);
+            if (first == last)
             {
                 return first;
+            }
+            if (first == real_first || !Parse::ParserBase::is_word_char(*(first - 1)))
+            {
+                return first + ADD_LIBRARY_CALL.size();
             }
             ++first;
         }
@@ -649,12 +664,11 @@ namespace vcpkg::Install
         std::vector<std::string> res;
         for (;;)
         {
-            first = find_add_library(real_first, first, last);
+            first = find_skip_add_library(real_first, first, last);
             if (first == last)
             {
                 return res;
             }
-            first = first + ADD_LIBRARY_CALL.size();
             auto start_of_library_name = std::find_if_not(first, last, Parse::ParserBase::is_whitespace);
             auto end_of_library_name = std::find_if_not(start_of_library_name, last, is_library_name_char);
             if (end_of_library_name == start_of_library_name)
@@ -708,7 +722,9 @@ namespace vcpkg::Install
                         if (!targets.empty())
                         {
                             auto& all_targets = library_targets[find_package_name];
-                            all_targets.insert(all_targets.end(), targets.begin(), targets.end());
+                            all_targets.insert(all_targets.end(),
+                                               std::make_move_iterator(targets.begin()),
+                                               std::make_move_iterator(targets.end()));
                         }
                     }
 
@@ -785,20 +801,17 @@ namespace vcpkg::Install
                     });
                     targets.erase(std::unique(targets.begin(), targets.end()), targets.end());
 
-                    if (targets.size() <= 4)
-                    {
-                        Strings::append(
-                            msg, "    target_link_libraries(main PRIVATE ", Strings::join(" ", targets), ")\n\n");
-                    }
-                    else
+                    if (targets.size() > 4)
                     {
                         auto omitted = targets.size() - 4;
                         library_target_pair.second.erase(targets.begin() + 4, targets.end());
-                        msg += Strings::format("    # Note: %zd target(s) were omitted.\n"
-                                               "    target_link_libraries(main PRIVATE %s)\n\n",
-                                               omitted,
-                                               Strings::join(" ", targets));
+                        msg.append(
+                            msg::format(msgCmakeTargetsExcluded, msg::count = omitted).appendnl().extract_data());
                     }
+                    msg.append(msg::format(msgCmakeTargetLinkLibraries, msg::list = Strings::join(" ", targets))
+                                   .appendnl()
+                                   .appendnl()
+                                   .extract_data());
                 }
                 ret.message = std::move(msg);
             }
