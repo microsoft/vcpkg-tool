@@ -298,4 +298,16 @@ namespace vcpkg::msg
                     (msg::option),
                     "",
                     "error: cannot specify both --no-{option} and --{option}.");
+
+    template<class Message, class... Ts>
+    void print_warning(Message m, Ts... args)
+    {
+        print(Color::warning, format(msgWarningMessage).append(format(m, args...).appendnl()));
+    }
+
+    template<class Message, class... Ts>
+    void print_error(Message m, Ts... args)
+    {
+        print(Color::error, format(msgErrorMessage).append(format(m, args...).appendnl()));
+    }
 }
