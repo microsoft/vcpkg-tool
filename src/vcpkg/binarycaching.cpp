@@ -90,7 +90,7 @@ namespace
             std::string segment;
             for (;;)
             {
-                auto n = match_until([](char32_t ch) { return ch == ',' || ch == '`' || ch == ';'; });
+                auto n = match_while([](char32_t ch) { return ch != ',' && ch != '`' && ch != ';'; });
                 Strings::append(segment, n);
                 auto ch = cur();
                 if (ch == Unicode::end_of_file || ch == ',' || ch == ';')

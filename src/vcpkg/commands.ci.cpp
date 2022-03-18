@@ -481,8 +481,13 @@ namespace vcpkg::Commands::CI
         SortedVector<PackageSpec> expected_failures;
         if (baseline_iter != settings.end())
         {
-            expected_failures = parse_and_apply_ci_baseline(
-                paths.get_filesystem().read_lines(baseline_iter->second, VCPKG_LINE_INFO), exclusions_map);
+            const auto& ci_baseline_file_name = baseline_iter->second;
+            const auto ci_baseline_file_contents =
+                paths.get_filesystem().read_contents(ci_baseline_file_name, VCPKG_LINE_INFO);
+            ParseMessages ci_parse_messages;
+            const auto lines = parse_ci_baseline(ci_baseline_file_contents, ci_baseline_file_name, ci_parse_messages);
+            ci_parse_messages.exit_if_errors_or_warnings(ci_baseline_file_name);
+            expected_failures = parse_and_apply_ci_baseline(lines, exclusions_map);
         }
         else
         {

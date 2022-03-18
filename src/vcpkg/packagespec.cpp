@@ -99,19 +99,6 @@ namespace vcpkg
         return PackageSpec{name, t};
     }
 
-    static bool is_package_name_char(char32_t ch)
-    {
-        return ParserBase::is_lower_alpha(ch) || ParserBase::is_ascii_digit(ch) || ch == '-';
-    }
-
-    static bool is_feature_name_char(char32_t ch)
-    {
-        // TODO: we do not intend underscores to be valid, however there is currently a feature using them
-        // (libwebp[vwebp_sdl]).
-        // TODO: we need to rename this feature, then remove underscores from this list.
-        return is_package_name_char(ch) || ch == '_';
-    }
-
     ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
     {
         auto parser = ParserBase(input, "<unknown>");
@@ -123,7 +110,7 @@ namespace vcpkg
 
     Optional<std::string> parse_feature_name(ParserBase& parser)
     {
-        auto ret = parser.match_zero_or_more(is_feature_name_char).to_string();
+        auto ret = parser.match_while(ParserBase::is_feature_name_char).to_string();
         auto ch = parser.cur();
 
         // ignores the feature name vwebp_sdl as a back-compat thing
@@ -149,7 +136,7 @@ namespace vcpkg
     }
     Optional<std::string> parse_package_name(ParserBase& parser)
     {
-        auto ret = parser.match_zero_or_more(is_package_name_char).to_string();
+        auto ret = parser.match_while(ParserBase::is_package_name_char).to_string();
         auto ch = parser.cur();
         if (ParserBase::is_upper_alpha(ch) || ch == '_')
         {
@@ -218,7 +205,7 @@ namespace vcpkg
         if (ch == ':')
         {
             parser.next();
-            ret.triplet = parser.match_zero_or_more(is_package_name_char).to_string();
+            ret.triplet = parser.match_while(ParserBase::is_package_name_char).to_string();
             if (ret.triplet.get()->empty())
             {
                 parser.add_error("expected triplet name (must be lowercase, digits, '-')");

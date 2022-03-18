@@ -8,6 +8,16 @@
 
 using namespace vcpkg;
 
+namespace
+{
+    DECLARE_AND_REGISTER_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression,
+                                 (msg::value),
+                                 "Example of {value} is 'x64 & windows'",
+                                 "    on expression: {value}");
+}
+
 namespace vcpkg
 {
     static void advance_rowcol(char32_t ch, int& row, int& column)
@@ -37,21 +47,10 @@ namespace vcpkg
         return res;
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageLocation,
-                                 (msg::path, msg::row, msg::column),
-                                 "{Locked}",
-                                 "{path}:{row}:{column}: ");
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression,
-                                 (msg::value),
-                                 "Example of {value} is 'x64 & windows'",
-                                 "    on expression: {value}");
-
     LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
     {
-        LocalizedString res = msg::format(msgFormattedParseMessageLocation,
-                                          msg::path = origin,
-                                          msg::row = location.row,
-                                          msg::column = location.column);
+        LocalizedString res =
+            LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
         if (kind == MessageKind::Warning)
         {
             res.append(msg::format(msg::msgWarningMessage));
@@ -95,6 +94,23 @@ namespace vcpkg
 
     const std::string& ParseError::get_message() const { return this->message; }
 
+    void ParseMessages::exit_if_errors_or_warnings(StringView origin) const
+    {
+        for (const auto& warning : warnings)
+        {
+            msg::println(warning.format(origin, MessageKind::Warning));
+        }
+
+        if (error)
+        {
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, LocalizedString::from_raw(error->format()));
+        }
+
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               warnings.empty(),
+                               msg::format(msg::msgErrorMessage).append(msg::format(msgWarningsTreatedAsErrors)));
+    }
+
     ParserBase::ParserBase(StringView text, StringView origin, TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
@@ -103,6 +119,24 @@ namespace vcpkg
         , m_text(text)
         , m_origin(origin)
     {
+    }
+
+    StringView ParserBase::skip_whitespace() { return match_while(is_whitespace); }
+    StringView ParserBase::skip_tabs_spaces()
+    {
+        return match_while([](char32_t ch) { return ch == ' ' || ch == '\t'; });
+    }
+
+    void ParserBase::skip_to_eof() { m_it = m_it.end(); }
+    void ParserBase::skip_newline()
+    {
+        if (cur() == '\r') next();
+        if (cur() == '\n') next();
+    }
+    void ParserBase::skip_line()
+    {
+        match_while(is_not_lineend);
+        skip_newline();
     }
 
     char32_t ParserBase::next()

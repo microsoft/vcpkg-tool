@@ -65,6 +65,8 @@ namespace vcpkg
     {
         std::unique_ptr<ParseError> error;
         std::vector<ParseMessage> warnings;
+
+        void exit_if_errors_or_warnings(StringView origin) const;
     };
 
     struct ParserBase
@@ -77,6 +79,7 @@ namespace vcpkg
         static constexpr bool is_icase_alpha(char32_t ch) { return is_lower_alpha(ch) || is_upper_alpha(ch); }
         static constexpr bool is_ascii_digit(char32_t ch) { return ch >= '0' && ch <= '9'; }
         static constexpr bool is_lineend(char32_t ch) { return ch == '\r' || ch == '\n' || ch == Unicode::end_of_file; }
+        static constexpr bool is_not_lineend(char32_t ch) { return !is_lineend(ch); }
         static constexpr bool is_alphanum(char32_t ch) { return is_icase_alpha(ch) || is_ascii_digit(ch); }
         static constexpr bool is_alphadash(char32_t ch) { return is_icase_alpha(ch) || ch == '-'; }
         static constexpr bool is_alphanumdash(char32_t ch) { return is_alphanum(ch) || ch == '-'; }
@@ -87,39 +90,35 @@ namespace vcpkg
         }
         static constexpr bool is_word_char(char32_t ch) { return is_alphanum(ch) || ch == '_'; }
 
-        StringView skip_whitespace() { return match_zero_or_more(is_whitespace); }
-        StringView skip_tabs_spaces()
+        static constexpr bool is_package_name_char(char32_t ch)
         {
-            return match_zero_or_more([](char32_t ch) { return ch == ' ' || ch == '\t'; });
-        }
-        void skip_to_eof() { m_it = m_it.end(); }
-        void skip_newline()
-        {
-            if (cur() == '\r') next();
-            if (cur() == '\n') next();
-        }
-        void skip_line()
-        {
-            match_until(is_lineend);
-            skip_newline();
+            return is_lower_alpha(ch) || is_ascii_digit(ch) || ch == '-';
         }
 
+        static constexpr bool is_feature_name_char(char32_t ch)
+        {
+            // TODO: we do not intend underscores to be valid, however there is currently a feature using them
+            // (libwebp[vwebp_sdl]).
+            // TODO: we need to rename this feature, then remove underscores from this list.
+            return is_package_name_char(ch) || ch == '_';
+        }
+
+        StringView skip_whitespace();
+        StringView skip_tabs_spaces();
+        void skip_to_eof();
+        void skip_newline();
+        void skip_line();
+
         template<class Pred>
-        StringView match_zero_or_more(Pred p)
+        StringView match_while(Pred p)
         {
             const char* start = m_it.pointer_to_current();
             auto ch = cur();
             while (ch != Unicode::end_of_file && p(ch))
+            {
                 ch = next();
-            return {start, m_it.pointer_to_current()};
-        }
-        template<class Pred>
-        StringView match_until(Pred p)
-        {
-            const char* start = m_it.pointer_to_current();
-            auto ch = cur();
-            while (ch != Unicode::end_of_file && !p(ch))
-                ch = next();
+            }
+            
             return {start, m_it.pointer_to_current()};
         }
 
@@ -140,10 +139,10 @@ namespace vcpkg
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
 
         const IParseError* get_error() const { return m_messages.error.get(); }
-        std::unique_ptr<IParseError> extract_error() { return std::move(m_messages.error); }
+        std::unique_ptr<IParseError> extract_error() && { return std::move(m_messages.error); }
 
         const ParseMessages& messages() const { return m_messages; }
-        ParseMessages extract_messages() { return std::move(m_messages); }
+        ParseMessages extract_messages() && { return std::move(m_messages); }
 
     private:
         Unicode::Utf8Decoder m_it;

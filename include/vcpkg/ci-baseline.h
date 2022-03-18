@@ -45,7 +45,7 @@ namespace vcpkg
         bool operator()(const PackageSpec& spec) const;
     };
 
-    std::vector<CiBaselineLine> parse_ci_baseline(View<std::string> lines);
+    std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages);
 
-    SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<std::string> lines, ExclusionsMap& exclusions_map);
+    SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<CiBaselineLine> lines, ExclusionsMap& exclusions_map);
 }

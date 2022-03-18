@@ -7,14 +7,6 @@
 
 using namespace vcpkg;
 
-namespace
-{
-    struct CiBaselineParser : ParserBase
-    {
-        CiBaselineParser(StringView text, StringView origin) : ParserBase(text, origin) { }
-    };
-}
-
 namespace vcpkg
 {
     TripletExclusions::TripletExclusions(const Triplet& triplet) : triplet(triplet), exclusions() { }
@@ -64,41 +56,57 @@ namespace vcpkg
         return false;
     }
 
-    std::vector<CiBaselineLine> parse_ci_baseline(View<std::string> lines)
+    std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages)
     {
         std::vector<CiBaselineLine> result;
-        for (auto& line : lines)
+        ParserBase parser(text, origin);
+        while (!parser.at_eof())
         {
-            if (line.empty() || line[0] == '#') continue;
-            CiBaselineLine parsed_line;
-
-            auto colon_loc = line.find(':');
-            Checks::check_exit(VCPKG_LINE_INFO, colon_loc != std::string::npos, "Line '%s' must contain a ':'", line);
-            parsed_line.port_name = Strings::trim(StringView{line.data(), line.data() + colon_loc}).to_string();
-
-            auto equal_loc = line.find('=', colon_loc + 1);
-            Checks::check_exit(VCPKG_LINE_INFO, equal_loc != std::string::npos, "Line '%s' must contain a '='", line);
-            parsed_line.triplet = Triplet::from_canonical_name(
-                Strings::trim(StringView{line.data() + colon_loc + 1, line.data() + equal_loc}).to_string());
-
-            auto baseline_value = Strings::trim(StringView{line.data() + equal_loc + 1, line.data() + line.size()});
-            if (baseline_value == "fail")
+            parser.skip_whitespace();
+            if (parser.cur() == '#')
             {
-                parsed_line.state = CiBaselineState::Fail;
+                parser.skip_line();
+                continue;
             }
-            else if (baseline_value == "skip")
-            {
-                parsed_line.state = CiBaselineState::Skip;
-            }
-            else
-            {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown value '%s'", baseline_value);
-            }
+            
+            // port-name:triplet=(fail|skip)
+            auto port = parser.match_while(ParserBase::is_package_name_char);
+            (void)port;
         }
+
+        messages = std::move(parser).extract_messages();
+        //for (auto& line : lines)
+        //{
+        //    if (line.empty() || line[0] == '#') continue;
+        //    CiBaselineLine parsed_line;
+
+        //    auto colon_loc = line.find(':');
+        //    Checks::check_exit(VCPKG_LINE_INFO, colon_loc != std::string::npos, "Line '%s' must contain a ':'", line);
+        //    parsed_line.port_name = Strings::trim(StringView{line.data(), line.data() + colon_loc}).to_string();
+
+        //    auto equal_loc = line.find('=', colon_loc + 1);
+        //    Checks::check_exit(VCPKG_LINE_INFO, equal_loc != std::string::npos, "Line '%s' must contain a '='", line);
+        //    parsed_line.triplet = Triplet::from_canonical_name(
+        //        Strings::trim(StringView{line.data() + colon_loc + 1, line.data() + equal_loc}).to_string());
+
+        //    auto baseline_value = Strings::trim(StringView{line.data() + equal_loc + 1, line.data() + line.size()});
+        //    if (baseline_value == "fail")
+        //    {
+        //        parsed_line.state = CiBaselineState::Fail;
+        //    }
+        //    else if (baseline_value == "skip")
+        //    {
+        //        parsed_line.state = CiBaselineState::Skip;
+        //    }
+        //    else
+        //    {
+        //        Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown value '%s'", baseline_value);
+        //    }
+        //}
         return result;
     }
 
-    SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<std::string> lines, ExclusionsMap& exclusions_map)
+    SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<CiBaselineLine> lines, ExclusionsMap& exclusions_map)
     {
         std::vector<PackageSpec> expected_failures;
         std::map<Triplet, std::vector<std::string>> added_known_fails;
@@ -108,19 +116,18 @@ namespace vcpkg
                 std::piecewise_construct, std::forward_as_tuple(triplet_entry.triplet), std::tuple<>{});
         }
 
-        auto baseline_lines = parse_ci_baseline(lines);
-        for (auto& baseline_line : baseline_lines)
+        for (auto& line : lines)
         {
-            auto triplet_match = added_known_fails.find(baseline_line.triplet);
+            auto triplet_match = added_known_fails.find(line.triplet);
             if (triplet_match != added_known_fails.end())
             {
-                if (baseline_line.state == CiBaselineState::Skip)
+                if (line.state == CiBaselineState::Skip)
                 {
-                    triplet_match->second.push_back(std::move(baseline_line.port_name));
+                    triplet_match->second.push_back(line.port_name);
                 }
-                else if (baseline_line.state == CiBaselineState::Fail)
+                else if (line.state == CiBaselineState::Fail)
                 {
-                    expected_failures.emplace_back(std::move(baseline_line.port_name), baseline_line.triplet);
+                    expected_failures.emplace_back(line.port_name, line.triplet);
                 }
             }
         }
