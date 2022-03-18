@@ -15,6 +15,81 @@ namespace vcpkg::Export::IFW
     using Dependencies::ExportPlanType;
     using Install::InstallDir;
 
+    // requires: after_prefix <= semi
+    // requires: *semi == ';'
+    static bool is_character_ref(const char* after_prefix, const char* semi)
+    {
+        if (after_prefix == semi)
+        {
+            return false;
+        }
+
+        if (*after_prefix == '#')
+        {
+            ++after_prefix;
+            if (*after_prefix == 'x')
+            {
+                ++after_prefix;
+                // hex character escape: &#xABC;
+                return after_prefix != semi && std::all_of(after_prefix, semi, Parse::ParserBase::is_hex_digit);
+            }
+
+            // decimal character escape: &#123;
+            return after_prefix != semi && std::all_of(after_prefix, semi, Parse::ParserBase::is_ascii_digit);
+        }
+
+        // word character escape: &amp;
+        return std::all_of(after_prefix, semi, Parse::ParserBase::is_word_char);
+    }
+
+    std::string safe_rich_from_plain_text(StringView text)
+    {
+        // looking for `&`, not followed by:
+        // - '#<numbers>;`
+        // - '#x<hex numbers>;`
+        // - `<numbers, letters, or _>;`
+        // (basically, an HTML character entity reference)
+        constexpr static StringLiteral escaped_amp = "&amp;";
+
+        auto first = text.begin();
+        const auto last = text.end();
+
+        std::string result;
+        for (;;)
+        {
+            auto amp = std::find(first, last, '&');
+            result.append(first, amp);
+            first = amp;
+            if (first == last)
+            {
+                break;
+            }
+
+            ++first; // skip amp
+            if (first == last)
+            {
+                result.append(escaped_amp);
+                break;
+            }
+            else
+            {
+                auto semi = std::find(first, last, ';');
+
+                if (semi != last && is_character_ref(first, semi))
+                {
+                    first = amp;
+                }
+                else
+                {
+                    result.append(escaped_amp.begin(), escaped_amp.end());
+                }
+                result.append(first, semi);
+                first = semi;
+            }
+        }
+        return result;
+    }
+
     namespace
     {
         std::string create_release_date()
@@ -31,14 +106,6 @@ namespace vcpkg::Export::IFW
                                bytes_written);
             const std::string date_time_as_string(mbstr);
             return date_time_as_string;
-        }
-
-        std::string safe_rich_from_plain_text(const std::string& text)
-        {
-            // match standalone ampersand, no HTML number or name
-            std::regex standalone_ampersand(R"###(&(?!(#[0-9]+|\w+);))###");
-
-            return std::regex_replace(text, standalone_ampersand, "&amp;");
         }
 
         Path get_packages_dir_path(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)

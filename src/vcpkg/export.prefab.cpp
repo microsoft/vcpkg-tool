@@ -153,44 +153,63 @@ namespace vcpkg::Export::Prefab
         return json;
     }
 
-    Optional<std::string> find_ndk_version(const std::string& content)
+    Optional<StringView> find_ndk_version(StringView content)
     {
-        std::smatch pkg_match;
-        std::regex pkg_regex(R"(Pkg\.Revision\s*=\s*(\d+)(\.\d+)(\.\d+)\s*)");
+        constexpr static StringLiteral pkg_revision = "Pkg.Revision";
 
-        if (std::regex_search(content, pkg_match, pkg_regex))
+        constexpr static auto is_version_character = [](char ch) {
+            return ch == '.' || Parse::ParserBase::is_ascii_digit(ch);
+        };
+
+        auto first = content.begin();
+        auto last = content.end();
+
+        for (;;)
         {
-            for (const auto& p : pkg_match)
-            {
-                std::string delimiter = "=";
-                std::string s = p.str();
-                auto it = s.find(delimiter);
-                if (it != std::string::npos)
-                {
-                    std::string token = (s.substr(s.find(delimiter) + 1, s.size()));
-                    return Strings::trim(std::move(token));
-                }
-            }
+            first = std::search(first, last, pkg_revision.begin(), pkg_revision.end());
+            if (first == last) break;
+
+            first += pkg_revision.size();
+            first = std::find_if_not(first, last, Parse::ParserBase::is_whitespace);
+            if (first == last) break;
+            if (*first != '=') continue;
+
+            // Pkg.Revision = x.y.z
+            ++first; // skip =
+            first = std::find_if_not(first, last, Parse::ParserBase::is_whitespace);
+            auto end_of_version = std::find_if_not(first, last, is_version_character);
+            if (first == end_of_version) continue;
+            return StringView{first, end_of_version};
         }
+
         return {};
     }
 
-    Optional<NdkVersion> to_version(const std::string& version)
+    Optional<NdkVersion> to_version(StringView version)
     {
         if (version.size() > 100) return {};
-        size_t last = 0;
-        size_t next = 0;
-        std::vector<int> fragments(0);
+        std::vector<int> fragments;
 
-        while ((next = version.find(".", last)) != std::string::npos)
+        for (auto first = version.begin(), last = version.end(); first != last;)
         {
-            fragments.push_back(std::stoi(version.substr(last, next - last)));
-            last = next + 1;
+            auto next = std::find(first, last, '.');
+            auto parsed = Strings::strto<int>(StringView{first, next});
+            if (auto p = parsed.get())
+            {
+                fragments.push_back(*p);
+            }
+            else
+            {
+                return {};
+            }
+            if (next == last) break;
+            ++next;
+            first = next;
         }
-        fragments.push_back(std::stoi(version.substr(last)));
-        if (fragments.size() == kFragmentSize)
+
+        if (fragments.size() == 3)
         {
-            return NdkVersion(fragments[0], fragments[1], fragments[2]);
+            return NdkVersion{fragments[0], fragments[1], fragments[2]};
         }
         return {};
     }

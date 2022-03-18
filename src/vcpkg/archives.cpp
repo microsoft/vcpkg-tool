@@ -188,7 +188,6 @@ namespace
 
 namespace vcpkg
 {
-
 #ifdef _WIN32
     void win32_extract_bootstrap_zip(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {

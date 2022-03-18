@@ -325,6 +325,8 @@ namespace vcpkg
             // Environment variables to tell git to use custom SSH executable or command
             L"GIT_SSH",
             L"GIT_SSH_COMMAND",
+            // Points to a credential-manager binary for git authentication
+            L"GIT_ASKPASS",
             // Environment variables needed for ssh-agent based authentication
             L"SSH_AUTH_SOCK",
             L"SSH_AGENT_PID",
