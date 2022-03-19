@@ -183,7 +183,7 @@ target_link_libraries(vcpkglib
         fmt::fmt
     PRIVATE
         Threads::Threads
-        atomic
+        $<$<NOT:$<AND:$<BOOL:${MSVC}>,$<BOOL:${APPLE}>>>:atomic>
 )
 
 if(MSVC)
