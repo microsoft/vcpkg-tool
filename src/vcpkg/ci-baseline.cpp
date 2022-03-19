@@ -7,6 +7,14 @@
 
 using namespace vcpkg;
 
+namespace
+{
+    DECLARE_AND_REGISTER_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
+    DECLARE_AND_REGISTER_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
+    DECLARE_AND_REGISTER_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail' or 'skip' here");
+    DECLARE_AND_REGISTER_MESSAGE(UnknownBaselineFileContent, (), "", "unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'");
+}
+
 namespace vcpkg
 {
     TripletExclusions::TripletExclusions(const Triplet& triplet) : triplet(triplet), exclusions() { }
@@ -60,49 +68,89 @@ namespace vcpkg
     {
         std::vector<CiBaselineLine> result;
         ParserBase parser(text, origin);
-        while (!parser.at_eof())
+        for (;;)
         {
             parser.skip_whitespace();
+            if (parser.at_eof())
+            {
+                // success
+                return result;
+            }
+
             if (parser.cur() == '#')
             {
                 parser.skip_line();
                 continue;
             }
-            
-            // port-name:triplet=(fail|skip)
+
+            // port-name:triplet     =    (fail|skip)\b
             auto port = parser.match_while(ParserBase::is_package_name_char);
-            (void)port;
+            if (port.empty())
+            {
+                parser.add_error(msg::format(msgExpectedPortName));
+                break;
+            }
+
+            if (parser.require_character(':'))
+            {
+                break;
+            }
+
+            auto triplet = parser.match_while(ParserBase::is_package_name_char);
+            if (triplet.empty())
+            {
+                parser.add_error(msg::format(msgExpectedTripletName));
+                break;
+            }
+
+            parser.skip_tabs_spaces();
+            if (parser.require_character('='))
+            {
+                break;
+            }
+
+            parser.skip_tabs_spaces();
+
+            static constexpr StringLiteral FAIL = "fail";
+            static constexpr StringLiteral SKIP = "skip";
+            CiBaselineState state;
+            if (parser.try_match_keyword(FAIL))
+            {
+                state = CiBaselineState::Fail;
+            }
+            else if (parser.try_match_keyword(SKIP))
+            {
+                state = CiBaselineState::Skip;
+            }
+            else
+            {
+                parser.add_error(msg::format(msgExpectedFailOrSkip));
+                break;
+            }
+
+            parser.skip_tabs_spaces();
+            auto trailing = parser.cur();
+            if (trailing == '#')
+            {
+                parser.skip_line();
+            }
+            else if (trailing == '\r' || trailing == '\n')
+            {
+                parser.skip_newline();
+            }
+            else
+            {
+                parser.add_error(msg::format(msgUnknownBaselineFileContent));
+                break;
+            }
+
+            result.emplace_back(
+                CiBaselineLine{port.to_string(), Triplet::from_canonical_name(triplet.to_string()), state});
         }
 
+        // failure
         messages = std::move(parser).extract_messages();
-        //for (auto& line : lines)
-        //{
-        //    if (line.empty() || line[0] == '#') continue;
-        //    CiBaselineLine parsed_line;
-
-        //    auto colon_loc = line.find(':');
-        //    Checks::check_exit(VCPKG_LINE_INFO, colon_loc != std::string::npos, "Line '%s' must contain a ':'", line);
-        //    parsed_line.port_name = Strings::trim(StringView{line.data(), line.data() + colon_loc}).to_string();
-
-        //    auto equal_loc = line.find('=', colon_loc + 1);
-        //    Checks::check_exit(VCPKG_LINE_INFO, equal_loc != std::string::npos, "Line '%s' must contain a '='", line);
-        //    parsed_line.triplet = Triplet::from_canonical_name(
-        //        Strings::trim(StringView{line.data() + colon_loc + 1, line.data() + equal_loc}).to_string());
-
-        //    auto baseline_value = Strings::trim(StringView{line.data() + equal_loc + 1, line.data() + line.size()});
-        //    if (baseline_value == "fail")
-        //    {
-        //        parsed_line.state = CiBaselineState::Fail;
-        //    }
-        //    else if (baseline_value == "skip")
-        //    {
-        //        parsed_line.state = CiBaselineState::Skip;
-        //    }
-        //    else
-        //    {
-        //        Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown value '%s'", baseline_value);
-        //    }
-        //}
+        result.clear();
         return result;
     }
 

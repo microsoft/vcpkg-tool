@@ -122,6 +122,10 @@ namespace vcpkg
             return {start, m_it.pointer_to_current()};
         }
 
+        bool require_character(char ch);
+
+        bool try_match_keyword(StringView keyword_content);
+
         StringView text() const { return m_text; }
         Unicode::Utf8Decoder it() const { return m_it; }
         char32_t cur() const { return m_it == m_it.end() ? Unicode::end_of_file : *m_it; }

@@ -16,6 +16,12 @@ namespace
                                  (msg::value),
                                  "Example of {value} is 'x64 & windows'",
                                  "    on expression: {value}");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        ExpectedCharacterHere,
+        (msg::expected),
+        "expected is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
+        "expected {expected} here");
 }
 
 namespace vcpkg
@@ -137,6 +143,46 @@ namespace vcpkg
     {
         match_while(is_not_lineend);
         skip_newline();
+    }
+
+    bool ParserBase::require_character(char ch)
+    {
+        if (ch == cur())
+        {
+            next();
+            return false;
+        }
+
+        add_error(msg::format(msgExpectedCharacterHere, msg::expected = ch));
+        return true;
+    }
+
+    bool ParserBase::try_match_keyword(StringView keyword_content) {
+        auto first1 = m_it;
+        const auto last1 = first1.end();
+
+        auto first2 = keyword_content.begin();
+        const auto last2 = keyword_content.end();
+
+        for (;;)
+        {
+            if (first2 == last2)
+            {
+                if (first1 == last1 || is_whitespace(*first1))
+                {
+                    m_it = first1;
+                    m_column += static_cast<int>(keyword_content.size());
+                    return true;
+                }
+
+                return false;
+            }
+
+            if (first1 == last1 || *first1 == *first2)
+            {
+                return false;
+            }
+        }
     }
 
     char32_t ParserBase::next()
