@@ -19,6 +19,13 @@ namespace vcpkg
         std::string port_name;
         Triplet triplet;
         CiBaselineState state;
+
+        friend bool operator==(const CiBaselineLine& lhs, const CiBaselineLine& rhs)
+        {
+            return lhs.port_name == rhs.port_name && lhs.triplet == rhs.triplet && lhs.state == rhs.state;
+        }
+
+        friend bool operator!=(const CiBaselineLine& lhs, const CiBaselineLine& rhs) { return !(lhs == rhs); }
     };
 
     struct TripletExclusions

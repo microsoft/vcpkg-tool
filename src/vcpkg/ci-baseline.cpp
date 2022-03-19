@@ -12,7 +12,10 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(ExpectedPortName, (), "", "expected a port name here");
     DECLARE_AND_REGISTER_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here");
     DECLARE_AND_REGISTER_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail' or 'skip' here");
-    DECLARE_AND_REGISTER_MESSAGE(UnknownBaselineFileContent, (), "", "unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'");
+    DECLARE_AND_REGISTER_MESSAGE(UnknownBaselineFileContent,
+                                 (),
+                                 "",
+                                 "unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'");
 }
 
 namespace vcpkg
@@ -138,7 +141,7 @@ namespace vcpkg
             {
                 parser.skip_newline();
             }
-            else
+            else if (trailing != Unicode::end_of_file)
             {
                 parser.add_error(msg::format(msgUnknownBaselineFileContent));
                 break;
@@ -157,17 +160,17 @@ namespace vcpkg
     SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<CiBaselineLine> lines, ExclusionsMap& exclusions_map)
     {
         std::vector<PackageSpec> expected_failures;
-        std::map<Triplet, std::vector<std::string>> added_known_fails;
+        std::map<Triplet, std::vector<std::string>> added_exclusions;
         for (const auto& triplet_entry : exclusions_map.triplets)
         {
-            added_known_fails.emplace(
+            added_exclusions.emplace(
                 std::piecewise_construct, std::forward_as_tuple(triplet_entry.triplet), std::tuple<>{});
         }
 
         for (auto& line : lines)
         {
-            auto triplet_match = added_known_fails.find(line.triplet);
-            if (triplet_match != added_known_fails.end())
+            auto triplet_match = added_exclusions.find(line.triplet);
+            if (triplet_match != added_exclusions.end())
             {
                 if (line.state == CiBaselineState::Skip)
                 {
@@ -183,7 +186,7 @@ namespace vcpkg
         for (auto& triplet_entry : exclusions_map.triplets)
         {
             triplet_entry.exclusions.append(
-                SortedVector<std::string>(std::move(added_known_fails.find(triplet_entry.triplet)->second)));
+                SortedVector<std::string>(std::move(added_exclusions.find(triplet_entry.triplet)->second)));
         }
 
         return SortedVector<PackageSpec>{std::move(expected_failures)};

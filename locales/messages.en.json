@@ -40,9 +40,12 @@
   "ErrorRequirePackagesList": "Error: `vcpkg install` requires a list of packages to install in classic mode.",
   "ErrorRequirePackagesToInstall": "Error: No packages were listed for installation and no manifest was found.",
   "ErrorVcvarsUnsupported": "Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.",
+  "ExpectedCharacterHere": "expected '{expected}' here",
+  "ExpectedFailOrSkip": "expected 'fail' or 'skip' here",
+  "ExpectedPortName": "expected a port name here",
+  "ExpectedTripletName": "expected a triplet name here",
   "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.",
   "FormattedParseMessageExpression": "    on expression: {value}",
-  "FormattedParseMessageLocation": "{path}:{row}:{column}: ",
   "GenerateMsgErrorParsingFormatArgs": "error: parsing format string for {value}:",
   "GenerateMsgIncorrectComment": "message {value} has an incorrect comment:",
   "GenerateMsgNoArgumentValue": "    {{{value}}} was specified in a comment, but was not used in the message.",
@@ -81,6 +84,7 @@
   "ResultsLine": "    {spec}: {build_result}: {elapsed}",
   "SeeURL": "See {url} for more information.",
   "SuggestNewVersionScheme": "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port \"{package_name}\".\nUse `--{option}` to disable this check.",
+  "UnknownBaselineFileContent": "unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'",
   "UnsupportedSystemName": "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
   "UnsupportedToolchain": "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target architecture was {arch}\n    The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n",
   "UsingManifestAt": "Using manifest file at {path}.",
@@ -98,5 +102,6 @@
   "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
   "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
   "VersionSpecMismatch": "error: Failed to load port because version specs did not match\n    Path: {path}\n    Expected: {expected_version}\n    Actual: {actual_version}",
-  "WarningMessage": "warning: "
+  "WarningMessage": "warning: ",
+  "WarningsTreatedAsErrors": "previous warnings being interpreted as errors"
 }

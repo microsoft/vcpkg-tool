@@ -20,8 +20,8 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(
         ExpectedCharacterHere,
         (msg::expected),
-        "expected is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
-        "expected {expected} here");
+        "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
+        "expected '{expected}' here");
 }
 
 namespace vcpkg
@@ -147,7 +147,7 @@ namespace vcpkg
 
     bool ParserBase::require_character(char ch)
     {
-        if (ch == cur())
+        if (static_cast<char32_t>(ch) == cur())
         {
             next();
             return false;
@@ -157,7 +157,8 @@ namespace vcpkg
         return true;
     }
 
-    bool ParserBase::try_match_keyword(StringView keyword_content) {
+    bool ParserBase::try_match_keyword(StringView keyword_content)
+    {
         auto first1 = m_it;
         const auto last1 = first1.end();
 
@@ -178,10 +179,13 @@ namespace vcpkg
                 return false;
             }
 
-            if (first1 == last1 || *first1 == *first2)
+            if (first1 == last1 || *first1 != static_cast<char32_t>(*first2))
             {
                 return false;
             }
+
+            ++first1;
+            ++first2;
         }
     }
 

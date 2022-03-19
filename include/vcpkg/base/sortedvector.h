@@ -1,9 +1,10 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
+#include <initializer_list>
 #include <iterator>
 #include <vector>
-#include <functional>
 
 // Add more forwarding functions to the m_data std::vector as needed.
 namespace vcpkg
@@ -25,7 +26,7 @@ namespace vcpkg
         {
             sort_uniqueify();
         }
-        explicit SortedVector(std::vector<Ty>&& data) : m_data(std::move(data)) { sort_uniqueify(); }
+        explicit SortedVector(std::vector<Ty>&& data) : m_data(std::move(data)), m_comp() { sort_uniqueify(); }
         explicit SortedVector(std::vector<Ty>&& data, Compare comp) : m_data(std::move(data)), m_comp(comp)
         {
             sort_uniqueify();
@@ -42,6 +43,8 @@ namespace vcpkg
         {
             sort_uniqueify();
         }
+
+        SortedVector(std::initializer_list<Ty> elements) : m_data(elements), m_comp() { sort_uniqueify(); }
 
         iterator begin() const { return this->m_data.cbegin(); }
 
@@ -64,7 +67,7 @@ namespace vcpkg
             // This could use a more efficient merge algorithm than inplace_merge with an understanding that we will
             // allocate the whole result if perf becomes a problem
             auto merge_point = m_data.insert(m_data.end(), other.begin(), other.end());
-            std::inplace_merge(m_data.begin(), merge_point, m_data.end());
+            std::inplace_merge(m_data.begin(), merge_point, m_data.end(), m_comp);
             uniqueify();
         }
 
@@ -72,12 +75,25 @@ namespace vcpkg
         {
             auto merge_point = m_data.insert(
                 m_data.end(), std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
-            std::inplace_merge(m_data.begin(), merge_point, m_data.end());
+            std::inplace_merge(m_data.begin(), merge_point, m_data.end(), m_comp);
             uniqueify();
         }
 
+        friend bool operator==(const SortedVector& lhs, const SortedVector& rhs) { return lhs.m_data == rhs.m_data; }
+        friend bool operator!=(const SortedVector& lhs, const SortedVector& rhs) { return lhs.m_data != rhs.m_data; }
+
     private:
-        void uniqueify() { m_data.erase(std::unique(m_data.begin(), m_data.end(), m_comp), m_data.end()); }
+        void uniqueify()
+        {
+            Compare comp = m_comp;
+            m_data.erase(std::unique(m_data.begin(),
+                                     m_data.end(),
+                                     [comp](const Ty& lhs, const Ty& rhs) {
+                                         // note that we know !comp(rhs, lhs) because m_data is sorted
+                                         return !comp(lhs, rhs);
+                                     }),
+                         m_data.end());
+        }
         void sort_uniqueify()
         {
             if (!std::is_sorted(m_data.begin(), m_data.end(), m_comp))

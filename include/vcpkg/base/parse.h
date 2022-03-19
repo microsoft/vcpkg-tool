@@ -67,6 +67,7 @@ namespace vcpkg
         std::vector<ParseMessage> warnings;
 
         void exit_if_errors_or_warnings(StringView origin) const;
+        bool good() const { return !error && warnings.empty(); }
     };
 
     struct ParserBase
@@ -118,7 +119,7 @@ namespace vcpkg
             {
                 ch = next();
             }
-            
+
             return {start, m_it.pointer_to_current()};
         }
 
