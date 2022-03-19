@@ -183,6 +183,7 @@ target_link_libraries(vcpkglib
         fmt::fmt
     PRIVATE
         Threads::Threads
+        atomic
 )
 
 if(MSVC)
