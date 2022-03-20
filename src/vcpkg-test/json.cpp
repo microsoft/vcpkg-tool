@@ -155,12 +155,12 @@ TEST_CASE ("JSON parse floats", "[json]")
     REQUIRE(res.get()->first.is_number());
     REQUIRE(!res.get()->first.is_integer());
     REQUIRE(res.get()->first.number() == 0.0);
-    REQUIRE(!signbit(res.get()->first.number()));
+    REQUIRE(!std::signbit(res.get()->first.number()));
     res = Json::parse("-0.0");
     REQUIRE(res);
     REQUIRE(res.get()->first.is_number());
     REQUIRE(res.get()->first.number() == 0.0);
-    REQUIRE(signbit(res.get()->first.number()));
+    REQUIRE(std::signbit(res.get()->first.number()));
     res = Json::parse("12345.6789");
     REQUIRE(res);
     REQUIRE(res.get()->first.is_number());

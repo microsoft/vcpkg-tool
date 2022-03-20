@@ -21,6 +21,10 @@
 #include <sys/wait.h>
 #endif
 
+#if defined(__NetBSD__)
+#include <sys/wait.h>
+#endif
+
 #if defined(_WIN32)
 #pragma comment(lib, "Advapi32")
 #endif
