@@ -25,6 +25,8 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "ulaşılamayan koda ulaşıldı",
   "ChecksUpdateVcpkg": "vcpkg’nin bootstrap-vcpkg’nin yeniden çalıştırılarak güncelleştirilmesi bu hatayı çözebilir.",
+  "CmakeTargetLinkLibraries": "    target_link_libraries(main PRIVATE {list})",
+  "CmakeTargetsExcluded": "    # note: {count} targets were omitted.",
   "CouldNotDeduceNugetIdAndVersion": "{path} dosya adından NuGet kimliği ve sürümü çıkarılamadı",
   "DownloadingVcpkgCeBundle": "Downloading vcpkg-ce bundle {version}...",
   "DownloadingVcpkgCeBundleLatest": "Downloading latest vcpkg-ce bundle...",

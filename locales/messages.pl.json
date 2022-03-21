@@ -25,6 +25,8 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "osiągnięto nieosiągalny kod",
   "ChecksUpdateVcpkg": "zaktualizowanie pakietu vcpkg przez ponowne uruchomienie pakietu bootstrap-vcpkg może rozwiązać ten problem.",
+  "CmakeTargetLinkLibraries": "    target_link_libraries(main PRIVATE {list})",
+  "CmakeTargetsExcluded": "    # note: {count} targets were omitted.",
   "CouldNotDeduceNugetIdAndVersion": "Nie można wywnioskować identyfikatora NuGet i wersji z nazwy pliku: {path}",
   "DownloadingVcpkgCeBundle": "Downloading vcpkg-ce bundle {version}...",
   "DownloadingVcpkgCeBundleLatest": "Downloading latest vcpkg-ce bundle...",

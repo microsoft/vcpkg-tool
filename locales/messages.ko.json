@@ -25,6 +25,8 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "연결할 수 없는 코드에 도달했습니다",
   "ChecksUpdateVcpkg": "bootstrap-vcpkg를 다시 실행하여 vcpkg를 업데이트하면 이 오류가 해결될 수 있습니다.",
+  "CmakeTargetLinkLibraries": "    target_link_libraries(main PRIVATE {list})",
+  "CmakeTargetsExcluded": "    # note: {count} targets were omitted.",
   "CouldNotDeduceNugetIdAndVersion": "파일 이름에서 nuget ID 및 버전을 추론할 수 없음: {path}",
   "DownloadingVcpkgCeBundle": "Downloading vcpkg-ce bundle {version}...",
   "DownloadingVcpkgCeBundleLatest": "Downloading latest vcpkg-ce bundle...",
