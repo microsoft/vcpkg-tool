@@ -10,57 +10,106 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#if defined(VCPKG_CE_SHA)
+#define VCPKG_CE_SHA_AS_STRING MACRO_TO_STRING(VCPKG_CE_SHA)
+#endif // ^^^ VCPKG_CE_SHA
+
+namespace
+{
+    using namespace vcpkg;
+    DECLARE_AND_REGISTER_MESSAGE(FailedToProvisionCe, (), "", "Failed to provision vcpkg-ce.");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgCeIsExperimental,
+                                 (),
+                                 "",
+                                 "vcpkg-ce ('configure environment') is experimental and may change at any time.");
+    DECLARE_AND_REGISTER_MESSAGE(DownloadingVcpkgCeBundle,
+                                 (msg::version),
+                                 "",
+                                 "Downloading vcpkg-ce bundle {version}...");
+    DECLARE_AND_REGISTER_MESSAGE(DownloadingVcpkgCeBundleLatest,
+                                 (),
+                                 "This message is normally displayed only in development.",
+                                 "Downloading latest vcpkg-ce bundle...");
+
+    void extract_ce_tarball(const VcpkgPaths& paths,
+                            const Path& ce_tarball,
+                            const Path& node_path,
+                            const Path& node_modules)
+    {
+        auto& fs = paths.get_filesystem();
+        fs.remove_all(node_modules, VCPKG_LINE_INFO);
+        Path node_root = node_path.parent_path();
+        auto npm_path = node_root / "node_modules" / "npm" / "bin" / "npm-cli.js";
+        if (!fs.exists(npm_path, VCPKG_LINE_INFO))
+        {
+            npm_path = Path(node_root.parent_path()) / "lib" / "node_modules" / "npm" / "bin" / "npm-cli.js";
+        }
+
+        Command cmd_provision(node_path);
+        cmd_provision.string_arg(npm_path);
+        cmd_provision.string_arg("--force");
+        cmd_provision.string_arg("install");
+        cmd_provision.string_arg("--no-save");
+        cmd_provision.string_arg("--no-lockfile");
+        cmd_provision.string_arg("--scripts-prepend-node-path=true");
+        cmd_provision.string_arg("--silent");
+        cmd_provision.string_arg(ce_tarball);
+        auto env = get_modified_clean_environment({}, node_root);
+        const auto provision_status = cmd_execute(cmd_provision, WorkingDirectory{paths.root}, env);
+        fs.remove(ce_tarball, VCPKG_LINE_INFO);
+        if (provision_status != 0)
+        {
+            fs.remove_all(node_modules, VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
+        }
+    }
+}
+
 namespace vcpkg
 {
     int run_configure_environment_command(const VcpkgPaths& paths, View<std::string> args)
     {
-        print2(Color::warning, "vcpkg-ce ('configure environment') is experimental and may change at any time.\n");
-
+        msg::print_warning(msgVcpkgCeIsExperimental);
         auto& fs = paths.get_filesystem();
         auto& download_manager = paths.get_download_manager();
         auto node_path = paths.get_tool_exe(Tools::NODE);
-        Path node_root = node_path.parent_path();
         auto node_modules = paths.root / "node_modules";
         auto ce_path = node_modules / "vcpkg-ce";
-        if (!fs.is_directory(ce_path))
-        {
-            auto env = get_modified_clean_environment({}, node_root);
+        auto ce_sha_path = node_modules / "ce-sha.txt";
+
 #if defined(VCPKG_CE_SHA)
-            print2("Downloading vcpkg-ce bundle " VCPKG_BASE_VERSION_AS_STRING "\n");
+        bool needs_provisioning = !fs.is_directory(ce_path);
+        if (!needs_provisioning)
+        {
+            auto installed_ce_sha = fs.read_contents(ce_sha_path, IgnoreErrors{});
+            if (installed_ce_sha != VCPKG_CE_SHA_AS_STRING)
+            {
+                fs.remove(ce_sha_path, VCPKG_LINE_INFO);
+                fs.remove_all(ce_path, VCPKG_LINE_INFO);
+                needs_provisioning = true;
+            }
+        }
+
+        if (needs_provisioning)
+        {
+            msg::println(msgDownloadingVcpkgCeBundle, msg::version = VCPKG_BASE_VERSION_AS_STRING);
             const auto ce_uri =
                 "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
                 "/vcpkg-ce.tgz";
             const auto ce_tarball = paths.downloads / "vcpkg-ce-" VCPKG_BASE_VERSION_AS_STRING ".tgz";
-            download_manager.download_file(fs, ce_uri, ce_tarball, std::string(MACRO_TO_STRING(VCPKG_CE_SHA)));
-#else  // ^^^ VCPKG_CE_BUNDLE_SHA / !VCPKG_CE_BUNDLE_SHA vvv
-            print2(Color::warning, "Downloading latest vcpkg-ce bundle\n");
-            const auto ce_uri = "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-ce.tgz";
-            const auto ce_tarball = paths.downloads / "vcpkg-ce-latest.tgz";
-            download_manager.download_file(fs, ce_uri, ce_tarball, nullopt);
-#endif // ^^^ !VCPKG_CE_BUNDLE_SHA
-            auto npm_path = node_root / "node_modules" / "npm" / "bin" / "npm-cli.js";
-            if (!fs.exists(npm_path, VCPKG_LINE_INFO))
-            {
-                npm_path = Path(node_root.parent_path()) / "lib" / "node_modules" / "npm" / "bin" / "npm-cli.js";
-            }
-
-            Command cmd_provision(node_path);
-            cmd_provision.string_arg(npm_path);
-            cmd_provision.string_arg("--force");
-            cmd_provision.string_arg("install");
-            cmd_provision.string_arg("--no-save");
-            cmd_provision.string_arg("--no-lockfile");
-            cmd_provision.string_arg("--scripts-prepend-node-path=true");
-            cmd_provision.string_arg("--silent");
-            cmd_provision.string_arg(ce_tarball);
-            const auto provision_status = cmd_execute(cmd_provision, WorkingDirectory{paths.root}, env);
-            fs.remove(ce_tarball, VCPKG_LINE_INFO);
-            if (provision_status != 0)
-            {
-                fs.remove_all(node_modules, VCPKG_LINE_INFO);
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Failed to provision vcpkg-ce.");
-            }
+            download_manager.download_file(fs, ce_uri, ce_tarball, VCPKG_CE_SHA_AS_STRING);
+            extract_ce_tarball(paths, ce_tarball, node_path, node_modules);
+            fs.write_contents(ce_sha_path, VCPKG_CE_SHA_AS_STRING, VCPKG_LINE_INFO);
         }
+#else  // ^^^ VCPKG_CE_SHA / !VCPKG_CE_SHA vvv
+        fs.remove(ce_sha_path, VCPKG_LINE_INFO);
+        fs.remove_all(ce_path, VCPKG_LINE_INFO);
+        msg::println(Color::warning, msgDownloadingVcpkgCeBundleLatest);
+        const auto ce_uri = "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-ce.tgz";
+        const auto ce_tarball = paths.downloads / "vcpkg-ce-latest.tgz";
+        download_manager.download_file(fs, ce_uri, ce_tarball, nullopt);
+        extract_ce_tarball(paths, ce_tarball, node_path, node_modules);
+#endif // ^^^ !VCPKG_CE_SHA
 
         Command cmd_run(node_path);
         cmd_run.string_arg("--harmony");

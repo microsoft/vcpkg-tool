@@ -12,6 +12,8 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <regex>
+
 namespace vcpkg
 {
     struct ToolData
