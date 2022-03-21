@@ -6,6 +6,7 @@
 #include <vcpkg/ci-baseline.h>
 #include <vcpkg/triplet.h>
 
+#include <ostream>
 #include <utility>
 
 using namespace vcpkg;
