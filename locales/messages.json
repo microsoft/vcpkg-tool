@@ -49,6 +49,8 @@
   "ChecksUpdateVcpkg": "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "_CouldNotDeduceNugetIdAndVersion.comment": "example of {path} is '/foo/bar'.\n",
+  "CurlReportedUnexpectedResults": "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\nPlease review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===\n",
+  "_CurlReportedUnexpectedResults.comment": "{command_line} is the command line to call curl.exe, {actual} is the console output of curl.exe locale-invariant download results.\nexample of {command_line} is 'vcpkg install zlib'.\n",
   "EmptyLicenseExpression": "SPDX license expression was empty.",
   "ErrorIndividualPackagesUnsupported": "Error: In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.",
   "ErrorInvalidClassicModeOption": "Error: The option --{option} is not supported in classic mode and no manifest was found.",

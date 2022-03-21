@@ -17,8 +17,8 @@ namespace
 
     DECLARE_AND_REGISTER_MESSAGE(CurlReportedUnexpectedResults,
                                  (msg::command_line, msg::actual),
-                                 "command_line is the command line to call curl.exe, actual is the console output of "
-                                 "curl.exe locale-invariant download results.",
+                                 "{command_line} is the command line to call curl.exe, {actual} is the console output "
+                                 "of curl.exe locale-invariant download results.",
                                  "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\n"
                                  "Please review the following text for sensitive information and open an issue on the "
                                  "Microsoft/vcpkg GitHub to help fix this problem!\n"
