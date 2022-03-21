@@ -28,6 +28,7 @@
   "CmakeTargetLinkLibraries": "    target_link_libraries(main PRIVATE {list})",
   "CmakeTargetsExcluded": "    # note: {count} targets were omitted.",
   "CouldNotDeduceNugetIdAndVersion": "파일 이름에서 nuget ID 및 버전을 추론할 수 없음: {path}",
+  "CurlReportedUnexpectedResults": "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\nPlease review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===\n",
   "DownloadingVcpkgCeBundle": "Downloading vcpkg-ce bundle {version}...",
   "DownloadingVcpkgCeBundleLatest": "Downloading latest vcpkg-ce bundle...",
   "EmptyLicenseExpression": "SPDX 라이선스 식이 비어 있습니다.",

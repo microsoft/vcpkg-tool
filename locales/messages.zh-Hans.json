@@ -28,6 +28,7 @@
   "CmakeTargetLinkLibraries": "    target_link_libraries(main PRIVATE {list})",
   "CmakeTargetsExcluded": "    # note: {count} targets were omitted.",
   "CouldNotDeduceNugetIdAndVersion": "无法从文件名推导出 nuget ID 和版本: {path}",
+  "CurlReportedUnexpectedResults": "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\nPlease review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===\n",
   "DownloadingVcpkgCeBundle": "Downloading vcpkg-ce bundle {version}...",
   "DownloadingVcpkgCeBundleLatest": "Downloading latest vcpkg-ce bundle...",
   "EmptyLicenseExpression": "SPDX 许可证表达式为空。",

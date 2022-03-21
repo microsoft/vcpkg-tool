@@ -28,6 +28,7 @@
   "CmakeTargetLinkLibraries": "    target_link_libraries(main PRIVATE {list})",
   "CmakeTargetsExcluded": "    # note: {count} targets were omitted.",
   "CouldNotDeduceNugetIdAndVersion": "Não foi possível deduzir a ID e a versão do nuget do nome de arquivo: {path}",
+  "CurlReportedUnexpectedResults": "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\nPlease review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===\n",
   "DownloadingVcpkgCeBundle": "Downloading vcpkg-ce bundle {version}...",
   "DownloadingVcpkgCeBundleLatest": "Downloading latest vcpkg-ce bundle...",
   "EmptyLicenseExpression": "A expressão da licença SPDX estava vazia.",
