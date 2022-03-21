@@ -56,11 +56,8 @@ namespace
 
     constexpr IsSlash is_slash;
 
-    bool is_dot(StringView sv) { return sv.size() == 1 && sv.byte_at_index(0) == '.'; }
-    bool is_dot_dot(StringView sv)
-    {
-        return sv.size() == 2 && sv.byte_at_index(0) == '.' && sv.byte_at_index(1) == '.';
-    }
+    bool is_dot(StringView sv) { return sv.size() == 1 && sv[0] == '.'; }
+    bool is_dot_dot(StringView sv) { return sv.size() == 2 && sv[0] == '.' && sv[1] == '.'; }
 #if !defined(_WIN32)
     bool is_dot_or_dot_dot(const char* ntbs)
     {
@@ -340,7 +337,7 @@ namespace
         // \\?\ or \\server, so the path is absolute. Otherwise it is relative.
         return first != find_root_name_end(first, last);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-        return !str.empty() && str.byte_at_index(0) == '/';
+        return !str.empty() && str[0] == '/';
 #endif // ^^^ !_WIN32
     }
 
@@ -380,11 +377,10 @@ namespace
             }
         }
 
+        // bug in MSVC considers h_file uninitialized:
         // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
-#if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 6001)
-#endif // ^^^ _MSC_VER
+        VCPKG_MSVC_WARNING(push)
+        VCPKG_MSVC_WARNING(disable : 6001)
         ~FileHandle()
         {
             if (h_file != INVALID_HANDLE_VALUE)
@@ -392,9 +388,7 @@ namespace
                 Checks::check_exit(VCPKG_LINE_INFO, ::CloseHandle(h_file));
             }
         }
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif // ^^^ _MSC_VER
+        VCPKG_MSVC_WARNING(pop)
     };
 
     struct RemoveAllErrorInfo

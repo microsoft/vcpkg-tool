@@ -245,7 +245,7 @@ namespace vcpkg
         {
             cmd.string_arg(var.s);
         }
-        cmd.string_arg("-P").path_arg(cmake_script);
+        cmd.string_arg("-P").string_arg(cmake_script);
         return cmd;
     }
 
@@ -260,9 +260,8 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path)
     {
-        static const std::string system_root_env =
-            get_environment_variable("SystemRoot").value_or_exit(VCPKG_LINE_INFO);
-        static const std::string system32_env = system_root_env + R"(\system32)";
+        const std::string& system_root_env = get_system_root().value_or_exit(VCPKG_LINE_INFO).native();
+        const std::string& system32_env = get_system32().value_or_exit(VCPKG_LINE_INFO).native();
         std::string new_path = "PATH=";
         if (!prepend_to_path.empty())
         {
@@ -326,6 +325,8 @@ namespace vcpkg
             // Environment variables to tell git to use custom SSH executable or command
             L"GIT_SSH",
             L"GIT_SSH_COMMAND",
+            // Points to a credential-manager binary for git authentication
+            L"GIT_ASKPASS",
             // Environment variables needed for ssh-agent based authentication
             L"SSH_AUTH_SOCK",
             L"SSH_AGENT_PID",
@@ -549,10 +550,11 @@ namespace vcpkg
                 Strings::to_utf16(get_real_filesystem().absolute(wd.working_directory, VCPKG_LINE_INFO));
         }
 
-        VCPKG_MSVC_WARNING(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
-                                            // /analyze can't tell that we transferred ownership here
         auto environment_block = env.m_env_data;
-#pragma warning(suppress : 6335) // Leaking process information handle 'process_info.proc_info.hProcess'
+
+        // Leaking process information handle 'process_info.proc_info.hProcess'
+        // /analyze can't tell that we transferred ownership here
+        VCPKG_MSVC_WARNING(suppress : 6335)
         bool succeeded = TRUE == CreateProcessW(nullptr,
                                                 Strings::to_utf16(cmd_line).data(),
                                                 nullptr,
@@ -602,6 +604,7 @@ namespace vcpkg
             {
                 while (ReadFile(child_stdout, static_cast<void*>(buf), buffer_size, &bytes_read, nullptr))
                 {
+                    std::replace(buf, buf + bytes_read, '\0', '?');
                     f(StringView{buf, static_cast<size_t>(bytes_read)});
                 }
             }
@@ -759,7 +762,7 @@ namespace vcpkg
         if (!wd.working_directory.empty())
         {
             real_command_line_builder.string_arg("cd");
-            real_command_line_builder.path_arg(wd.working_directory);
+            real_command_line_builder.string_arg(wd.working_directory);
             real_command_line_builder.raw_arg("&&");
         }
 
@@ -829,7 +832,7 @@ namespace vcpkg
         else
         {
             actual_cmd_line = Command("cd")
-                                  .path_arg(wd.working_directory)
+                                  .string_arg(wd.working_directory)
                                   .raw_arg("&&")
                                   .raw_arg(cmd_line.command_line())
                                   .raw_arg("2>&1")

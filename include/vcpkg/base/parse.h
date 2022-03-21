@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
+#include <vcpkg/base/zstringview.h>
 
 #include <vcpkg/textrowcol.h>
 
@@ -84,6 +84,12 @@ namespace vcpkg::Parse
         static constexpr bool is_alphanum(char32_t ch) { return is_icase_alpha(ch) || is_ascii_digit(ch); }
         static constexpr bool is_alphadash(char32_t ch) { return is_icase_alpha(ch) || ch == '-'; }
         static constexpr bool is_alphanumdash(char32_t ch) { return is_alphanum(ch) || ch == '-'; }
+
+        static constexpr bool is_hex_digit(char32_t ch)
+        {
+            return is_ascii_digit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+        }
+        static constexpr bool is_word_char(char32_t ch) { return is_alphanum(ch) || ch == '_'; }
 
         StringView skip_whitespace() { return match_zero_or_more(is_whitespace); }
         StringView skip_tabs_spaces()

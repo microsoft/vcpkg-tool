@@ -351,7 +351,7 @@ namespace vcpkg
                 .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
             for (auto&& url : url_pairs)
             {
-                cmd.string_arg(url.first).string_arg("-o").path_arg(url.second);
+                cmd.string_arg(url.first).string_arg("-o").string_arg(url.second);
             }
             auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
                 if (Strings::starts_with(line, guid_marker))
@@ -409,7 +409,7 @@ namespace vcpkg
             Command cmd;
             cmd.string_arg("curl");
             cmd.string_arg(url);
-            cmd.string_arg("-T").path_arg(file);
+            cmd.string_arg("-T").string_arg(file);
             auto res = cmd_execute_and_capture_output(cmd);
             if (res.exit_code != 0)
             {
@@ -427,7 +427,7 @@ namespace vcpkg
         }
         cmd.string_arg("-w").string_arg(Strings::concat("\\n", guid_marker, "%{http_code}"));
         cmd.string_arg(url);
-        cmd.string_arg("-T").path_arg(file);
+        cmd.string_arg("-T").string_arg(file);
         int code = 0;
         auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
             if (Strings::starts_with(line, guid_marker))
@@ -579,7 +579,7 @@ namespace vcpkg
             .string_arg(url)
             .string_arg("--create-dirs")
             .string_arg("--output")
-            .path_arg(download_path_part_path);
+            .string_arg(download_path_part_path);
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);

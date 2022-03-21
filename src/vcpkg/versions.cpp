@@ -1,7 +1,32 @@
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/versions.h>
+
+namespace
+{
+    using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        VersionInvalidRelaxed,
+        (msg::version),
+        "",
+        "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).");
+
+    DECLARE_AND_REGISTER_MESSAGE(VersionInvalidSemver,
+                                 (msg::version),
+                                 "",
+                                 "`{version}` is not a valid semantic version, consult <https://semver.org>.");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        VersionInvalidDate,
+        (msg::version),
+        "",
+        "`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be "
+        "dot-separated positive integer values without leading zeroes.");
+}
 
 namespace vcpkg
 {
@@ -144,20 +169,20 @@ namespace vcpkg
         return nullptr;
     }
 
-    static Optional<DotVersion> try_parse_dot_version(const std::string& str)
+    static ExpectedL<DotVersion> try_parse_dot_version(StringView str)
     {
         // Suggested regex by semver.org
-        // ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
+        // ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)   (this part replaced here with dotted number parsing)
         // (?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]
         // *[a-zA-Z-][0-9a-zA-Z-]*))*))?
         // (?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
 
         DotVersion ret;
-        ret.original_string = str;
+        ret.original_string.assign(str.data(), str.size());
 
         // (0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)
         int idx = 0;
-        const char* cur = str.c_str();
+        const char* cur = ret.original_string.c_str();
         for (;; ++idx)
         {
             ret.version.push_back(0);
@@ -165,8 +190,8 @@ namespace vcpkg
             if (!cur || *cur != '.') break;
             ++cur;
         }
-        if (!cur) return nullopt;
-        ret.version_string.assign(str.c_str(), cur);
+        if (!cur) return LocalizedString{};
+        ret.version_string.assign(ret.original_string.c_str(), cur);
         if (*cur == 0) return ret;
 
         // pre-release
@@ -180,7 +205,7 @@ namespace vcpkg
                 cur = skip_prerelease_identifier(cur);
                 if (!cur)
                 {
-                    return nullopt;
+                    return LocalizedString{};
                 }
                 ret.identifiers.emplace_back(start_identifier, cur);
                 if (*cur != '.') break;
@@ -191,12 +216,12 @@ namespace vcpkg
         if (*cur == 0) return ret;
 
         // build
-        if (*cur != '+') return nullopt;
+        if (*cur != '+') return LocalizedString{};
         ++cur;
         for (;;)
         {
             // Require non-empty identifier element
-            if (!Parse::ParserBase::is_alphanumdash(*cur)) return nullopt;
+            if (!Parse::ParserBase::is_alphanumdash(*cur)) return LocalizedString{};
             ++cur;
             while (Parse::ParserBase::is_alphanumdash(*cur))
             {
@@ -209,7 +234,7 @@ namespace vcpkg
             }
             else
             {
-                return nullopt;
+                return LocalizedString{};
             }
         }
     }
@@ -217,7 +242,7 @@ namespace vcpkg
     bool operator==(const DotVersion& lhs, const DotVersion& rhs) { return compare(lhs, rhs) == VerComp::eq; }
     bool operator<(const DotVersion& lhs, const DotVersion& rhs) { return compare(lhs, rhs) == VerComp::lt; }
 
-    ExpectedS<DotVersion> DotVersion::try_parse(const std::string& str, VersionScheme scheme)
+    ExpectedL<DotVersion> DotVersion::try_parse(StringView str, VersionScheme scheme)
     {
         switch (scheme)
         {
@@ -227,20 +252,14 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<DotVersion> DotVersion::try_parse_relaxed(const std::string& str)
+    ExpectedL<DotVersion> DotVersion::try_parse_relaxed(StringView str)
     {
-        auto x = try_parse_dot_version(str);
-        if (auto p = x.get())
-        {
-            return std::move(*p);
-        }
-
-        return Strings::format(
-            "Error: String `%s` is not a valid Relaxed version string (semver with arbitrary numeric identifiers)",
-            str);
+        return try_parse_dot_version(str).replace_error([&] {
+            return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidRelaxed, msg::version = str));
+        });
     }
 
-    ExpectedS<DotVersion> DotVersion::try_parse_semver(const std::string& str)
+    ExpectedL<DotVersion> DotVersion::try_parse_semver(StringView str)
     {
         auto x = try_parse_dot_version(str);
         if (auto p = x.get())
@@ -251,8 +270,7 @@ namespace vcpkg
             }
         }
 
-        return Strings::format("Error: String `%s` is not a valid Semantic Version string, consult https://semver.org",
-                               str);
+        return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidSemver, msg::version = str));
     }
 
     static int uint64_comp(uint64_t a, uint64_t b) { return (a > b) - (a < b); }
@@ -301,43 +319,38 @@ namespace vcpkg
     bool operator==(const DateVersion& lhs, const DateVersion& rhs) { return compare(lhs, rhs) == VerComp::eq; }
     bool operator<(const DateVersion& lhs, const DateVersion& rhs) { return compare(lhs, rhs) == VerComp::lt; }
 
-    static std::string format_invalid_date_version(const std::string& str)
+    static LocalizedString format_invalid_date_version(StringView version)
     {
-        return Strings::format("Error: String `%s` is not a valid date version."
-                               "Date section must follow the format YYYY-MM-DD and disambiguators must be "
-                               "dot-separated positive integer values without leading zeroes.",
-                               str);
+        return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidDate, msg::version = version));
     }
 
-    ExpectedS<DateVersion> DateVersion::try_parse(const std::string& str)
+    ExpectedL<DateVersion> DateVersion::try_parse(StringView version)
     {
+        ParsedExternalVersion parsed;
+        if (!try_extract_external_date_version(parsed, version))
+        {
+            return format_invalid_date_version(version);
+        }
+
         DateVersion ret;
-        ret.original_string = str;
-
-        if (str.size() < 10) return format_invalid_date_version(str);
-
-        bool valid = Parse::ParserBase::is_ascii_digit(str[0]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[1]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[2]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[3]);
-        valid |= str[4] != '-';
-        valid |= Parse::ParserBase::is_ascii_digit(str[5]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[6]);
-        valid |= str[7] != '-';
-        valid |= Parse::ParserBase::is_ascii_digit(str[8]);
-        valid |= Parse::ParserBase::is_ascii_digit(str[9]);
-        if (!valid) return format_invalid_date_version(str);
-        ret.version_string.assign(str.c_str(), 10);
-
-        const char* cur = str.c_str() + 10;
+        ret.original_string.assign(version.data(), version.size());
+        ret.version_string.assign(version.data(), 10);
+        const char* cur = ret.original_string.c_str() + 10;
         // (\.(0|[1-9][0-9]*))*
         while (*cur == '.')
         {
             ret.identifiers.push_back(0);
             cur = parse_skip_number(cur + 1, &ret.identifiers.back());
-            if (!cur) return format_invalid_date_version(str);
+            if (!cur)
+            {
+                return format_invalid_date_version(version);
+            }
         }
-        if (*cur != 0) return format_invalid_date_version(str);
+
+        if (*cur != 0)
+        {
+            return format_invalid_date_version(version);
+        }
 
         return ret;
     }
@@ -387,5 +400,90 @@ namespace vcpkg
         }
 
         return static_cast<VerComp>(Util::range_lexcomp(a.identifiers, b.identifiers, uint64_comp));
+    }
+
+    StringView normalize_external_version_zeros(StringView sv)
+    {
+        if (sv.empty()) return "0";
+
+        auto it = std::find_if_not(sv.begin(), sv.end(), [](char ch) { return ch == '0'; });
+        if (it == sv.end())
+        {
+            // all zeroes - just return "0"
+            return StringView{sv.end() - 1, sv.end()};
+        }
+        else
+        {
+            return StringView{it, sv.end()};
+        }
+    }
+
+    void ParsedExternalVersion::normalize()
+    {
+        major = normalize_external_version_zeros(major);
+        minor = normalize_external_version_zeros(minor);
+        patch = normalize_external_version_zeros(patch);
+    }
+
+    // /(\d\d\d\d)-(\d\d)-(\d\d).*/
+    bool try_extract_external_date_version(ParsedExternalVersion& out, StringView version)
+    {
+        using P = vcpkg::Parse::ParserBase;
+        // a b c d - e f - g h <end>
+        // 0 1 2 3 4 5 6 7 8 9 10
+        if (version.size() < 10) return false;
+        auto first = version.begin();
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (*first++ != '-') return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (*first++ != '-') return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+        if (!P::is_ascii_digit(*first++)) return false;
+
+        first = version.begin();
+        out.major = StringView{first, first + 4};
+        out.minor = StringView{first + 5, first + 7};
+        out.patch = StringView{first + 8, first + 10};
+
+        return true;
+    }
+
+    // /(\d+)(\.\d+|$)(\.\d+)?.*/
+    bool try_extract_external_dot_version(ParsedExternalVersion& out, StringView version)
+    {
+        using P = vcpkg::Parse::ParserBase;
+        auto first = version.begin();
+        auto last = version.end();
+
+        out.major = out.minor = out.patch = StringView{};
+
+        if (first == last) return false;
+
+        auto major_last = std::find_if_not(first, last, P::is_ascii_digit);
+        out.major = StringView{first, major_last};
+        if (major_last == last)
+        {
+            return true;
+        }
+        else if (*major_last != '.')
+        {
+            return false;
+        }
+
+        auto minor_last = std::find_if_not(major_last + 1, last, P::is_ascii_digit);
+        out.minor = StringView{major_last + 1, minor_last};
+        if (minor_last == last || minor_last == major_last + 1 || *minor_last != '.')
+        {
+            return true;
+        }
+
+        auto patch_last = std::find_if_not(minor_last + 1, last, P::is_ascii_digit);
+        out.patch = StringView{minor_last + 1, patch_last};
+
+        return true;
     }
 }

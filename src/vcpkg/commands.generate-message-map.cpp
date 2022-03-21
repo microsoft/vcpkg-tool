@@ -183,7 +183,7 @@ namespace vcpkg::Commands
         {
             if (Util::Sets::contains(parsed_args.switches, OPTION_ALLOW_BAD_COMMENTS))
             {
-                Checks::exit_with_message(
+                Checks::msg_exit_with_message(
                     VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_ALLOW_BAD_COMMENTS);
             }
             comments_msg_type = msg::format(msg::msgErrorMessage);
@@ -194,7 +194,7 @@ namespace vcpkg::Commands
 
         if (!output_comments && Util::Sets::contains(parsed_args.switches, OPTION_OUTPUT_COMMENTS))
         {
-            Checks::exit_with_message(
+            Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_OUTPUT_COMMENTS);
         }
 
@@ -230,7 +230,7 @@ namespace vcpkg::Commands
             if (!format_string_parsing_error.data().empty())
             {
                 msg::println(msgGenerateMsgErrorParsingFormatArgs, msg::value = msg.name);
-                Checks::exit_with_message(VCPKG_LINE_INFO, format_string_parsing_error);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, format_string_parsing_error);
             }
 
             if (!mismatches.arguments_without_comment.empty() || !mismatches.comments_without_argument.empty())

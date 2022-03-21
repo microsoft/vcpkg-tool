@@ -365,8 +365,8 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
         auto cmd_line = Command(nuget_exe)
                             .string_arg("pack")
                             .string_arg("-OutputDirectory")
-                            .path_arg(buildsystems_dir)
-                            .path_arg(nuspec_file_path);
+                            .string_arg(buildsystems_dir)
+                            .string_arg(nuspec_file_path);
 
         const int exit_code =
             cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;

@@ -1,6 +1,7 @@
 #include <vcpkg/base/api_stable_format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/unicode.h>
 #include <vcpkg/base/util.h>
@@ -12,19 +13,6 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-
-namespace
-{
-    constexpr struct
-    {
-        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
-    } tolower_char;
-
-    constexpr struct
-    {
-        bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
-    } icase_eq;
-}
 
 vcpkg::ExpectedS<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
                                                                      void (*cb)(void*, std::string&, StringView),
@@ -187,14 +175,14 @@ std::string Strings::escape_string(std::string&& s, char char_to_escape, char es
     return ret;
 }
 
-static const char* case_insensitive_ascii_find(StringView s, StringView pattern)
+const char* Strings::case_insensitive_ascii_search(StringView s, StringView pattern)
 {
     return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
 bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
 {
-    return case_insensitive_ascii_find(s, pattern) != s.end();
+    return case_insensitive_ascii_search(s, pattern) != s.end();
 }
 
 bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
@@ -457,6 +445,96 @@ size_t Strings::byte_edit_distance(StringView a, StringView b)
         }
     }
     return d[sa - 1];
+}
+
+template<>
+Optional<int> Strings::strto<int>(StringView sv)
+{
+    auto opt = strto<long>(sv);
+    if (auto p = opt.get())
+    {
+        if (INT_MIN <= *p && *p <= INT_MAX)
+        {
+            return static_cast<int>(*p);
+        }
+    }
+    return nullopt;
+}
+
+template<>
+Optional<long> Strings::strto<long>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || Parse::ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    errno = 0;
+    char* endptr = nullptr;
+    long res = strtol(with_nul_terminator.c_str(), &endptr, 10);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    else if (errno == ERANGE)
+    {
+        return nullopt;
+    }
+
+    return res;
+}
+
+template<>
+Optional<long long> Strings::strto<long long>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || Parse::ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    errno = 0;
+    char* endptr = nullptr;
+    long long res = strtoll(with_nul_terminator.c_str(), &endptr, 10);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    else if (errno == ERANGE)
+    {
+        return nullopt;
+    }
+
+    return res;
+}
+
+template<>
+Optional<double> Strings::strto<double>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || Parse::ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    char* endptr = nullptr;
+    double res = strtod(with_nul_terminator.c_str(), &endptr);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    // else, we may have HUGE_VAL but we expect the caller to deal with that
+    return res;
 }
 
 namespace vcpkg::Strings

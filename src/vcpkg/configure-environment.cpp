@@ -45,14 +45,14 @@ namespace vcpkg
             }
 
             Command cmd_provision(node_path);
-            cmd_provision.path_arg(npm_path);
+            cmd_provision.string_arg(npm_path);
             cmd_provision.string_arg("--force");
             cmd_provision.string_arg("install");
             cmd_provision.string_arg("--no-save");
             cmd_provision.string_arg("--no-lockfile");
             cmd_provision.string_arg("--scripts-prepend-node-path=true");
             cmd_provision.string_arg("--silent");
-            cmd_provision.path_arg(ce_tarball);
+            cmd_provision.string_arg(ce_tarball);
             const auto provision_status = cmd_execute(cmd_provision, WorkingDirectory{paths.root}, env);
             fs.remove(ce_tarball, VCPKG_LINE_INFO);
             if (provision_status != 0)
@@ -64,7 +64,7 @@ namespace vcpkg
 
         Command cmd_run(node_path);
         cmd_run.string_arg("--harmony");
-        cmd_run.path_arg(ce_path);
+        cmd_run.string_arg(ce_path);
         cmd_run.forwarded_args(args);
         cmd_run.string_arg("--from-vcpkg");
         return cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd});

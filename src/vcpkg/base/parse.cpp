@@ -30,7 +30,7 @@ namespace vcpkg::Parse
         auto decoder = Unicode::Utf8Decoder(line.data(), line.data() + line.size());
         ParseMessage as_message;
         as_message.location = SourceLoc{std::next(decoder, caret_col), decoder, row, column};
-        as_message.message = LocalizedString::from_string_unchecked(std::string(message));
+        as_message.message = LocalizedString::from_raw(std::string(message));
 
         auto res = as_message.format(origin, MessageKind::Error).extract_data();
         res.push_back('\n');
@@ -88,7 +88,7 @@ namespace vcpkg::Parse
         }
         caret_string.push_back('^');
 
-        res.append(LocalizedString::from_string_unchecked(std::move(caret_string)));
+        res.append_raw(std::move(caret_string));
 
         return res;
     }
