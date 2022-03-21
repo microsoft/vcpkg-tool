@@ -454,10 +454,10 @@ namespace vcpkg::Commands::CI
                                  ExclusionsMap& exclusions_map)
     {
         auto it_exclusions = settings.find(opt);
-        if (it_exclusions != settings.end())
-        {
-            exclusions_map.insert(triplet, SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
-        }
+        exclusions_map.insert(triplet,
+                              it_exclusions == settings.end()
+                                  ? SortedVector<std::string>{}
+                                  : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
     }
 
     static Optional<int> parse_skipped_cascade_count(const std::unordered_map<std::string, std::string>& settings)
