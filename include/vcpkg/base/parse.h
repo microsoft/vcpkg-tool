@@ -84,6 +84,10 @@ namespace vcpkg::Parse
         static constexpr bool is_alphanum(char32_t ch) { return is_icase_alpha(ch) || is_ascii_digit(ch); }
         static constexpr bool is_alphadash(char32_t ch) { return is_icase_alpha(ch) || ch == '-'; }
         static constexpr bool is_alphanumdash(char32_t ch) { return is_alphanum(ch) || ch == '-'; }
+        static constexpr bool is_package_name_char(char32_t ch)
+        {
+            return is_lower_alpha(ch) || is_ascii_digit(ch) || ch == '-';
+        }
 
         static constexpr bool is_hex_digit(char32_t ch)
         {
