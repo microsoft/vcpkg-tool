@@ -28,7 +28,7 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <iostream>
+#include <stdio.h>
 
 using namespace vcpkg;
 
@@ -79,6 +79,23 @@ namespace
     private:
         Path base_path;
     };
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        CiBaselineRegressionHeader,
+        (),
+        "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
+        "REGRESSIONS:");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        CiBaselineRegression,
+        (msg::spec, msg::build_result, msg::path),
+        "",
+        "REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.");
+
+    DECLARE_AND_REGISTER_MESSAGE(CiBaselineUnexpectedPass,
+                                 (msg::spec, msg::path),
+                                 "",
+                                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
 }
 
 namespace vcpkg::Commands::CI
@@ -460,6 +477,47 @@ namespace vcpkg::Commands::CI
         return result;
     }
 
+    static void print_baseline_regressions(const TripletAndSummary& result,
+                                           const SortedVector<PackageSpec>& expected_failures,
+                                           const std::string& ci_baseline_file_name,
+                                           bool allow_unexpected_passing)
+    {
+        LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
+        output.appendnl();
+        for (auto&& port_result : result.summary.results)
+        {
+            switch (port_result.build_result.code)
+            {
+                case Build::BuildResult::BUILD_FAILED:
+                case Build::BuildResult::POST_BUILD_CHECKS_FAILED:
+                case Build::BuildResult::FILE_CONFLICTS:
+                    if (!expected_failures.contains(port_result.spec))
+                    {
+                        output.append(msg::format(
+                            msgCiBaselineRegression,
+                            msg::spec = port_result.spec.to_string(),
+                            msg::build_result =
+                                Build::to_string_locale_invariant(port_result.build_result.code).to_string(),
+                            msg::path = ci_baseline_file_name));
+                        output.appendnl();
+                    }
+                    break;
+                case Build::BuildResult::SUCCEEDED:
+                    if (!allow_unexpected_passing && expected_failures.contains(port_result.spec))
+                    {
+                        output.append(msg::format(msgCiBaselineUnexpectedPass,
+                                                  msg::spec = port_result.spec.to_string(),
+                                                  msg::path = ci_baseline_file_name));
+                        output.appendnl();
+                    }
+                    break;
+                default: break;
+            }
+        }
+
+        fputs(output.data().c_str(), stderr);
+    }
+
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
                           Triplet target_triplet,
@@ -688,33 +746,7 @@ namespace vcpkg::Commands::CI
 
             if (baseline_iter != settings.end())
             {
-                print2("\nREGRESSIONS:\n");
-                for (auto&& port_result : result.summary.results)
-                {
-                    switch (port_result.build_result.code)
-                    {
-                        case Build::BuildResult::BUILD_FAILED:
-                        case Build::BuildResult::POST_BUILD_CHECKS_FAILED:
-                        case Build::BuildResult::FILE_CONFLICTS:
-                            if (!expected_failures.contains(port_result.spec))
-                            {
-                                std::cerr
-                                    << "    REGRESSION: " << port_result.spec.to_string() << " failed with "
-                                    << Build::to_string_locale_invariant(port_result.build_result.code).to_string()
-                                    << ". If expected, add " << port_result.spec.to_string() << "=fail to "
-                                    << baseline_iter->second << std::endl;
-                            }
-                            break;
-                        case Build::BuildResult::SUCCEEDED:
-                            if (!allow_unexpected_passing && expected_failures.contains(port_result.spec))
-                            {
-                                std::cerr << "    PASSING, REMOVE FROM FAIL LIST: " << port_result.spec.to_string()
-                                          << " (" << baseline_iter->second << ")" << std::endl;
-                            }
-                            break;
-                        default: break;
-                    }
-                }
+                print_baseline_regressions(result, expected_failures, baseline_iter->second, allow_unexpected_passing);
             }
         }
 
