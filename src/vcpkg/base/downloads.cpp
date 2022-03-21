@@ -11,6 +11,23 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
+namespace
+{
+    using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(CurlReportedUnexpectedResults,
+                                 (msg::command_line, msg::actual),
+                                 "command_line is the command line to call curl.exe, actual is the console output of "
+                                 "curl.exe locale-invariant download results.",
+                                 "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\n"
+                                 "Please review the following text for sensitive information and open an issue on the "
+                                 "Microsoft/vcpkg GitHub to help fix this problem!\n"
+                                 "cmd: {command_line}\n"
+                                 "=== curl output ===\n"
+                                 "{actual}\n"
+                                 "=== end curl output ===\n");
+}
+
 namespace vcpkg
 {
 #if defined(_WIN32)
@@ -294,20 +311,11 @@ namespace vcpkg
 
         if (out->size() != start_size + urls.size())
         {
-            // Invariant violation
-            print2(
-                Color::error,
-                "Error: vcpkg has encountered an internal invariant violation and cannot continue.\nPlease review the "
-                "following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix "
-                "this problem!\n");
-
-            print2("cmd: ", cmd.command_line(), '\n');
-            print2("=== curl output ===\n");
-            for (auto&& line : lines)
-                print2(line, '\n');
-            print2("=== end curl output ===\n");
-
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msg::format(msg::msgErrorMessage)
+                                              .append(msg::format(msgCurlReportedUnexpectedResults,
+                                                                  msg::command_line = cmd.command_line(),
+                                                                  msg::actual = Strings::join("\n", lines))));
         }
     }
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers)
