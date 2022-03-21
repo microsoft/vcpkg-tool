@@ -13,7 +13,7 @@ using namespace vcpkg;
 
 namespace vcpkg
 {
-    std::ostream& operator<<(std::ostream& os, const CiBaselineLine& line)
+    static std::ostream& operator<<(std::ostream& os, const CiBaselineLine& line)
     {
         os << line.port_name << ':' << line.triplet.canonical_name() << '=';
         switch (line.state)
