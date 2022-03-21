@@ -141,6 +141,35 @@ namespace vcpkg::Util
         cont.erase(std::remove_if(cont.begin(), cont.end(), pred), cont.end());
     }
 
+    template<class ForwardIt1, class ForwardIt2>
+    ForwardIt1 search_and_skip(ForwardIt1 first, ForwardIt1 last, ForwardIt2 s_first, ForwardIt2 s_last)
+    {
+        first = std::search(first, last, s_first, s_last);
+        if (first != last)
+        {
+            std::advance(first, std::distance(s_first, s_last));
+        }
+        return first;
+    }
+
+    template<class ForwardIt1, class ForwardRange2>
+    ForwardIt1 search_and_skip(ForwardIt1 first, ForwardIt1 last, const ForwardRange2& rng)
+    {
+        using std::begin;
+        using std::end;
+
+        return ::vcpkg::Util::search_and_skip(first, last, begin(rng), end(rng));
+    }
+
+    template<class ForwardIt1, class ForwardRange2>
+    ForwardIt1 search(ForwardIt1 first, ForwardIt1 last, const ForwardRange2& rng)
+    {
+        using std::begin;
+        using std::end;
+
+        return std::search(first, last, begin(rng), end(rng));
+    }
+
     // 0th is the first occurence
     // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
     // returns the 1 before the 4
