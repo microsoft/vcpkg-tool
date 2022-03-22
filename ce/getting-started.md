@@ -1,7 +1,7 @@
 # Build Instructions
 
 ## Prerequisites: 
-1. [Node.js](https://nodejs.org/en/download/) (>=15.10.0) -- I suggest using [NVS](https://github.com/jasongin/nvs) -- written by a microsoft engineer.
+1. [Node.js](https://nodejs.org/en/download/) (>=15.10.0) -- We suggest using [NVS](https://github.com/jasongin/nvs)
 
 2. [Rush](https://rushjs.io/pages/intro/welcome/) 
 
