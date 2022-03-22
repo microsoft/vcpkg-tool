@@ -31,7 +31,7 @@ namespace vcpkg
             // XX-XX-XX-XX-XX-XX
             // 1  2  3  4  5  6
             // size = 6 * 2 + 5 = 17
-            first = std::find_if(first, last, Parse::ParserBase::is_hex_digit);
+            first = std::find_if(first, last, ParserBase::is_hex_digit);
             if (last - first < 17)
             {
                 break;
@@ -53,14 +53,14 @@ namespace vcpkg
                 }
                 is_first = false;
 
-                if (!Parse::ParserBase::is_hex_digit(*end_of_mac))
+                if (!ParserBase::is_hex_digit(*end_of_mac))
                 {
                     is_valid = false;
                     break;
                 }
                 ++end_of_mac;
 
-                if (!Parse::ParserBase::is_hex_digit(*end_of_mac))
+                if (!ParserBase::is_hex_digit(*end_of_mac))
                 {
                     is_valid = false;
                     break;

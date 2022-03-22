@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/parse.h>
+
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
@@ -11,7 +13,7 @@
 #include <memory>
 #include <string>
 
-namespace vcpkg::Parse
+namespace vcpkg
 {
     struct IParseError
     {
@@ -49,12 +51,6 @@ namespace vcpkg::Parse
         Unicode::Utf8Decoder start_of_line;
         int row;
         int column;
-    };
-
-    enum class MessageKind
-    {
-        Warning,
-        Error,
     };
 
     struct ParseMessage

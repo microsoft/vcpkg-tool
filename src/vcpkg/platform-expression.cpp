@@ -11,8 +11,6 @@
 
 namespace vcpkg::PlatformExpression
 {
-    using vcpkg::Parse::ParseError;
-
     enum class Identifier
     {
         invalid = -1, // not a recognized identifier
@@ -109,10 +107,10 @@ namespace vcpkg::PlatformExpression
             }
         };
 
-        struct ExpressionParser : Parse::ParserBase
+        struct ExpressionParser : ParserBase
         {
             ExpressionParser(StringView str, MultipleBinaryOperators multiple_binary_operators)
-                : Parse::ParserBase(str, "CONTROL"), multiple_binary_operators(multiple_binary_operators)
+                : ParserBase(str, "CONTROL"), multiple_binary_operators(multiple_binary_operators)
             {
             }
 
