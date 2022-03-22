@@ -126,7 +126,7 @@ TEST_CASE ("cmdlinebuilder", "[system]")
     using vcpkg::Command;
 
     Command cmd;
-    cmd.path_arg("relative/path.exe");
+    cmd.string_arg("relative/path.exe");
     cmd.string_arg("abc");
     cmd.string_arg("hello world!");
     cmd.string_arg("|");
@@ -135,7 +135,7 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 
     cmd.clear();
 
-    cmd.path_arg("trailing\\slash\\");
+    cmd.string_arg("trailing\\slash\\");
     cmd.string_arg("inner\"quotes");
 #ifdef _WIN32
     REQUIRE(cmd.command_line() == "\"trailing\\slash\\\\\" \"inner\\\"quotes\"");

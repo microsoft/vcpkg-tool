@@ -1,26 +1,21 @@
 #pragma once
 
-#include <vcpkg/base/cstringview.h>
+#include <vcpkg/base/fwd/parse.h>
+
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
+#include <vcpkg/base/zstringview.h>
 
 #include <vcpkg/textrowcol.h>
 
 #include <memory>
 #include <string>
 
-namespace vcpkg::Parse
+namespace vcpkg
 {
-    struct IParseError
-    {
-        virtual ~IParseError() = default;
-        virtual std::string format() const = 0;
-        virtual const std::string& get_message() const = 0;
-    };
-
-    struct ParseError : IParseError
+    struct ParseError
     {
         ParseError(std::string origin, int row, int column, int caret_col, std::string line, std::string message)
             : origin(std::move(origin))
@@ -39,8 +34,8 @@ namespace vcpkg::Parse
         const std::string line;
         const std::string message;
 
-        virtual std::string format() const override;
-        virtual const std::string& get_message() const override;
+        std::string format() const;
+        const std::string& get_message() const;
     };
 
     struct SourceLoc
@@ -49,12 +44,6 @@ namespace vcpkg::Parse
         Unicode::Utf8Decoder start_of_line;
         int row;
         int column;
-    };
-
-    enum class MessageKind
-    {
-        Warning,
-        Error,
     };
 
     struct ParseMessage
@@ -84,6 +73,16 @@ namespace vcpkg::Parse
         static constexpr bool is_alphanum(char32_t ch) { return is_icase_alpha(ch) || is_ascii_digit(ch); }
         static constexpr bool is_alphadash(char32_t ch) { return is_icase_alpha(ch) || ch == '-'; }
         static constexpr bool is_alphanumdash(char32_t ch) { return is_alphanum(ch) || ch == '-'; }
+        static constexpr bool is_package_name_char(char32_t ch)
+        {
+            return is_lower_alpha(ch) || is_ascii_digit(ch) || ch == '-';
+        }
+
+        static constexpr bool is_hex_digit(char32_t ch)
+        {
+            return is_ascii_digit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+        }
+        static constexpr bool is_word_char(char32_t ch) { return is_alphanum(ch) || ch == '_'; }
 
         StringView skip_whitespace() { return match_zero_or_more(is_whitespace); }
         StringView skip_tabs_spaces()
@@ -137,8 +136,8 @@ namespace vcpkg::Parse
         void add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
 
-        const IParseError* get_error() const { return m_messages.error.get(); }
-        std::unique_ptr<IParseError> extract_error() { return std::move(m_messages.error); }
+        const ParseError* get_error() const { return m_messages.error.get(); }
+        std::unique_ptr<ParseError> extract_error() { return std::move(m_messages.error); }
 
         const ParseMessages& messages() const { return m_messages; }
         ParseMessages extract_messages() { return std::move(m_messages); }

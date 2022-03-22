@@ -1,20 +1,14 @@
 #pragma once
 
+#include <vcpkg/fwd/paragraphparser.h>
 #include <vcpkg/fwd/registries.h>
 
 #include <vcpkg/base/expected.h>
 
 #include <vcpkg/binaryparagraph.h>
 
-namespace vckpg::Parse
-{
-    struct ParseControlErrorInfo;
-}
-
 namespace vcpkg::Paragraphs
 {
-    using Paragraph = Parse::Paragraph;
-
     uint64_t get_load_ports_stats();
 
     ExpectedS<Paragraph> parse_single_paragraph(StringView str, StringView origin);
@@ -26,10 +20,8 @@ namespace vcpkg::Paragraphs
 
     bool is_port_directory(const Filesystem& fs, const Path& maybe_directory);
 
-    Parse::ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const Path& port_directory);
-    Parse::ParseExpected<SourceControlFile> try_load_port_text(const std::string& text,
-                                                               StringView origin,
-                                                               bool is_manifest);
+    ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const Path& port_directory);
+    ParseExpected<SourceControlFile> try_load_port_text(const std::string& text, StringView origin, bool is_manifest);
 
     ExpectedS<BinaryControlFile> try_load_cached_package(const Filesystem& fs,
                                                          const Path& package_dir,
@@ -38,7 +30,7 @@ namespace vcpkg::Paragraphs
     struct LoadResults
     {
         std::vector<SourceControlFileAndLocation> paragraphs;
-        std::vector<std::unique_ptr<Parse::ParseControlErrorInfo>> errors;
+        std::vector<std::unique_ptr<ParseControlErrorInfo>> errors;
     };
 
     // this allows one to pass this around as an overload set to stuff like `Util::fmap`,

@@ -86,6 +86,7 @@ namespace vcpkg
 
         std::vector<std::string> aws_read_prefixes;
         std::vector<std::string> aws_write_prefixes;
+        bool aws_no_sign_request = false;
 
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;

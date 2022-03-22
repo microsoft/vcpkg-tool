@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/fwd/paragraphparser.h>
+
 #include <vcpkg/base/expected.h>
 
 #include <vcpkg/packagespec.h>
@@ -11,7 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace vcpkg::Parse
+namespace vcpkg
 {
     struct ParseControlErrorInfo
     {

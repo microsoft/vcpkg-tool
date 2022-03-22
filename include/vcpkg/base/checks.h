@@ -26,6 +26,14 @@ namespace vcpkg::Checks
         msg_exit_with_message(line_info, msg::format(m, args...));
     }
 
+    template<class Message, class... Args>
+    [[noreturn]] typename Message::is_message_type msg_exit_with_error(const LineInfo& line_info,
+                                                                       Message m,
+                                                                       const Args&... args)
+    {
+        msg_exit_with_message(line_info, msg::format(msg::msgErrorMessage).append(msg::format(m, args...)));
+    }
+
     template<class Arg1, class... Args>
     VCPKG_SAL_ANNOTATION(_Post_satisfies_(_Old_(expression)))
     void check_exit(const LineInfo& line_info,

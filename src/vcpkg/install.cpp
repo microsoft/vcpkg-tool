@@ -24,14 +24,25 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <iterator>
+
 namespace
 {
     using namespace vcpkg;
     DECLARE_AND_REGISTER_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
     DECLARE_AND_REGISTER_MESSAGE(ResultsLine,
                                  (msg::spec, msg::build_result, msg::elapsed),
-                                 "A single instalation result.",
+                                 "{Locked}",
                                  "    {spec}: {build_result}: {elapsed}");
+
+    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetsExcluded,
+                                 (msg::count),
+                                 "keep the indentation and the `#` mark",
+                                 "    # note: {count} targets were omitted.");
+    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetLinkLibraries,
+                                 (msg::list),
+                                 "{Locked}",
+                                 "    target_link_libraries(main PRIVATE {list})");
 }
 
 namespace vcpkg::Install
@@ -621,11 +632,56 @@ namespace vcpkg::Install
         }
     }
 
+    static const char* find_skip_add_library(const char* real_first, const char* first, const char* last)
+    {
+        static constexpr StringLiteral ADD_LIBRARY_CALL = "add_library(";
+
+        for (;;)
+        {
+            first = Util::search(first, last, ADD_LIBRARY_CALL);
+            if (first == last)
+            {
+                return first;
+            }
+            if (first == real_first || !ParserBase::is_word_char(*(first - 1)))
+            {
+                return first + ADD_LIBRARY_CALL.size();
+            }
+            ++first;
+        }
+    }
+
+    std::vector<std::string> get_cmake_add_library_names(StringView cmake_file)
+    {
+        constexpr static auto is_library_name_char = [](char ch) {
+            return ch != ')' && ch != '$' && !ParserBase::is_whitespace(ch);
+        };
+
+        const auto real_first = cmake_file.begin();
+        auto first = real_first;
+        const auto last = cmake_file.end();
+
+        std::vector<std::string> res;
+        for (;;)
+        {
+            first = find_skip_add_library(real_first, first, last);
+            if (first == last)
+            {
+                return res;
+            }
+            auto start_of_library_name = std::find_if_not(first, last, ParserBase::is_whitespace);
+            auto end_of_library_name = std::find_if_not(start_of_library_name, last, is_library_name_char);
+            if (end_of_library_name == start_of_library_name)
+            {
+                first = end_of_library_name;
+                continue;
+            }
+            res.emplace_back(start_of_library_name, end_of_library_name);
+        }
+    }
+
     CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh)
     {
-        static const std::regex cmake_library_regex(R"(\badd_library\(([^\$\s\)]+)\s)",
-                                                    std::regex_constants::ECMAScript);
-
         CMakeUsageInfo ret;
 
         std::error_code ec;
@@ -662,16 +718,13 @@ namespace vcpkg::Install
                     const auto find_package_name = Path(path.parent_path()).filename().to_string();
                     if (!ec)
                     {
-                        std::sregex_iterator next(contents.begin(), contents.end(), cmake_library_regex);
-                        std::sregex_iterator last;
-
-                        while (next != last)
+                        auto targets = get_cmake_add_library_names(contents);
+                        if (!targets.empty())
                         {
-                            auto match = *next;
-                            auto& targets = library_targets[find_package_name];
-                            if (std::find(targets.cbegin(), targets.cend(), match[1]) == targets.cend())
-                                targets.push_back(match[1]);
-                            ++next;
+                            auto& all_targets = library_targets[find_package_name];
+                            all_targets.insert(all_targets.end(),
+                                               std::make_move_iterator(targets.begin()),
+                                               std::make_move_iterator(targets.end()));
                         }
                     }
 
@@ -712,7 +765,7 @@ namespace vcpkg::Install
                 {
                     static auto cmakeify = [](std::string name) {
                         auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
-                        if (n.empty() || Parse::ParserBase::is_ascii_digit(n[0]))
+                        if (n.empty() || ParserBase::is_ascii_digit(n[0]))
                         {
                             n.insert(n.begin(), '_');
                         }
@@ -740,31 +793,25 @@ namespace vcpkg::Install
                     else
                         Strings::append(msg, "    find_package(", library_target_pair.first, " CONFIG REQUIRED)\n");
 
-                    std::sort(library_target_pair.second.begin(),
-                              library_target_pair.second.end(),
-                              [](const std::string& l, const std::string& r) {
-                                  if (l.size() < r.size()) return true;
-                                  if (l.size() > r.size()) return false;
-                                  return l < r;
-                              });
+                    auto& targets = library_target_pair.second;
+                    Util::sort(targets, [](const std::string& l, const std::string& r) {
+                        if (l.size() < r.size()) return true;
+                        if (l.size() > r.size()) return false;
+                        return l < r;
+                    });
+                    targets.erase(std::unique(targets.begin(), targets.end()), targets.end());
 
-                    if (library_target_pair.second.size() <= 4)
+                    if (targets.size() > 4)
                     {
-                        Strings::append(msg,
-                                        "    target_link_libraries(main PRIVATE ",
-                                        Strings::join(" ", library_target_pair.second),
-                                        ")\n\n");
+                        auto omitted = targets.size() - 4;
+                        library_target_pair.second.erase(targets.begin() + 4, targets.end());
+                        msg.append(
+                            msg::format(msgCmakeTargetsExcluded, msg::count = omitted).appendnl().extract_data());
                     }
-                    else
-                    {
-                        auto omitted = library_target_pair.second.size() - 4;
-                        library_target_pair.second.erase(library_target_pair.second.begin() + 4,
-                                                         library_target_pair.second.end());
-                        msg += Strings::format("    # Note: %zd target(s) were omitted.\n"
-                                               "    target_link_libraries(main PRIVATE %s)\n\n",
-                                               omitted,
-                                               Strings::join(" ", library_target_pair.second));
-                    }
+                    msg.append(msg::format(msgCmakeTargetLinkLibraries, msg::list = Strings::join(" ", targets))
+                                   .appendnl()
+                                   .appendnl()
+                                   .extract_data());
                 }
                 ret.message = std::move(msg);
             }

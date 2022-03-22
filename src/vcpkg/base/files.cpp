@@ -56,11 +56,8 @@ namespace
 
     constexpr IsSlash is_slash;
 
-    bool is_dot(StringView sv) { return sv.size() == 1 && sv.byte_at_index(0) == '.'; }
-    bool is_dot_dot(StringView sv)
-    {
-        return sv.size() == 2 && sv.byte_at_index(0) == '.' && sv.byte_at_index(1) == '.';
-    }
+    bool is_dot(StringView sv) { return sv.size() == 1 && sv[0] == '.'; }
+    bool is_dot_dot(StringView sv) { return sv.size() == 2 && sv[0] == '.' && sv[1] == '.'; }
 #if !defined(_WIN32)
     bool is_dot_or_dot_dot(const char* ntbs)
     {
@@ -340,7 +337,7 @@ namespace
         // \\?\ or \\server, so the path is absolute. Otherwise it is relative.
         return first != find_root_name_end(first, last);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-        return !str.empty() && str.byte_at_index(0) == '/';
+        return !str.empty() && str[0] == '/';
 #endif // ^^^ !_WIN32
     }
 
