@@ -39,7 +39,7 @@ namespace vcpkg::Commands::X_Download
         nullptr,
     };
 
-    static bool is_hex(StringView sha) { return std::all_of(sha.begin(), sha.end(), Parse::ParserBase::is_hex_digit); }
+    static bool is_hex(StringView sha) { return std::all_of(sha.begin(), sha.end(), ParserBase::is_hex_digit); }
     static bool is_sha512(StringView sha) { return sha.size() == 128 && is_hex(sha); }
 
     static Optional<std::string> get_sha512_check(const VcpkgCmdArguments& args, const ParsedArguments& parsed)

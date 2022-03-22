@@ -34,14 +34,10 @@
 
 using namespace vcpkg;
 using vcpkg::Build::BuildResult;
-using vcpkg::Parse::ParseControlErrorInfo;
-using vcpkg::Parse::ParseExpected;
 using vcpkg::PortFileProvider::PathsPortFileProvider;
 
 namespace
 {
-    using vcpkg::PackageSpec;
-    using vcpkg::VcpkgPaths;
     using vcpkg::Build::IBuildLogsRecorder;
     struct NullBuildLogsRecorder final : IBuildLogsRecorder
     {
@@ -1504,9 +1500,9 @@ namespace vcpkg::Build
                                paths.get_toolver_diagnostics());
     }
 
-    static BuildInfo inner_create_buildinfo(Parse::Paragraph pgh)
+    static BuildInfo inner_create_buildinfo(Paragraph pgh)
     {
-        Parse::ParagraphParser parser(std::move(pgh));
+        ParagraphParser parser(std::move(pgh));
 
         BuildInfo build_info;
 
@@ -1570,7 +1566,7 @@ namespace vcpkg::Build
 
     BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
     {
-        const ExpectedS<Parse::Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
+        const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
         Checks::check_maybe_upgrade(
             VCPKG_LINE_INFO, pghs.get() != nullptr, "Invalid BUILD_INFO file for package: %s", pghs.error());
         return inner_create_buildinfo(*pghs.get());

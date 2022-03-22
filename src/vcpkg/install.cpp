@@ -643,7 +643,7 @@ namespace vcpkg::Install
             {
                 return first;
             }
-            if (first == real_first || !Parse::ParserBase::is_word_char(*(first - 1)))
+            if (first == real_first || !ParserBase::is_word_char(*(first - 1)))
             {
                 return first + ADD_LIBRARY_CALL.size();
             }
@@ -654,7 +654,7 @@ namespace vcpkg::Install
     std::vector<std::string> get_cmake_add_library_names(StringView cmake_file)
     {
         constexpr static auto is_library_name_char = [](char ch) {
-            return ch != ')' && ch != '$' && !Parse::ParserBase::is_whitespace(ch);
+            return ch != ')' && ch != '$' && !ParserBase::is_whitespace(ch);
         };
 
         const auto real_first = cmake_file.begin();
@@ -669,7 +669,7 @@ namespace vcpkg::Install
             {
                 return res;
             }
-            auto start_of_library_name = std::find_if_not(first, last, Parse::ParserBase::is_whitespace);
+            auto start_of_library_name = std::find_if_not(first, last, ParserBase::is_whitespace);
             auto end_of_library_name = std::find_if_not(start_of_library_name, last, is_library_name_char);
             if (end_of_library_name == start_of_library_name)
             {
@@ -765,7 +765,7 @@ namespace vcpkg::Install
                 {
                     static auto cmakeify = [](std::string name) {
                         auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
-                        if (n.empty() || Parse::ParserBase::is_ascii_digit(n[0]))
+                        if (n.empty() || ParserBase::is_ascii_digit(n[0]))
                         {
                             n.insert(n.begin(), '_');
                         }

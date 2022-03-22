@@ -470,16 +470,16 @@ namespace vcpkg::Json
     // auto parse() {
     namespace
     {
-        struct Parser : private Parse::ParserBase
+        struct Parser : private ParserBase
         {
-            Parser(StringView text, StringView origin) : Parse::ParserBase(text, origin), style_() { }
+            Parser(StringView text, StringView origin) : ParserBase(text, origin), style_() { }
 
             char32_t next() noexcept
             {
                 auto ch = cur();
                 if (ch == '\r') style_.newline_kind = JsonStyle::Newline::CrLf;
                 if (ch == '\t') style_.set_tabs();
-                return Parse::ParserBase::next();
+                return ParserBase::next();
             }
 
             static bool is_number_start(char32_t code_point) noexcept
@@ -981,8 +981,8 @@ namespace vcpkg::Json
                 }
             }
 
-            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(
-                StringView json, StringView origin) noexcept
+            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
+                                                                                             StringView origin) noexcept
             {
                 StatsTimer t(g_json_parsing_stats);
 
@@ -1023,7 +1023,7 @@ namespace vcpkg::Json
 
     static constexpr bool is_lower_digit(char ch)
     {
-        return Parse::ParserBase::is_lower_alpha(ch) || Parse::ParserBase::is_ascii_digit(ch);
+        return ParserBase::is_lower_alpha(ch) || ParserBase::is_ascii_digit(ch);
     }
 
     bool IdentifierDeserializer::is_ident(StringView sv)
@@ -1072,14 +1072,14 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Filesystem& fs,
-                                                                                           const Path& json_file,
-                                                                                           std::error_code& ec) noexcept
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
+                                                                                   const Path& json_file,
+                                                                                   std::error_code& ec) noexcept
     {
         auto res = fs.read_contents(json_file, ec);
         if (ec)
         {
-            return std::unique_ptr<Parse::IParseError>();
+            return std::unique_ptr<ParseError>();
         }
 
         return parse(std::move(res), json_file);
@@ -1103,8 +1103,8 @@ namespace vcpkg::Json
         return ret.value_or_exit(li);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
-                                                                                      StringView origin) noexcept
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
+                                                                              StringView origin) noexcept
     {
         return Parser::parse(json, origin);
     }

@@ -230,12 +230,12 @@ namespace vcpkg
         auto last = desc.end();
         for (;;)
         {
-            auto next_ws = std::find_if(first, last, Parse::ParserBase::is_whitespace);
+            auto next_ws = std::find_if(first, last, ParserBase::is_whitespace);
             simple_desc.append(first, next_ws);
             if (next_ws == last) break;
 
             simple_desc.push_back(' ');
-            first = std::find_if_not(next_ws + 1, last, Parse::ParserBase::is_whitespace);
+            first = std::find_if_not(next_ws + 1, last, ParserBase::is_whitespace);
         }
 
         return simple_desc.size() <= length ? simple_desc : simple_desc.substr(0, length - 3) + "...";

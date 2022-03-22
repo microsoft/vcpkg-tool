@@ -32,7 +32,7 @@ namespace vcpkg::PostBuildLint
             ++option_end;
         }
 
-        return option_end == sv.end() || Parse::ParserBase::is_whitespace(*option_end);
+        return option_end == sv.end() || ParserBase::is_whitespace(*option_end);
     }
 
     StringLiteral BuildType::to_string() const

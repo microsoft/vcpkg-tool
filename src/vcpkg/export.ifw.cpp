@@ -31,15 +31,15 @@ namespace vcpkg::Export::IFW
             {
                 ++after_prefix;
                 // hex character escape: &#xABC;
-                return after_prefix != semi && std::all_of(after_prefix, semi, Parse::ParserBase::is_hex_digit);
+                return after_prefix != semi && std::all_of(after_prefix, semi, ParserBase::is_hex_digit);
             }
 
             // decimal character escape: &#123;
-            return after_prefix != semi && std::all_of(after_prefix, semi, Parse::ParserBase::is_ascii_digit);
+            return after_prefix != semi && std::all_of(after_prefix, semi, ParserBase::is_ascii_digit);
         }
 
         // word character escape: &amp;
-        return std::all_of(after_prefix, semi, Parse::ParserBase::is_word_char);
+        return std::all_of(after_prefix, semi, ParserBase::is_word_char);
     }
 
     std::string safe_rich_from_plain_text(StringView text)

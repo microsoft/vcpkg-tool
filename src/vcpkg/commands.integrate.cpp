@@ -83,7 +83,7 @@ namespace vcpkg::Commands::Integrate
                 {
                     // autoload[ a-zA-Z0-9-]+bashcompinit
                     if (std::all_of(first, bashcompinit, [](char ch) {
-                            return Parse::ParserBase::is_word_char(ch) || ch == ' ' || ch == '-';
+                            return ParserBase::is_word_char(ch) || ch == ' ' || ch == '-';
                         }))
                     {
                         res.has_autoload_bashcompinit = true;

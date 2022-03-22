@@ -465,7 +465,7 @@ template<>
 Optional<long> Strings::strto<long>(StringView sv)
 {
     // disallow initial whitespace
-    if (sv.empty() || Parse::ParserBase::is_whitespace(sv[0]))
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
     {
         return nullopt;
     }
@@ -492,7 +492,7 @@ template<>
 Optional<long long> Strings::strto<long long>(StringView sv)
 {
     // disallow initial whitespace
-    if (sv.empty() || Parse::ParserBase::is_whitespace(sv[0]))
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
     {
         return nullopt;
     }
@@ -519,7 +519,7 @@ template<>
 Optional<double> Strings::strto<double>(StringView sv)
 {
     // disallow initial whitespace
-    if (sv.empty() || Parse::ParserBase::is_whitespace(sv[0]))
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
     {
         return nullopt;
     }

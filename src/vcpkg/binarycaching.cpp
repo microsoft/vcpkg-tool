@@ -39,11 +39,9 @@ namespace
                                  "Restored {count} packages from AWS servers in {elapsed}");
     DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages, (msg::count), "", "Uploaded binaries to {count} AWS servers");
 
-    using Parse::SourceLoc;
-
-    struct ConfigSegmentsParser : Parse::ParserBase
+    struct ConfigSegmentsParser : ParserBase
     {
-        using Parse::ParserBase::ParserBase;
+        using ParserBase::ParserBase;
 
         void parse_segments(std::vector<std::pair<SourceLoc, std::string>>& out_segments);
         std::vector<std::vector<std::pair<SourceLoc, std::string>>> parse_all_segments();
