@@ -176,6 +176,31 @@ else()
     )
 endif()
 
+set(CPP_ATOMIC_LIBRARY "")
+if(NOT MSVC)
+    # Some platforms require a explicit linkage against libatomic
+    # Using clang with libstdc++ requires explicitly linking against libatomic
+    set(TEST_SOURCE "
+#include <atomic>
+int main(int argc, char** argv) {
+    struct Test { int val; };
+    std::atomic<Test> s;
+    return static_cast<int>(s.is_lock_free());
+}")
+    check_cxx_source_compiles("${TEST_SOURCE}" CPP_ATOMIC_BUILTIN)
+    if(NOT CPP_ATOMIC_BUILTIN)
+        list(APPEND CMAKE_REQUIRED_LIBRARIES atomic)
+        set(CPP_ATOMIC_LIBRARY atomic)
+        check_cxx_source_compiles("${TEST_SOURCE}" CPP_ATOMIC_WITH_LIBATOMIC)
+        if (NOT CPP_ATOMIC_WITH_LIBATOMIC)
+            message(
+                FATAL_ERROR "unable to link C++ std::atomic code: you may need \
+                to install GNU libatomic"
+            )
+        endif()
+    endif()
+endif()
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(vcpkglib
@@ -183,7 +208,7 @@ target_link_libraries(vcpkglib
         fmt::fmt
     PRIVATE
         Threads::Threads
-        $<$<NOT:$<OR:$<BOOL:${MSVC}>,$<BOOL:${APPLE}>>>:atomic>
+        ${CPP_ATOMIC_LIBRARY}
 )
 
 if(MSVC)
