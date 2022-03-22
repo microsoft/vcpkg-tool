@@ -2,7 +2,6 @@
 
 namespace vcpkg
 {
-    struct IParseError;
     struct ParseError;
     struct SourceLoc;
 

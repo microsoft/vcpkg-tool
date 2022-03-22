@@ -981,8 +981,8 @@ namespace vcpkg::Json
                 }
             }
 
-            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<IParseError>> parse(
-                StringView json, StringView origin) noexcept
+            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
+                                                                                             StringView origin) noexcept
             {
                 StatsTimer t(g_json_parsing_stats);
 
@@ -1072,14 +1072,14 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<IParseError>> parse_file(const Filesystem& fs,
-                                                                                    const Path& json_file,
-                                                                                    std::error_code& ec) noexcept
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
+                                                                                   const Path& json_file,
+                                                                                   std::error_code& ec) noexcept
     {
         auto res = fs.read_contents(json_file, ec);
         if (ec)
         {
-            return std::unique_ptr<IParseError>();
+            return std::unique_ptr<ParseError>();
         }
 
         return parse(std::move(res), json_file);
@@ -1103,8 +1103,8 @@ namespace vcpkg::Json
         return ret.value_or_exit(li);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<IParseError>> parse(StringView json,
-                                                                               StringView origin) noexcept
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
+                                                                              StringView origin) noexcept
     {
         return Parser::parse(json, origin);
     }
