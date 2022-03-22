@@ -15,14 +15,7 @@
 
 namespace vcpkg
 {
-    struct IParseError
-    {
-        virtual ~IParseError() = default;
-        virtual std::string format() const = 0;
-        virtual const std::string& get_message() const = 0;
-    };
-
-    struct ParseError : IParseError
+    struct ParseError
     {
         ParseError(std::string origin, int row, int column, int caret_col, std::string line, std::string message)
             : origin(std::move(origin))
@@ -41,8 +34,8 @@ namespace vcpkg
         const std::string line;
         const std::string message;
 
-        virtual std::string format() const override;
-        virtual const std::string& get_message() const override;
+        std::string format() const;
+        const std::string& get_message() const;
     };
 
     struct SourceLoc
@@ -143,8 +136,8 @@ namespace vcpkg
         void add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
 
-        const IParseError* get_error() const { return m_messages.error.get(); }
-        std::unique_ptr<IParseError> extract_error() { return std::move(m_messages.error); }
+        const ParseError* get_error() const { return m_messages.error.get(); }
+        std::unique_ptr<ParseError> extract_error() { return std::move(m_messages.error); }
 
         const ParseMessages& messages() const { return m_messages; }
         ParseMessages extract_messages() { return std::move(m_messages); }
