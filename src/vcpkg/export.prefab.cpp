@@ -166,10 +166,9 @@ namespace vcpkg::Export::Prefab
 
         for (;;)
         {
-            first = std::search(first, last, pkg_revision.begin(), pkg_revision.end());
+            first = Util::search_and_skip(first, last, pkg_revision);
             if (first == last) break;
 
-            first += pkg_revision.size();
             first = std::find_if_not(first, last, ParserBase::is_whitespace);
             if (first == last) break;
             if (*first != '=') continue;

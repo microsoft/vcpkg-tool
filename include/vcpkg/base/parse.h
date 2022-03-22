@@ -84,25 +84,16 @@ namespace vcpkg
         static constexpr bool is_alphanum(char32_t ch) { return is_icase_alpha(ch) || is_ascii_digit(ch); }
         static constexpr bool is_alphadash(char32_t ch) { return is_icase_alpha(ch) || ch == '-'; }
         static constexpr bool is_alphanumdash(char32_t ch) { return is_alphanum(ch) || ch == '-'; }
+        static constexpr bool is_package_name_char(char32_t ch)
+        {
+            return is_lower_alpha(ch) || is_ascii_digit(ch) || ch == '-';
+        }
 
         static constexpr bool is_hex_digit(char32_t ch)
         {
             return is_ascii_digit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
         }
         static constexpr bool is_word_char(char32_t ch) { return is_alphanum(ch) || ch == '_'; }
-
-        static constexpr bool is_package_name_char(char32_t ch)
-        {
-            return is_lower_alpha(ch) || is_ascii_digit(ch) || ch == '-';
-        }
-
-        static constexpr bool is_feature_name_char(char32_t ch)
-        {
-            // TODO: we do not intend underscores to be valid, however there is currently a feature using them
-            // (libwebp[vwebp_sdl]).
-            // TODO: we need to rename this feature, then remove underscores from this list.
-            return is_package_name_char(ch) || ch == '_';
-        }
 
         StringView skip_whitespace();
         StringView skip_tabs_spaces();
