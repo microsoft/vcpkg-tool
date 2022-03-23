@@ -9,6 +9,7 @@
 #include <vcpkg/base/stringliteral.h>
 
 #include <string>
+#include <type_traits>
 #include <utility>
 
 namespace vcpkg
@@ -31,8 +32,18 @@ namespace vcpkg
         const std::string& data() const { return m_data; }
         std::string extract_data() { return std::exchange(m_data, ""); }
 
-        static LocalizedString from_raw(const std::string& s) { return LocalizedString(s); }
-        static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
+        template<class StringLike>
+        static LocalizedString from_raw(StringLike&& s)
+        {
+            if constexpr (std::is_same<StringLike, std::string>::value)
+            {
+                return LocalizedString(std::move(s));
+            }
+            else
+            {
+                return LocalizedString(StringView(s));
+            }
+        }
 
         LocalizedString& append_raw(StringView s)
         {
@@ -97,7 +108,7 @@ namespace vcpkg
     private:
         std::string m_data;
 
-        explicit LocalizedString(const std::string& data) : m_data(data) { }
+        explicit LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
         explicit LocalizedString(std::string&& data) : m_data(std::move(data)) { }
     };
 }

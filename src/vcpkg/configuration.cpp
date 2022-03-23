@@ -424,7 +424,7 @@ namespace
         Json::Object demands_obj;
         if (r.optional_object_field(obj, DemandsDeserializer::CE_DEMANDS, demands_obj, DemandsDeserializer::instance))
         {
-            ce_metadata_obj.insert_or_replace(DemandsDeserializer::CE_DEMANDS, demands_obj);
+            ce_metadata_obj.insert_or_replace(DemandsDeserializer::CE_DEMANDS.to_string(), demands_obj);
         }
 
         // Remove comments duplicated in ce_metadata
@@ -469,7 +469,7 @@ namespace
                         serialize_ce_metadata(el.second.object(), inserted);
                     }
                 }
-                put_into.insert_or_replace(DemandsDeserializer::CE_DEMANDS, serialized_demands);
+                put_into.insert_or_replace(DemandsDeserializer::CE_DEMANDS.to_string(), serialized_demands);
             }
         };
 
@@ -666,12 +666,12 @@ namespace vcpkg
 
         if (auto default_registry = default_reg.get())
         {
-            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, default_registry->serialize());
+            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY.to_string(), default_registry->serialize());
         }
 
         if (!registries.empty())
         {
-            auto& reg_arr = obj.insert(ConfigurationDeserializer::REGISTRIES, Json::Array());
+            auto& reg_arr = obj.insert(ConfigurationDeserializer::REGISTRIES.to_string(), Json::Array());
             for (const auto& reg : registries)
             {
                 reg_arr.push_back(reg.serialize());
@@ -693,16 +693,20 @@ namespace vcpkg
             return Json::Value::null(nullptr);
         }
         Json::Object obj;
-        obj.insert(RegistryConfigDeserializer::KIND, Json::Value::string(*kind.get()));
-        if (auto p = baseline.get()) obj.insert(RegistryConfigDeserializer::BASELINE, Json::Value::string(*p));
-        if (auto p = location.get()) obj.insert(RegistryConfigDeserializer::LOCATION, Json::Value::string(*p));
-        if (auto p = name.get()) obj.insert(RegistryConfigDeserializer::NAME, Json::Value::string(*p));
-        if (auto p = path.get()) obj.insert(RegistryConfigDeserializer::PATH, Json::Value::string(p->native()));
-        if (auto p = reference.get()) obj.insert(RegistryConfigDeserializer::REFERENCE, Json::Value::string(*p));
-        if (auto p = repo.get()) obj.insert(RegistryConfigDeserializer::REPO, Json::Value::string(*p));
+        obj.insert(RegistryConfigDeserializer::KIND.to_string(), Json::Value::string(*kind.get()));
+        if (auto p = baseline.get())
+            obj.insert(RegistryConfigDeserializer::BASELINE.to_string(), Json::Value::string(*p));
+        if (auto p = location.get())
+            obj.insert(RegistryConfigDeserializer::LOCATION.to_string(), Json::Value::string(*p));
+        if (auto p = name.get()) obj.insert(RegistryConfigDeserializer::NAME.to_string(), Json::Value::string(*p));
+        if (auto p = path.get())
+            obj.insert(RegistryConfigDeserializer::PATH.to_string(), Json::Value::string(p->native()));
+        if (auto p = reference.get())
+            obj.insert(RegistryConfigDeserializer::REFERENCE.to_string(), Json::Value::string(*p));
+        if (auto p = repo.get()) obj.insert(RegistryConfigDeserializer::REPO.to_string(), Json::Value::string(*p));
         if (packages)
         {
-            auto& arr = obj.insert(RegistryDeserializer::PACKAGES, Json::Array());
+            auto& arr = obj.insert(RegistryDeserializer::PACKAGES.to_string(), Json::Array());
             for (auto&& p : *packages.get())
             {
                 arr.push_back(Json::Value::string(p));

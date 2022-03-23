@@ -443,7 +443,7 @@ namespace vcpkg::Commands::CI
         });
     }
 
-    static std::set<std::string> parse_exclusions(const std::unordered_map<std::string, std::string>& settings,
+    static std::set<std::string> parse_exclusions(const std::map<std::string, std::string, std::less<>>& settings,
                                                   StringLiteral opt)
     {
         std::set<std::string> exclusions_set;
@@ -458,7 +458,7 @@ namespace vcpkg::Commands::CI
         return exclusions_set;
     }
 
-    static Optional<int> parse_skipped_cascade_count(const std::unordered_map<std::string, std::string>& settings)
+    static Optional<int> parse_skipped_cascade_count(const std::map<std::string, std::string, std::less<>>& settings)
     {
         auto opt = settings.find(OPTION_SKIPPED_CASCADE_COUNT);
         if (opt == settings.end())
@@ -586,7 +586,7 @@ namespace vcpkg::Commands::CI
                     Json::Object obj;
                     obj.insert("name", Json::Value::string(action.spec.name()));
                     obj.insert("triplet", Json::Value::string(action.spec.triplet().canonical_name()));
-                    obj.insert("state", Json::Value::string(split_specs->action_state_string[i]));
+                    obj.insert("state", Json::Value::string(split_specs->action_state_string[i].to_string()));
                     obj.insert("abi", Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
                     arr.push_back(std::move(obj));
                 }
