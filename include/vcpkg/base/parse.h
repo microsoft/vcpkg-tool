@@ -133,10 +133,10 @@ namespace vcpkg
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
 
         const ParseError* get_error() const { return m_messages.error.get(); }
-        std::unique_ptr<ParseError> extract_error() && { return std::move(m_messages.error); }
+        std::unique_ptr<ParseError> extract_error() { return std::move(m_messages.error); }
 
         const ParseMessages& messages() const { return m_messages; }
-        ParseMessages extract_messages() && { return std::move(m_messages); }
+        ParseMessages&& extract_messages() { return std::move(m_messages); }
 
     private:
         Unicode::Utf8Decoder m_it;

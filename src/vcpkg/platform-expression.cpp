@@ -630,7 +630,7 @@ namespace vcpkg::PlatformExpression
         ExpressionParser parser(expression, multiple_binary_operators);
         auto res = parser.parse();
 
-        if (auto p = std::move(parser).extract_error())
+        if (auto p = parser.extract_error())
         {
             return p->format();
         }

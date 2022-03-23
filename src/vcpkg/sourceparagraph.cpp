@@ -1008,7 +1008,7 @@ namespace vcpkg
     {
         auto parser = SpdxLicenseExpressionParser(sv, "<license string>");
         auto result = parser.parse();
-        messages = std::move(parser).extract_messages();
+        messages = parser.extract_messages();
         return result;
     }
 
