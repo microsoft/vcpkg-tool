@@ -160,34 +160,28 @@ namespace vcpkg
 
     bool ParserBase::try_match_keyword(StringView keyword_content)
     {
-        auto first1 = m_it;
-        const auto last1 = first1.end();
-
-        auto first2 = keyword_content.begin();
-        const auto last2 = keyword_content.end();
-
-        for (;;)
+        auto encoded = m_it;
+        // check that the encoded stream matches the keyword:
+        for (const char ch : keyword_content)
         {
-            if (first2 == last2)
-            {
-                if (first1 == last1 || is_whitespace(*first1))
-                {
-                    m_it = first1;
-                    m_column += static_cast<int>(keyword_content.size());
-                    return true;
-                }
-
-                return false;
-            }
-
-            if (first1 == last1 || *first1 != static_cast<char32_t>(*first2))
+            if (encoded.is_eof() || *encoded != static_cast<char32_t>(ch))
             {
                 return false;
             }
 
-            ++first1;
-            ++first2;
+            ++encoded;
         }
+
+        // whole keyword matched, now check for a word boundary:
+        if (!encoded.is_eof() && !is_whitespace(*encoded))
+        {
+            return false;
+        }
+
+        // success
+        m_it = encoded;
+        m_column += static_cast<int>(keyword_content.size());
+        return true;
     }
 
     char32_t ParserBase::next()
