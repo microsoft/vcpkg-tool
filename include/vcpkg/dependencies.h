@@ -39,9 +39,9 @@ namespace vcpkg::Dependencies
     };
 
     std::string to_output_string(RequestType request_type,
-                                 const CStringView s,
+                                 const ZStringView s,
                                  const Build::BuildPackageOptions& options);
-    std::string to_output_string(RequestType request_type, const CStringView s);
+    std::string to_output_string(RequestType request_type, const ZStringView s);
 
     enum class InstallPlanType
     {

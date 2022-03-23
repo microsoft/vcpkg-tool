@@ -18,6 +18,10 @@ namespace vcpkg
 
 #ifdef _WIN32
     const ExpectedS<Path>& get_appdata_local() noexcept;
+
+    const ExpectedS<Path>& get_system_root() noexcept;
+
+    const ExpectedS<Path>& get_system32() noexcept;
 #endif
 
     Optional<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);
@@ -30,6 +34,7 @@ namespace vcpkg
         X64,
         ARM,
         ARM64,
+        ARM64EC,
         S390X,
         PPC64LE,
     };

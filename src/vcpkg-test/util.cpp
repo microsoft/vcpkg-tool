@@ -53,13 +53,13 @@ namespace vcpkg::Test
                                                             const char* default_features,
                                                             const char* triplet)
     {
-        return std::make_unique<StatusParagraph>(Parse::Paragraph{{"Package", {name, {}}},
-                                                                  {"Version", {"1", {}}},
-                                                                  {"Architecture", {triplet, {}}},
-                                                                  {"Multi-Arch", {"same", {}}},
-                                                                  {"Depends", {depends, {}}},
-                                                                  {"Default-Features", {default_features, {}}},
-                                                                  {"Status", {"install ok installed", {}}}});
+        return std::make_unique<StatusParagraph>(Paragraph{{"Package", {name, {}}},
+                                                           {"Version", {"1", {}}},
+                                                           {"Architecture", {triplet, {}}},
+                                                           {"Multi-Arch", {"same", {}}},
+                                                           {"Depends", {depends, {}}},
+                                                           {"Default-Features", {default_features, {}}},
+                                                           {"Status", {"install ok installed", {}}}});
     }
 
     std::unique_ptr<StatusParagraph> make_status_feature_pgh(const char* name,
@@ -67,12 +67,12 @@ namespace vcpkg::Test
                                                              const char* depends,
                                                              const char* triplet)
     {
-        return std::make_unique<StatusParagraph>(Parse::Paragraph{{"Package", {name, {}}},
-                                                                  {"Feature", {feature, {}}},
-                                                                  {"Architecture", {triplet, {}}},
-                                                                  {"Multi-Arch", {"same", {}}},
-                                                                  {"Depends", {depends, {}}},
-                                                                  {"Status", {"install ok installed", {}}}});
+        return std::make_unique<StatusParagraph>(Paragraph{{"Package", {name, {}}},
+                                                           {"Feature", {feature, {}}},
+                                                           {"Architecture", {triplet, {}}},
+                                                           {"Multi-Arch", {"same", {}}},
+                                                           {"Depends", {depends, {}}},
+                                                           {"Status", {"install ok installed", {}}}});
     }
 
     PackageSpec PackageSpecMap::emplace(const char* name,

@@ -2,8 +2,6 @@
 
 #include <vcpkg/statusparagraph.h>
 
-using namespace vcpkg::Parse;
-
 namespace vcpkg
 {
     namespace BinaryParagraphRequiredField
@@ -23,8 +21,7 @@ namespace vcpkg
             .push_back('\n');
     }
 
-    StatusParagraph::StatusParagraph(Parse::Paragraph&& fields)
-        : want(Want::ERROR_STATE), state(InstallState::ERROR_STATE)
+    StatusParagraph::StatusParagraph(Paragraph&& fields) : want(Want::ERROR_STATE), state(InstallState::ERROR_STATE)
     {
         auto status_it = fields.find(BinaryParagraphRequiredField::STATUS);
         Checks::check_maybe_upgrade(

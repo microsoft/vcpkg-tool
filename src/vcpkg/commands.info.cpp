@@ -57,7 +57,7 @@ namespace vcpkg::Commands::Info
             std::vector<PackageSpec> specs_to_write;
             for (auto&& arg : args.command_arguments)
             {
-                Parse::ParserBase parser(arg, "<command>");
+                ParserBase parser(arg, "<command>");
                 auto maybe_qpkg = parse_qualified_specifier(parser);
                 if (!parser.at_eof() || !maybe_qpkg)
                 {
@@ -117,7 +117,7 @@ namespace vcpkg::Commands::Info
 
             for (auto&& arg : args.command_arguments)
             {
-                Parse::ParserBase parser(arg, "<command>");
+                ParserBase parser(arg, "<command>");
                 auto maybe_pkg = parse_package_name(parser);
                 if (!parser.at_eof() || !maybe_pkg)
                 {

@@ -24,6 +24,27 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <iterator>
+
+namespace
+{
+    using namespace vcpkg;
+    DECLARE_AND_REGISTER_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_AND_REGISTER_MESSAGE(ResultsLine,
+                                 (msg::spec, msg::build_result, msg::elapsed),
+                                 "{Locked}",
+                                 "    {spec}: {build_result}: {elapsed}");
+
+    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetsExcluded,
+                                 (msg::count),
+                                 "keep the indentation and the `#` mark",
+                                 "    # note: {count} targets were omitted.");
+    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetLinkLibraries,
+                                 (msg::list),
+                                 "{Locked}",
+                                 "    target_link_libraries(main PRIVATE {list})");
+}
+
 namespace vcpkg::Install
 {
     using namespace vcpkg;
@@ -405,28 +426,27 @@ namespace vcpkg::Install
 
     void InstallSummary::print() const
     {
-        print2("RESULTS\n");
+        msg::println(msgResultsHeader);
 
         for (const SpecSummary& result : this->results)
         {
-            vcpkg::printf("    %s: %s: %s\n", result.spec, Build::to_string(result.build_result.code), result.timing);
+            msg::println(msgResultsLine,
+                         msg::spec = result.spec,
+                         msg::build_result = Build::to_string(result.build_result.code),
+                         msg::elapsed = result.timing);
         }
 
-        std::map<BuildResult, int> summary;
-        for (const BuildResult& v : Build::BUILD_RESULT_VALUES)
-        {
-            summary[v] = 0;
-        }
-
+        std::map<Triplet, Build::BuildResultCounts> summary;
         for (const SpecSummary& r : this->results)
         {
-            summary[r.build_result.code]++;
+            summary[r.spec.triplet()].increment(r.build_result.code);
         }
 
-        print2("\nSUMMARY\n");
-        for (const std::pair<const BuildResult, int>& entry : summary)
+        msg::println();
+
+        for (auto&& entry : summary)
         {
-            vcpkg::printf("    %s: %d\n", Build::to_string(entry.first), entry.second);
+            entry.second.println(entry.first);
         }
     }
 
@@ -612,11 +632,56 @@ namespace vcpkg::Install
         }
     }
 
+    static const char* find_skip_add_library(const char* real_first, const char* first, const char* last)
+    {
+        static constexpr StringLiteral ADD_LIBRARY_CALL = "add_library(";
+
+        for (;;)
+        {
+            first = Util::search(first, last, ADD_LIBRARY_CALL);
+            if (first == last)
+            {
+                return first;
+            }
+            if (first == real_first || !ParserBase::is_word_char(*(first - 1)))
+            {
+                return first + ADD_LIBRARY_CALL.size();
+            }
+            ++first;
+        }
+    }
+
+    std::vector<std::string> get_cmake_add_library_names(StringView cmake_file)
+    {
+        constexpr static auto is_library_name_char = [](char ch) {
+            return ch != ')' && ch != '$' && !ParserBase::is_whitespace(ch);
+        };
+
+        const auto real_first = cmake_file.begin();
+        auto first = real_first;
+        const auto last = cmake_file.end();
+
+        std::vector<std::string> res;
+        for (;;)
+        {
+            first = find_skip_add_library(real_first, first, last);
+            if (first == last)
+            {
+                return res;
+            }
+            auto start_of_library_name = std::find_if_not(first, last, ParserBase::is_whitespace);
+            auto end_of_library_name = std::find_if_not(start_of_library_name, last, is_library_name_char);
+            if (end_of_library_name == start_of_library_name)
+            {
+                first = end_of_library_name;
+                continue;
+            }
+            res.emplace_back(start_of_library_name, end_of_library_name);
+        }
+    }
+
     CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh)
     {
-        static const std::regex cmake_library_regex(R"(\badd_library\(([^\$\s\)]+)\s)",
-                                                    std::regex_constants::ECMAScript);
-
         CMakeUsageInfo ret;
 
         std::error_code ec;
@@ -653,16 +718,13 @@ namespace vcpkg::Install
                     const auto find_package_name = Path(path.parent_path()).filename().to_string();
                     if (!ec)
                     {
-                        std::sregex_iterator next(contents.begin(), contents.end(), cmake_library_regex);
-                        std::sregex_iterator last;
-
-                        while (next != last)
+                        auto targets = get_cmake_add_library_names(contents);
+                        if (!targets.empty())
                         {
-                            auto match = *next;
-                            auto& targets = library_targets[find_package_name];
-                            if (std::find(targets.cbegin(), targets.cend(), match[1]) == targets.cend())
-                                targets.push_back(match[1]);
-                            ++next;
+                            auto& all_targets = library_targets[find_package_name];
+                            all_targets.insert(all_targets.end(),
+                                               std::make_move_iterator(targets.begin()),
+                                               std::make_move_iterator(targets.end()));
                         }
                     }
 
@@ -703,7 +765,7 @@ namespace vcpkg::Install
                 {
                     static auto cmakeify = [](std::string name) {
                         auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
-                        if (n.empty() || Parse::ParserBase::is_ascii_digit(n[0]))
+                        if (n.empty() || ParserBase::is_ascii_digit(n[0]))
                         {
                             n.insert(n.begin(), '_');
                         }
@@ -731,31 +793,25 @@ namespace vcpkg::Install
                     else
                         Strings::append(msg, "    find_package(", library_target_pair.first, " CONFIG REQUIRED)\n");
 
-                    std::sort(library_target_pair.second.begin(),
-                              library_target_pair.second.end(),
-                              [](const std::string& l, const std::string& r) {
-                                  if (l.size() < r.size()) return true;
-                                  if (l.size() > r.size()) return false;
-                                  return l < r;
-                              });
+                    auto& targets = library_target_pair.second;
+                    Util::sort(targets, [](const std::string& l, const std::string& r) {
+                        if (l.size() < r.size()) return true;
+                        if (l.size() > r.size()) return false;
+                        return l < r;
+                    });
+                    targets.erase(std::unique(targets.begin(), targets.end()), targets.end());
 
-                    if (library_target_pair.second.size() <= 4)
+                    if (targets.size() > 4)
                     {
-                        Strings::append(msg,
-                                        "    target_link_libraries(main PRIVATE ",
-                                        Strings::join(" ", library_target_pair.second),
-                                        ")\n\n");
+                        auto omitted = targets.size() - 4;
+                        library_target_pair.second.erase(targets.begin() + 4, targets.end());
+                        msg.append(
+                            msg::format(msgCmakeTargetsExcluded, msg::count = omitted).appendnl().extract_data());
                     }
-                    else
-                    {
-                        auto omitted = library_target_pair.second.size() - 4;
-                        library_target_pair.second.erase(library_target_pair.second.begin() + 4,
-                                                         library_target_pair.second.end());
-                        msg += Strings::format("    # Note: %zd target(s) were omitted.\n"
-                                               "    target_link_libraries(main PRIVATE %s)\n\n",
-                                               omitted,
-                                               Strings::join(" ", library_target_pair.second));
-                    }
+                    msg.append(msg::format(msgCmakeTargetLinkLibraries, msg::list = Strings::join(" ", targets))
+                                   .appendnl()
+                                   .appendnl()
+                                   .extract_data());
                 }
                 ret.message = std::move(msg);
             }
@@ -784,16 +840,16 @@ namespace vcpkg::Install
 
     DECLARE_AND_REGISTER_MESSAGE(
         ErrorInvalidClassicModeOption,
-        (msg::value),
+        (msg::option),
         "",
-        "Error: The option {value} is not supported in classic mode and no manifest was found.");
+        "Error: The option --{option} is not supported in classic mode and no manifest was found.");
 
     DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
-                                 (msg::value),
+                                 (msg::option),
                                  "",
-                                 "Error: The option {value} is not supported in manifest mode.");
+                                 "Error: The option --{option} is not supported in manifest mode.");
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
@@ -818,8 +874,9 @@ namespace vcpkg::Install
             Util::Sets::contains(options.switches, (OPTION_CLEAN_PACKAGES_AFTER_BUILD));
         const bool clean_downloads_after_build =
             Util::Sets::contains(options.switches, (OPTION_CLEAN_DOWNLOADS_AFTER_BUILD));
-        const KeepGoing keep_going =
-            to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads);
+        const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
+                                         ? KeepGoing::YES
+                                         : KeepGoing::NO;
         const bool prohibit_backcompat_features =
             Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES)) ||
             Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
@@ -838,16 +895,12 @@ namespace vcpkg::Install
             }
             if (use_head_version)
             {
-                msg::println(Color::error,
-                             msgErrorInvalidManifestModeOption,
-                             msg::value = Strings::concat("--", OPTION_USE_HEAD_VERSION));
+                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_USE_HEAD_VERSION);
                 failure = true;
             }
             if (is_editable)
             {
-                msg::println(Color::error,
-                             msgErrorInvalidManifestModeOption,
-                             msg::value = Strings::concat("--", OPTION_EDITABLE));
+                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
                 failure = true;
             }
             if (failure)
@@ -868,16 +921,13 @@ namespace vcpkg::Install
             }
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
-                msg::println(Color::error,
-                             msgErrorInvalidClassicModeOption,
-                             msg::value = Strings::concat("--", OPTION_MANIFEST_NO_DEFAULT_FEATURES));
+                msg::println(
+                    Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
                 failure = true;
             }
             if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
             {
-                msg::println(Color::error,
-                             msgErrorInvalidClassicModeOption,
-                             msg::value = Strings::concat("--", OPTION_MANIFEST_FEATURE));
+                msg::println(Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
                 failure = true;
             }
             if (failure)
@@ -1221,13 +1271,13 @@ namespace vcpkg::Install
             case BuildResult::BUILD_FAILED:
             case BuildResult::CACHE_MISSING:
                 result_string = "Fail";
-                message_block =
-                    Strings::format("<failure><message><![CDATA[%s]]></message></failure>", to_string(code));
+                message_block = Strings::format("<failure><message><![CDATA[%s]]></message></failure>",
+                                                to_string_locale_invariant(code));
                 break;
             case BuildResult::EXCLUDED:
             case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
                 result_string = "Skip";
-                message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string(code));
+                message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string_locale_invariant(code));
                 break;
             case BuildResult::SUCCEEDED: result_string = "Pass"; break;
             default: Checks::unreachable(VCPKG_LINE_INFO);

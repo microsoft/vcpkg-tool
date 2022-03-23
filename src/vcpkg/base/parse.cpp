@@ -8,7 +8,7 @@
 
 using namespace vcpkg;
 
-namespace vcpkg::Parse
+namespace vcpkg
 {
     static void advance_rowcol(char32_t ch, int& row, int& column)
     {
@@ -30,7 +30,7 @@ namespace vcpkg::Parse
         auto decoder = Unicode::Utf8Decoder(line.data(), line.data() + line.size());
         ParseMessage as_message;
         as_message.location = SourceLoc{std::next(decoder, caret_col), decoder, row, column};
-        as_message.message = msg::LocalizedString::from_string_unchecked(std::string(message));
+        as_message.message = LocalizedString::from_raw(std::string(message));
 
         auto res = as_message.format(origin, MessageKind::Error).extract_data();
         res.push_back('\n');
@@ -39,29 +39,32 @@ namespace vcpkg::Parse
 
     DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageLocation,
                                  (msg::path, msg::row, msg::column),
-                                 "{LOCKED}",
+                                 "{Locked}",
                                  "{path}:{row}:{column}: ");
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseError, (msg::value), "", "error: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseWarning, (msg::value), "", "warning: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression, (msg::value), "", "    on expression: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression,
+                                 (msg::value),
+                                 "Example of {value} is 'x64 & windows'",
+                                 "    on expression: {value}");
 
-    msg::LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
+    LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
     {
-        msg::LocalizedString res = msg::format(msgFormattedParseMessageLocation,
-                                               msg::path = origin,
-                                               msg::row = location.row,
-                                               msg::column = location.column);
+        LocalizedString res = msg::format(msgFormattedParseMessageLocation,
+                                          msg::path = origin,
+                                          msg::row = location.row,
+                                          msg::column = location.column);
         if (kind == MessageKind::Warning)
         {
-            res.append(msg::format(msgFormattedParseWarning, msg::value = message));
+            res.append(msg::format(msg::msgWarningMessage));
         }
         else
         {
-            res.append(msg::format(msgFormattedParseError, msg::value = message));
+            res.append(msg::format(msg::msgErrorMessage));
         }
+        res.append(message);
+
         res.appendnl();
 
-        auto line_end = Util::find_if(location.it, Parse::ParserBase::is_lineend);
+        auto line_end = Util::find_if(location.it, ParserBase::is_lineend);
         StringView line = StringView{
             location.start_of_line.pointer_to_current(),
             line_end.pointer_to_current(),
@@ -85,7 +88,7 @@ namespace vcpkg::Parse
         }
         caret_string.push_back('^');
 
-        res.append(msg::LocalizedString::from_string_unchecked(std::move(caret_string)));
+        res.append_raw(std::move(caret_string));
 
         return res;
     }
@@ -125,7 +128,7 @@ namespace vcpkg::Parse
         return cur();
     }
 
-    void ParserBase::add_warning(msg::LocalizedString&& message, const SourceLoc& loc)
+    void ParserBase::add_warning(LocalizedString&& message, const SourceLoc& loc)
     {
         m_messages.warnings.push_back(ParseMessage{loc, std::move(message)});
     }

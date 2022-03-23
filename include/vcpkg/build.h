@@ -4,10 +4,10 @@
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
 
-#include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/zstringview.h>
 
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/packagespec.h>
@@ -195,15 +195,24 @@ namespace vcpkg::Build
         Build::BackcompatFeatures::PROHIBIT,
     };
 
-    static constexpr std::array<BuildResult, 6> BUILD_RESULT_VALUES = {
-        BuildResult::SUCCEEDED,
-        BuildResult::BUILD_FAILED,
-        BuildResult::POST_BUILD_CHECKS_FAILED,
-        BuildResult::FILE_CONFLICTS,
-        BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES,
-        BuildResult::EXCLUDED};
+    struct BuildResultCounts
+    {
+        int null_value = 0;
+        int succeeded = 0;
+        int build_failed = 0;
+        int post_build_checks_failed = 0;
+        int file_conflicts = 0;
+        int cascaded_due_to_missing_dependencies = 0;
+        int excluded = 0;
+        int cache_missing = 0;
+        int downloaded = 0;
 
-    const std::string& to_string(const BuildResult build_result);
+        void increment(const BuildResult build_result);
+        void println(const Triplet& triplet) const;
+    };
+
+    StringLiteral to_string_locale_invariant(const BuildResult build_result);
+    LocalizedString to_string(const BuildResult build_result);
     std::string create_error_message(const BuildResult build_result, const PackageSpec& spec);
     std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
                                                     const VcpkgPaths& paths);
@@ -284,7 +293,7 @@ namespace vcpkg::Build
     extern const std::array<BuildPolicy, size_t(BuildPolicy::COUNT)> ALL_POLICIES;
 
     const std::string& to_string(BuildPolicy policy);
-    CStringView to_cmake_variable(BuildPolicy policy);
+    ZStringView to_cmake_variable(BuildPolicy policy);
 
     struct BuildPolicies
     {

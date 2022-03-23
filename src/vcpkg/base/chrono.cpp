@@ -131,7 +131,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    Optional<CTime> CTime::parse(CStringView str)
+    Optional<CTime> CTime::parse(ZStringView str)
     {
         CTime ret;
         const auto assigned =

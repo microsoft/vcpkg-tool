@@ -9,6 +9,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/build.h>
@@ -1006,7 +1007,7 @@ namespace vcpkg
         const auto local_repo = this->root / ".git";
         const auto git_cmd = git_cmd_builder({}, {})
                                  .string_arg("-C")
-                                 .path_arg(this->builtin_ports_directory())
+                                 .string_arg(this->builtin_ports_directory())
                                  .string_arg("ls-tree")
                                  .string_arg("-d")
                                  .string_arg("HEAD")
@@ -1078,7 +1079,7 @@ namespace vcpkg
                                    .string_arg("archive")
                                    .string_arg(git_tree)
                                    .string_arg("-o")
-                                   .path_arg(destination_tar);
+                                   .string_arg(destination_tar);
         const auto tar_output = cmd_execute_and_capture_output(tar_cmd_builder);
         if (tar_output.exit_code != 0)
         {
@@ -1086,17 +1087,7 @@ namespace vcpkg
                     expected_right_tag};
         }
 
-        auto extract_cmd_builder =
-            Command{this->get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").path_arg(
-                destination_tar);
-
-        const auto extract_output =
-            cmd_execute_and_capture_output(extract_cmd_builder, InWorkingDirectory{destination_tmp});
-        if (extract_output.exit_code != 0)
-        {
-            return {Strings::concat(PRELUDE, "Error: Failed to extract port directory\n", extract_output.output),
-                    expected_right_tag};
-        }
+        extract_tar_cmake(this->get_tool_exe(Tools::CMAKE), destination_tar, destination_tmp);
         fs.remove(destination_tar, ec);
         if (ec)
         {
@@ -1253,7 +1244,7 @@ namespace vcpkg
                                   .string_arg("tar")
                                   .string_arg(object)
                                   .string_arg("--output")
-                                  .path_arg(git_tree_temp_tar);
+                                  .string_arg(git_tree_temp_tar);
         auto git_archive_output = cmd_execute_and_capture_output(git_archive);
         if (git_archive_output.exit_code != 0)
         {
@@ -1261,24 +1252,17 @@ namespace vcpkg
                     expected_right_tag};
         }
 
-        auto untar = Command{get_tool_exe(Tools::CMAKE)}.string_arg("-E").string_arg("tar").string_arg("xf").path_arg(
-            git_tree_temp_tar);
-
-        auto untar_output = cmd_execute_and_capture_output(untar, InWorkingDirectory{git_tree_temp});
+        extract_tar_cmake(get_tool_exe(Tools::CMAKE), git_tree_temp_tar, git_tree_temp);
         // Attempt to remove temporary files, though non-critical.
         fs.remove(git_tree_temp_tar, IgnoreErrors{});
-        if (untar_output.exit_code != 0)
-        {
-            return {Strings::format("cmake's untar failed with message:\n%s", untar_output.output), expected_right_tag};
-        }
 
         std::error_code ec;
-        fs.rename(git_tree_temp, git_tree_final, ec);
-
+        fs.rename_with_retry(git_tree_temp, git_tree_final, ec);
         if (fs.exists(git_tree_final, IgnoreErrors{}))
         {
             return git_tree_final;
         }
+
         if (ec)
         {
             return {Strings::format("rename to %s failed with message:\n%s", git_tree_final, ec.message()),
@@ -1332,20 +1316,14 @@ namespace vcpkg
                                  "",
                                  "Error: in triplet {triplet}: Unable to find a valid Visual Studio instance");
 
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion,
-                                 (msg::version),
-                                 "Printed after ErrorNoVSInstance on a separate line",
-                                 "    with toolset version {version}");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "    with toolset version {version}");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion,
                                  (msg::version),
-                                 "Printed after ErrorNoVSInstance on a separate line",
+                                 "",
                                  "    with toolset version prefix {version}");
 
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt,
-                                 (msg::path),
-                                 "Printed after ErrorNoVSInstance on a separate line",
-                                 "     at \"{path}\"");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "     at \"{path}\"");
 
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)

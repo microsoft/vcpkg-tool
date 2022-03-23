@@ -1,0 +1,43 @@
+info: 
+  id: sample1
+  version: 1.2.3
+
+contacts:
+  Garrett Serack: 
+    email: garrett@serack.org
+    role: developer 
+
+  Bob Smith: 
+    email: bob@smith.com
+    role: 
+      - fallguy 
+      - otherguy # cool, right?
+  
+requires:
+  foo/bar/bin: ~2.0.0
+  bar/bin:baz: '* 1.2.3'
+  bar/bin/buz: ~* # with a comment.
+  weird/range: '>= 1.0 <= 2.0 2.0.0'
+  nuget/range: (2.0,3.0] 2.3.4
+
+settings:
+  tools:
+    CC: foo/bar/cl.exe
+    CXX: bin/baz/cl.exe
+    Whatever: some/tool/path/foo
+
+  variables:
+    test: abc
+    cxxflags: 
+      - foo=bar
+      - bar=baz
+  
+  paths:
+    bin:
+      - foo/bar/bin/baz
+      - foo/bar/bin/waz
+demands:      
+  windows and arm:
+    install: 
+      nupkg: floobaloo/1.2.3
+      sha256: fluffyKittenBunnies

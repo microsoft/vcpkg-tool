@@ -222,11 +222,12 @@ if (Test-Path $installedDir)
             auto cmd_line = Command(nuget_exe)
                                 .string_arg("pack")
                                 .string_arg("-OutputDirectory")
-                                .path_arg(exported_dir_path)
-                                .path_arg(nuspec_file_path)
+                                .string_arg(exported_dir_path)
+                                .string_arg(nuspec_file_path)
                                 .string_arg("-NoDefaultExcludes");
 
-            const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
+            const int exit_code =
+                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
         }
     }

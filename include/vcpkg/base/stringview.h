@@ -41,10 +41,11 @@ namespace vcpkg
 
         std::string to_string() const;
         void to_string(std::string& out) const;
+        explicit operator std::string() const { return to_string(); }
 
         StringView substr(size_t pos, size_t count = std::numeric_limits<size_t>::max()) const noexcept;
 
-        constexpr char byte_at_index(size_t pos) const noexcept { return m_ptr[pos]; }
+        constexpr char operator[](size_t pos) const noexcept { return m_ptr[pos]; }
 
     private:
         const char* m_ptr = 0;

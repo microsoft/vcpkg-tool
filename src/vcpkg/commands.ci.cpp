@@ -115,9 +115,9 @@ namespace vcpkg::Commands::CI
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("ci x64-windows"),
-        1,
-        1,
+        create_example_string("ci --triplet=x64-windows"),
+        0,
+        0,
         {CI_SWITCHES, CI_SETTINGS},
         nullptr,
     };
@@ -225,13 +225,14 @@ namespace vcpkg::Commands::CI
                 case BuildResult::FILE_CONFLICTS:
                 case BuildResult::BUILD_FAILED:
                     result_string = "Fail";
-                    message_block =
-                        Strings::format("<failure><message><![CDATA[%s]]></message></failure>", to_string(test.result));
+                    message_block = Strings::format("<failure><message><![CDATA[%s]]></message></failure>",
+                                                    to_string_locale_invariant(test.result));
                     break;
                 case BuildResult::EXCLUDED:
                 case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
                     result_string = "Skip";
-                    message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string(test.result));
+                    message_block =
+                        Strings::format("<reason><![CDATA[%s]]></reason>", to_string_locale_invariant(test.result));
                     break;
                 case BuildResult::SUCCEEDED: result_string = "Pass"; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -474,7 +475,10 @@ namespace vcpkg::Commands::CI
         return result;
     }
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet, Triplet host_triplet)
+    void perform_and_exit(const VcpkgCmdArguments& args,
+                          const VcpkgPaths& paths,
+                          Triplet target_triplet,
+                          Triplet host_triplet)
     {
         vcpkg::print2(Color::warning,
                       "'vcpkg ci' is an internal command which will change incompatibly or be removed at any time.\n");
@@ -483,7 +487,6 @@ namespace vcpkg::Commands::CI
         const auto& settings = options.settings;
 
         BinaryCache binary_cache{args, paths};
-        Triplet target_triplet = Triplet::from_canonical_name(std::string(args.command_arguments[0]));
         ExclusionPredicate is_excluded{
             parse_exclusions(settings, OPTION_EXCLUDE),
             parse_exclusions(settings, OPTION_HOST_EXCLUDE),
