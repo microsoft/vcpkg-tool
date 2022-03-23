@@ -151,7 +151,7 @@ namespace vcpkg::Paragraphs
             do
             {
                 // scan to end of current line (it is part of the field value)
-                Strings::append(fieldvalue, match_while(is_not_lineend));
+                Strings::append(fieldvalue, match_until(is_lineend));
                 skip_newline();
 
                 if (cur() != ' ') return;

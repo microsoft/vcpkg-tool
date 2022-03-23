@@ -141,7 +141,7 @@ namespace vcpkg
     }
     void ParserBase::skip_line()
     {
-        match_while(is_not_lineend);
+        match_until(is_lineend);
         skip_newline();
     }
 
