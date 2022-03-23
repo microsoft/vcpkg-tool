@@ -1,0 +1,18 @@
+# Windows SDK
+# install with `ce add sdks/microsoft/windows`
+
+info:
+  id: sdks/microsoft/windows/arm64
+  version: 10.0.19041
+  description: The Windows SDK available as a NuGet package for more seamless acquisition and CI/CD integration. This package is designed for C++ applications (targeting arm64)
+  summary: Microsoft Windows SDK. (targeting arm64)
+
+contacts:
+  Garrett Serack: 
+    email: garretts@microsoft.com
+    role: publisher
+
+install: 
+  nupkg: Microsoft.Windows.SDK.cpp.arm64/10.0.19041.5
+  sha256: fluffyKittenBunnies
+  
