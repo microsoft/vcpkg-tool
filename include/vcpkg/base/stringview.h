@@ -12,9 +12,6 @@
 namespace vcpkg
 {
 
-    // Forward declaration needed for StringView(T&) constructor
-    struct ZStringView;
-
     struct StringView
     {
         constexpr StringView() = default;
@@ -29,10 +26,6 @@ namespace vcpkg
         StringView(const char* ptr) noexcept : m_ptr(ptr), m_size(strlen(ptr)) { }
         constexpr StringView(const char* ptr, size_t size) noexcept : m_ptr(ptr), m_size(size) { }
         constexpr StringView(const char* b, const char* e) noexcept : m_ptr(b), m_size(static_cast<size_t>(e - b)) { }
-
-        template<typename T,
-                 typename std::enable_if<std::is_base_of<ZStringView, T>::value, bool>::type...>
-        constexpr StringView(const T& t) noexcept : m_ptr(t.begin()), m_size(t.size()) { }
 
         constexpr const char* begin() const noexcept { return m_ptr; }
         constexpr const char* end() const noexcept { return m_ptr + m_size; }
