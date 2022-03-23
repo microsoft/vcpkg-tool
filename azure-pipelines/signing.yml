@@ -66,55 +66,42 @@ jobs:
         filePath: vcpkg-init/lock-versions.ps1
         arguments: '-Destination "$(Build.BinariesDirectory)" -VcpkgBaseVersion $(VCPKG_INITIAL_BASE_VERSION)'
     # Build and test vcpkg-ce
-    - task: PowerShell@2
-      displayName: 'Download vcpkg-ce sources'
-      inputs:
-        targetType: 'inline'
-        script: |
-          $sha = Get-Content azure-pipelines/vcpkg-ce-sha.txt -Raw
-          $sha = $sha.Trim()
-          if( test-path vcpkg-ce) { rmdir -recurse -force vcpkg-ce -ea 0 }
-          # this will keep the .git folder, which is used by set-versions to accurately set the version of ce
-          git clone https://github.com/microsoft/vcpkg-ce/ vcpkg-ce
-          cd vcpkg-ce
-          git checkout $sha
-        pwsh: true
     - task: UseNode@1
       displayName: Use Node 16 or later
       inputs:
         version: "16.x"
     - script: npm install -g @microsoft/rush
       displayName: Install Rush
-      workingDirectory: vcpkg-ce
+      workingDirectory: ce
     - script: rush update
       displayName: Install vcpkg-ce Dependencies
-      workingDirectory: vcpkg-ce
+      workingDirectory: ce
     - script: rush lint
       displayName: Check vcpkg-ce for Linting Errors
-      workingDirectory: vcpkg-ce
+      workingDirectory: ce
     - script: rush rebuild
       displayName: Build vcpkg-ce Packages
-      workingDirectory: vcpkg-ce
+      workingDirectory: ce
     - script: rush test
       displayName: Run vcpkg-ce Tests
-      workingDirectory: vcpkg-ce
+      workingDirectory: ce
     - script: |
         rush set-versions
         node -e "const c = require('./ce/package.json'); p = require('./assets/package.json') ; p.version = c.version; require('fs').writeFileSync('./assets/package.json', JSON.stringify(p,undefined,2)); console.log(``set asset version to `${p.version}``);"
       displayName: Set vcpkg-ce Package Versions
-      workingDirectory: vcpkg-ce
-    - script: mkdir "$(Build.BinariesDirectory)\vcpkg-ce" && rush deploy -t "$(Build.BinariesDirectory)\vcpkg-ce"
+      workingDirectory: ce
+    - script: mkdir "$(Build.BinariesDirectory)\ce" && rush deploy -t "$(Build.BinariesDirectory)\ce"
       displayName: Collect vcpkg-ce Dependencies
-      workingDirectory: vcpkg-ce
+      workingDirectory: ce
     - task: ComponentGovernanceComponentDetection@0
       displayName: Detect Components
       inputs:
-        ignoreDirectories: vcpkg-ce/common/temp
+        ignoreDirectories: ce/common/temp
     # Inject the NOTICE file. This must run after component detection.
     - task: msospo.ospo-extension.8d7f9abb-6896-461d-9e25-4f74ed65ddb2.notice@0
       displayName: Generate NOTICE File
       inputs:
-        outputfile: $(Build.BinariesDirectory)/vcpkg-ce/NOTICE.txt
+        outputfile: $(Build.BinariesDirectory)/ce/NOTICE.txt
     - task: MicroBuildSigningPlugin@3
       displayName: Install MicroBuild Signing
       inputs:
@@ -148,10 +135,10 @@ jobs:
         arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init"'
     - script: npm pack
       displayName: Create vcpkg-ce Pack
-      workingDirectory: $(Build.BinariesDirectory)/vcpkg-ce
+      workingDirectory: $(Build.BinariesDirectory)/ce
     - script: |
         mkdir "$(Build.ArtifactStagingDirectory)\staging"
-        move "$(Build.BinariesDirectory)\vcpkg-ce\vcpkg-ce-*.tgz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz"
+        move "$(Build.BinariesDirectory)\ce\vcpkg-ce-*.tgz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz"
         move "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz"
         move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init"
         move "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1"
