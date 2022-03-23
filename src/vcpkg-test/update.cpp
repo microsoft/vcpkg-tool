@@ -27,8 +27,8 @@ TEST_CASE ("find outdated packages basic", "[update]")
     map.emplace("a", SourceControlFileAndLocation{std::move(scf), ""});
     PortFileProvider::MapPortFileProvider provider(map);
 
-    auto pkgs = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-        Update::find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
+    auto pkgs = SortedVector<OutdatedPackage>(Update::find_outdated_packages(provider, status_db),
+                                              &OutdatedPackage::compare_by_name);
 
     REQUIRE(pkgs.size() == 1);
     REQUIRE(pkgs[0].version_diff.left.to_string() == "2");
@@ -51,8 +51,8 @@ TEST_CASE ("find outdated packages features", "[update]")
     map.emplace("a", SourceControlFileAndLocation{std::move(scf), ""});
     PortFileProvider::MapPortFileProvider provider(map);
 
-    auto pkgs = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-        Update::find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
+    auto pkgs = SortedVector<OutdatedPackage>(Update::find_outdated_packages(provider, status_db),
+                                              &OutdatedPackage::compare_by_name);
 
     REQUIRE(pkgs.size() == 1);
     REQUIRE(pkgs[0].version_diff.left.to_string() == "2");
@@ -77,8 +77,8 @@ TEST_CASE ("find outdated packages features 2", "[update]")
     map.emplace("a", SourceControlFileAndLocation{std::move(scf), ""});
     PortFileProvider::MapPortFileProvider provider(map);
 
-    auto pkgs = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-        Update::find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
+    auto pkgs = SortedVector<OutdatedPackage>(Update::find_outdated_packages(provider, status_db),
+                                              &OutdatedPackage::compare_by_name);
 
     REQUIRE(pkgs.size() == 1);
     REQUIRE(pkgs[0].version_diff.left.to_string() == "2");
@@ -98,8 +98,8 @@ TEST_CASE ("find outdated packages none", "[update]")
     map.emplace("a", SourceControlFileAndLocation{std::move(scf), ""});
     PortFileProvider::MapPortFileProvider provider(map);
 
-    auto pkgs = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-        Update::find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
+    auto pkgs = SortedVector<OutdatedPackage>(Update::find_outdated_packages(provider, status_db),
+                                              &OutdatedPackage::compare_by_name);
 
     REQUIRE(pkgs.size() == 0);
 }

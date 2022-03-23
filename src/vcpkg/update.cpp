@@ -70,8 +70,8 @@ namespace vcpkg::Update
 
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
 
-        const auto outdated_packages = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-            find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
+        const auto outdated_packages = SortedVector<OutdatedPackage>(find_outdated_packages(provider, status_db),
+                                                                     &OutdatedPackage::compare_by_name);
 
         if (outdated_packages.empty())
         {
