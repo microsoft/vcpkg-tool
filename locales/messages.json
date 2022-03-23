@@ -47,6 +47,7 @@
   "_ChecksLineInfo.comment": "{Locked}",
   "ChecksUnreachableCode": "unreachable code was reached",
   "ChecksUpdateVcpkg": "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.",
+  "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.",
   "CiBaselineRegression": "REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.",
   "_CiBaselineRegression.comment": "example of {spec} is 'zlib:x64-windows'.\nexample of {build_result} is 'One of the BuildResultXxx messages (such as BuildResultSucceeded/SUCCEEDED)'.\nexample of {path} is '/foo/bar'.\n",
   "CiBaselineRegressionHeader": "REGRESSIONS:",

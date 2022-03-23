@@ -96,6 +96,12 @@ namespace
                                  (msg::spec, msg::path),
                                  "",
                                  "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        CiBaselineAllowUnexpectedPassingRequiresBaseline,
+        (),
+        "",
+        "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.");
 }
 
 namespace vcpkg::Commands::CI
@@ -537,7 +543,14 @@ namespace vcpkg::Commands::CI
         auto baseline_iter = settings.find(OPTION_CI_BASELINE);
         const bool allow_unexpected_passing = Util::Sets::contains(options.switches, OPTION_ALLOW_UNEXPECTED_PASSING);
         SortedVector<PackageSpec> expected_failures;
-        if (baseline_iter != settings.end())
+        if (baseline_iter == settings.end())
+        {
+            if (allow_unexpected_passing)
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgCiBaselineAllowUnexpectedPassingRequiresBaseline);
+            }
+        }
+        else
         {
             const auto& ci_baseline_file_name = baseline_iter->second;
             const auto ci_baseline_file_contents =
@@ -546,15 +559,6 @@ namespace vcpkg::Commands::CI
             const auto lines = parse_ci_baseline(ci_baseline_file_contents, ci_baseline_file_name, ci_parse_messages);
             ci_parse_messages.exit_if_errors_or_warnings(ci_baseline_file_name);
             expected_failures = parse_and_apply_ci_baseline(lines, exclusions_map);
-        }
-        else
-        {
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               !allow_unexpected_passing,
-                               Strings::concat("--",
-                                               OPTION_ALLOW_UNEXPECTED_PASSING,
-                                               " can only be used if a ci baseline is provided via --",
-                                               OPTION_CI_BASELINE));
         }
 
         auto skipped_cascade_count = parse_skipped_cascade_count(settings);

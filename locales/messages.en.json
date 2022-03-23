@@ -25,6 +25,7 @@
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "unreachable code was reached",
   "ChecksUpdateVcpkg": "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.",
+  "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.",
   "CiBaselineRegression": "REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.",
   "CiBaselineRegressionHeader": "REGRESSIONS:",
   "CiBaselineUnexpectedPass": "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).",

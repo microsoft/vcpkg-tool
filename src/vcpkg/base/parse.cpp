@@ -112,9 +112,10 @@ namespace vcpkg
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, LocalizedString::from_raw(error->format()));
         }
 
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               warnings.empty(),
-                               msg::format(msg::msgErrorMessage).append(msg::format(msgWarningsTreatedAsErrors)));
+        if (!warnings.empty())
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgWarningsTreatedAsErrors);
+        }
     }
 
     ParserBase::ParserBase(StringView text, StringView origin, TextRowCol init_rowcol)
