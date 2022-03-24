@@ -180,11 +180,11 @@ set(CPP_ATOMIC_LIBRARY "")
 if(NOT MSVC)
     # Some platforms require a explicit linkage against libatomic to operate on 64-bit numbers
     set(TEST_SOURCE "
-#include <cstdint>
+#include <stdint.h>
 #include <atomic>
 std::atomic<uintptr_t> x;
 std::atomic<uintmax_t> y;
-int main(int, char**) {
+int main() {
     return x + y;
 }
 ")
