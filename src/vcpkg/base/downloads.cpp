@@ -311,11 +311,10 @@ namespace vcpkg
 
         if (out->size() != start_size + urls.size())
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                          msg::format(msg::msgErrorMessage)
-                                              .append(msg::format(msgCurlReportedUnexpectedResults,
-                                                                  msg::command_line = cmd.command_line(),
-                                                                  msg::actual = Strings::join("\n", lines))));
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msgCurlReportedUnexpectedResults,
+                                        msg::command_line = cmd.command_line(),
+                                        msg::actual = Strings::join("\n", lines));
         }
     }
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers)

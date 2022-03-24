@@ -822,7 +822,7 @@ namespace vcpkg
         void eat_idstring(std::string& result, Expecting& expecting)
         {
             auto loc = cur_loc();
-            auto token = match_zero_or_more(is_idstring_element);
+            auto token = match_while(is_idstring_element);
 
             if (Strings::starts_with(token, "DocumentRef-"))
             {

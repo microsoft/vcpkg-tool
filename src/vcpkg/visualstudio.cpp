@@ -210,8 +210,8 @@ namespace vcpkg::VisualStudio
         std::vector<Path>& paths_examined = ret.paths_examined;
         std::vector<Toolset>& found_toolsets = ret.toolsets;
 
-        const SortedVector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(fs),
-                                                        VisualStudioInstance::preferred_first_comparator};
+        const SortedVector<VisualStudioInstance, decltype(&VisualStudioInstance::preferred_first_comparator)> sorted{
+            get_visual_studio_instances_internal(fs), VisualStudioInstance::preferred_first_comparator};
 
         const bool v140_is_available = Util::find_if(sorted, [&](const VisualStudioInstance& vs_instance) {
                                            return vs_instance.major_version() == "14";
