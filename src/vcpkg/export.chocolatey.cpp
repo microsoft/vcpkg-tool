@@ -222,8 +222,8 @@ if (Test-Path $installedDir)
             auto cmd_line = Command(nuget_exe)
                                 .string_arg("pack")
                                 .string_arg("-OutputDirectory")
-                                .path_arg(exported_dir_path)
-                                .path_arg(nuspec_file_path)
+                                .string_arg(exported_dir_path)
+                                .string_arg(nuspec_file_path)
                                 .string_arg("-NoDefaultExcludes");
 
             const int exit_code =

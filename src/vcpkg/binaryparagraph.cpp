@@ -30,10 +30,8 @@ namespace vcpkg
 
     BinaryParagraph::BinaryParagraph() = default;
 
-    BinaryParagraph::BinaryParagraph(Parse::Paragraph fields)
+    BinaryParagraph::BinaryParagraph(Paragraph fields)
     {
-        using namespace vcpkg::Parse;
-
         ParagraphParser parser(std::move(fields));
 
         {

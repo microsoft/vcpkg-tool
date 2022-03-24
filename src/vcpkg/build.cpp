@@ -34,14 +34,10 @@
 
 using namespace vcpkg;
 using vcpkg::Build::BuildResult;
-using vcpkg::Parse::ParseControlErrorInfo;
-using vcpkg::Parse::ParseExpected;
 using vcpkg::PortFileProvider::PathsPortFileProvider;
 
 namespace
 {
-    using vcpkg::PackageSpec;
-    using vcpkg::VcpkgPaths;
     using vcpkg::Build::IBuildLogsRecorder;
     struct NullBuildLogsRecorder final : IBuildLogsRecorder
     {
@@ -312,7 +308,7 @@ namespace vcpkg::Build
         }
     }
 
-    CStringView to_cmake_variable(BuildPolicy policy)
+    ZStringView to_cmake_variable(BuildPolicy policy)
     {
         switch (policy)
         {
@@ -374,7 +370,7 @@ namespace vcpkg::Build
         "Supported system names are '', 'Windows' and 'WindowsStore'.");
 
 #if defined(_WIN32)
-    static CStringView to_vcvarsall_target(const std::string& cmake_system_name)
+    static ZStringView to_vcvarsall_target(const std::string& cmake_system_name)
     {
         if (cmake_system_name.empty()) return "";
         if (cmake_system_name == "Windows") return "";
@@ -385,7 +381,7 @@ namespace vcpkg::Build
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
 
-    static CStringView to_vcvarsall_toolchain(const std::string& target_architecture,
+    static ZStringView to_vcvarsall_toolchain(const std::string& target_architecture,
                                               const Toolset& toolset,
                                               Triplet triplet)
     {
@@ -714,11 +710,6 @@ namespace vcpkg::Build
         print2("Detecting compiler hash for triplet ", triplet, "...\n");
         auto buildpath = paths.buildtrees() / "detect_compiler";
 
-#if !defined(_WIN32)
-        // TODO: remove when vcpkg.exe is in charge for acquiring tools. Change introduced in vcpkg v0.0.107.
-        // bootstrap should have already downloaded ninja, but making sure it is present in case it was deleted.
-        (void)(paths.get_tool_exe(Tools::NINJA));
-#endif
         std::vector<CMakeVariable> cmake_args{
             {"CURRENT_PORT_DIR", paths.scripts / "detect_compiler"},
             {"CURRENT_BUILDTREES_DIR", buildpath},
@@ -799,11 +790,6 @@ namespace vcpkg::Build
                                                            const VcpkgPaths& paths,
                                                            const Dependencies::InstallPlanAction& action)
     {
-#if !defined(_WIN32)
-        // TODO: remove when vcpkg.exe is in charge for acquiring tools. Change introduced in vcpkg v0.0.107.
-        // bootstrap should have already downloaded ninja, but making sure it is present in case it was deleted.
-        (void)(paths.get_tool_exe(Tools::NINJA));
-#endif
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto& scf = *scfl.source_control_file;
 
@@ -1514,9 +1500,9 @@ namespace vcpkg::Build
                                paths.get_toolver_diagnostics());
     }
 
-    static BuildInfo inner_create_buildinfo(Parse::Paragraph pgh)
+    static BuildInfo inner_create_buildinfo(Paragraph pgh)
     {
-        Parse::ParagraphParser parser(std::move(pgh));
+        ParagraphParser parser(std::move(pgh));
 
         BuildInfo build_info;
 
@@ -1580,7 +1566,7 @@ namespace vcpkg::Build
 
     BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
     {
-        const ExpectedS<Parse::Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
+        const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
         Checks::check_maybe_upgrade(
             VCPKG_LINE_INFO, pghs.get() != nullptr, "Invalid BUILD_INFO file for package: %s", pghs.error());
         return inner_create_buildinfo(*pghs.get());

@@ -11,6 +11,23 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
+namespace
+{
+    using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(CurlReportedUnexpectedResults,
+                                 (msg::command_line, msg::actual),
+                                 "{command_line} is the command line to call curl.exe, {actual} is the console output "
+                                 "of curl.exe locale-invariant download results.",
+                                 "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\n"
+                                 "Please review the following text for sensitive information and open an issue on the "
+                                 "Microsoft/vcpkg GitHub to help fix this problem!\n"
+                                 "cmd: {command_line}\n"
+                                 "=== curl output ===\n"
+                                 "{actual}\n"
+                                 "=== end curl output ===\n");
+}
+
 namespace vcpkg
 {
 #if defined(_WIN32)
@@ -264,6 +281,8 @@ namespace vcpkg
     {
         static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
+        const size_t start_size = out->size();
+
         Command cmd;
         cmd.string_arg("curl")
             .string_arg("--head")
@@ -278,13 +297,26 @@ namespace vcpkg
         {
             cmd.string_arg(url);
         }
-        auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
+
+        std::vector<std::string> lines;
+
+        auto res = cmd_execute_and_stream_lines(cmd, [out, &lines](StringView line) {
+            lines.push_back(line.to_string());
             if (Strings::starts_with(line, guid_marker))
             {
                 out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
             }
         });
         Checks::check_exit(VCPKG_LINE_INFO, res == 0, "curl failed to execute with exit code: %d", res);
+
+        if (out->size() != start_size + urls.size())
+        {
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msg::format(msg::msgErrorMessage)
+                                              .append(msg::format(msgCurlReportedUnexpectedResults,
+                                                                  msg::command_line = cmd.command_line(),
+                                                                  msg::actual = Strings::join("\n", lines))));
+        }
     }
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers)
     {
@@ -327,7 +359,7 @@ namespace vcpkg
                 .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
             for (auto&& url : url_pairs)
             {
-                cmd.string_arg(url.first).string_arg("-o").path_arg(url.second);
+                cmd.string_arg(url.first).string_arg("-o").string_arg(url.second);
             }
             auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
                 if (Strings::starts_with(line, guid_marker))
@@ -385,7 +417,7 @@ namespace vcpkg
             Command cmd;
             cmd.string_arg("curl");
             cmd.string_arg(url);
-            cmd.string_arg("-T").path_arg(file);
+            cmd.string_arg("-T").string_arg(file);
             auto res = cmd_execute_and_capture_output(cmd);
             if (res.exit_code != 0)
             {
@@ -403,7 +435,7 @@ namespace vcpkg
         }
         cmd.string_arg("-w").string_arg(Strings::concat("\\n", guid_marker, "%{http_code}"));
         cmd.string_arg(url);
-        cmd.string_arg("-T").path_arg(file);
+        cmd.string_arg("-T").string_arg(file);
         int code = 0;
         auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
             if (Strings::starts_with(line, guid_marker))
@@ -555,7 +587,7 @@ namespace vcpkg
             .string_arg(url)
             .string_arg("--create-dirs")
             .string_arg("--output")
-            .path_arg(download_path_part_path);
+            .string_arg(download_path_part_path);
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);

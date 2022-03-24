@@ -12,6 +12,8 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <regex>
+
 namespace vcpkg
 {
     struct ToolData
@@ -25,28 +27,47 @@ namespace vcpkg
         std::string sha512;
     };
 
-    static Optional<std::array<int, 3>> parse_version_string(const std::string& version_as_string)
+    // /\d+\.\d+(\.\d+)?/
+    Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version)
     {
-        static const std::regex RE(R"###((\d+)\.(\d+)(\.(\d+))?)###");
+        // first, find the beginning of the version
+        auto first = string_version.begin();
+        const auto last = string_version.end();
 
-        std::match_results<std::string::const_iterator> match;
-        const auto found = std::regex_search(version_as_string, match, RE);
-        if (!found)
+        // we're looking for the first instance of `<digits>.<digits>`
+        ParsedExternalVersion parsed_version{};
+        for (;;)
         {
-            return {};
+            first = std::find_if(first, last, ParserBase::is_ascii_digit);
+            if (first == last)
+            {
+                return nullopt;
+            }
+
+            if (try_extract_external_dot_version(parsed_version, StringView{first, last}) &&
+                !parsed_version.minor.empty())
+            {
+                break;
+            }
+
+            first = std::find_if_not(first, last, ParserBase::is_ascii_digit);
         }
 
-        const int d1 = atoi(match[1].str().c_str());
-        const int d2 = atoi(match[2].str().c_str());
-        const int d3 = [&] {
-            if (match[4].str().empty()) return 0;
-            return atoi(match[4].str().c_str());
-        }();
-        const std::array<int, 3> result = {d1, d2, d3};
-        return result;
+        parsed_version.normalize();
+
+        auto d1 = Strings::strto<int>(parsed_version.major);
+        if (!d1.has_value()) return {};
+
+        auto d2 = Strings::strto<int>(parsed_version.minor);
+        if (!d2.has_value()) return {};
+
+        auto d3 = Strings::strto<int>(parsed_version.patch);
+        if (!d3.has_value()) return {};
+
+        return std::array<int, 3>{*d1.get(), *d2.get(), *d3.get()};
     }
 
-    static ExpectedT<ToolData, std::string> parse_tool_data_from_xml(const VcpkgPaths& paths, const std::string& tool)
+    static ExpectedT<ToolData, std::string> parse_tool_data_from_xml(const VcpkgPaths& paths, StringView tool)
     {
 #if defined(_WIN32)
         static constexpr StringLiteral OS_STRING = "windows";
@@ -112,7 +133,7 @@ namespace vcpkg
         const std::string sha512 = Strings::find_exactly_one_enclosed(tool_data, "<sha512>", "</sha512>").to_string();
         auto archive_name = Strings::find_at_most_one_enclosed(tool_data, "<archiveName>", "</archiveName>");
 
-        const Optional<std::array<int, 3>> version = parse_version_string(version_as_string);
+        const Optional<std::array<int, 3>> version = parse_tool_version_string(version_as_string);
         Checks::check_exit(VCPKG_LINE_INFO,
                            version.has_value(),
                            "Could not parse version for tool %s. Version string was: %s",
@@ -144,8 +165,8 @@ namespace vcpkg
 
     struct ToolProvider
     {
-        virtual const std::string& tool_data_name() const = 0;
-        virtual const std::string& exe_stem() const = 0;
+        virtual StringLiteral tool_data_name() const = 0;
+        virtual StringLiteral exe_stem() const = 0;
         virtual std::array<int, 3> default_min_version() const = 0;
 
         virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const { (void)out_candidate_paths; }
@@ -165,7 +186,7 @@ namespace vcpkg
             auto maybe_version = tool_provider.get_version(paths, candidate);
             const auto version = maybe_version.get();
             if (!version) continue;
-            const auto parsed_version = parse_version_string(*version);
+            const auto parsed_version = parse_tool_version_string(*version);
             if (!parsed_version) continue;
             auto& actual_version = *parsed_version.get();
             if (!accept_version(actual_version)) continue;
@@ -176,7 +197,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    static Path fetch_tool(const VcpkgPaths& paths, const std::string& tool_name, const ToolData& tool_data)
+    static Path fetch_tool(const VcpkgPaths& paths, StringView tool_name, const ToolData& tool_data)
     {
         const std::array<int, 3>& version = tool_data.version;
         const std::string version_as_string = Strings::format("%d.%d.%d", version[0], version[1], version[2]);
@@ -258,7 +279,7 @@ namespace vcpkg
             min_version = tool_data->version;
         }
 
-        auto& exe_stem = tool.exe_stem();
+        StringLiteral exe_stem = tool.exe_stem();
         if (!exe_stem.empty())
         {
             auto paths_from_path = fs.find_from_PATH(exe_stem);
@@ -293,10 +314,8 @@ namespace vcpkg
 
     struct CMakeProvider : ToolProvider
     {
-        std::string m_exe = "cmake";
-
-        virtual const std::string& tool_data_name() const override { return m_exe; }
-        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual StringLiteral tool_data_name() const override { return Tools::CMAKE; }
+        virtual StringLiteral exe_stem() const override { return Tools::CMAKE; }
         virtual std::array<int, 3> default_min_version() const override { return {3, 17, 1}; }
 
         virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const override
@@ -337,10 +356,8 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
 
     struct NinjaProvider : ToolProvider
     {
-        std::string m_exe = "ninja";
-
-        virtual const std::string& tool_data_name() const override { return m_exe; }
-        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual StringLiteral tool_data_name() const override { return Tools::NINJA; }
+        virtual StringLiteral exe_stem() const override { return Tools::NINJA; }
         virtual std::array<int, 3> default_min_version() const override { return {3, 5, 1}; }
 
         virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
@@ -362,21 +379,19 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
 
     struct NuGetProvider : ToolProvider
     {
-        std::string m_exe = "nuget";
-
-        virtual const std::string& tool_data_name() const override { return m_exe; }
-        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual StringLiteral tool_data_name() const override { return Tools::NUGET; }
+        virtual StringLiteral exe_stem() const override { return Tools::NUGET; }
         virtual std::array<int, 3> default_min_version() const override { return {4, 6, 2}; }
 
         virtual ExpectedS<std::string> get_version(const VcpkgPaths& paths, const Path& exe_path) const override
         {
             Command cmd;
 #ifndef _WIN32
-            cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+            cmd.string_arg(paths.get_tool_exe(Tools::MONO));
 #else
             (void)paths;
 #endif
-            cmd.path_arg(exe_path);
+            cmd.string_arg(exe_path);
             auto rc = cmd_execute_and_capture_output(cmd);
             if (rc.exit_code != 0)
             {
@@ -409,10 +424,8 @@ Type 'NuGet help <command>' for help on a specific command.
 
     struct Aria2Provider : ToolProvider
     {
-        std::string m_name = "aria2";
-        virtual const std::string& tool_data_name() const override { return m_name; }
-        std::string m_exe = "aria2c";
-        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual StringLiteral tool_data_name() const override { return "aria2"; }
+        virtual StringLiteral exe_stem() const override { return "aria2c"; }
         virtual std::array<int, 3> default_min_version() const override { return {1, 33, 1}; }
         virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
         {
@@ -441,8 +454,8 @@ Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa
 
     struct NodeProvider : ToolProvider
     {
-        virtual const std::string& tool_data_name() const override { return Tools::NODE; }
-        virtual const std::string& exe_stem() const override { return Tools::NODE; }
+        virtual StringLiteral tool_data_name() const override { return Tools::NODE; }
+        virtual StringLiteral exe_stem() const override { return Tools::NODE; }
         virtual std::array<int, 3> default_min_version() const override { return {16, 12, 0}; }
 
         virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const override
@@ -485,10 +498,8 @@ Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa
 
     struct GitProvider : ToolProvider
     {
-        std::string m_exe = "git";
-
-        virtual const std::string& tool_data_name() const override { return m_exe; }
-        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual StringLiteral tool_data_name() const override { return Tools::GIT; }
+        virtual StringLiteral exe_stem() const override { return Tools::GIT; }
         virtual std::array<int, 3> default_min_version() const override { return {2, 7, 4}; }
 
         virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const override
@@ -527,10 +538,8 @@ git version 2.17.1.windows.2
 
     struct MonoProvider : ToolProvider
     {
-        std::string m_exe = "mono";
-
-        virtual const std::string& tool_data_name() const override { return m_exe; }
-        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual StringLiteral tool_data_name() const override { return Tools::MONO; }
+        virtual StringLiteral exe_stem() const override { return Tools::MONO; }
         virtual std::array<int, 3> default_min_version() const override { return {0, 0, 0}; }
 
         virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
@@ -554,10 +563,8 @@ Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50
 
     struct GsutilProvider : ToolProvider
     {
-        std::string m_exe = "gsutil";
-
-        virtual const std::string& tool_data_name() const override { return m_exe; }
-        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual StringLiteral tool_data_name() const override { return Tools::GSUTIL; }
+        virtual StringLiteral exe_stem() const override { return Tools::GSUTIL; }
         virtual std::array<int, 3> default_min_version() const override { return {4, 56, 0}; }
 
         virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
@@ -583,10 +590,8 @@ gsutil version: 4.58
 
     struct AwsCliProvider : ToolProvider
     {
-        std::string m_exe = "aws";
-
-        virtual const std::string& tool_data_name() const override { return m_exe; }
-        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual StringLiteral tool_data_name() const override { return Tools::AWSCLI; }
+        virtual StringLiteral exe_stem() const override { return Tools::AWSCLI; }
         virtual std::array<int, 3> default_min_version() const override { return {2, 4, 4}; }
 
         virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
@@ -612,11 +617,8 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
 
     struct IfwInstallerBaseProvider : ToolProvider
     {
-        std::string m_exe;
-        std::string m_toolname = "installerbase";
-
-        virtual const std::string& tool_data_name() const override { return m_toolname; }
-        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual StringLiteral tool_data_name() const override { return "installerbase"; }
+        virtual StringLiteral exe_stem() const override { return ""; }
         virtual std::array<int, 3> default_min_version() const override { return {0, 0, 0}; }
 
         virtual void add_special_paths(std::vector<Path>& out_candidate_paths) const override
@@ -650,11 +652,8 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
 
     struct PowerShellCoreProvider : ToolProvider
     {
-        std::string m_exe = "pwsh";
-        std::string m_name = "powershell-core";
-
-        virtual const std::string& tool_data_name() const override { return m_name; }
-        virtual const std::string& exe_stem() const override { return m_exe; }
+        virtual StringLiteral tool_data_name() const override { return "powershell-core"; }
+        virtual StringLiteral exe_stem() const override { return "pwsh"; }
         virtual std::array<int, 3> default_min_version() const override { return {7, 0, 3}; }
 
         virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
@@ -688,7 +687,7 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
 
         ToolCacheImpl(RequireExactVersions abiToolVersionHandling) : abiToolVersionHandling(abiToolVersionHandling) { }
 
-        virtual const Path& get_tool_path_from_system(const Filesystem& fs, const std::string& tool) const override
+        virtual const Path& get_tool_path_from_system(const Filesystem& fs, StringView tool) const override
         {
             return system_cache.get_lazy(tool, [&] {
                 if (tool == Tools::TAR)
@@ -715,7 +714,7 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
             });
         }
 
-        virtual const Path& get_tool_path(const VcpkgPaths& paths, const std::string& tool) const override
+        virtual const Path& get_tool_path(const VcpkgPaths& paths, StringView tool) const override
         {
             return path_only_cache.get_lazy(tool, [&]() {
                 if (tool == Tools::IFW_BINARYCREATOR)
@@ -736,7 +735,7 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
             });
         }
 
-        const PathAndVersion& get_tool_pathversion(const VcpkgPaths& paths, const std::string& tool) const
+        const PathAndVersion& get_tool_pathversion(const VcpkgPaths& paths, StringView tool) const
         {
             return path_version_cache.get_lazy(tool, [&]() -> PathAndVersion {
                 // First deal with specially handled tools.
@@ -830,7 +829,7 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
             });
         }
 
-        virtual const std::string& get_tool_version(const VcpkgPaths& paths, const std::string& tool) const override
+        virtual const std::string& get_tool_version(const VcpkgPaths& paths, StringView tool) const override
         {
             return get_tool_pathversion(paths, tool).version;
         }

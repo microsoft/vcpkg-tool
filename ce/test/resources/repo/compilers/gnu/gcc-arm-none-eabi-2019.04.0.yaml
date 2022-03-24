@@ -1,0 +1,28 @@
+info:
+  id: compilers/gnu/gcc/arm-none-eabi
+  version: 2019.4.0
+  description: sample yaml file that might work for gcc 
+  summary: GCC compiler for ARM CPUs. from early 2019
+
+contacts:
+  Garrett Serack: 
+    email: garretts@microsoft.com
+    role: publisher
+
+windows:
+  install:
+    unzip: https://developer.arm.com/-/media/Files/downloads/gnu-rm/10-2020q4/gcc-arm-none-eabi-10-2020-q4-major-win32.zip
+    sha256: 90057B8737B888C53CA5AEE332F1F73C401D6D3873124D2C2906DF4347EBEF9E
+    strip: 1 # 
+
+not windows: 
+  error: not yet supported
+
+settings:
+  tools:
+    CC: bin/arm-none-eabi-gcc.exe
+    CXX: bin/arm-none-eabi-g++.exe
+  
+  paths:
+    - bin
+    - gcc-arm-eabi-none/bin

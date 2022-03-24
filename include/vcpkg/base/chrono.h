@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/zstringview.h>
 
 #include <atomic>
 #include <chrono>
@@ -64,7 +64,7 @@ namespace vcpkg
     struct CTime
     {
         static Optional<CTime> get_current_date_time();
-        static Optional<CTime> parse(CStringView str);
+        static Optional<CTime> parse(ZStringView str);
 
         constexpr CTime() noexcept : m_tm{} { }
         explicit constexpr CTime(tm t) noexcept : m_tm{t} { }

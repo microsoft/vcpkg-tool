@@ -1,6 +1,6 @@
 #pragma once
 
-namespace vcpkg::Parse
+namespace vcpkg
 {
     struct TextRowCol
     {

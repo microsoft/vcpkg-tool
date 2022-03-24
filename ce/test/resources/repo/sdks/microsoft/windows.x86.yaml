@@ -1,0 +1,18 @@
+# Windows SDK
+# install with `ce add sdks/microsoft/windows`
+
+info:
+  id: sdks/microsoft/windows/x86
+  version: 10.0.19041
+  description: The Windows SDK available as a NuGet package for more seamless acquisition and CI/CD integration. This package is designed for C++ applications (targeting x86)
+  summary: Microsoft Windows SDK. (targeting x86)
+
+contacts:
+  Garrett Serack: 
+    email: garretts@microsoft.com
+    role: publisher
+
+install: 
+  nupkg: Microsoft.Windows.SDK.cpp.x86/10.0.19041.5
+  sha256: fluffyKittenBunnies
+  

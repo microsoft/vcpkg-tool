@@ -8,6 +8,7 @@
 
 #include <vcpkg/statusparagraph.h>
 
+#include <iomanip>
 #include <memory>
 
 #define CHECK_EC(ec)                                                                                                   \
@@ -56,6 +57,14 @@ namespace Catch
     };
 }
 
+namespace vcpkg
+{
+    inline std::ostream& operator<<(std::ostream& os, const LocalizedString& value)
+    {
+        return os << "LL" << std::quoted(value.data());
+    }
+}
+
 namespace vcpkg::Test
 {
     std::unique_ptr<SourceControlFile> make_control_file(
@@ -66,12 +75,12 @@ namespace vcpkg::Test
 
     inline auto test_parse_control_file(const std::vector<std::unordered_map<std::string, std::string>>& v)
     {
-        std::vector<vcpkg::Parse::Paragraph> pghs;
+        std::vector<vcpkg::Paragraph> pghs;
         for (auto&& p : v)
         {
             pghs.emplace_back();
             for (auto&& kv : p)
-                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::Parse::TextRowCol{}));
+                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
         }
         return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));
     }
@@ -126,7 +135,7 @@ namespace vcpkg::Test
     inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv, Triplet t = X86_WINDOWS)
     {
         std::vector<FullPackageSpec> ret;
-        Parse::ParserBase parser(sv, "test");
+        ParserBase parser(sv, "test");
         while (!parser.at_eof())
         {
             auto opt = parse_qualified_specifier(parser);

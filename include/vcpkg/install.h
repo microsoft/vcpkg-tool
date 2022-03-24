@@ -97,6 +97,7 @@ namespace vcpkg::Install
         std::map<std::string, std::vector<std::string>> cmake_targets_map;
     };
 
+    std::vector<std::string> get_cmake_add_library_names(StringView cmake_file);
     CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh);
     void print_usage_information(const BinaryParagraph& bpgh,
                                  std::set<std::string>& printed_usages,

@@ -10,12 +10,9 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 
-using namespace vcpkg::Parse;
-using namespace vcpkg;
-
 static std::atomic<uint64_t> g_load_ports_stats(0);
 
-namespace vcpkg::Parse
+namespace vcpkg
 {
     static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, const std::string& fieldname)
     {
@@ -78,7 +75,7 @@ namespace vcpkg::Parse
     }
 
     template<class T, class F>
-    static Optional<std::vector<T>> parse_list_until_eof(StringLiteral plural_item_name, Parse::ParserBase& parser, F f)
+    static Optional<std::vector<T>> parse_list_until_eof(StringLiteral plural_item_name, ParserBase& parser, F f)
     {
         std::vector<T> ret;
         parser.skip_whitespace();
@@ -104,7 +101,7 @@ namespace vcpkg::Parse
                                                                     StringView origin,
                                                                     TextRowCol textrowcol)
     {
-        auto parser = Parse::ParserBase(str, origin, textrowcol);
+        auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<std::string>("default features", parser, &parse_feature_name);
         if (!opt) return {parser.get_error()->format(), expected_right_tag};
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
@@ -113,7 +110,7 @@ namespace vcpkg::Parse
                                                                                     StringView origin,
                                                                                     TextRowCol textrowcol)
     {
-        auto parser = Parse::ParserBase(str, origin, textrowcol);
+        auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<ParsedQualifiedSpecifier>(
             "dependencies", parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
         if (!opt) return {parser.get_error()->format(), expected_right_tag};
@@ -124,7 +121,7 @@ namespace vcpkg::Parse
                                                                StringView origin,
                                                                TextRowCol textrowcol)
     {
-        auto parser = Parse::ParserBase(str, origin, textrowcol);
+        auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<Dependency>("dependencies", parser, [](ParserBase& parser) {
             auto loc = parser.cur_loc();
             return parse_qualified_specifier(parser).then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
@@ -144,7 +141,7 @@ namespace vcpkg::Parse
 
 namespace vcpkg::Paragraphs
 {
-    struct PghParser : private Parse::ParserBase
+    struct PghParser : private ParserBase
     {
     private:
         void get_fieldvalue(std::string& fieldvalue)
@@ -197,7 +194,7 @@ namespace vcpkg::Paragraphs
         }
 
     public:
-        PghParser(StringView text, StringView origin) : Parse::ParserBase(text, origin) { }
+        PghParser(StringView text, StringView origin) : ParserBase(text, origin) { }
 
         ExpectedS<std::vector<Paragraph>> get_paragraphs()
         {

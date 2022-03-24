@@ -1,6 +1,6 @@
 jobs:
 - job: linux_gcc_9
-  displayName: 'Ubuntu 20.04 with GCC 9'
+  displayName: 'Ubuntu 20.04 with GCC 9, plus vcpkg-ce'
   pool:
     vmImage: 'ubuntu-20.04'
   variables:
@@ -11,6 +11,34 @@ jobs:
         git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT" -n
         git -C "$VCPKG_ROOT" checkout `cat vcpkg-init/vcpkg-scripts-sha.txt`
       displayName: "Clone vcpkg repo to serve as root"
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '16.x'
+      displayName: 'Install Node.js'
+    - script: |
+        cd ce
+
+        npm install -g npm
+        rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
+
+        npx @microsoft/rush update
+        rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
+
+        npx @microsoft/rush rebuild
+        rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
+
+        npx @microsoft/rush test
+        rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
+
+        npx @microsoft/rush lint
+        rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
+
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "ERROR: Working directory is dirty. Are there test output files missing from the PR?"
+          git status
+          exit 1
+        fi
+      displayName: 'Rush install, build and test vcpkg-ce'
     - bash: |
         export CXXFLAGS="-fprofile-arcs -ftest-coverage -fPIC -O0"
         cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
