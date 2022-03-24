@@ -17,13 +17,21 @@ parameters:
   displayName: vcpkg Base Version (default is today's date in ISO 8601)
   type: string
   default:
-
+- name: PublishLocation
+  displayName: Publishing Location
+  type: string
+  default: all
+  values:
+  - all
+  - nuget
 variables:
   - name: TeamName
     value: vcpkg
   - group: vcpkg-dependency-source-blobs
   - name: FMT_TARBALL_URL
     value: "$(fmt-tarball-url)"
+  - name: PublishLocation
+    value: ${{ parameters.PublishLocation }}
   # If the user didn't override the signing type, then only real-sign on main.
   - ${{ if ne(parameters.SignTypeOverride, 'default') }}:
     - name: SignType
@@ -106,6 +114,10 @@ jobs:
     - script: mkdir "$(Build.BinariesDirectory)\vcpkg-ce" && rush deploy -t "$(Build.BinariesDirectory)\vcpkg-ce"
       displayName: Collect vcpkg-ce Dependencies
       workingDirectory: vcpkg-ce
+    - script: |
+        mkdir "$(Build.BinariesDirectory)/scripts"
+        xcopy /E /F "$(Build.SourcesDirectory)/scripts" "$(Build.BinariesDirectory)/scripts"
+      displayName: Collect Powershell scripts
     - task: ComponentGovernanceComponentDetection@0
       displayName: Detect Components
       inputs:
@@ -138,6 +150,12 @@ jobs:
         msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
       # Note that signing must happen before packing step because the packs contain files that are themselves signed.
     - script: |
+        mkdir "$(Build.ArtifactStagingDirectory)\staging"
+        move "$(Build.BinariesDirectory)\scripts\buildsystems\msbuild\applocal.ps1" "$(Build.ArtifactStagingDirectory)\staging\applocal.ps1"
+        move "$(Build.BinariesDirectory)\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\staging\addPoshVcpkgToPowershellProfile.ps1"
+        move "$(Build.BinariesDirectory)\scripts\posh-vcpkg\0.0.1\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\staging\posh-vcpkg.psm1"
+      displayName: 'Move signed Powershell scripts'
+    - script: |
         copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
       displayName: 'Duplicate Install Scripts'
     - task: Powershell@2
@@ -150,7 +168,6 @@ jobs:
       displayName: Create vcpkg-ce Pack
       workingDirectory: $(Build.BinariesDirectory)/vcpkg-ce
     - script: |
-        mkdir "$(Build.ArtifactStagingDirectory)\staging"
         move "$(Build.BinariesDirectory)\vcpkg-ce\vcpkg-ce-*.tgz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz"
         move "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz"
         move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init"
@@ -354,6 +371,10 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
 
+          move /Y "$(Build.ArtifactStagingDirectory)\staging\applocal.ps1" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\scripts\buildsystems\msbuild\applocal.ps1"
+          move /Y "$(Build.ArtifactStagingDirectory)\staging\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\scripts\addPoshVcpkgToPowershellProfile.ps1"
+          move /Y "$(Build.ArtifactStagingDirectory)\staging\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\scripts\posh-vcpkg\0.0.1\posh-vcpkg.psm1"
+
           move "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
           copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.exe"
 
@@ -449,7 +470,7 @@ jobs:
     - task: DownloadSecureFile@1
       displayName: Download Deploy Key
       name: githubDeployKey
-      condition: and(eq(variables.SignType, 'real'), succeeded())
+      condition: and(eq(variables.SignType, 'real'), eq(variables.PublishLocation, 'all'), succeeded())
       inputs:
         secureFile: id_vcpkg_tool
     # GitHub has a large, regularly changing set of IP address, so ignore the
@@ -460,15 +481,15 @@ jobs:
     # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
     - script: mkdir %USERPROFILE%\.ssh && echo * ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==>>%USERPROFILE%\.ssh\known_hosts
       displayName: Store GitHub Public Key
-      condition: and(eq(variables.SignType, 'real'), succeeded())
+      condition: and(eq(variables.SignType, 'real'), eq(variables.PublishLocation, 'all'), succeeded())
     - script: git -c user.email=embeddedbot@microsoft.com -c user.name="Embedded Bot" push git@github.com:microsoft/vcpkg-tool HEAD:refs/tags/%VCPKG_BASE_VERSION%
-      condition: and(eq(variables.SignType, 'real'), succeeded())
+      condition: and(eq(variables.SignType, 'real'), eq(variables.PublishLocation, 'all'), succeeded())
       env:
         GIT_SSH_COMMAND: ssh -i "$(githubDeployKey.secureFilePath)"
       displayName: Push Release Tag
     - task: GitHubRelease@0
       displayName: Publish GitHub Release
-      condition: and(eq(variables.SignType, 'real'), succeeded())
+      condition: and(eq(variables.SignType, 'real'), eq(variables.PublishLocation, 'all'), succeeded())
       inputs:
         gitHubConnection: embeddedbot
         repositoryName: microsoft/vcpkg-tool
