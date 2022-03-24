@@ -211,6 +211,11 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
                        ^
 )");
 
+    check_error("hello\n:", R"(test:1:6: error: expected ':' here
+    on expression: hello
+                        ^
+)");
+
     check_error("?example:x64-windows=fail", R"(test:1:1: error: expected a port name here
     on expression: ?example:x64-windows=fail
                    ^
@@ -219,6 +224,11 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
     check_error("x64-windows:", R"(test:1:13: error: expected a triplet name here
     on expression: x64-windows:
                               ^
+)");
+
+    check_error("x64-windows:\nport:x64-windows=skip", R"(test:1:13: error: expected a triplet name here
+    on expression: x64-windows:
+                               ^
 )");
 
     check_error("x64-windows:#", R"(test:1:13: error: expected a triplet name here
@@ -232,6 +242,16 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
                       )" "\t" R"(           ^
 )");
     // clang-format on
+
+    check_error("port:x64-windows\n=fail", R"(test:1:17: error: expected '=' here
+    on expression: port:x64-windows
+                                   ^
+)");
+
+    check_error("example:x64-windows   =  \n  fail", R"(test:1:26: error: expected 'fail' or 'skip' here
+    on expression: example:x64-windows   =  
+                                            ^
+)");
 
     check_error("example:x64-windows   =    pass", R"(test:1:28: error: expected 'fail' or 'skip' here
     on expression: example:x64-windows   =    pass
@@ -247,6 +267,12 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
     check_error("example:x64-windows   =    fail extra stuff",
                 R"(test:1:33: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'
     on expression: example:x64-windows   =    fail extra stuff
+                                                   ^
+)");
+
+    check_error("example:x64-windows   =    fail example:x64-windows   =    fail",
+                R"(test:1:33: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'
+    on expression: example:x64-windows   =    fail example:x64-windows   =    fail
                                                    ^
 )");
 
