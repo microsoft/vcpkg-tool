@@ -1,78 +1,5 @@
 {
-  // FYI: if the TS version that vscode needs to be set, the path will be something like this (with whatever version instead of 3.9.5)
-  "typescript.tsdk": "ce/common/temp/node_modules/typescript/lib",
-  "files.eol": "\n",
-  "files.exclude": {
-    "**/common/temp/**": true,
-    "node_modules/**": true,
-    "**/generated/**": false,
-    "**/dist/**": true,
-    "**/dist/dist/**": false,
-    "**/obj/**": true,
-    "**/bin/**": true,
-    "**/node_modules/**": true,
-    "**/test/**/*.d.ts": true,
-    "**/test/**/*.js": true,
-    "**/*.?s.map": true,
-    "**/*.log": true,
-    "**/.rush": true,
-    "**/*.js": {
-      "when": "$(basename).ts"
-    },
-    "**/*.d.tsx": {
-      "when": "$(basename).ts"
-    },
-    "**/.git": true,
-    "**/.svn": true,
-    "**/.hg": true,
-    "**/.DS_Store": true
-  },
-  "[javascript]": {
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": true,
-    "editor.tabSize": 2,
-    "editor.detectIndentation": false
-  },
-  "[typescript]": {
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": true,
-    "editor.tabSize": 2,
-    "editor.detectIndentation": false,
-  },
-  "[csharp]": {
-    "editor.tabSize": 4,
-  },
-  "[json]": {
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": true,
-    "editor.tabSize": 2,
-    "editor.detectIndentation": false
-  },
-  "[jsonc]": {
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": true,
-    "editor.tabSize": 2,
-    "editor.detectIndentation": false
-  },
-  "files.associations": {
-    "rush.json": "jsonc",
-    "command-line.json": "jsonc"
-  },
-  "eslint.workingDirectories": [
-    {
-      "changeProcessCWD": true,
-      "directory": "./ce",
-    },
-    {
-      "changeProcessCWD": true,
-      "directory": "./test",
-    }
-  ],
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true,
-    "source.organizeImports": true
-  },
-  "eslint.format.enable": true,
+  "typescript.tsdk": "ce/ce/common/temp/node_modules/typescript/lib",
   "mochaExplorer.files": "./ce/test/**/*.js",
   "mochaExplorer.ignore": [
     "./ce/test/**/*.d.ts",
@@ -89,9 +16,4 @@
   ],
   "mochaExplorer.monkeyPatch": true,
   "mochaExplorer.debuggerConfig": "MochaTest",
-  "mochaExplorer.env": {
-    // turn this on to dump session.debug messages in the test output window.
-    // "debug": "true"
-  },
-  "eslint.debug": true
 }
