@@ -178,15 +178,16 @@ endif()
 
 set(CPP_ATOMIC_LIBRARY "")
 if(NOT MSVC)
-    # Some platforms require a explicit linkage against libatomic
-    # Using clang with libstdc++ requires explicitly linking against libatomic
+    # Some platforms require a explicit linkage against libatomic to operate on 64-bit numbers
     set(TEST_SOURCE "
+#include <cstdint>
 #include <atomic>
-int main(int argc, char** argv) {
-    struct Test { int val; };
-    std::atomic<Test> s;
-    return static_cast<int>(s.is_lock_free());
-}")
+std::atomic<uintptr_t> x;
+std::atomic<uintmax_t> y;
+int main(int, char**) {
+    return x + y;
+}
+")
     check_cxx_source_compiles("${TEST_SOURCE}" CPP_ATOMIC_BUILTIN)
     if(NOT CPP_ATOMIC_BUILTIN)
         list(APPEND CMAKE_REQUIRED_LIBRARIES atomic)
