@@ -1,1 +1,20 @@
+# Don't allow people to merge changes to these generated files, because the result
+# may be invalid.  You need to run "rush update" again.
+ce/pnpm-lock.yaml               merge=binary
+ce/shrinkwrap.yaml              merge=binary
+ce/npm-shrinkwrap.json          merge=binary
+
+
+# Disable line ending smudges entirely.
 * -text
+
+# Rush's JSON config files use JavaScript-style code comments.  The rule below prevents pedantic
+# syntax highlighters such as GitHub's from highlighting these comments as errors.  Your text editor
+# may also require a special configuration to allow comments in JSON.
+#
+# For more information, see this issue: https://github.com/Microsoft/web-build-tools/issues/1088
+#
+*.json                       linguist-language=JSON-with-Comments
+*.png               binary
+*.gif               binary
+*.mp4               binary

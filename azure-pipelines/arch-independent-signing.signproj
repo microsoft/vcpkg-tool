@@ -11,14 +11,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\*.js" Exclude="$(IntermediateOutputPath)\vcpkg-ce\**\node_modules\**\*.js">
+    <FilesToSign Include="$(IntermediateOutputPath)\ce\**\*.js" Exclude="$(IntermediateOutputPath)\ce\**\node_modules\**\*.js">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\scripts\ce.ps1">
+    <FilesToSign Include="$(IntermediateOutputPath)\ce\scripts\ce.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-ce\**\node_modules\**\*.js"
-                 Exclude="$(IntermediateOutputPath)\vcpkg-ce\common\temp\node_modules\.pnpm\**\node_modules\fast-xml-parser\src\xmlbuilder\prettifyJs2Xml.js">
+    <FilesToSign Include="$(IntermediateOutputPath)\ce\**\node_modules\**\*.js"
+                 Exclude="$(IntermediateOutputPath)\ce\common\temp\node_modules\.pnpm\**\node_modules\fast-xml-parser\src\xmlbuilder\prettifyJs2Xml.js">
       <Authenticode>3PartyScriptsSHA2</Authenticode>
     </FilesToSign>
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-init.ps1">
