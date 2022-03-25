@@ -1,0 +1,67 @@
+# Kitware CMake Toolsuite
+# install with `ce add cmake`
+
+info:
+  id: tools/kitware/cmake
+  version: 3.20.1
+  description: CMake is an open-source, cross-platform family of tools designed to build, test and package software. CMake is used to control the software compilation process using simple platform and compiler independent configuration files, and generate native makefiles and workspaces that can be used in the compiler environment of your choice. The suite of CMake tools were created by Kitware in response to the need for a powerful, cross-platform build environment for open-source projects such as ITK and VTK.
+  summary: Kitware's cmake tool
+
+contacts:
+  Garrett Serack: 
+    email: garretts@microsoft.com
+    role: publisher
+
+  Kitware:
+    email: kitware@kitware.com
+    role: originator
+
+windows and x64:
+  install:
+    unzip: https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0-windows-x86_64.zip
+    sha256: 056378cb599353479c3a8aa2654454b8a3eaa3c8c0872928ba7e09c3ec50774c  
+    strip: 1 # 
+
+windows and x86:
+  install:
+    unzip: https://github.com/Kitware/CMake/releases/download/v3.20.1/cmake-3.20.1-windows-i386.zip
+    sha256: 650026534e66dabe0ed6be3422e86fabce5fa86d43927171ea8b8dfd0877fc9d  
+    strip: 1 # 
+
+windows:
+  settings: 
+    tools:
+      cmake: bin/cmake.exe
+      cmake_gui: bin/cmake-gui.exe
+      ctest: bin/ctest.exe
+
+    paths:
+      path: bin
+
+osx: 
+  install: 
+    untar: https://github.com/Kitware/CMake/releases/download/v3.20.1/cmake-3.20.1-macos-universal.tar.gz
+    sha256: 89afcb79f58bb1f0bb840047c146c3fac8051829b6025c3dbe9b75799b27deb4
+    strip: 3
+
+linux and x64: 
+  install:
+    untar: https://github.com/Kitware/CMake/releases/download/v3.20.1/cmake-3.20.1-linux-x86_64.tar.gz
+    sha256: B8C141BD7A6D335600AB0A8A35E75AF79F95B837F736456B5532F4D717F20A09  
+    strip: 1
+
+linux and arm64:
+  install: 
+    untar: https://github.com/Kitware/CMake/releases/download/v3.20.1/cmake-3.20.1-linux-aarch64.tar.gz
+    sha256: 2761a222c14a15b9bdf1bdb4a17c10806757b7ed3bc26a84523f042ec212b76c  
+    strip: 1
+
+not windows:
+  settings:
+    tools:
+      cmake: bin/cmake
+      cmake_gui: bin/cmake-gui
+      ctest: bin/ctest
+    
+    paths:
+      path: bin

@@ -14,6 +14,100 @@
 
 namespace vcpkg::Commands::Integrate
 {
+    Optional<int> find_targets_file_version(StringView contents)
+    {
+        constexpr static StringLiteral VERSION_START = "<!-- version ";
+        constexpr static StringLiteral VERSION_END = " -->";
+
+        auto first = contents.begin();
+        const auto last = contents.end();
+        for (;;)
+        {
+            first = Util::search_and_skip(first, last, VERSION_START);
+            if (first == last)
+            {
+                break;
+            }
+            auto version_end = Util::search(first, last, VERSION_END);
+            if (version_end == last)
+            {
+                break;
+            }
+            auto ver = Strings::strto<int>({first, version_end});
+            if (ver.has_value() && *ver.get() >= 0)
+            {
+                return ver;
+            }
+        }
+        return nullopt;
+    }
+
+    std::vector<std::string> get_bash_source_completion_lines(StringView contents)
+    {
+        std::vector<std::string> matches;
+        auto first = contents.begin();
+        const auto last = contents.end();
+        while (first != last)
+        {
+            const auto end_of_line = std::find(first, last, '\n');
+            const auto line = Strings::trim(StringView{first, end_of_line});
+            if (Strings::starts_with(line, "source") && Strings::ends_with(line, "scripts/vcpkg_completion.bash"))
+            {
+                matches.emplace_back(line.data(), line.size());
+            }
+            first = end_of_line == last ? last : end_of_line + 1;
+        }
+        return matches;
+    }
+
+    ZshAutocomplete get_zsh_autocomplete_data(StringView contents)
+    {
+        constexpr static StringLiteral BASHCOMPINIT = "bashcompinit";
+        ZshAutocomplete res{};
+
+        auto first = contents.begin();
+        const auto last = contents.end();
+        while (first != last)
+        {
+            const auto end_of_line = std::find(first, last, '\n');
+            const auto line = Strings::trim(StringView{first, end_of_line});
+            const auto bashcompinit = Strings::search(line, BASHCOMPINIT);
+
+            if (Strings::starts_with(line, "source") && Strings::ends_with(line, "scripts/vcpkg_completion.zsh"))
+            {
+                res.source_completion_lines.emplace_back(line.data(), line.size());
+            }
+            else if (bashcompinit != line.end())
+            {
+                if (Strings::starts_with(line, "autoload"))
+                {
+                    // autoload[ a-zA-Z0-9-]+bashcompinit
+                    if (std::all_of(first, bashcompinit, [](char ch) {
+                            return ParserBase::is_word_char(ch) || ch == ' ' || ch == '-';
+                        }))
+                    {
+                        res.has_autoload_bashcompinit = true;
+                    }
+                }
+                else
+                {
+                    auto line_before_bashcompinit = Strings::trim(StringView{first, bashcompinit});
+                    // check this is not commented out,
+                    // and that it is either the first element after a && or the beginning
+                    if (!Strings::contains(line_before_bashcompinit, '#') &&
+                        (line_before_bashcompinit.empty() || Strings::ends_with(line_before_bashcompinit, "&&")))
+                    {
+                        res.has_bashcompinit = true;
+                    }
+                }
+            }
+
+            first = end_of_line == last ? last : end_of_line + 1;
+        }
+
+        return res;
+    }
+
 #if defined(_WIN32)
     static std::string create_appdata_shortcut(StringView target_path) noexcept
     {
@@ -199,15 +293,12 @@ namespace vcpkg::Commands::Integrate
         bool should_install_system = true;
         std::error_code ec;
         std::string system_wide_file_contents = fs.read_contents(SYSTEM_WIDE_TARGETS_FILE, ec);
-        static const std::regex RE(R"###(<!-- version (\d+) -->)###");
         if (!ec)
         {
-            std::match_results<std::string::const_iterator> match;
-            const auto found = std::regex_search(system_wide_file_contents, match, RE);
-            if (found)
+            auto opt = find_targets_file_version(system_wide_file_contents);
+            if (opt.value_or(0) >= 1)
             {
-                const int ver = atoi(match[1].str().c_str());
-                if (ver >= 1) should_install_system = false;
+                should_install_system = false;
             }
         }
 
@@ -439,16 +530,8 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         auto& fs = paths.get_filesystem();
         const auto completion_script_path = paths.scripts / "vcpkg_completion.bash";
 
-        auto bashrc_content = fs.read_lines(bashrc_path, VCPKG_LINE_INFO);
-        std::vector<std::string> matches;
-        for (auto&& line : bashrc_content)
-        {
-            std::smatch match;
-            if (std::regex_match(line, match, std::regex{R"###(source.*scripts/vcpkg_completion.bash)###"}))
-            {
-                matches.push_back(line);
-            }
-        }
+        auto bashrc_content = fs.read_contents(bashrc_path, VCPKG_LINE_INFO);
+        auto matches = get_bash_source_completion_lines(bashrc_content);
 
         if (!matches.empty())
         {
@@ -462,8 +545,10 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         }
 
         vcpkg::printf("Adding vcpkg completion entry to %s\n", bashrc_path);
-        bashrc_content.push_back(Strings::format("source %s", completion_script_path));
-        fs.write_contents(bashrc_path, Strings::join("\n", bashrc_content) + '\n', VCPKG_LINE_INFO);
+        bashrc_content.append("\nsource ");
+        bashrc_content.append(completion_script_path.native());
+        bashrc_content.push_back('\n');
+        fs.write_contents(bashrc_path, bashrc_content, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
@@ -475,55 +560,35 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         auto& fs = paths.get_filesystem();
         const auto completion_script_path = paths.scripts / "vcpkg_completion.zsh";
 
-        Expected<std::vector<std::string>> maybe_zshrc_content = fs.read_lines(zshrc_path, VCPKG_LINE_INFO);
-        Checks::check_exit(VCPKG_LINE_INFO, maybe_zshrc_content.has_value(), "Unable to read %s", zshrc_path);
-
-        std::vector<std::string> zshrc_content = maybe_zshrc_content.value_or_exit(VCPKG_LINE_INFO);
+        auto zshrc_content = fs.read_contents(zshrc_path, VCPKG_LINE_INFO);
 
         // How to use bash completions in zsh: https://stackoverflow.com/a/8492043/10162645
-        bool has_autoload_bashcompinit = false;
-        bool has_bashcompinit = false;
-        std::vector<std::string> matches;
-        for (auto&& line : zshrc_content)
-        {
-            std::smatch match;
-            if (std::regex_match(line, match, std::regex{R"###(source.*scripts/vcpkg_completion.zsh)###"}))
-            {
-                matches.push_back(line);
-            }
-            else if (std::regex_search(line, std::regex{R"###(^ *autoload[ a-zA-Z0-9-]+bashcompinit)###"}),
-                     std::regex_constants::match_any)
-            {
-                has_autoload_bashcompinit = true;
-            }
-            if (std::regex_match(line, std::regex{R"###(^ *([^#]*&& *)?bashcompinit)###"}))
-            {
-                has_bashcompinit = true;
-            }
-        }
+        auto data = get_zsh_autocomplete_data(zshrc_content);
 
-        if (!matches.empty())
+        if (!data.source_completion_lines.empty())
         {
             printf("vcpkg zsh completion is already imported to your %s file.\n"
                    "The following entries were found:\n"
                    "    %s\n"
                    "Please make sure you have started a new zsh shell for the changes to take effect.\n",
                    zshrc_path,
-                   Strings::join("\n    ", matches));
+                   Strings::join("\n    ", data.source_completion_lines));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
         printf("Adding vcpkg completion entry to %s\n", zshrc_path);
-        if (!has_autoload_bashcompinit)
+        if (!data.has_autoload_bashcompinit)
         {
-            zshrc_content.push_back("autoload bashcompinit");
+            zshrc_content.append("\nautoload bashcompinit");
         }
-        if (!has_bashcompinit)
+        if (!data.has_bashcompinit)
         {
-            zshrc_content.push_back("bashcompinit");
+            zshrc_content.append("\nbashcompinit");
         }
-        zshrc_content.push_back(Strings::concat("source ", completion_script_path));
-        fs.write_contents(zshrc_path, Strings::join("\n", zshrc_content) + '\n', VCPKG_LINE_INFO);
+        zshrc_content.append("\nsource ");
+        zshrc_content.append(completion_script_path.native());
+        zshrc_content.push_back('\n');
+        fs.write_contents(zshrc_path, zshrc_content, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

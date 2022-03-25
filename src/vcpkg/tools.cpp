@@ -12,6 +12,8 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <regex>
+
 namespace vcpkg
 {
     struct ToolData
@@ -36,7 +38,7 @@ namespace vcpkg
         ParsedExternalVersion parsed_version{};
         for (;;)
         {
-            first = std::find_if(first, last, Parse::ParserBase::is_ascii_digit);
+            first = std::find_if(first, last, ParserBase::is_ascii_digit);
             if (first == last)
             {
                 return nullopt;
@@ -48,7 +50,7 @@ namespace vcpkg
                 break;
             }
 
-            first = std::find_if_not(first, last, Parse::ParserBase::is_ascii_digit);
+            first = std::find_if_not(first, last, ParserBase::is_ascii_digit);
         }
 
         parsed_version.normalize();

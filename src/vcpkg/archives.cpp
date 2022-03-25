@@ -32,7 +32,7 @@ namespace
         // This assumption may not always hold
         auto dot_after_name = Util::find_nth_from_last(stem, '.', 2);
 
-        auto is_digit_or_dot = [](char ch) { return ch == '.' || Parse::ParserBase::is_ascii_digit(ch); };
+        auto is_digit_or_dot = [](char ch) { return ch == '.' || ParserBase::is_ascii_digit(ch); };
         if (dot_after_name == stem.end() || !std::all_of(dot_after_name, stem.end(), is_digit_or_dot))
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);

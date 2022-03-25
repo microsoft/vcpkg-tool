@@ -158,7 +158,7 @@ namespace vcpkg::Export::Prefab
         constexpr static StringLiteral pkg_revision = "Pkg.Revision";
 
         constexpr static auto is_version_character = [](char ch) {
-            return ch == '.' || Parse::ParserBase::is_ascii_digit(ch);
+            return ch == '.' || ParserBase::is_ascii_digit(ch);
         };
 
         auto first = content.begin();
@@ -166,17 +166,16 @@ namespace vcpkg::Export::Prefab
 
         for (;;)
         {
-            first = std::search(first, last, pkg_revision.begin(), pkg_revision.end());
+            first = Util::search_and_skip(first, last, pkg_revision);
             if (first == last) break;
 
-            first += pkg_revision.size();
-            first = std::find_if_not(first, last, Parse::ParserBase::is_whitespace);
+            first = std::find_if_not(first, last, ParserBase::is_whitespace);
             if (first == last) break;
             if (*first != '=') continue;
 
             // Pkg.Revision = x.y.z
             ++first; // skip =
-            first = std::find_if_not(first, last, Parse::ParserBase::is_whitespace);
+            first = std::find_if_not(first, last, ParserBase::is_whitespace);
             auto end_of_version = std::find_if_not(first, last, is_version_character);
             if (first == end_of_version) continue;
             return StringView{first, end_of_version};

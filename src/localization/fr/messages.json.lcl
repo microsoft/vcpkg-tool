@@ -241,11 +241,53 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmakeTargetLinkLibraries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[    target_link_libraries(main PRIVATE {list})]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmakeTargetsExcluded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[    # note: {count} targets were omitted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[    # Remarque : {count} cibles ont été omises.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Impossible de déduire l’ID nuget et la version à partir du nom de fichier : {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlReportedUnexpectedResults" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[curl a signalé des résultats inattendus à vcpkg et vcpkg ne peut pas continuer.]A;Consultez le texte suivant pour obtenir des informations sensibles et ouvrez un problème sur Microsoft/vcpkg GitHub pour vous aider à résoudre ce problème !]A;cmd : {command_line}]A;=== sortie de boucle ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Téléchargement du bundle vcpkg-ce {version}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Téléchargement du dernier bundle vcpkg-ce...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -372,6 +414,15 @@
           <Val><![CDATA[Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.]A;Define 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Erreur : dans triplet {triplet} : l’utilisation de l’invite développeur de Visual Studio n’est pas prise en charge sur les ordinateurs hôtes non Windows.]A;Définissez 'VCPKG_CMAKE_SYSTEM_NAME' ou 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' dans le fichier triplet.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Échec de l’approvisionnement de vcpkg-ce]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -798,6 +849,15 @@
           <Val><![CDATA[Could not locate a complete Visual Studio instance]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Instance de Visual Studio complète introuvable]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-ce (« configurer l’environnement ») est expérimental et peut changer à tout moment.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

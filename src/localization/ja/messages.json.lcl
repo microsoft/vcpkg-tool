@@ -241,11 +241,53 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmakeTargetLinkLibraries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[    target_link_libraries(main PRIVATE {list})]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmakeTargetsExcluded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[    # note: {count} targets were omitted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[    # 注: {count} 個のターゲットが省略されました。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ファイル名 {path} から nuget ID とバージョンを推測できませんでした]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlReportedUnexpectedResults" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[curl から vcpkg に対して予期しない結果が報告され、vcpkg が続行できません。]A;次のテキストに機密情報がないか確認して、この問題を修正する助けとして Microsoft/vcpkg GitHub でイシューを作成してください。]A;cmd: {command_line}]A;=== curl の出力 ===]A;{actual}]A;=== curl の出力の終わり ===]A;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-ce バンドル {version} をダウンロードしています...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[最新の vcpkg-ce バンドルをダウンロードしています...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -372,6 +414,15 @@
           <Val><![CDATA[Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.]A;Define 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[エラー: トリプレット {triplet}: Visual Studio の開発者プロンプトの使用は、Windows 以外のホストではサポートされていません。]A;トリプレット ファイルに `VCPKG_CMAKE_SYSTEM_NAME` または `VCPKG_CHAINLOAD_TOOLCHAIN_FILE`を定義します。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-ce をプロビジョニングできませんでした。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -798,6 +849,15 @@
           <Val><![CDATA[Could not locate a complete Visual Studio instance]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[完全な Visual Studio インスタンスが見つかりませんでした]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-ce ('環境の構成') は試験段階であり、いつでも変更される可能性があります。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

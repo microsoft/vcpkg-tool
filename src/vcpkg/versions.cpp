@@ -130,7 +130,7 @@ namespace vcpkg
             return nullptr;
         }
         size_t i = 1;
-        while (Parse::ParserBase::is_ascii_digit(s[i]))
+        while (ParserBase::is_ascii_digit(s[i]))
         {
             ++i;
         }
@@ -142,18 +142,18 @@ namespace vcpkg
     static const char* skip_prerelease_identifier(const char* const s)
     {
         auto cur = s;
-        while (Parse::ParserBase::is_ascii_digit(*cur))
+        while (ParserBase::is_ascii_digit(*cur))
         {
             ++cur;
         }
         const char ch = *cur;
-        if (Parse::ParserBase::is_alphadash(ch))
+        if (ParserBase::is_alphadash(ch))
         {
             // matched alpha identifier
             do
             {
                 ++cur;
-            } while (Parse::ParserBase::is_alphanumdash(*cur));
+            } while (ParserBase::is_alphanumdash(*cur));
             return cur;
         }
         if (*s == '0')
@@ -221,9 +221,9 @@ namespace vcpkg
         for (;;)
         {
             // Require non-empty identifier element
-            if (!Parse::ParserBase::is_alphanumdash(*cur)) return LocalizedString{};
+            if (!ParserBase::is_alphanumdash(*cur)) return LocalizedString{};
             ++cur;
-            while (Parse::ParserBase::is_alphanumdash(*cur))
+            while (ParserBase::is_alphanumdash(*cur))
             {
                 ++cur;
             }
@@ -428,7 +428,7 @@ namespace vcpkg
     // /(\d\d\d\d)-(\d\d)-(\d\d).*/
     bool try_extract_external_date_version(ParsedExternalVersion& out, StringView version)
     {
-        using P = vcpkg::Parse::ParserBase;
+        using P = ParserBase;
         // a b c d - e f - g h <end>
         // 0 1 2 3 4 5 6 7 8 9 10
         if (version.size() < 10) return false;
@@ -455,7 +455,7 @@ namespace vcpkg
     // /(\d+)(\.\d+|$)(\.\d+)?.*/
     bool try_extract_external_dot_version(ParsedExternalVersion& out, StringView version)
     {
-        using P = vcpkg::Parse::ParserBase;
+        using P = ParserBase;
         auto first = version.begin();
         auto last = version.end();
 

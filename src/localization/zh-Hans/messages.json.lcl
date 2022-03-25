@@ -241,11 +241,53 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmakeTargetLinkLibraries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[    target_link_libraries(main PRIVATE {list})]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmakeTargetsExcluded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[    # note: {count} targets were omitted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[    # 注意: 已省略 {count} 个目标。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[无法从文件名推导出 nuget ID 和版本: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlReportedUnexpectedResults" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[curl 向 vcpkg 报告了意外结果，vcpkg 无法继续。]A;请查看以下文本以获取敏感信息，并在 Microsoft/vcpkg GitHub 上打开问题以获取解决此问题的帮助!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在下载 vcpkg-ce 捆绑包 {version}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在下载最新的 vcpkg-ce 捆绑包...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -372,6 +414,15 @@
           <Val><![CDATA[Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.]A;Define 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[错误: 在三重 {triplet} 中: 在非 Windows 主机上不支持使用 Visual Studio 的开发人员提示。]A;在三重文件中定义 "VCPKG_CMAKE_SYSTEM_NAME" 或 "VCPKG_CHAINLOAD_TOOLCHAIN_FILE"。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无法预配 vcpkg-ce。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -798,6 +849,15 @@
           <Val><![CDATA[Could not locate a complete Visual Studio instance]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[找不到完整的 Visual Studio 实例]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-ce (“配置环境”)是实验性的，可能会随时更改。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

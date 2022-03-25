@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "alwaysStrict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "CommonJS",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitThis": true,
+    "inlineSourceMap": true,
+    "declarationMap": true,
+    "strict": true,
+    "declaration": true,
+    "stripInternal": true,
+    "noEmitHelpers": false,
+    "target": "ESNext",
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "newLine": "LF"
+  },
+  "exclude": [
+    "../**/dist/**",
+    "../node_modules/**",
+    "../**/*.d.ts"
+  ]
+}

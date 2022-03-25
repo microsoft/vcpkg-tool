@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/parse.h>
+
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/json.h>
@@ -9,11 +11,6 @@
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
 #include <vcpkg/versions.h>
-
-namespace vcpkg::Parse
-{
-    struct ParserBase;
-}
 
 namespace vcpkg
 {
@@ -26,7 +23,8 @@ namespace vcpkg
     struct PackageSpec
     {
         PackageSpec() = default;
-        PackageSpec(std::string name, Triplet triplet) : m_name(std::move(name)), m_triplet(triplet) { }
+        PackageSpec(const std::string& name, Triplet triplet) : m_name(name), m_triplet(triplet) { }
+        PackageSpec(std::string&& name, Triplet triplet) : m_name(std::move(name)), m_triplet(triplet) { }
 
         const std::string& name() const;
 
@@ -190,10 +188,10 @@ namespace vcpkg
         ExpectedS<PackageSpec> to_package_spec(Triplet default_triplet) const;
     };
 
-    Optional<std::string> parse_feature_name(Parse::ParserBase& parser);
-    Optional<std::string> parse_package_name(Parse::ParserBase& parser);
+    Optional<std::string> parse_feature_name(ParserBase& parser);
+    Optional<std::string> parse_package_name(ParserBase& parser);
     ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input);
-    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(Parse::ParserBase& parser);
+    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(ParserBase& parser);
 }
 
 template<class Char>
