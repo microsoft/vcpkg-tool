@@ -6,7 +6,7 @@ trigger: none
 
 parameters:
 - name: SignTypeOverride
-  displayName: Signing Type Override
+  displayName: Signing Type (default is real for the main branch and test otherwise)
   type: string
   default: default
   values:
