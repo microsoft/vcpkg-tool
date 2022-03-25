@@ -133,13 +133,7 @@ jobs:
       inputs:
         solution: 'azure-pipelines\arch-independent-signing.signproj'
         msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
-      # Note that signing must happen before packing step because the packs contain files that are themselves signed.
-    - script: |
-        mkdir "$(Build.ArtifactStagingDirectory)\staging"
-        move "$(Build.BinariesDirectory)\scripts\buildsystems\msbuild\applocal.ps1" "$(Build.ArtifactStagingDirectory)\staging\applocal.ps1"
-        move "$(Build.BinariesDirectory)\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\staging\addPoshVcpkgToPowershellProfile.ps1"
-        move "$(Build.BinariesDirectory)\scripts\posh-vcpkg\0.0.1\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\staging\posh-vcpkg.psm1"
-      displayName: 'Move signed Powershell scripts'
+      # Note that signing must happen before packing steps because the packs contain files that are themselves signed.
     - script: |
         copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
       displayName: 'Duplicate Install Scripts'
@@ -158,6 +152,9 @@ jobs:
         move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init"
         move "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1"
         move "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd"
+        move "$(Build.BinariesDirectory)\applocal.ps1" "$(Build.ArtifactStagingDirectory)\staging\applocal.ps1"
+        move "$(Build.BinariesDirectory)\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\staging\addPoshVcpkgToPowershellProfile.ps1"
+        move "$(Build.BinariesDirectory)\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\staging\posh-vcpkg.psm1"
       displayName: 'Arrange Architecture-independent Files for Staging'
     - task: Powershell@2
       displayName: Generate Arch-independent SHA512s
@@ -351,6 +348,9 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.cmd"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.ps1"
+          move "$(Build.ArtifactStagingDirectory)\staging\applocal.ps1" "$(Build.ArtifactStagingDirectory)\drop\applocal.ps1"
+          move "$(Build.ArtifactStagingDirectory)\staging\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\drop\addPoshVcpkgToPowershellProfile.ps1"
+          move "$(Build.ArtifactStagingDirectory)\staging\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psm1"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-ce.tgz"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
