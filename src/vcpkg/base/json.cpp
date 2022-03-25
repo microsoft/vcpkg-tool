@@ -994,11 +994,11 @@ namespace vcpkg::Json
                 if (!parser.at_eof())
                 {
                     parser.add_error("Unexpected character; expected EOF");
-                    return std::move(parser).extract_error();
+                    return parser.extract_error();
                 }
                 else if (parser.get_error())
                 {
-                    return std::move(parser).extract_error();
+                    return parser.extract_error();
                 }
                 else
                 {
