@@ -17,21 +17,19 @@ parameters:
   displayName: vcpkg Base Version (default is today's date in ISO 8601)
   type: string
   default:
-- name: PublishLocation
-  displayName: Publishing Location
+- name: PublishTo
+  displayName: 'Publish To'
   type: string
-  default: all
+  default: 'GitHub and NuGet'
   values:
-  - all
-  - nuget
+  - 'GitHub and NuGet'
+  - 'NuGet Only'
 variables:
   - name: TeamName
     value: vcpkg
   - group: vcpkg-dependency-source-blobs
   - name: FMT_TARBALL_URL
     value: "$(fmt-tarball-url)"
-  - name: PublishLocation
-    value: ${{ parameters.PublishLocation }}
   # If the user didn't override the signing type, then only real-sign on main.
   - ${{ if ne(parameters.SignTypeOverride, 'default') }}:
     - name: SignType
@@ -457,7 +455,7 @@ jobs:
     - task: DownloadSecureFile@1
       displayName: Download Deploy Key
       name: githubDeployKey
-      condition: and(eq(variables.SignType, 'real'), eq(variables.PublishLocation, 'all'), succeeded())
+      condition: and(eq(variables.SignType, 'real'), eq(parameters.PublishTo, 'GitHub and NuGet'), succeeded())
       inputs:
         secureFile: id_vcpkg_tool
     # GitHub has a large, regularly changing set of IP address, so ignore the
@@ -468,15 +466,15 @@ jobs:
     # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
     - script: mkdir %USERPROFILE%\.ssh && echo * ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==>>%USERPROFILE%\.ssh\known_hosts
       displayName: Store GitHub Public Key
-      condition: and(eq(variables.SignType, 'real'), eq(variables.PublishLocation, 'all'), succeeded())
+      condition: and(eq(variables.SignType, 'real'), eq(parameters.PublishTo, 'GitHub and NuGet'), succeeded())
     - script: git -c user.email=embeddedbot@microsoft.com -c user.name="Embedded Bot" push git@github.com:microsoft/vcpkg-tool HEAD:refs/tags/%VCPKG_BASE_VERSION%
-      condition: and(eq(variables.SignType, 'real'), eq(variables.PublishLocation, 'all'), succeeded())
+      condition: and(eq(variables.SignType, 'real'), eq(parameters.PublishTo, 'GitHub and NuGet'), succeeded())
       env:
         GIT_SSH_COMMAND: ssh -i "$(githubDeployKey.secureFilePath)"
       displayName: Push Release Tag
     - task: GitHubRelease@0
       displayName: Publish GitHub Release
-      condition: and(eq(variables.SignType, 'real'), eq(variables.PublishLocation, 'all'), succeeded())
+      condition: and(eq(variables.SignType, 'real'), eq(parameters.PublishTo, 'GitHub and NuGet'), succeeded())
       inputs:
         gitHubConnection: embeddedbot
         repositoryName: microsoft/vcpkg-tool
