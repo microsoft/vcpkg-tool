@@ -30,6 +30,8 @@
 #include <thread>
 
 #if defined(_WIN32)
+#include <share.h>
+
 #include <filesystem>
 namespace stdfs = std::filesystem;
 #endif // _WIN32
@@ -37,6 +39,8 @@ namespace stdfs = std::filesystem;
 namespace
 {
     using namespace vcpkg;
+
+    std::atomic<uint64_t> g_us_filesystem_stats(0);
 
     struct IsSlash
     {
@@ -52,11 +56,8 @@ namespace
 
     constexpr IsSlash is_slash;
 
-    bool is_dot(StringView sv) { return sv.size() == 1 && sv.byte_at_index(0) == '.'; }
-    bool is_dot_dot(StringView sv)
-    {
-        return sv.size() == 2 && sv.byte_at_index(0) == '.' && sv.byte_at_index(1) == '.';
-    }
+    bool is_dot(StringView sv) { return sv.size() == 1 && sv[0] == '.'; }
+    bool is_dot_dot(StringView sv) { return sv.size() == 2 && sv[0] == '.' && sv[1] == '.'; }
 #if !defined(_WIN32)
     bool is_dot_or_dot_dot(const char* ntbs)
     {
@@ -69,8 +70,8 @@ namespace
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args)
     {
-        Checks::exit_with_message(
-            li, Strings::concat(call_name, "(", Strings::join(", ", args.begin(), args.end()), "): ", ec.message()));
+        auto arguments = args.size() == 0 ? "()" : "(\"" + Strings::join("\", \"", args.begin(), args.end()) + "\")";
+        Checks::exit_with_message_and_line(li, Strings::concat(call_name, arguments, ": ", ec.message()));
     }
 
 #if defined(_WIN32)
@@ -336,7 +337,7 @@ namespace
         // \\?\ or \\server, so the path is absolute. Otherwise it is relative.
         return first != find_root_name_end(first, last);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-        return !str.empty() && str.byte_at_index(0) == '/';
+        return !str.empty() && str[0] == '/';
 #endif // ^^^ !_WIN32
     }
 
@@ -376,11 +377,10 @@ namespace
             }
         }
 
+        // bug in MSVC considers h_file uninitialized:
         // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
-#if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 6001)
-#endif // ^^^ _MSC_VER
+        VCPKG_MSVC_WARNING(push)
+        VCPKG_MSVC_WARNING(disable : 6001)
         ~FileHandle()
         {
             if (h_file != INVALID_HANDLE_VALUE)
@@ -388,9 +388,7 @@ namespace
                 Checks::check_exit(VCPKG_LINE_INFO, ::CloseHandle(h_file));
             }
         }
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif // ^^^ _MSC_VER
+        VCPKG_MSVC_WARNING(pop)
     };
 
     struct RemoveAllErrorInfo
@@ -398,12 +396,12 @@ namespace
         std::error_code ec;
         Path failure_point;
 
-        bool check_ec(const std::error_code& ec_arg, const stdfs::directory_entry& current_entry)
+        bool check_ec(const std::error_code& ec_arg, const stdfs::path& current_entry_path)
         {
             if (ec_arg)
             {
                 ec = ec_arg;
-                failure_point = from_stdfs_path(current_entry.path());
+                failure_point = from_stdfs_path(current_entry_path);
                 return true;
             }
 
@@ -436,6 +434,7 @@ namespace
     // Custom implementation of stdfs::remove_all intended to be resilient to transient issues
     void vcpkg_remove_all_impl(const stdfs::directory_entry& current_entry, RemoveAllErrorInfo& err)
     {
+        const auto& current_entry_path = current_entry.path();
         std::error_code ec;
         const auto path_status = current_entry.symlink_status(ec);
         if (path_status.type() == stdfs::file_type::not_found)
@@ -443,35 +442,50 @@ namespace
             return;
         }
 
-        if (err.check_ec(ec, current_entry))
+        if (err.check_ec(ec, current_entry_path))
         {
             return;
         }
 
         if ((path_status.permissions() & stdfs::perms::owner_write) != stdfs::perms::owner_write)
         {
-            remove_file_attribute_readonly(current_entry, ec);
-            if (err.check_ec(ec, current_entry)) return;
+            remove_file_attribute_readonly(current_entry_path, ec);
+            if (err.check_ec(ec, current_entry_path)) return;
         }
 
         if (stdfs::is_directory(path_status))
         {
-            for (const auto& entry : stdfs::directory_iterator(current_entry.path()))
+            stdfs::directory_iterator last;
+            for (stdfs::directory_iterator first(current_entry_path, ec);; first.increment(ec))
             {
-                vcpkg_remove_all_impl(entry, err);
-                if (err.ec) return;
+                if (err.check_ec(ec, current_entry_path))
+                {
+                    return;
+                }
+
+                if (first == last)
+                {
+                    if (RemoveDirectoryW(current_entry_path.c_str()))
+                    {
+                        ec.clear();
+                        return;
+                    }
+
+                    ec.assign(GetLastError(), std::system_category());
+                    err.failure_point = from_stdfs_path(current_entry_path);
+                    return;
+                }
+
+                vcpkg_remove_all_impl(*first, err);
+                if (err.check_ec(ec, current_entry_path))
+                {
+                    return;
+                }
             }
-            if (!RemoveDirectoryW(current_entry.path().c_str()))
-            {
-                ec.assign(GetLastError(), std::system_category());
-            }
-        }
-        else
-        {
-            stdfs::remove(current_entry.path(), ec);
         }
 
-        err.check_ec(ec, current_entry);
+        stdfs::remove(current_entry_path, ec);
+        err.check_ec(ec, current_entry_path);
     }
 
     void vcpkg_remove_all(const stdfs::directory_entry& current_entry, std::error_code& ec, Path& failure_point)
@@ -824,7 +838,7 @@ namespace
             {
                 // if it isn't still a directory something is racy
                 ec = std::make_error_code(std::errc::device_or_resource_busy);
-                mark_recursive_error(base, ec, failure_point);
+                failure_point = base;
                 return;
             }
 
@@ -1306,7 +1320,9 @@ namespace vcpkg
     WriteFilePointer::WriteFilePointer(const Path& file_path, std::error_code& ec) noexcept
     {
 #if defined(_WIN32)
-        ec.assign(::_wfopen_s(&m_fs, to_stdfs_path(file_path).c_str(), L"wb"), std::generic_category());
+        m_fs = ::_wfsopen(to_stdfs_path(file_path).c_str(), L"wb", _SH_DENYWR);
+        ec.assign(m_fs == nullptr ? errno : 0, std::generic_category());
+        if (m_fs != nullptr) ::setvbuf(m_fs, NULL, _IONBF, 0);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         m_fs = ::fopen(file_path.c_str(), "wb");
         if (m_fs)
@@ -1416,6 +1432,18 @@ namespace vcpkg
         return maybe_directories;
     }
 
+    std::vector<Path> Filesystem::get_regular_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const
+    {
+        std::error_code ec;
+        auto maybe_directories = this->get_regular_files_recursive_lexically_proximate(dir, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {dir});
+        }
+
+        return maybe_directories;
+    }
+
     std::vector<Path> Filesystem::get_regular_files_non_recursive(const Path& dir, LineInfo li) const
     {
         std::error_code ec;
@@ -1460,6 +1488,15 @@ namespace vcpkg
     {
         std::error_code ec;
         this->rename(old_path, new_path, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {old_path, new_path});
+        }
+    }
+    void Filesystem::rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li)
+    {
+        std::error_code ec;
+        this->rename_with_retry(old_path, new_path, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {old_path, new_path});
@@ -1826,6 +1863,7 @@ namespace vcpkg
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const override
         {
+            StatsTimer t(g_us_filesystem_stats);
             ReadFilePointer file{file_path, ec};
             if (ec)
             {
@@ -1849,10 +1887,17 @@ namespace vcpkg
                 }
             } while (!file.eof());
 
+            if (Strings::starts_with(output, "\xEF\xBB\xBF"))
+            {
+                // remove byte-order mark from the beginning of the string
+                output.erase(output.begin(), output.begin() + 3);
+            }
+
             return output;
         }
         virtual std::vector<std::string> read_lines(const Path& file_path, std::error_code& ec) const override
         {
+            StatsTimer t(g_us_filesystem_stats);
             ReadFilePointer file{file_path, ec};
             if (ec)
             {
@@ -1876,7 +1921,13 @@ namespace vcpkg
                 }
             } while (!file.eof());
 
-            return output.extract();
+            auto res = output.extract();
+            if (res.size() > 0 && Strings::starts_with(res[0], "\xEF\xBB\xBF"))
+            {
+                // remove byte-order mark from the beginning of the string
+            }
+
+            return res;
         }
 
         virtual Path find_file_recursively_up(const Path& starting_dir,
@@ -2051,6 +2102,21 @@ namespace vcpkg
         {
             return get_regular_files_impl<stdfs::directory_iterator>(dir, ec);
         }
+
+        virtual std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir,
+                                                                                  std::error_code& ec) const override
+        {
+            auto ret = this->get_regular_files_recursive(dir, ec);
+            if (!ec)
+            {
+                const auto base = to_stdfs_path(dir);
+                for (auto& p : ret)
+                {
+                    p = from_stdfs_path(to_stdfs_path(p).lexically_proximate(base));
+                }
+            }
+            return ret;
+        }
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         static void insert_if_stat_matches(std::vector<Path>& result,
                                            const Path& full,
@@ -2086,6 +2152,7 @@ namespace vcpkg
 
         static void get_files_recursive_impl(std::vector<Path>& result,
                                              const Path& base,
+                                             const Path& out_base,
                                              std::error_code& ec,
                                              bool want_directories,
                                              bool want_regular_files,
@@ -2120,6 +2187,7 @@ namespace vcpkg
                     }
 
                     const auto full = base / entry->d_name;
+                    const auto out_full = out_base / entry->d_name;
                     const auto entry_dtype = get_d_type(entry);
                     struct stat s;
                     struct stat ls;
@@ -2129,11 +2197,11 @@ namespace vcpkg
                             if (want_directories)
                             {
                                 // push results before recursion to get outer entries first
-                                result.push_back(full);
+                                result.push_back(out_full);
                             }
 
                             get_files_recursive_impl(
-                                result, full, ec, want_directories, want_regular_files, want_other);
+                                result, full, out_full, ec, want_directories, want_regular_files, want_other);
                             if (ec)
                             {
                                 return;
@@ -2143,7 +2211,7 @@ namespace vcpkg
                         case PosixDType::Regular:
                             if (want_regular_files)
                             {
-                                result.push_back(full);
+                                result.push_back(out_full);
                             }
 
                             break;
@@ -2154,7 +2222,7 @@ namespace vcpkg
                         case PosixDType::BlockDevice:
                             if (want_other)
                             {
-                                result.push_back(full);
+                                result.push_back(out_full);
                             }
 
                             break;
@@ -2181,7 +2249,7 @@ namespace vcpkg
                                 if (want_directories && want_regular_files && want_other)
                                 {
                                     // skip extra stat syscall since we want everything
-                                    result.push_back(full);
+                                    result.push_back(out_full);
                                 }
                                 else
                                 {
@@ -2201,21 +2269,21 @@ namespace vcpkg
                                     }
 
                                     insert_if_stat_matches(
-                                        result, full, &s, want_directories, want_regular_files, want_other);
+                                        result, out_full, &s, want_directories, want_regular_files, want_other);
                                 }
                             }
                             else
                             {
                                 // push results before recursion to get outer entries first
                                 insert_if_stat_matches(
-                                    result, full, &ls, want_directories, want_regular_files, want_other);
+                                    result, out_full, &ls, want_directories, want_regular_files, want_other);
                             }
 
                             // recursion check doesn't follow symlinks:
                             if (S_ISDIR(ls.st_mode))
                             {
                                 get_files_recursive_impl(
-                                    result, full, ec, want_directories, want_regular_files, want_other);
+                                    result, full, out_full, ec, want_directories, want_regular_files, want_other);
                             }
                             break;
                     }
@@ -2271,7 +2339,8 @@ namespace vcpkg
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, true, true, true);
+            Path out_base = dir;
+            get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
             return result;
         }
 
@@ -2285,7 +2354,8 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, true, false, false);
+            Path out_base = dir;
+            get_files_recursive_impl(result, dir, out_base, ec, true, false, false);
 
             return result;
         }
@@ -2314,7 +2384,17 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const override
         {
             std::vector<Path> result;
-            get_files_recursive_impl(result, dir, ec, false, true, false);
+            Path out_base = dir;
+            get_files_recursive_impl(result, dir, out_base, ec, false, true, false);
+            return result;
+        }
+
+        virtual std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir,
+                                                                                  std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            Path out_base;
+            get_files_recursive_impl(result, dir, out_base, ec, false, true, false);
             return result;
         }
 
@@ -2553,6 +2633,7 @@ namespace vcpkg
         }
         virtual bool create_directories(const Path& new_directory, std::error_code& ec) override
         {
+            StatsTimer t(g_us_filesystem_stats);
 #if defined(_WIN32)
             return stdfs::create_directories(to_stdfs_path(new_directory), ec);
 #else // ^^^ _WIN32 // !_WIN32 vvv
@@ -2652,6 +2733,11 @@ namespace vcpkg
 
         virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) override
         {
+            StatsTimer t(g_us_filesystem_stats);
+            copy_regular_recursive_impl(source, destination, ec);
+        }
+        void copy_regular_recursive_impl(const Path& source, const Path& destination, std::error_code& ec)
+        {
 #if defined(_WIN32)
             stdfs::copy(to_stdfs_path(source), to_stdfs_path(destination), stdfs::copy_options::recursive, ec);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
@@ -2680,9 +2766,9 @@ namespace vcpkg
                 {
                     this->copy_file(source_entry_name, destination_entry_name, CopyOptions::none, ec);
                 }
-                else
+                else if (!is_dot_or_dot_dot(entry->d_name))
                 {
-                    this->copy_regular_recursive(source_entry_name, destination_entry_name, ec);
+                    this->copy_regular_recursive_impl(source_entry_name, destination_entry_name, ec);
                 }
             }
 #endif // ^^^ !_WIN32
@@ -2800,11 +2886,23 @@ namespace vcpkg
             }
 
 #if defined(__linux__)
-            off_t bytes = 0;
-            if (sendfile(destination_fd.get(), source_fd.get(), &bytes, source_stat.st_size) == -1)
+            // https://man7.org/linux/man-pages/man2/sendfile.2.html#NOTES
+            // sendfile() will transfer at most 0x7ffff000 (2,147,479,552)
+            // bytes, returning the number of bytes actually transferred.
+            constexpr off_t maximum_sendfile = 0x7ffff000;
+            off_t offset = 0;
+            for (off_t remaining_size = source_stat.st_size; remaining_size != 0;)
             {
-                ec.assign(errno, std::generic_category());
-                return false;
+                const off_t this_send_attempt = std::min(maximum_sendfile, remaining_size);
+                const ssize_t this_send_actual =
+                    sendfile(destination_fd.get(), source_fd.get(), &offset, this_send_attempt);
+                if (this_send_actual == -1)
+                {
+                    ec.assign(errno, std::generic_category());
+                    return false;
+                }
+
+                remaining_size -= this_send_actual;
             }
 
             destination_fd.fchmod(source_stat.st_mode, ec);
@@ -2940,6 +3038,7 @@ namespace vcpkg
         }
         virtual void write_contents(const Path& file_path, const std::string& data, std::error_code& ec) override
         {
+            StatsTimer t(g_us_filesystem_stats);
             auto f = open_for_write(file_path, ec);
             if (!ec)
             {
@@ -3228,6 +3327,8 @@ namespace vcpkg
         message.push_back('\n');
         print2(message);
     }
+
+    uint64_t get_filesystem_stats() { return g_us_filesystem_stats.load(); }
 
 #ifdef _WIN32
     Path win32_fix_path_case(const Path& source)

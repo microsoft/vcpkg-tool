@@ -18,27 +18,34 @@ using namespace vcpkg;
 
 struct KnowNothingBinaryProvider : IBinaryProvider
 {
-    RestoreResult try_restore(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override
+    RestoreResult try_restore(const Dependencies::InstallPlanAction& action) const override
     {
+        CHECK(action.has_package_abi());
         return RestoreResult::unavailable;
     }
 
-    virtual void push_success(const VcpkgPaths&, const Dependencies::InstallPlanAction&) const override { }
-    virtual void prefetch(const VcpkgPaths&,
-                          View<Dependencies::InstallPlanAction>,
-                          View<CacheStatus* const>) const override
+    virtual void push_success(const Dependencies::InstallPlanAction& action) const override
     {
+        CHECK(action.has_package_abi());
     }
-    virtual void precheck(const VcpkgPaths&,
-                          View<Dependencies::InstallPlanAction>,
+
+    virtual void prefetch(View<Dependencies::InstallPlanAction> actions,
                           View<CacheStatus* const> cache_status) const override
     {
+        REQUIRE(actions.size() == cache_status.size());
+        for (size_t idx = 0; idx < cache_status.size(); ++idx)
+        {
+            CHECK(actions[idx].has_package_abi() == (cache_status[idx] != nullptr));
+        }
+    }
+    virtual void precheck(View<Dependencies::InstallPlanAction> actions,
+                          View<CacheStatus* const> cache_status) const override
+    {
+        REQUIRE(actions.size() == cache_status.size());
         for (const auto c : cache_status)
         {
-            if (c)
-            {
-                c->mark_unavailable(this);
-            }
+            CHECK(c);
+            c->mark_unavailable(this);
         }
     }
 };
@@ -199,50 +206,36 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
         REQUIRE(lhs_lines.size() == rhs_lines.size());                                                                 \
     }
 
-TEST_CASE ("reformat_version semver-ish", "[reformat_version]")
+TEST_CASE ("format_version_for_nugetref semver-ish", "[format_version_for_nugetref]")
 {
-    REQUIRE(reformat_version("0.0.0", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(reformat_version("1.0.1", "abitag") == "1.0.1-vcpkgabitag");
-    REQUIRE(reformat_version("1.01.000", "abitag") == "1.1.0-vcpkgabitag");
-    REQUIRE(reformat_version("1.2", "abitag") == "1.2.0-vcpkgabitag");
-    REQUIRE(reformat_version("v52", "abitag") == "52.0.0-vcpkgabitag");
-    REQUIRE(reformat_version("v09.01.02", "abitag") == "9.1.2-vcpkgabitag");
-    REQUIRE(reformat_version("1.1.1q", "abitag") == "1.1.1-vcpkgabitag");
-    REQUIRE(reformat_version("1", "abitag") == "1.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("0.0.0", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("1.0.1", "abitag") == "1.0.1-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("1.01.000", "abitag") == "1.1.0-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("1.2", "abitag") == "1.2.0-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("v52", "abitag") == "52.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("v09.01.02", "abitag") == "9.1.2-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("1.1.1q", "abitag") == "1.1.1-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("1", "abitag") == "1.0.0-vcpkgabitag");
 }
 
-TEST_CASE ("reformat_version date", "[reformat_version]")
+TEST_CASE ("format_version_for_nugetref date", "[format_version_for_nugetref]")
 {
-    REQUIRE(reformat_version("2020-06-26", "abitag") == "2020.6.26-vcpkgabitag");
-    REQUIRE(reformat_version("20-06-26", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(reformat_version("2020-06-26-release", "abitag") == "2020.6.26-vcpkgabitag");
-    REQUIRE(reformat_version("2020-06-26000", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("2020-06-26", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("20-06-26", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("2020-06-26-release", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("2020-06-26000", "abitag") == "2020.6.26-vcpkgabitag");
 }
 
-TEST_CASE ("reformat_version generic", "[reformat_version]")
+TEST_CASE ("format_version_for_nugetref generic", "[format_version_for_nugetref]")
 {
-    REQUIRE(reformat_version("apr", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(reformat_version("", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("apr", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_nugetref("", "abitag") == "0.0.0-vcpkgabitag");
 }
 
 TEST_CASE ("generate_nuspec", "[generate_nuspec]")
 {
-    auto& fsWrapper = get_real_filesystem();
-    VcpkgCmdArguments args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
-    if (auto root = get_environment_variable(VcpkgCmdArguments::VCPKG_ROOT_DIR_ENV))
-    {
-        args.imbue_from_fake_environment(
-            {{VcpkgCmdArguments::VCPKG_ROOT_DIR_ENV.to_string(), root.value_or_exit(VCPKG_LINE_INFO)}});
-    }
-    args.packages_root_dir = std::make_unique<std::string>("/");
-    auto pkgPath = fsWrapper.absolute("/zlib2_x64-windows", VCPKG_LINE_INFO);
-#if defined(_WIN32)
-    pkgPath = vcpkg::win32_fix_path_case(pkgPath);
-#endif // ^^^ _WIN32
-    pkgPath = pkgPath / "**";
-    pkgPath.make_preferred();
-    const auto pkgPathStr = pkgPath.native();
-    VcpkgPaths paths(fsWrapper, args);
+    const Path pkgPath = "/zlib2_x64-windows";
+    const auto pkgPathWild = (pkgPath / "**").native();
 
     auto pghs = Paragraphs::parse_paragraphs(R"(
 Source: zlib2
@@ -288,7 +281,7 @@ Build-Depends: bzip
     REQUIRE(ref.nupkg_filename() == "zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 
     {
-        auto nuspec = generate_nuspec(paths, ipa, ref, {});
+        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -308,7 +301,7 @@ Dependencies:
 </description>
     <packageTypes><packageType name="vcpkg"/></packageTypes>
   </metadata>
-  <files><file src=")" + pkgPathStr +
+  <files><file src=")" + pkgPathWild +
                                R"(" target=""/></files>
 </package>
 )";
@@ -316,7 +309,7 @@ Dependencies:
     }
 
     {
-        auto nuspec = generate_nuspec(paths, ipa, ref, {"urlvalue"});
+        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {"urlvalue"});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -337,14 +330,14 @@ Dependencies:
     <packageTypes><packageType name="vcpkg"/></packageTypes>
     <repository type="git" url="urlvalue"/>
   </metadata>
-  <files><file src=")" + pkgPathStr +
+  <files><file src=")" + pkgPathWild +
                                R"(" target=""/></files>
 </package>
 )";
         REQUIRE_EQUAL_TEXT(nuspec, expected);
     }
     {
-        auto nuspec = generate_nuspec(paths, ipa, ref, {"urlvalue", "branchvalue", "commitvalue"});
+        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {"urlvalue", "branchvalue", "commitvalue"});
         std::string expected = R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
@@ -365,12 +358,45 @@ Dependencies:
     <packageTypes><packageType name="vcpkg"/></packageTypes>
     <repository type="git" url="urlvalue" branch="branchvalue" commit="commitvalue"/>
   </metadata>
-  <files><file src=")" + pkgPathStr +
+  <files><file src=")" + pkgPathWild +
                                R"(" target=""/></files>
 </package>
 )";
         REQUIRE_EQUAL_TEXT(nuspec, expected);
     }
+}
+
+TEST_CASE ("Provider nullptr checks", "[BinaryCache]")
+{
+    // create a binary cache to test
+    BinaryCache uut;
+    std::vector<std::unique_ptr<IBinaryProvider>> providers;
+    providers.emplace_back(std::make_unique<KnowNothingBinaryProvider>());
+    uut.install_providers(std::move(providers));
+
+    // create an action plan with an action without a package ABI set
+    auto pghs = Paragraphs::parse_paragraphs(R"(
+Source: someheadpackage
+Version: 1.5
+Description: 
+)",
+                                             "<testdata>");
+    REQUIRE(pghs.has_value());
+    auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
+    REQUIRE(maybe_scf.has_value());
+    SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
+    std::vector<Dependencies::InstallPlanAction> install_plan;
+    install_plan.emplace_back(PackageSpec{"someheadpackage", Test::X64_WINDOWS},
+                              scfl,
+                              Dependencies::RequestType::USER_REQUESTED,
+                              Test::ARM_UWP,
+                              std::map<std::string, std::vector<FeatureSpec>>{});
+    Dependencies::InstallPlanAction& ipa_without_abi = install_plan.back();
+
+    // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider
+    uut.push_success(ipa_without_abi); // should have no effects
+    CHECK(uut.try_restore(ipa_without_abi) == RestoreResult::unavailable);
+    uut.prefetch(install_plan); // should have no effects
 }
 
 TEST_CASE ("XmlSerializer", "[XmlSerializer]")

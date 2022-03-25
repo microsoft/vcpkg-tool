@@ -2,9 +2,12 @@
 
 #include <vcpkg/base/system_headers.h>
 
+#if defined(_MSC_VER)
+// pch.h only is used for performance with MSVC
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/pragmas.h>
+#endif
 
 #if defined(_WIN32)
 #include <process.h>
@@ -32,7 +35,6 @@
 #include <memory>
 #include <mutex>
 #include <random>
-#include <regex>
 #include <set>
 #include <stdexcept>
 #include <string>

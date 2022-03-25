@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/view.h>
 #include <vcpkg/base/zstringview.h>
 
 #include <functional>
@@ -22,26 +23,38 @@ namespace vcpkg
         std::string s;
     };
 
+    void append_shell_escaped(std::string& target, StringView content);
+
     struct Command
     {
         Command() = default;
-        explicit Command(const Path& p) { path_arg(p); }
         explicit Command(StringView s) { string_arg(s); }
-        explicit Command(const std::string& s) { string_arg(s); }
-        explicit Command(const char* s) { string_arg({s, ::strlen(s)}); }
 
-        Command& path_arg(const Path& p) & { return string_arg(p); }
         Command& string_arg(StringView s) &;
         Command& raw_arg(StringView s) &
         {
-            buf.push_back(' ');
+            if (!buf.empty())
+            {
+                buf.push_back(' ');
+            }
+
             buf.append(s.data(), s.size());
             return *this;
         }
 
-        Command&& path_arg(const Path& p) && { return std::move(path_arg(p)); }
+        Command& forwarded_args(View<std::string> args) &
+        {
+            for (auto&& arg : args)
+            {
+                string_arg(arg);
+            }
+
+            return *this;
+        }
+
         Command&& string_arg(StringView s) && { return std::move(string_arg(s)); };
         Command&& raw_arg(StringView s) && { return std::move(raw_arg(s)); }
+        Command&& forwarded_args(View<std::string> args) && { return std::move(forwarded_args(args)); }
 
         std::string&& extract() && { return std::move(buf); }
         StringView command_line() const { return buf; }
@@ -77,75 +90,59 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         std::wstring m_env_data;
-#endif
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+        std::string m_env_data;
+#endif // ^^^ !_WIN32
     };
 
     const Environment& get_clean_environment();
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
-                                               const std::string& prepend_to_path = {});
+                                               StringView prepend_to_path = {});
 
-    struct InWorkingDirectory
+    struct WorkingDirectory
     {
-        const Path& working_directory;
+        Path working_directory;
     };
 
-    int cmd_execute(const Command& cmd_line, InWorkingDirectory wd, const Environment& env = {});
-    inline int cmd_execute(const Command& cmd_line, const Environment& env = {})
-    {
-        return cmd_execute(cmd_line, InWorkingDirectory{Path()}, env);
-    }
+    extern const WorkingDirectory default_working_directory;
+    extern const Environment default_environment;
 
-    int cmd_execute_clean(const Command& cmd_line, InWorkingDirectory wd);
-    inline int cmd_execute_clean(const Command& cmd_line)
-    {
-        return cmd_execute_clean(cmd_line, InWorkingDirectory{Path()});
-    }
+    int cmd_execute(const Command& cmd_line,
+                    const WorkingDirectory& wd = default_working_directory,
+                    const Environment& env = default_environment);
+    int cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
 
 #if defined(_WIN32)
-    Environment cmd_execute_modify_env(const Command& cmd_line, const Environment& env = {});
+    Environment cmd_execute_and_capture_environment(const Command& cmd_line,
+                                                    const Environment& env = default_environment);
 
     void cmd_execute_background(const Command& cmd_line);
 #endif
 
     ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
-                                                     InWorkingDirectory wd,
-                                                     const Environment& env = {});
-    inline ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line, const Environment& env = {})
-    {
-        return cmd_execute_and_capture_output(cmd_line, InWorkingDirectory{Path()}, env);
-    }
+                                                     const WorkingDirectory& wd = default_working_directory,
+                                                     const Environment& env = default_environment,
+                                                     Encoding encoding = Encoding::Utf8,
+                                                     EchoInDebug echo_in_debug = EchoInDebug::Hide);
 
-    std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
-                                                                           InWorkingDirectory wd,
-                                                                           const Environment& env = {});
-
-    inline std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
-                                                                                  const Environment& env = {})
-    {
-        return cmd_execute_and_capture_output_parallel(cmd_lines, InWorkingDirectory{Path()}, env);
-    }
+    std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(
+        View<Command> cmd_lines,
+        const WorkingDirectory& wd = default_working_directory,
+        const Environment& env = default_environment);
 
     int cmd_execute_and_stream_lines(const Command& cmd_line,
-                                     InWorkingDirectory wd,
                                      std::function<void(StringView)> per_line_cb,
-                                     const Environment& env = {});
-    inline int cmd_execute_and_stream_lines(const Command& cmd_line,
-                                            std::function<void(StringView)> per_line_cb,
-                                            const Environment& env = {})
-    {
-        return cmd_execute_and_stream_lines(cmd_line, InWorkingDirectory{Path()}, std::move(per_line_cb), env);
-    }
+                                     const WorkingDirectory& wd = default_working_directory,
+                                     const Environment& env = default_environment,
+                                     Encoding encoding = Encoding::Utf8);
 
     int cmd_execute_and_stream_data(const Command& cmd_line,
-                                    InWorkingDirectory wd,
                                     std::function<void(StringView)> data_cb,
-                                    const Environment& env = {});
-    inline int cmd_execute_and_stream_data(const Command& cmd_line,
-                                           std::function<void(StringView)> data_cb,
-                                           const Environment& env = {})
-    {
-        return cmd_execute_and_stream_data(cmd_line, InWorkingDirectory{Path()}, std::move(data_cb), env);
-    }
+                                    const WorkingDirectory& wd = default_working_directory,
+                                    const Environment& env = default_environment,
+                                    Encoding encoding = Encoding::Utf8);
+
+    uint64_t get_subproccess_stats();
 
     void register_console_ctrl_handler();
 #if defined(_WIN32)

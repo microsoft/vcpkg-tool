@@ -103,7 +103,7 @@ namespace vcpkg::Commands::DependInfo
             {{OPTION_MAX_RECURSE, "Set max recursion depth, a value of -1 indicates no limit"},
              {OPTION_SORT,
               "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-              "(default), "
+              "(default), x-tree, "
               "reverse"}}};
 
         enum SortMode
@@ -308,13 +308,8 @@ namespace vcpkg::Commands::DependInfo
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return Input::check_and_get_full_package_spec(
-                std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text);
+                std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
-
-        for (auto&& spec : specs)
-        {
-            Input::check_triplet(spec.package_spec.triplet(), paths);
-        }
 
         PathsPortFileProvider provider(paths, args.overlay_ports);
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -323,8 +318,12 @@ namespace vcpkg::Commands::DependInfo
         // By passing an empty status_db, we should get a plan containing all dependencies.
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
-        auto action_plan =
-            Dependencies::create_feature_install_plan(provider, var_provider, specs, status_db, {host_triplet});
+        auto action_plan = Dependencies::create_feature_install_plan(
+            provider, var_provider, specs, status_db, {host_triplet, Dependencies::UnsupportedPortAction::Warn});
+        for (const auto& warning : action_plan.warnings)
+        {
+            print2(Color::warning, warning, '\n');
+        }
         Checks::check_exit(
             VCPKG_LINE_INFO, action_plan.remove_actions.empty(), "Only install actions should exist in the plan");
         std::vector<const InstallPlanAction*> install_actions =

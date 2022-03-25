@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -35,32 +36,37 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::value), "", "invalid command: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgDebugTimeTaken,
-                                 (msg::pretty_value, msg::value),
-                                 "{LOCKED}",
-                                 "[DEBUG] Exiting after {pretty_value} ({value} us)\n");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
                                  (),
                                  "",
                                  "Warning: passed --sendmetrics, but metrics are disabled.");
     DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed,
-                                 (msg::email, msg::version, msg::error),
+                                 (msg::email),
                                  "",
                                  R"(vcpkg.exe has crashed.
 Please send an email to:
     {email}
-containing a brief summary of what you were trying to do and the following data blob:
-
-Version={vcpkg_version}
+containing a brief summary of what you were trying to do and the following data blob:)");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedDataBlob,
+                                 (msg::version, msg::error),
+                                 "{Locked}",
+                                 R"(
+Version={version}
 EXCEPTION='{error}'
 CMD=)");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{LOCKED}", "{value}|");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{Locked}", "{value}|");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        ForceSystemBinariesOnWeirdPlatforms,
+        (),
+        "",
+        "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
 }
 
 static void invalid_command(const std::string& cmd)
 {
-    msg::println(Color::error, msgVcpkgInvalidCommand, msg::value = cmd);
+    msg::println(Color::error, msgVcpkgInvalidCommand, msg::command_name = cmd);
     print_usage();
     Checks::exit_fail(VCPKG_LINE_INFO);
 }
@@ -161,7 +167,7 @@ int main(const int argc, const char* const* const argv)
         }
     }
 
-    *(LockGuardPtr<ElapsedTimer>(GlobalState::timer)) = ElapsedTimer::create_started();
+    GlobalState::timer = ElapsedTimer::create_started();
 
 #if defined(_WIN32)
     GlobalState::g_init_console_cp = GetConsoleCP();
@@ -189,10 +195,19 @@ int main(const int argc, const char* const* const argv)
     }
 #endif
     set_environment_variable("VCPKG_COMMAND", get_exe_path_of_current_process().generic_u8string());
+
+    // Prevent child processes (ex. cmake) from producing "colorized"
+    // output (which may include ANSI escape codes), since it would
+    // complicate parsing the output.
+    //
+    // See http://bixense.com/clicolors for the semantics associated with
+    // the CLICOLOR and CLICOLOR_FORCE env variables
+    //
     set_environment_variable("CLICOLOR_FORCE", {});
+    set_environment_variable("CLICOLOR", "0");
 
     Checks::register_global_shutdown_handler([]() {
-        const auto elapsed_us_inner = LockGuardPtr<ElapsedTimer>(GlobalState::timer)->microseconds();
+        const auto elapsed_us_inner = GlobalState::timer.microseconds();
 
         bool debugging = Debug::g_debugging;
 
@@ -210,9 +225,29 @@ int main(const int argc, const char* const* const argv)
 #endif
 
         if (debugging)
-            msg::println(msgVcpkgDebugTimeTaken,
-                         msg::pretty_value = LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(),
-                         msg::value = static_cast<int64_t>(elapsed_us_inner));
+        {
+            msg::write_unlocalized_text_to_stdout(Color::none,
+                                                  Strings::concat("[DEBUG] Time in subprocesses: ",
+                                                                  get_subproccess_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in parsing JSON: ",
+                                                                  Json::get_json_parsing_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in JSON reader: ",
+                                                                  Json::Reader::get_reader_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in filesystem: ",
+                                                                  get_filesystem_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Time in loading ports: ",
+                                                                  Paragraphs::get_load_ports_stats(),
+                                                                  " us\n",
+                                                                  "[DEBUG] Exiting after ",
+                                                                  GlobalState::timer.to_string(),
+                                                                  " (",
+                                                                  static_cast<int64_t>(elapsed_us_inner),
+                                                                  " us)\n"));
+        }
     });
 
     LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version());
@@ -226,9 +261,7 @@ int main(const int argc, const char* const* const argv)
     !defined(_WIN32) && !defined(__APPLE__)
     if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
     {
-        Checks::exit_with_message(
-            VCPKG_LINE_INFO,
-            "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.");
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgForceSystemBinariesOnWeirdPlatforms);
     }
 #endif
 
@@ -303,10 +336,9 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashed,
-                 msg::email = Commands::Contact::email(),
-                 msg::version = Commands::Version::version(),
-                 msg::error = exc_msg);
+    msg::println(msgVcpkgHasCrashed, msg::email = Commands::Contact::email());
+    fflush(stdout);
+    msg::println(msgVcpkgHasCrashedDataBlob, msg::version = Commands::Version::version(), msg::error = exc_msg);
     fflush(stdout);
     for (int x = 0; x < argc; ++x)
     {

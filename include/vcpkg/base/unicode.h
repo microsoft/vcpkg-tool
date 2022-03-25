@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/checks.h>
+
 #include <stddef.h>
 
 namespace vcpkg::Unicode
@@ -14,18 +16,51 @@ namespace vcpkg::Unicode
         StartFour = 4,
     };
 
+    constexpr static char32_t end_of_file = 0xFFFF'FFFF;
+
+    enum class utf8_errc
+    {
+        NoError = 0,
+        InvalidCodeUnit = 1,
+        InvalidCodePoint = 2,
+        PairedSurrogates = 3,
+        UnexpectedContinue = 4,
+        UnexpectedStart = 5,
+        UnexpectedEof = 6,
+    };
+
+    DECLARE_MESSAGE(Utf8DecoderDereferencedAtEof, (), "", "dereferenced Utf8Decoder at the end of a string.");
+
+    const std::error_category& utf8_category() noexcept;
+
     Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept;
     int utf8_code_unit_count(Utf8CodeUnitKind kind) noexcept;
     int utf8_code_unit_count(char code_unit) noexcept;
 
     int utf8_encode_code_point(char (&array)[4], char32_t code_point) noexcept;
 
-    template<class String>
-    String& utf8_append_code_point(String& str, char32_t code_point)
+    // returns {after-current-code-point, error},
+    // and if error = NoError, then out = parsed code point.
+    // else, out = end_of_file.
+    std::pair<const char*, utf8_errc> utf8_decode_code_point(const char* first,
+                                                             const char* last,
+                                                             char32_t& out) noexcept;
+
+    // uses the C++20 definition
+    bool is_double_width_code_point(char32_t ch) noexcept;
+
+    inline std::string& utf8_append_code_point(std::string& str, char32_t code_point)
     {
-        char buf[4] = {};
-        int count = ::vcpkg::Unicode::utf8_encode_code_point(buf, code_point);
-        str.append(buf, buf + count);
+        if (static_cast<uint32_t>(code_point) < 0x80)
+        {
+            str.push_back(static_cast<char>(code_point));
+        }
+        else
+        {
+            char buf[4] = {};
+            int count = ::vcpkg::Unicode::utf8_encode_code_point(buf, code_point);
+            str.append(buf, buf + count);
+        }
         return str;
     }
 
@@ -45,21 +80,6 @@ namespace vcpkg::Unicode
     }
 
     char32_t utf16_surrogates_to_code_point(char32_t leading, char32_t trailing);
-
-    constexpr static char32_t end_of_file = 0xFFFF'FFFF;
-
-    enum class utf8_errc
-    {
-        NoError = 0,
-        InvalidCodeUnit = 1,
-        InvalidCodePoint = 2,
-        PairedSurrogates = 3,
-        UnexpectedContinue = 4,
-        UnexpectedStart = 5,
-        UnexpectedEof = 6,
-    };
-
-    const std::error_category& utf8_category() noexcept;
 
     inline std::error_code make_error_code(utf8_errc err) noexcept
     {
@@ -83,21 +103,31 @@ namespace vcpkg::Unicode
     struct Utf8Decoder
     {
         Utf8Decoder() noexcept;
+        explicit Utf8Decoder(StringView sv) : Utf8Decoder(sv.begin(), sv.end()) { }
         Utf8Decoder(const char* first, const char* last) noexcept;
 
         struct sentinel
         {
         };
 
-        bool is_eof() const noexcept;
+        constexpr inline bool is_eof() const noexcept { return current_ == end_of_file; }
 
-        void next(std::error_code& ec);
+        [[nodiscard]] utf8_errc next();
 
         Utf8Decoder& operator=(sentinel) noexcept;
 
         char const* pointer_to_current() const noexcept;
 
-        char32_t operator*() const noexcept;
+        char32_t operator*() const noexcept
+        {
+            if (is_eof())
+            {
+                msg::print(Color::error, msg::msgInternalErrorMessage);
+                msg::println(Color::error, msgUtf8DecoderDereferencedAtEof);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msg::msgInternalErrorMessageContact);
+            }
+            return current_;
+        }
 
         Utf8Decoder& operator++() noexcept;
         Utf8Decoder operator++(int) noexcept

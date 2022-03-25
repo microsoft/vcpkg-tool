@@ -1,0 +1,10 @@
+
+top: foo
+top: foobar
+
+info:
+  id: bob
+  version: 1.0.2
+  summary: none
+
+$*$*$*$*

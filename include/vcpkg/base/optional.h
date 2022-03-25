@@ -26,7 +26,6 @@ namespace vcpkg
         template<class T, bool B = std::is_copy_constructible<T>::value>
         struct OptionalStorage
         {
-            VCPKG_MSVC_WARNING(suppress : 26495)
             constexpr OptionalStorage() noexcept : m_is_present(false), m_inactive() { }
             constexpr OptionalStorage(const T& t) : m_is_present(true), m_t(t) { }
             constexpr OptionalStorage(T&& t) : m_is_present(true), m_t(std::move(t)) { }
@@ -54,13 +53,11 @@ namespace vcpkg
                 if (m_is_present) m_t.~T();
             }
 
-            VCPKG_MSVC_WARNING(suppress : 26495)
             OptionalStorage(const OptionalStorage& o) : m_is_present(o.m_is_present), m_inactive()
             {
                 if (m_is_present) new (&m_t) T(o.m_t);
             }
 
-            VCPKG_MSVC_WARNING(suppress : 26495)
             OptionalStorage(OptionalStorage&& o) noexcept : m_is_present(o.m_is_present), m_inactive()
             {
                 if (m_is_present)
@@ -117,6 +114,21 @@ namespace vcpkg
                 m_inactive = '\0';
             }
 
+            template<class... Args>
+            T& emplace(Args&&... args)
+            {
+                if (m_is_present)
+                {
+                    m_t = T(static_cast<Args&&>(args)...);
+                }
+                else
+                {
+                    new (&m_t) T(static_cast<Args&&>(args)...);
+                    m_is_present = true;
+                }
+                return m_t;
+            }
+
         private:
             bool m_is_present;
             union
@@ -129,7 +141,6 @@ namespace vcpkg
         template<class T>
         struct OptionalStorage<T, false>
         {
-            VCPKG_MSVC_WARNING(suppress : 26495)
             constexpr OptionalStorage() noexcept : m_is_present(false), m_inactive() { }
             constexpr OptionalStorage(T&& t) : m_is_present(true), m_t(std::move(t)) { }
 
@@ -138,7 +149,6 @@ namespace vcpkg
                 if (m_is_present) m_t.~T();
             }
 
-            VCPKG_MSVC_WARNING(suppress : 26495)
             OptionalStorage(OptionalStorage&& o) noexcept : m_is_present(o.m_is_present), m_inactive()
             {
                 if (m_is_present)
@@ -170,6 +180,21 @@ namespace vcpkg
             const T& value() const { return this->m_t; }
             T& value() { return this->m_t; }
 
+            template<class... Args>
+            T& emplace(Args&&... args)
+            {
+                if (m_is_present)
+                {
+                    m_t = T(static_cast<Args&&>(args)...);
+                }
+                else
+                {
+                    new (&m_t) T(static_cast<Args&&>(args)...);
+                    m_is_present = true;
+                }
+                return m_t;
+            }
+
             void destroy()
             {
                 m_is_present = false;
@@ -197,6 +222,12 @@ namespace vcpkg
 
             T& value() const { return *this->m_t; }
 
+            T& emplace(T& t)
+            {
+                m_t = &t;
+                return *m_t;
+            }
+
         private:
             T* m_t;
         };
@@ -214,6 +245,12 @@ namespace vcpkg
             constexpr bool has_value() const { return m_t != nullptr; }
 
             const T& value() const { return *this->m_t; }
+
+            const T& emplace(const T& t)
+            {
+                m_t = &t;
+                return *m_t;
+            }
 
         private:
             const T* m_t;
@@ -252,6 +289,12 @@ namespace vcpkg
         }
 
         constexpr explicit operator bool() const { return this->m_base.has_value(); }
+
+        template<class... Args>
+        T& emplace(Args&&... args)
+        {
+            return this->m_base.emplace(static_cast<Args&&>(args)...);
+        }
 
         constexpr bool has_value() const { return this->m_base.has_value(); }
 
@@ -352,6 +395,7 @@ namespace vcpkg
 
             return !rhs.m_base.has_value();
         }
+        friend bool operator!=(const Optional& lhs, const Optional& rhs) noexcept { return !(lhs == rhs); }
 
     private:
         details::OptionalStorage<T> m_base;

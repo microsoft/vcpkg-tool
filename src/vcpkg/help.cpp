@@ -9,10 +9,12 @@
 #include <vcpkg/commands.list.h>
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/commands.search.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/export.h>
 #include <vcpkg/help.h>
 #include <vcpkg/install.h>
 #include <vcpkg/remove.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Help
 {
@@ -20,9 +22,9 @@ namespace vcpkg::Help
     {
         using topic_function = void (*)(const VcpkgPaths& paths);
 
-        constexpr Topic(CStringView n, topic_function fn) : name(n), print(fn) { }
+        constexpr Topic(ZStringView n, topic_function fn) : name(n), print(fn) { }
 
-        CStringView name;
+        ZStringView name;
         topic_function print;
     };
 
@@ -112,9 +114,7 @@ namespace vcpkg::Help
         { "name": "rapidjson", "version": "2020-09-14" }
     ]
 })");
-        print2(tbl.m_str,
-               "\nExtended documentation is available at "
-               "https://github.com/Microsoft/vcpkg/tree/master/docs/users/versioning.md\n");
+        print2(tbl.m_str, "\nExtended documentation is available at ", docs::versioning_url, "\n");
     }
 
     static constexpr std::array<Topic, 17> topics = {{
@@ -131,7 +131,7 @@ namespace vcpkg::Help
         {"list", command_topic_fn<Commands::List::COMMAND_STRUCTURE>},
         {"owns", command_topic_fn<Commands::Owns::COMMAND_STRUCTURE>},
         {"remove", command_topic_fn<Remove::COMMAND_STRUCTURE>},
-        {"search", command_topic_fn<Commands::Search::COMMAND_STRUCTURE>},
+        {"search", command_topic_fn<Commands::SearchCommandStructure>},
         {"topics", help_topics},
         {"triplet", help_topic_valid_triplet},
         {"versioning", help_topic_versioning},

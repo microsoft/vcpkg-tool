@@ -13,10 +13,12 @@
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkglib.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Export
 {
@@ -44,27 +46,32 @@ namespace vcpkg::Export
         xml.start_complex_open_tag("file")
             .text_attr("src", raw_exported_dir.native() + "\\installed\\**")
             .text_attr("target", "installed")
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", raw_exported_dir.native() + "\\scripts\\**")
             .text_attr("target", "scripts")
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", raw_exported_dir.native() + "\\.vcpkg-root")
             .text_attr("target", "")
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", targets_redirect_path)
             .text_attr("target", Strings::concat("build\\native\\", nuget_id, ".targets"))
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.start_complex_open_tag("file")
             .text_attr("src", props_redirect_path)
             .text_attr("target", Strings::concat("build\\native\\", nuget_id, ".props"))
-            .finish_self_closing_complex_tag();
+            .finish_self_closing_complex_tag()
+            .line_break();
 
         xml.close_tag("files").line_break();
         xml.close_tag("package").line_break();
@@ -139,7 +146,6 @@ namespace vcpkg::Export
                                 const Path& output_dir)
     {
         Filesystem& fs = paths.get_filesystem();
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
 
         std::error_code ec;
         fs.create_directories(paths.buildsystems / "tmp", ec);
@@ -164,16 +170,21 @@ namespace vcpkg::Export
         // -NoDefaultExcludes is needed for ".vcpkg-root"
         Command cmd;
 #ifndef _WIN32
-        cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+        cmd.string_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-        cmd.path_arg(nuget_exe)
+        cmd.string_arg(paths.get_tool_exe(Tools::NUGET))
             .string_arg("pack")
-            .path_arg(nuspec_file_path)
+            .string_arg(nuspec_file_path)
             .string_arg("-OutputDirectory")
-            .path_arg(output_dir)
+            .string_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        const int exit_code = cmd_execute_and_capture_output(cmd, get_clean_environment()).exit_code;
+        const auto output = cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
+        const auto exit_code = output.exit_code;
+        if (exit_code != 0)
+        {
+            print2(output.output, '\n');
+        }
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
 
         const auto output_path = output_dir / (nuget_id + "." + nuget_version + ".nupkg");
@@ -190,19 +201,19 @@ namespace vcpkg::Export
 
         constexpr ArchiveFormat() = delete;
 
-        constexpr ArchiveFormat(BackingEnum backing_enum, const char* extension, const char* cmake_option)
+        constexpr ArchiveFormat(BackingEnum backing_enum, ZStringView extension, ZStringView cmake_option)
             : backing_enum(backing_enum), m_extension(extension), m_cmake_option(cmake_option)
         {
         }
 
         constexpr operator BackingEnum() const { return backing_enum; }
-        constexpr CStringView extension() const { return this->m_extension; }
-        constexpr CStringView cmake_option() const { return this->m_cmake_option; }
+        constexpr ZStringView extension() const { return this->m_extension; }
+        constexpr ZStringView cmake_option() const { return this->m_cmake_option; }
 
     private:
         BackingEnum backing_enum;
-        const char* m_extension;
-        const char* m_cmake_option;
+        ZStringView m_extension;
+        ZStringView m_cmake_option;
     };
 
     namespace ArchiveFormatC
@@ -223,16 +234,16 @@ namespace vcpkg::Export
         const auto exported_archive_path = output_dir / exported_archive_filename;
 
         Command cmd;
-        cmd.path_arg(cmake_exe)
+        cmd.string_arg(cmake_exe)
             .string_arg("-E")
             .string_arg("tar")
             .string_arg("cf")
-            .path_arg(exported_archive_path)
+            .string_arg(exported_archive_path)
             .string_arg(Strings::concat("--format=", format.cmake_option()))
             .string_arg("--")
-            .path_arg(raw_exported_dir);
+            .string_arg(raw_exported_dir);
 
-        const int exit_code = cmd_execute_clean(cmd, InWorkingDirectory{raw_exported_dir.parent_path()});
+        const int exit_code = cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()});
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", exported_archive_path);
         return exported_archive_path;
     }
@@ -410,7 +421,7 @@ namespace vcpkg::Export
             // input sanitization
             ret.specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
                 return Input::check_and_get_package_spec(
-                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text);
+                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
             });
         }
 
@@ -447,12 +458,6 @@ namespace vcpkg::Export
             }
         };
 
-#if defined(_MSC_VER) && _MSC_VER <= 1900
-// there's a bug in VS 2015 that causes a bunch of "unreferenced local variable" warnings
-#pragma warning(push)
-#pragma warning(disable : 4189)
-#endif
-
         options_implies(OPTION_NUGET,
                         ret.nuget,
                         {
@@ -488,9 +493,6 @@ namespace vcpkg::Export
                             {OPTION_CHOCOLATEY_VERSION_SUFFIX, ret.chocolatey_options.maybe_version_suffix},
                         });
 
-#if defined(_MSC_VER) && _MSC_VER <= 1900
-#pragma warning(pop)
-#endif
         return ret;
     }
 
@@ -520,35 +522,36 @@ namespace vcpkg::Export
         fs.create_directory(raw_exported_dir_path, ec);
 
         // execute the plan
-        for (const ExportPlanAction& action : export_plan)
         {
-            if (action.plan_type != ExportPlanType::ALREADY_BUILT)
+            const InstalledPaths export_paths(raw_exported_dir_path / "installed");
+            for (const ExportPlanAction& action : export_plan)
             {
-                Checks::unreachable(VCPKG_LINE_INFO);
+                if (action.plan_type != ExportPlanType::ALREADY_BUILT)
+                {
+                    Checks::unreachable(VCPKG_LINE_INFO);
+                }
+
+                const std::string display_name = action.spec.to_string();
+                print2("Exporting package ", display_name, "...\n");
+
+                const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
+
+                const InstallDir dirs =
+                    InstallDir::from_destination_root(export_paths, action.spec.triplet(), binary_paragraph);
+
+                auto lines = fs.read_lines(paths.installed().listfile_path(binary_paragraph), VCPKG_LINE_INFO);
+                std::vector<Path> files;
+                for (auto&& suffix : lines)
+                {
+                    if (suffix.empty()) continue;
+                    if (suffix.back() == '/') suffix.pop_back();
+                    if (suffix == action.spec.triplet().to_string()) continue;
+                    files.push_back(paths.installed().root() / suffix);
+                }
+
+                Install::install_files_and_write_listfile(
+                    fs, paths.installed().triplet_dir(action.spec.triplet()), files, dirs);
             }
-
-            const std::string display_name = action.spec.to_string();
-            print2("Exporting package ", display_name, "...\n");
-
-            const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-
-            const InstallDir dirs = InstallDir::from_destination_root(raw_exported_dir_path / "installed",
-                                                                      action.spec.triplet().to_string(),
-                                                                      raw_exported_dir_path / "installed/vcpkg/info" /
-                                                                          (binary_paragraph.fullstem() + ".list"));
-
-            auto lines = fs.read_lines(paths.listfile_path(binary_paragraph), VCPKG_LINE_INFO);
-            std::vector<Path> files;
-            for (auto&& suffix : lines)
-            {
-                if (suffix.empty()) continue;
-                if (suffix.back() == '/') suffix.pop_back();
-                if (suffix == action.spec.triplet().to_string()) continue;
-                files.push_back(paths.installed() / suffix);
-            }
-
-            Install::install_files_and_write_listfile(
-                fs, paths.installed() / action.spec.triplet().to_string(), files, dirs);
         }
 
         // Copy files needed for integration
@@ -616,10 +619,8 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                 "vcpkg export does not support manifest mode, in order to allow for future design considerations. You "
                 "may use export in classic mode by running vcpkg outside of a manifest-based project.");
         }
-        const StatusParagraphs status_db = database_load_check(paths);
+        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
-        for (auto&& spec : opts.specs)
-            Input::check_triplet(spec.triplet(), paths);
 
         // Load ports from ports dirs
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/fwd/binarycaching.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
@@ -16,27 +17,6 @@
 
 namespace vcpkg
 {
-    enum class RestoreResult
-    {
-        unavailable,
-        restored,
-    };
-
-    enum class CacheAvailability
-    {
-        unavailable,
-        available,
-    };
-
-    enum class CacheStatusState
-    {
-        unknown,   // the cache status of the indicated package ABI is unknown
-        available, // the cache is known to contain the package ABI, but it has not been restored
-        restored,  // the cache contains the ABI and it has been restored to the packages tree
-    };
-
-    struct IBinaryProvider;
-
     struct CacheStatus
     {
         bool should_attempt_precheck(const IBinaryProvider* sender) const noexcept;
@@ -67,64 +47,92 @@ namespace vcpkg
 
         /// Attempts to restore the package referenced by `action` into the packages directory.
         /// Prerequisite: action has a package_abi()
-        virtual RestoreResult try_restore(const VcpkgPaths& paths,
-                                          const Dependencies::InstallPlanAction& action) const = 0;
+        virtual RestoreResult try_restore(const Dependencies::InstallPlanAction& action) const = 0;
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         /// Prerequisite: action has a package_abi()
-        virtual void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action) const = 0;
+        virtual void push_success(const Dependencies::InstallPlanAction& action) const = 0;
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
         /// `cache_status` is a vector with the same number of entries of actions, where each index corresponds
         /// to the action at the same index in `actions`. The provider must mark the cache status as appropriate.
-        virtual void prefetch(const VcpkgPaths& paths,
-                              View<Dependencies::InstallPlanAction> actions,
-                              View<CacheStatus*> cache_status) const = 0;
+        /// Note: `actions` *might not* have package ABIs (for example, a --head package)!
+        /// Prerequisite: if `actions[i]` has no package ABI, `cache_status[i]` is nullptr.
+        virtual void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const = 0;
 
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.
         /// `cache_status` is a view with the same number of entries of actions, where each index corresponds
         /// to the action at the same index in `actions`. The provider must mark the cache status as appropriate.
-        virtual void precheck(const VcpkgPaths& paths,
-                              View<Dependencies::InstallPlanAction> actions,
-                              View<CacheStatus*> cache_status) const = 0;
+        /// Prerequisite: `actions` have package ABIs.
+        virtual void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const = 0;
     };
 
+    struct BinaryConfigParserState
+    {
+        bool m_cleared = false;
+        bool interactive = false;
+        std::string nugettimeout = "100";
+
+        std::vector<Path> archives_to_read;
+        std::vector<Path> archives_to_write;
+
+        std::vector<std::string> url_templates_to_get;
+        std::vector<std::string> azblob_templates_to_put;
+
+        std::vector<std::string> gcs_read_prefixes;
+        std::vector<std::string> gcs_write_prefixes;
+
+        std::vector<std::string> aws_read_prefixes;
+        std::vector<std::string> aws_write_prefixes;
+        bool aws_no_sign_request = false;
+
+        std::vector<std::string> sources_to_read;
+        std::vector<std::string> sources_to_write;
+
+        std::vector<Path> configs_to_read;
+        std::vector<Path> configs_to_write;
+
+        std::vector<std::string> secrets;
+
+        void clear();
+    };
+
+    ExpectedS<BinaryConfigParserState> create_binary_providers_from_configs_pure(const std::string& env_string,
+                                                                                 View<std::string> args);
     ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs(
-        View<std::string> args);
-    ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs_pure(
-        const std::string& env_string, View<std::string> args);
+        const VcpkgPaths& paths, View<std::string> args);
 
     struct BinaryCache
     {
         BinaryCache() = default;
-        explicit BinaryCache(const VcpkgCmdArguments& args);
+        explicit BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 
         void install_providers(std::vector<std::unique_ptr<IBinaryProvider>>&& providers);
-        void install_providers_for(const VcpkgCmdArguments& args);
+        void install_providers_for(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 
         /// Attempts to restore the package referenced by `action` into the packages directory.
-        RestoreResult try_restore(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action);
+        RestoreResult try_restore(const Dependencies::InstallPlanAction& action);
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
-        void push_success(const VcpkgPaths& paths, const Dependencies::InstallPlanAction& action);
+        void push_success(const Dependencies::InstallPlanAction& action);
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
-        void prefetch(const VcpkgPaths& paths, View<Dependencies::InstallPlanAction> actions);
+        void prefetch(View<Dependencies::InstallPlanAction> actions);
 
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.
         /// Returns a vector where each index corresponds to the matching index in `actions`.
-        std::vector<CacheAvailability> precheck(const VcpkgPaths& paths, View<Dependencies::InstallPlanAction> actions);
+        std::vector<CacheAvailability> precheck(View<Dependencies::InstallPlanAction> actions);
 
     private:
         std::unordered_map<std::string, CacheStatus> m_status;
         std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
     };
 
-    ExpectedS<Downloads::DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
+    ExpectedS<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const Dependencies::ActionPlan& action);
 

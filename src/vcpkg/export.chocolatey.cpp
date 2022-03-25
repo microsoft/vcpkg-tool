@@ -5,7 +5,9 @@
 #include <vcpkg/export.chocolatey.h>
 #include <vcpkg/export.h>
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Export::Chocolatey
 {
@@ -194,12 +196,12 @@ if (Test-Path $installedDir)
 
             const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
-            const InstallDir dirs = InstallDir::from_destination_root(
-                per_package_dir_path / "installed",
-                action.spec.triplet().to_string(),
-                per_package_dir_path / "installed" / "vcpkg" / "info" / (binary_paragraph.fullstem() + ".list"));
+            const InstalledPaths installed(per_package_dir_path / "installed");
 
-            Install::install_package_and_write_listfile(paths, action.spec, dirs);
+            const InstallDir dirs =
+                InstallDir::from_destination_root(installed, action.spec.triplet(), binary_paragraph);
+
+            Install::install_package_and_write_listfile(fs, paths.package_dir(action.spec), dirs);
 
             const std::string nuspec_file_content = create_nuspec_file_contents(
                 per_package_dir_path, binary_paragraph, packages_version, chocolatey_options);
@@ -220,11 +222,12 @@ if (Test-Path $installedDir)
             auto cmd_line = Command(nuget_exe)
                                 .string_arg("pack")
                                 .string_arg("-OutputDirectory")
-                                .path_arg(exported_dir_path)
-                                .path_arg(nuspec_file_path)
+                                .string_arg(exported_dir_path)
+                                .string_arg(nuspec_file_path)
                                 .string_arg("-NoDefaultExcludes");
 
-            const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
+            const int exit_code =
+                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
         }
     }

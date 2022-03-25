@@ -227,13 +227,13 @@ namespace vcpkg::Json
         Value& operator[](StringView key) noexcept
         {
             auto res = this->get(key);
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, res, "missing key: \"%s\"", key);
+            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, res != nullptr, "missing key: \"%s\"", key);
             return *res;
         }
         const Value& operator[](StringView key) const noexcept
         {
             auto res = this->get(key);
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, res, "missing key: \"%s\"", key);
+            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, res != nullptr, "missing key: \"%s\"", key);
             return *res;
         }
 
@@ -289,13 +289,16 @@ namespace vcpkg::Json
         underlying_t underlying_;
     };
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(
-        const Filesystem&, const Path&, std::error_code& ec) noexcept;
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView text,
-                                                                                      StringView origin = {}) noexcept;
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem&,
+                                                                                   const Path&,
+                                                                                   std::error_code& ec) noexcept;
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView text,
+                                                                              StringView origin = {}) noexcept;
     std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem&, const Path&) noexcept;
 
     std::string stringify(const Value&, JsonStyle style);
     std::string stringify(const Object&, JsonStyle style);
     std::string stringify(const Array&, JsonStyle style);
+
+    uint64_t get_json_parsing_stats();
 }

@@ -10,7 +10,7 @@
 #include <vcpkg/base/view.h>
 
 #include <vcpkg/versiondeserializers.h>
-#include <vcpkg/versiont.h>
+#include <vcpkg/versions.h>
 
 #include <map>
 #include <memory>
@@ -51,9 +51,9 @@ namespace vcpkg
 
     struct RegistryEntry
     {
-        virtual View<VersionT> get_port_versions() const = 0;
+        virtual View<Version> get_port_versions() const = 0;
 
-        virtual ExpectedS<Path> get_path_to_version(const VcpkgPaths& paths, const VersionT& version) const = 0;
+        virtual ExpectedS<Path> get_path_to_version(const Version& version) const = 0;
 
         virtual ~RegistryEntry() = default;
     };
@@ -63,15 +63,15 @@ namespace vcpkg
         virtual StringLiteral kind() const = 0;
 
         // returns nullptr if the port doesn't exist
-        virtual std::unique_ptr<RegistryEntry> get_port_entry(const VcpkgPaths& paths, StringView port_name) const = 0;
+        virtual std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const = 0;
 
         // appends the names of the ports to the out parameter
         // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
-        virtual void get_all_port_names(std::vector<std::string>& port_names, const VcpkgPaths& paths) const = 0;
+        virtual void get_all_port_names(std::vector<std::string>& port_names) const = 0;
 
-        virtual Optional<VersionT> get_baseline_version(const VcpkgPaths& paths, StringView port_name) const = 0;
+        virtual Optional<Version> get_baseline_version(StringView port_name) const = 0;
 
-        virtual Json::Object serialize() const;
+        virtual Optional<Path> get_path_to_baseline_version(StringView port_name) const;
 
         virtual ~RegistryImplementation() = default;
     };
@@ -102,23 +102,21 @@ namespace vcpkg
     // configuration fields.
     struct RegistrySet
     {
-        RegistrySet();
+        RegistrySet(std::unique_ptr<RegistryImplementation>&& x, std::vector<Registry>&& y)
+            : default_registry_(std::move(x)), registries_(std::move(y))
+        {
+        }
 
         // finds the correct registry for the port name
         // Returns the null pointer if there is no registry set up for that name
         const RegistryImplementation* registry_for_port(StringView port_name) const;
-        Optional<VersionT> baseline_for_port(const VcpkgPaths& paths, StringView port_name) const;
+        Optional<Version> baseline_for_port(StringView port_name) const;
 
         View<Registry> registries() const { return registries_; }
 
         const RegistryImplementation* default_registry() const { return default_registry_.get(); }
 
-        // TODO: figure out how to get this to return an error (or maybe it should be a warning?)
-        void add_registry(Registry&& r);
-        void set_default_registry(std::unique_ptr<RegistryImplementation>&& r);
-        void set_default_registry(std::nullptr_t r);
         bool is_default_builtin_registry() const;
-        void set_default_builtin_registry_baseline(StringView baseline) const;
 
         // returns whether the registry set has any modifications to the default
         // (i.e., whether `default_registry` was set, or `registries` had any entries)
@@ -130,25 +128,27 @@ namespace vcpkg
         std::vector<Registry> registries_;
     };
 
-    Json::Object serialize_registry_set(const RegistrySet& config);
-
-    std::unique_ptr<Json::IDeserializer<std::unique_ptr<RegistryImplementation>>>
-    get_registry_implementation_deserializer(const Path& configuration_directory);
-
-    std::unique_ptr<Json::IDeserializer<std::vector<Registry>>> get_registry_array_deserializer(
-        const Path& configuration_directory);
+    std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths);
+    std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths, std::string baseline);
+    std::unique_ptr<RegistryImplementation> make_git_registry(const VcpkgPaths& paths,
+                                                              std::string repo,
+                                                              std::string reference,
+                                                              std::string baseline);
+    std::unique_ptr<RegistryImplementation> make_filesystem_registry(const Filesystem& fs,
+                                                                     Path path,
+                                                                     std::string baseline);
 
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name);
 
-    ExpectedS<std::map<std::string, VersionT, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
+    ExpectedS<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
 
     struct VersionDbEntry
     {
-        VersionT version;
-        Versions::Scheme scheme = Versions::Scheme::String;
+        Version version;
+        VersionScheme scheme = VersionScheme::String;
 
         // only one of these may be non-empty
         std::string git_tree;

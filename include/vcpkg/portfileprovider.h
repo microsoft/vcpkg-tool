@@ -32,17 +32,17 @@ namespace vcpkg::PortFileProvider
 
     struct IVersionedPortfileProvider
     {
-        virtual View<VersionT> get_port_versions(StringView port_name) const = 0;
+        virtual View<Version> get_port_versions(StringView port_name) const = 0;
         virtual ~IVersionedPortfileProvider() = default;
 
         virtual ExpectedS<const SourceControlFileAndLocation&> get_control_file(
-            const Versions::VersionSpec& version_spec) const = 0;
+            const VersionSpec& version_spec) const = 0;
         virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>& out) const = 0;
     };
 
     struct IBaselineProvider
     {
-        virtual Optional<VersionT> get_baseline_version(StringView port_name) const = 0;
+        virtual Optional<Version> get_baseline_version(StringView port_name) const = 0;
         virtual ~IBaselineProvider() = default;
     };
 
@@ -55,9 +55,7 @@ namespace vcpkg::PortFileProvider
 
     struct PathsPortFileProvider : PortFileProvider
     {
-        explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, const std::vector<std::string>& overlay_ports);
-        PathsPortFileProvider(const PathsPortFileProvider&) = delete;
-        PathsPortFileProvider& operator=(const PathsPortFileProvider&) = delete;
+        explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, View<std::string> overlay_ports);
         ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 

@@ -11,8 +11,6 @@
 
 namespace vcpkg::PlatformExpression
 {
-    using vcpkg::Parse::ParseError;
-
     enum class Identifier
     {
         invalid = -1, // not a recognized identifier
@@ -26,6 +24,8 @@ namespace vcpkg::PlatformExpression
         windows,
         mingw,
         linux,
+        freebsd,
+        openbsd,
         osx,
         uwp,
         android,
@@ -50,6 +50,8 @@ namespace vcpkg::PlatformExpression
             {"windows", Identifier::windows},
             {"mingw", Identifier::mingw},
             {"linux", Identifier::linux},
+            {"freebsd", Identifier::freebsd},
+            {"openbsd", Identifier::openbsd},
             {"osx", Identifier::osx},
             {"uwp", Identifier::uwp},
             {"android", Identifier::android},
@@ -105,10 +107,10 @@ namespace vcpkg::PlatformExpression
             }
         };
 
-        struct ExpressionParser : Parse::ParserBase
+        struct ExpressionParser : ParserBase
         {
             ExpressionParser(StringView str, MultipleBinaryOperators multiple_binary_operators)
-                : Parse::ParserBase(str, "CONTROL"), multiple_binary_operators(multiple_binary_operators)
+                : ParserBase(str, "CONTROL"), multiple_binary_operators(multiple_binary_operators)
             {
             }
 
@@ -220,7 +222,7 @@ namespace vcpkg::PlatformExpression
                         // { "and", optional-whitespace, platform-expression-not }
                         // { "or", platform-expression-binary-keyword-second-operand } }
                         // "and" is a synonym of "&", "or" is reserved (but not yet supported) as a synonym of "|"
-                        std::string name = match_zero_or_more(is_identifier_char).to_string();
+                        std::string name = match_while(is_identifier_char).to_string();
                         Checks::check_exit(VCPKG_LINE_INFO, !name.empty());
 
                         if (name == "and")
@@ -280,7 +282,7 @@ namespace vcpkg::PlatformExpression
             std::unique_ptr<ExprImpl> expr_identifier()
             {
                 // identifier-character, { identifier-character },
-                std::string name = match_zero_or_more(is_identifier_char).to_string();
+                std::string name = match_while(is_identifier_char).to_string();
 
                 if (name.empty())
                 {
@@ -310,7 +312,7 @@ namespace vcpkg::PlatformExpression
                 }
                 else if (cur() == 'n')
                 {
-                    std::string name = match_zero_or_more(is_identifier_char).to_string();
+                    std::string name = match_while(is_identifier_char).to_string();
 
                     // "not"
                     if (name == "not")
@@ -537,6 +539,8 @@ namespace vcpkg::PlatformExpression
                                    true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "MinGW");
                         case Identifier::mingw: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "MinGW");
                         case Identifier::linux: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
+                        case Identifier::freebsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD");
+                        case Identifier::openbsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD");
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
@@ -676,7 +680,7 @@ namespace vcpkg::PlatformExpression
     int compare(const Expr& lhs, const Expr& rhs)
     {
         auto lhs_platform_complexity = lhs.complexity();
-        auto rhs_platform_complexity = lhs.complexity();
+        auto rhs_platform_complexity = rhs.complexity();
 
         if (lhs_platform_complexity < rhs_platform_complexity) return -1;
         if (rhs_platform_complexity < lhs_platform_complexity) return 1;
@@ -710,7 +714,7 @@ namespace vcpkg::PlatformExpression
                     case ExprKind::identifier: return expr.identifier;
                     case ExprKind::op_and: join = " & "; break;
                     case ExprKind::op_or: join = " | "; break;
-                    case ExprKind::op_list: join = " , "; break;
+                    case ExprKind::op_list: join = ", "; break;
                     case ExprKind::op_not: return Strings::format("!%s", (*this)(expr.exprs.at(0)));
                     case ExprKind::op_empty: join = ""; break;
                     case ExprKind::op_invalid: join = " invalid "; break;

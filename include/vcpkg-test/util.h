@@ -3,10 +3,14 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/sortedvector.h>
 
+#include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraph.h>
 
+#include <iomanip>
 #include <memory>
 
 #define CHECK_EC(ec)                                                                                                   \
@@ -34,10 +38,41 @@ namespace Catch
     };
 
     template<>
+    struct StringMaker<vcpkg::FeatureSpec>
+    {
+        static std::string convert(vcpkg::FeatureSpec const& value)
+        {
+            return vcpkg::Strings::concat(value.spec().name(), '[', value.feature(), "]:", value.spec().triplet());
+        }
+    };
+
+    template<>
     struct StringMaker<vcpkg::Triplet>
     {
         static const std::string& convert(const vcpkg::Triplet& triplet) { return triplet.canonical_name(); }
     };
+
+    template<>
+    struct StringMaker<vcpkg::LocalizedString>
+    {
+        static const std::string convert(const vcpkg::LocalizedString& value) { return "LL\"" + value.data() + "\""; }
+    };
+
+    template<>
+    struct StringMaker<vcpkg::PackageSpec>
+    {
+        static const std::string convert(const vcpkg::PackageSpec& value) { return value.to_string(); }
+    };
+}
+
+namespace vcpkg
+{
+    inline std::ostream& operator<<(std::ostream& os, const PackageSpec& value) { return os << value.to_string(); }
+
+    inline std::ostream& operator<<(std::ostream& os, const LocalizedString& value)
+    {
+        return os << "LL" << std::quoted(value.data());
+    }
 }
 
 namespace vcpkg::Test
@@ -50,12 +85,12 @@ namespace vcpkg::Test
 
     inline auto test_parse_control_file(const std::vector<std::unordered_map<std::string, std::string>>& v)
     {
-        std::vector<vcpkg::Parse::Paragraph> pghs;
+        std::vector<vcpkg::Paragraph> pghs;
         for (auto&& p : v)
         {
             pghs.emplace_back();
             for (auto&& kv : p)
-                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::Parse::TextRowCol{}));
+                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
         }
         return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));
     }
@@ -107,6 +142,19 @@ namespace vcpkg::Test
         return std::move(*opt.get());
     }
 
+    inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv, Triplet t = X86_WINDOWS)
+    {
+        std::vector<FullPackageSpec> ret;
+        ParserBase parser(sv, "test");
+        while (!parser.at_eof())
+        {
+            auto opt = parse_qualified_specifier(parser);
+            REQUIRE(opt.has_value());
+            ret.push_back(unwrap(opt.get()->to_full_spec(t, ImplicitDefault::YES)));
+        }
+        return ret;
+    }
+
     template<class R1, class R2>
     void check_ranges(const R1& r1, const R2& r2)
     {
@@ -120,6 +168,14 @@ namespace vcpkg::Test
             CHECK(*it1 == *it2);
         }
     }
+
+    void check_json_eq(const Json::Value& l, const Json::Value& r);
+    void check_json_eq(const Json::Object& l, const Json::Object& r);
+    void check_json_eq(const Json::Array& l, const Json::Array& r);
+
+    void check_json_eq_ordered(const Json::Value& l, const Json::Value& r);
+    void check_json_eq_ordered(const Json::Object& l, const Json::Object& r);
+    void check_json_eq_ordered(const Json::Array& l, const Json::Array& r);
 
     const Path& base_temporary_directory() noexcept;
 }

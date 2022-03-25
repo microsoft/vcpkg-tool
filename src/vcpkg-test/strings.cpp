@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/api_stable_format.h>
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/strings.h>
 
 #include <stdint.h>
@@ -7,10 +9,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#if defined(_MSC_VER)
-#pragma warning(disable : 6237)
-#endif
 
 TEST_CASE ("b32 encoding", "[strings]")
 {
@@ -111,4 +109,43 @@ TEST_CASE ("inplace_replace_all(char)", "[strings]")
     REQUIRE(target == "hewwo");
     inplace_replace_all(target, 'x', '?');
     REQUIRE(target == "hewwo");
+}
+
+TEST_CASE ("api_stable_format(sv,append_f)", "[strings]")
+{
+    namespace Strings = vcpkg::Strings;
+    using vcpkg::api_stable_format;
+    using vcpkg::nullopt;
+    using vcpkg::StringView;
+
+    std::string target;
+    auto res = api_stable_format("{", [](std::string&, StringView) { CHECK(false); });
+    REQUIRE(!res.has_value());
+    res = api_stable_format("}", [](std::string&, StringView) { CHECK(false); });
+    REQUIRE(!res.has_value());
+    res = api_stable_format("{ {", [](std::string&, StringView) { CHECK(false); });
+    REQUIRE(!res.has_value());
+    res = api_stable_format("{ {}", [](std::string&, StringView) { CHECK(false); });
+    REQUIRE(!res.has_value());
+
+    res = api_stable_format("}}", [](std::string&, StringView) { CHECK(false); });
+    REQUIRE(*res.get() == "}");
+    res = api_stable_format("{{", [](std::string&, StringView) { CHECK(false); });
+    REQUIRE(*res.get() == "{");
+
+    res = api_stable_format("{x}{y}{z}", [](std::string& out, StringView t) {
+        CHECK((t == "x" || t == "y" || t == "z"));
+        Strings::append(out, t, t);
+    });
+    REQUIRE(*res.get() == "xxyyzz");
+    res = api_stable_format("{x}}}", [](std::string& out, StringView t) {
+        CHECK(t == "x");
+        Strings::append(out, "hello");
+    });
+    REQUIRE(*res.get() == "hello}");
+    res = api_stable_format("123{x}456", [](std::string& out, StringView t) {
+        CHECK(t == "x");
+        Strings::append(out, "hello");
+    });
+    REQUIRE(*res.get() == "123hello456");
 }

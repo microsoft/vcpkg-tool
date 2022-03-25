@@ -5,12 +5,14 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/unicode.h>
 
-#include <inttypes.h>
+#include <vcpkg/documentation.h>
 
-#include <regex>
+#include <inttypes.h>
 
 namespace vcpkg::Json
 {
+    static std::atomic<uint64_t> g_json_parsing_stats(0);
+
     using VK = ValueKind;
 
     // struct Value {
@@ -468,35 +470,26 @@ namespace vcpkg::Json
     // auto parse() {
     namespace
     {
-        struct Parser : private Parse::ParserBase
+        struct Parser : private ParserBase
         {
-            Parser(StringView text, StringView origin) : Parse::ParserBase(text, origin), style_() { }
+            Parser(StringView text, StringView origin) : ParserBase(text, origin), style_() { }
 
             char32_t next() noexcept
             {
                 auto ch = cur();
                 if (ch == '\r') style_.newline_kind = JsonStyle::Newline::CrLf;
                 if (ch == '\t') style_.set_tabs();
-                return Parse::ParserBase::next();
+                return ParserBase::next();
             }
 
-            static constexpr bool is_digit(char32_t code_point) noexcept
-            {
-                return code_point >= '0' && code_point <= '9';
-            }
-            static constexpr bool is_hex_digit(char32_t code_point) noexcept
-            {
-                return is_digit(code_point) || (code_point >= 'a' && code_point <= 'f') ||
-                       (code_point >= 'A' && code_point <= 'F');
-            }
             static bool is_number_start(char32_t code_point) noexcept
             {
-                return code_point == '-' || is_digit(code_point);
+                return code_point == '-' || is_ascii_digit(code_point);
             }
 
             static unsigned char from_hex_digit(char32_t code_point) noexcept
             {
-                if (is_digit(code_point))
+                if (is_ascii_digit(code_point))
                 {
                     return static_cast<unsigned char>(code_point) - '0';
                 }
@@ -662,7 +655,7 @@ namespace vcpkg::Json
                         floating = true;
                         current = next();
                     }
-                    else if (is_digit(current))
+                    else if (is_ascii_digit(current))
                     {
                         add_error("Unexpected digits after a leading zero");
                         return Value();
@@ -680,7 +673,7 @@ namespace vcpkg::Json
                     }
                 }
 
-                while (is_digit(current))
+                while (is_ascii_digit(current))
                 {
                     number_to_parse.push_back(static_cast<char>(current));
                     current = next();
@@ -690,12 +683,12 @@ namespace vcpkg::Json
                     floating = true;
                     number_to_parse.push_back('.');
                     current = next();
-                    if (!is_digit(current))
+                    if (!is_ascii_digit(current))
                     {
                         add_error("Expected digits after the decimal point");
                         return Value();
                     }
-                    while (is_digit(current))
+                    while (is_ascii_digit(current))
                     {
                         number_to_parse.push_back(static_cast<char>(current));
                         current = next();
@@ -988,9 +981,11 @@ namespace vcpkg::Json
                 }
             }
 
-            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(
-                StringView json, StringView origin) noexcept
+            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
+                                                                                             StringView origin) noexcept
             {
+                StatsTimer t(g_json_parsing_stats);
+
                 auto parser = Parser(json, origin);
 
                 auto val = parser.parse_value();
@@ -999,11 +994,11 @@ namespace vcpkg::Json
                 if (!parser.at_eof())
                 {
                     parser.add_error("Unexpected character; expected EOF");
-                    return std::move(parser).extract_error();
+                    return parser.extract_error();
                 }
                 else if (parser.get_error())
                 {
-                    return std::move(parser).extract_error();
+                    return parser.extract_error();
                 }
                 else
                 {
@@ -1026,41 +1021,65 @@ namespace vcpkg::Json
     PackageNameDeserializer PackageNameDeserializer::instance;
     PathDeserializer PathDeserializer::instance;
 
+    static constexpr bool is_lower_digit(char ch)
+    {
+        return ParserBase::is_lower_alpha(ch) || ParserBase::is_ascii_digit(ch);
+    }
+
     bool IdentifierDeserializer::is_ident(StringView sv)
     {
-        static const std::regex BASIC_IDENTIFIER = std::regex(R"([a-z0-9]+(-[a-z0-9]+)*)");
-
-        // we only check for lowercase in RESERVED since we already remove all
-        // strings with uppercase letters from the basic check
-        static const std::regex RESERVED = std::regex(R"(prn|aux|nul|con|(lpt|com)[1-9]|core|default)");
-
         // back-compat
         if (sv == "all_modules")
         {
             return true;
         }
 
-        if (!std::regex_match(sv.begin(), sv.end(), BASIC_IDENTIFIER))
+        // [a-z0-9]+(-[a-z0-9]+)*
+        auto cur = sv.begin();
+        const auto last = sv.end();
+        for (;;)
         {
-            return false; // we're not even in the shape of an identifier
+            if (cur == last || !is_lower_digit(*cur)) return false;
+            ++cur;
+            while (cur != last && is_lower_digit(*cur))
+                ++cur;
+
+            if (cur == last) break;
+            if (*cur != '-') return false;
+            ++cur;
         }
 
-        if (std::regex_match(sv.begin(), sv.end(), RESERVED))
+        if (sv.size() < 5)
         {
-            return false; // we're a reserved identifier
+            if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == "core")
+            {
+                return false; // we're a reserved identifier
+            }
+            if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
+                sv[3] >= '1' && sv[3] <= '9')
+            {
+                return false; // we're a reserved identifier
+            }
+        }
+        else
+        {
+            if (sv == "default")
+            {
+                return false;
+            }
         }
 
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Filesystem& fs,
-                                                                                           const Path& json_file,
-                                                                                           std::error_code& ec) noexcept
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
+                                                                                   const Path& json_file,
+                                                                                   std::error_code& ec) noexcept
     {
         auto res = fs.read_contents(json_file, ec);
         if (ec)
         {
-            return std::unique_ptr<Parse::IParseError>();
+            return std::unique_ptr<ParseError>();
         }
 
         return parse(std::move(res), json_file);
@@ -1084,8 +1103,8 @@ namespace vcpkg::Json
         return ret.value_or_exit(li);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
-                                                                                      StringView origin) noexcept
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
+                                                                              StringView origin) noexcept
     {
         return Parser::parse(json, origin);
     }
@@ -1317,6 +1336,12 @@ namespace vcpkg::Json
         return res;
     }
 
+    static std::atomic<uint64_t> g_json_reader_stats(0);
+
+    Reader::Reader() : m_stat_timer(g_json_reader_stats) { }
+
+    uint64_t Reader::get_reader_stats() { return g_json_reader_stats.load(); }
+
     void Reader::add_missing_field_error(StringView type, StringView key, StringView key_type)
     {
         add_generic_error(type, "missing required field '", key, "' (", key_type, ")");
@@ -1393,9 +1418,9 @@ namespace vcpkg::Json
         if (!is_ident(sv))
         {
             r.add_generic_error(type_name(),
-                                "must be lowercase alphanumeric+hyphens and not reserved (see "
-                                "https://github.com/Microsoft/vcpkg/tree/master/docs/specifications/manifests.md for "
-                                "more information)");
+                                Strings::concat("must be lowercase alphanumeric+hyphens and not reserved (see ",
+                                                vcpkg::docs::manifests_url,
+                                                " for more information)"));
         }
         return sv.to_string();
     }
@@ -1422,6 +1447,8 @@ namespace vcpkg::Json
 
         return true;
     }
+
+    uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
 
     Optional<std::string> PackageNameDeserializer::visit_string(Json::Reader&, StringView sv)
     {

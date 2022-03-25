@@ -1,6 +1,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
+#include <vcpkg/base/system.process.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.integrate.h>
@@ -188,7 +189,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            if (arg.byte_at_index(option.size()) == '=')
+            if (arg[option.size()] == '=')
             {
                 parser(arg.substr(option.size() + 1), option, place);
                 return TryParseArgumentResult::Found;
@@ -235,10 +236,14 @@ namespace vcpkg
         VcpkgCmdArguments args;
         std::vector<std::string> feature_flags;
 
-        if (arg_first != arg_last && arg_first + 1 == arg_last && *arg_first == "--version")
+        if (arg_first != arg_last)
         {
-            args.command = "version";
-            return args;
+            args.forwardable_arguments.assign(arg_first + 1, arg_last);
+            if (arg_first + 1 == arg_last && *arg_first == "--version")
+            {
+                args.command = "version";
+                return args;
+            }
         }
 
         for (auto it = arg_first; it != arg_last; ++it)
@@ -270,8 +275,8 @@ namespace vcpkg
             }
 
             // make argument case insensitive before the first =
-            auto first_eq = std::find(std::begin(basic_arg), std::end(basic_arg), '=');
-            Strings::ascii_to_lowercase(std::begin(basic_arg), first_eq);
+            auto first_eq = Util::find(Span<char>(basic_arg), '=');
+            Strings::ascii_to_lowercase(basic_arg.data(), first_eq);
             // basic_arg[0] == '-' && basic_arg[1] == '-'
             StringView arg = StringView(basic_arg).substr(2);
             constexpr static std::pair<StringView, std::unique_ptr<std::string> VcpkgCmdArguments::*>
@@ -548,6 +553,11 @@ namespace vcpkg
         return output;
     }
 
+    const std::vector<std::string>& VcpkgCmdArguments::get_forwardable_arguments() const noexcept
+    {
+        return forwardable_arguments;
+    }
+
     void print_usage()
     {
         HelpTableFormatter table;
@@ -650,11 +660,6 @@ namespace vcpkg
                      "(Experimental) Specify the buildtrees root directory");
         table.format(opt(INSTALL_ROOT_DIR_ARG, "=", "<path>"), "(Experimental) Specify the install root directory");
         table.format(opt(PACKAGES_ROOT_DIR_ARG, "=", "<path>"), "(Experimental) Specify the packages root directory");
-        table.format(opt(SCRIPTS_ROOT_DIR_ARG, "=", "<path>"), "(Experimental) Specify the scripts root directory");
-        table.format(opt(BUILTIN_PORTS_ROOT_DIR_ARG, "=", "<path>"),
-                     "(Experimental) Specify the packages root directory");
-        table.format(opt(BUILTIN_REGISTRY_VERSIONS_DIR_ARG, "=", "<path>"),
-                     "(Experimental) Specify the versions root directory");
         table.format(opt(JSON_SWITCH, "", ""), "(Experimental) Request JSON output");
     }
 

@@ -1,6 +1,8 @@
+#include <vcpkg/base/api_stable_format.h>
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -9,7 +11,24 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
-namespace vcpkg::Downloads
+namespace
+{
+    using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(CurlReportedUnexpectedResults,
+                                 (msg::command_line, msg::actual),
+                                 "{command_line} is the command line to call curl.exe, {actual} is the console output "
+                                 "of curl.exe locale-invariant download results.",
+                                 "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\n"
+                                 "Please review the following text for sensitive information and open an issue on the "
+                                 "Microsoft/vcpkg GitHub to help fix this problem!\n"
+                                 "cmd: {command_line}\n"
+                                 "=== curl output ===\n"
+                                 "{actual}\n"
+                                 "=== end curl output ===\n");
+}
+
+namespace vcpkg
 {
 #if defined(_WIN32)
     struct WinHttpHandleDeleter
@@ -262,6 +281,8 @@ namespace vcpkg::Downloads
     {
         static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
+        const size_t start_size = out->size();
+
         Command cmd;
         cmd.string_arg("curl")
             .string_arg("--head")
@@ -276,13 +297,25 @@ namespace vcpkg::Downloads
         {
             cmd.string_arg(url);
         }
-        auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
+
+        std::vector<std::string> lines;
+
+        auto res = cmd_execute_and_stream_lines(cmd, [out, &lines](StringView line) {
+            lines.push_back(line.to_string());
             if (Strings::starts_with(line, guid_marker))
             {
                 out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
             }
         });
         Checks::check_exit(VCPKG_LINE_INFO, res == 0, "curl failed to execute with exit code: %d", res);
+
+        if (out->size() != start_size + urls.size())
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msgCurlReportedUnexpectedResults,
+                                        msg::command_line = cmd.command_line(),
+                                        msg::actual = Strings::join("\n", lines));
+        }
     }
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers)
     {
@@ -325,7 +358,7 @@ namespace vcpkg::Downloads
                 .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
             for (auto&& url : url_pairs)
             {
-                cmd.string_arg(url.first).string_arg("-o").path_arg(url.second);
+                cmd.string_arg(url.first).string_arg("-o").string_arg(url.second);
             }
             auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
                 if (Strings::starts_with(line, guid_marker))
@@ -383,7 +416,7 @@ namespace vcpkg::Downloads
             Command cmd;
             cmd.string_arg("curl");
             cmd.string_arg(url);
-            cmd.string_arg("-T").path_arg(file);
+            cmd.string_arg("-T").string_arg(file);
             auto res = cmd_execute_and_capture_output(cmd);
             if (res.exit_code != 0)
             {
@@ -401,7 +434,7 @@ namespace vcpkg::Downloads
         }
         cmd.string_arg("-w").string_arg(Strings::concat("\\n", guid_marker, "%{http_code}"));
         cmd.string_arg(url);
-        cmd.string_arg("-T").path_arg(file);
+        cmd.string_arg("-T").string_arg(file);
         int code = 0;
         auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
             if (Strings::starts_with(line, guid_marker))
@@ -553,7 +586,7 @@ namespace vcpkg::Downloads
             .string_arg(url)
             .string_arg("--create-dirs")
             .string_arg("--output")
-            .path_arg(download_path_part_path);
+            .string_arg(download_path_part_path);
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
@@ -611,31 +644,82 @@ namespace vcpkg::Downloads
                                                const Optional<std::string>& sha512) const
     {
         std::string errors;
+        if (urls.size() == 0)
+        {
+            if (auto hash = sha512.get())
+            {
+                Strings::append(errors, "Error: No urls specified to download SHA: ", *hash);
+            }
+            else
+            {
+                Strings::append(errors, "Error: No urls specified and no hash specified.");
+            }
+        }
         if (auto hash = sha512.get())
         {
             if (auto read_template = m_config.m_read_url_template.get())
             {
                 auto read_url = Strings::replace_all(*read_template, "<SHA>", *hash);
-                if (Downloads::try_download_file(
+                if (try_download_file(
                         fs, read_url, m_config.m_read_headers, download_path, sha512, m_config.m_secrets, errors))
                     return read_url;
+            }
+            else if (auto script = m_config.m_script.get())
+            {
+                if (urls.size() != 0)
+                {
+                    const auto download_path_part_path =
+                        download_path + Strings::concat(".", get_process_id(), ".part");
+
+                    const auto escaped_url = Command(urls[0]).extract();
+                    const auto escaped_sha512 = Command(*hash).extract();
+                    const auto escaped_dpath = Command(download_path_part_path).extract();
+
+                    auto cmd = api_stable_format(*script, [&](std::string& out, StringView key) {
+                                   if (key == "url")
+                                   {
+                                       Strings::append(out, escaped_url);
+                                   }
+                                   else if (key == "sha512")
+                                   {
+                                       Strings::append(out, escaped_sha512);
+                                   }
+                                   else if (key == "dst")
+                                   {
+                                       Strings::append(out, escaped_dpath);
+                                   }
+                               }).value_or_exit(VCPKG_LINE_INFO);
+
+                    auto res = cmd_execute_and_capture_output(Command{}.raw_arg(cmd),
+                                                              default_working_directory,
+                                                              get_clean_environment(),
+                                                              Encoding::Utf8,
+                                                              EchoInDebug::Show);
+                    if (res.exit_code == 0)
+                    {
+                        auto maybe_error =
+                            try_verify_downloaded_file_hash(fs, "<mirror-script>", download_path_part_path, *hash);
+                        if (auto err = maybe_error.get())
+                        {
+                            Strings::append(errors, *err);
+                        }
+                        else
+                        {
+                            fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                            return urls[0];
+                        }
+                    }
+                    else
+                    {
+                        Strings::append(errors, res.output);
+                    }
+                }
             }
         }
 
         if (!m_config.m_block_origin)
         {
-            if (urls.size() == 0)
-            {
-                if (auto hash = sha512.get())
-                {
-                    Strings::append(errors, "Error: No urls specified to download SHA: ", *hash, '\n');
-                }
-                else
-                {
-                    Strings::append(errors, "Error: No urls specified\n");
-                }
-            }
-            else
+            if (urls.size() != 0)
             {
                 auto maybe_url =
                     try_download_files(fs, urls, headers, download_path, sha512, m_config.m_secrets, errors);
@@ -663,7 +747,7 @@ namespace vcpkg::Downloads
         auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            return Downloads::put_file(fs, maybe_mirror_url, m_config.m_write_headers, file_to_put);
+            return put_file(fs, maybe_mirror_url, m_config.m_write_headers, file_to_put);
         }
         return 0;
     }

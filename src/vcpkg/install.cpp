@@ -1,5 +1,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
@@ -10,16 +11,39 @@
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/remove.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+
+#include <iterator>
+
+namespace
+{
+    using namespace vcpkg;
+    DECLARE_AND_REGISTER_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
+    DECLARE_AND_REGISTER_MESSAGE(ResultsLine,
+                                 (msg::spec, msg::build_result, msg::elapsed),
+                                 "{Locked}",
+                                 "    {spec}: {build_result}: {elapsed}");
+
+    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetsExcluded,
+                                 (msg::count),
+                                 "keep the indentation and the `#` mark",
+                                 "    # note: {count} targets were omitted.");
+    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetLinkLibraries,
+                                 (msg::list),
+                                 "{Locked}",
+                                 "    target_link_libraries(main PRIVATE {list})");
+}
 
 namespace vcpkg::Install
 {
@@ -28,33 +52,25 @@ namespace vcpkg::Install
 
     using file_pack = std::pair<std::string, std::string>;
 
-    InstallDir InstallDir::from_destination_root(const Path& destination_root,
-                                                 const std::string& destination_subdirectory,
-                                                 const Path& listfile)
+    InstallDir InstallDir::from_destination_root(const InstalledPaths& ip, Triplet t, const BinaryParagraph& pgh)
     {
         InstallDir dirs;
-        dirs.m_destination = destination_root / destination_subdirectory;
-        dirs.m_destination_subdirectory = destination_subdirectory;
-        dirs.m_listfile = listfile;
+        dirs.m_destination = ip.triplet_dir(t);
+        dirs.m_listfile = ip.listfile_path(pgh);
         return dirs;
     }
 
     const Path& InstallDir::destination() const { return this->m_destination; }
 
-    const std::string& InstallDir::destination_subdirectory() const { return this->m_destination_subdirectory; }
-
     const Path& InstallDir::listfile() const { return this->m_listfile; }
 
-    void install_package_and_write_listfile(const VcpkgPaths& paths,
-                                            const PackageSpec& spec,
-                                            const InstallDir& destination_dir)
+    void install_package_and_write_listfile(Filesystem& fs, const Path& source_dir, const InstallDir& destination_dir)
     {
-        auto& fs = paths.get_filesystem();
-        auto source_dir = paths.package_dir(spec);
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(source_dir, IgnoreErrors{}),
                            Strings::concat("Source directory ", source_dir, "does not exist"));
         auto files = fs.get_files_recursive(source_dir, VCPKG_LINE_INFO);
+        Util::erase_remove_if(files, [](Path& path) { return path.filename() == ".DS_Store"; });
         install_files_and_write_listfile(fs, source_dir, files, destination_dir);
     }
     void install_files_and_write_listfile(Filesystem& fs,
@@ -67,7 +83,7 @@ namespace vcpkg::Install
 
         const size_t prefix_length = source_dir.native().size();
         const Path& destination = destination_dir.destination();
-        const std::string& destination_subdirectory = destination_dir.destination_subdirectory();
+        std::string destination_subdirectory = destination.filename().to_string();
         const Path& listfile = destination_dir.listfile();
 
         fs.create_directories(destination, ec);
@@ -183,7 +199,8 @@ namespace vcpkg::Install
 
     static SortedVector<std::string> build_list_of_package_files(const Filesystem& fs, const Path& package_dir)
     {
-        const std::vector<Path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
+        std::vector<Path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
+        Util::erase_remove_if(package_file_paths, [](Path& path) { return path.filename() == ".DS_Store"; });
         const size_t package_remove_char_count = package_dir.native().size() + 1; // +1 for the slash
         auto package_files = Util::fmap(package_file_paths, [package_remove_char_count](const Path& target) {
             return std::string(target.generic_u8string(), package_remove_char_count);
@@ -204,12 +221,14 @@ namespace vcpkg::Install
 
     InstallResult install_package(const VcpkgPaths& paths, const BinaryControlFile& bcf, StatusParagraphs* status_db)
     {
+        auto& fs = paths.get_filesystem();
+        const auto& installed = paths.installed();
         const auto package_dir = paths.package_dir(bcf.core_paragraph.spec);
         Triplet triplet = bcf.core_paragraph.spec.triplet();
-        const std::vector<StatusParagraphAndAssociatedFiles> pgh_and_files = get_installed_files(paths, *status_db);
+        const std::vector<StatusParagraphAndAssociatedFiles> pgh_and_files =
+            get_installed_files(fs, installed, *status_db);
 
-        const SortedVector<std::string> package_files =
-            build_list_of_package_files(paths.get_filesystem(), package_dir);
+        const SortedVector<std::string> package_files = build_list_of_package_files(fs, package_dir);
         const SortedVector<file_pack> installed_files = build_list_of_installed_files(pgh_and_files, triplet);
 
         struct intersection_compare
@@ -239,7 +258,7 @@ namespace vcpkg::Install
 
         if (!intersection.empty())
         {
-            const auto triplet_install_path = paths.installed() / triplet.canonical_name();
+            const auto triplet_install_path = installed.triplet_dir(triplet);
             vcpkg::printf(Color::error,
                           "The following files are already installed in %s and are in conflict with %s\n\n",
                           triplet_install_path.generic_u8string(),
@@ -266,7 +285,7 @@ namespace vcpkg::Install
         source_paragraph.want = Want::INSTALL;
         source_paragraph.state = InstallState::HALF_INSTALLED;
 
-        write_update(paths, source_paragraph);
+        write_update(fs, installed, source_paragraph);
         status_db->insert(std::make_unique<StatusParagraph>(source_paragraph));
 
         std::vector<StatusParagraph> features_spghs;
@@ -279,23 +298,23 @@ namespace vcpkg::Install
             feature_paragraph.want = Want::INSTALL;
             feature_paragraph.state = InstallState::HALF_INSTALLED;
 
-            write_update(paths, feature_paragraph);
+            write_update(fs, installed, feature_paragraph);
             status_db->insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }
 
-        const InstallDir install_dir = InstallDir::from_destination_root(
-            paths.installed(), triplet.to_string(), paths.listfile_path(bcf.core_paragraph));
+        const InstallDir install_dir =
+            InstallDir::from_destination_root(paths.installed(), triplet, bcf.core_paragraph);
 
-        install_package_and_write_listfile(paths, bcf.core_paragraph.spec, install_dir);
+        install_package_and_write_listfile(fs, paths.package_dir(bcf.core_paragraph.spec), install_dir);
 
         source_paragraph.state = InstallState::INSTALLED;
-        write_update(paths, source_paragraph);
+        write_update(fs, installed, source_paragraph);
         status_db->insert(std::make_unique<StatusParagraph>(source_paragraph));
 
         for (auto&& feature_paragraph : features_spghs)
         {
             feature_paragraph.state = InstallState::INSTALLED;
-            write_update(paths, feature_paragraph);
+            write_update(fs, installed, feature_paragraph);
             status_db->insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }
 
@@ -312,6 +331,7 @@ namespace vcpkg::Install
                                                            BinaryCache& binary_cache,
                                                            const Build::IBuildLogsRecorder& build_logs_recorder)
     {
+        auto& fs = paths.get_filesystem();
         const InstallPlanType& plan_type = action.plan_type;
         const std::string display_name = action.spec.to_string();
         const std::string display_name_with_features = action.displayname();
@@ -332,10 +352,10 @@ namespace vcpkg::Install
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
         {
             std::unique_ptr<BinaryControlFile> bcf;
-            auto restore = binary_cache.try_restore(paths, action);
+            auto restore = binary_cache.try_restore(action);
             if (restore == RestoreResult::restored)
             {
-                auto maybe_bcf = Paragraphs::try_load_cached_package(paths, action.spec);
+                auto maybe_bcf = Paragraphs::try_load_cached_package(fs, paths.package_dir(action.spec), action.spec);
                 bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
             }
             else if (action.build_options.build_missing == Build::BuildMissing::NO)
@@ -380,13 +400,11 @@ namespace vcpkg::Install
 
             if (action.build_options.clean_packages == Build::CleanPackages::YES)
             {
-                auto& fs = paths.get_filesystem();
                 fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
             }
 
             if (action.build_options.clean_downloads == Build::CleanDownloads::YES)
             {
-                auto& fs = paths.get_filesystem();
                 std::error_code ec;
                 for (auto& p : fs.get_regular_files_non_recursive(paths.downloads, IgnoreErrors{}))
                 {
@@ -408,28 +426,27 @@ namespace vcpkg::Install
 
     void InstallSummary::print() const
     {
-        print2("RESULTS\n");
+        msg::println(msgResultsHeader);
 
         for (const SpecSummary& result : this->results)
         {
-            vcpkg::printf("    %s: %s: %s\n", result.spec, Build::to_string(result.build_result.code), result.timing);
+            msg::println(msgResultsLine,
+                         msg::spec = result.spec,
+                         msg::build_result = Build::to_string(result.build_result.code),
+                         msg::elapsed = result.timing);
         }
 
-        std::map<BuildResult, int> summary;
-        for (const BuildResult& v : Build::BUILD_RESULT_VALUES)
-        {
-            summary[v] = 0;
-        }
-
+        std::map<Triplet, Build::BuildResultCounts> summary;
         for (const SpecSummary& r : this->results)
         {
-            summary[r.build_result.code]++;
+            summary[r.spec.triplet()].increment(r.build_result.code);
         }
 
-        print2("\nSUMMARY\n");
-        for (const std::pair<const BuildResult, int>& entry : summary)
+        msg::println();
+
+        for (auto&& entry : summary)
         {
-            vcpkg::printf("    %s: %d\n", Build::to_string(entry.first), entry.second);
+            entry.second.println(entry.first);
         }
     }
 
@@ -486,7 +503,7 @@ namespace vcpkg::Install
         }
 
         Build::compute_all_abis(paths, action_plan, var_provider, status_db);
-        binary_cache.prefetch(paths, action_plan.install_actions);
+        binary_cache.prefetch(action_plan.install_actions);
         for (auto&& action : action_plan.install_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action.spec);
@@ -526,41 +543,25 @@ namespace vcpkg::Install
     static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 16> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 17> INSTALL_SWITCHES = {{
         {OPTION_DRY_RUN, "Do not actually build or install"},
-        {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
+        {OPTION_USE_HEAD_VERSION,
+         "Install the libraries on the command line using the latest upstream sources (classic mode)"},
         {OPTION_NO_DOWNLOADS, "Do not download new sources"},
         {OPTION_ONLY_DOWNLOADS, "Download sources but don't build packages"},
         {OPTION_ONLY_BINARYCACHING, "Fail if cached binaries are not available"},
         {OPTION_RECURSE, "Allow removal of packages as part of installation"},
         {OPTION_KEEP_GOING, "Continue installing packages on failure"},
-        {OPTION_EDITABLE, "Disable source re-extraction and binary caching for libraries on the command line"},
+        {OPTION_EDITABLE,
+         "Disable source re-extraction and binary caching for libraries on the command line (classic mode)"},
 
         {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
         {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
         {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
-        {OPTION_ENFORCE_PORT_CHECKS,
-         "Fail install if a port has detected problems or attempts to use a deprecated feature"},
-        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
-    }};
-    static constexpr std::array<CommandSwitch, 17> MANIFEST_INSTALL_SWITCHES = {{
-        {OPTION_DRY_RUN, "Do not actually build or install"},
-        {OPTION_USE_HEAD_VERSION, "Install the libraries on the command line using the latest upstream sources"},
-        {OPTION_NO_DOWNLOADS, "Do not download new sources"},
-        {OPTION_ONLY_DOWNLOADS, "Download sources but don't build packages"},
-        {OPTION_ONLY_BINARYCACHING, "Fail if cached binaries are not available"},
-        {OPTION_RECURSE, "Allow removal of packages as part of installation"},
-        {OPTION_KEEP_GOING, "Continue installing packages on failure"},
-        {OPTION_EDITABLE, "Disable source re-extraction and binary caching for libraries on the command line"},
-        {OPTION_USE_ARIA2, "Use aria2 to perform download tasks"},
-        {OPTION_CLEAN_AFTER_BUILD, "Clean buildtrees, packages and downloads after building each package"},
-        {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, "Clean buildtrees after building each package"},
-        {OPTION_CLEAN_PACKAGES_AFTER_BUILD, "Clean packages after building each package"},
-        {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, "Clean downloads after building each package"},
-        {OPTION_MANIFEST_NO_DEFAULT_FEATURES, "Don't install the default features from the manifest."},
+        {OPTION_MANIFEST_NO_DEFAULT_FEATURES,
+         "Don't install the default features from the top-level manifest (manifest mode)."},
         {OPTION_ENFORCE_PORT_CHECKS,
          "Fail install if a port has detected problems or attempts to use a deprecated feature"},
         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, ""},
@@ -568,44 +569,58 @@ namespace vcpkg::Install
     }};
 
     static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
-        {OPTION_XUNIT, "File to output results in XUnit format (Internal use)"},
+        {OPTION_XUNIT, ""}, // internal use
         {OPTION_WRITE_PACKAGES_CONFIG,
          "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
          "binarycaching` for more information."},
     }};
 
-    static constexpr std::array<CommandMultiSetting, 1> MANIFEST_INSTALL_MULTISETTINGS = {{
-        {OPTION_MANIFEST_FEATURE, "A feature from the manifest to install."},
+    static constexpr std::array<CommandMultiSetting, 1> INSTALL_MULTISETTINGS = {{
+        {OPTION_MANIFEST_FEATURE, "Additional feature from the top-level manifest to install (manifest mode)."},
     }};
 
-    std::vector<std::string> get_all_port_names(const VcpkgPaths& paths)
+    static std::vector<std::string> get_all_port_names(const VcpkgPaths& paths)
     {
-        auto sources_and_errors = Paragraphs::try_load_all_registry_ports(paths);
+        const auto& registries = paths.get_registry_set();
 
-        return Util::fmap(sources_and_errors.paragraphs, Paragraphs::get_name_of_control_file);
+        std::vector<std::string> ret;
+        for (const auto& registry : registries.registries())
+        {
+            const auto packages = registry.packages();
+            ret.insert(ret.end(), packages.begin(), packages.end());
+        }
+        if (auto registry = registries.default_registry())
+        {
+            registry->get_all_port_names(ret);
+        }
+
+        Util::sort_unique_erase(ret);
+        return ret;
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
         create_example_string("install zlib zlib:x64-windows curl boost"),
-        1,
+        0,
         SIZE_MAX,
-        {INSTALL_SWITCHES, INSTALL_SETTINGS},
+        {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
         &get_all_port_names,
     };
 
+    // This command structure must share "critical" values (switches, number of arguments). It exists only to provide a
+    // better example string.
     const CommandStructure MANIFEST_COMMAND_STRUCTURE = {
         create_example_string("install --triplet x64-windows"),
         0,
-        0,
-        {MANIFEST_INSTALL_SWITCHES, INSTALL_SETTINGS, MANIFEST_INSTALL_MULTISETTINGS},
+        SIZE_MAX,
+        {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
         nullptr,
     };
-
     void print_usage_information(const BinaryParagraph& bpgh,
                                  std::set<std::string>& printed_usages,
-                                 const VcpkgPaths& paths)
+                                 const Filesystem& fs,
+                                 const InstalledPaths& installed)
     {
-        auto message = get_cmake_usage(bpgh, paths).message;
+        auto message = get_cmake_usage(fs, installed, bpgh).message;
         if (!message.empty())
         {
             auto existing = printed_usages.lower_bound(message);
@@ -617,18 +632,61 @@ namespace vcpkg::Install
         }
     }
 
-    CMakeUsageInfo get_cmake_usage(const BinaryParagraph& bpgh, const VcpkgPaths& paths)
+    static const char* find_skip_add_library(const char* real_first, const char* first, const char* last)
     {
-        static const std::regex cmake_library_regex(R"(\badd_library\(([^\$\s\)]+)\s)",
-                                                    std::regex_constants::ECMAScript);
+        static constexpr StringLiteral ADD_LIBRARY_CALL = "add_library(";
 
+        for (;;)
+        {
+            first = Util::search(first, last, ADD_LIBRARY_CALL);
+            if (first == last)
+            {
+                return first;
+            }
+            if (first == real_first || !ParserBase::is_word_char(*(first - 1)))
+            {
+                return first + ADD_LIBRARY_CALL.size();
+            }
+            ++first;
+        }
+    }
+
+    std::vector<std::string> get_cmake_add_library_names(StringView cmake_file)
+    {
+        constexpr static auto is_library_name_char = [](char ch) {
+            return ch != ')' && ch != '$' && !ParserBase::is_whitespace(ch);
+        };
+
+        const auto real_first = cmake_file.begin();
+        auto first = real_first;
+        const auto last = cmake_file.end();
+
+        std::vector<std::string> res;
+        for (;;)
+        {
+            first = find_skip_add_library(real_first, first, last);
+            if (first == last)
+            {
+                return res;
+            }
+            auto start_of_library_name = std::find_if_not(first, last, ParserBase::is_whitespace);
+            auto end_of_library_name = std::find_if_not(start_of_library_name, last, is_library_name_char);
+            if (end_of_library_name == start_of_library_name)
+            {
+                first = end_of_library_name;
+                continue;
+            }
+            res.emplace_back(start_of_library_name, end_of_library_name);
+        }
+    }
+
+    CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh)
+    {
         CMakeUsageInfo ret;
 
         std::error_code ec;
-        auto& fs = paths.get_filesystem();
 
-        auto usage_file =
-            paths.installed() / bpgh.spec.triplet().canonical_name() / "share" / bpgh.spec.name() / "usage";
+        auto usage_file = installed.usage_file(bpgh.spec);
         if (fs.exists(usage_file, IgnoreErrors{}))
         {
             ret.usage_file = true;
@@ -642,7 +700,7 @@ namespace vcpkg::Install
             return ret;
         }
 
-        auto files = fs.read_lines(paths.listfile_path(bpgh), ec);
+        auto files = fs.read_lines(installed.listfile_path(bpgh), ec);
         if (!ec)
         {
             std::map<std::string, std::string> config_files;
@@ -655,21 +713,18 @@ namespace vcpkg::Install
                 if (Strings::contains(suffix, "/share/") && Strings::ends_with(suffix, ".cmake"))
                 {
                     // CMake file is inside the share folder
-                    const auto path = paths.installed() / suffix;
+                    const auto path = installed.root() / suffix;
                     const auto contents = fs.read_contents(path, ec);
                     const auto find_package_name = Path(path.parent_path()).filename().to_string();
                     if (!ec)
                     {
-                        std::sregex_iterator next(contents.begin(), contents.end(), cmake_library_regex);
-                        std::sregex_iterator last;
-
-                        while (next != last)
+                        auto targets = get_cmake_add_library_names(contents);
+                        if (!targets.empty())
                         {
-                            auto match = *next;
-                            auto& targets = library_targets[find_package_name];
-                            if (std::find(targets.cbegin(), targets.cend(), match[1]) == targets.cend())
-                                targets.push_back(match[1]);
-                            ++next;
+                            auto& all_targets = library_targets[find_package_name];
+                            all_targets.insert(all_targets.end(),
+                                               std::make_move_iterator(targets.begin()),
+                                               std::make_move_iterator(targets.end()));
                         }
                     }
 
@@ -710,7 +765,7 @@ namespace vcpkg::Install
                 {
                     static auto cmakeify = [](std::string name) {
                         auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
-                        if (n.empty() || Parse::ParserBase::is_ascii_digit(n[0]))
+                        if (n.empty() || ParserBase::is_ascii_digit(n[0]))
                         {
                             n.insert(n.begin(), '_');
                         }
@@ -738,31 +793,25 @@ namespace vcpkg::Install
                     else
                         Strings::append(msg, "    find_package(", library_target_pair.first, " CONFIG REQUIRED)\n");
 
-                    std::sort(library_target_pair.second.begin(),
-                              library_target_pair.second.end(),
-                              [](const std::string& l, const std::string& r) {
-                                  if (l.size() < r.size()) return true;
-                                  if (l.size() > r.size()) return false;
-                                  return l < r;
-                              });
+                    auto& targets = library_target_pair.second;
+                    Util::sort(targets, [](const std::string& l, const std::string& r) {
+                        if (l.size() < r.size()) return true;
+                        if (l.size() > r.size()) return false;
+                        return l < r;
+                    });
+                    targets.erase(std::unique(targets.begin(), targets.end()), targets.end());
 
-                    if (library_target_pair.second.size() <= 4)
+                    if (targets.size() > 4)
                     {
-                        Strings::append(msg,
-                                        "    target_link_libraries(main PRIVATE ",
-                                        Strings::join(" ", library_target_pair.second),
-                                        ")\n\n");
+                        auto omitted = targets.size() - 4;
+                        library_target_pair.second.erase(targets.begin() + 4, targets.end());
+                        msg.append(
+                            msg::format(msgCmakeTargetsExcluded, msg::count = omitted).appendnl().extract_data());
                     }
-                    else
-                    {
-                        auto omitted = library_target_pair.second.size() - 4;
-                        library_target_pair.second.erase(library_target_pair.second.begin() + 4,
-                                                         library_target_pair.second.end());
-                        msg += Strings::format("    # Note: %zd target(s) were omitted.\n"
-                                               "    target_link_libraries(main PRIVATE %s)\n\n",
-                                               omitted,
-                                               Strings::join(" ", library_target_pair.second));
-                    }
+                    msg.append(msg::format(msgCmakeTargetLinkLibraries, msg::list = Strings::join(" ", targets))
+                                   .appendnl()
+                                   .appendnl()
+                                   .extract_data());
                 }
                 ret.message = std::move(msg);
             }
@@ -771,17 +820,42 @@ namespace vcpkg::Install
         return ret;
     }
 
-    ///
-    /// <summary>
-    /// Run "install" command.
-    /// </summary>
-    ///
+    DECLARE_AND_REGISTER_MESSAGE(ErrorRequirePackagesToInstall,
+                                 (),
+                                 "",
+                                 "Error: No packages were listed for installation and no manifest was found.");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        ErrorIndividualPackagesUnsupported,
+        (),
+        "",
+        "Error: In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
+        "additional "
+        "packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorRequirePackagesList,
+                                 (),
+                                 "",
+                                 "Error: `vcpkg install` requires a list of packages to install in classic mode.");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        ErrorInvalidClassicModeOption,
+        (msg::option),
+        "",
+        "Error: The option --{option} is not supported in classic mode and no manifest was found.");
+
+    DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
+
+    DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
+                                 (msg::option),
+                                 "",
+                                 "Error: The option --{option} is not supported in manifest mode.");
+
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
                           Triplet default_triplet,
                           Triplet host_triplet)
     {
-        // input sanitization
         const ParsedArguments options =
             args.parse_arguments(paths.manifest_mode_enabled() ? MANIFEST_COMMAND_STRUCTURE : COMMAND_STRUCTURE);
 
@@ -800,8 +874,9 @@ namespace vcpkg::Install
             Util::Sets::contains(options.switches, (OPTION_CLEAN_PACKAGES_AFTER_BUILD));
         const bool clean_downloads_after_build =
             Util::Sets::contains(options.switches, (OPTION_CLEAN_DOWNLOADS_AFTER_BUILD));
-        const KeepGoing keep_going =
-            to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads);
+        const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
+                                         ? KeepGoing::YES
+                                         : KeepGoing::NO;
         const bool prohibit_backcompat_features =
             Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES)) ||
             Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
@@ -809,10 +884,64 @@ namespace vcpkg::Install
                                                  ? Dependencies::UnsupportedPortAction::Warn
                                                  : Dependencies::UnsupportedPortAction::Error;
 
+        if (paths.manifest_mode_enabled())
+        {
+            bool failure = false;
+            if (!args.command_arguments.empty())
+            {
+                msg::println(Color::error, msgErrorIndividualPackagesUnsupported);
+                msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
+                failure = true;
+            }
+            if (use_head_version)
+            {
+                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_USE_HEAD_VERSION);
+                failure = true;
+            }
+            if (is_editable)
+            {
+                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
+                failure = true;
+            }
+            if (failure)
+            {
+                msg::println(msgUsingManifestAt, msg::path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO));
+                print2("\n");
+                print_usage(MANIFEST_COMMAND_STRUCTURE);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+        else
+        {
+            bool failure = false;
+            if (args.command_arguments.empty())
+            {
+                msg::println(Color::error, msgErrorRequirePackagesList);
+                failure = true;
+            }
+            if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
+            {
+                msg::println(
+                    Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
+                failure = true;
+            }
+            if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
+            {
+                msg::println(Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
+                failure = true;
+            }
+            if (failure)
+            {
+                print2("\n");
+                print_usage(COMMAND_STRUCTURE);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
         BinaryCache binary_cache;
         if (!only_downloads)
         {
-            binary_cache.install_providers_for(args);
+            binary_cache.install_providers_for(args, paths);
         }
 
         auto& fs = paths.get_filesystem();
@@ -847,21 +976,18 @@ namespace vcpkg::Install
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             const auto& manifest_path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO);
-            auto maybe_manifest_scf = SourceControlFile::parse_manifest_file(manifest_path, *manifest);
+            auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest_path, *manifest);
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
-                print2("See https://github.com/Microsoft/vcpkg/tree/master/docs/users/manifests.md for "
-                       "more information.\n");
+                print2("See ", docs::manifests_url, " for more information.\n");
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
             auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
 
             if (auto maybe_error = manifest_scf.check_against_feature_flags(
-                    manifest_path,
-                    paths.get_feature_flags(),
-                    paths.get_configuration().registry_set.is_default_builtin_registry()))
+                    manifest_path, paths.get_feature_flags(), paths.get_registry_set().is_default_builtin_registry()))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
             }
@@ -872,18 +998,19 @@ namespace vcpkg::Install
             {
                 features.insert(features.end(), manifest_feature_it->second.begin(), manifest_feature_it->second.end());
             }
-            auto core_it = Util::find(features, "core");
-            if (core_it == features.end() &&
-                !Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
+            if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
+            {
+                features.push_back("core");
+            }
+
+            auto core_it = std::remove(features.begin(), features.end(), "core");
+            if (core_it == features.end())
             {
                 const auto& default_features = manifest_scf.core_paragraph->default_features;
                 features.insert(features.end(), default_features.begin(), default_features.end());
             }
             else
             {
-                // remove "core" because resolve_deps_as_top_level uses default-inversion
-                // support multiple core features
-                core_it = std::remove(core_it, features.end(), "core");
                 features.erase(core_it, features.end());
             }
             Util::sort_unique_erase(features);
@@ -910,7 +1037,7 @@ namespace vcpkg::Install
             }
 
             if (std::any_of(dependencies.begin(), dependencies.end(), [](const Dependency& dep) {
-                    return dep.constraint.type != Versions::Constraint::Type::None;
+                    return dep.constraint.type != VersionConstraintKind::None;
                 }))
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_version_constraint", "defined");
@@ -928,8 +1055,7 @@ namespace vcpkg::Install
             extended_overlay_ports.reserve(args.overlay_ports.size() + 2);
             extended_overlay_ports.push_back(manifest_path.parent_path().to_string());
             Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
-            if (paths.get_configuration().registry_set.is_default_builtin_registry() &&
-                !paths.use_git_default_registry())
+            if (paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry())
             {
                 extended_overlay_ports.push_back(paths.builtin_ports_directory().native());
             }
@@ -977,17 +1103,12 @@ namespace vcpkg::Install
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return Input::check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text);
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
-
-        for (auto&& spec : specs)
-        {
-            Input::check_triplet(spec.package_spec.triplet(), paths);
-        }
 
         // create the plan
         print2("Computing installation plan...\n");
-        StatusParagraphs status_db = database_load_check(paths);
+        StatusParagraphs status_db = database_load_check(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
         auto action_plan = Dependencies::create_feature_install_plan(
@@ -1033,7 +1154,7 @@ namespace vcpkg::Install
                                "warning: vcpkg appears to be in a Visual Studio prompt targeting ",
                                vs_prompt_view,
                                " but is installing packages for ",
-                               common_triplet.to_string(),
+                               common_triplet,
                                ". Consider using --triplet ",
                                vs_prompt_view,
                                "-windows or --triplet ",
@@ -1077,7 +1198,7 @@ namespace vcpkg::Install
                                                Build::null_build_logs_recorder(),
                                                var_provider);
 
-        print2("\nTotal elapsed time: ", LockGuardPtr<ElapsedTimer>(GlobalState::timer)->to_string(), "\n\n");
+        print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 
         if (keep_going == KeepGoing::YES)
         {
@@ -1102,7 +1223,7 @@ namespace vcpkg::Install
             if (result.action->request_type != RequestType::USER_REQUESTED) continue;
             auto bpgh = result.get_binary_paragraph();
             if (!bpgh) continue;
-            print_usage_information(*bpgh, printed_usages, paths);
+            print_usage_information(*bpgh, printed_usages, fs, paths.installed());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
@@ -1150,13 +1271,13 @@ namespace vcpkg::Install
             case BuildResult::BUILD_FAILED:
             case BuildResult::CACHE_MISSING:
                 result_string = "Fail";
-                message_block =
-                    Strings::format("<failure><message><![CDATA[%s]]></message></failure>", to_string(code));
+                message_block = Strings::format("<failure><message><![CDATA[%s]]></message></failure>",
+                                                to_string_locale_invariant(code));
                 break;
             case BuildResult::EXCLUDED:
             case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
                 result_string = "Skip";
-                message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string(code));
+                message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string_locale_invariant(code));
                 break;
             case BuildResult::SUCCEEDED: result_string = "Pass"; break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -1203,9 +1324,8 @@ namespace vcpkg::Install
 
         for (auto&& install_action : plan.install_actions)
         {
-            auto&& version_as_string = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                           .to_versiont()
-                                           .to_string();
+            auto&& version_as_string =
+                install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version().to_string();
             if (!specs_string.empty()) specs_string.push_back(',');
             specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
                                             ":",

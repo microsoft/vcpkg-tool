@@ -1,5 +1,9 @@
+#include <vcpkg/base/api_stable_format.h>
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/expected.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/unicode.h>
 #include <vcpkg/base/util.h>
 
 #include <locale.h>
@@ -10,16 +14,61 @@
 #include <string>
 #include <vector>
 
-namespace
+vcpkg::ExpectedS<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
+                                                                     void (*cb)(void*, std::string&, StringView),
+                                                                     void* user)
 {
-    constexpr struct
+    // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
+
+    static const char s_brackets[] = "{}";
+
+    std::string out;
+    auto prev = sv.begin();
+    const auto last = sv.end();
+    for (const char* p = std::find_first_of(prev, last, s_brackets, s_brackets + 2); p != last;
+         p = std::find_first_of(p, last, s_brackets, s_brackets + 2))
     {
-        bool operator()(char a, char b) const noexcept
+        // p[0] == '{' or p[0] == '}'
+        out.append(prev, p);
+        const char ch = p[0];
+        ++p;
+        if (ch == '{')
         {
-            using vcpkg::Strings::details::tolower_char;
-            return tolower_char(a) == tolower_char(b);
+            if (p == last)
+            {
+                return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
+            }
+            else if (*p == '{')
+            {
+                out.push_back('{');
+                prev = ++p;
+            }
+            else
+            {
+                // Opened a group
+                const auto seq_start = p;
+                p = std::find_first_of(p, last, s_brackets, s_brackets + 2);
+                if (p == last || p[0] != '}')
+                {
+                    return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
+                }
+                // p[0] == '}'
+                cb(user, out, {seq_start, p});
+                prev = ++p;
+            }
         }
-    } icase_eq;
+        else if (ch == '}')
+        {
+            if (p == last || p[0] != '}')
+            {
+                return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
+            }
+            out.push_back('}');
+            prev = ++p;
+        }
+    }
+    out.append(prev, last);
+    return {std::move(out), expected_left_tag};
 }
 
 namespace vcpkg::Strings::details
@@ -82,31 +131,39 @@ std::wstring Strings::to_utf16(StringView s)
 #if defined(_WIN32)
 std::string Strings::to_utf8(const wchar_t* w) { return Strings::to_utf8(w, wcslen(w)); }
 
-std::string Strings::to_utf8(const wchar_t* w, size_t s)
+std::string Strings::to_utf8(const wchar_t* w, size_t size_in_characters)
 {
     std::string output;
-    if (s != 0)
-    {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, s <= INT_MAX);
-        const int size = WideCharToMultiByte(CP_UTF8, 0, w, static_cast<int>(s), nullptr, 0, nullptr, nullptr);
-        if (size <= 0)
-        {
-            unsigned long last_error = ::GetLastError();
-            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                      "Failed to convert to UTF-8. %08lX %s",
-                                      last_error,
-                                      std::system_category().message(static_cast<int>(last_error)));
-        }
-
-        output.resize(size);
-        vcpkg::Checks::check_exit(
-            VCPKG_LINE_INFO,
-            size == WideCharToMultiByte(
-                        CP_UTF8, 0, w, static_cast<int>(s), output.data(), static_cast<int>(size), nullptr, nullptr));
-    }
-
+    to_utf8(output, w, size_in_characters);
     return output;
 }
+
+void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_characters)
+{
+    if (size_in_characters == 0)
+    {
+        output.clear();
+        return;
+    }
+
+    vcpkg::Checks::check_exit(VCPKG_LINE_INFO, size_in_characters <= INT_MAX);
+    const int s_clamped = static_cast<int>(size_in_characters);
+    const int size = WideCharToMultiByte(CP_UTF8, 0, w, s_clamped, nullptr, 0, nullptr, nullptr);
+    if (size <= 0)
+    {
+        unsigned long last_error = ::GetLastError();
+        Checks::exit_with_message(VCPKG_LINE_INFO,
+                                  "Failed to convert to UTF-8. %08lX %s",
+                                  last_error,
+                                  std::system_category().message(static_cast<int>(last_error)));
+    }
+
+    output.resize(size);
+    vcpkg::Checks::check_exit(
+        VCPKG_LINE_INFO, size == WideCharToMultiByte(CP_UTF8, 0, w, s_clamped, output.data(), size, nullptr, nullptr));
+}
+
+std::string Strings::to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
 #endif
 
 std::string Strings::escape_string(std::string&& s, char char_to_escape, char escape_char)
@@ -118,14 +175,14 @@ std::string Strings::escape_string(std::string&& s, char char_to_escape, char es
     return ret;
 }
 
-static const char* case_insensitive_ascii_find(StringView s, StringView pattern)
+const char* Strings::case_insensitive_ascii_search(StringView s, StringView pattern)
 {
     return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
 bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
 {
-    return case_insensitive_ascii_find(s, pattern) != s.end();
+    return case_insensitive_ascii_search(s, pattern) != s.end();
 }
 
 bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
@@ -133,9 +190,11 @@ bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }
 
+void Strings::ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
+
 std::string Strings::ascii_to_lowercase(std::string&& s)
 {
-    Strings::ascii_to_lowercase(s.begin(), s.end());
+    Strings::ascii_to_lowercase(s.data(), s.data() + s.size());
     return std::move(s);
 }
 
@@ -386,6 +445,96 @@ size_t Strings::byte_edit_distance(StringView a, StringView b)
         }
     }
     return d[sa - 1];
+}
+
+template<>
+Optional<int> Strings::strto<int>(StringView sv)
+{
+    auto opt = strto<long>(sv);
+    if (auto p = opt.get())
+    {
+        if (INT_MIN <= *p && *p <= INT_MAX)
+        {
+            return static_cast<int>(*p);
+        }
+    }
+    return nullopt;
+}
+
+template<>
+Optional<long> Strings::strto<long>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    errno = 0;
+    char* endptr = nullptr;
+    long res = strtol(with_nul_terminator.c_str(), &endptr, 10);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    else if (errno == ERANGE)
+    {
+        return nullopt;
+    }
+
+    return res;
+}
+
+template<>
+Optional<long long> Strings::strto<long long>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    errno = 0;
+    char* endptr = nullptr;
+    long long res = strtoll(with_nul_terminator.c_str(), &endptr, 10);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    else if (errno == ERANGE)
+    {
+        return nullopt;
+    }
+
+    return res;
+}
+
+template<>
+Optional<double> Strings::strto<double>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    char* endptr = nullptr;
+    double res = strtod(with_nul_terminator.c_str(), &endptr);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    // else, we may have HUGE_VAL but we expect the caller to deal with that
+    return res;
 }
 
 namespace vcpkg::Strings

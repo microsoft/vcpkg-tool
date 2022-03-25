@@ -1,10 +1,12 @@
 #pragma once
 
-#include <vcpkg/fwd/vcpkgpaths.h>
+#include <vcpkg/fwd/installedpaths.h>
 
 #include <vcpkg/binaryparagraph.h>
 
 #include <map>
+#include <string>
+#include <vector>
 
 namespace vcpkg
 {
@@ -32,7 +34,7 @@ namespace vcpkg
     struct StatusParagraph
     {
         StatusParagraph() noexcept;
-        explicit StatusParagraph(Parse::Paragraph&& fields);
+        explicit StatusParagraph(Paragraph&& fields);
 
         bool is_installed() const { return want == Want::INSTALL && state == InstallState::INSTALLED; }
 
@@ -64,5 +66,5 @@ namespace vcpkg
         std::vector<const StatusParagraph*> features;
     };
 
-    Json::Value serialize_ipv(const InstalledPackageView& ipv, const VcpkgPaths& paths);
+    Json::Value serialize_ipv(const InstalledPackageView& ipv, const InstalledPaths& installed, const Filesystem& fs);
 }

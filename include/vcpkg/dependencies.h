@@ -39,9 +39,9 @@ namespace vcpkg::Dependencies
     };
 
     std::string to_output_string(RequestType request_type,
-                                 const CStringView s,
+                                 const ZStringView s,
                                  const Build::BuildPackageOptions& options);
-    std::string to_output_string(RequestType request_type, const CStringView s);
+    std::string to_output_string(RequestType request_type, const ZStringView s);
 
     enum class InstallPlanType
     {
@@ -86,7 +86,7 @@ namespace vcpkg::Dependencies
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
         std::vector<PackageSpec> package_dependencies;
-        std::vector<std::string> feature_list;
+        InternalFeatureSet feature_list;
         Triplet host_triplet;
 
         Optional<Build::AbiInfo> abi_info;
@@ -161,8 +161,6 @@ namespace vcpkg::Dependencies
         Optional<InstalledPackageView> m_installed_package;
     };
 
-    struct ClusterGraph;
-
     struct CreateInstallPlanOptions
     {
         CreateInstallPlanOptions(Graphs::Randomizer* r, Triplet t) : randomizer(r), host_triplet(t) { }
@@ -197,13 +195,6 @@ namespace vcpkg::Dependencies
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
                                    const CreateInstallPlanOptions& options = {Triplet{}});
-
-    // `features` should have "default" instead of missing "core". This is only exposed for testing purposes.
-    std::vector<FullPackageSpec> resolve_deps_as_top_level(const SourceControlFile& scf,
-                                                           Triplet triplet,
-                                                           Triplet host_triplet,
-                                                           std::vector<std::string> features,
-                                                           CMakeVars::CMakeVarProvider& var_provider);
 
     ExpectedS<ActionPlan> create_versioned_install_plan(const PortFileProvider::IVersionedPortfileProvider& vprovider,
                                                         const PortFileProvider::IBaselineProvider& bprovider,

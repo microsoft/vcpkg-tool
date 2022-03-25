@@ -3,13 +3,16 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/archives.h>
 #include <vcpkg/build.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/export.h>
 #include <vcpkg/export.prefab.h>
 #include <vcpkg/install.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Export::Prefab
 {
@@ -150,62 +153,64 @@ namespace vcpkg::Export::Prefab
         return json;
     }
 
-    Optional<std::string> find_ndk_version(const std::string& content)
+    Optional<StringView> find_ndk_version(StringView content)
     {
-        std::smatch pkg_match;
-        std::regex pkg_regex(R"(Pkg\.Revision\s*=\s*(\d+)(\.\d+)(\.\d+)\s*)");
+        constexpr static StringLiteral pkg_revision = "Pkg.Revision";
 
-        if (std::regex_search(content, pkg_match, pkg_regex))
+        constexpr static auto is_version_character = [](char ch) {
+            return ch == '.' || ParserBase::is_ascii_digit(ch);
+        };
+
+        auto first = content.begin();
+        auto last = content.end();
+
+        for (;;)
         {
-            for (const auto& p : pkg_match)
-            {
-                std::string delimiter = "=";
-                std::string s = p.str();
-                auto it = s.find(delimiter);
-                if (it != std::string::npos)
-                {
-                    std::string token = (s.substr(s.find(delimiter) + 1, s.size()));
-                    return Strings::trim(std::move(token));
-                }
-            }
+            first = Util::search_and_skip(first, last, pkg_revision);
+            if (first == last) break;
+
+            first = std::find_if_not(first, last, ParserBase::is_whitespace);
+            if (first == last) break;
+            if (*first != '=') continue;
+
+            // Pkg.Revision = x.y.z
+            ++first; // skip =
+            first = std::find_if_not(first, last, ParserBase::is_whitespace);
+            auto end_of_version = std::find_if_not(first, last, is_version_character);
+            if (first == end_of_version) continue;
+            return StringView{first, end_of_version};
         }
+
         return {};
     }
 
-    Optional<NdkVersion> to_version(const std::string& version)
+    Optional<NdkVersion> to_version(StringView version)
     {
         if (version.size() > 100) return {};
-        size_t last = 0;
-        size_t next = 0;
-        std::vector<int> fragments(0);
+        std::vector<int> fragments;
 
-        while ((next = version.find(".", last)) != std::string::npos)
+        for (auto first = version.begin(), last = version.end(); first != last;)
         {
-            fragments.push_back(std::stoi(version.substr(last, next - last)));
-            last = next + 1;
+            auto next = std::find(first, last, '.');
+            auto parsed = Strings::strto<int>(StringView{first, next});
+            if (auto p = parsed.get())
+            {
+                fragments.push_back(*p);
+            }
+            else
+            {
+                return {};
+            }
+            if (next == last) break;
+            ++next;
+            first = next;
         }
-        fragments.push_back(std::stoi(version.substr(last)));
-        if (fragments.size() == kFragmentSize)
+
+        if (fragments.size() == 3)
         {
-            return NdkVersion(fragments[0], fragments[1], fragments[2]);
+            return NdkVersion{fragments[0], fragments[1], fragments[2]};
         }
         return {};
-    }
-
-    static void compress_directory(const VcpkgPaths& paths, const Path& source, const Path& destination)
-    {
-        auto& fs = paths.get_filesystem();
-        fs.remove(destination, VCPKG_LINE_INFO);
-#if defined(_WIN32)
-        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
-
-        cmd_execute_and_capture_output(
-            Command(seven_zip_exe).string_arg("a").path_arg(destination).path_arg(source / "*"),
-            get_clean_environment());
-#else
-        cmd_execute_clean(Command{"zip"}.string_arg("--quiet").string_arg("-r").path_arg(destination).string_arg("*"),
-                          InWorkingDirectory{source});
-#endif
     }
 
     static void maven_install(const Path& aar, const Path& pom, const Options& prefab_options)
@@ -508,7 +513,8 @@ namespace vcpkg::Export::Prefab
             for (const auto& triplet : triplets)
             {
                 const auto listfile =
-                    paths.vcpkg_dir_info() / Strings::format("%s_%s_%s", name, norm_version, triplet) + ".list";
+                    paths.installed().vcpkg_dir_info() / Strings::format("%s_%s_%s", name, norm_version, triplet) +
+                    ".list";
                 const auto installed_dir = paths.packages() / Strings::format("%s_%s", name, triplet);
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    utils.exists(listfile, IgnoreErrors{}),
@@ -630,7 +636,9 @@ namespace vcpkg::Export::Prefab
                     "[DEBUG] Exporting AAR And POM\n\tAAR Path %s\n\tPOM Path %s\n", exported_archive_path, pom_path));
             }
 
-            compress_directory(paths, package_directory, exported_archive_path);
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               compress_directory_to_zip(paths, package_directory, exported_archive_path) != 0,
+                               Strings::concat("Failed to compress folder ", package_directory));
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"

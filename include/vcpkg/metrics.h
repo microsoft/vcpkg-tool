@@ -31,5 +31,7 @@ namespace vcpkg
         void flush(Filesystem& fs);
     };
 
+    Optional<StringView> find_first_nonzero_mac(StringView sv);
+
     extern LockGuarded<Metrics> g_metrics;
 }

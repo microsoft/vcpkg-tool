@@ -1,7 +1,10 @@
 #pragma once
 
+#include <vcpkg/base/fwd/format.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/stringview.h>
 
 #include <stdio.h>
@@ -204,6 +207,8 @@ namespace vcpkg
         virtual ~IExclusiveFileLock() = default;
     };
 
+    uint64_t get_filesystem_stats();
+
     struct Filesystem
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
@@ -232,6 +237,10 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_regular_files_recursive(const Path& dir, LineInfo li) const;
 
+        virtual std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir,
+                                                                                  std::error_code& ec) const = 0;
+        std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const;
+
         virtual std::vector<Path> get_regular_files_non_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_regular_files_non_recursive(const Path& dir, LineInfo li) const;
 
@@ -249,6 +258,7 @@ namespace vcpkg
         void rename(const Path& old_path, const Path& new_path, LineInfo li);
 
         void rename_with_retry(const Path& old_path, const Path& new_path, std::error_code& ec);
+        void rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li);
 
         virtual void rename_or_copy(const Path& old_path,
                                     const Path& new_path,
@@ -384,22 +394,17 @@ namespace vcpkg
             return !Strings::case_insensitive_ascii_equals(target.extension(), ext);
         }
     };
-}
 
-namespace fmt
-{
-    template<>
-    struct formatter<vcpkg::Path>
+    struct NotExtensionsCaseInsensitive
     {
-        constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+        std::vector<std::string> exts;
+        bool operator()(const Path& target) const
         {
-            return vcpkg::basic_format_parse_impl(ctx);
-        }
-        template<class FormatContext>
-        auto format(const vcpkg::Path& path, FormatContext& ctx) -> decltype(ctx.out())
-        {
-            return format_to(ctx.out(), "{}", path.native());
+            return !std::any_of(exts.begin(), exts.end(), [extension = target.extension()](const auto& ext) {
+                return Strings::case_insensitive_ascii_equals(extension, ext);
+            });
         }
     };
-
 }
+
+VCPKG_FORMAT_AS(vcpkg::Path, vcpkg::StringView);

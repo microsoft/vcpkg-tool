@@ -9,7 +9,14 @@
 
 namespace vcpkg
 {
-    std::string reformat_version(const std::string& version, const std::string& abi_tag);
+    // Turns:
+    // - <XXXX>-<YY>-<ZZ><whatever> -> <X>.<Y>.<Z>-vcpkg<abitag>
+    // - v?<X> -> <X>.0.0-vcpkg<abitag>
+    //   - this avoids turning 20-01-01 into 20.0.0-vcpkg<abitag>
+    // - v?<X>.<Y><whatever> -> <X>.<Y>.0-vcpkg<abitag>
+    // - v?<X>.<Y>.<Z><whatever> -> <X>.<Y>.<Z>-vcpkg<abitag>
+    // - anything else -> 0.0.0-vcpkg<abitag>
+    std::string format_version_for_nugetref(StringView version, StringView abi_tag);
 
     struct NugetReference
     {
@@ -26,13 +33,13 @@ namespace vcpkg
                                         const std::string& abi_tag,
                                         const std::string& prefix)
     {
-        return {Strings::concat(prefix, spec.dir()), reformat_version(raw_version, abi_tag)};
+        return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(raw_version, abi_tag)};
     }
     inline NugetReference make_nugetref(const Dependencies::InstallPlanAction& action, const std::string& prefix)
     {
         return make_nugetref(action.spec,
                              action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                 .source_control_file->core_paragraph->version,
+                                 .source_control_file->core_paragraph->raw_version,
                              action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi,
                              prefix);
     }
@@ -49,7 +56,7 @@ namespace vcpkg
         NuGetRepoInfo get_nuget_repo_info_from_env();
     }
 
-    std::string generate_nuspec(const VcpkgPaths& paths,
+    std::string generate_nuspec(const Path& package_dir,
                                 const Dependencies::InstallPlanAction& action,
                                 const NugetReference& ref,
                                 details::NuGetRepoInfo rinfo = details::get_nuget_repo_info_from_env());

@@ -19,6 +19,67 @@ namespace vcpkg
 {
     LockGuarded<Metrics> g_metrics;
 
+    Optional<StringView> find_first_nonzero_mac(StringView sv)
+    {
+        static constexpr StringLiteral ZERO_MAC = "00-00-00-00-00-00";
+
+        auto first = sv.begin();
+        const auto last = sv.end();
+
+        while (first != last)
+        {
+            // XX-XX-XX-XX-XX-XX
+            // 1  2  3  4  5  6
+            // size = 6 * 2 + 5 = 17
+            first = std::find_if(first, last, ParserBase::is_hex_digit);
+            if (last - first < 17)
+            {
+                break;
+            }
+
+            bool is_first = true;
+            bool is_valid = true;
+            auto end_of_mac = first;
+            for (int i = 0; is_valid && i < 6; ++i)
+            {
+                if (!is_first)
+                {
+                    if (*end_of_mac != '-')
+                    {
+                        is_valid = false;
+                        break;
+                    }
+                    ++end_of_mac;
+                }
+                is_first = false;
+
+                if (!ParserBase::is_hex_digit(*end_of_mac))
+                {
+                    is_valid = false;
+                    break;
+                }
+                ++end_of_mac;
+
+                if (!ParserBase::is_hex_digit(*end_of_mac))
+                {
+                    is_valid = false;
+                    break;
+                }
+                ++end_of_mac;
+            }
+            if (is_valid && StringView{first, end_of_mac} != ZERO_MAC)
+            {
+                return StringView{first, end_of_mac};
+            }
+            else
+            {
+                first = end_of_mac;
+            }
+        }
+
+        return nullopt;
+    }
+
     static std::string get_current_date_time_string()
     {
         auto maybe_time = CTime::get_current_date_time();
@@ -262,21 +323,15 @@ namespace vcpkg
 
         if (getmac.exit_code != 0) return "0";
 
-        std::regex mac_regex("([a-fA-F0-9]{2}(-[a-fA-F0-9]{2}){5})");
-        std::sregex_iterator next(getmac.output.begin(), getmac.output.end(), mac_regex);
-        std::sregex_iterator last;
-
-        while (next != last)
+        auto found_mac = find_first_nonzero_mac(getmac.output);
+        if (auto p = found_mac.get())
         {
-            const auto match = *next;
-            if (match[0] != "00-00-00-00-00-00")
-            {
-                return vcpkg::Hash::get_string_hash(match[0].str(), Hash::Algorithm::Sha256);
-            }
-            ++next;
+            return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
         }
-
-        return "0";
+        else
+        {
+            return "0";
+        }
     }
 #endif
 
@@ -473,8 +528,7 @@ namespace vcpkg
         GetTempPathW(MAX_PATH, temp_folder);
 
         const Path temp_folder_path = Path(Strings::to_utf8(temp_folder)) / "vcpkg";
-        const Path temp_folder_path_exe =
-            temp_folder_path / Strings::format("vcpkg-%s.exe", Commands::Version::base_version());
+        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING ".exe";
 #endif
 
         std::error_code ec;
@@ -494,9 +548,9 @@ namespace vcpkg
 
 #if defined(_WIN32)
         Command builder;
-        builder.path_arg(temp_folder_path_exe);
+        builder.string_arg(temp_folder_path_exe);
         builder.string_arg("x-upload-metrics");
-        builder.path_arg(vcpkg_metrics_txt_path);
+        builder.string_arg(vcpkg_metrics_txt_path);
         cmd_execute_background(builder);
 #else
         // TODO: convert to cmd_execute_background or something.
@@ -513,7 +567,7 @@ namespace vcpkg
                         .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
                         .raw_arg(">/dev/null")
                         .raw_arg("2>&1");
-        auto remove = Command("rm").path_arg(vcpkg_metrics_txt_path);
+        auto remove = Command("rm").string_arg(vcpkg_metrics_txt_path);
         Command cmd_line;
         cmd_line.raw_arg("(").raw_arg(curl.command_line()).raw_arg(";").raw_arg(remove.command_line()).raw_arg(") &");
         cmd_execute_clean(cmd_line);

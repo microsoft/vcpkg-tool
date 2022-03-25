@@ -1,18 +1,15 @@
 #pragma once
 
-#include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/pragmas.h>
-#include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/zstringview.h>
 
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
 
+#include <algorithm>
 #include <vector>
 
 namespace vcpkg::Strings::details
@@ -73,15 +70,20 @@ namespace vcpkg::Strings::details
     {
         to_string(into, t);
     }
-
-    constexpr struct
-    {
-        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
-    } tolower_char;
 }
 
 namespace vcpkg::Strings
 {
+    constexpr struct
+    {
+        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
+    } tolower_char;
+
+    constexpr struct
+    {
+        bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
+    } icase_eq;
+
     template<class Arg>
     std::string& append(std::string& into, const Arg& a)
     {
@@ -133,21 +135,18 @@ namespace vcpkg::Strings
     std::wstring to_utf16(StringView s);
 
     std::string to_utf8(const wchar_t* w);
-    std::string to_utf8(const wchar_t* w, size_t s);
-    inline std::string to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
+    std::string to_utf8(const wchar_t* w, size_t size_in_characters);
+    void to_utf8(std::string& output, const wchar_t* w, size_t size_in_characters);
+    std::string to_utf8(const std::wstring& ws);
 #endif
 
     std::string escape_string(std::string&& s, char char_to_escape, char escape_char);
 
+    const char* case_insensitive_ascii_search(StringView s, StringView pattern);
     bool case_insensitive_ascii_contains(StringView s, StringView pattern);
-
     bool case_insensitive_ascii_equals(StringView left, StringView right);
 
-    template<class It>
-    void ascii_to_lowercase(It first, It last)
-    {
-        std::transform(first, last, first, details::tolower_char);
-    }
+    void ascii_to_lowercase(char* first, char* last);
     std::string ascii_to_lowercase(std::string&& s);
 
     std::string ascii_to_uppercase(std::string&& s);
@@ -237,74 +236,16 @@ namespace vcpkg::Strings
 
     // Equivalent to one of the `::strto[T]` functions. Returns `nullopt` if there is an error.
     template<class T>
-    Optional<T> strto(CStringView sv);
+    Optional<T> strto(StringView sv);
 
     template<>
-    inline Optional<double> strto<double>(CStringView sv)
-    {
-        char* endptr = nullptr;
-        double res = strtod(sv.c_str(), &endptr);
-        if (endptr == sv.c_str())
-        {
-            // no digits
-            return nullopt;
-        }
-        // else, we may have HUGE_VAL but we expect the caller to deal with that
-        return res;
-    }
-
+    Optional<int> strto<int>(StringView);
     template<>
-    inline Optional<long> strto<long>(CStringView sv)
-    {
-        char* endptr = nullptr;
-        long res = strtol(sv.c_str(), &endptr, 10);
-        if (endptr == sv.c_str())
-        {
-            // no digits
-            return nullopt;
-        }
-        if (errno == ERANGE)
-        {
-            // out of bounds
-            return nullopt;
-        }
-
-        return res;
-    }
-
+    Optional<long> strto<long>(StringView);
     template<>
-    inline Optional<long long> strto<long long>(CStringView sv)
-    {
-        char* endptr = nullptr;
-        long long res = strtoll(sv.c_str(), &endptr, 10);
-        if (endptr == sv.c_str())
-        {
-            // no digits
-            return nullopt;
-        }
-        if (errno == ERANGE)
-        {
-            // out of bounds
-            return nullopt;
-        }
-
-        return res;
-    }
-
+    Optional<long long> strto<long long>(StringView);
     template<>
-    inline Optional<int> strto<int>(CStringView sv)
-    {
-        auto res = strto<long>(sv);
-        if (auto r = res.get())
-        {
-            if (*r < INT_MIN || *r > INT_MAX)
-            {
-                return nullopt;
-            }
-            return static_cast<int>(*r);
-        }
-        return nullopt;
-    }
+    Optional<double> strto<double>(StringView);
 
     const char* search(StringView haystack, StringView needle);
 

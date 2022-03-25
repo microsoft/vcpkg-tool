@@ -16,14 +16,14 @@ namespace
 {
     using namespace vcpkg;
 
-    std::string get_scheme_name(Versions::Scheme scheme)
+    std::string get_scheme_name(VersionScheme scheme)
     {
         switch (scheme)
         {
-            case Versions::Scheme::Relaxed: return "version";
-            case Versions::Scheme::Semver: return "version-semver";
-            case Versions::Scheme::String: return "version-string";
-            case Versions::Scheme::Date: return "version-date";
+            case VersionScheme::Relaxed: return "version";
+            case VersionScheme::Semver: return "version-semver";
+            case VersionScheme::String: return "version-string";
+            case VersionScheme::Date: return "version-date";
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -53,7 +53,7 @@ namespace vcpkg::Commands::CIVerifyVersions
     };
 
     static ExpectedS<std::string> verify_version_in_db(const VcpkgPaths& paths,
-                                                       const std::map<std::string, VersionT, std::less<>> baseline,
+                                                       const std::map<std::string, Version, std::less<>> baseline,
                                                        StringView port_name,
                                                        const Path& port_path,
                                                        const Path& versions_file_path,
@@ -107,7 +107,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                             "       Found the following error(s):\n%s",
                                             port_name,
                                             versions_file_path,
-                                            version_entry.first.versiont,
+                                            version_entry.first.version,
                                             treeish,
                                             maybe_scf.error()->error),
                             expected_right_tag,
@@ -116,7 +116,7 @@ namespace vcpkg::Commands::CIVerifyVersions
 
                     const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
                     auto&& git_tree_version = scf.get()->to_schemed_version();
-                    if (version_entry.first.versiont != git_tree_version.versiont)
+                    if (version_entry.first.version != git_tree_version.version)
                     {
                         return {
                             Strings::format(
@@ -126,8 +126,8 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "       Checked out Git SHA: %s",
                                 port_name,
                                 versions_file_path,
-                                version_entry.first.versiont,
-                                git_tree_version.versiont,
+                                version_entry.first.version,
+                                git_tree_version.version,
                                 version_entry.second),
                             expected_right_tag,
                         };
@@ -146,7 +146,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                             "       Checked out Git SHA: %s",
                             port_name,
                             versions_file_path,
-                            version_entry.first.versiont,
+                            version_entry.first.version,
                             version_entry.second),
                         expected_right_tag,
                     };
@@ -169,9 +169,10 @@ namespace vcpkg::Commands::CIVerifyVersions
         const auto local_port_version = maybe_scf.value_or_exit(VCPKG_LINE_INFO)->to_schemed_version();
 
         auto versions_end = versions.end();
-        auto it = std::find_if(versions.begin(), versions_end, [&](auto&& entry) {
-            return entry.first.versiont == local_port_version.versiont;
-        });
+        auto it =
+            std::find_if(versions.begin(), versions_end, [&](const std::pair<SchemedVersion, std::string>& entry) {
+                return entry.first.version == local_port_version.version;
+            });
         if (it == versions_end)
         {
             return {
@@ -182,7 +183,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "       to add the new port version.",
                                 port_name,
                                 versions_file_path,
-                                local_port_version.versiont,
+                                local_port_version.version,
                                 port_name),
                 expected_right_tag,
             };
@@ -201,7 +202,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "       to overwrite the declared version's scheme.",
                                 port_name,
                                 versions_file_path,
-                                entry.first.versiont,
+                                entry.first.version,
                                 get_scheme_name(entry.first.scheme),
                                 get_scheme_name(local_port_version.scheme),
                                 port_name),
@@ -222,7 +223,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "       to add a new version.",
                                 port_name,
                                 versions_file_path,
-                                entry.first.versiont,
+                                entry.first.version,
                                 entry.second,
                                 local_git_tree,
                                 port_name),
@@ -243,13 +244,13 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 "       to set version %s as the baseline version.",
                                 port_name,
                                 port_name,
-                                local_port_version.versiont),
+                                local_port_version.version),
                 expected_right_tag,
             };
         }
 
         auto&& baseline_version = maybe_baseline->second;
-        if (baseline_version != entry.first.versiont)
+        if (baseline_version != entry.first.version)
         {
             return {
                 Strings::format("Error: While reading baseline version for port %s.\n"
@@ -264,14 +265,14 @@ namespace vcpkg::Commands::CIVerifyVersions
                                 port_name,
                                 versions_file_path,
                                 baseline_version,
-                                entry.first.versiont,
+                                entry.first.version,
                                 port_name),
                 expected_right_tag,
             };
         }
 
         return {
-            Strings::format("OK: %s\t%s -> %s\n", entry.second, port_name, entry.first.versiont),
+            Strings::format("OK: %s\t%s -> %s\n", entry.second, port_name, entry.first.version),
             expected_left_tag,
         };
     }
@@ -358,7 +359,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 continue;
             }
 
-            const char prefix[] = {port_name.byte_at_index(0), '-', '\0'};
+            const char prefix[] = {port_name[0], '-', '\0'};
             auto versions_file_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             if (!fs.exists(versions_file_path, IgnoreErrors{}))
             {
