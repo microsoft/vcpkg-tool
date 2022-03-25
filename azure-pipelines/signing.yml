@@ -388,6 +388,7 @@ jobs:
     # Create NuGet package.
     - task: NuGetCommand@2
       displayName: 'NuGet pack for VS Insertion'
+      condition: and(eq(variables.SignType, 'real'), succeeded())
       inputs:
         command: custom
         arguments: 'pack $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec -NoDefaultExcludes -OutputDirectory "$(Build.ArtifactStagingDirectory)/vs-insertion/drop" -Properties version=$(VCPKG_BASE_VERSION)'
