@@ -338,7 +338,7 @@ jobs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
         arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -readonly -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging"'
-    - task: CmdLine@2SignedFilesRoot
+    - task: CmdLine@2
       displayName: 'Arrange Drop'
       inputs:
         failOnStderr: true
