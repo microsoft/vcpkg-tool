@@ -148,7 +148,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp "$(Build.BinariesDirectory)\vcpkg-init.cmd" "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init"'
+        arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)"'
     - script: npm pack
       displayName: Create vcpkg-ce Pack
       workingDirectory: $(Build.BinariesDirectory)/ce
@@ -340,8 +340,8 @@ jobs:
       inputs:
         pwsh: true
         filePath: vcpkg-init/mint-standalone-bundle.ps1
-        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -readonly -TempDir standalone-temp'
-    - task: CmdLine@2
+        arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -readonly -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging"'
+    - task: CmdLine@2SignedFilesRoot
       displayName: 'Arrange Drop'
       inputs:
         failOnStderr: true
@@ -355,10 +355,6 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
           move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
-
-          move /Y "$(Build.ArtifactStagingDirectory)\staging\applocal.ps1" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\scripts\buildsystems\msbuild\applocal.ps1"
-          move /Y "$(Build.ArtifactStagingDirectory)\staging\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\scripts\addPoshVcpkgToPowershellProfile.ps1"
-          move /Y "$(Build.ArtifactStagingDirectory)\staging\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\scripts\posh-vcpkg\0.0.1\posh-vcpkg.psm1"
 
           move "$(Build.BinariesDirectory)\x86\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
           copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.exe"
