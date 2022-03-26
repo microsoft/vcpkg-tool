@@ -146,6 +146,7 @@ jobs:
       displayName: Create vcpkg-ce Pack
       workingDirectory: $(Build.BinariesDirectory)/ce
     - script: |
+        mkdir "$(Build.ArtifactStagingDirectory)\staging"
         move "$(Build.BinariesDirectory)\ce\vcpkg-ce-*.tgz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-ce.tgz"
         move "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz"
         move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init"
