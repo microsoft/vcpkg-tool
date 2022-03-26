@@ -100,9 +100,8 @@ jobs:
       displayName: Collect vcpkg-ce Dependencies
       workingDirectory: ce
     - script: |
-        mkdir "$(Build.BinariesDirectory)/scripts"
-        xcopy /E /F "$(Build.SourcesDirectory)/scripts" "$(Build.BinariesDirectory)/scripts"
-      displayName: Collect Powershell scripts
+        xcopy /F "$(Build.SourcesDirectory)/scripts" "$(Build.BinariesDirectory)"
+      displayName: Collect PowerShell scripts
     - task: ComponentGovernanceComponentDetection@0
       displayName: Detect Components
       inputs:
