@@ -24,13 +24,13 @@
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-init.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\scripts\buildsystems\msbuild\applocal.ps1">
+    <FilesToSign Include="$(IntermediateOutputPath)\scripts\applocal.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
     <FilesToSign Include="$(IntermediateOutputPath)\scripts\addPoshVcpkgToPowershellProfile.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\scripts\posh-vcpkg\0.0.1\posh-vcpkg.psm1">
+    <FilesToSign Include="$(IntermediateOutputPath)\scripts\posh-vcpkg.psm1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
   </ItemGroup>
