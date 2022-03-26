@@ -1605,7 +1605,7 @@ TEST_CASE ("version dont install default features when host", "[versionplan]")
     SECTION ("only one host dependency ")
     {
         auto install_plan = unwrap(create_versioned_install_plan(
-            vp, bp, var_provider, {Dependency{"a", {}, {}, {}, true}}, {}, toplevel_spec()));
+            vp, bp, var_provider, {Dependency{"a", {"core"}, {}, {}, true}}, {}, toplevel_spec()));
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {});
     }
@@ -1632,14 +1632,14 @@ TEST_CASE ("version dont install default features when host", "[versionplan]")
     }
     SECTION ("triplet = host triplet, default-features = false")
     {
-        auto install_plan = unwrap(
-            create_versioned_install_plan(vp,
-                                          bp,
-                                          var_provider,
-                                          {Dependency{"a", {}, {}, {}, true}, Dependency{"a", {"core"}, {}, {}, false}},
-                                          {},
-                                          toplevel_spec(),
-                                          toplevel_spec().triplet()));
+        auto install_plan = unwrap(create_versioned_install_plan(
+            vp,
+            bp,
+            var_provider,
+            {Dependency{"a", {"core"}, {}, {}, true}, Dependency{"a", {"core"}, {}, {}, false}},
+            {},
+            toplevel_spec(),
+            toplevel_spec().triplet()));
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {});
     }
@@ -1699,21 +1699,21 @@ TEST_CASE ("version dont install default features when host (transitive)", "[ver
     // every port has a default feature x; Dependencies a -> b, b -> c, c -> d
     // we request a host dependency to "a" and a normal one to "c" while triplet = host-triplet
     // => a and b should have no default features, c and d should have a default feature
-    create_port("a")->core_paragraph->dependencies.emplace_back("b");
-    create_port("b")->core_paragraph->dependencies.emplace_back("c");
-    create_port("c")->core_paragraph->dependencies.emplace_back("d");
+    create_port("a")->core_paragraph->dependencies.emplace_back("b", std::vector<std::string>{"core"});
+    create_port("b")->core_paragraph->dependencies.emplace_back("c", std::vector<std::string>{"core"});
+    create_port("c")->core_paragraph->dependencies.emplace_back("d", std::vector<std::string>{"core"});
     create_port("d");
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {Dependency{"a", {}, {}, {}, true}, Dependency{"c", {}, {}, {}, false}},
-                                             {},
-                                             toplevel_spec(),
-                                             toplevel_spec().triplet()));
+    auto install_plan = unwrap(
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {Dependency{"a", {"core"}, {}, {}, true}, Dependency{"c", {}, {}, {}, false}},
+                                      {},
+                                      toplevel_spec(),
+                                      toplevel_spec().triplet()));
     REQUIRE(install_plan.size() == 4);
     check_name_and_version(install_plan.install_actions[0], "d", {"1", 0}, {"x"});
     check_name_and_version(install_plan.install_actions[1], "c", {"1", 0}, {"x"});

@@ -157,7 +157,7 @@ namespace vcpkg
             , platform(std::move(expr))
             , constraint(std::move(dc))
             , host(h)
-            , default_features(Util::contains(features, "core") ? DefaultFeatures::No : DefaultFeatures::DontCare)
+            , default_features(Util::contains(features, "core") ? DefaultFeatures::No : DefaultFeatures::Yes)
         {
         }
         std::string name;
