@@ -19,15 +19,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddFailedToWriteManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to write manifest file {path}: {error}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler beim Schreiben der Manifestdatei {path}: {error}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddFirstArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
@@ -250,6 +241,57 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmakeTargetLinkLibraries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[    target_link_libraries(main PRIVATE {list})]]></Val>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmakeTargetsExcluded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[    # note: {count} targets were omitted.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[    # Hinweis: {count} Ziele wurden ausgelassen.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Die NuGet-ID und die Version konnten nicht aus dem Dateinamen abgeleitet werden: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlReportedUnexpectedResults" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[curl hat unerwartete Ergebnisse für vcpkg gemeldet, und vcpkg kann nicht fortgesetzt werden. ]A;Lesen Sie den folgenden Text auf vertrauliche Informationen, und öffnen Sie ein Problem auf dem GitHub von Microsoft/vcpkg, um dieses Problem zu beheben.]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vcpkg-ce-Paket {version} wird heruntergeladen...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Das neueste vcpkg-ce-Paket wird heruntergeladen...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";EmptyLicenseExpression" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[SPDX license expression was empty.]]></Val>
@@ -372,6 +414,15 @@
           <Val><![CDATA[Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.]A;Define 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Fehler: im Tripel {triplet}: Die Verwendung der Entwickleraufforderung von Visual Studio wird auf Nicht-Windows-Hosts nicht unterstützt.]A;Definieren Sie in der Tripeldatei 'VCPKG_CMAKE_SYSTEM_NAME' oder 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE'.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Fehler beim Bereitstellen von vcpkg-ce.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -680,7 +731,7 @@
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler beim Analysieren von %PROCESSOR_ARCHITECTURE% ({arch}) als eine gültige CPU-Architektur.]]></Val>
+            <Val><![CDATA[%PROCESSOR_ARCHITECTURE% ({arch}) konnte nicht als gültige CPU-Architektur geparst werden.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -698,7 +749,7 @@
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. Falling back to %PROCESSOR_ARCHITECTURE%.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler beim Analysieren von %PROCESSOR_ARCHITEW6432% ({arch}) als eine gültige CPU-Architektur. Fallback auf %PROCESSOR_ARCHITECTURE% wird durchgeführt.]]></Val>
+            <Val><![CDATA[%PROCESSOR_ARCHITEW6432% ({arch}) konnte nicht als gültige CPU-Architektur geparst werden. Fallback auf %PROCESSOR_ARCHITECTURE% wird durchgeführt.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -802,6 +853,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-ce ("Umgebung konfigurieren") ist experimentell und kann sich jederzeit ändern.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VcpkgDisallowedClassicMode" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Error: Could not locate a manifest (vcpkg.json) above the current working directory.]A;This vcpkg distribution does not have a classic mode instance.]]></Val>
@@ -846,6 +906,33 @@
           <Val><![CDATA[Warning: passed --sendmetrics, but metrics are disabled.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Warnung: --sendmetrics wurde übergeben, Metriken sind jedoch deaktiviert.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionInvalidDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{version}“ ist keine gültige Datumsversion. Datumsangaben müssen dem Format „JJJJ-MM-TT“ entsprechen, und Disambiguatoren müssen durch Punkte getrennte positive ganzzahlige Werte ohne führende Nullen sein.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionInvalidRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{version}“ ist keine gültige gelockerte Version (SemVer mit beliebiger numerischer Elementanzahl).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionInvalidSemver" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[`{version}` is not a valid semantic version, consult <https://semver.org>.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{version}“ ist keine gültige semantische Version. Weitere Informationen finden Sie unter <https://semver.org>.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

@@ -245,7 +245,7 @@ namespace vcpkg
         {
             cmd.string_arg(var.s);
         }
-        cmd.string_arg("-P").path_arg(cmake_script);
+        cmd.string_arg("-P").string_arg(cmake_script);
         return cmd;
     }
 
@@ -325,6 +325,8 @@ namespace vcpkg
             // Environment variables to tell git to use custom SSH executable or command
             L"GIT_SSH",
             L"GIT_SSH_COMMAND",
+            // Points to a credential-manager binary for git authentication
+            L"GIT_ASKPASS",
             // Environment variables needed for ssh-agent based authentication
             L"SSH_AUTH_SOCK",
             L"SSH_AGENT_PID",
@@ -618,6 +620,7 @@ namespace vcpkg
             {
                 while (ReadFile(child_stdout, static_cast<void*>(buf), buffer_size, &bytes_read, nullptr))
                 {
+                    std::replace(buf, buf + bytes_read, '\0', '?');
                     f(StringView{buf, static_cast<size_t>(bytes_read)});
                 }
             }
@@ -775,7 +778,7 @@ namespace vcpkg
         if (!wd.working_directory.empty())
         {
             real_command_line_builder.string_arg("cd");
-            real_command_line_builder.path_arg(wd.working_directory);
+            real_command_line_builder.string_arg(wd.working_directory);
             real_command_line_builder.raw_arg("&&");
         }
 
@@ -845,7 +848,7 @@ namespace vcpkg
         else
         {
             actual_cmd_line = Command("cd")
-                                  .path_arg(wd.working_directory)
+                                  .string_arg(wd.working_directory)
                                   .raw_arg("&&")
                                   .raw_arg(cmd_line.command_line())
                                   .raw_arg("2>&1")

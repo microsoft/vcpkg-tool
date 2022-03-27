@@ -367,7 +367,7 @@ namespace vcpkg::Dependencies
     }
 
     static std::string to_output_string(RequestType request_type,
-                                        const CStringView s,
+                                        const ZStringView s,
                                         const Build::BuildPackageOptions& options,
                                         const SourceControlFileAndLocation* scfl,
                                         const InstalledPackageView* ipv,
@@ -405,13 +405,13 @@ namespace vcpkg::Dependencies
     }
 
     std::string to_output_string(RequestType request_type,
-                                 const CStringView s,
+                                 const ZStringView s,
                                  const Build::BuildPackageOptions& options)
     {
         return to_output_string(request_type, s, options, {}, {}, {});
     }
 
-    std::string to_output_string(RequestType request_type, const CStringView s)
+    std::string to_output_string(RequestType request_type, const ZStringView s)
     {
         return to_output_string(request_type, s, {}, {}, {}, {});
     }

@@ -16,6 +16,13 @@ using vcpkg::Build::PreBuildInfo;
 
 namespace vcpkg::PostBuildLint
 {
+    constexpr static const StringLiteral windows_system_names[] = {
+        "",
+        "Windows",
+        "WindowsStore",
+        "MinGW",
+    };
+
     enum class LintStatus
     {
         SUCCESS = 0,
@@ -25,39 +32,33 @@ namespace vcpkg::PostBuildLint
     struct OutdatedDynamicCrt
     {
         std::string name;
-        std::regex regex;
-
-        OutdatedDynamicCrt(const std::string& name, const std::string& regex_as_string)
-            : name(name), regex(std::regex(regex_as_string, std::regex_constants::icase))
-        {
-        }
     };
 
     static Span<const OutdatedDynamicCrt> get_outdated_dynamic_crts(const Optional<std::string>& toolset_version)
     {
         static const std::vector<OutdatedDynamicCrt> V_NO_120 = {
-            {"msvcp100.dll", R"(msvcp100\.dll)"},
-            {"msvcp100d.dll", R"(msvcp100d\.dll)"},
-            {"msvcp110.dll", R"(msvcp110\.dll)"},
-            {"msvcp110_win.dll", R"(msvcp110_win\.dll)"},
-            {"msvcp60.dll", R"(msvcp60\.dll)"},
-            {"msvcp60.dll", R"(msvcp60\.dll)"},
+            {"msvcp100.dll"},
+            {"msvcp100d.dll"},
+            {"msvcp110.dll"},
+            {"msvcp110_win.dll"},
+            {"msvcp60.dll"},
+            {"msvcp60.dll"},
 
-            {"msvcrt.dll", R"(msvcrt\.dll)"},
-            {"msvcr100.dll", R"(msvcr100\.dll)"},
-            {"msvcr100d.dll", R"(msvcr100d\.dll)"},
-            {"msvcr100_clr0400.dll", R"(msvcr100_clr0400\.dll)"},
-            {"msvcr110.dll", R"(msvcr110\.dll)"},
-            {"msvcrt20.dll", R"(msvcrt20\.dll)"},
-            {"msvcrt40.dll", R"(msvcrt40\.dll)"},
+            {"msvcrt.dll"},
+            {"msvcr100.dll"},
+            {"msvcr100d.dll"},
+            {"msvcr100_clr0400.dll"},
+            {"msvcr110.dll"},
+            {"msvcrt20.dll"},
+            {"msvcrt40.dll"},
         };
 
         static const std::vector<OutdatedDynamicCrt> V_NO_MSVCRT = [&]() {
             auto ret = V_NO_120;
-            ret.push_back({"msvcp120.dll", R"(msvcp120\.dll)"});
-            ret.push_back({"msvcp120_clr0400.dll", R"(msvcp120_clr0400\.dll)"});
-            ret.push_back({"msvcr120.dll", R"(msvcr120\.dll)"});
-            ret.push_back({"msvcr120_clr0400.dll", R"(msvcr120_clr0400\.dll)"});
+            ret.push_back({"msvcp120.dll"});
+            ret.push_back({"msvcp120_clr0400.dll"});
+            ret.push_back({"msvcr120.dll"});
+            ret.push_back({"msvcr120_clr0400.dll"});
             return ret;
         }();
 
@@ -419,7 +420,7 @@ namespace vcpkg::PostBuildLint
         std::vector<Path> dlls_with_no_exports;
         for (const Path& dll : dlls)
         {
-            auto cmd_line = Command(dumpbin_exe).string_arg("/exports").path_arg(dll);
+            auto cmd_line = Command(dumpbin_exe).string_arg("/exports").string_arg(dll);
             ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
             Checks::check_exit(
                 VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
@@ -457,7 +458,7 @@ namespace vcpkg::PostBuildLint
         std::vector<Path> dlls_with_improper_uwp_bit;
         for (const Path& dll : dlls)
         {
-            auto cmd_line = Command(dumpbin_exe).string_arg("/headers").path_arg(dll);
+            auto cmd_line = Command(dumpbin_exe).string_arg("/headers").string_arg(dll);
             ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
             Checks::check_exit(
                 VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
@@ -556,8 +557,7 @@ namespace vcpkg::PostBuildLint
                                              const Filesystem& fs)
     {
         std::vector<FileAndArch> binaries_with_invalid_architecture;
-        if (cmake_system_name.empty() || cmake_system_name == "Windows" || cmake_system_name == "WindowsStore" ||
-            cmake_system_name == "MinGW")
+        if (Util::Vectors::contains(windows_system_names, cmake_system_name))
         {
             for (const Path& file : files)
             {
@@ -586,7 +586,7 @@ namespace vcpkg::PostBuildLint
             const auto requested_arch = expected_architecture == "x64" ? "x86_64" : expected_architecture;
             for (const Path& file : files)
             {
-                auto cmd_line = Command("lipo").string_arg("-archs").path_arg(file);
+                auto cmd_line = Command("lipo").string_arg("-archs").string_arg(file);
                 ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
                 if (ec_data.exit_code != 0)
                 {
@@ -883,15 +883,19 @@ namespace vcpkg::PostBuildLint
                                                 const std::vector<Path>& libs,
                                                 const Path& dumpbin_exe)
     {
-        std::vector<BuildType> bad_build_types(BuildTypeC::VALUES.cbegin(), BuildTypeC::VALUES.cend());
-        bad_build_types.erase(std::remove(bad_build_types.begin(), bad_build_types.end(), expected_build_type),
-                              bad_build_types.end());
+        auto bad_build_types = std::vector<BuildType>({
+            {Build::ConfigurationType::DEBUG, Build::LinkageType::STATIC},
+            {Build::ConfigurationType::DEBUG, Build::LinkageType::DYNAMIC},
+            {Build::ConfigurationType::RELEASE, Build::LinkageType::STATIC},
+            {Build::ConfigurationType::RELEASE, Build::LinkageType::DYNAMIC},
+        });
+        Util::erase_remove(bad_build_types, expected_build_type);
 
         std::vector<BuildTypeAndFile> libs_with_invalid_crt;
 
         for (const Path& lib : libs)
         {
-            auto cmd_line = Command(dumpbin_exe).string_arg("/directives").path_arg(lib);
+            auto cmd_line = Command(dumpbin_exe).string_arg("/directives").string_arg(lib);
             ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
             Checks::check_exit(VCPKG_LINE_INFO,
                                ec_data.exit_code == 0,
@@ -901,7 +905,7 @@ namespace vcpkg::PostBuildLint
 
             for (const BuildType& bad_build_type : bad_build_types)
             {
-                if (std::regex_search(ec_data.output.cbegin(), ec_data.output.cend(), bad_build_type.crt_regex()))
+                if (bad_build_type.has_crt_linker_option(ec_data.output))
                 {
                     libs_with_invalid_crt.push_back({lib, bad_build_type});
                     break;
@@ -944,14 +948,14 @@ namespace vcpkg::PostBuildLint
 
         for (const Path& dll : dlls)
         {
-            auto cmd_line = Command(dumpbin_exe).string_arg("/dependents").path_arg(dll);
+            auto cmd_line = Command(dumpbin_exe).string_arg("/dependents").string_arg(dll);
             ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
             Checks::check_exit(
                 VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
 
             for (const OutdatedDynamicCrt& outdated_crt : get_outdated_dynamic_crts(pre_build_info.platform_toolset))
             {
-                if (std::regex_search(ec_data.output.cbegin(), ec_data.output.cend(), outdated_crt.regex))
+                if (Strings::case_insensitive_ascii_contains(ec_data.output, outdated_crt.name))
                 {
                     dlls_with_outdated_crt.push_back({dll, outdated_crt});
                     break;
@@ -1033,18 +1037,15 @@ namespace vcpkg::PostBuildLint
         const auto debug_bin_dir = package_dir / "debug" / "bin";
         const auto release_bin_dir = package_dir / "bin";
 
-        const auto lib_filter = [&pre_build_info]() {
-            if (pre_build_info.cmake_system_name.empty() || pre_build_info.cmake_system_name == "Windows" ||
-                pre_build_info.cmake_system_name == "WindowsStore")
-            {
-                return NotExtensionsCaseInsensitive{{".lib"}};
-            }
-            if (pre_build_info.cmake_system_name == "MinGW")
-            {
-                return NotExtensionsCaseInsensitive{{".lib", ".a"}};
-            }
-            return NotExtensionsCaseInsensitive{{".so", ".a", ".dylib"}};
-        }();
+        NotExtensionsCaseInsensitive lib_filter;
+        if (Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name))
+        {
+            lib_filter = NotExtensionsCaseInsensitive{{".lib"}};
+        }
+        else
+        {
+            lib_filter = NotExtensionsCaseInsensitive{{".so", ".a", ".dylib"}};
+        }
 
         std::vector<Path> debug_libs = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
         Util::erase_remove_if(debug_libs, lib_filter);
@@ -1111,14 +1112,14 @@ namespace vcpkg::PostBuildLint
                     if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
                     {
                         error_count += check_crt_linkage_of_libs(
-                            BuildType::value_of(Build::ConfigurationType::DEBUG, build_info.crt_linkage),
+                            BuildType(Build::ConfigurationType::DEBUG, build_info.crt_linkage),
                             debug_libs,
                             toolset.dumpbin);
                     }
-                    error_count += check_crt_linkage_of_libs(
-                        BuildType::value_of(Build::ConfigurationType::RELEASE, build_info.crt_linkage),
-                        release_libs,
-                        toolset.dumpbin);
+                    error_count +=
+                        check_crt_linkage_of_libs(BuildType(Build::ConfigurationType::RELEASE, build_info.crt_linkage),
+                                                  release_libs,
+                                                  toolset.dumpbin);
                 }
                 break;
             }

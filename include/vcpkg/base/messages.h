@@ -9,6 +9,7 @@
 #include <vcpkg/base/stringliteral.h>
 
 #include <string>
+#include <utility>
 
 namespace vcpkg
 {
@@ -30,12 +31,8 @@ namespace vcpkg
         const std::string& data() const { return m_data; }
         std::string extract_data() { return std::exchange(m_data, ""); }
 
-        static LocalizedString from_raw(std::string&& s)
-        {
-            LocalizedString res;
-            res.m_data = std::move(s);
-            return res;
-        }
+        static LocalizedString from_raw(const std::string& s) { return LocalizedString(s); }
+        static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
 
         LocalizedString& append_raw(StringView s)
         {
@@ -99,6 +96,9 @@ namespace vcpkg
 
     private:
         std::string m_data;
+
+        explicit LocalizedString(const std::string& data) : m_data(data) { }
+        explicit LocalizedString(std::string&& data) : m_data(std::move(data)) { }
     };
 }
 
@@ -298,4 +298,16 @@ namespace vcpkg::msg
                     (msg::option),
                     "",
                     "error: cannot specify both --no-{option} and --{option}.");
+
+    template<class Message, class... Ts>
+    void print_warning(Message m, Ts... args)
+    {
+        print(Color::warning, format(msgWarningMessage).append(format(m, args...).appendnl()));
+    }
+
+    template<class Message, class... Ts>
+    void print_error(Message m, Ts... args)
+    {
+        print(Color::error, format(msgErrorMessage).append(format(m, args...).appendnl()));
+    }
 }
