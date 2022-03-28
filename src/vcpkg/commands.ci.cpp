@@ -2,14 +2,17 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/lockguarded.h>
+#include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
+#include <vcpkg/base/view.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/build.h>
+#include <vcpkg/ci-baseline.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.ci.h>
 #include <vcpkg/dependencies.h>
@@ -24,6 +27,8 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+
+#include <stdio.h>
 
 using namespace vcpkg;
 
@@ -74,6 +79,29 @@ namespace
     private:
         Path base_path;
     };
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        CiBaselineRegressionHeader,
+        (),
+        "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
+        "REGRESSIONS:");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        CiBaselineRegression,
+        (msg::spec, msg::build_result, msg::path),
+        "",
+        "REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.");
+
+    DECLARE_AND_REGISTER_MESSAGE(CiBaselineUnexpectedPass,
+                                 (msg::spec, msg::path),
+                                 "",
+                                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        CiBaselineAllowUnexpectedPassingRequiresBaseline,
+        (),
+        "",
+        "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.");
 }
 
 namespace vcpkg::Commands::CI
@@ -93,15 +121,18 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_HOST_EXCLUDE = "host-exclude";
     static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
+    static constexpr StringLiteral OPTION_CI_BASELINE = "ci-baseline";
+    static constexpr StringLiteral OPTION_ALLOW_UNEXPECTED_PASSING = "allow-unexpected-passing";
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
     static constexpr StringLiteral OPTION_SKIPPED_CASCADE_COUNT = "x-skipped-cascade-count";
 
-    static constexpr std::array<CommandSetting, 7> CI_SETTINGS = {
+    static constexpr std::array<CommandSetting, 8> CI_SETTINGS = {
         {{OPTION_EXCLUDE, "Comma separated list of ports to skip"},
          {OPTION_HOST_EXCLUDE, "Comma separated list of ports to skip for the host triplet"},
          {OPTION_XUNIT, "File to output results in XUnit format (internal)"},
+         {OPTION_CI_BASELINE, "Path to the ci.baseline.txt file. Used to skip ports and detect regressions."},
          {OPTION_FAILURE_LOGS, "Directory to which failure logs will be copied"},
          {OPTION_OUTPUT_HASHES, "File to output all determined package hashes"},
          {OPTION_PARENT_HASHES,
@@ -109,9 +140,11 @@ namespace vcpkg::Commands::CI
          {OPTION_SKIPPED_CASCADE_COUNT,
           "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
 
-    static constexpr std::array<CommandSwitch, 2> CI_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 3> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
         {OPTION_RANDOMIZE, "Randomize the install order"},
+        {OPTION_ALLOW_UNEXPECTED_PASSING,
+         "Indicates that 'Passing, remove from fail list' results should not be emitted."},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -302,28 +335,6 @@ namespace vcpkg::Commands::CI
         return supports_expression.evaluate(context);
     }
 
-    struct ExclusionPredicate
-    {
-        std::set<std::string> exclusions;
-        std::set<std::string> host_exclusions;
-        Triplet target_triplet;
-        Triplet host_triplet;
-
-        bool operator()(const PackageSpec& spec) const
-        {
-            bool excluded = false;
-            if (spec.triplet() == host_triplet)
-            {
-                excluded = excluded || Util::Sets::contains(host_exclusions, spec.name());
-            }
-            if (spec.triplet() == target_triplet)
-            {
-                excluded = excluded || Util::Sets::contains(exclusions, spec.name());
-            }
-            return excluded;
-        }
-    };
-
     static Dependencies::ActionPlan compute_full_plan(const VcpkgPaths& paths,
                                                       const PortFileProvider::PortFileProvider& provider,
                                                       const CMakeVars::CMakeVarProvider& var_provider,
@@ -354,7 +365,7 @@ namespace vcpkg::Commands::CI
     }
 
     static std::unique_ptr<UnknownCIPortsResults> compute_action_statuses(
-        const ExclusionPredicate& is_excluded,
+        ExclusionPredicate is_excluded,
         const CMakeVars::CMakeVarProvider& var_provider,
         const std::vector<CacheAvailability>& precheck_results,
         const Dependencies::ActionPlan& action_plan)
@@ -443,19 +454,16 @@ namespace vcpkg::Commands::CI
         });
     }
 
-    static std::set<std::string> parse_exclusions(const std::unordered_map<std::string, std::string>& settings,
-                                                  StringLiteral opt)
+    static void parse_exclusions(const std::unordered_map<std::string, std::string>& settings,
+                                 StringLiteral opt,
+                                 Triplet triplet,
+                                 ExclusionsMap& exclusions_map)
     {
-        std::set<std::string> exclusions_set;
         auto it_exclusions = settings.find(opt);
-        if (it_exclusions != settings.end())
-        {
-            auto exclusions = Strings::split(it_exclusions->second, ',');
-            exclusions_set.insert(std::make_move_iterator(exclusions.begin()),
-                                  std::make_move_iterator(exclusions.end()));
-        }
-
-        return exclusions_set;
+        exclusions_map.insert(triplet,
+                              it_exclusions == settings.end()
+                                  ? SortedVector<std::string>{}
+                                  : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
     }
 
     static Optional<int> parse_skipped_cascade_count(const std::unordered_map<std::string, std::string>& settings)
@@ -475,6 +483,55 @@ namespace vcpkg::Commands::CI
         return result;
     }
 
+    static void print_baseline_regressions(const TripletAndSummary& result,
+                                           const SortedVector<PackageSpec>& expected_failures,
+                                           const std::string& ci_baseline_file_name,
+                                           bool allow_unexpected_passing)
+    {
+        LocalizedString output;
+        for (auto&& port_result : result.summary.results)
+        {
+            switch (port_result.build_result.code)
+            {
+                case Build::BuildResult::BUILD_FAILED:
+                case Build::BuildResult::POST_BUILD_CHECKS_FAILED:
+                case Build::BuildResult::FILE_CONFLICTS:
+                    if (!expected_failures.contains(port_result.spec))
+                    {
+                        output.append(msg::format(
+                            msgCiBaselineRegression,
+                            msg::spec = port_result.spec.to_string(),
+                            msg::build_result =
+                                Build::to_string_locale_invariant(port_result.build_result.code).to_string(),
+                            msg::path = ci_baseline_file_name));
+                        output.appendnl();
+                    }
+                    break;
+                case Build::BuildResult::SUCCEEDED:
+                    if (!allow_unexpected_passing && expected_failures.contains(port_result.spec))
+                    {
+                        output.append(msg::format(msgCiBaselineUnexpectedPass,
+                                                  msg::spec = port_result.spec.to_string(),
+                                                  msg::path = ci_baseline_file_name));
+                        output.appendnl();
+                    }
+                    break;
+                default: break;
+            }
+        }
+
+        auto output_data = output.extract_data();
+        if (output_data.empty())
+        {
+            return;
+        }
+
+        LocalizedString header = msg::format(msgCiBaselineRegressionHeader);
+        header.appendnl();
+        output_data.insert(0, header.extract_data());
+        fwrite(output_data.data(), 1, output_data.size(), stderr);
+    }
+
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
                           Triplet target_triplet,
@@ -487,12 +544,31 @@ namespace vcpkg::Commands::CI
         const auto& settings = options.settings;
 
         BinaryCache binary_cache{args, paths};
-        ExclusionPredicate is_excluded{
-            parse_exclusions(settings, OPTION_EXCLUDE),
-            parse_exclusions(settings, OPTION_HOST_EXCLUDE),
-            target_triplet,
-            host_triplet,
-        };
+
+        ExclusionsMap exclusions_map;
+        parse_exclusions(settings, OPTION_EXCLUDE, target_triplet, exclusions_map);
+        parse_exclusions(settings, OPTION_HOST_EXCLUDE, host_triplet, exclusions_map);
+        auto baseline_iter = settings.find(OPTION_CI_BASELINE);
+        const bool allow_unexpected_passing = Util::Sets::contains(options.switches, OPTION_ALLOW_UNEXPECTED_PASSING);
+        SortedVector<PackageSpec> expected_failures;
+        if (baseline_iter == settings.end())
+        {
+            if (allow_unexpected_passing)
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgCiBaselineAllowUnexpectedPassingRequiresBaseline);
+            }
+        }
+        else
+        {
+            const auto& ci_baseline_file_name = baseline_iter->second;
+            const auto ci_baseline_file_contents =
+                paths.get_filesystem().read_contents(ci_baseline_file_name, VCPKG_LINE_INFO);
+            ParseMessages ci_parse_messages;
+            const auto lines = parse_ci_baseline(ci_baseline_file_contents, ci_baseline_file_name, ci_parse_messages);
+            ci_parse_messages.exit_if_errors_or_warnings(ci_baseline_file_name);
+            expected_failures = parse_and_apply_ci_baseline(lines, exclusions_map);
+        }
+
         auto skipped_cascade_count = parse_skipped_cascade_count(settings);
 
         const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
@@ -523,8 +599,6 @@ namespace vcpkg::Commands::CI
 
         std::vector<TripletAndSummary> results;
         auto timer = ElapsedTimer::create_started();
-
-        Input::check_triplet(target_triplet, paths);
 
         xunitTestResults.push_collection(target_triplet.canonical_name());
 
@@ -561,7 +635,8 @@ namespace vcpkg::Commands::CI
 
         auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
-        auto split_specs = compute_action_statuses(is_excluded, var_provider, precheck_results, action_plan);
+        auto split_specs =
+            compute_action_statuses(ExclusionPredicate{&exclusions_map}, var_provider, precheck_results, action_plan);
 
         {
             std::string msg;
@@ -680,6 +755,11 @@ namespace vcpkg::Commands::CI
             print2("\nTriplet: ", result.triplet, "\n");
             print2("Total elapsed time: ", GlobalState::timer.to_string(), "\n");
             result.summary.print();
+
+            if (baseline_iter != settings.end())
+            {
+                print_baseline_regressions(result, expected_failures, baseline_iter->second, allow_unexpected_passing);
+            }
         }
 
         auto it_xunit = settings.find(OPTION_XUNIT);

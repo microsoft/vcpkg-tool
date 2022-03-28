@@ -17,4 +17,4 @@ namespace vcpkg
     };
 }
 
-VCPKG_FORMAT_AS(vcpkg::StringLiteral, vcpkg::StringView);
+VCPKG_FORMAT_AS(vcpkg::StringLiteral, vcpkg::ZStringView);

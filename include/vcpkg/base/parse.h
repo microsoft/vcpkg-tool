@@ -58,6 +58,9 @@ namespace vcpkg
     {
         std::unique_ptr<ParseError> error;
         std::vector<ParseMessage> warnings;
+
+        void exit_if_errors_or_warnings(StringView origin) const;
+        bool good() const { return !error && warnings.empty(); }
     };
 
     struct ParserBase
@@ -84,41 +87,34 @@ namespace vcpkg
         }
         static constexpr bool is_word_char(char32_t ch) { return is_alphanum(ch) || ch == '_'; }
 
-        StringView skip_whitespace() { return match_zero_or_more(is_whitespace); }
-        StringView skip_tabs_spaces()
-        {
-            return match_zero_or_more([](char32_t ch) { return ch == ' ' || ch == '\t'; });
-        }
-        void skip_to_eof() { m_it = m_it.end(); }
-        void skip_newline()
-        {
-            if (cur() == '\r') next();
-            if (cur() == '\n') next();
-        }
-        void skip_line()
-        {
-            match_until(is_lineend);
-            skip_newline();
-        }
+        StringView skip_whitespace();
+        StringView skip_tabs_spaces();
+        void skip_to_eof();
+        void skip_newline();
+        void skip_line();
 
         template<class Pred>
-        StringView match_zero_or_more(Pred p)
+        StringView match_while(Pred p)
         {
             const char* start = m_it.pointer_to_current();
             auto ch = cur();
             while (ch != Unicode::end_of_file && p(ch))
+            {
                 ch = next();
+            }
+
             return {start, m_it.pointer_to_current()};
         }
+
         template<class Pred>
         StringView match_until(Pred p)
         {
-            const char* start = m_it.pointer_to_current();
-            auto ch = cur();
-            while (ch != Unicode::end_of_file && !p(ch))
-                ch = next();
-            return {start, m_it.pointer_to_current()};
+            return match_while([p](char32_t ch) { return !p(ch); });
         }
+
+        bool require_character(char ch);
+
+        bool try_match_keyword(StringView keyword_content);
 
         StringView text() const { return m_text; }
         Unicode::Utf8Decoder it() const { return m_it; }
@@ -140,7 +136,7 @@ namespace vcpkg
         std::unique_ptr<ParseError> extract_error() { return std::move(m_messages.error); }
 
         const ParseMessages& messages() const { return m_messages; }
-        ParseMessages extract_messages() { return std::move(m_messages); }
+        ParseMessages&& extract_messages() { return std::move(m_messages); }
 
     private:
         Unicode::Utf8Decoder m_it;

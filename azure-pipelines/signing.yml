@@ -16,7 +16,7 @@ parameters:
 - name: VcpkgBaseVersionOverride
   displayName: vcpkg Base Version (default is today's date in ISO 8601)
   type: string
-  default:
+  default: default
 - name: PublishTo
   displayName: 'Publish To'
   type: string
@@ -48,10 +48,10 @@ jobs:
     # would make subsequent pipeline stages use a different day producing a broken build.
     # Note that pipeline.startTime seems to refer to the start of the *job*, not the overall pipeline run.
     variables:
-    - ${{ if eq(parameters.VcpkgBaseVersionOverride, '') }}:
+    - ${{ if eq(parameters.VcpkgBaseVersionOverride, 'default') }}:
       - name: VCPKG_INITIAL_BASE_VERSION
         value: $[format('{0:yyyy}-{0:MM}-{0:dd}', pipeline.startTime)]
-    - ${{ if ne(parameters.VcpkgBaseVersionOverride, '') }}:
+    - ${{ if ne(parameters.VcpkgBaseVersionOverride, 'default') }}:
       - name: VCPKG_INITIAL_BASE_VERSION
         value: ${{parameters.VcpkgBaseVersionOverride}}
     pool:
