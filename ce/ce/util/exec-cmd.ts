@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
+import { lstat } from 'fs/promises';
 
 export interface ExecOptions extends SpawnOptions {
   onCreate?(cp: ChildProcess): void;
@@ -12,6 +13,7 @@ export interface ExecOptions extends SpawnOptions {
 export interface ExecResult {
   stdout: string;
   stderr: string;
+  env: NodeJS.ProcessEnv | undefined;
 
   /**
    * Union of stdout and stderr.
@@ -19,8 +21,9 @@ export interface ExecResult {
   log: string;
   error: Error | null;
   code: number | null;
+  command: string,
+  args: Array<string>,
 }
-
 
 export function cmdlineToArray(text: string, result: Array<string> = [], matcher = /[^\s"]+|"([^"]*)"/gi, count = 0): Array<string> {
   text = text.replace(/\\"/g, '\ufffe');
@@ -35,7 +38,18 @@ export function cmdlineToArray(text: string, result: Array<string> = [], matcher
     : result;
 }
 
-export function execute(command: string, cmdlineargs: Array<string>, options: ExecOptions = {}): Promise<ExecResult> {
+export async function execute(command: string, cmdlineargs: Array<string>, options: ExecOptions = {}): Promise<ExecResult> {
+  try {
+    command = command.replace(/"/g, '');
+    const k = await lstat(command);
+    if (k.isDirectory()) {
+      throw new Error(`Unable to call ${command} ${cmdlineargs.join(' ')} -- ${command} is a directory`);
+    }
+  } catch (e) {
+    throw new Error(`Unable to call ${command} ${cmdlineargs.join(' ')} - -- ${command} is not a file `);
+
+  }
+
   return new Promise((resolve, reject) => {
     const cp = spawn(command, cmdlineargs.filter(each => each), { ...options, stdio: 'pipe' });
     if (options.onCreate) {
@@ -61,14 +75,18 @@ export function execute(command: string, cmdlineargs: Array<string>, options: Ex
       reject(err);
     });
 
-    cp.on('close', (code, signal) =>
-      resolve({
+    cp.on('close', (code, signal) => {
+      return resolve({
+        env: options.env,
         stdout: out,
         stderr: err,
         log: all,
         error: code ? new Error('Process Failed.') : null,
         code,
-      }),
+        command: command,
+        args: cmdlineargs,
+      });
+    }
     );
   });
 }
@@ -112,11 +130,14 @@ export const execute_shell = (
     });
     cp.on('close', (code, signal) =>
       resolve({
+        env: options.env,
         stdout: out,
         stderr: err,
         log: all,
         error: code ? new Error('Process Failed.') : null,
         code,
+        command: command,
+        args: [],
       }),
     );
   });

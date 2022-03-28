@@ -2,16 +2,14 @@
 // Licensed under the MIT License.
 
 import { CloneOptions, Git } from '../archivers/git';
-import { Activation } from '../artifacts/activation';
 import { i } from '../i18n';
 import { InstallEvents, InstallOptions } from '../interfaces/events';
 import { CloneSettings, GitInstaller } from '../interfaces/metadata/installers/git';
 import { Session } from '../session';
 import { Uri } from '../util/uri';
-import { installEspIdf } from './espidf';
 
-export async function installGit(session: Session, activation: Activation, name: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
-  const gitPath = activation.findTool('git');
+export async function installGit(session: Session, name: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
+  const gitPath = await session.activation.getAlias('git');
 
   if (!gitPath) {
     throw new Error(i`Git is not installed`);
@@ -20,7 +18,7 @@ export async function installGit(session: Session, activation: Activation, name:
   const repo = session.parseUri(install.location);
   const targetDirectory = targetLocation.join(options.subdirectory ?? '');
 
-  const gitTool = new Git(session, gitPath, activation.environmentBlock, targetDirectory);
+  const gitTool = new Git(session, gitPath, await session.activation.getEnvironmentBlock(), targetDirectory);
 
   await gitTool.clone(repo, events, {
     recursive: install.recurse,
@@ -45,9 +43,5 @@ export async function installGit(session: Session, activation: Activation, name:
         commit: install.commit
       });
     }
-  }
-
-  if (install.espidf) {
-    await installEspIdf(events, targetDirectory, activation);
   }
 }

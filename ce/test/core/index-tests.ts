@@ -3,7 +3,7 @@
 
 
 import { Index, IndexSchema, SemverKey, StringKey } from '@microsoft/vcpkg-ce/dist/registries/indexer';
-import { Dictionary, keys } from '@microsoft/vcpkg-ce/dist/util/linq';
+import { keys, Record } from '@microsoft/vcpkg-ce/dist/util/linq';
 import { describe, it } from 'mocha';
 import { SemVer } from 'semver';
 import { SuiteLocal } from './SuiteLocal';
@@ -15,7 +15,7 @@ interface TestData {
     summary?: string
     description?: string;
   },
-  contacts?: Dictionary<{
+  contacts?: Record<string, {
     email?: string;
     role?: Array<string>;
   }>

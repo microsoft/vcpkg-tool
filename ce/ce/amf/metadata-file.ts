@@ -4,7 +4,6 @@
 
 import { extname } from 'path';
 import { Document, isMap, LineCounter, parseDocument, YAMLMap } from 'yaml';
-import { Activation } from '../artifacts/activation';
 import { Registry } from '../artifacts/registry';
 import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
@@ -39,6 +38,7 @@ export class MetadataFile extends BaseMap implements Profile {
     this.context.session = session;
     this.context.file = session.parseUri(this.context.filename);
     this.context.folder = this.context.file.parent;
+    await this.demandBlock.init(session);
     return this;
   }
 
@@ -82,9 +82,6 @@ export class MetadataFile extends BaseMap implements Profile {
   get unless() { return this.demandBlock.unless; }
   get apply() { return this.demandBlock.apply; }
 
-  setActivation(activation: Activation): void {
-    this.demandBlock.setActivation(activation);
-  }
 
   conditionalDemands = new Demands(undefined, this, 'demands');
 

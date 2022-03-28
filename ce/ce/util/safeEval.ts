@@ -3,6 +3,7 @@
 
 import * as vm from 'vm';
 import { Kind, Scanner } from '../mediaquery/scanner';
+import { isPrimitive } from './checks';
 
 /**
  * Creates a reusable safe-eval sandbox to execute code in.
@@ -103,4 +104,37 @@ export function valiadateExpression(expression: string) {
     return false;
   }
   return true;
+}
+
+export function proxifyObject(obj: Record<string, any>): any {
+  return new Proxy(obj, {
+    get(target, prop) {
+
+      if (typeof prop === 'string') {
+        let result = target[prop];
+        // check for a direct match first
+        if (!result) {
+          // go thru the properties and check for a case-insensitive match
+          for (const each of Object.keys(target)) {
+            if (each.toLowerCase() === prop.toLowerCase()) {
+              result = target[each];
+              break;
+            }
+          }
+        }
+        if (result) {
+          if (Array.isArray(result)) {
+            return result;
+          }
+          if (typeof result === 'object') {
+            return proxifyObject(result);
+          }
+          if (isPrimitive(result)) {
+            return result;
+          }
+        }
+        return undefined;
+      }
+    },
+  });
 }

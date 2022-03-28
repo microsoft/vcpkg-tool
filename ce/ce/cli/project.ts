@@ -25,11 +25,11 @@ export async function openProject(location: Uri): Promise<ProjectManifest> {
 
 export async function activate(artifacts: ArtifactMap, createUndoFile: boolean, options?: ActivationOptions) {
   // install the items in the project
-  const [success, artifactStatus, activation] = await installArtifacts(session, artifacts.artifacts, options);
+  const [success, artifactStatus] = await installArtifacts(session, artifacts.artifacts, options);
 
   if (success) {
     const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;
-    await activation.activate(artifacts.artifacts, session.environment, session.postscriptFile, backupFile, options?.msbuildProps);
+    await session.activation.activate(artifacts.artifacts, session.environment, session.postscriptFile, backupFile, options?.msbuildProps);
   }
 
   return success;

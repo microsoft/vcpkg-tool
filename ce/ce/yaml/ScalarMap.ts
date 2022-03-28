@@ -26,7 +26,7 @@ export /** @internal */ class ScalarMap<TElement extends Primitive = Primitive> 
     if (this.node) {
       for (const { key, value } of this.node.items) {
         if (isScalar(value)) {
-          yield [key, <any>this.asPrimitive(value)];
+          yield [this.asString(key)!, <any>this.asPrimitive(value)];
         }
       }
     }

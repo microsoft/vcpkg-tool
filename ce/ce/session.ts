@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
@@ -25,15 +26,14 @@ import { Registries } from './registries/registries';
 import { RemoteRegistry } from './registries/RemoteRegistry';
 import { isIndexFile, isMetadataFile } from './registries/standard-registry';
 import { Channels, Stopwatch } from './util/channels';
-import { Dictionary } from './util/linq';
 import { Queue } from './util/promise';
 import { isFilePath, Uri } from './util/uri';
 import { isYAML } from './yaml/yaml';
 
+
 /** The definition for an installer tool function */
 type InstallerTool<T extends Installer = any> = (
   session: Session,
-  activation: Activation,
   name: string,
   targetLocation: Uri,
   install: T,
@@ -55,11 +55,6 @@ export type Context = { [key: string]: Array<string> | undefined; } & {
   readonly arm64: boolean;
 }
 
-interface BackupFile {
-  environment: Dictionary<string>;
-  activation: Activation;
-}
-
 /**
  * The Session class is used to hold a reference to the
  * message channels,
@@ -76,6 +71,7 @@ export class Session {
   readonly tmpFolder: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
+  readonly activation: Activation = new Activation(this);
 
   readonly globalConfig: Uri;
   readonly cache: Uri;
@@ -95,7 +91,7 @@ export class Session {
 
   telemetryEnabled = false;
 
-  constructor(currentDirectory: string, public readonly context: Context, public readonly settings: Dictionary<string>, public readonly environment: NodeJS.ProcessEnv) {
+  constructor(currentDirectory: string, public readonly context: Context, public readonly settings: Record<string, string>, public readonly environment: NodeJS.ProcessEnv) {
     this.fileSystem = new UnifiedFileSystem(this).
       register('file', new LocalFileSystem(this)).
       register('vsix', new VsixLocalFilesystem(this)).
@@ -398,4 +394,5 @@ export class Session {
     }
     return value;
   }
+
 }

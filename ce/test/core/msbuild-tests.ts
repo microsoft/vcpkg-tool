@@ -12,7 +12,7 @@ describe('MSBuild Generator', () => {
 
   after(local.after.bind(local));
 
-  it('Generates locations in order', () => {
+  it('Generates locations in order', async () => {
 
     const activation = new Activation(local.session);
 
@@ -59,6 +59,6 @@ describe('MSBuild Generator', () => {
   </PropertyGroup>
 </Project>` ;
 
-    strict.equal(activation.generateMSBuild([]), expected);
+    strict.equal(await activation.generateMSBuild([]), expected);
   });
 });

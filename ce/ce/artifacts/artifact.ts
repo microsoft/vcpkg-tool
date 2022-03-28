@@ -6,7 +6,7 @@ import { fail } from 'assert';
 import { match } from 'micromatch';
 import { delimiter, resolve } from 'path';
 import { MetadataFile } from '../amf/metadata-file';
-import { gitArtifact, gitUniqueIdPrefix, latestVersion } from '../constants';
+import { gitArtifact, latestVersion } from '../constants';
 import { FileType } from '../fs/filesystem';
 import { i } from '../i18n';
 import { activateEspIdf, installEspIdf } from '../installers/espidf';
@@ -15,10 +15,8 @@ import { Registries } from '../registries/registries';
 import { Session } from '../session';
 import { linq } from '../util/linq';
 import { Uri } from '../util/uri';
-import { Activation } from './activation';
 import { Registry } from './registry';
 import { SetOfDemands } from './SetOfDemands';
-
 
 export type Selections = Map<string, string>;
 export type UID = string;
@@ -86,8 +84,10 @@ class ArtifactBase {
       }
     }
 
+    // check if system/git is already requested
+    if (!linq.entries(artifacts).first(([id, [artifact, name, version]]) => artifact.registryId === 'microsoft' && artifact.shortName === 'system/git')) {
 
-    if (!linq.startsWith(artifacts, gitUniqueIdPrefix)) {
+      // nope, should it be?
       // check if anyone needs git and add it if it isn't there
       for (const each of this.applicableDemands.installer) {
         if (each.installerKind === 'git') {
@@ -131,25 +131,25 @@ export class Artifact extends ArtifactBase {
     return `${this.registryUri.toString()}::${this.id}::${this.version}`;
   }
 
-  async install(activation: Activation, events: Partial<InstallEvents>, options: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<boolean> {
+  async install(events: Partial<InstallEvents>, options: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<boolean> {
     let installing = false;
     try {
       // is it installed?
       const applicableDemands = this.applicableDemands;
-      applicableDemands.setActivation(activation);
 
-      this.session.channels.error(applicableDemands.errors);
+      this.session.channels.error(applicableDemands.errors, this);
 
       if (applicableDemands.errors.length) {
-        throw Error('errors present');
+        throw Error('Error message from Artifact');
       }
 
-      this.session.channels.warning(applicableDemands.warnings);
-      this.session.channels.message(applicableDemands.messages);
-
+      this.session.channels.warning(applicableDemands.warnings, this);
+      this.session.channels.message(applicableDemands.messages, this);
 
       if (await this.isInstalled && !options.force) {
-        await this.loadActivationSettings(activation, events);
+        if (!await this.loadActivationSettings(events)) {
+          throw new Error(i`Failed during artifact activation`);
+        }
         return false;
       }
       installing = true;
@@ -172,12 +172,14 @@ export class Artifact extends ArtifactBase {
         if (!installer) {
           fail(i`Unknown installer type ${installInfo!.installerKind}`);
         }
-        await installer(this.session, activation, this.id, this.targetLocation, installInfo, events, options);
+        await installer(this.session, this.id, this.targetLocation, installInfo, events, options);
       }
 
       // after we unpack it, write out the installed manifest
       await this.writeManifest();
-      await this.loadActivationSettings(activation, events);
+      if (!await this.loadActivationSettings(events)) {
+        throw new Error(i`Failed during artifact activation`);
+      }
       return true;
     } catch (err) {
       if (installing) {
@@ -208,7 +210,7 @@ export class Artifact extends ArtifactBase {
   matchFilesInArtifact(glob: string) {
     const results = match(this.allPaths, glob.trim(), { dot: true, cwd: this.targetLocation.fsPath, unescape: true });
     if (results.length === 0) {
-      this.session.channels.warning(i`Unable to resolve '${glob}' to files in the artifact folder`);
+      this.session.channels.warning(i`Unable to resolve '${glob}' to files in the artifact folder`, this);
       return [];
     }
     return results;
@@ -218,7 +220,7 @@ export class Artifact extends ArtifactBase {
     return text.replace(/\{(.*?)\}/g, (m, e) => {
       const results = this.matchFilesInArtifact(e);
       if (mustBeSingle && results.length > 1) {
-        this.session.channels.warning(i`Glob ${m} resolved to multiple locations. Using first location.`);
+        this.session.channels.warning(i`Glob ${m} resolved to multiple locations. Using first location.`, this);
         return results[0];
       }
       return results.join(delimiter);
@@ -233,7 +235,7 @@ export class Artifact extends ArtifactBase {
     return path.indexOf('*') !== -1 || path.indexOf('?') !== -1;
   }
 
-  async loadActivationSettings(activation: Activation, events: Partial<InstallEvents>) {
+  async loadActivationSettings(events: Partial<InstallEvents>) {
     // construct paths (bin, lib, include, etc.)
     // construct tools
     // compose variables
@@ -241,103 +243,31 @@ export class Artifact extends ArtifactBase {
 
     // record all the files in the artifact
     this.allPaths = (await this.targetLocation.readDirectory(undefined, { recursive: true })).select(([name, stat]) => stat === FileType.Directory ? name.fsPath + '/' : name.fsPath);
-
     for (const exportsBlock of this.applicableDemands.exports) {
-      // **** defines ****
-      // eslint-disable-next-line prefer-const
-      for (let [key, value] of exportsBlock.defines) {
-        if (value === 'true') {
-          value = '1';
-        }
-        activation.addDefine(key, this.resolveBraces(value, true));
-      }
-
-      // **** paths ****
-      for (const [key, values] of exportsBlock.paths) {
-        if (!key || !values) {
-          continue;
-        }
-
-        for (const each of values) {
-          // check that each path is an actual path.
-          const locations = this.resolveBracesAndSplit(each);
-          for (const location of locations) {
-            activation.addPath(key, await this.sanitizeAndValidatePath(location));
-          }
-        }
-      }
-
-      // **** tools ****
-      for (let [key, value] of exportsBlock.tools) {
-        value = this.resolveBraces(value, true);
-        const uri = await this.sanitizeAndValidatePath(value);
-        if (uri) {
-          activation.addTool(key, uri.fsPath);
-        } else {
-          if (value) {
-            activation.addTool(key, value);
-            // this.session.channels.warning(i`Invalid tool path '${p}'`);
-          }
-        }
-      }
-
-      // **** variables ****
-      for (const [key, values] of exportsBlock.environment) {
-        for (const value of values) {
-          activation.addEnvironmentVariable(key, this.resolveBraces(value));
-        }
-      }
-
-      // **** properties ****
-      for (const [key, values] of exportsBlock.properties) {
-        for (const value of values) {
-          activation.addProperty(key, this.resolveBraces(value));
-        }
-      }
-
-      // **** locations ****
-      for (const [locationName, location] of exportsBlock.locations) {
-        const uri = await this.sanitizeAndValidatePath(this.resolveBraces(location, true));
-        if (uri) {
-          activation.addLocation(locationName, uri);
-        }
-      }
-
-      // **** aliases ****
-      for (const [key, value] of exportsBlock.aliases) {
-        activation.addAlias(key, this.resolveBraces(value, true));
-      }
+      this.session.activation.addExports(exportsBlock, this.targetLocation);
     }
 
-    // if espressif
-    console.log('TESTING FOR ESPRESSIF');
+    // if espressif install
     if (this.metadata.info.flags.has('espidf')) {
-      console.log('HAS ESPIDF FLAG');
-      console.log(this.targetLocation.toString());
       // check for some file that espressif installs to see if it's installed.
-      // if not
-      // install
       if (!await this.targetLocation.exists('.espressif')) {
-        console.log('INSTALLING');
-        await installEspIdf(events, this.targetLocation, activation);
+        await installEspIdf(this.session, events, this.targetLocation);
       }
-
 
       // activate
-      await activateEspIdf(this.session, this.targetLocation, activation);
+      return await activateEspIdf(this.session, this.targetLocation);
     }
+    return true;
   }
 
   async sanitizeAndValidatePath(path: string) {
-    if (!path.startsWith('.')) {
-      try {
-        const loc = this.session.fileSystem.file(resolve(path));
-        if (await loc.exists()) {
-          return loc;
-        }
-      } catch {
-        // no worries, treat it like a relative path.
+    try {
+      const loc = this.session.fileSystem.file(resolve(this.targetLocation.fsPath, path));
+      if (await loc.exists()) {
+        return loc;
       }
+    } catch {
+      // no worries, treat it like a relative path.
     }
     const loc = this.targetLocation.join(sanitizePath(path));
     if (await loc.exists()) {

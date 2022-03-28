@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { bold, cyan, gray, green, greenBright, grey, underline, whiteBright, yellowBright } from 'chalk';
+import { bold, cyan, gray, green, greenBright, grey, underline, whiteBright, yellow, yellowBright } from 'chalk';
 import { Uri } from '../util/uri';
 
 export function projectFile(uri: Uri): string {
@@ -10,9 +10,9 @@ export function projectFile(uri: Uri): string {
 
 export function artifactIdentity(registryName: string, identity: string, alias?: string) {
   if (alias) {
-    return `${registryName}:${identity.substr(0, identity.length - alias.length)}${yellowBright(alias)}`;
+    return `${whiteBright(registryName)}:${yellow.dim(identity.substr(0, identity.length - alias.length))}${yellowBright(alias)}`;
   }
-  return registryName ? `${registryName}:${yellowBright(identity)}` : yellowBright(identity);
+  return registryName ? `${whiteBright(registryName)}:${yellowBright(identity)}` : yellowBright(identity);
 }
 
 export function artifactReference(registryName: string, identity: string, version: string) {

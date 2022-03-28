@@ -1,10 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { cyan, red, yellow } from 'chalk';
+import { cyan, green, red, yellow } from 'chalk';
 import { argv } from 'process';
+import { Artifact } from '../artifacts/artifact';
 import { Session } from '../session';
 import { CommandLine } from './command-line';
+import { artifactIdentity } from './format';
 
 function formatTime(t: number) {
   return (
@@ -54,23 +56,39 @@ export function writeException(e: any) {
 
 export function initStyling(commandline: CommandLine, session: Session) {
   log = (text) => stdout((reformatText(text, session).trim()));
-  error = (text) => stdout(`${red.bold('ERROR: ')}${reformatText(text, session).trim()}`);
-  warning = (text) => stdout(`${yellow.bold('WARNING: ')}${reformatText(text, session).trim()}`);
+  error = (text) => stdout(`${red.bold('\nERROR: ')}${reformatText(text, session).trim()}`);
+  warning = (text) => stdout(`${yellow.bold('\nWARNING: ')}${reformatText(text, session).trim()}`);
   debug = (text) => { if (commandline.debug) { stdout(`${cyan.bold('DEBUG: ')}${reformatText(text, session).trim()}`); } };
 
   session.channels.on('message', (text: string, context: any, msec: number) => {
-    log(text);
+    if (context && context instanceof Artifact) {
+      log(`${green.bold('NOTE: ')}[${artifactIdentity(context.registryId, context.name)}] - ${text}`);
+    } else {
+      log(text);
+    }
   });
 
   session.channels.on('error', (text: string, context: any, msec: number) => {
-    error(text);
+    if (context && context instanceof Artifact) {
+      error(`[${artifactIdentity(context.registryId, context.name)}] - ${text}`);
+    } else {
+      error(text);
+    }
   });
 
   session.channels.on('debug', (text: string, context: any, msec: number) => {
-    debug(`${cyan.bold(`[${formatTime(msec)}]`)} ${reformatText(text, session)}`);
+    if (context && context instanceof Artifact) {
+      debug(`[${artifactIdentity(context.registryId, context.name)}] - ${text}`);
+    } else {
+      debug(`${cyan.bold(`[${formatTime(msec)}]`)} ${reformatText(text, session)}`);
+    }
   });
 
   session.channels.on('warning', (text: string, context: any, msec: number) => {
-    warning(text);
+    if (context && context instanceof Artifact) {
+      warning(`[${artifactIdentity(context.registryId, context.name)}] - ${text}`);
+    } else {
+      warning(text);
+    }
   });
 }
