@@ -134,8 +134,6 @@ async function main() {
   try {
     result = await command.run();
     log(blank);
-
-    /// await session.writePostscript();
   } catch (e) {
     // in --debug mode we want to see the stack trace(s).
     if (commandline.debug && e instanceof Error) {

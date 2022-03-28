@@ -22,11 +22,14 @@ export function artifactFileName(name: string, install: Installer, extension: st
 }
 
 export function applyAcquireOptions(options: AcquireOptions, install: Verifiable): AcquireOptions {
-  if (install.sha256) {
-    return { ...options, algorithm: 'sha256', value: install.sha256 };
+  const sha256 = install.sha256;
+  if (sha256 !== null && sha256 !== undefined) {
+    return { ...options, algorithm: 'sha256', value: sha256.toString() };
   }
-  if (install.sha512) {
-    return { ...options, algorithm: 'sha512', value: install.sha512 };
+
+  const sha512 = install.sha512;
+  if (sha512 !== null && sha512 !== undefined) {
+    return { ...options, algorithm: 'sha512', value: sha512.toString() };
   }
 
   return options;

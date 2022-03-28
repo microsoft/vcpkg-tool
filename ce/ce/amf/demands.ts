@@ -169,9 +169,7 @@ export class DemandBlock extends Entity {
     if (value === undefined) {
       return value;
     }
-    value = isScalar(value) ? value.value : value;
-
-    return this.evaluate(value);
+    return this.evaluate(isScalar(value) ? value.value : value);
   }
 
   override asPrimitive(value: any): Primitive | undefined {
