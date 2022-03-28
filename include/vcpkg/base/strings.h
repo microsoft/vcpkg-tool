@@ -74,7 +74,7 @@ namespace vcpkg::Strings::details
 
 namespace vcpkg::Strings
 {
-    //inline std::string& append(std::string& into) { return into; }
+    // inline std::string& append(std::string& into) { return into; }
     constexpr struct
     {
         char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
