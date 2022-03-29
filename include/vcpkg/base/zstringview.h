@@ -32,8 +32,8 @@ namespace vcpkg
         {
         }
 
-        constexpr const char* begin() const { return m_ptr; }
-        constexpr const char* end() const { return m_ptr + m_size; }
+        constexpr const char* begin() const noexcept { return m_ptr; }
+        constexpr const char* end() const noexcept { return m_ptr + m_size; }
 
         const char& front() const noexcept { return *m_ptr; }
         const char& back() const noexcept { return m_ptr[m_size - 1]; }
@@ -41,21 +41,21 @@ namespace vcpkg
         std::reverse_iterator<const char*> rbegin() const noexcept { return std::make_reverse_iterator(end()); }
         std::reverse_iterator<const char*> rend() const noexcept { return std::make_reverse_iterator(begin()); }
 
-        constexpr const char* data() const { return m_ptr; }
-        constexpr size_t size() const { return m_size; }
-        constexpr bool empty() const { return m_size == 0; }
-        constexpr char operator[](ptrdiff_t off) const { return m_ptr[off]; }
+        constexpr const char* data() const noexcept { return m_ptr; }
+        constexpr size_t size() const noexcept { return m_size; }
+        constexpr bool empty() const noexcept { return m_size == 0; }
+        constexpr char operator[](ptrdiff_t off) const noexcept { return m_ptr[off]; }
 
-        constexpr const char* c_str() const { return m_ptr; }
+        constexpr const char* c_str() const noexcept { return m_ptr; }
 
         std::string to_string() const;
         void to_string(std::string& out) const;
         explicit operator std::string() const { return to_string(); }
 
-        constexpr operator StringView() const { return StringView(m_ptr, m_size); }
+        constexpr operator StringView() const noexcept { return StringView(m_ptr, m_size); }
 
         // Note that only the 1 parameter version of substr is provided to preserve null termination
-        ZStringView substr(size_t pos) const;
+        ZStringView substr(size_t pos) const noexcept;
 
         friend bool operator==(ZStringView lhs, ZStringView rhs) noexcept;
         friend bool operator!=(ZStringView lhs, ZStringView rhs) noexcept;

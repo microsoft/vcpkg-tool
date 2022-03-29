@@ -11,7 +11,7 @@ namespace vcpkg
     std::string ZStringView::to_string() const { return std::string(m_ptr, m_size); }
     void ZStringView::to_string(std::string& s) const { s.append(m_ptr, m_size); }
 
-    ZStringView ZStringView::substr(size_t pos) const
+    ZStringView ZStringView::substr(size_t pos) const noexcept
     {
         if (pos < m_size)
         {
