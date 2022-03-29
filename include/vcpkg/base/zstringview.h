@@ -57,12 +57,12 @@ namespace vcpkg
         // Note that only the 1 parameter version of substr is provided to preserve null termination
         ZStringView substr(size_t pos) const;
 
-        friend bool operator==(ZStringView lhs, ZStringView rhs);
-        friend bool operator!=(ZStringView lhs, ZStringView rhs);
-        friend bool operator<(ZStringView lhs, ZStringView rhs);
-        friend bool operator>(ZStringView lhs, ZStringView rhs);
-        friend bool operator<=(ZStringView lhs, ZStringView rhs);
-        friend bool operator>=(ZStringView lhs, ZStringView rhs);
+        friend bool operator==(ZStringView lhs, ZStringView rhs) noexcept;
+        friend bool operator!=(ZStringView lhs, ZStringView rhs) noexcept;
+        friend bool operator<(ZStringView lhs, ZStringView rhs) noexcept;
+        friend bool operator>(ZStringView lhs, ZStringView rhs) noexcept;
+        friend bool operator<=(ZStringView lhs, ZStringView rhs) noexcept;
+        friend bool operator>=(ZStringView lhs, ZStringView rhs) noexcept;
 
         friend std::string operator+(std::string&& l, const ZStringView& r);
 
