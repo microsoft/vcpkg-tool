@@ -140,7 +140,7 @@ namespace vcpkg
         }
 
         ExpectedT(const T& t, ExpectedLeftTag = {}) : m_t(t) { }
-        template<std::enable_if_t<!std::is_reference<S>::value, int> = 0>
+        template<std::enable_if_t<!std::is_reference<T>::value, int> = 0>
         ExpectedT(T&& t, ExpectedLeftTag = {}) : m_t(std::move(t))
         {
         }
