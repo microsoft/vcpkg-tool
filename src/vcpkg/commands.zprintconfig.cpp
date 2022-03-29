@@ -23,7 +23,7 @@ namespace vcpkg::Commands::Z_PrintConfig
     {
         if (auto p = opt.get())
         {
-            obj.insert(key.to_string(), p->native());
+            obj.insert(key, p->native());
         }
     }
 

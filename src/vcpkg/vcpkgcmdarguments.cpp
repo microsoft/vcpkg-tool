@@ -445,7 +445,7 @@ namespace vcpkg
             const auto it = find_option(switches_copy, switch_.name);
             if (it != switches_copy.end())
             {
-                output.switches.insert(switch_.name.to_string());
+                output.switches.insert(switch_.name);
                 switches_copy.erase(it);
             }
             const auto option_it = find_option(options_copy, switch_.name);
@@ -514,7 +514,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        output.multisettings[option.name.to_string()].push_back(v);
+                        output.multisettings[option.name].push_back(v);
                     }
                 }
                 options_copy.erase(it);
@@ -796,22 +796,22 @@ namespace vcpkg
             Json::Object obj;
             if (args.vcpkg_root_dir)
             {
-                obj.insert(VCPKG_ROOT_DIR_ENV.to_string(), Json::Value::string(*args.vcpkg_root_dir.get()));
+                obj.insert(VCPKG_ROOT_DIR_ENV, Json::Value::string(*args.vcpkg_root_dir.get()));
             }
 
             if (args.downloads_root_dir)
             {
-                obj.insert(DOWNLOADS_ROOT_DIR_ENV.to_string(), Json::Value::string(*args.downloads_root_dir.get()));
+                obj.insert(DOWNLOADS_ROOT_DIR_ENV, Json::Value::string(*args.downloads_root_dir.get()));
             }
 
             if (auto value = args.asset_sources_template())
             {
-                obj.insert(ASSET_SOURCES_ENV.to_string(), Json::Value::string(value.value_or_exit(VCPKG_LINE_INFO)));
+                obj.insert(ASSET_SOURCES_ENV, Json::Value::string(value.value_or_exit(VCPKG_LINE_INFO)));
             }
 
             if (args.disable_metrics)
             {
-                obj.insert(DISABLE_METRICS_ENV.to_string(), Json::Value::boolean(true));
+                obj.insert(DISABLE_METRICS_ENV, Json::Value::boolean(true));
             }
 
             set_environment_variable(RECURSIVE_DATA_ENV, Json::stringify(obj, Json::JsonStyle::with_spaces(0)));

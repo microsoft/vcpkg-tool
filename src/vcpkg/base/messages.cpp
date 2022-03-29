@@ -209,7 +209,7 @@ namespace vcpkg::msg
             else if (Debug::g_debugging)
             {
                 // we only want to print these in debug
-                names_without_localization.push_back(name.to_string());
+                names_without_localization.emplace_back(name);
             }
         }
 

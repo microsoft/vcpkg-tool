@@ -39,7 +39,7 @@ namespace
 
     void insert_version_to_json_object(Json::Object& obj, const Version& version, StringLiteral version_field)
     {
-        obj.insert(version_field.to_string(), Json::Value::string(version.text()));
+        obj.insert(version_field, Json::Value::string(version.text()));
         obj.insert("port-version", Json::Value::integer(version.port_version()));
     }
 

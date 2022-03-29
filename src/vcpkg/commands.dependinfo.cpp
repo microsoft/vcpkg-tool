@@ -141,10 +141,12 @@ namespace vcpkg::Commands::DependInfo
             constexpr StringLiteral OPTION_SORT_REVERSE = "reverse";
             constexpr StringLiteral OPTION_SORT_TREE = "x-tree";
 
-            static const std::map<StringView, SortMode> sortModesMap{{OPTION_SORT_LEXICOGRAPHICAL, Lexicographical},
-                                                                     {OPTION_SORT_TOPOLOGICAL, Topological},
-                                                                     {OPTION_SORT_REVERSE, ReverseTopological},
-                                                                     {OPTION_SORT_TREE, Treelogical}};
+            static const std::map<StringLiteral, SortMode, std::less<>> sortModesMap{
+                {OPTION_SORT_LEXICOGRAPHICAL, Lexicographical},
+                {OPTION_SORT_TOPOLOGICAL, Topological},
+                {OPTION_SORT_REVERSE, ReverseTopological},
+                {OPTION_SORT_TREE, Treelogical},
+            };
 
             auto iter = options.settings.find(OPTION_SORT);
             if (iter != options.settings.end())

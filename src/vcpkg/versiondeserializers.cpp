@@ -209,11 +209,11 @@ namespace vcpkg
             }
         };
 
-        out_obj.insert(version_field(scheme).to_string(), Json::Value::string(version));
+        out_obj.insert(version_field(scheme), Json::Value::string(version));
 
         if (port_version != 0 || always_emit_port_version)
         {
-            out_obj.insert(PORT_VERSION.to_string(), Json::Value::integer(port_version));
+            out_obj.insert(PORT_VERSION, Json::Value::integer(port_version));
         }
     }
 

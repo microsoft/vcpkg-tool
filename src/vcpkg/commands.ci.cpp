@@ -661,7 +661,7 @@ namespace vcpkg::Commands::CI
                     Json::Object obj;
                     obj.insert("name", Json::Value::string(action.spec.name()));
                     obj.insert("triplet", Json::Value::string(action.spec.triplet().canonical_name()));
-                    obj.insert("state", Json::Value::string(split_specs->action_state_string[i].to_string()));
+                    obj.insert("state", Json::Value::string(split_specs->action_state_string[i]));
                     obj.insert("abi", Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
                     arr.push_back(std::move(obj));
                 }

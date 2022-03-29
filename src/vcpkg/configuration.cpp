@@ -276,15 +276,13 @@ namespace
         Json::Object ret;
         for (const auto& el : obj)
         {
-            auto value = el.second;
-
-            if (!value.is_string())
+            if (!el.second.is_string())
             {
                 r.add_generic_error(type_name(), "value of [\"", el.first, "\"] must be a string");
                 continue;
             }
 
-            ret.insert_or_replace(el.first.to_string(), el.second);
+            ret.insert_or_replace(el.first, el.second);
         }
         return ret;
     }
@@ -299,7 +297,7 @@ namespace
             if (r.optional_object_field(obj, key, value, string_deserializer))
             {
                 if (errors_count != r.errors()) return;
-                put_into.insert_or_replace(key.to_string(), Json::Value::string(value));
+                put_into.insert_or_replace(key, std::move(value));
             }
         };
         auto extract_object = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
@@ -311,7 +309,7 @@ namespace
                 }
                 else
                 {
-                    put_into.insert_or_replace(key.to_string(), *value);
+                    put_into.insert_or_replace(key, *value);
                 }
             }
         };
@@ -321,7 +319,7 @@ namespace
             if (r.optional_object_field(obj, key, value, DictionaryDeserializer::instance))
             {
                 if (errors_count != r.errors()) return;
-                put_into.insert_or_replace(key.to_string(), value);
+                put_into.insert_or_replace(key, value);
             }
         };
 
@@ -331,7 +329,7 @@ namespace
             auto&& key = el.first;
             if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
             {
-                ret.insert_or_replace(key.to_string(), el.second);
+                ret.insert_or_replace(key, el.second);
             }
         }
         extract_string(obj, CE_ERROR, ret);
@@ -349,7 +347,7 @@ namespace
         Json::Object ret;
         for (const auto& el : obj)
         {
-            auto key = el.first.to_string();
+            const auto key = el.first;
             if (Strings::starts_with(key, "$"))
             {
                 // Put comments back without attempting to parse.
@@ -391,9 +389,8 @@ namespace
         {
             if (Strings::starts_with(el.first, "$"))
             {
-                auto key = el.first.to_string();
-                extra_info.insert_or_replace(key, el.second);
-                comment_keys.push_back(key);
+                extra_info.insert_or_replace(el.first, el.second);
+                comment_keys.emplace_back(el.first);
             }
         }
 
@@ -424,7 +421,7 @@ namespace
         Json::Object demands_obj;
         if (r.optional_object_field(obj, DemandsDeserializer::CE_DEMANDS, demands_obj, DemandsDeserializer::instance))
         {
-            ce_metadata_obj.insert_or_replace(DemandsDeserializer::CE_DEMANDS.to_string(), demands_obj);
+            ce_metadata_obj.insert_or_replace(DemandsDeserializer::CE_DEMANDS, demands_obj);
         }
 
         // Remove comments duplicated in ce_metadata
@@ -441,7 +438,7 @@ namespace
         auto extract_object = [](const Json::Object& obj, StringView key, Json::Object& put_into) {
             if (auto value = obj.get(key))
             {
-                put_into.insert_or_replace(key.to_string(), *value);
+                put_into.insert_or_replace(key, *value);
             }
         };
 
@@ -456,7 +453,7 @@ namespace
                 Json::Object serialized_demands;
                 for (const auto& el : demands->object())
                 {
-                    auto key = el.first.to_string();
+                    auto key = el.first;
                     if (Strings::starts_with(key, "$"))
                     {
                         serialized_demands.insert_or_replace(key, el.second);
@@ -469,7 +466,7 @@ namespace
                         serialize_ce_metadata(el.second.object(), inserted);
                     }
                 }
-                put_into.insert_or_replace(DemandsDeserializer::CE_DEMANDS.to_string(), serialized_demands);
+                put_into.insert_or_replace(DemandsDeserializer::CE_DEMANDS, serialized_demands);
             }
         };
 
@@ -478,7 +475,7 @@ namespace
         {
             if (Util::find(Configuration::known_fields(), el.first) == std::end(Configuration::known_fields()))
             {
-                put_into.insert_or_replace(el.first.to_string(), el.second);
+                put_into.insert_or_replace(el.first, el.second);
             }
         }
 
@@ -497,7 +494,7 @@ namespace
         std::vector<StringView> ret;
         for (const auto& el : obj)
         {
-            auto key = el.first.to_string();
+            auto key = el.first;
             if (Strings::starts_with(key, "$"))
             {
                 continue;
@@ -661,17 +658,17 @@ namespace vcpkg
 
         for (const auto& el : extra_info)
         {
-            obj.insert(el.first.to_string(), el.second);
+            obj.insert(el.first, el.second);
         }
 
         if (auto default_registry = default_reg.get())
         {
-            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY.to_string(), default_registry->serialize());
+            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, default_registry->serialize());
         }
 
         if (!registries.empty())
         {
-            auto& reg_arr = obj.insert(ConfigurationDeserializer::REGISTRIES.to_string(), Json::Array());
+            auto& reg_arr = obj.insert(ConfigurationDeserializer::REGISTRIES, Json::Array());
             for (const auto& reg : registries)
             {
                 reg_arr.push_back(reg.serialize());
@@ -693,20 +690,16 @@ namespace vcpkg
             return Json::Value::null(nullptr);
         }
         Json::Object obj;
-        obj.insert(RegistryConfigDeserializer::KIND.to_string(), Json::Value::string(*kind.get()));
-        if (auto p = baseline.get())
-            obj.insert(RegistryConfigDeserializer::BASELINE.to_string(), Json::Value::string(*p));
-        if (auto p = location.get())
-            obj.insert(RegistryConfigDeserializer::LOCATION.to_string(), Json::Value::string(*p));
-        if (auto p = name.get()) obj.insert(RegistryConfigDeserializer::NAME.to_string(), Json::Value::string(*p));
-        if (auto p = path.get())
-            obj.insert(RegistryConfigDeserializer::PATH.to_string(), Json::Value::string(p->native()));
-        if (auto p = reference.get())
-            obj.insert(RegistryConfigDeserializer::REFERENCE.to_string(), Json::Value::string(*p));
-        if (auto p = repo.get()) obj.insert(RegistryConfigDeserializer::REPO.to_string(), Json::Value::string(*p));
+        obj.insert(RegistryConfigDeserializer::KIND, Json::Value::string(*kind.get()));
+        if (auto p = baseline.get()) obj.insert(RegistryConfigDeserializer::BASELINE, Json::Value::string(*p));
+        if (auto p = location.get()) obj.insert(RegistryConfigDeserializer::LOCATION, Json::Value::string(*p));
+        if (auto p = name.get()) obj.insert(RegistryConfigDeserializer::NAME, Json::Value::string(*p));
+        if (auto p = path.get()) obj.insert(RegistryConfigDeserializer::PATH, Json::Value::string(p->native()));
+        if (auto p = reference.get()) obj.insert(RegistryConfigDeserializer::REFERENCE, Json::Value::string(*p));
+        if (auto p = repo.get()) obj.insert(RegistryConfigDeserializer::REPO, Json::Value::string(*p));
         if (packages)
         {
-            auto& arr = obj.insert(RegistryDeserializer::PACKAGES.to_string(), Json::Array());
+            auto& arr = obj.insert(RegistryDeserializer::PACKAGES, Json::Array());
             for (auto&& p : *packages.get())
             {
                 arr.push_back(Json::Value::string(p));
