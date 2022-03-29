@@ -120,12 +120,13 @@ namespace vcpkg::Json
         static Value boolean(bool) noexcept;
         static Value integer(int64_t i) noexcept;
         static Value number(double d) noexcept;
-        template<class StringLike>
-        static Value string(StringLike&& s) noexcept
+        static Value string(std::string&& s) noexcept;
+        template<class StringLike,
+                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        static Value string(const StringLike& s) noexcept
         {
             return string(StringView(s).to_string());
         }
-        static Value string(std::string&& s) noexcept;
 
         static Value array(Array&&) noexcept;
         static Value array(const Array&) noexcept;
@@ -209,11 +210,11 @@ namespace vcpkg::Json
         ~Object() = default;
 
         // asserts if the key is found
-        template<class StringViewLike,
-                 class = std::enable_if_t<std::is_constructible<StringView, StringViewLike&&>::value>>
-        Value& insert(StringView key, StringViewLike&& value)
+        template<class StringLike,
+                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        Value& insert(StringView key, const StringLike& value)
         {
-            return this->insert(key, StringView(static_cast<StringViewLike&&>(value)).to_string());
+            return this->insert(key, StringView(value).to_string());
         }
         Value& insert(StringView key, std::string&& value);
         Value& insert(StringView key, Value&& value);
@@ -225,13 +226,13 @@ namespace vcpkg::Json
 
         // replaces the value if the key is found, otherwise inserts a new
         // value.
-        template<class StringViewLike,
-                 class = std::enable_if_t<std::is_constructible<StringView, StringViewLike&&>::value>>
-        Value& insert_or_replace(StringView key, StringViewLike&& value)
-        {
-            return this->insert_or_replace(key, StringView(static_cast<StringViewLike&&>(value)).to_string());
-        }
         Value& insert_or_replace(StringView key, std::string&& value);
+        template<class StringLike,
+                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        Value& insert_or_replace(StringView key, const StringLike& value)
+        {
+            return this->insert_or_replace(key, StringView(value).to_string());
+        }
         Value& insert_or_replace(StringView key, Value&& value);
         Value& insert_or_replace(StringView key, const Value& value);
         Object& insert_or_replace(StringView key, Object&& value);
