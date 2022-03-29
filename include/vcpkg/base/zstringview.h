@@ -14,63 +14,61 @@ namespace vcpkg
     // A counted view of a null-terminated string
     struct ZStringView
     {
-        using value_type = char;
+        constexpr ZStringView() = default;
+        ZStringView(const std::string& s) noexcept;
+        constexpr ZStringView(const char* ptr, size_t size) noexcept : m_ptr(ptr), m_size(size) { }
+        // intentionally not provided to discourage non-null-termination:
+        // constexpr ZStringView(const char* b, const char* e)
 
-        constexpr ZStringView() : m_size(0), m_cstr("") { }
-
-        template<int N>
-        constexpr ZStringView(const char (&str)[N])
-            : m_size(N - 1) /* -1 here accounts for the null byte at the end*/, m_cstr(str)
+        template<size_t Sz>
+        constexpr ZStringView(const char (&arr)[Sz]) noexcept : m_ptr(arr), m_size(Sz - 1)
         {
         }
 
-        ZStringView(const std::string& s) : m_size(s.size()), m_cstr(s.c_str()) { }
-        constexpr ZStringView(const char* str, size_t sz) : m_size(sz), m_cstr(str) { }
+        // This constructor is a "template" for const char* to avoid outcompeting the array constructor above.
+        template<class Ptr,
+                 std::enable_if_t<std::is_convertible<Ptr, const char*>::value && !std::is_array<Ptr>::value, int> = 0>
+        ZStringView(Ptr ptr) noexcept : m_ptr(ptr), m_size(strlen(m_ptr))
+        {
+        }
 
-        constexpr const char* data() const { return m_cstr; }
+        constexpr const char* begin() const { return m_ptr; }
+        constexpr const char* end() const { return m_ptr + m_size; }
+
+        const char& front() const noexcept { return *m_ptr; }
+        const char& back() const noexcept { return m_ptr[m_size - 1]; }
+
+        std::reverse_iterator<const char*> rbegin() const noexcept { return std::make_reverse_iterator(end()); }
+        std::reverse_iterator<const char*> rend() const noexcept { return std::make_reverse_iterator(begin()); }
+
+        constexpr const char* data() const { return m_ptr; }
         constexpr size_t size() const { return m_size; }
         constexpr bool empty() const { return m_size == 0; }
-        constexpr char operator[](ptrdiff_t off) const { return m_cstr[off]; }
+        constexpr char operator[](ptrdiff_t off) const { return m_ptr[off]; }
 
-        constexpr const char* c_str() const { return m_cstr; }
+        constexpr const char* c_str() const { return m_ptr; }
 
-        constexpr const char* begin() const { return m_cstr; }
-        constexpr const char* end() const { return m_cstr + m_size; }
-
-        std::string to_string() const { return std::string(m_cstr, m_size); }
-        void to_string(std::string& out) const { out.append(m_cstr, m_size); }
+        std::string to_string() const;
+        void to_string(std::string& out) const;
         explicit operator std::string() const { return to_string(); }
 
-        constexpr operator StringView() const { return StringView(m_cstr, m_size); }
+        constexpr operator StringView() const { return StringView(m_ptr, m_size); }
 
         // Note that only the 1 parameter version of substr is provided to preserve null termination
-        ZStringView substr(std::size_t prefix_length) const
-        {
-            if (prefix_length < m_size)
-            {
-                return ZStringView{m_cstr + prefix_length, m_size - prefix_length};
-            }
+        ZStringView substr(size_t pos) const;
 
-            return ZStringView{};
-        }
+        friend bool operator==(ZStringView lhs, ZStringView rhs);
+        friend bool operator!=(ZStringView lhs, ZStringView rhs);
+        friend bool operator<(ZStringView lhs, ZStringView rhs);
+        friend bool operator>(ZStringView lhs, ZStringView rhs);
+        friend bool operator<=(ZStringView lhs, ZStringView rhs);
+        friend bool operator>=(ZStringView lhs, ZStringView rhs);
 
-        friend bool operator==(ZStringView l, ZStringView r)
-        {
-            return std::equal(l.begin(), l.end(), r.begin(), r.end());
-        }
-        friend bool operator!=(ZStringView l, ZStringView r)
-        {
-            return !std::equal(l.begin(), l.end(), r.begin(), r.end());
-        }
-
-        friend bool operator==(const char* l, ZStringView r) { return strcmp(l, r.c_str()) == 0; }
-        friend bool operator==(ZStringView l, const char* r) { return strcmp(l.c_str(), r) == 0; }
-
-        friend std::string operator+(std::string&& l, const ZStringView& r) { return std::move(l) + r.c_str(); }
+        friend std::string operator+(std::string&& l, const ZStringView& r);
 
     private:
-        size_t m_size;
-        const char* m_cstr;
+        const char* m_ptr = "";
+        size_t m_size = 0;
     };
 }
 

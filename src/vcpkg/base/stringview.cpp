@@ -1,9 +1,8 @@
-#include <vcpkg/base/checks.h>
-#include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringview.h>
 
+#include <string.h>
+
 #include <algorithm>
-#include <cstring>
 
 namespace vcpkg
 {
