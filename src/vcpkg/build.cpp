@@ -109,10 +109,14 @@ namespace
                                  "DOWNLOADED");
 
     DECLARE_AND_REGISTER_MESSAGE(BuildingPackageFailed,
-        (msg::spec, msg::build_result), "",
-            "building package {spec} failed with: {build_result}");
-    DECLARE_AND_REGISTER_MESSAGE(BuildingPackageFailedDueToMissingDeps,
-        (), "Printed after BuildingPackageFailed, and followed by a list of dependencies that were missing.", "due to the following missing dependencies:");
+                                 (msg::spec, msg::build_result),
+                                 "",
+                                 "building package {spec} failed with: {build_result}");
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildingPackageFailedDueToMissingDeps,
+        (),
+        "Printed after BuildingPackageFailed, and followed by a list of dependencies that were missing.",
+        "due to the following missing dependencies:");
 }
 
 namespace vcpkg::Build
@@ -1470,7 +1474,10 @@ namespace vcpkg::Build
 
     LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec)
     {
-        auto res = msg::format(msg::msgErrorMessage).append(msgBuildingPackageFailed, msg::spec = spec, msg::build_result = to_string_locale_invariant(build_result.code));
+        auto res = msg::format(msg::msgErrorMessage)
+                       .append(msgBuildingPackageFailed,
+                               msg::spec = spec,
+                               msg::build_result = to_string_locale_invariant(build_result.code));
 
         if (build_result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
