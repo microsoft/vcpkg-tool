@@ -41,6 +41,13 @@ namespace
                                  (),
                                  "",
                                  "Warning: passed --sendmetrics, but metrics are disabled.");
+    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed,
+                                 (msg::email),
+                                 "",
+                                 R"(vcpkg.exe has crashed.
+Please send an email to:
+    {email}
+containing a brief summary of what you were trying to do and the following data blob:)");
     DECLARE_AND_REGISTER_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
         (),
@@ -234,7 +241,7 @@ int main(const int argc, const char* const* const argv)
         }
     });
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version);
+    LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version.to_string());
 
     register_console_ctrl_handler();
 
@@ -320,25 +327,23 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    msg::println(LocalizedString::from_raw("vcpkg.exe has crashed."));
-    msg::println(LocalizedString::from_raw("Please send an email to:"));
-    msg::println(LocalizedString().append_indent().append_raw(Commands::Contact::email()));
-    msg::println(LocalizedString::from_raw(
-        "containing a brief summary of what you were trying to do and the following data blob:"));
+    msg::println(msgVcpkgHasCrashed, msg::email = Commands::Contact::email());
     fflush(stdout);
     msg::println();
-    msg::println(LocalizedString::from_raw("Version=").append_raw(Commands::Version::version));
-    msg::println(LocalizedString::from_raw("EXCEPTION=").append_raw(exc_msg));
-    msg::println(LocalizedString::from_raw("CMD="));
-    fflush(stdout);
+    LocalizedString data_blob;
+    data_blob.append_raw("Version=").append_raw(Commands::Version::version).appendnl();
+    data_blob.append_raw("EXCEPTION=").append_raw(exc_msg).appendnl();
+    data_blob.append_raw("CMD=").appendnl();
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
-        msg::println(LocalizedString::from_raw(Strings::to_utf8(argv[x]) + "|"));
+        data_blob.append_raw(Strings::to_utf8(argv[x])).append_raw("|").appendnl();
 #else
-        msg::println(LocalizedString::from_raw(std::string(argv[x]) + "|"));
+        data_blob.append_raw(argv[x]).append_raw("|").appendnl();
 #endif
     }
+
+    msg::print(data_blob);
     fflush(stdout);
 
     // It is expected that one of the sub-commands will exit cleanly before we get here.
