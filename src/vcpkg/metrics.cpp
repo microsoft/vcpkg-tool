@@ -217,24 +217,24 @@ namespace vcpkg
         Json::Array buildtime_names;
         Json::Array buildtime_times;
 
-        void track_property(const std::string& name, const std::string& value)
+        void track_property(StringView name, const std::string& value)
         {
             properties.insert_or_replace(name, Json::Value::string(value));
         }
 
-        void track_metric(const std::string& name, double value)
+        void track_metric(StringView name, double value)
         {
             measurements.insert_or_replace(name, Json::Value::number(value));
         }
 
-        void track_buildtime(const std::string& name, double value)
+        void track_buildtime(StringView name, double value)
         {
             buildtime_names.push_back(Json::Value::string(name));
             buildtime_times.push_back(Json::Value::number(value));
         }
-        void track_feature(const std::string& name, bool value)
+        void track_feature(StringView name, bool value)
         {
-            properties.insert("feature-flag-" + name, Json::Value::boolean(value));
+            properties.insert(Strings::concat("feature-flag-", name), Json::Value::boolean(value));
         }
 
         std::string format_event_data_template() const
