@@ -107,6 +107,12 @@ namespace
                                  "Printed after the name of an installed entity to indicate that it was successfully "
                                  "downloaded but no build or install was requested.",
                                  "DOWNLOADED");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildingPackageFailed,
+        (msg::spec, msg::build_result), "",
+            "building package {spec} failed with: {build_result}");
+    DECLARE_AND_REGISTER_MESSAGE(BuildingPackageFailedDueToMissingDeps,
+        (), "Printed after BuildingPackageFailed, and followed by a list of dependencies that were missing.", "due to the following missing dependencies:");
 }
 
 namespace vcpkg::Build
@@ -1462,10 +1468,21 @@ namespace vcpkg::Build
         }
     }
 
-    std::string create_error_message(const BuildResult build_result, const PackageSpec& spec)
+    LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec)
     {
-        return Strings::format(
-            "Error: Building package %s failed with: %s", spec, Build::to_string_locale_invariant(build_result));
+        auto res = msg::format(msg::msgErrorMessage).append(msgBuildingPackageFailed, msg::spec = spec, msg::build_result = to_string_locale_invariant(build_result.code));
+
+        if (build_result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
+        {
+            res.appendnl().append(msgBuildingPackageFailedDueToMissingDeps);
+
+            for (const auto& missing_spec : build_result.unmet_dependencies)
+            {
+                res.appendnl().append_indent().append_raw(missing_spec.to_string());
+            }
+        }
+
+        return res;
     }
 
     std::string create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)

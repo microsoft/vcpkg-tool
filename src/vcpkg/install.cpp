@@ -379,7 +379,7 @@ namespace vcpkg::Install
 
                 if (result.code != Build::BuildResult::SUCCEEDED)
                 {
-                    print2(Color::error, Build::create_error_message(result.code, action.spec), "\n");
+                    msg::println(Color::error, Build::create_error_message(result, action.spec));
                     return result;
                 }
 
