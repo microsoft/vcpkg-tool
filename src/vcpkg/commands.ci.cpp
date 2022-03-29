@@ -488,8 +488,7 @@ namespace vcpkg::Commands::CI
                                            const std::string& ci_baseline_file_name,
                                            bool allow_unexpected_passing)
     {
-        LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
-        output.appendnl();
+        LocalizedString output;
         for (auto&& port_result : result.summary.results)
         {
             switch (port_result.build_result.code)
@@ -521,7 +520,16 @@ namespace vcpkg::Commands::CI
             }
         }
 
-        fputs(output.data().c_str(), stderr);
+        auto output_data = output.extract_data();
+        if (output_data.empty())
+        {
+            return;
+        }
+
+        LocalizedString header = msg::format(msgCiBaselineRegressionHeader);
+        header.appendnl();
+        output_data.insert(0, header.extract_data());
+        fwrite(output_data.data(), 1, output_data.size(), stderr);
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args,

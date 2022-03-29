@@ -353,6 +353,7 @@ namespace vcpkg
 
             Command cmd;
             cmd.string_arg("curl")
+                .string_arg("--create-dirs")
                 .string_arg("--location")
                 .string_arg("-w")
                 .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
