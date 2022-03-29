@@ -134,13 +134,13 @@ namespace vcpkg
         // Constructors are intentionally implicit
 
         ExpectedT(const S& s, ExpectedRightTag = {}) : m_s(s) { }
-        template<std::enable_if_t<!std::is_reference<S>::value, int> = 0>
+        template<class U = S, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
         ExpectedT(S&& s, ExpectedRightTag = {}) : m_s(std::move(s))
         {
         }
 
         ExpectedT(const T& t, ExpectedLeftTag = {}) : m_t(t) { }
-        template<std::enable_if_t<!std::is_reference<S>::value, int> = 0>
+        template<class U = T, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
         ExpectedT(T&& t, ExpectedLeftTag = {}) : m_t(std::move(t))
         {
         }
