@@ -77,10 +77,7 @@ namespace vcpkg::Graphs
                     {
                         if (node.second == ExplorationStatus::PARTIALLY_EXPLORED)
                         {
-                            LocalizedString element_text;
-                            element_text.append_indent();
-                            element_text.append_raw(node.first.to_string());
-                            msg::println(element_text);
+                            msg::println(LocalizedString().append_indent().append_raw(node.first.to_string()));
                         }
                     }
                     Checks::exit_fail(VCPKG_LINE_INFO);
