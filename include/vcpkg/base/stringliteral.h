@@ -12,8 +12,6 @@ namespace vcpkg
         constexpr StringLiteral(const char (&str)[N]) : ZStringView(str)
         {
         }
-
-        operator std::string() const { return std::string(data(), size()); }
     };
 }
 

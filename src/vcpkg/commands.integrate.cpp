@@ -511,7 +511,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
             {
                 auto locked_metrics = LockGuardPtr<Metrics>(g_metrics);
                 locked_metrics->track_property("error", "powershell script failed");
-                locked_metrics->track_property("title", TITLE);
+                locked_metrics->track_property("title", TITLE.to_string());
             }
         }
 

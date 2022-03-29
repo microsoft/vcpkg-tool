@@ -29,9 +29,9 @@ namespace vcpkg
     {
         template<class KeyIsh,
                  class F,
-                 typename std::enable_if<std::is_constructible<Key, const KeyIsh&>::value &&
-                                             detail::is_callable<Compare&, const Key&, const KeyIsh&>::value,
-                                         int>::type = 0>
+                 std::enable_if_t<std::is_constructible<Key, const KeyIsh&>::value &&
+                                      detail::is_callable<Compare&, const Key&, const KeyIsh&>::value,
+                                  int> = 0>
         const Value& get_lazy(const KeyIsh& k, F&& f) const
         {
             auto it = m_cache.lower_bound(k);
