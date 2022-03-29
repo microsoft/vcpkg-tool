@@ -20,12 +20,12 @@ namespace
                                  (),
                                  "",
                                  "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
+
+    void (*g_shutdown_handler)() = nullptr;
 }
 
 namespace vcpkg
 {
-    static void (*g_shutdown_handler)() = nullptr;
-
     void Checks::register_global_shutdown_handler(void (*func)())
     {
         if (g_shutdown_handler)
