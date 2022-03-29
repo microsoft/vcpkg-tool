@@ -30,19 +30,7 @@ namespace
 {
     using namespace vcpkg;
     DECLARE_AND_REGISTER_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
-    DECLARE_AND_REGISTER_MESSAGE(ResultsLine,
-                                 (msg::spec, msg::build_result, msg::elapsed),
-                                 "{Locked}",
-                                 "    {spec}: {build_result}: {elapsed}");
-
-    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetsExcluded,
-                                 (msg::count),
-                                 "keep the indentation and the `#` mark",
-                                 "    # note: {count} targets were omitted.");
-    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetLinkLibraries,
-                                 (msg::list),
-                                 "{Locked}",
-                                 "    target_link_libraries(main PRIVATE {list})");
+    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "note: {count} targets were omitted.");
 }
 
 namespace vcpkg::Install
@@ -430,10 +418,8 @@ namespace vcpkg::Install
 
         for (const SpecSummary& result : this->results)
         {
-            msg::println(msgResultsLine,
-                         msg::spec = result.spec,
-                         msg::build_result = Build::to_string(result.build_result.code),
-                         msg::elapsed = result.timing);
+            msg::println(LocalizedString().append_indent().append_raw(
+                fmt::format("{}: {}: {}", result.spec, Build::to_string(result.build_result.code), result.timing)));
         }
 
         std::map<Triplet, Build::BuildResultCounts> summary;
@@ -805,10 +791,16 @@ namespace vcpkg::Install
                     {
                         auto omitted = targets.size() - 4;
                         library_target_pair.second.erase(targets.begin() + 4, targets.end());
-                        msg.append(
-                            msg::format(msgCmakeTargetsExcluded, msg::count = omitted).appendnl().extract_data());
+                        msg.append(LocalizedString()
+                                       .append_indent()
+                                       .append_raw("# ")
+                                       .append(msgCmakeTargetsExcluded, msg::count = omitted)
+                                       .extract_data());
                     }
-                    msg.append(msg::format(msgCmakeTargetLinkLibraries, msg::list = Strings::join(" ", targets))
+                    msg.append(LocalizedString()
+                                   .append_indent()
+                                   .append_raw(fmt::format("target_link_libraries(main PRIVATE {})",
+                                                           Strings::join(" ", targets)))
                                    .appendnl()
                                    .appendnl()
                                    .extract_data());

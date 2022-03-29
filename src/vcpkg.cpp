@@ -41,22 +41,6 @@ namespace
                                  (),
                                  "",
                                  "Warning: passed --sendmetrics, but metrics are disabled.");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed,
-                                 (msg::email),
-                                 "",
-                                 R"(vcpkg.exe has crashed.
-Please send an email to:
-    {email}
-containing a brief summary of what you were trying to do and the following data blob:)");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedDataBlob,
-                                 (msg::version, msg::error),
-                                 "{Locked}",
-                                 R"(
-Version={version}
-EXCEPTION='{error}'
-CMD=)");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{Locked}", "{value}|");
-
     DECLARE_AND_REGISTER_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
         (),
@@ -250,7 +234,7 @@ int main(const int argc, const char* const* const argv)
         }
     });
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version());
+    LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version);
 
     register_console_ctrl_handler();
 
@@ -336,16 +320,23 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashed, msg::email = Commands::Contact::email());
+    msg::println(LocalizedString::from_raw("vcpkg.exe has crashed."));
+    msg::println(LocalizedString::from_raw("Please send an email to:"));
+    msg::println(LocalizedString().append_indent().append_raw(Commands::Contact::email()));
+    msg::println(LocalizedString::from_raw(
+        "containing a brief summary of what you were trying to do and the following data blob:"));
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashedDataBlob, msg::version = Commands::Version::version(), msg::error = exc_msg);
+    msg::println();
+    msg::println(LocalizedString::from_raw("Version=").append_raw(Commands::Version::version));
+    msg::println(LocalizedString::from_raw("EXCEPTION=").append_raw(exc_msg));
+    msg::println(LocalizedString::from_raw("CMD="));
     fflush(stdout);
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
-        msg::println(msgVcpkgHasCrashedArgument, msg::value = Strings::to_utf8(argv[x]));
+        msg::println(LocalizedString::from_raw(Strings::to_utf8(argv[x]) + "|"));
 #else
-        msg::println(msgVcpkgHasCrashedArgument, msg::value = argv[x]);
+        msg::println(LocalizedString::from_raw(std::string(argv[x]) + "|"));
 #endif
     }
     fflush(stdout);

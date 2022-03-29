@@ -138,8 +138,6 @@ namespace vcpkg::msg
         std::string get_examples_for_args(StringView extra, const MessageCheckFormatArgs<Args...>&)
         {
             std::string res(extra.begin(), extra.end());
-            if (res == "{Locked}") return res;
-
             if (!res.empty()) res.push_back('\n');
             (void)(..., res.append(Args::comment()));
             return res;
