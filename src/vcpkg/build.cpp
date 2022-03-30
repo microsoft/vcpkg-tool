@@ -111,7 +111,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(BuildingPackageFailed,
                                  (msg::spec, msg::build_result),
                                  "",
-                                 "building package {spec} failed with: {build_result}");
+                                 "building {spec} failed with: {build_result}");
     DECLARE_AND_REGISTER_MESSAGE(
         BuildingPackageFailedDueToMissingDeps,
         (),
@@ -1481,11 +1481,11 @@ namespace vcpkg::Build
 
         if (build_result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            res.appendnl().append(msgBuildingPackageFailedDueToMissingDeps);
+            res.appendnl().append_indent().append(msgBuildingPackageFailedDueToMissingDeps);
 
             for (const auto& missing_spec : build_result.unmet_dependencies)
             {
-                res.appendnl().append_indent().append_raw(missing_spec.to_string());
+                res.appendnl().append_indent(2).append_raw(missing_spec.to_string());
             }
         }
 

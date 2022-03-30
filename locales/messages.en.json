@@ -21,7 +21,7 @@
   "BuildResultSucceeded": "SUCCEEDED",
   "BuildResultSummaryHeader": "SUMMARY FOR {triplet}",
   "BuildResultSummaryLine": "    {build_result}: {count}",
-  "BuildingPackageFailed": "building package {spec} failed with: {build_result}",
+  "BuildingPackageFailed": "building {spec} failed with: {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "ChecksFailedCheck": "vcpkg has crashed; no additional details are available.",
   "ChecksLineInfo": "{vcpkg_line_info}: ",
