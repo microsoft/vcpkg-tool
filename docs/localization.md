@@ -33,8 +33,8 @@ REGISTER_MESSAGE(<message-name>);
 An example of this lies in [`graphs.h`] and [`graphs.cpp`].
 
 [`sourceparagraph.cpp`]: https://github.com/microsoft/vcpkg-tool/blob/13a09ef0359e259627d46560a22a6e182730da7b/src/vcpkg/sourceparagraph.cpp#L24-L28
-[`graphs.h`]: https://github.com/microsoft/vcpkg-tool/blob/13a09ef0359e259627d46560a22a6e182730da7b/include/vcpkg/graphs.h#L13
-[`graphs.cpp`]: https://github.com/microsoft/vcpkg-tool/blob/13a09ef0359e259627d46560a22a6e182730da7b/src/vcpkg/graphs.cpp#L5
+[`graphs.h`]: https://github.com/microsoft/vcpkg-tool/blob/ca8099607bfa71adac301b56c601fd71d8ccab9b/include/vcpkg/base/graphs.h#L13
+[`graphs.cpp`]: https://github.com/microsoft/vcpkg-tool/blob/ca8099607bfa71adac301b56c601fd71d8ccab9b/src/vcpkg/base/graphs.cpp#L5
 
 ### Message Names
 
