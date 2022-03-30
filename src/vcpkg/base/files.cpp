@@ -896,7 +896,8 @@ namespace
                 continue;
             }
 
-            vcpkg_remove_all(base / entry->d_name, ec, failure_point, get_d_type(entry));
+            StringView entry_d_name{entry->d_name, strlen(entry->d_name)};
+            vcpkg_remove_all(base / entry_d_name, ec, failure_point, get_d_type(entry));
             if (ec)
             {
                 // removing a contained entity failed; the recursive call will set failure_point
@@ -2183,8 +2184,9 @@ namespace vcpkg
                         continue;
                     }
 
-                    const auto full = base / entry->d_name;
-                    const auto out_full = out_base / entry->d_name;
+                    StringView entry_d_name{entry->d_name, strlen(entry->d_name)};
+                    const auto full = base / entry_d_name;
+                    const auto out_full = out_base / entry_d_name;
                     const auto entry_dtype = get_d_type(entry);
                     struct stat s;
                     struct stat ls;
@@ -2324,7 +2326,7 @@ namespace vcpkg
                         continue;
                     }
 
-                    auto full = base / entry->d_name;
+                    auto full = base / StringView{entry->d_name, strlen(entry->d_name)};
                     if (selector(get_d_type(entry), full))
                     {
                         result.push_back(std::move(full));
@@ -2757,8 +2759,9 @@ namespace vcpkg
             // recent copy_file or copy_regular_recursive on subsequent iterations
             while (!ec && (entry = rd.read(ec)))
             {
-                source_entry_name = source / entry->d_name;
-                destination_entry_name = destination / entry->d_name;
+                StringView entry_d_name{entry->d_name, strlen(entry->d_name)};
+                source_entry_name = source / entry_d_name;
+                destination_entry_name = destination / entry_d_name;
                 if (get_d_type(entry) == PosixDType::Regular)
                 {
                     this->copy_file(source_entry_name, destination_entry_name, CopyOptions::none, ec);
