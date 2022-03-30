@@ -14,12 +14,6 @@
 
 namespace vcpkg
 {
-    enum class SkipFailures : bool
-    {
-        No,
-        Yes,
-    };
-
     struct CiBaselineLine
     {
         std::string port_name;
