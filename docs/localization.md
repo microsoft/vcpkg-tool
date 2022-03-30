@@ -1,16 +1,40 @@
 # Writing Localizeable Code
 
 As part of Microsoft's commitment to global-ready products, our developer tools are localized into 14 different languages.
-For this effort, vcpkg has hooks in order to allow our localization team to translate all messages that are shown to the user by the vcpkg tool.
+For this effort, vcpkg has hooks that allow our localization team to translate all messages shown to the user.
 As a developer on vcpkg, the only thing you have to consider is the messages in the C++ source files,
 and `locales/messages.json` -- everything else will be generated and modified by the localization team.
 
 ## Declaring a Message
 
-The process of writing a message to be displayed to the user starts with the message; if it needs to be in a header,
-use the `DECLARE_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>` in that header,
-followed by `REGISTER_MESSAGE(<message-name>)` in a source file; if it can just be in a source file,
-use `DECLARE_AND_REGISTER_MESSAGE()`.
+The process of writing a user-visible message starts with declaring it.
+Most user-facing messages can be declared and registered at the same time in a source file with:
+
+```cxx
+DECLARE_AND_REGISTER_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>);
+```
+
+for example, in [`sourceparagraph.cpp`].
+
+If you need to declare a message in a header file
+(for example, if a templated function uses it),
+then you need to first declare it in the header:
+
+```cxx
+DECLARE_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>);
+```
+
+and then register it in the corresponding source file:
+
+```cxx
+REGISTER_MESSAGE(<message-name>);
+```
+
+An example of this lies in [`graphs.h`] and [`graphs.cpp`].
+
+[`sourceparagraph.cpp`]: https://github.com/microsoft/vcpkg-tool/blob/13a09ef0359e259627d46560a22a6e182730da7b/src/vcpkg/sourceparagraph.cpp#L24-L28
+[`graphs.h`]: https://github.com/microsoft/vcpkg-tool/blob/13a09ef0359e259627d46560a22a6e182730da7b/include/vcpkg/graphs.h#L13
+[`graphs.cpp`]: https://github.com/microsoft/vcpkg-tool/blob/13a09ef0359e259627d46560a22a6e182730da7b/src/vcpkg/graphs.cpp#L5
 
 ### Message Names
 
@@ -20,8 +44,8 @@ When referring to a message in `msg::format`, you must add `msg` to the front of
 
 ### Parameters
 
-Each placeholder in a localized format string must have a corresponding parameter in this list.
-It should look something like `(msg::arg1, msg::arg2)`.
+If the message contains placeholders, each one must have a corresponding parameter.
+For example, `"Installing {package_name}:{triplet}"` should have the parameter list `(msg::package_name, msg::triplet)`.
 This allows us to make sure that we don't have format errors, where one forgets a placeholder,
 or adds an extra one.
 Each parameter in the list should be used in the message.
@@ -36,21 +60,19 @@ Only general placeholders like `{value}`, `{expected}`, and `{actual}` don't hav
 If you use any of these placeholders, write `example of {<name>} is '<expected-value>'` for each of those placeholders,
 separated by `\n`. You can also add context if you feel it's necessary as the first line.
 
-An additional, special value is `"{Locked}"` -- this is a note to the localizers that they should not modify the message.
-However, you should not use this value, and we will remove existing uses of it over time.
-
 ### Message
 
 Messages in vcpkg are written in American English. They should not contain:
 
 * formatting:
-  - indentation should be added with the `append_indent()` function
-  - newlines should be added with the `append_newline()` function
-  - Any other interesting characters (like `- ` for lists, for example) should use `append(LocalizedString::from_raw(...))`
-* the kind of message:
-  - warnings should be printed as `msg::format(msg::msgWarningMessage).append(msgMyWarning)`
-  - errors the same, with `msg::msgErrorMessage`
-  - and internal errors the same, with `msg::msgInternalErrorMessage`.
+  - indentation should be added with the `append_indent()` function;
+    if you need to add more than one indentation, you can use `append_indent(N)`
+  - newlines should be added with the `appendnl()` function
+  - Any other interesting characters (like `- ` for lists, for example) should use `append_raw(...)`
+* or for the prefixes:
+  - `"warning: "`, instead use `msg::format(msg::msgWarningMessage).append(msgMyWarning)`
+  - `"error: "`, instead use `msg::msgErrorMessage`
+  - `"internal error: "`, instead use `msg::msgInternalErrorMessage`.
 
 They should also not be simple, locale-invariant messages -- something like, for example,
 `{file}:{line}:{column}: ` should be done with `LocalizedString::from_raw(fmt::format("{}:{}:{}", file, line, column))`.
@@ -83,11 +105,11 @@ namespace
     };
 
     // note that we add additional context in the comment here
-    DECLARE_AND_REGISTER_MESSAGE(World, "We will say hello to 'world' if no name is given", (), "world");
+    DECLARE_AND_REGISTER_MESSAGE(World, (), "We will say hello to 'world' if no name is given", "world");
     // here, `{value}` is a placeholder that doesn't have example text, so we need to give it ourselves
-    DECLARE_AND_REGISTER_MESSAGE(Hello, "example for {value} is 'world'", (msg::value), "Hello, {value}!");
+    DECLARE_AND_REGISTER_MESSAGE(Hello, (msg::value), "example for {value} is 'world'", "Hello, {value}!");
     // here, `{triplet}` _already has_ example text, so it's fine to not give a comment
-    DECLARE_AND_REGISTER_MESSAGE(MyTripletIs, "", (msg::triplet), "My triplet is {triplet}.");
+    DECLARE_AND_REGISTER_MESSAGE(MyTripletIs, (msg::triplet), "", "My triplet is {triplet}.");
 }
 
 namespace vcpkg::Commands
