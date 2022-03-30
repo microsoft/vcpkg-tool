@@ -157,9 +157,13 @@ namespace vcpkg::Json
         using iterator = underlying_t::iterator;
         using const_iterator = underlying_t::const_iterator;
 
-        Value& push_back(std::string value);
-        template<class = void>
-        Value& push_back(StringView value);
+        Value& push_back(std::string&& value);
+        template<class StringLike,
+                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        Value& push_back(const StringLike& value)
+        {
+            return this->push_back(StringView(value).to_string());
+        }
         Value& push_back(Value&& value);
         Object& push_back(Object&& value);
         Array& push_back(Array&& value);
