@@ -46,6 +46,7 @@ export async function installEspIdf(session: Session, events: Partial<InstallEve
   });
 
   if (installResult.code) {
+    session.channels.debug(JSON.stringify(installResult, null, 2));
     return false;
   }
 
@@ -57,6 +58,7 @@ export async function installEspIdf(session: Session, events: Partial<InstallEve
   });
 
   if (installPythonEnv.code) {
+    session.channels.debug(JSON.stringify(installPythonEnv, null, 2));
     return false;
   }
 
@@ -103,6 +105,7 @@ export async function activateEspIdf(session: Session, targetLocation: Uri) {
   });
 
   if (activateIdf.code) {
+    session.channels.debug(JSON.stringify(activateIdf, null, 2));
     throw new Error(`Failed to activate esp-idf - ${activateIdf.stderr}`);
   }
 
