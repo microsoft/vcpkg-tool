@@ -25,22 +25,22 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(ObjectStorageToolFailedToDownload,
+    DECLARE_AND_REGISTER_MESSAGE(ObjectStorageToolFailed,
                                  (msg::exit_code, msg::tool_name),
                                  "",
-                                 "{tool_name} failed to download with exit code: {exit_code}");
+                                 "{tool_name} failed with exit code: {exit_code}");
     DECLARE_AND_REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor,
                                  (msg::count, msg::vendor),
                                  "",
-                                 "Attempting to fetch {count} packages from {vendor}");
+                                 "Attempting to fetch {count} package(s) from {vendor}");
     DECLARE_AND_REGISTER_MESSAGE(RestoredPackagesFromVendor,
                                  (msg::count, msg::elapsed, msg::vendor),
                                  "",
-                                 "Restored {count} packages from {vendor} servers in {elapsed}");
+                                 "Restored {count} package(s) from {vendor} in {elapsed}");
     DECLARE_AND_REGISTER_MESSAGE(UploadedPackagesToVendor,
-                                 (msg::count, msg::vendor),
+                                 (msg::count, msg::elapsed, msg::vendor),
                                  "",
-                                 "Uploaded binaries to {count} {vendor} servers");
+                                 "Uploaded {count} package(s) to {vendor} in {elapsed}");
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -1010,6 +1010,7 @@ namespace
         void push_success(const Dependencies::InstallPlanAction& action) const override
         {
             if (m_write_prefixes.empty()) return;
+            const auto timer = ElapsedTimer::create_started();
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
@@ -1030,7 +1031,10 @@ namespace
                 }
             }
 
-            msg::println(msgUploadedPackagesToVendor, msg::count = upload_count, msg::vendor = vendor());
+            msg::println(msgUploadedPackagesToVendor,
+                         msg::count = upload_count,
+                         msg::elapsed = timer.elapsed(),
+                         msg::vendor = vendor());
         }
 
         void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -1065,13 +1069,12 @@ namespace
             }
         }
 
-    private:
-        virtual const std::string& vendor() const = 0;
-        virtual bool stat(const std::string& url) const = 0;
-        virtual bool upload_file(const std::string& object, const Path& archive) const = 0;
-        virtual bool download_file(const std::string& object, const Path& archive) const = 0;
-
     protected:
+        virtual StringLiteral vendor() const = 0;
+        virtual bool stat(StringView url) const = 0;
+        virtual bool upload_file(StringView object, const Path& archive) const = 0;
+        virtual bool download_file(StringView object, const Path& archive) const = 0;
+
         const VcpkgPaths& paths;
 
     private:
@@ -1088,20 +1091,19 @@ namespace
         {
         }
 
-    private:
-        const std::string& vendor() const override { return m_vendor; }
+        StringLiteral vendor() const override { return "GCS"; }
 
-        bool stat(const std::string& url) const override
+        Command command() const { return Command{paths.get_tool_exe(Tools::GSUTIL)}; }
+
+        bool stat(StringView url) const override
         {
-            auto cmd = Command{paths.get_tool_exe(m_tool)}.string_arg("-q").string_arg("stat").string_arg(url);
+            auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
             return cmd_execute(cmd) == 0;
         }
 
-        bool upload_file(const std::string& object, const Path& archive) const override
+        bool upload_file(StringView object, const Path& archive) const override
         {
-            auto cmd =
-                Command{paths.get_tool_exe(m_tool)}.string_arg("-q").string_arg("cp").string_arg(archive).string_arg(
-                    object);
+            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
             const auto out = cmd_execute_and_capture_output(cmd);
             if (out.exit_code == 0)
             {
@@ -1109,18 +1111,16 @@ namespace
             }
 
             msg::println(Color::warning,
-                         msgObjectStorageToolFailedToDownload,
+                         msgObjectStorageToolFailed,
                          msg::exit_code = out.exit_code,
-                         msg::tool_name = m_tool);
+                         msg::tool_name = Tools::GSUTIL);
             msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
             return false;
         }
 
-        bool download_file(const std::string& object, const Path& archive) const override
+        bool download_file(StringView object, const Path& archive) const override
         {
-            auto cmd =
-                Command{paths.get_tool_exe(m_tool)}.string_arg("-q").string_arg("cp").string_arg(object).string_arg(
-                    archive);
+            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
             const auto out = cmd_execute_and_capture_output(cmd);
             if (out.exit_code == 0)
             {
@@ -1128,16 +1128,12 @@ namespace
             }
 
             msg::println(Color::warning,
-                         msgObjectStorageToolFailedToDownload,
+                         msgObjectStorageToolFailed,
                          msg::exit_code = out.exit_code,
-                         msg::tool_name = m_tool);
+                         msg::tool_name = Tools::GSUTIL);
             msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
             return false;
         }
-
-    private:
-        const std::string m_tool = Tools::GSUTIL;
-        const std::string m_vendor = "GCS";
     };
 
     struct AwsBinaryProvider : ObjectStorageProvider
@@ -1151,12 +1147,13 @@ namespace
         {
         }
 
-    private:
-        const std::string& vendor() const override { return m_vendor; }
+        StringLiteral vendor() const override { return "AWS"; }
 
-        bool stat(const std::string& url) const override
+        Command command() const { return Command{paths.get_tool_exe(Tools::AWSCLI)}; }
+
+        bool stat(StringView url) const override
         {
-            auto cmd = Command{paths.get_tool_exe(m_tool)}.string_arg("s3").string_arg("ls").string_arg(url);
+            auto cmd = command().string_arg("s3").string_arg("ls").string_arg(url);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
@@ -1164,11 +1161,9 @@ namespace
             return cmd_execute(cmd) == 0;
         }
 
-        bool upload_file(const std::string& object, const Path& archive) const override
+        bool upload_file(StringView object, const Path& archive) const override
         {
-            auto cmd =
-                Command{paths.get_tool_exe(m_tool)}.string_arg("s3").string_arg("cp").string_arg(archive).string_arg(
-                    object);
+            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
@@ -1180,18 +1175,16 @@ namespace
             }
 
             msg::println(Color::warning,
-                         msgObjectStorageToolFailedToDownload,
+                         msgObjectStorageToolFailed,
                          msg::exit_code = out.exit_code,
-                         msg::tool_name = m_tool);
+                         msg::tool_name = Tools::AWSCLI);
             msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
             return false;
         }
 
-        bool download_file(const std::string& object, const Path& archive) const override
+        bool download_file(StringView object, const Path& archive) const override
         {
-            auto cmd =
-                Command{paths.get_tool_exe(m_tool)}.string_arg("s3").string_arg("cp").string_arg(object).string_arg(
-                    archive);
+            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
@@ -1203,17 +1196,15 @@ namespace
             }
 
             msg::println(Color::warning,
-                         msgObjectStorageToolFailedToDownload,
+                         msgObjectStorageToolFailed,
                          msg::exit_code = out.exit_code,
-                         msg::tool_name = m_tool);
+                         msg::tool_name = Tools::AWSCLI);
             msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
             return false;
         }
 
     private:
         bool m_no_sign_request;
-        const std::string m_tool = Tools::AWSCLI;
-        const std::string m_vendor = "AWS";
     };
 }
 
