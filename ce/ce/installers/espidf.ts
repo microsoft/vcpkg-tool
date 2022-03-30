@@ -9,23 +9,14 @@ import { execute } from '../util/exec-cmd';
 import { Uri } from '../util/uri';
 
 export async function installEspIdf(session: Session, events: Partial<InstallEvents>, targetLocation: Uri) {
-
   // create the .espressif folder for the espressif installation
   const espressifFolder = await targetLocation.createDirectory('.espressif');
-  //  session.activation.addTool('IDF_TOOLS_PATH', targetLocation.join('.espressif').fsPath);
 
   const pythonPath = await session.activation.getAlias('python');
   if (!pythonPath) {
     throw new Error(i`Python is not installed`);
   }
 
-  /*
-  const extendedEnvironment: NodeJS.ProcessEnv = {
-    ... await session.activation.getEnvironmentBlock(),
-    IDF_PATH: directoryLocation,
-    IDF_TOOLS_PATH: `${directoryLocation}/.espressif`
-  };
-*/
   const installResult = await execute(pythonPath, [
     targetLocation.join('tools', 'idf_tools.py').fsPath,
     'install',
