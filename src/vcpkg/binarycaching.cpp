@@ -25,19 +25,22 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(AwsFailedToDownload,
-                                 (msg::exit_code),
+    DECLARE_AND_REGISTER_MESSAGE(ObjectStorageToolFailed,
+                                 (msg::exit_code, msg::tool_name),
                                  "",
-                                 "aws failed to download with exit code: {exit_code}");
-    DECLARE_AND_REGISTER_MESSAGE(AwsAttemptingToFetchPackages,
-                                 (msg::count),
+                                 "{tool_name} failed with exit code: {exit_code}");
+    DECLARE_AND_REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor,
+                                 (msg::count, msg::vendor),
                                  "",
-                                 "Attempting to fetch {count} packages from AWS");
-    DECLARE_AND_REGISTER_MESSAGE(AwsRestoredPackages,
-                                 (msg::count, msg::elapsed),
+                                 "Attempting to fetch {count} package(s) from {vendor}");
+    DECLARE_AND_REGISTER_MESSAGE(RestoredPackagesFromVendor,
+                                 (msg::count, msg::elapsed, msg::vendor),
                                  "",
-                                 "Restored {count} packages from AWS servers in {elapsed}");
-    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages, (msg::count), "", "Uploaded binaries to {count} AWS servers");
+                                 "Restored {count} package(s) from {vendor} in {elapsed}");
+    DECLARE_AND_REGISTER_MESSAGE(UploadedPackagesToVendor,
+                                 (msg::count, msg::elapsed, msg::vendor),
+                                 "",
+                                 "Uploaded {count} package(s) to {vendor} in {elapsed}");
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -916,52 +919,16 @@ namespace
         bool m_use_nuget_cache;
     };
 
-    bool gsutil_stat(const std::string& url)
+    struct ObjectStorageProvider : IBinaryProvider
     {
-        Command cmd;
-        cmd.string_arg("gsutil").string_arg("-q").string_arg("stat").string_arg(url);
-        const auto res = cmd_execute(cmd);
-        return res == 0;
-    }
-
-    bool gsutil_upload_file(const std::string& gcs_object, const Path& archive)
-    {
-        Command cmd;
-        cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").string_arg(archive).string_arg(gcs_object);
-        const auto out = cmd_execute_and_capture_output(cmd);
-        if (out.exit_code == 0)
-        {
-            return true;
-        }
-
-        print2(Color::warning, "gsutil failed to upload with exit code: ", out.exit_code, '\n', out.output);
-        return false;
-    }
-
-    bool gsutil_download_file(const std::string& gcs_object, const Path& archive)
-    {
-        Command cmd;
-        cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").string_arg(gcs_object).string_arg(archive);
-        const auto out = cmd_execute_and_capture_output(cmd);
-        if (out.exit_code == 0)
-        {
-            return true;
-        }
-
-        print2(Color::warning, "gsutil failed to download with exit code: ", out.exit_code, '\n', out.output);
-        return false;
-    }
-
-    struct GcsBinaryProvider : IBinaryProvider
-    {
-        GcsBinaryProvider(const VcpkgPaths& paths,
-                          std::vector<std::string>&& read_prefixes,
-                          std::vector<std::string>&& write_prefixes)
+        ObjectStorageProvider(const VcpkgPaths& paths,
+                              std::vector<std::string>&& read_prefixes,
+                              std::vector<std::string>&& write_prefixes)
             : paths(paths), m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
         {
         }
 
-        static std::string make_gcs_path(const std::string& prefix, const std::string& abi)
+        static std::string make_object_path(const std::string& prefix, const std::string& abi)
         {
             return Strings::concat(prefix, abi, ".zip");
         }
@@ -988,225 +955,16 @@ namespace
 
                     auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    url_paths.emplace_back(make_gcs_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
-                                           make_temp_archive_path(paths.buildtrees(), action.spec));
+                    url_paths.emplace_back(
+                        make_object_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
+                        make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
 
                 if (url_paths.empty()) break;
 
-                print2("Attempting to fetch ", url_paths.size(), " packages from GCS.\n");
-                std::vector<Command> jobs;
-                std::vector<size_t> idxs;
-                for (size_t idx = 0; idx < url_paths.size(); ++idx)
-                {
-                    auto&& action = actions[url_indices[idx]];
-                    auto&& url_path = url_paths[idx];
-                    if (!gsutil_download_file(url_path.first, url_path.second)) continue;
-                    jobs.push_back(decompress_zip_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
-                    idxs.push_back(idx);
-                }
-
-                const auto job_results = decompress_in_parallel(jobs);
-
-                for (size_t j = 0; j < jobs.size(); ++j)
-                {
-                    const auto idx = idxs[j];
-                    if (job_results[j].exit_code != 0)
-                    {
-                        Debug::print("Failed to decompress ", url_paths[idx].second, '\n');
-                        continue;
-                    }
-
-                    // decompression success
-                    ++restored_count;
-                    fs.remove(url_paths[idx].second, VCPKG_LINE_INFO);
-                    cache_status[url_indices[idx]]->mark_restored();
-                }
-            }
-
-            print2("Restored ",
-                   restored_count,
-                   " packages from GCS servers in ",
-                   timer.elapsed(),
-                   ". Use --debug for more information.\n");
-        }
-
-        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
-        {
-            return RestoreResult::unavailable;
-        }
-
-        void push_success(const Dependencies::InstallPlanAction& action) const override
-        {
-            if (m_write_prefixes.empty()) return;
-            const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-            auto& spec = action.spec;
-            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
-            if (code != 0)
-            {
-                vcpkg::print2(
-                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
-                return;
-            }
-            size_t upload_count = 0;
-            for (const auto& prefix : m_write_prefixes)
-            {
-                if (gsutil_upload_file(make_gcs_path(prefix, abi), tmp_archive_path))
-                {
-                    ++upload_count;
-                }
-            }
-
-            print2("Uploaded binaries to ", upload_count, " GCS remotes.\n");
-        }
-
-        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
-        {
-            std::vector<CacheAvailability> actions_availability{actions.size()};
-            for (const auto& prefix : m_read_prefixes)
-            {
-                for (size_t idx = 0; idx < actions.size(); ++idx)
-                {
-                    auto&& action = actions[idx];
-                    const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                    if (!cache_status[idx]->should_attempt_precheck(this))
-                    {
-                        continue;
-                    }
-
-                    if (gsutil_stat(make_gcs_path(prefix, abi)))
-                    {
-                        actions_availability[idx] = CacheAvailability::available;
-                        cache_status[idx]->mark_available(this);
-                    }
-                }
-            }
-
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
-                const auto this_cache_status = cache_status[idx];
-                if (this_cache_status && actions_availability[idx] == CacheAvailability::unavailable)
-                {
-                    this_cache_status->mark_unavailable(this);
-                }
-            }
-        }
-
-    private:
-        const VcpkgPaths& paths;
-
-        std::vector<std::string> m_read_prefixes;
-        std::vector<std::string> m_write_prefixes;
-    };
-
-    bool awscli_stat(const VcpkgPaths& paths, const std::string& url, const bool no_sign_request)
-    {
-        auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("ls").string_arg(url);
-        if (no_sign_request)
-        {
-            cmd.string_arg("--no-sign-request");
-        }
-        return cmd_execute(cmd) == 0;
-    }
-
-    bool awscli_upload_file(const VcpkgPaths& paths,
-                            const std::string& aws_object,
-                            const Path& archive,
-                            const bool no_sign_request)
-    {
-        auto cmd =
-            Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("cp").string_arg(archive).string_arg(
-                aws_object);
-        if (no_sign_request)
-        {
-            cmd.string_arg("--no-sign-request");
-        }
-        const auto out = cmd_execute_and_capture_output(cmd);
-        if (out.exit_code == 0)
-        {
-            return true;
-        }
-
-        msg::println(Color::warning, msgAwsFailedToDownload, msg::exit_code = out.exit_code);
-        msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
-        return false;
-    }
-
-    bool awscli_download_file(const VcpkgPaths& paths,
-                              const std::string& aws_object,
-                              const Path& archive,
-                              const bool no_sign_request)
-    {
-        auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
-                       .string_arg("s3")
-                       .string_arg("cp")
-                       .string_arg(aws_object)
-                       .string_arg(archive);
-        if (no_sign_request)
-        {
-            cmd.string_arg("--no-sign-request");
-        }
-        const auto out = cmd_execute_and_capture_output(cmd);
-        if (out.exit_code == 0)
-        {
-            return true;
-        }
-
-        msg::println(Color::warning, msgAwsFailedToDownload, msg::exit_code = out.exit_code);
-        msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
-        return false;
-    }
-
-    struct AwsBinaryProvider : IBinaryProvider
-    {
-        AwsBinaryProvider(const VcpkgPaths& paths,
-                          std::vector<std::string>&& read_prefixes,
-                          std::vector<std::string>&& write_prefixes,
-                          const bool no_sign_request)
-            : paths(paths)
-            , m_read_prefixes(std::move(read_prefixes))
-            , m_write_prefixes(std::move(write_prefixes))
-            , m_no_sign_request(no_sign_request)
-        {
-        }
-
-        static std::string make_aws_path(const std::string& prefix, const std::string& abi)
-        {
-            return Strings::concat(prefix, abi, ".zip");
-        }
-
-        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
-        {
-            auto& fs = paths.get_filesystem();
-
-            const auto timer = ElapsedTimer::create_started();
-
-            size_t restored_count = 0;
-            for (const auto& prefix : m_read_prefixes)
-            {
-                std::vector<std::pair<std::string, Path>> url_paths;
-                std::vector<size_t> url_indices;
-
-                for (size_t idx = 0; idx < cache_status.size(); ++idx)
-                {
-                    const auto this_cache_status = cache_status[idx];
-                    if (!this_cache_status || !this_cache_status->should_attempt_restore(this))
-                    {
-                        continue;
-                    }
-
-                    auto&& action = actions[idx];
-                    clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    url_paths.emplace_back(make_aws_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
-                                           make_temp_archive_path(paths.buildtrees(), action.spec));
-                    url_indices.push_back(idx);
-                }
-
-                if (url_paths.empty()) break;
-
-                msg::println(msgAwsAttemptingToFetchPackages, msg::count = url_paths.size());
+                msg::println(
+                    msgAttemptingToFetchPackagesFromVendor, msg::count = url_paths.size(), msg::vendor = vendor());
 
                 std::vector<Command> jobs;
                 std::vector<size_t> idxs;
@@ -1214,7 +972,7 @@ namespace
                 {
                     auto&& action = actions[url_indices[idx]];
                     auto&& url_path = url_paths[idx];
-                    if (!awscli_download_file(paths, url_path.first, url_path.second, m_no_sign_request)) continue;
+                    if (!download_file(url_path.first, url_path.second)) continue;
                     jobs.push_back(decompress_zip_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
                     idxs.push_back(idx);
                 }
@@ -1238,7 +996,10 @@ namespace
                 }
             }
 
-            msg::println(msgAwsRestoredPackages, msg::count = restored_count, msg::elapsed = timer.elapsed());
+            msg::println(msgRestoredPackagesFromVendor,
+                         msg::count = restored_count,
+                         msg::elapsed = timer.elapsed(),
+                         msg::vendor = vendor());
         }
 
         RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
@@ -1249,6 +1010,7 @@ namespace
         void push_success(const Dependencies::InstallPlanAction& action) const override
         {
             if (m_write_prefixes.empty()) return;
+            const auto timer = ElapsedTimer::create_started();
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
@@ -1263,13 +1025,16 @@ namespace
             size_t upload_count = 0;
             for (const auto& prefix : m_write_prefixes)
             {
-                if (awscli_upload_file(paths, make_aws_path(prefix, abi), tmp_archive_path, m_no_sign_request))
+                if (upload_file(make_object_path(prefix, abi), tmp_archive_path))
                 {
                     ++upload_count;
                 }
             }
 
-            msg::println(msgAwsUploadedPackages, msg::count = upload_count);
+            msg::println(msgUploadedPackagesToVendor,
+                         msg::count = upload_count,
+                         msg::elapsed = timer.elapsed(),
+                         msg::vendor = vendor());
         }
 
         void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -1286,7 +1051,7 @@ namespace
                         continue;
                     }
 
-                    if (awscli_stat(paths, make_aws_path(prefix, abi), m_no_sign_request))
+                    if (stat(make_object_path(prefix, abi)))
                     {
                         actions_availability[idx] = CacheAvailability::available;
                         cache_status[idx]->mark_available(this);
@@ -1304,12 +1069,141 @@ namespace
             }
         }
 
-    private:
+    protected:
+        virtual StringLiteral vendor() const = 0;
+        virtual bool stat(StringView url) const = 0;
+        virtual bool upload_file(StringView object, const Path& archive) const = 0;
+        virtual bool download_file(StringView object, const Path& archive) const = 0;
+
         const VcpkgPaths& paths;
 
+    private:
         std::vector<std::string> m_read_prefixes;
         std::vector<std::string> m_write_prefixes;
+    };
 
+    struct GcsBinaryProvider : ObjectStorageProvider
+    {
+        GcsBinaryProvider(const VcpkgPaths& paths,
+                          std::vector<std::string>&& read_prefixes,
+                          std::vector<std::string>&& write_prefixes)
+            : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
+        {
+        }
+
+        StringLiteral vendor() const override { return "GCS"; }
+
+        Command command() const { return Command{paths.get_tool_exe(Tools::GSUTIL)}; }
+
+        bool stat(StringView url) const override
+        {
+            auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
+            return cmd_execute(cmd) == 0;
+        }
+
+        bool upload_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::GSUTIL);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+
+        bool download_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::GSUTIL);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+    };
+
+    struct AwsBinaryProvider : ObjectStorageProvider
+    {
+        AwsBinaryProvider(const VcpkgPaths& paths,
+                          std::vector<std::string>&& read_prefixes,
+                          std::vector<std::string>&& write_prefixes,
+                          const bool no_sign_request)
+            : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
+            , m_no_sign_request(no_sign_request)
+        {
+        }
+
+        StringLiteral vendor() const override { return "AWS"; }
+
+        Command command() const { return Command{paths.get_tool_exe(Tools::AWSCLI)}; }
+
+        bool stat(StringView url) const override
+        {
+            auto cmd = command().string_arg("s3").string_arg("ls").string_arg(url);
+            if (m_no_sign_request)
+            {
+                cmd.string_arg("--no-sign-request");
+            }
+            return cmd_execute(cmd) == 0;
+        }
+
+        bool upload_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object);
+            if (m_no_sign_request)
+            {
+                cmd.string_arg("--no-sign-request");
+            }
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::AWSCLI);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+
+        bool download_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
+            if (m_no_sign_request)
+            {
+                cmd.string_arg("--no-sign-request");
+            }
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::AWSCLI);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+
+    private:
         bool m_no_sign_request;
     };
 }

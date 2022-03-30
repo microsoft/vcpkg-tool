@@ -264,10 +264,12 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(row, "42");
     DECLARE_MSG_ARG(spec, "zlib:x64-windows");
     DECLARE_MSG_ARG(system_name, "Darwin");
+    DECLARE_MSG_ARG(tool_name, "aria2");
     DECLARE_MSG_ARG(triplet, "x64-windows");
     DECLARE_MSG_ARG(url, "https://github.com/microsoft/vcpkg");
-    DECLARE_MSG_ARG(version, "1.3.8");
     DECLARE_MSG_ARG(vcpkg_line_info, "/a/b/foo.cpp(13)");
+    DECLARE_MSG_ARG(vendor, "Azure");
+    DECLARE_MSG_ARG(version, "1.3.8");
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of
