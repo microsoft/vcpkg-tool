@@ -79,6 +79,8 @@ namespace vcpkg
             uniqueify();
         }
 
+        void clear() { m_data.clear(); }
+
         friend bool operator==(const SortedVector& lhs, const SortedVector& rhs) { return lhs.m_data == rhs.m_data; }
         friend bool operator!=(const SortedVector& lhs, const SortedVector& rhs) { return lhs.m_data != rhs.m_data; }
 
