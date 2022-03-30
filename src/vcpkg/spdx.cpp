@@ -23,19 +23,13 @@ static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj,
     }
 }
 
-static bool is_cmake_whitespace(int ch) { return ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r'; }
-static bool is_cmake_identifier(int ch)
-{
-    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || (ch >= '0' && ch <= '9');
-}
-
 static StringView scan_for_command(StringView contents, StringView command)
 {
     auto it = Strings::case_insensitive_ascii_search(contents, command);
     if (it == contents.end()) return {};
     it += command.size();
     if (it == contents.end()) return {};
-    if (is_cmake_identifier(*it)) return {};
+    if (ParserBase::is_word_char(*it)) return {};
     auto it_end = std::find(it, contents.end(), ')');
     return {it, it_end};
 }
@@ -45,14 +39,15 @@ static StringView extract_command_argument(StringView command, StringView argume
     auto it = std::search(command.begin(), command.end(), argument.begin(), argument.end());
     if (it == command.end()) return {};
     it += argument.size();
-    while (it != command.end() && is_cmake_whitespace(*it))
+    while (it != command.end() && ParserBase::is_whitespace(*it))
         ++it;
     if (it == command.end()) return {};
     if (*it == '"')
     {
         return {it + 1, std::find(it + 1, command.end(), '"')};
     }
-    return {it, std::find_if(it + 1, command.end(), [](char ch) { return is_cmake_whitespace(ch) || ch == ')'; })};
+    return {it,
+            std::find_if(it + 1, command.end(), [](char ch) { return ParserBase::is_whitespace(ch) || ch == ')'; })};
 }
 
 static Json::Object make_resource(
