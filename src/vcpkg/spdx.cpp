@@ -23,7 +23,7 @@ static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj,
     }
 }
 
-static StringView scan_for_command(StringView contents, StringView command)
+static StringView find_cmake_invocation(StringView contents, StringView command)
 {
     auto it = Strings::case_insensitive_ascii_search(contents, command);
     if (it == contents.end()) return {};
@@ -34,13 +34,10 @@ static StringView scan_for_command(StringView contents, StringView command)
     return {it, it_end};
 }
 
-static StringView extract_command_argument(StringView command, StringView argument)
+static StringView extract_cmake_invocation_argument(StringView command, StringView argument)
 {
-    auto it = std::search(command.begin(), command.end(), argument.begin(), argument.end());
-    if (it == command.end()) return {};
-    it += argument.size();
-    while (it != command.end() && ParserBase::is_whitespace(*it))
-        ++it;
+    auto it = Util::search_and_skip(command.begin(), command.end(), argument);
+    it = std::find_if_not(it, command.end(), ParserBase::is_whitespace);
     if (it == command.end()) return {};
     if (*it == '"')
     {
@@ -81,45 +78,45 @@ Json::Value vcpkg::run_resource_heuristics(const std::string& contents)
     size_t n = 0;
     Json::Object ret;
     auto& packages = ret.insert("packages", Json::Array{});
-    auto github = scan_for_command(contents, "vcpkg_from_github");
+    auto github = find_cmake_invocation(contents, "vcpkg_from_github");
     if (!github.empty())
     {
-        auto repo = extract_command_argument(github, "REPO");
-        auto ref = extract_command_argument(github, "REF");
-        auto sha = extract_command_argument(github, "SHA512");
+        auto repo = extract_cmake_invocation_argument(github, "REPO");
+        auto ref = extract_cmake_invocation_argument(github, "REF");
+        auto sha = extract_cmake_invocation_argument(github, "SHA512");
         packages.push_back(make_resource(Strings::concat("SPDXRef-resource-", ++n),
                                          repo.to_string(),
                                          Strings::concat("git+https://github.com/", repo, '@', ref),
                                          sha,
                                          {}));
     }
-    auto git = scan_for_command(contents, "vcpkg_from_git");
+    auto git = find_cmake_invocation(contents, "vcpkg_from_git");
     if (!git.empty())
     {
-        auto url = extract_command_argument(github, "URL");
-        auto ref = extract_command_argument(github, "REF");
+        auto url = extract_cmake_invocation_argument(github, "URL");
+        auto ref = extract_cmake_invocation_argument(github, "REF");
         packages.push_back(make_resource(Strings::concat("SPDXRef-resource-", ++n),
                                          url.to_string(),
                                          Strings::concat("git+", url, '@', ref),
                                          {},
                                          {}));
     }
-    auto distfile = scan_for_command(contents, "vcpkg_download_distfile");
+    auto distfile = find_cmake_invocation(contents, "vcpkg_download_distfile");
     if (!distfile.empty())
     {
-        auto url = extract_command_argument(distfile, "URLS");
-        auto filename = extract_command_argument(distfile, "FILENAME");
-        auto sha = extract_command_argument(distfile, "SHA512");
+        auto url = extract_cmake_invocation_argument(distfile, "URLS");
+        auto filename = extract_cmake_invocation_argument(distfile, "FILENAME");
+        auto sha = extract_cmake_invocation_argument(distfile, "SHA512");
         packages.push_back(make_resource(
             Strings::concat("SPDXRef-resource-", ++n), filename.to_string(), url.to_string(), sha, filename));
     }
-    auto sfg = scan_for_command(contents, "vcpkg_from_sourceforge");
+    auto sfg = find_cmake_invocation(contents, "vcpkg_from_sourceforge");
     if (!sfg.empty())
     {
-        auto repo = extract_command_argument(sfg, "REPO");
-        auto ref = extract_command_argument(sfg, "REF");
-        auto filename = extract_command_argument(sfg, "FILENAME");
-        auto sha = extract_command_argument(sfg, "SHA512");
+        auto repo = extract_cmake_invocation_argument(sfg, "REPO");
+        auto ref = extract_cmake_invocation_argument(sfg, "REF");
+        auto filename = extract_cmake_invocation_argument(sfg, "FILENAME");
+        auto sha = extract_cmake_invocation_argument(sfg, "SHA512");
         auto url = Strings::concat("https://sourceforge.net/projects/", repo, "/files/", ref, '/', filename);
         packages.push_back(make_resource(
             Strings::concat("SPDXRef-resource-", ++n), filename.to_string(), std::move(url), sha, filename));
