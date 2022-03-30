@@ -177,6 +177,7 @@ else()
 endif()
 
 set(CPP_ATOMIC_LIBRARY "")
+include(CheckCXXSourceCompiles)
 if(NOT MSVC)
     # Some platforms require a explicit linkage against libatomic to operate on 64-bit numbers
     set(TEST_SOURCE "
