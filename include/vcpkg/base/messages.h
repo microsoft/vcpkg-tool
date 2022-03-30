@@ -62,7 +62,7 @@ namespace vcpkg
             m_data.push_back('\n');
             return *this;
         }
-        LocalizedString& append_indent(std::size_t indent = 1)
+        LocalizedString& append_indent(size_t indent = 1)
         {
             m_data.append(indent * 4, ' ');
             return *this;
