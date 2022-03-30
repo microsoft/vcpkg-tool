@@ -123,6 +123,7 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
     static constexpr StringLiteral OPTION_CI_BASELINE = "ci-baseline";
     static constexpr StringLiteral OPTION_ALLOW_UNEXPECTED_PASSING = "allow-unexpected-passing";
+    static constexpr StringLiteral OPTION_SKIP_FAILURES = "skip-failures";
     static constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     static constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     static constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
@@ -140,11 +141,12 @@ namespace vcpkg::Commands::CI
          {OPTION_SKIPPED_CASCADE_COUNT,
           "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
 
-    static constexpr std::array<CommandSwitch, 3> CI_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 4> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
         {OPTION_RANDOMIZE, "Randomize the install order"},
         {OPTION_ALLOW_UNEXPECTED_PASSING,
          "Indicates that 'Passing, remove from fail list' results should not be emitted."},
+        {OPTION_SKIP_FAILURES, "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped."},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -560,13 +562,15 @@ namespace vcpkg::Commands::CI
         }
         else
         {
+            auto skip_failures =
+                Util::Sets::contains(options.switches, OPTION_SKIP_FAILURES) ? SkipFailures::Yes : SkipFailures::No;
             const auto& ci_baseline_file_name = baseline_iter->second;
             const auto ci_baseline_file_contents =
                 paths.get_filesystem().read_contents(ci_baseline_file_name, VCPKG_LINE_INFO);
             ParseMessages ci_parse_messages;
             const auto lines = parse_ci_baseline(ci_baseline_file_contents, ci_baseline_file_name, ci_parse_messages);
             ci_parse_messages.exit_if_errors_or_warnings(ci_baseline_file_name);
-            expected_failures = parse_and_apply_ci_baseline(lines, exclusions_map);
+            expected_failures = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
 
         auto skipped_cascade_count = parse_skipped_cascade_count(settings);

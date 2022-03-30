@@ -11,7 +11,6 @@
 
 namespace vcpkg
 {
-
     struct StringView
     {
         constexpr StringView() = default;
