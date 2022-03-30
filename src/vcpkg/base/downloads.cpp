@@ -349,7 +349,7 @@ namespace vcpkg
         for (auto i : {100, 1000, 10000, 0})
         {
             size_t start_size = out->size();
-            static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
+            static constexpr StringLiteral guid_marker = "5ec47b8e-6776-4d70-b9b3-ac2a57bc0a1c";
 
             Command cmd;
             cmd.string_arg("curl")

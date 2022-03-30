@@ -21,6 +21,8 @@
   "BuildResultSucceeded": "ÚSPĚCH",
   "BuildResultSummaryHeader": "SOUHRN PRO {triplet}",
   "BuildResultSummaryLine": "    {build_result}: {count}",
+  "BuildingPackageFailed": "building {spec} failed with: {build_result}",
+  "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "ChecksFailedCheck": "vcpkg se zhroutilo. blížší podrobnosti nejsou k dispozici.",
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "nedosažitelný kód byl dosažen",

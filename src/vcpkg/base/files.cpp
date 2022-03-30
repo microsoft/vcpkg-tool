@@ -1456,7 +1456,7 @@ namespace vcpkg
         return maybe_directories;
     }
 
-    void Filesystem::write_contents(const Path& file_path, const std::string& data, LineInfo li)
+    void Filesystem::write_contents(const Path& file_path, StringView data, LineInfo li)
     {
         std::error_code ec;
         this->write_contents(file_path, data, ec);
@@ -1465,17 +1465,14 @@ namespace vcpkg
             exit_filesystem_call_error(li, ec, __func__, {file_path});
         }
     }
-    void Filesystem::write_rename_contents(const Path& file_path,
-                                           const Path& temp_name,
-                                           const std::string& data,
-                                           LineInfo li)
+    void Filesystem::write_rename_contents(const Path& file_path, const Path& temp_name, StringView data, LineInfo li)
     {
         auto temp_path = file_path;
         temp_path.replace_filename(temp_name);
         this->write_contents(temp_path, data, li);
         this->rename(temp_path, file_path, li);
     }
-    void Filesystem::write_contents_and_dirs(const Path& file_path, const std::string& data, LineInfo li)
+    void Filesystem::write_contents_and_dirs(const Path& file_path, StringView data, LineInfo li)
     {
         std::error_code ec;
         this->write_contents_and_dirs(file_path, data, ec);
@@ -3036,7 +3033,7 @@ namespace vcpkg
             return FileType::unknown;
 #endif // ^^^ !_WIN32
         }
-        virtual void write_contents(const Path& file_path, const std::string& data, std::error_code& ec) override
+        virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) override
         {
             StatsTimer t(g_us_filesystem_stats);
             auto f = open_for_write(file_path, ec);
@@ -3050,9 +3047,7 @@ namespace vcpkg
             }
         }
 
-        virtual void write_contents_and_dirs(const Path& file_path,
-                                             const std::string& data,
-                                             std::error_code& ec) override
+        virtual void write_contents_and_dirs(const Path& file_path, StringView data, std::error_code& ec) override
         {
             write_contents(file_path, data, ec);
             if (ec)
@@ -3267,7 +3262,7 @@ namespace vcpkg
             return std::move(result);
         }
 
-        virtual std::vector<Path> find_from_PATH(const std::string& name) const override
+        virtual std::vector<Path> find_from_PATH(StringView name) const override
         {
 #if defined(_WIN32)
             static constexpr StringLiteral EXTS[] = {".cmd", ".exe", ".bat"};

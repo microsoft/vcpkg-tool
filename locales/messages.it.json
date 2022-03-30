@@ -21,6 +21,8 @@
   "BuildResultSucceeded": "OPERAZIONE RIUSCITA",
   "BuildResultSummaryHeader": "RIEPILOGO PER {triplet}",
   "BuildResultSummaryLine": "    {build_result}: {count}",
+  "BuildingPackageFailed": "building {spec} failed with: {build_result}",
+  "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "ChecksFailedCheck": "vcpkg si è arrestato in modo anomalo; non sono disponibili altri dettagli.",
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "è stato raggiunto il codice non raggiungibile",
