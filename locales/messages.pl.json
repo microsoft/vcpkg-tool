@@ -21,6 +21,8 @@
   "BuildResultSucceeded": "POWODZENIE",
   "BuildResultSummaryHeader": "PODSUMOWANIE DLA :{triplet}",
   "BuildResultSummaryLine": "    {build_result}: {count}",
+  "BuildingPackageFailed": "building {spec} failed with: {build_result}",
+  "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "ChecksFailedCheck": "Pakiet vcpkg uległ awarii; nie są dostępne żadne dodatkowe szczegóły",
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "osiągnięto nieosiągalny kod",

@@ -21,6 +21,8 @@
   "BuildResultSucceeded": "成功",
   "BuildResultSummaryHeader": "{triplet} 的摘要",
   "BuildResultSummaryLine": "    {build_result}: {count} 个",
+  "BuildingPackageFailed": "building {spec} failed with: {build_result}",
+  "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "ChecksFailedCheck": "vcpkg 已崩溃；没有其他详细信息可用。",
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "已访问无法访问的代码",

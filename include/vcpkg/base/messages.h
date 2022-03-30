@@ -62,10 +62,13 @@ namespace vcpkg
             m_data.push_back('\n');
             return *this;
         }
-        LocalizedString& append_indent()
+        LocalizedString& append_indent(int indent = 1)
         {
-            static const char indent[] = "    ";
-            m_data.append(indent, indent + sizeof(indent) - 1);
+            static const StringLiteral INDENT = "    ";
+            for (int i = 0; i < indent; ++i)
+            {
+                m_data.append(INDENT.data(), INDENT.size());
+            }
             return *this;
         }
 
