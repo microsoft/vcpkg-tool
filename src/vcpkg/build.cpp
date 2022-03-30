@@ -11,6 +11,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
+#include <vcpkg/base/uuid.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/build.h>
@@ -31,7 +32,6 @@
 #include <vcpkg/spdx.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/tools.h>
-#include <vcpkg/uuid.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
