@@ -52,9 +52,7 @@ export class MetadataFile extends BaseMap implements Profile {
       content = '{\n}';
     }
     const doc = parseDocument(content, { prettyErrors: false, lineCounter: lc, strict: true });
-    const result = new MetadataFile(doc, filename, lc, registry).init(session);
-    (await result).validationErrors;
-    return result;
+    return new MetadataFile(doc, filename, lc, registry).init(session);
   }
 
   info = new Info(undefined, this, 'info');
@@ -80,8 +78,6 @@ export class MetadataFile extends BaseMap implements Profile {
   get exports() { return this.demandBlock.exports; }
   get install() { return this.demandBlock.install; }
   get unless() { return this.demandBlock.unless; }
-  get apply() { return this.demandBlock.apply; }
-
 
   conditionalDemands = new Demands(undefined, this, 'demands');
 

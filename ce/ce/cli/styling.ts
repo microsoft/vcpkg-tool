@@ -62,7 +62,7 @@ export function initStyling(commandline: CommandLine, session: Session) {
 
   session.channels.on('message', (text: string, context: any, msec: number) => {
     if (context && context instanceof Artifact) {
-      log(`${green.bold('NOTE: ')}[${artifactIdentity(context.registryId, context.name)}] - ${text}`);
+      log(`${green.bold('NOTE: ')}[${artifactIdentity(context.registryId, context.id)}] - ${text}`);
     } else {
       log(text);
     }
@@ -70,7 +70,7 @@ export function initStyling(commandline: CommandLine, session: Session) {
 
   session.channels.on('error', (text: string, context: any, msec: number) => {
     if (context && context instanceof Artifact) {
-      error(`[${artifactIdentity(context.registryId, context.name)}] - ${text}`);
+      error(`[${artifactIdentity(context.registryId, context.id)}] - ${text}`);
     } else {
       error(text);
     }
@@ -78,7 +78,7 @@ export function initStyling(commandline: CommandLine, session: Session) {
 
   session.channels.on('debug', (text: string, context: any, msec: number) => {
     if (context && context instanceof Artifact) {
-      debug(`[${artifactIdentity(context.registryId, context.name)}] - ${text}`);
+      debug(`[${artifactIdentity(context.registryId, context.id)}] - ${text}`);
     } else {
       debug(`${cyan.bold(`[${formatTime(msec)}]`)} ${reformatText(text, session)}`);
     }
@@ -86,7 +86,7 @@ export function initStyling(commandline: CommandLine, session: Session) {
 
   session.channels.on('warning', (text: string, context: any, msec: number) => {
     if (context && context instanceof Artifact) {
-      warning(`[${artifactIdentity(context.registryId, context.name)}] - ${text}`);
+      warning(`[${artifactIdentity(context.registryId, context.id)}] - ${text}`);
     } else {
       warning(text);
     }

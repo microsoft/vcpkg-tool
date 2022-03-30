@@ -2,38 +2,36 @@
 // Licensed under the MIT License.
 
 import { delimiter } from 'path';
-import { log } from '../cli/styling';
 import { i } from '../i18n';
 import { InstallEvents } from '../interfaces/events';
 import { Session } from '../session';
 import { execute } from '../util/exec-cmd';
-import { isFilePath, Uri } from '../util/uri';
+import { Uri } from '../util/uri';
 
 export async function installEspIdf(session: Session, events: Partial<InstallEvents>, targetLocation: Uri) {
 
   // create the .espressif folder for the espressif installation
-  await targetLocation.createDirectory('.espressif');
-  session.activation.addTool('IDF_TOOLS_PATH', targetLocation.join('.espressif').fsPath);
+  const espressifFolder = await targetLocation.createDirectory('.espressif');
+  //  session.activation.addTool('IDF_TOOLS_PATH', targetLocation.join('.espressif').fsPath);
 
   const pythonPath = await session.activation.getAlias('python');
   if (!pythonPath) {
     throw new Error(i`Python is not installed`);
   }
 
-  const directoryLocation = await isFilePath(targetLocation) ? targetLocation.fsPath : targetLocation.toString();
-
+  /*
   const extendedEnvironment: NodeJS.ProcessEnv = {
     ... await session.activation.getEnvironmentBlock(),
     IDF_PATH: directoryLocation,
     IDF_TOOLS_PATH: `${directoryLocation}/.espressif`
   };
-
+*/
   const installResult = await execute(pythonPath, [
-    `${directoryLocation}/tools/idf_tools.py`,
+    targetLocation.join('tools', 'idf_tools.py').fsPath,
     'install',
     '--targets=all'
   ], {
-    env: extendedEnvironment,
+    env: await session.activation.getEnvironmentBlock(),
     onStdOutData: (chunk) => {
       const regex = /\s(100)%/;
       chunk.toString().split('\n').forEach((line: string) => {
@@ -46,26 +44,30 @@ export async function installEspIdf(session: Session, events: Partial<InstallEve
   });
 
   if (installResult.code) {
+    // on failure, clean up the .espressif folder
+    await espressifFolder.delete({ recursive: true });
+
+    session.channels.debug(i`There was a failure during the installation of the .espressif tools.`);
     session.channels.debug(JSON.stringify(installResult, null, 2));
     return false;
   }
 
   const installPythonEnv = await execute(pythonPath, [
-    `${directoryLocation}/tools/idf_tools.py`,
+    targetLocation.join('tools', 'idf_tools.py').fsPath,
     'install-python-env'
   ], {
-    env: extendedEnvironment
+    env: await session.activation.getEnvironmentBlock()
   });
 
   if (installPythonEnv.code) {
+    // on failure, clean up the .espressif folder
+    await espressifFolder.delete({ recursive: true });
+
+    session.channels.debug(i`There was a failure during the installation of the python environement for the .espressif tools.`);
     session.channels.debug(JSON.stringify(installPythonEnv, null, 2));
     return false;
   }
 
-  // call activate, extrapolate what environment is changed
-  // change it in the session object.
-
-  log('installing espidf commands post-git is implemented, but post activation of the necessary esp-idf path / environment variables is not.');
   return true;
 }
 
@@ -75,10 +77,8 @@ export async function activateEspIdf(session: Session, targetLocation: Uri) {
     throw new Error(i`Python is not installed`);
   }
 
-  const directoryLocation = await isFilePath(targetLocation) ? targetLocation.fsPath : targetLocation.toString();
-
   const activateIdf = await execute(pythonPath, [
-    `${directoryLocation}/tools/idf_tools.py`,
+    targetLocation.join('tools', 'idf_tools.py').fsPath,
     'export',
     '--format',
     'key-value'

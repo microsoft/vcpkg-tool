@@ -50,8 +50,6 @@ export interface Demands extends Validation {
   /** a means to an alternative fulfillment */
   unless: AlternativeFulfillment;
 
-  /** files that should be (non-overwrite) copied to the output project folder. */
-  apply: Dictionary<string>;
 
   init(session: Session): Promise<Demands>;
 }

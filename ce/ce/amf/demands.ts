@@ -15,7 +15,6 @@ import { cmdlineToArray, execute } from '../util/exec-cmd';
 import { safeEval, valiadateExpression } from '../util/safeEval';
 import { Entity } from '../yaml/Entity';
 import { EntityMap } from '../yaml/EntityMap';
-import { ScalarMap } from '../yaml/ScalarMap';
 import { Strings } from '../yaml/strings';
 import { Primitive, Yaml, YAMLDictionary } from '../yaml/yaml-types';
 import { Exports } from './exports';
@@ -93,15 +92,10 @@ export class DemandBlock extends Entity {
     return this.usingAlternative ? this.unless.install : this._install;
   }
 
-  get apply(): ScalarMap<string> {
-    return this.usingAlternative ? this.unless.apply : this._apply;
-  }
-
   protected readonly _seeAlso = new Requires(undefined, this, 'seeAlso');
   protected readonly _requires = new Requires(undefined, this, 'requires');
   protected readonly _exports = new Exports(undefined, this, 'exports');
   protected readonly _install = new Installs(undefined, this, 'install');
-  protected readonly _apply = new ScalarMap<string>(undefined, this, 'apply');
 
   readonly unless!: Unless;
 
@@ -131,7 +125,7 @@ export class DemandBlock extends Entity {
 
   /** @internal */
   override *validate(): Iterable<ValidationError> {
-    yield* this.validateChildKeys(['error', 'warning', 'message', 'seeAlso', 'requires', 'exports', 'install', 'apply', 'unless']);
+    yield* this.validateChildKeys(['error', 'warning', 'message', 'seeAlso', 'requires', 'exports', 'install', 'unless']);
 
     yield* super.validate();
     if (this.exists()) {
