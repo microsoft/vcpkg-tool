@@ -21,6 +21,8 @@
   "BuildResultSucceeded": "成功",
   "BuildResultSummaryHeader": "{triplet} の概要",
   "BuildResultSummaryLine": "    {build_result}: {count}",
+  "BuildingPackageFailed": "building {spec} failed with: {build_result}",
+  "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "ChecksFailedCheck": "vcpkg がクラッシュしました。その他の詳細はありません。",
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "到達できないコードに達しました",
