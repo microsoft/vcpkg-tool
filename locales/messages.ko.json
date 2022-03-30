@@ -21,6 +21,8 @@
   "BuildResultSucceeded": "성공",
   "BuildResultSummaryHeader": "{triplet}에 대한 요약",
   "BuildResultSummaryLine": "    {build_result}: {count}",
+  "BuildingPackageFailed": "building {spec} failed with: {build_result}",
+  "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "ChecksFailedCheck": "vcpkg가 충돌했습니다. 추가 정보가 없습니다.",
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "연결할 수 없는 코드에 도달했습니다",

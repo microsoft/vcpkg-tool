@@ -21,6 +21,8 @@
   "BuildResultSucceeded": "BAŞARILI OLDU",
   "BuildResultSummaryHeader": "{triplet} ÖZETİ",
   "BuildResultSummaryLine": "    {build_result}: {count}",
+  "BuildingPackageFailed": "building {spec} failed with: {build_result}",
+  "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "ChecksFailedCheck": "vcpkg kilitlendi; ek ayrıntı yok.",
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "ulaşılamayan koda ulaşıldı",

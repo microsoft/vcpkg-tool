@@ -21,6 +21,8 @@
   "BuildResultSucceeded": "ERFOLGREICH",
   "BuildResultSummaryHeader": "ZUSAMMENFASSUNG FÜR {triplet}",
   "BuildResultSummaryLine": "    {build_result}: {count}",
+  "BuildingPackageFailed": "building {spec} failed with: {build_result}",
+  "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "ChecksFailedCheck": "„vcpkg“ ist abgestürzt; es sind keine weiteren Details verfügbar.",
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "Nicht erreichbarer Code wurde erreicht.",

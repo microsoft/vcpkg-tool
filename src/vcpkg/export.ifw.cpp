@@ -68,7 +68,7 @@ namespace vcpkg::Export::IFW
             ++first; // skip amp
             if (first == last)
             {
-                result.append(escaped_amp);
+                result.append(escaped_amp.data(), escaped_amp.size());
                 break;
             }
             else

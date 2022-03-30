@@ -454,7 +454,7 @@ namespace vcpkg::Commands::CI
         });
     }
 
-    static void parse_exclusions(const std::unordered_map<std::string, std::string>& settings,
+    static void parse_exclusions(const std::map<std::string, std::string, std::less<>>& settings,
                                  StringLiteral opt,
                                  Triplet triplet,
                                  ExclusionsMap& exclusions_map)
@@ -466,7 +466,7 @@ namespace vcpkg::Commands::CI
                                   : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
     }
 
-    static Optional<int> parse_skipped_cascade_count(const std::unordered_map<std::string, std::string>& settings)
+    static Optional<int> parse_skipped_cascade_count(const std::map<std::string, std::string, std::less<>>& settings)
     {
         auto opt = settings.find(OPTION_SKIPPED_CASCADE_COUNT);
         if (opt == settings.end())

@@ -21,6 +21,8 @@
   "BuildResultSucceeded": "BEM-SUCEDIDO",
   "BuildResultSummaryHeader": "RESUMO PARA {triplet}",
   "BuildResultSummaryLine": "    {build_result}: {count}",
+  "BuildingPackageFailed": "building {spec} failed with: {build_result}",
+  "BuildingPackageFailedDueToMissingDeps": "due to the following missing dependencies:",
   "ChecksFailedCheck": "vcpkg falhou; nenhum detalhe adicional está disponível.",
   "ChecksLineInfo": "{vcpkg_line_info}: ",
   "ChecksUnreachableCode": "código inacessível atingido",
