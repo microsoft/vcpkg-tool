@@ -672,7 +672,7 @@ namespace vcpkg
             LockGuardPtr<Metrics> metrics(g_metrics);
             if (default_registry)
             {
-                metrics->track_property("registries-default-registry-kind", default_registry->kind());
+                metrics->track_property("registries-default-registry-kind", default_registry->kind().to_string());
             }
             else
             {
@@ -897,11 +897,11 @@ namespace vcpkg
             });
     }
 
-    const Path& VcpkgPaths::get_tool_exe(const std::string& tool) const
+    const Path& VcpkgPaths::get_tool_exe(StringView tool) const
     {
         return m_pimpl->m_tool_cache->get_tool_path(*this, tool);
     }
-    const std::string& VcpkgPaths::get_tool_version(const std::string& tool) const
+    const std::string& VcpkgPaths::get_tool_version(StringView tool) const
     {
         return m_pimpl->m_tool_cache->get_tool_version(*this, tool);
     }
