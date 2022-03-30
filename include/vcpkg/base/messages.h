@@ -9,6 +9,7 @@
 #include <vcpkg/base/stringliteral.h>
 
 #include <string>
+#include <type_traits>
 #include <utility>
 
 namespace vcpkg
@@ -31,8 +32,14 @@ namespace vcpkg
         const std::string& data() const { return m_data; }
         std::string extract_data() { return std::exchange(m_data, ""); }
 
-        static LocalizedString from_raw(const std::string& s) { return LocalizedString(s); }
         static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
+
+        template<class StringLike,
+                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        static LocalizedString from_raw(const StringLike& s)
+        {
+            return LocalizedString(StringView(s));
+        }
 
         LocalizedString& append_raw(StringView s)
         {
@@ -55,10 +62,13 @@ namespace vcpkg
             m_data.push_back('\n');
             return *this;
         }
-        LocalizedString& append_indent()
+        LocalizedString& append_indent(int indent = 1)
         {
-            static const char indent[] = "    ";
-            m_data.append(indent, indent + sizeof(indent) - 1);
+            static const StringLiteral INDENT = "    ";
+            for (int i = 0; i < indent; ++i)
+            {
+                m_data.append(INDENT.data(), INDENT.size());
+            }
             return *this;
         }
 
@@ -97,7 +107,7 @@ namespace vcpkg
     private:
         std::string m_data;
 
-        explicit LocalizedString(const std::string& data) : m_data(data) { }
+        explicit LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
         explicit LocalizedString(std::string&& data) : m_data(std::move(data)) { }
     };
 }
@@ -254,10 +264,12 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(row, "42");
     DECLARE_MSG_ARG(spec, "zlib:x64-windows");
     DECLARE_MSG_ARG(system_name, "Darwin");
+    DECLARE_MSG_ARG(tool_name, "aria2");
     DECLARE_MSG_ARG(triplet, "x64-windows");
     DECLARE_MSG_ARG(url, "https://github.com/microsoft/vcpkg");
-    DECLARE_MSG_ARG(version, "1.3.8");
     DECLARE_MSG_ARG(vcpkg_line_info, "/a/b/foo.cpp(13)");
+    DECLARE_MSG_ARG(vendor, "Azure");
+    DECLARE_MSG_ARG(version, "1.3.8");
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of

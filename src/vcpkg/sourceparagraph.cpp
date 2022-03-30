@@ -822,7 +822,7 @@ namespace vcpkg
         void eat_idstring(std::string& result, Expecting& expecting)
         {
             auto loc = cur_loc();
-            auto token = match_zero_or_more(is_idstring_element);
+            auto token = match_while(is_idstring_element);
 
             if (Strings::starts_with(token, "DocumentRef-"))
             {
@@ -1542,7 +1542,7 @@ namespace vcpkg
                     }
                     if (pgh.size() == 1)
                     {
-                        obj.insert(name, Json::Value::string(pgh.front()));
+                        obj.insert(name, pgh.front());
                         return;
                     }
                 }
@@ -1566,7 +1566,7 @@ namespace vcpkg
         auto serialize_optional_string = [&](Json::Object& obj, StringLiteral name, const std::string& s) {
             if (!s.empty() || debug)
             {
-                obj.insert(name, Json::Value::string(s));
+                obj.insert(name, s);
             }
         };
         auto serialize_dependency = [&](Json::Array& arr, const Dependency& dep) {
@@ -1582,7 +1582,7 @@ namespace vcpkg
                     dep_obj.insert(el.first.to_string(), el.second);
                 }
 
-                dep_obj.insert(DependencyDeserializer::NAME, Json::Value::string(dep.name));
+                dep_obj.insert(DependencyDeserializer::NAME, dep.name);
                 if (dep.host) dep_obj.insert(DependencyDeserializer::HOST, Json::Value::boolean(true));
 
                 auto features_copy = dep.features;
@@ -1602,7 +1602,7 @@ namespace vcpkg
                     {
                         Strings::append(s, '#', dep.constraint.port_version);
                     }
-                    dep_obj.insert(DependencyDeserializer::VERSION_GE, Json::Value::string(std::move(s)));
+                    dep_obj.insert(DependencyDeserializer::VERSION_GE, std::move(s));
                 }
             }
         };

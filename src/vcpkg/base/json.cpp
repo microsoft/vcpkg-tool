@@ -258,7 +258,7 @@ namespace vcpkg::Json
         val.underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), d);
         return val;
     }
-    Value Value::string(std::string s) noexcept
+    Value Value::string(std::string&& s) noexcept
     {
         if (!Unicode::utf8_is_valid_string(s.data(), s.data() + s.size()))
         {
@@ -342,42 +342,32 @@ namespace vcpkg::Json
     bool operator==(const Array& lhs, const Array& rhs) { return lhs.underlying_ == rhs.underlying_; }
     // } struct Array
     // struct Object {
-    Value& Object::insert(std::string key, std::string value) { return insert(key, Value::string(std::move(value))); }
-    template<>
-    Value& Object::insert<void>(std::string key, StringView value)
-    {
-        return insert(key, Value::string(value.to_string()));
-    }
-    Value& Object::insert(std::string key, Value&& value)
+    Value& Object::insert(StringView key, std::string&& value) { return insert(key, Value::string(std::move(value))); }
+    Value& Object::insert(StringView key, Value&& value)
     {
         vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
-        underlying_.push_back({std::move(key), std::move(value)});
+        underlying_.emplace_back(key.to_string(), std::move(value));
         return underlying_.back().second;
     }
-    Value& Object::insert(std::string key, const Value& value)
+    Value& Object::insert(StringView key, const Value& value)
     {
         vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
-        underlying_.push_back({std::move(key), value});
+        underlying_.emplace_back(key.to_string(), value);
         return underlying_.back().second;
     }
-    Array& Object::insert(std::string key, Array&& value)
+    Array& Object::insert(StringView key, Array&& value) { return insert(key, Value::array(std::move(value))).array(); }
+    Array& Object::insert(StringView key, const Array& value) { return insert(key, Value::array(value)).array(); }
+    Object& Object::insert(StringView key, Object&& value)
     {
-        return insert(std::move(key), Value::array(std::move(value))).array();
+        return insert(key, Value::object(std::move(value))).object();
     }
-    Array& Object::insert(std::string key, const Array& value)
-    {
-        return insert(std::move(key), Value::array(value)).array();
-    }
-    Object& Object::insert(std::string key, Object&& value)
-    {
-        return insert(std::move(key), Value::object(std::move(value))).object();
-    }
-    Object& Object::insert(std::string key, const Object& value)
-    {
-        return insert(std::move(key), Value::object(value)).object();
-    }
+    Object& Object::insert(StringView key, const Object& value) { return insert(key, Value::object(value)).object(); }
 
-    Value& Object::insert_or_replace(std::string key, Value&& value)
+    Value& Object::insert_or_replace(StringView key, std::string&& value)
+    {
+        return this->insert_or_replace(key, Json::Value::string(std::move(value)));
+    }
+    Value& Object::insert_or_replace(StringView key, Value&& value)
     {
         auto v = get(key);
         if (v)
@@ -387,11 +377,11 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.push_back({std::move(key), std::move(value)});
+            underlying_.emplace_back(key, std::move(value));
             return underlying_.back().second;
         }
     }
-    Value& Object::insert_or_replace(std::string key, const Value& value)
+    Value& Object::insert_or_replace(StringView key, const Value& value)
     {
         auto v = get(key);
         if (v)
@@ -401,25 +391,25 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.push_back({std::move(key), std::move(value)});
+            underlying_.emplace_back(key, std::move(value));
             return underlying_.back().second;
         }
     }
-    Array& Object::insert_or_replace(std::string key, Array&& value)
+    Array& Object::insert_or_replace(StringView key, Array&& value)
     {
-        return insert_or_replace(std::move(key), Value::array(std::move(value))).array();
+        return insert_or_replace(key, Value::array(std::move(value))).array();
     }
-    Array& Object::insert_or_replace(std::string key, const Array& value)
+    Array& Object::insert_or_replace(StringView key, const Array& value)
     {
-        return insert_or_replace(std::move(key), Value::array(value)).array();
+        return insert_or_replace(key, Value::array(value)).array();
     }
-    Object& Object::insert_or_replace(std::string key, Object&& value)
+    Object& Object::insert_or_replace(StringView key, Object&& value)
     {
-        return insert_or_replace(std::move(key), Value::object(std::move(value))).object();
+        return insert_or_replace(key, Value::object(std::move(value))).object();
     }
-    Object& Object::insert_or_replace(std::string key, const Object& value)
+    Object& Object::insert_or_replace(StringView key, const Object& value)
     {
-        return insert_or_replace(std::move(key), Value::object(value)).object();
+        return insert_or_replace(key, Value::object(value)).object();
     }
 
     auto Object::internal_find_key(StringView key) const noexcept -> underlying_t::const_iterator
@@ -1005,11 +995,11 @@ namespace vcpkg::Json
                 if (!parser.at_eof())
                 {
                     parser.add_error("Unexpected character; expected EOF");
-                    return std::move(parser).extract_error();
+                    return parser.extract_error();
                 }
                 else if (parser.get_error())
                 {
-                    return std::move(parser).extract_error();
+                    return parser.extract_error();
                 }
                 else
                 {

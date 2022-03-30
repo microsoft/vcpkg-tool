@@ -176,6 +176,33 @@ else()
     )
 endif()
 
+set(CPP_ATOMIC_LIBRARY "")
+include(CheckCXXSourceCompiles)
+if(NOT MSVC)
+    # Some platforms require a explicit linkage against libatomic to operate on 64-bit numbers
+    set(TEST_SOURCE "
+#include <stdint.h>
+#include <atomic>
+std::atomic<uintptr_t> x;
+std::atomic<uintmax_t> y;
+int main() {
+    return x + y;
+}
+")
+    check_cxx_source_compiles("${TEST_SOURCE}" CPP_ATOMIC_BUILTIN)
+    if(NOT CPP_ATOMIC_BUILTIN)
+        list(APPEND CMAKE_REQUIRED_LIBRARIES atomic)
+        set(CPP_ATOMIC_LIBRARY atomic)
+        check_cxx_source_compiles("${TEST_SOURCE}" CPP_ATOMIC_WITH_LIBATOMIC)
+        if (NOT CPP_ATOMIC_WITH_LIBATOMIC)
+            message(
+                FATAL_ERROR "unable to link C++ std::atomic code: you may need \
+                to install GNU libatomic"
+            )
+        endif()
+    endif()
+endif()
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(vcpkglib
@@ -183,6 +210,7 @@ target_link_libraries(vcpkglib
         fmt::fmt
     PRIVATE
         Threads::Threads
+        ${CPP_ATOMIC_LIBRARY}
 )
 
 if(MSVC)

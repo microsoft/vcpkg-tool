@@ -163,7 +163,7 @@ namespace vcpkg::Paragraphs
 
         void get_fieldname(std::string& fieldname)
         {
-            fieldname = match_zero_or_more(is_alphanumdash).to_string();
+            fieldname = match_while(is_alphanumdash).to_string();
             if (fieldname.empty()) return add_error("expected fieldname");
         }
 
@@ -205,7 +205,7 @@ namespace vcpkg::Paragraphs
             {
                 paragraphs.emplace_back();
                 get_paragraph(paragraphs.back());
-                match_zero_or_more(is_lineend);
+                match_while(is_lineend);
             }
             if (get_error()) return get_error()->format();
 

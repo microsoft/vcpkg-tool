@@ -222,7 +222,7 @@ namespace vcpkg::PlatformExpression
                         // { "and", optional-whitespace, platform-expression-not }
                         // { "or", platform-expression-binary-keyword-second-operand } }
                         // "and" is a synonym of "&", "or" is reserved (but not yet supported) as a synonym of "|"
-                        std::string name = match_zero_or_more(is_identifier_char).to_string();
+                        std::string name = match_while(is_identifier_char).to_string();
                         Checks::check_exit(VCPKG_LINE_INFO, !name.empty());
 
                         if (name == "and")
@@ -282,7 +282,7 @@ namespace vcpkg::PlatformExpression
             std::unique_ptr<ExprImpl> expr_identifier()
             {
                 // identifier-character, { identifier-character },
-                std::string name = match_zero_or_more(is_identifier_char).to_string();
+                std::string name = match_while(is_identifier_char).to_string();
 
                 if (name.empty())
                 {
@@ -312,7 +312,7 @@ namespace vcpkg::PlatformExpression
                 }
                 else if (cur() == 'n')
                 {
-                    std::string name = match_zero_or_more(is_identifier_char).to_string();
+                    std::string name = match_while(is_identifier_char).to_string();
 
                     // "not"
                     if (name == "not")

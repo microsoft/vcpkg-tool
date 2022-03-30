@@ -110,7 +110,7 @@ namespace vcpkg
 
     Optional<std::string> parse_feature_name(ParserBase& parser)
     {
-        auto ret = parser.match_zero_or_more(ParserBase::is_package_name_char).to_string();
+        auto ret = parser.match_while(ParserBase::is_package_name_char).to_string();
         auto ch = parser.cur();
 
         // ignores the feature name vwebp_sdl as a back-compat thing
@@ -136,7 +136,7 @@ namespace vcpkg
     }
     Optional<std::string> parse_package_name(ParserBase& parser)
     {
-        auto ret = parser.match_zero_or_more(ParserBase::is_package_name_char).to_string();
+        auto ret = parser.match_while(ParserBase::is_package_name_char).to_string();
         auto ch = parser.cur();
         if (ParserBase::is_upper_alpha(ch) || ch == '_')
         {
@@ -205,7 +205,7 @@ namespace vcpkg
         if (ch == ':')
         {
             parser.next();
-            ret.triplet = parser.match_zero_or_more(ParserBase::is_package_name_char).to_string();
+            ret.triplet = parser.match_while(ParserBase::is_package_name_char).to_string();
             if (ret.triplet.get()->empty())
             {
                 parser.add_error("expected triplet name (must be lowercase, digits, '-')");
