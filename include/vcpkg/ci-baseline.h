@@ -14,6 +14,12 @@
 
 namespace vcpkg
 {
+    enum class SkipFailures : bool
+    {
+        No,
+        Yes,
+    };
+
     struct CiBaselineLine
     {
         std::string port_name;
@@ -54,5 +60,5 @@ namespace vcpkg
 
     std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages);
 
-    SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<CiBaselineLine> lines, ExclusionsMap& exclusions_map);
+    SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<CiBaselineLine> lines, ExclusionsMap& exclusions_map, SkipFailures skip_failures);
 }

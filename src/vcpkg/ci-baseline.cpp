@@ -157,7 +157,7 @@ namespace vcpkg
         return result;
     }
 
-    SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<CiBaselineLine> lines, ExclusionsMap& exclusions_map)
+    SortedVector<PackageSpec> parse_and_apply_ci_baseline(View<CiBaselineLine> lines, ExclusionsMap& exclusions_map, SkipFailures skip_failures)
     {
         std::vector<PackageSpec> expected_failures;
         std::map<Triplet, std::vector<std::string>> added_exclusions;
@@ -172,14 +172,16 @@ namespace vcpkg
             auto triplet_match = added_exclusions.find(line.triplet);
             if (triplet_match != added_exclusions.end())
             {
-                if (line.state == CiBaselineState::Skip)
-                {
-                    triplet_match->second.push_back(line.port_name);
-                }
-                else if (line.state == CiBaselineState::Fail)
+                if (line.state == CiBaselineState::Fail)
                 {
                     expected_failures.emplace_back(line.port_name, line.triplet);
+                    if (skip_failures == SkipFailures::No)
+                    {
+                        continue;
+                    }
                 }
+                
+                triplet_match->second.push_back(line.port_name);
             }
         }
 

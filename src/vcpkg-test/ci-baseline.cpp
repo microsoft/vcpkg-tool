@@ -289,7 +289,7 @@ TEST_CASE ("Applies Skips and Fails", "[ci-baseline]")
     ExclusionsMap exclusions;
     exclusions.insert(x64_uwp);   // example triplet
     exclusions.insert(x64_linux); // example host triplet
-    auto actual_expected_failures = parse_and_apply_ci_baseline(expected_from_example_input, exclusions);
+    auto actual_expected_failures = parse_and_apply_ci_baseline(expected_from_example_input, exclusions, SkipFailures::No);
     const SortedVector<PackageSpec> expected_expected_failures{
         PackageSpec{"aubio", x64_uwp},
         PackageSpec{"bde", x64_linux},
