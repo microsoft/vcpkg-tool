@@ -10,6 +10,7 @@ export interface ChannelEvents {
   error(text: string, context: any, msec: number): void;
   message(text: string, context: any, msec: number): void;
   debug(text: string, context: any, msec: number): void;
+  verbose(text: string, context: any, msec: number): void;
 }
 
 /**
@@ -54,6 +55,9 @@ export class Channels extends EventEmitter<ChannelEvents> {
   }
   debug(text: string | Array<string>, context?: any) {
     typeof text === 'string' ? this.emit('debug', text, context, this.stopwatch.total) : text.forEach(t => this.emit('debug', t, context, this.stopwatch.total));
+  }
+  verbose(text: string | Array<string>, context?: any) {
+    typeof text === 'string' ? this.emit('verbose', text, context, this.stopwatch.total) : text.forEach(t => this.emit('verbose', t, context, this.stopwatch.total));
   }
   constructor(session: Session) {
     super();

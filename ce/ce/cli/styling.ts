@@ -7,6 +7,7 @@ import { Artifact } from '../artifacts/artifact';
 import { Session } from '../session';
 import { CommandLine } from './command-line';
 import { artifactIdentity } from './format';
+import chalk = require('chalk');
 
 function formatTime(t: number) {
   return (
@@ -55,6 +56,9 @@ export function writeException(e: any) {
 }
 
 export function initStyling(commandline: CommandLine, session: Session) {
+  if (commandline.switches['no-color']) {
+    chalk.level = 0;
+  }
   log = (text) => stdout((reformatText(text, session).trim()));
   error = (text) => stdout(`${red.bold('\nERROR: ')}${reformatText(text, session).trim()}`);
   warning = (text) => stdout(`${yellow.bold('\nWARNING: ')}${reformatText(text, session).trim()}`);
@@ -81,6 +85,12 @@ export function initStyling(commandline: CommandLine, session: Session) {
       debug(`[${artifactIdentity(context.registryId, context.id)}] - ${text}`);
     } else {
       debug(`${cyan.bold(`[${formatTime(msec)}]`)} ${reformatText(text, session)}`);
+    }
+  });
+
+  session.channels.on('verbose', (text: string, context: any, msec: number) => {
+    if (commandline.verbose) {
+      debug(` ${green(text)}`);
     }
   });
 

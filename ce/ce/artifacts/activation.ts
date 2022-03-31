@@ -651,17 +651,24 @@ export class Activation {
       // make a note of the location
       variables[undoVariableName] = undoEnvironmentFile.fsPath;
 
+      const contents = JSON.stringify(undoContents, (k, v) => this.#session.serializer(k, v), 2);
+      this.#session.channels.verbose(`--------[START UNDO FILE]--------\n${contents}\n--------[END UNDO FILE]---------`);
       // create the file on disk
-      await undoEnvironmentFile.writeUTF8(JSON.stringify(undoContents, (k, v) => this.#session.serializer(k, v), 2));
+      await undoEnvironmentFile.writeUTF8(contents);
     }
 
     // generate shell script if requested
     if (shellScriptFile) {
-      await shellScriptFile.writeUTF8(undoDeactivation + generateScriptContent(scriptKind, variables, aliases));
+      const contents = undoDeactivation + generateScriptContent(scriptKind, variables, aliases);
+
+      this.#session.channels.verbose(`--------[START SHELL SCRIPT FILE]--------\n${contents}\n--------[END SHELL SCRIPT FILE]---------`);
+      await shellScriptFile.writeUTF8(contents);
     }
 
     // generate msbuild props file if requested
     if (msbuildFile) {
+      const contents = await this.generateMSBuild(artifacts);
+      this.#session.channels.verbose(`--------[START MSBUILD FILE]--------\n${contents}\n--------[END MSBUILD FILE]---------`);
       await msbuildFile.writeUTF8(await this.generateMSBuild(artifacts));
     }
   }
