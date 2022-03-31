@@ -1206,6 +1206,60 @@ namespace
     private:
         bool m_no_sign_request;
     };
+
+    struct CosBinaryProvider : ObjectStorageProvider
+    {
+        CosBinaryProvider(const VcpkgPaths& paths,
+                          std::vector<std::string>&& read_prefixes,
+                          std::vector<std::string>&& write_prefixes)
+            : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
+        {
+        }
+
+        StringLiteral vendor() const override { return "COS"; }
+
+        Command command() const { return Command{paths.get_tool_exe(Tools::COSCLI)}; }
+
+        bool stat(StringView url) const override
+        {
+            auto cmd = command().string_arg("ls").string_arg(url);
+            return cmd_execute(cmd) == 0;
+        }
+
+        bool upload_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("cp").string_arg(archive).string_arg(object);
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::COSCLI);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+
+        bool download_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("cp").string_arg(object).string_arg(archive);
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::COSCLI);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+    };
 }
 
 namespace vcpkg
@@ -1462,6 +1516,8 @@ namespace vcpkg
         aws_read_prefixes.clear();
         aws_write_prefixes.clear();
         aws_no_sign_request = false;
+        cos_read_prefixes.clear();
+        cos_write_prefixes.clear();
         sources_to_read.clear();
         sources_to_write.clear();
         configs_to_read.clear();
@@ -1789,6 +1845,36 @@ namespace
 
                 state->aws_no_sign_request = no_sign_request;
             }
+            else if (segments[0].second == "x-cos")
+            {
+                // Scheme: x-cos,<prefix>[,<readwrite>]
+                if (segments.size() < 2)
+                {
+                    return add_error("expected arguments: binary config 'cos' requires at least a prefix",
+                                     segments[0].first);
+                }
+
+                if (!Strings::starts_with(segments[1].second, "cos://"))
+                {
+                    return add_error(
+                        "invalid argument: binary config 'cos' requires a cos:// base url as the first argument",
+                        segments[1].first);
+                }
+
+                if (segments.size() > 3)
+                {
+                    return add_error("unexpected arguments: binary config 'cos' requires 1 or 2 arguments",
+                                     segments[3].first);
+                }
+
+                auto p = segments[1].second;
+                if (p.back() != '/')
+                {
+                    p.push_back('/');
+                }
+
+                handle_readwrite(state->cos_read_prefixes, state->cos_write_prefixes, std::move(p), segments, 2);
+            }
             else
             {
                 return add_error(
@@ -2062,6 +2148,12 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
             paths, std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes), s.aws_no_sign_request));
     }
 
+    if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
+    {
+        providers.push_back(std::make_unique<CosBinaryProvider>(
+            paths, std::move(s.cos_read_prefixes), std::move(s.cos_write_prefixes)));
+    }
+
     if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.azblob_templates_to_put.empty())
     {
         providers.push_back(std::make_unique<ArchivesBinaryProvider>(paths,
@@ -2306,6 +2398,10 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
         "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
         "Adds an AWS configuration; currently supports only 'no-sign-request' parameter that is an equivalent to the "
         "'--no-sign-request parameter of the AWS cli.");
+    tbl.format("x-cos,<prefix>[,<rw>]",
+               "**Experimental: will change or be removed without warning** Adds an COS source. "
+               "Uses the cos CLI for uploads and downloads. Prefix should include cos:// scheme and be suffixed "
+               "with a `/`.");
     tbl.format("interactive", "Enables interactive credential management for some source types");
     tbl.blank();
     tbl.text("The `<rw>` optional parameter for certain strings controls whether they will be consulted for "
