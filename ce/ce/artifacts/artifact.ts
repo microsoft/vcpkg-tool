@@ -255,7 +255,7 @@ export class Artifact extends ArtifactBase {
       }
 
       // activate
-      return await activateEspIdf(this.session, this.targetLocation);
+      await activateEspIdf(this.session, this.targetLocation);
     }
     return true;
   }

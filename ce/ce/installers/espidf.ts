@@ -39,9 +39,8 @@ export async function installEspIdf(session: Session, events: Partial<InstallEve
   if (installResult.code) {
     // on failure, clean up the .espressif folder
     await espressifFolder.delete({ recursive: true });
-
-    session.channels.debug(i`There was a failure during the installation of the .espressif tools.`);
-    return false;
+    session.channels.error(installResult.stderr);
+    throw new Error(i`There was a failure during the installation of the .espressif tools.`);
   }
 
   const installPythonEnv = await execute(pythonPath, [
@@ -56,12 +55,9 @@ export async function installEspIdf(session: Session, events: Partial<InstallEve
   if (installPythonEnv.code) {
     // on failure, clean up the .espressif folder
     await espressifFolder.delete({ recursive: true });
-
-    session.channels.debug(i`There was a failure during the installation of the python environement for the .espressif tools.`);
-    return false;
+    session.channels.error(installPythonEnv.stderr);
+    throw new Error(i`There was a failure during the installation of the python environement for the .espressif tools.`);
   }
-
-  return true;
 }
 
 export async function activateEspIdf(session: Session, targetLocation: Uri) {
@@ -100,8 +96,7 @@ export async function activateEspIdf(session: Session, targetLocation: Uri) {
   session.channels.verbose(JSON.stringify(activateIdf, null, 2));
 
   if (activateIdf.code) {
+    session.channels.error(activateIdf.stderr);
     throw new Error(`Failed to activate esp-idf - ${activateIdf.stderr}`);
   }
-
-  return true;
 }

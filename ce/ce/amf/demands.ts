@@ -231,9 +231,28 @@ export class Unless extends DemandBlock implements AlternativeFulfillment {
     }
   }
 
+  async runCmd(cmd: string) {
+    const commandline = cmdlineToArray(cmd);
+    const result = await execute(resolve(commandline[0]), commandline.slice(1));
+    if (result.code !== 0) {
+      return false;
+    }
+
+    this.discoveredData = filterOutput(this.select || '', result.log) || [];
+    (<DemandBlock>(this.parent)).discoveredData = this.discoveredData;
+
+    // if we have a match expression, let's check it.
+    if (this.matches && !safeEval(this.matches, this.discoveredData)) {
+      return false; // not a match, move on
+    }
+    return true;
+  }
+
   override async init(session: Session): Promise<Unless> {
     if (this.usingAlternative === undefined) {
       this.usingAlternative = false;
+
+      // we can search for an executable using from/where
       if (this.from.length > 0 && this.where.length > 0) {
         // we're doing some kind of check.
         const locations = [...this.from].map(each => session.activation.expandPathLikeVariableExpressions(each)).flat();
@@ -275,28 +294,21 @@ export class Unless extends DemandBlock implements AlternativeFulfillment {
           const run = this.run?.replace('$0', item.toString());
 
           if (run) {
-            const commandline = cmdlineToArray(run);
-            const result = await execute(resolve(commandline[0]), commandline.slice(1));
-            if (result.code !== 0) {
+            const result = await this.runCmd(run);
+            if (!result) {
               continue;
             }
 
-            this.discoveredData = filterOutput(this.select || '', result.log) || [];
             this.discoveredData['$0'] = item.toString();
-            (<DemandBlock>(this.parent)).discoveredData = this.discoveredData;
-
-            // if we have a match expression, let's check it.
-            if (this.matches && !safeEval(this.matches, this.discoveredData)) {
-              continue; // not a match, move on
-            }
-
-            // it did match, or it's just presence check
             this.usingAlternative = true;
-            // set the data output of the check
-            // this is used later to fill in the settings.
-
             return this;
           }
+        }
+      }
+      else {
+        // or if just a cmdline is available, we can use that directly
+        if (this.run) {
+          this.usingAlternative = await this.runCmd(this.run);
         }
       }
     }
