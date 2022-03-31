@@ -248,8 +248,7 @@ namespace vcpkg::Export
         return exported_archive_path;
     }
 
-    static Optional<std::string> maybe_lookup(std::unordered_map<std::string, std::string> const& m,
-                                              std::string const& key)
+    static Optional<std::string> maybe_lookup(std::map<std::string, std::string, std::less<>> const& m, StringView key)
     {
         const auto it = m.find(key);
         if (it != m.end()) return it->second;

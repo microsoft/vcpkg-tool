@@ -24,6 +24,15 @@
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-init.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
+    <FilesToSign Include="$(IntermediateOutputPath)\applocal.ps1">
+      <Authenticode>Microsoft400</Authenticode>
+    </FilesToSign>
+    <FilesToSign Include="$(IntermediateOutputPath)\addPoshVcpkgToPowershellProfile.ps1">
+      <Authenticode>Microsoft400</Authenticode>
+    </FilesToSign>
+    <FilesToSign Include="$(IntermediateOutputPath)\posh-vcpkg.psm1">
+      <Authenticode>Microsoft400</Authenticode>
+    </FilesToSign>
   </ItemGroup>
 
   <ImportGroup Label="ExtensionTargets">
