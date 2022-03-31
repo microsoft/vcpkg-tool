@@ -619,7 +619,7 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
     {
         virtual StringLiteral tool_data_name() const override { return Tools::COSCLI; }
         virtual StringLiteral exe_stem() const override { return Tools::COSCLI; }
-        virtual std::array<int, 3> default_min_version() const override { return {0, 10, 2}; }
+        virtual std::array<int, 3> default_min_version() const override { return {0, 11, 0}; }
 
         virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
         {
@@ -632,7 +632,7 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
             }
 
             /* Sample output:
-coscli version v0.10.2-beta
+coscli version v0.11.0-beta
                 */
 
             const auto idx = rc.output.find("coscli version v");
