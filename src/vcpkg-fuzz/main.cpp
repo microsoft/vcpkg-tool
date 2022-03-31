@@ -1,7 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/unicode.h>
 
 #include <vcpkg/platform-expression.h>
@@ -68,14 +68,16 @@ namespace
                     }
                     else
                     {
-                        print2(Color::error, "Invalid kind: ", value, "\n");
-                        print2(Color::error, "  Expected one of: utf-8, json, platform-expr\n\n");
+                        msg::print_error(LocalizedString::from_raw(fmt::format("invalid kind: {}", value))
+                                             .appendnl()
+                                             .append_indent()
+                                             .append_raw("expected one of: utf-8, json, platform-expr"));
                         print_help_and_exit(true);
                     }
                 }
                 else
                 {
-                    print2("Unknown option: ", key, "\n\n");
+                    msg::print_error(LocalizedString::from_raw(fmt::format("unknown option: {}", key)));
                     print_help_and_exit(true);
                 }
             }
@@ -99,7 +101,7 @@ namespace
 
         [[noreturn]] void print_help_and_exit(bool invalid = false)
         {
-            constexpr auto help =
+            constexpr StringLiteral help =
                 R"(
 Usage: vcpkg-fuzz <options>
 
@@ -111,7 +113,7 @@ Options:
 
             auto color = invalid ? Color::error : Color::success;
 
-            print2(color, help);
+            msg::write_unlocalized_text_to_stdout(color, help);
             if (invalid)
             {
                 Checks::exit_fail(VCPKG_LINE_INFO);
