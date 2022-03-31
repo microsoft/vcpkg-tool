@@ -2,7 +2,7 @@
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/zstringview.h>
+#include <vcpkg/base/stringview.h>
 
 #include <atomic>
 #include <chrono>
