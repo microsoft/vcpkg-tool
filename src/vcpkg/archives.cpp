@@ -151,7 +151,11 @@ namespace
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
-            win32_extract_with_seven_zip(paths.get_tool_exe(Tools::SEVEN_ZIP), archive, to_path);
+            const Path filename = archive.filename();
+            const Path stem = filename.stem();
+            const Path to_archive = Path(archive.parent_path()) / stem;
+            win32_extract_self_extracting_7z(paths, archive, to_archive);
+            extract_archive_to_empty(paths, to_archive, to_path);
         }
 #else
         if (ext == ".zip")
@@ -189,6 +193,28 @@ namespace
 namespace vcpkg
 {
 #ifdef _WIN32
+    void win32_extract_self_extracting_7z(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
+    {
+        constexpr static const char header_7z[] = "7z\xBC\xAF\x27\x1C";
+
+        const Path stem = archive.stem();
+        const auto subext = stem.extension();
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           Strings::case_insensitive_ascii_equals(subext, ".7z"),
+                           "Unable to extract 7z archive from Installer %s. Missing '.7z.exe' extension.",
+                           archive);
+
+        Filesystem& fs = paths.get_filesystem();
+        auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
+        const auto pos = contents.find(header_7z);
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           pos != std::string::npos,
+                           "Unable to extract 7z archive from Installer %s. Unable to find 7z header.",
+                           archive);
+        contents = contents.substr(pos);
+        fs.write_contents(to_path, std::move(contents), VCPKG_LINE_INFO);
+    }
+
     void win32_extract_bootstrap_zip(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
     {
         Filesystem& fs = paths.get_filesystem();
