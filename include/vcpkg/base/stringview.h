@@ -61,8 +61,8 @@ namespace vcpkg
     // A counted view of a null-terminated string
     struct ZStringView : StringView
     {
-        constexpr ZStringView() : StringView("", size_t{}){}
-        ZStringView(const std::string& s) : StringView(s){}
+        constexpr ZStringView() : StringView("", size_t{}) { }
+        ZStringView(const std::string& s) : StringView(s) { }
         constexpr ZStringView(const char* ptr, size_t size) noexcept : StringView(ptr, size) { }
         // intentionally not provided to discourage non-null-termination:
         // constexpr ZStringView(const char* b, const char* e)
