@@ -685,8 +685,6 @@ namespace vcpkg::Commands::CI
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-
-            auto collection_timer = ElapsedTimer::create_started();
             auto summary = Install::perform(args,
                                             action_plan,
                                             Install::KeepGoing::YES,
@@ -695,7 +693,6 @@ namespace vcpkg::Commands::CI
                                             binary_cache,
                                             build_logs_recorder,
                                             var_provider);
-            auto collection_time_elapsed = collection_timer.elapsed();
 
             // Adding results for ports that were built or pulled from an archive
             for (auto&& result : summary.results)
