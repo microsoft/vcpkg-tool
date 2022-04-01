@@ -18,6 +18,8 @@
   "_AlreadyInstalledNotHead.comment": "'HEAD' means the most recent version of source code\nexample of {spec} is 'zlib:x64-windows'.\n",
   "AttemptingToFetchPackagesFromVendor": "Attempting to fetch {count} package(s) from {vendor}",
   "_AttemptingToFetchPackagesFromVendor.comment": "example of {count} is '42'.\nexample of {vendor} is 'Azure'.\n",
+  "BinaryConfig": "binary config '{config}' ",
+  "_BinaryConfig.comment": "example of {config} is 'azblob'.\n",
   "BothYesAndNoOptionSpecifiedError": "error: cannot specify both --no-{option} and --{option}.",
   "_BothYesAndNoOptionSpecifiedError.comment": "example of {option} is 'editable'.\n",
   "BuildResultBuildFailed": "BUILD_FAILED",
@@ -96,8 +98,12 @@
   "ErrorRequirePackagesToInstall": "Error: No packages were listed for installation and no manifest was found.",
   "ErrorVcvarsUnsupported": "Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.",
   "_ErrorVcvarsUnsupported.comment": "example of {triplet} is 'x64-windows'.\n",
+<<<<<<< HEAD
   "ExcludedPackage": "Excluded {spec}",
   "_ExcludedPackage.comment": "example of {spec} is 'zlib:x64-windows'.\n",
+=======
+  "ExpectedArguments": "expected arguments: ",
+>>>>>>> d8a851af (make strings localizable)
   "ExpectedCharacterHere": "expected '{expected}' here",
   "_ExpectedCharacterHere.comment": "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'\n",
   "ExpectedFailOrSkip": "expected 'fail' or 'skip' here",
@@ -128,10 +134,14 @@
   "_InstallingPackage.comment": "example of {spec} is 'zlib:x64-windows'.\n",
   "InternalErrorMessage": "internal error: ",
   "InternalErrorMessageContact": "Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.",
+<<<<<<< HEAD
   "JsonErrorFailedToParse": "failed to parse {path}:",
   "_JsonErrorFailedToParse.comment": "example of {path} is '/foo/bar'.\n",
   "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
   "_JsonErrorFailedToRead.comment": "example of {path} is '/foo/bar'.\nexample of {error_msg} is 'File Not Found'.\n",
+=======
+  "InvalidArgument": "invalid argument: ",
+>>>>>>> d8a851af (make strings localizable)
   "LicenseExpressionContainsExtraPlus": "SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.",
   "LicenseExpressionContainsInvalidCharacter": "SPDX license expression contains an invalid character (0x{value:02X} '{value}').",
   "_LicenseExpressionContainsInvalidCharacter.comment": "example of {value:02X} is '7B'\nexample of {value} is '{'\n",
@@ -169,8 +179,25 @@
   "ProcessorArchitectureMissing": "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.",
   "ProcessorArchitectureW6432Malformed": "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. Falling back to %PROCESSOR_ARCHITECTURE%.",
   "_ProcessorArchitectureW6432Malformed.comment": "example of {arch} is 'x64'.\n",
+<<<<<<< HEAD
   "RemovingPackage": "Removing {spec}",
   "_RemovingPackage.comment": "example of {spec} is 'zlib:x64-windows'.\n",
+=======
+  "RequiresAbsolutePath": "path arguments for binary config strings must be absolute",
+  "RequiresBaseUrl": "requires a {base_url} base url as the first argument",
+  "_RequiresBaseUrl.comment": "example of {base_url} is 'azblob://'.\n",
+  "RequiresBaseUrlAndToken": "requires at least a base-url and a SAS token",
+  "RequiresNoneArguments": "does not take arguments",
+  "RequiresOneOrTwoArguments": "requires 1 or 2 arguments",
+  "RequiresPathArgument": "requires at least a path argument",
+  "RequiresPrefix": "requires at least a prefix",
+  "RequiresSingleArgument": "does not take more than 1 argument",
+  "RequiresSingleStringArgument": "expects a single string argument",
+  "RequiresSource": "requires non-empty source",
+  "RequiresSourceArgument": "requires at least a source argument",
+  "RequiresTwoOrThreeArguments": "requires 2 or 3 arguments",
+  "RequiresValidToken": "requires a SAS token without a preceeding '?' as the second argument",
+>>>>>>> d8a851af (make strings localizable)
   "RestoredPackagesFromVendor": "Restored {count} package(s) from {vendor} in {elapsed}",
   "_RestoredPackagesFromVendor.comment": "example of {count} is '42'.\nexample of {elapsed} is '3.532 min'.\nexample of {vendor} is 'Azure'.\n",
   "ResultsHeader": "RESULTS",
@@ -179,8 +206,13 @@
   "_SeeURL.comment": "example of {url} is 'https://github.com/microsoft/vcpkg'.\n",
   "SuggestNewVersionScheme": "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port \"{package_name}\".\nUse `--{option}` to disable this check.",
   "_SuggestNewVersionScheme.comment": "example of {new_scheme} is 'version'.\nexample of {old_scheme} is 'version-string'.\nexample of {package_name} is 'zlib'.\nexample of {option} is 'editable'.\n",
+<<<<<<< HEAD
   "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
+=======
+  "UnExpectedArguments": "unexpected arguments: ",
+>>>>>>> d8a851af (make strings localizable)
   "UnknownBaselineFileContent": "unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'",
+  "UnknownBinaryProviderType": "unknown binary provider type: ",
   "UnsupportedSystemName": "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
   "_UnsupportedSystemName.comment": "example of {system_name} is 'Darwin'.\n",
   "UnsupportedToolchain": "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target architecture was {arch}\n    The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n",
@@ -193,6 +225,7 @@
   "VSExaminedInstances": "The following Visual Studio instances were considered:",
   "VSExaminedPaths": "The following paths were examined for Visual Studio instances:",
   "VSNoInstances": "Could not locate a complete Visual Studio instance",
+  "ValidProviders": "valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files'",
   "VcpkgCeIsExperimental": "vcpkg-ce ('configure environment') is experimental and may change at any time.",
   "VcpkgDisallowedClassicMode": "Error: Could not locate a manifest (vcpkg.json) above the current working directory.\nThis vcpkg distribution does not have a classic mode instance.",
   "VcpkgHasCrashed": "vcpkg.exe has crashed.\nPlease send an email to:\n    {email}\ncontaining a brief summary of what you were trying to do and the following data blob:",

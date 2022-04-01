@@ -9,6 +9,7 @@
   "AlreadyInstalled": "{spec} is already installed",
   "AlreadyInstalledNotHead": "{spec} is already installed -- not building from HEAD",
   "AttemptingToFetchPackagesFromVendor": "Attempting to fetch {count} package(s) from {vendor}",
+  "BinaryConfig": "binary config '{config}' ",
   "BothYesAndNoOptionSpecifiedError": "error: cannot specify both --no-{option} and --{option}.",
   "BuildResultBuildFailed": "BUILD_FAILED",
   "BuildResultCacheMissing": "CACHE_MISSING",
@@ -53,7 +54,11 @@
   "ErrorRequirePackagesList": "Error: `vcpkg install` requires a list of packages to install in classic mode.",
   "ErrorRequirePackagesToInstall": "Error: No packages were listed for installation and no manifest was found.",
   "ErrorVcvarsUnsupported": "Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.",
+<<<<<<< HEAD
   "ExcludedPackage": "Excluded {spec}",
+=======
+  "ExpectedArguments": "expected arguments: ",
+>>>>>>> d8a851af (make strings localizable)
   "ExpectedCharacterHere": "expected '{expected}' here",
   "ExpectedFailOrSkip": "expected 'fail' or 'skip' here",
   "ExpectedPortName": "expected a port name here",
@@ -74,8 +79,12 @@
   "InstallingPackage": "Installing {spec}...",
   "InternalErrorMessage": "internal error: ",
   "InternalErrorMessageContact": "Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.",
+<<<<<<< HEAD
   "JsonErrorFailedToParse": "failed to parse {path}:",
   "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
+=======
+  "InvalidArgument": "invalid argument: ",
+>>>>>>> d8a851af (make strings localizable)
   "LicenseExpressionContainsExtraPlus": "SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.",
   "LicenseExpressionContainsInvalidCharacter": "SPDX license expression contains an invalid character (0x{value:02X} '{value}').",
   "LicenseExpressionContainsUnicode": "SPDX license expression contains a unicode character (U+{value:04X} '{pretty_value}'), but these expressions are ASCII-only.",
@@ -100,13 +109,34 @@
   "ProcessorArchitectureMalformed": "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.",
   "ProcessorArchitectureMissing": "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.",
   "ProcessorArchitectureW6432Malformed": "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. Falling back to %PROCESSOR_ARCHITECTURE%.",
+<<<<<<< HEAD
   "RemovingPackage": "Removing {spec}",
+=======
+  "RequiresAbsolutePath": "path arguments for binary config strings must be absolute",
+  "RequiresBaseUrl": "requires a {base_url} base url as the first argument",
+  "RequiresBaseUrlAndToken": "requires at least a base-url and a SAS token",
+  "RequiresNoneArguments": "does not take arguments",
+  "RequiresOneOrTwoArguments": "requires 1 or 2 arguments",
+  "RequiresPathArgument": "requires at least a path argument",
+  "RequiresPrefix": "requires at least a prefix",
+  "RequiresSingleArgument": "does not take more than 1 argument",
+  "RequiresSingleStringArgument": "expects a single string argument",
+  "RequiresSource": "requires non-empty source",
+  "RequiresSourceArgument": "requires at least a source argument",
+  "RequiresTwoOrThreeArguments": "requires 2 or 3 arguments",
+  "RequiresValidToken": "requires a SAS token without a preceeding '?' as the second argument",
+>>>>>>> d8a851af (make strings localizable)
   "RestoredPackagesFromVendor": "Restored {count} package(s) from {vendor} in {elapsed}",
   "ResultsHeader": "RESULTS",
   "SeeURL": "See {url} for more information.",
   "SuggestNewVersionScheme": "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port \"{package_name}\".\nUse `--{option}` to disable this check.",
+<<<<<<< HEAD
   "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
+=======
+  "UnExpectedArguments": "unexpected arguments: ",
+>>>>>>> d8a851af (make strings localizable)
   "UnknownBaselineFileContent": "unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'",
+  "UnknownBinaryProviderType": "unknown binary provider type: ",
   "UnsupportedSystemName": "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
   "UnsupportedToolchain": "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target architecture was {arch}\n    The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n",
   "UploadedPackagesToVendor": "Uploaded {count} package(s) to {vendor} in {elapsed}",
@@ -115,6 +145,7 @@
   "VSExaminedInstances": "The following Visual Studio instances were considered:",
   "VSExaminedPaths": "The following paths were examined for Visual Studio instances:",
   "VSNoInstances": "Could not locate a complete Visual Studio instance",
+  "ValidProviders": "valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files'",
   "VcpkgCeIsExperimental": "vcpkg-ce ('configure environment') is experimental and may change at any time.",
   "VcpkgDisallowedClassicMode": "Error: Could not locate a manifest (vcpkg.json) above the current working directory.\nThis vcpkg distribution does not have a classic mode instance.",
   "VcpkgHasCrashed": "vcpkg.exe has crashed.\nPlease send an email to:\n    {email}\ncontaining a brief summary of what you were trying to do and the following data blob:",
