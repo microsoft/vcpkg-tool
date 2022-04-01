@@ -9,6 +9,7 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 #include <vcpkg/base/view.h>
+#include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/build.h>
@@ -157,6 +158,7 @@ namespace vcpkg::Commands::CI
         nullptr,
     };
 
+    // https://xunit.net/docs/format-xml-v2
     struct XunitTestResults
     {
     public:
@@ -180,9 +182,9 @@ namespace vcpkg::Commands::CI
 
         std::string build_xml(Triplet controlling_triplet)
         {
-            std::string xml;
-            xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-            xml.append("<assemblies>\n");
+            XmlSerializer xml;
+            xml.emit_declaration();
+            xml.open_tag("assemblies").line_break();
             for (const auto& test_group : m_tests)
             {
                 const auto& port_name = test_group.first;
@@ -211,25 +213,28 @@ namespace vcpkg::Commands::CI
                 StringView run_date{run_date_time, 10};
                 StringView run_time{run_date_time + 10, 8};
 
-                xml.append(fmt::format("  <assembly name=\"{}\" run-date=\"{}\" run-time=\"{}\" time=\"{}\">\n",
-                                       port_name,
-                                       run_date,
-                                       run_time,
-                                       elapsed_seconds));
-                xml.append(fmt::format("    <collection name=\"{}\" time=\"{}\">\n",
-                                       controlling_triplet.canonical_name(),
-                                       elapsed_seconds));
+                xml.start_complex_open_tag("assembly")
+                    .attr("name", port_name)
+                    .attr("run-date", run_date)
+                    .attr("run-time", run_time)
+                    .attr("time", elapsed_seconds)
+                    .finish_complex_open_tag()
+                    .line_break();
+                xml.start_complex_open_tag("collection")
+                    .attr("name", controlling_triplet)
+                    .attr("time", elapsed_seconds)
+                    .finish_complex_open_tag()
+                    .line_break();
                 for (const auto& port_result : port_results)
                 {
                     xml_test(xml, port_result);
                 }
-
-                xml.append("    </collection>\n");
-                xml.append("  </assembly>\n");
+                xml.close_tag("collection").line_break();
+                xml.close_tag("assembly").line_break();
             }
 
-            xml.append("</assemblies>\n");
-            return xml;
+            xml.close_tag("assemblies").line_break();
+            return std::move(xml.buf);
         }
 
     private:
@@ -245,50 +250,71 @@ namespace vcpkg::Commands::CI
             std::vector<std::string> features;
         };
 
-        static void xml_test(std::string& xml, const XunitTest& test)
+        static void xml_test(XmlSerializer& xml, const XunitTest& test)
         {
-            std::string message_block;
-            const char* result_string = "";
+            StringLiteral result_string = "";
             switch (test.result)
             {
                 case BuildResult::POST_BUILD_CHECKS_FAILED:
                 case BuildResult::FILE_CONFLICTS:
-                case BuildResult::BUILD_FAILED:
-                    result_string = "Fail";
-                    message_block = fmt::format("        <failure><message><![CDATA[{}]]></message></failure>\n",
-                                                to_string_locale_invariant(test.result));
-                    break;
+                case BuildResult::BUILD_FAILED: result_string = "Fail"; break;
                 case BuildResult::EXCLUDED:
-                case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
-                    result_string = "Skip";
-                    message_block = fmt::format("        <reason><![CDATA[{}]]></reason>\n",
-                                                to_string_locale_invariant(test.result));
-                    break;
+                case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: result_string = "Skip"; break;
                 case BuildResult::SUCCEEDED: result_string = "Pass"; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            xml.append(fmt::format("      <test name=\"{}\" method=\"{}\" time=\"{}\" result=\"{}\">\n",
-                                   test.name,
-                                   test.method,
-                                   test.time.as<std::chrono::seconds>().count(),
-                                   result_string));
-            xml.append("        <traits>\n");
+            xml.start_complex_open_tag("test")
+                .attr("name", test.name)
+                .attr("method", test.method)
+                .attr("time", test.time.as<std::chrono::seconds>().count())
+                .attr("method", result_string)
+                .finish_complex_open_tag()
+                .line_break();
+            xml.open_tag("traits").line_break();
             if (!test.abi_tag.empty())
             {
-                xml.append(fmt::format("          <trait name=\"abi_tag\" value=\"{}\" />\n", test.abi_tag));
+                xml.start_complex_open_tag("trait")
+                    .attr("name", "abi_tag")
+                    .attr("value", test.abi_tag)
+                    .finish_self_closing_complex_tag()
+                    .line_break();
             }
 
             if (!test.features.empty())
             {
-                xml.append(fmt::format("          <trait name=\"features\" value=\"{}\" />\n",
-                                       Strings::join(", ", test.features)));
+                xml.start_complex_open_tag("trait")
+                    .attr("name", "features")
+                    .attr("value", Strings::join(", ", test.features))
+                    .finish_self_closing_complex_tag()
+                    .line_break();
             }
 
-            xml.append(fmt::format("          <trait name=\"owner\" value=\"{}\" />\n", test.owner));
+            xml.start_complex_open_tag("trait")
+                .attr("name", "owner")
+                .attr("value", test.owner)
+                .finish_self_closing_complex_tag()
+                .line_break();
+            xml.close_tag("traits").line_break();
 
-            xml.append("        </traits>\n");
-            xml.append("      </test>\n");
+            if (result_string == "Fail")
+            {
+                xml.open_tag("failure")
+                    .open_tag("message")
+                    .cdata(to_string_locale_invariant(test.result))
+                    .close_tag("failure")
+                    .close_tag("message")
+                    .line_break();
+            }
+            else if (result_string == "Skip")
+            {
+                xml.open_tag("reason").cdata(to_string_locale_invariant(test.result)).close_tag("reason").line_break();
+            }
+            else
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, result_string == "Pass");
+            }
+            xml.close_tag("test").line_break();
         }
 
         std::map<std::string, std::vector<XunitTest>> m_tests;
