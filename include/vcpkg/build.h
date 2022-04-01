@@ -211,7 +211,6 @@ namespace vcpkg::Build
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
-    std::string create_error_message(const BuildResult build_result, const PackageSpec& spec);
     std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
                                                     const VcpkgPaths& paths);
 
@@ -261,6 +260,8 @@ namespace vcpkg::Build
         std::vector<FeatureSpec> unmet_dependencies;
         std::unique_ptr<BinaryControlFile> binary_control_file;
     };
+
+    LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,

@@ -120,8 +120,8 @@ namespace vcpkg
 
         std::string get_toolver_diagnostics() const;
 
-        const Path& get_tool_exe(const std::string& tool) const;
-        const std::string& get_tool_version(const std::string& tool) const;
+        const Path& get_tool_exe(StringView tool) const;
+        const std::string& get_tool_version(StringView tool) const;
 
         Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
 

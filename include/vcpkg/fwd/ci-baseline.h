@@ -13,4 +13,9 @@ namespace vcpkg
         Skip,
         Fail,
     };
+    enum class SkipFailures : bool
+    {
+        No,
+        Yes,
+    };
 }

@@ -5,11 +5,15 @@
 
 #include <stdlib.h>
 
-namespace vcpkg
+namespace
 {
-    static void (*g_shutdown_handler)() = nullptr;
+    using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(ChecksLineInfo, (msg::vcpkg_line_info), "{Locked}", "{vcpkg_line_info}: ");
+    LocalizedString locale_invariant_lineinfo(const LineInfo& line_info)
+    {
+        return LocalizedString::from_raw(fmt::format("{}: ", line_info));
+    }
+
     DECLARE_AND_REGISTER_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached");
     DECLARE_AND_REGISTER_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.");
     DECLARE_AND_REGISTER_MESSAGE(ChecksUpdateVcpkg,
@@ -17,6 +21,11 @@ namespace vcpkg
                                  "",
                                  "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.");
 
+    void (*g_shutdown_handler)() = nullptr;
+}
+
+namespace vcpkg
+{
     void Checks::register_global_shutdown_handler(void (*func)())
     {
         if (g_shutdown_handler)
@@ -49,8 +58,7 @@ namespace vcpkg
 
     [[noreturn]] void Checks::unreachable(const LineInfo& line_info)
     {
-        msg::println(Color::error,
-                     msg::format(msgChecksLineInfo, msg::vcpkg_line_info = line_info).append(msgChecksUnreachableCode));
+        msg::println(Color::error, locale_invariant_lineinfo(line_info).append(msgChecksUnreachableCode));
 #ifndef NDEBUG
         std::abort();
 #else
@@ -60,7 +68,7 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_with_code(const LineInfo& line_info, const int exit_code)
     {
-        Debug::println(msg::format(msgChecksLineInfo, msg::vcpkg_line_info = line_info));
+        Debug::println(locale_invariant_lineinfo(line_info));
         final_cleanup_and_exit(exit_code);
     }
 
@@ -81,7 +89,7 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_with_message_and_line(const LineInfo& line_info, StringView error_message)
     {
-        msg::print(Color::error, msgChecksLineInfo, msg::vcpkg_line_info = line_info);
+        msg::print(Color::error, locale_invariant_lineinfo(line_info));
         print2(Color::error, error_message, '\n');
         exit_fail(line_info);
     }
@@ -92,7 +100,7 @@ namespace vcpkg
         {
             msg::println(Color::error,
                          msg::format(msg::msgInternalErrorMessage)
-                             .append(msgChecksLineInfo, msg::vcpkg_line_info = line_info)
+                             .append(locale_invariant_lineinfo(line_info))
                              .append(msgChecksFailedCheck)
                              .appendnl()
                              .append(msg::msgInternalErrorMessageContact));
