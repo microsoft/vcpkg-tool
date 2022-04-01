@@ -312,6 +312,7 @@ namespace vcpkg::Json
     }
     // } struct Value
     // struct Array {
+    Value& Array::push_back(std::string&& value) { return this->push_back(Json::Value::string(std::move(value))); }
     Value& Array::push_back(Value&& value)
     {
         underlying_.push_back(std::move(value));
