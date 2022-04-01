@@ -20,6 +20,8 @@ namespace vcpkg::Remove
     using Dependencies::RequestType;
     using Update::OutdatedPackage;
 
+    REGISTER_MESSAGE(RemovingPackage);
+
     static void remove_package(Filesystem& fs,
                                const InstalledPaths& installed,
                                const PackageSpec& spec,
@@ -304,7 +306,8 @@ namespace vcpkg::Remove
         for (std::size_t idx = 0; idx < remove_plan.size(); ++idx)
         {
             const RemovePlanAction& action = remove_plan[idx];
-            vcpkg::printf("Removing %s (%zu/%zu)...\n", action.spec.to_string(), idx + 1, remove_plan.size());
+            msg::println(msg::format(msgRemovingPackage, msg::spec = action.spec)
+                             .append_fmt_raw(" ({}/{})...", idx + 1, remove_plan.size()));
             perform_remove_plan_action(paths, action, purge, &status_db);
         }
 
