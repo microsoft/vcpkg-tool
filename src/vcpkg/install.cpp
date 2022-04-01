@@ -448,21 +448,21 @@ namespace vcpkg::Install
         TrackedPackageInstallGuard(const size_t action_index,
                                    const size_t action_count,
                                    std::vector<SpecSummary>& results,
-                                   const Dependencies::InstallPlanAction* action)
+                                   const Dependencies::InstallPlanAction& action)
         {
             results.emplace_back(action);
             current_summary = &results.back();
-            vcpkg::printf("Installing %s (%zd/%zd)...\n", action->spec.to_string(), action_index, action_count);
+            vcpkg::printf("Installing %s (%zd/%zd)...\n", action.spec.to_string(), action_index, action_count);
         }
 
         TrackedPackageInstallGuard(const size_t action_index,
                                    const size_t action_count,
                                    std::vector<SpecSummary>& results,
-                                   const Dependencies::RemovePlanAction* action)
+                                   const Dependencies::RemovePlanAction& action)
         {
             results.emplace_back(action);
             current_summary = &results.back();
-            vcpkg::printf("Removing %s (%zd/%zd)...\n", action->spec.to_string(), action_index, action_count);
+            vcpkg::printf("Removing %s (%zd/%zd)...\n", action.spec.to_string(), action_index, action_count);
         }
 
         ~TrackedPackageInstallGuard()
@@ -491,13 +491,13 @@ namespace vcpkg::Install
 
         for (auto&& action : action_plan.remove_actions)
         {
-            TrackedPackageInstallGuard this_install(action_index++, action_count, results, &action);
+            TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             Remove::perform_remove_plan_action(paths, action, Remove::Purge::YES, &status_db);
         }
 
         for (auto&& action : action_plan.already_installed)
         {
-            results.emplace_back(&action);
+            results.emplace_back(action);
             results.back().build_result.emplace(
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder));
         }
@@ -506,7 +506,7 @@ namespace vcpkg::Install
         binary_cache.prefetch(action_plan.install_actions);
         for (auto&& action : action_plan.install_actions)
         {
-            TrackedPackageInstallGuard this_install(action_index++, action_count, results, &action);
+            TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             auto result =
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
@@ -1241,21 +1241,21 @@ namespace vcpkg::Install
         Install::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
-    SpecSummary::SpecSummary(const Dependencies::InstallPlanAction* action)
+    SpecSummary::SpecSummary(const Dependencies::InstallPlanAction& action)
         : build_result()
         , timing()
         , start_time(std::chrono::system_clock::now())
-        , m_install_action(action)
-        , m_spec(action->spec)
+        , m_install_action(&action)
+        , m_spec(action.spec)
     {
     }
 
-    SpecSummary::SpecSummary(const Dependencies::RemovePlanAction* action)
+    SpecSummary::SpecSummary(const Dependencies::RemovePlanAction& action)
         : build_result()
         , timing()
         , start_time(std::chrono::system_clock::now())
         , m_install_action(nullptr)
-        , m_spec(action->spec)
+        , m_spec(action.spec)
     {
     }
 

@@ -27,8 +27,8 @@ namespace vcpkg::Install
 
     struct SpecSummary
     {
-        explicit SpecSummary(const Dependencies::InstallPlanAction* action);
-        explicit SpecSummary(const Dependencies::RemovePlanAction* action);
+        explicit SpecSummary(const Dependencies::InstallPlanAction& action);
+        explicit SpecSummary(const Dependencies::RemovePlanAction& action);
 
         const BinaryParagraph* get_binary_paragraph() const;
         const PackageSpec& get_spec() const { return m_spec; }
