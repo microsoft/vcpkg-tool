@@ -5,6 +5,7 @@ namespace vcpkg
     struct CMakeVariable;
     struct Command;
     struct CommandLess;
+    struct ProcessResult;
     struct ExitCodeAndOutput;
 
     enum class EchoInDebug

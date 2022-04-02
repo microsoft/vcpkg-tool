@@ -747,7 +747,7 @@ namespace vcpkg::Build
         CompilerInfo compiler_info;
         std::string buf;
 
-        int rc;
+        ProcessResult rc;
         {
             const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             rc = cmd_execute_and_stream_lines(
@@ -781,7 +781,7 @@ namespace vcpkg::Build
                 env);
         } // close out_file
 
-        if (compiler_info.hash.empty() || rc != 0)
+        if (compiler_info.hash.empty() || !rc.successful())
         {
             Debug::print("Compiler information tracking can be disabled by passing --",
                          VcpkgCmdArguments::FEATURE_FLAGS_ARG,
@@ -1013,7 +1013,7 @@ namespace vcpkg::Build
                 VCPKG_LINE_INFO, !err.value(), "Failed to create directory '%s', code: %d", buildpath, err.value());
         }
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
-        int return_code;
+        ProcessResult return_code;
         {
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(
@@ -1051,7 +1051,7 @@ namespace vcpkg::Build
                                                        }) +
                                          "]",
                                      buildtimeus);
-            if (return_code != 0)
+            if (!return_code.successful())
             {
                 metrics->track_property("error", "build failed");
                 metrics->track_property("build_error", spec_string);

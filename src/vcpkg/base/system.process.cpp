@@ -475,7 +475,7 @@ namespace vcpkg
         return res;
     }
 
-    int cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
+    ProcessResult cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
     {
         return cmd_execute(cmd_line, wd, get_clean_environment());
     }
@@ -701,8 +701,8 @@ namespace vcpkg
         auto rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
         Checks::check_exit(VCPKG_LINE_INFO,
                            rc_output.exit_code == 0,
-                           "Run vcvarsall.bat to get Visual Studio env failed with exit code %d",
-                           rc_output.exit_code);
+                           "Run vcvarsall.bat to get Visual Studio env failed with %s",
+                           rc_output.error_msg());
         Debug::print("command line: ", actual_cmd_line.command_line(), "\n");
         Debug::print(rc_output.output, "\n");
 
@@ -736,26 +736,21 @@ namespace vcpkg
     }
 #endif
 
-    int cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
+    ProcessResult cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
     {
         auto timer = ElapsedTimer::create_started();
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
         g_ctrl_c_state.transition_to_spawn_process();
         auto proc_info = windows_create_windowless_process(cmd_line.command_line(), wd, env, 0);
-        auto long_exit_code = [&]() -> unsigned long {
-            if (auto p = proc_info.get())
-            {
-                return p->wait();
-            }
-            else
-            {
-                return proc_info.error();
-            }
-        }();
+        g_ctrl_c_state.transition_from_spawn_process();
+        if (!proc_info.has_value())
+        {
+            return Strings::concat("Failed to create process with WinAPI error ", proc_info.error());
+        }
+        auto long_exit_code = proc_info.value_or_exit(VCPKG_LINE_INFO).wait();
         if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
         int exit_code = static_cast<int>(long_exit_code);
-        g_ctrl_c_state.transition_from_spawn_process();
 #else
         (void)env;
         Command real_command_line_builder;
@@ -785,11 +780,11 @@ namespace vcpkg
         return exit_code;
     }
 
-    int cmd_execute_and_stream_lines(const Command& cmd_line,
-                                     std::function<void(StringView)> per_line_cb,
-                                     const WorkingDirectory& wd,
-                                     const Environment& env,
-                                     Encoding encoding)
+    ProcessResult cmd_execute_and_stream_lines(const Command& cmd_line,
+                                               std::function<void(StringView)> per_line_cb,
+                                               const WorkingDirectory& wd,
+                                               const Environment& env,
+                                               Encoding encoding)
     {
         Strings::LinesStream lines;
 
@@ -800,11 +795,11 @@ namespace vcpkg
         return rc;
     }
 
-    int cmd_execute_and_stream_data(const Command& cmd_line,
-                                    std::function<void(StringView)> data_cb,
-                                    const WorkingDirectory& wd,
-                                    const Environment& env,
-                                    Encoding encoding)
+    ProcessResult cmd_execute_and_stream_data(const Command& cmd_line,
+                                              std::function<void(StringView)> data_cb,
+                                              const WorkingDirectory& wd,
+                                              const Environment& env,
+                                              Encoding encoding)
     {
         const auto timer = ElapsedTimer::create_started();
 #if defined(_WIN32)
@@ -813,13 +808,12 @@ namespace vcpkg
 
         g_ctrl_c_state.transition_to_spawn_process();
         auto maybe_proc_info = windows_create_process_redirect(cmd_line.command_line(), wd, env, 0);
-        auto exit_code = [&]() -> unsigned long {
-            if (auto p = maybe_proc_info.get())
-                return p->wait_and_stream_output(data_cb, encoding);
-            else
-                return maybe_proc_info.error();
-        }();
         g_ctrl_c_state.transition_from_spawn_process();
+        if (!maybe_proc_info.has_value())
+        {
+            return Strings::concat("Failed to create process with WinAPI error ", maybe_proc_info.error());
+        }
+        auto exit_code = maybe_proc_info.value_or_exit(VCPKG_LINE_INFO).wait_and_stream_output(data_cb, encoding);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
         const auto proc_id = std::to_string(::getpid());
@@ -846,7 +840,7 @@ namespace vcpkg
         const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
-            return 1;
+            return Strings::concat("popen fails with error code ", errno);
         }
         char buf[1024];
         // Use fgets because fread will block until the entire buffer is filled.
@@ -857,7 +851,7 @@ namespace vcpkg
 
         if (!feof(pipe))
         {
-            return 1;
+            return std::string("fgets says that the end of stream is reached, but feof says the opposite");
         }
 
         auto exit_code = pclose(pipe);
@@ -906,7 +900,11 @@ namespace vcpkg
             wd,
             env,
             encoding);
-        return {rc, std::move(output)};
+        if (rc.successful())
+        {
+            return {rc.exit_code.value_or_exit(VCPKG_LINE_INFO), std::move(output)};
+        }
+        return {std::move(rc.api_error)};
     }
 
     uint64_t get_subproccess_stats() { return g_subprocess_stats.load(); }

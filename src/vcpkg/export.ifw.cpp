@@ -410,9 +410,9 @@ namespace vcpkg::Export::IFW
             auto cmd_line =
                 Command(repogen_exe).string_arg("--packages").string_arg(packages_dir).string_arg(repository_dir);
 
-            const int exit_code =
-                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
-            Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW repository generating failed");
+            const auto result =
+                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment());
+            Checks::check_exit(VCPKG_LINE_INFO, result.successful(), "Error: IFW repository generating failed");
 
             vcpkg::printf(Color::success, "Generating repository %s... done.\n", repository_dir);
         }
@@ -450,9 +450,9 @@ namespace vcpkg::Export::IFW
                                .string_arg(installer_file);
             }
 
-            const int exit_code =
-                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
-            Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW installer generating failed");
+            const auto result =
+                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment());
+            Checks::check_exit(VCPKG_LINE_INFO, result.successful(), "Error: IFW installer generating failed");
 
             vcpkg::printf(Color::success, "Generating installer %s... done.\n", installer_file);
         }

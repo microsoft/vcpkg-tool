@@ -26,9 +26,9 @@ using namespace vcpkg;
 namespace
 {
     DECLARE_AND_REGISTER_MESSAGE(ObjectStorageToolFailed,
-                                 (msg::exit_code, msg::tool_name),
-                                 "",
-                                 "{tool_name} failed with exit code: {exit_code}");
+                                 (msg::error, msg::tool_name),
+                                 "example of {error} is 'exit code 4'",
+                                 "{tool_name} failed with {error}");
     DECLARE_AND_REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor,
                                  (msg::count, msg::vendor),
                                  "",
@@ -329,11 +329,11 @@ namespace
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
-            if (code != 0)
+            auto code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            if (!code.successful())
             {
                 vcpkg::print2(
-                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', ", code.error_msg());
                 return;
             }
 
@@ -582,7 +582,7 @@ namespace
                 Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
-        int run_nuget_commandline(const Command& cmdline) const
+        ProcessResult run_nuget_commandline(const Command& cmdline) const
         {
             if (m_interactive)
             {
@@ -620,10 +620,10 @@ namespace
                     print2(res2.output);
                 }
 
-                return res2.exit_code;
+                return std::move(res2);
             }
 
-            return res.exit_code;
+            return std::move(res);
         }
 
         struct NuGetPrefetchAttempt
@@ -838,7 +838,7 @@ namespace
                 cmdline.string_arg("-NonInteractive");
             }
 
-            if (run_nuget_commandline(cmdline) != 0)
+            if (!run_nuget_commandline(cmdline).successful())
             {
                 print2(Color::error, "Packing NuGet failed. Use --debug for more information.\n");
                 return;
@@ -866,7 +866,7 @@ namespace
                 }
 
                 print2("Uploading binaries for ", spec, " to NuGet source ", write_src, ".\n");
-                if (run_nuget_commandline(cmd) != 0)
+                if (!run_nuget_commandline(cmd).successful())
                 {
                     print2(
                         Color::error, "Pushing NuGet to ", write_src, " failed. Use --debug for more information.\n");
@@ -893,7 +893,7 @@ namespace
 
                 print2("Uploading binaries for ", spec, " using NuGet config ", write_cfg, ".\n");
 
-                if (run_nuget_commandline(cmd) != 0)
+                if (!run_nuget_commandline(cmd).successful())
                 {
                     print2(
                         Color::error, "Pushing NuGet with ", write_cfg, " failed. Use --debug for more information.\n");
@@ -1014,11 +1014,11 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
-            if (code != 0)
+            auto code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            if (!code.successful())
             {
                 vcpkg::print2(
-                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', ", code.error_msg());
                 return;
             }
 
@@ -1098,21 +1098,21 @@ namespace
         bool stat(StringView url) const override
         {
             auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
-            return cmd_execute(cmd) == 0;
+            return cmd_execute(cmd).successful();
         }
 
         bool upload_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
             const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            if (out.successful())
             {
                 return true;
             }
 
             msg::println(Color::warning,
                          msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
+                         msg::error = out.error_msg(),
                          msg::tool_name = Tools::GSUTIL);
             msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
             return false;
@@ -1129,7 +1129,7 @@ namespace
 
             msg::println(Color::warning,
                          msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
+                         msg::error = out.error_msg(),
                          msg::tool_name = Tools::GSUTIL);
             msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
             return false;
@@ -1158,7 +1158,7 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
-            return cmd_execute(cmd) == 0;
+            return cmd_execute(cmd).successful();
         }
 
         bool upload_file(StringView object, const Path& archive) const override
@@ -1176,7 +1176,7 @@ namespace
 
             msg::println(Color::warning,
                          msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
+                         msg::error = out.error_msg(),
                          msg::tool_name = Tools::AWSCLI);
             msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
             return false;
@@ -1197,7 +1197,7 @@ namespace
 
             msg::println(Color::warning,
                          msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
+                         msg::error = out.error_msg(),
                          msg::tool_name = Tools::AWSCLI);
             msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
             return false;

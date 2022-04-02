@@ -80,9 +80,31 @@ namespace vcpkg
 
     Path get_exe_path_of_current_process();
 
-    struct ExitCodeAndOutput
+    struct ProcessResult
     {
-        int exit_code;
+        ProcessResult() : ProcessResult("not executed") { }
+        ProcessResult(int exit_code) : exit_code(exit_code) { }
+        ProcessResult(std::string api_error) : api_error(std::move(api_error)) { }
+        Optional<int> exit_code;
+        std::string api_error;
+
+        /// <summary>
+        /// Returns an error message that can be used in the form "... failed with {error_msg}"
+        /// </summary>
+        std::string error_msg() const
+        {
+            return exit_code.has_value() ? Strings::concat("exit code ", exit_code.value_or_exit(VCPKG_LINE_INFO))
+                                         : Strings::concat("error '", api_error, "'");
+        }
+
+        bool successful() const { return exit_code.value_or(1) == 0; }
+    };
+
+    struct ExitCodeAndOutput : ProcessResult
+    {
+        ExitCodeAndOutput() : ProcessResult("not executed") { }
+        ExitCodeAndOutput(int exit_code, std::string output) : ProcessResult(exit_code), output(std::move(output)) { }
+        ExitCodeAndOutput(std::string api_error) : ProcessResult(std::move(api_error)) { }
         std::string output;
     };
 
@@ -107,10 +129,10 @@ namespace vcpkg
     extern const WorkingDirectory default_working_directory;
     extern const Environment default_environment;
 
-    int cmd_execute(const Command& cmd_line,
-                    const WorkingDirectory& wd = default_working_directory,
-                    const Environment& env = default_environment);
-    int cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
+    ProcessResult cmd_execute(const Command& cmd_line,
+                              const WorkingDirectory& wd = default_working_directory,
+                              const Environment& env = default_environment);
+    ProcessResult cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
 
 #if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd_line,
@@ -130,17 +152,17 @@ namespace vcpkg
         const WorkingDirectory& wd = default_working_directory,
         const Environment& env = default_environment);
 
-    int cmd_execute_and_stream_lines(const Command& cmd_line,
-                                     std::function<void(StringView)> per_line_cb,
-                                     const WorkingDirectory& wd = default_working_directory,
-                                     const Environment& env = default_environment,
-                                     Encoding encoding = Encoding::Utf8);
+    ProcessResult cmd_execute_and_stream_lines(const Command& cmd_line,
+                                               std::function<void(StringView)> per_line_cb,
+                                               const WorkingDirectory& wd = default_working_directory,
+                                               const Environment& env = default_environment,
+                                               Encoding encoding = Encoding::Utf8);
 
-    int cmd_execute_and_stream_data(const Command& cmd_line,
-                                    std::function<void(StringView)> data_cb,
-                                    const WorkingDirectory& wd = default_working_directory,
-                                    const Environment& env = default_environment,
-                                    Encoding encoding = Encoding::Utf8);
+    ProcessResult cmd_execute_and_stream_data(const Command& cmd_line,
+                                              std::function<void(StringView)> data_cb,
+                                              const WorkingDirectory& wd = default_working_directory,
+                                              const Environment& env = default_environment,
+                                              Encoding encoding = Encoding::Utf8);
 
     uint64_t get_subproccess_stats();
 

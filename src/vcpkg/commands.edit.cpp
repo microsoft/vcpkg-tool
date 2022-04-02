@@ -217,16 +217,16 @@ namespace vcpkg::Commands::Edit
         candidate_paths.emplace_back("/usr/share/code/bin/code");
         candidate_paths.emplace_back("/usr/bin/code");
 
-        if (cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime")) == 0)
+        if (cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime")).successful())
         {
             auto mime_qry = Command("xdg-mime").string_arg("query").string_arg("default").string_arg("text/plain");
             auto execute_result = cmd_execute_and_capture_output(mime_qry);
-            if (execute_result.exit_code == 0 && !execute_result.output.empty())
+            if (execute_result.successful() && !execute_result.output.empty())
             {
                 mime_qry = Command("command").string_arg("-v").string_arg(
                     execute_result.output.substr(0, execute_result.output.find('.')));
                 execute_result = cmd_execute_and_capture_output(mime_qry);
-                if (execute_result.exit_code == 0 && !execute_result.output.empty())
+                if (execute_result.successful() && !execute_result.output.empty())
                 {
                     execute_result.output.erase(
                         std::remove(std::begin(execute_result.output), std::end(execute_result.output), '\n'),
@@ -264,7 +264,7 @@ namespace vcpkg::Commands::Edit
         }
 #endif // ^^^ _WIN32
 
-        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line));
+        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line).exit_code.value_or(1));
     }
 
     void EditCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const

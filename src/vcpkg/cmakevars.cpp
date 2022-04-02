@@ -264,7 +264,8 @@ endfunction()
             [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
             default_working_directory);
 
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, exit_code == 0 ? "" : Strings::join("\n", lines));
+        Checks::check_exit(
+            VCPKG_LINE_INFO, exit_code.successful(), exit_code.successful() ? "" : Strings::join("\n", lines));
 
         const auto end = lines.cend();
 

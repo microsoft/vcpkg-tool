@@ -179,13 +179,12 @@ namespace vcpkg::Export
             .string_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        const auto output = cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
-        const auto exit_code = output.exit_code;
-        if (exit_code != 0)
+        const auto res = cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
+        if (!res.successful())
         {
-            print2(output.output, '\n');
+            print2(res.output, '\n');
         }
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
+        Checks::check_exit(VCPKG_LINE_INFO, res.successful(), "Error: NuGet package creation failed");
 
         const auto output_path = output_dir / (nuget_id + "." + nuget_version + ".nupkg");
         return output_path;
@@ -243,8 +242,8 @@ namespace vcpkg::Export
             .string_arg("--")
             .string_arg(raw_exported_dir);
 
-        const int exit_code = cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()});
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", exported_archive_path);
+        const auto exit_code = cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()});
+        Checks::check_exit(VCPKG_LINE_INFO, exit_code.successful(), "Error: %s creation failed", exported_archive_path);
         return exported_archive_path;
     }
 

@@ -11,11 +11,10 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        MsiexecFailedToExtract,
-        (msg::path, msg::exit_code),
-        "",
-        "msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:");
+    DECLARE_AND_REGISTER_MESSAGE(MsiexecFailedToExtract,
+                                 (msg::path, msg::error),
+                                 "example of {error} is 'exit code 4'",
+                                 "msiexec failed while extracting '{path}' with launch or {error} and message:");
     DECLARE_AND_REGISTER_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                                  (msg::path),
                                  "",
@@ -107,7 +106,7 @@ namespace
             }
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
-                msg::format(msgMsiexecFailedToExtract, msg::path = archive, msg::exit_code = code_and_output.exit_code)
+                msg::format(msgMsiexecFailedToExtract, msg::path = archive, msg::error = code_and_output.error_msg())
                     .appendnl()
                     .append_raw(code_and_output.output));
         }
@@ -162,7 +161,7 @@ namespace
         {
             const auto code =
                 cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path});
-            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", archive);
+            Checks::check_exit(VCPKG_LINE_INFO, code.successful(), "unzip failed while extracting %s", archive);
         }
 #endif
         else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz")
@@ -248,7 +247,7 @@ namespace vcpkg
     {
         const auto code =
             cmd_execute(Command{tar_tool}.string_arg("xzf").string_arg(archive), WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+        Checks::check_exit(VCPKG_LINE_INFO, code.successful(), "tar failed while extracting %s", archive);
     }
 
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
@@ -257,7 +256,7 @@ namespace vcpkg
         const auto code =
             cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive),
                         WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+        Checks::check_exit(VCPKG_LINE_INFO, code.successful(), "tar failed while extracting %s", archive);
     }
 
     void extract_archive(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
@@ -268,7 +267,7 @@ namespace vcpkg
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
-    int compress_directory_to_zip(const VcpkgPaths& paths, const Path& source, const Path& destination)
+    ProcessResult compress_directory_to_zip(const VcpkgPaths& paths, const Path& source, const Path& destination)
     {
         auto& fs = paths.get_filesystem();
         fs.remove(destination, VCPKG_LINE_INFO);
@@ -276,10 +275,9 @@ namespace vcpkg
         auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
 
         return cmd_execute_and_capture_output(
-                   Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
-                   default_working_directory,
-                   get_clean_environment())
-            .exit_code;
+            Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
+            default_working_directory,
+            get_clean_environment());
 
 #else
         return cmd_execute_clean(Command{"zip"}

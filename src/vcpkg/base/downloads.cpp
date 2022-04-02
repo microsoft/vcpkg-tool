@@ -307,7 +307,7 @@ namespace vcpkg
                 out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
             }
         });
-        Checks::check_exit(VCPKG_LINE_INFO, res == 0, "curl failed to execute with exit code: %d", res);
+        Checks::check_exit(VCPKG_LINE_INFO, res.successful(), "curl failed to execute with %s", res.error_msg());
 
         if (out->size() != start_size + urls.size())
         {
@@ -367,7 +367,8 @@ namespace vcpkg
                     out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
                 }
             });
-            Checks::check_exit(VCPKG_LINE_INFO, res == 0, "Error: curl failed to execute with exit code: %d", res);
+            Checks::check_exit(
+                VCPKG_LINE_INFO, res.successful(), "Error: curl failed to execute with %s", res.error_msg());
 
             if (start_size + url_pairs.size() > out->size())
             {
@@ -422,8 +423,7 @@ namespace vcpkg
             if (res.exit_code != 0)
             {
                 Debug::print(res.output, '\n');
-                return Strings::concat(
-                    "Error: curl failed to put file to ", url, " with exit code: ", res.exit_code, '\n');
+                return Strings::concat("Error: curl failed to put file to ", url, " with ", res.error_msg(), '\n');
             }
             return 0;
         }
@@ -443,10 +443,10 @@ namespace vcpkg
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
             }
         });
-        if (res != 0 || (code >= 100 && code < 200) || code >= 300)
+        if (!res.successful() || (code >= 100 && code < 200) || code >= 300)
         {
             return Strings::concat(
-                "Error: curl failed to put file to ", url, " with exit code '", res, "' and http code '", code, "'\n");
+                "Error: curl failed to put file to ", url, " with ", res.error_msg(), " and http code '", code, "'\n");
         }
         return code;
     }

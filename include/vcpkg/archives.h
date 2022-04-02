@@ -25,7 +25,7 @@ namespace vcpkg
 #endif
 
     // Compress the source directory into the destination file.
-    int compress_directory_to_zip(const VcpkgPaths& paths, const Path& source, const Path& destination);
+    ProcessResult compress_directory_to_zip(const VcpkgPaths& paths, const Path& source, const Path& destination);
 
     Command decompress_zip_archive_cmd(const VcpkgPaths& paths, const Path& dst, const Path& archive_path);
 

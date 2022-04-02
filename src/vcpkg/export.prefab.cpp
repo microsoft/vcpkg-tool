@@ -227,8 +227,8 @@ namespace vcpkg::Export::Prefab
         cmd_line.string_arg("install:install-file")
             .string_arg(Strings::concat("-Dfile=", aar))
             .string_arg(Strings::concat("-DpomFile=", pom));
-        const int exit_code = cmd_execute_clean(cmd_line);
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s installing maven file", aar);
+        const auto result = cmd_execute_clean(cmd_line);
+        Checks::check_exit(VCPKG_LINE_INFO, result.successful(), "Error: %s installing maven file", aar);
     }
 
     static std::unique_ptr<Build::PreBuildInfo> build_info_from_triplet(
@@ -637,7 +637,7 @@ namespace vcpkg::Export::Prefab
             }
 
             Checks::check_exit(VCPKG_LINE_INFO,
-                               compress_directory_to_zip(paths, package_directory, exported_archive_path) != 0,
+                               compress_directory_to_zip(paths, package_directory, exported_archive_path).successful(),
                                Strings::concat("Failed to compress folder ", package_directory));
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>

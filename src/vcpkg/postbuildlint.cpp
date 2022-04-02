@@ -592,9 +592,9 @@ namespace vcpkg::PostBuildLint
                 {
                     printf(Color::warning,
                            "Error: unable to determine the architectures of binary file %s. Running lipo failed "
-                           "with status code %d\n    %s",
+                           "with %s\n    %s",
                            file,
-                           ec_data.exit_code,
+                           ec_data.error_msg(),
                            cmd_line.command_line());
                 }
                 else if (!Util::Vectors::contains(Strings::split(Strings::trim(ec_data.output), ' '), requested_arch))
