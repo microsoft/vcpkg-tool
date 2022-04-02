@@ -421,7 +421,7 @@ namespace vcpkg::PostBuildLint
         for (const Path& dll : dlls)
         {
             auto cmd_line = Command(dumpbin_exe).string_arg("/exports").string_arg(dll);
-            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
+            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line).value_or_exit(VCPKG_LINE_INFO);
             Checks::check_exit(
                 VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
 
@@ -459,7 +459,7 @@ namespace vcpkg::PostBuildLint
         for (const Path& dll : dlls)
         {
             auto cmd_line = Command(dumpbin_exe).string_arg("/headers").string_arg(dll);
-            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
+            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line).value_or_exit(VCPKG_LINE_INFO);
             Checks::check_exit(
                 VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
 
@@ -587,7 +587,7 @@ namespace vcpkg::PostBuildLint
             for (const Path& file : files)
             {
                 auto cmd_line = Command("lipo").string_arg("-archs").string_arg(file);
-                ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
+                ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line).value_or_exit(VCPKG_LINE_INFO);
                 if (ec_data.exit_code != 0)
                 {
                     printf(Color::warning,
@@ -896,7 +896,7 @@ namespace vcpkg::PostBuildLint
         for (const Path& lib : libs)
         {
             auto cmd_line = Command(dumpbin_exe).string_arg("/directives").string_arg(lib);
-            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
+            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line).value_or_exit(VCPKG_LINE_INFO);
             Checks::check_exit(VCPKG_LINE_INFO,
                                ec_data.exit_code == 0,
                                "Running command:\n   %s\n failed with message:\n%s",
@@ -949,7 +949,7 @@ namespace vcpkg::PostBuildLint
         for (const Path& dll : dlls)
         {
             auto cmd_line = Command(dumpbin_exe).string_arg("/dependents").string_arg(dll);
-            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line);
+            ExitCodeAndOutput ec_data = cmd_execute_and_capture_output(cmd_line).value_or_exit(VCPKG_LINE_INFO);
             Checks::check_exit(
                 VCPKG_LINE_INFO, ec_data.exit_code == 0, "Running command:\n   %s\n failed", cmd_line.command_line());
 

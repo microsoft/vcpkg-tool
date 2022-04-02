@@ -152,6 +152,18 @@ namespace vcpkg
 
         explicit constexpr operator bool() const noexcept { return !m_s.has_error(); }
         constexpr bool has_value() const noexcept { return !m_s.has_error(); }
+        template<class F>
+        constexpr bool has_value_and(F f) const noexcept
+        {
+            if (m_s.has_error()) return false;
+            return f(*m_t.get());
+        }
+        template<class F>
+        constexpr bool has_error_or(F f) const noexcept
+        {
+            if (m_s.has_error()) return true;
+            return f(*m_t.get());
+        }
 
         const T&& value_or_exit(const LineInfo& line_info) const&&
         {

@@ -227,7 +227,9 @@ if (Test-Path $installedDir)
                                 .string_arg("-NoDefaultExcludes");
 
             const int exit_code =
-                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
+                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment())
+                    .value_or_exit(VCPKG_LINE_INFO)
+                    .exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
         }
     }

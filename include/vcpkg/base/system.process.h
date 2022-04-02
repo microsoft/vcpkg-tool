@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/base/files.h>
@@ -107,10 +108,11 @@ namespace vcpkg
     extern const WorkingDirectory default_working_directory;
     extern const Environment default_environment;
 
-    int cmd_execute(const Command& cmd_line,
-                    const WorkingDirectory& wd = default_working_directory,
-                    const Environment& env = default_environment);
-    int cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
+    [[nodiscard]] ExpectedS<int> cmd_execute(const Command& cmd_line,
+                                             const WorkingDirectory& wd = default_working_directory,
+                                             const Environment& env = default_environment);
+    [[nodiscard]] ExpectedS<int> cmd_execute_clean(const Command& cmd_line,
+                                                   const WorkingDirectory& wd = default_working_directory);
 
 #if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd_line,
@@ -119,28 +121,28 @@ namespace vcpkg
     void cmd_execute_background(const Command& cmd_line);
 #endif
 
-    ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
-                                                     const WorkingDirectory& wd = default_working_directory,
-                                                     const Environment& env = default_environment,
-                                                     Encoding encoding = Encoding::Utf8,
-                                                     EchoInDebug echo_in_debug = EchoInDebug::Hide);
+    ExpectedS<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
+                                                                const WorkingDirectory& wd = default_working_directory,
+                                                                const Environment& env = default_environment,
+                                                                Encoding encoding = Encoding::Utf8,
+                                                                EchoInDebug echo_in_debug = EchoInDebug::Hide);
 
-    std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(
+    std::vector<ExpectedS<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
         View<Command> cmd_lines,
         const WorkingDirectory& wd = default_working_directory,
         const Environment& env = default_environment);
 
-    int cmd_execute_and_stream_lines(const Command& cmd_line,
-                                     std::function<void(StringView)> per_line_cb,
-                                     const WorkingDirectory& wd = default_working_directory,
-                                     const Environment& env = default_environment,
-                                     Encoding encoding = Encoding::Utf8);
+    [[nodiscard]] ExpectedS<int> cmd_execute_and_stream_lines(const Command& cmd_line,
+                                                              std::function<void(StringView)> per_line_cb,
+                                                              const WorkingDirectory& wd = default_working_directory,
+                                                              const Environment& env = default_environment,
+                                                              Encoding encoding = Encoding::Utf8);
 
-    int cmd_execute_and_stream_data(const Command& cmd_line,
-                                    std::function<void(StringView)> data_cb,
-                                    const WorkingDirectory& wd = default_working_directory,
-                                    const Environment& env = default_environment,
-                                    Encoding encoding = Encoding::Utf8);
+    [[nodiscard]] ExpectedS<int> cmd_execute_and_stream_data(const Command& cmd_line,
+                                                             std::function<void(StringView)> data_cb,
+                                                             const WorkingDirectory& wd = default_working_directory,
+                                                             const Environment& env = default_environment,
+                                                             Encoding encoding = Encoding::Utf8);
 
     uint64_t get_subproccess_stats();
 

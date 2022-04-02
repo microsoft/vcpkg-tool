@@ -180,12 +180,13 @@ namespace vcpkg::Export
             .string_arg("-NoDefaultExcludes");
 
         const auto output = cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
-        const auto exit_code = output.exit_code;
-        if (exit_code != 0)
+        if (output.has_value_and([](auto& res) { return res.exit_code != 0; }))
         {
-            print2(output.output, '\n');
+            print2(output.get()->output, '\n');
         }
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
+        Checks::check_exit(
+            VCPKG_LINE_INFO, output.has_value(), "Error: NuGet package creation failed: %s", output.error());
+        Checks::check_exit(VCPKG_LINE_INFO, output.get()->exit_code == 0, "Error: NuGet package creation failed");
 
         const auto output_path = output_dir / (nuget_id + "." + nuget_version + ".nupkg");
         return output_path;

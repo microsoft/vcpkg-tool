@@ -307,7 +307,8 @@ namespace vcpkg
                 out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
             }
         });
-        Checks::check_exit(VCPKG_LINE_INFO, res == 0, "curl failed to execute with exit code: %d", res);
+        Checks::check_exit(VCPKG_LINE_INFO, res.has_value(), "curl failed to execute with error: %s", res.error());
+        Checks::check_exit(VCPKG_LINE_INFO, *res.get() == 0, "curl failed to execute with exit code: %d", *res.get());
 
         if (out->size() != start_size + urls.size())
         {
@@ -367,7 +368,10 @@ namespace vcpkg
                     out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
                 }
             });
-            Checks::check_exit(VCPKG_LINE_INFO, res == 0, "Error: curl failed to execute with exit code: %d", res);
+            Checks::check_exit(
+                VCPKG_LINE_INFO, res.has_value(), "Error: curl failed to execute with error: %s", res.error());
+            Checks::check_exit(
+                VCPKG_LINE_INFO, *res.get() == 0, "Error: curl failed to execute with exit code: %d", *res.get());
 
             if (start_size + url_pairs.size() > out->size())
             {
@@ -419,11 +423,15 @@ namespace vcpkg
             cmd.string_arg(url);
             cmd.string_arg("-T").string_arg(file);
             auto res = cmd_execute_and_capture_output(cmd);
-            if (res.exit_code != 0)
+            if (!res.has_value())
             {
-                Debug::print(res.output, '\n');
+                return Strings::concat("Error: curl failed to put file to ", url, " with error: ", res.error(), '\n');
+            }
+            if (res.get()->exit_code != 0)
+            {
+                Debug::print(res.get()->output, '\n');
                 return Strings::concat(
-                    "Error: curl failed to put file to ", url, " with exit code: ", res.exit_code, '\n');
+                    "Error: curl failed to put file to ", url, " with exit code: ", res.get()->exit_code, '\n');
             }
             return 0;
         }
@@ -443,10 +451,19 @@ namespace vcpkg
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
             }
         });
-        if (res != 0 || (code >= 100 && code < 200) || code >= 300)
+        if (!res.has_value())
         {
-            return Strings::concat(
-                "Error: curl failed to put file to ", url, " with exit code '", res, "' and http code '", code, "'\n");
+            return Strings::concat("Error: curl failed to put file to ", url, " with error: ", res.error(), '\n');
+        }
+        if (*res.get() != 0 || (code >= 100 && code < 200) || code >= 300)
+        {
+            return Strings::concat("Error: curl failed to put file to ",
+                                   url,
+                                   " with exit code '",
+                                   *res.get(),
+                                   "' and http code '",
+                                   code,
+                                   "'\n");
         }
         return code;
     }
@@ -594,9 +611,14 @@ namespace vcpkg
         }
         const auto out = cmd_execute_and_capture_output(cmd);
         const auto sanitized_url = replace_secrets(url, secrets);
-        if (out.exit_code != 0)
+        if (!out.has_value())
         {
-            Strings::append(errors, sanitized_url, ": ", out.output, '\n');
+            Strings::append(errors, sanitized_url, ": ", out.error(), '\n');
+            return false;
+        }
+        if (out.get()->exit_code != 0)
+        {
+            Strings::append(errors, sanitized_url, ": ", out.get()->output, '\n');
             return false;
         }
 
@@ -696,7 +718,7 @@ namespace vcpkg
                                                               get_clean_environment(),
                                                               Encoding::Utf8,
                                                               EchoInDebug::Show);
-                    if (res.exit_code == 0)
+                    if (res.has_value() && res.get()->exit_code == 0)
                     {
                         auto maybe_error =
                             try_verify_downloaded_file_hash(fs, "<mirror-script>", download_path_part_path, *hash);
@@ -712,7 +734,14 @@ namespace vcpkg
                     }
                     else
                     {
-                        Strings::append(errors, res.output);
+                        if (res.has_value())
+                        {
+                            Strings::append(errors, res.get()->output);
+                        }
+                        else
+                        {
+                            Strings::append(errors, res.error());
+                        }
                     }
                 }
             }

@@ -120,7 +120,7 @@ namespace vcpkg::Commands::PortsDiff
                        .string_arg("cat-file")
                        .string_arg("-t")
                        .string_arg(git_commit_id);
-        const ExitCodeAndOutput output = cmd_execute_and_capture_output(cmd);
+        const ExitCodeAndOutput output = cmd_execute_and_capture_output(cmd).value_or_exit(VCPKG_LINE_INFO);
         Checks::check_exit(
             VCPKG_LINE_INFO, output.output == VALID_COMMIT_OUTPUT, "Invalid commit id %s", git_commit_id);
     }

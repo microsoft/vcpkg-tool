@@ -433,9 +433,9 @@ namespace vcpkg
     const WorkingDirectory default_working_directory;
     const Environment default_environment;
 
-    std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
-                                                                           const WorkingDirectory& wd,
-                                                                           const Environment& env)
+    std::vector<ExpectedS<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
+                                                                                      const WorkingDirectory& wd,
+                                                                                      const Environment& env)
     {
         if (cmd_lines.size() == 0)
         {
@@ -445,7 +445,7 @@ namespace vcpkg
         {
             return {cmd_execute_and_capture_output(cmd_lines[0], wd, env)};
         }
-        std::vector<ExitCodeAndOutput> res(cmd_lines.size());
+        std::vector<ExpectedS<ExitCodeAndOutput>> res(cmd_lines.size());
         std::atomic<size_t> work_item{0};
 
         const auto num_threads =
@@ -475,7 +475,7 @@ namespace vcpkg
         return res;
     }
 
-    int cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
+    ExpectedS<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
     {
         return cmd_execute(cmd_line, wd, get_clean_environment());
     }
@@ -736,7 +736,7 @@ namespace vcpkg
     }
 #endif
 
-    int cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
+    ExpectedS<int> cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
     {
         auto timer = ElapsedTimer::create_started();
 #if defined(_WIN32)
@@ -785,11 +785,11 @@ namespace vcpkg
         return exit_code;
     }
 
-    int cmd_execute_and_stream_lines(const Command& cmd_line,
-                                     std::function<void(StringView)> per_line_cb,
-                                     const WorkingDirectory& wd,
-                                     const Environment& env,
-                                     Encoding encoding)
+    ExpectedS<int> cmd_execute_and_stream_lines(const Command& cmd_line,
+                                                std::function<void(StringView)> per_line_cb,
+                                                const WorkingDirectory& wd,
+                                                const Environment& env,
+                                                Encoding encoding)
     {
         Strings::LinesStream lines;
 
@@ -800,11 +800,11 @@ namespace vcpkg
         return rc;
     }
 
-    int cmd_execute_and_stream_data(const Command& cmd_line,
-                                    std::function<void(StringView)> data_cb,
-                                    const WorkingDirectory& wd,
-                                    const Environment& env,
-                                    Encoding encoding)
+    ExpectedS<int> cmd_execute_and_stream_data(const Command& cmd_line,
+                                               std::function<void(StringView)> data_cb,
+                                               const WorkingDirectory& wd,
+                                               const Environment& env,
+                                               Encoding encoding)
     {
         const auto timer = ElapsedTimer::create_started();
 #if defined(_WIN32)
@@ -846,7 +846,7 @@ namespace vcpkg
         const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
-            return 1;
+            return Strings::concat("popen fails with error code ", errno);
         }
         char buf[1024];
         // Use fgets because fread will block until the entire buffer is filled.
@@ -857,7 +857,7 @@ namespace vcpkg
 
         if (!feof(pipe))
         {
-            return 1;
+            return std::string("fgets says that the end of stream is reached, but feof says the opposite");
         }
 
         auto exit_code = pclose(pipe);
@@ -887,11 +887,11 @@ namespace vcpkg
         return exit_code;
     }
 
-    ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
-                                                     const WorkingDirectory& wd,
-                                                     const Environment& env,
-                                                     Encoding encoding,
-                                                     EchoInDebug echo_in_debug)
+    ExpectedS<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
+                                                                const WorkingDirectory& wd,
+                                                                const Environment& env,
+                                                                Encoding encoding,
+                                                                EchoInDebug echo_in_debug)
     {
         std::string output;
         auto rc = cmd_execute_and_stream_data(
@@ -906,7 +906,7 @@ namespace vcpkg
             wd,
             env,
             encoding);
-        return {rc, std::move(output)};
+        return rc.map([&output](int exit_code) -> ExitCodeAndOutput { return {exit_code, std::move(output)}; });
     }
 
     uint64_t get_subproccess_stats() { return g_subprocess_stats.load(); }

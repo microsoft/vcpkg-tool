@@ -29,6 +29,10 @@ namespace
                                  (msg::exit_code, msg::tool_name),
                                  "",
                                  "{tool_name} failed with exit code: {exit_code}");
+    DECLARE_AND_REGISTER_MESSAGE(ObjectStorageToolStartFailed,
+                                 (msg::error, msg::tool_name),
+                                 "",
+                                 "{tool_name} failed with error: {error}");
     DECLARE_AND_REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor,
                                  (msg::count, msg::vendor),
                                  "",
@@ -279,7 +283,7 @@ namespace
             {
                 const auto i = action_idxs[j];
                 const auto& archive_result = job_results[j];
-                if (archive_result.exit_code == 0)
+                if (archive_result.has_value() && archive_result.get()->exit_code == 0)
                 {
                     results[i] = RestoreResult::restored;
                     Debug::print("Restored ", archive_paths[j].native(), '\n');
@@ -329,11 +333,20 @@ namespace
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
-            if (code != 0)
+            auto code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            if (!code.has_value())
             {
                 vcpkg::print2(
-                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', error: ", code.error());
+                return;
+            }
+            if (*code.get() != 0)
+            {
+                vcpkg::print2(Color::warning,
+                              "Failed to compress folder '",
+                              paths.package_dir(spec),
+                              "', exit code: ",
+                              *code.get());
                 return;
             }
 
@@ -489,7 +502,7 @@ namespace
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
                     const auto i = action_idxs[j];
-                    if (job_results[j].exit_code == 0)
+                    if (job_results[j].has_value() && job_results[j].get()->exit_code == 0)
                     {
                         ++this_restore_count;
                         fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
@@ -582,14 +595,20 @@ namespace
                 Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
-        int run_nuget_commandline(const Command& cmdline) const
+        ExpectedS<int> run_nuget_commandline(const Command& cmdline) const
         {
             if (m_interactive)
             {
                 return cmd_execute(cmdline);
             }
 
-            auto res = cmd_execute_and_capture_output(cmdline);
+            auto maybe_res = cmd_execute_and_capture_output(cmdline);
+            if (!maybe_res.has_value())
+            {
+                return maybe_res.error();
+            }
+
+            auto res = maybe_res.value_or_exit(VCPKG_LINE_INFO);
             if (Debug::g_debugging)
             {
                 print2(res.output);
@@ -615,12 +634,16 @@ namespace
                 auto real_cmdline = cmdline;
                 real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
                 auto res2 = cmd_execute_and_capture_output(real_cmdline);
-                if (Debug::g_debugging)
+                if (res2.has_value())
                 {
-                    print2(res2.output);
-                }
+                    if (Debug::g_debugging)
+                    {
+                        print2(res2.get()->output);
+                    }
 
-                return res2.exit_code;
+                    return res2.get()->exit_code;
+                }
+                return res2.error();
             }
 
             return res.exit_code;
@@ -838,7 +861,7 @@ namespace
                 cmdline.string_arg("-NonInteractive");
             }
 
-            if (run_nuget_commandline(cmdline) != 0)
+            if (run_nuget_commandline(cmdline).has_error_or([](int exit_code) { return exit_code != 0; }))
             {
                 print2(Color::error, "Packing NuGet failed. Use --debug for more information.\n");
                 return;
@@ -866,7 +889,7 @@ namespace
                 }
 
                 print2("Uploading binaries for ", spec, " to NuGet source ", write_src, ".\n");
-                if (run_nuget_commandline(cmd) != 0)
+                if (run_nuget_commandline(cmd).has_error_or([](int exit_code) { return exit_code != 0; }))
                 {
                     print2(
                         Color::error, "Pushing NuGet to ", write_src, " failed. Use --debug for more information.\n");
@@ -893,7 +916,7 @@ namespace
 
                 print2("Uploading binaries for ", spec, " using NuGet config ", write_cfg, ".\n");
 
-                if (run_nuget_commandline(cmd) != 0)
+                if (run_nuget_commandline(cmd).has_error_or([](int exit_code) { return exit_code != 0; }))
                 {
                     print2(
                         Color::error, "Pushing NuGet with ", write_cfg, " failed. Use --debug for more information.\n");
@@ -983,7 +1006,7 @@ namespace
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
                     const auto idx = idxs[j];
-                    if (job_results[j].exit_code != 0)
+                    if (job_results[j].has_error_or([](auto& res) { return res.exit_code != 0; }))
                     {
                         Debug::print("Failed to decompress ", url_paths[idx].second, '\n');
                         continue;
@@ -1014,8 +1037,8 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
-            if (code != 0)
+            auto code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            if (code.has_error_or([](auto exit_code) { return exit_code != 0; }))
             {
                 vcpkg::print2(
                     Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
@@ -1082,6 +1105,25 @@ namespace
         std::vector<std::string> m_write_prefixes;
     };
 
+    static void print_failure_message(ExpectedS<ExitCodeAndOutput> error, StringView tool_name)
+    {
+        if (error.has_value())
+        {
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = error.get()->exit_code,
+                         msg::tool_name = tool_name);
+            msg::write_unlocalized_text_to_stdout(Color::warning, error.get()->output);
+        }
+        else
+        {
+            msg::println(Color::warning,
+                         msgObjectStorageToolStartFailed,
+                         msg::error = error.error(),
+                         msg::tool_name = tool_name);
+        }
+    }
+
     struct GcsBinaryProvider : ObjectStorageProvider
     {
         GcsBinaryProvider(const VcpkgPaths& paths,
@@ -1098,23 +1140,18 @@ namespace
         bool stat(StringView url) const override
         {
             auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
-            return cmd_execute(cmd) == 0;
+            return cmd_execute(cmd).has_value_and([](int exit_code) { return exit_code == 0; });
         }
 
         bool upload_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
             const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            if (out.has_value_and([](auto& res) { return res.exit_code == 0; }))
             {
                 return true;
             }
-
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::GSUTIL);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            print_failure_message(std::move(out), Tools::GSUTIL);
             return false;
         }
 
@@ -1122,16 +1159,11 @@ namespace
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
             const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            if (out.has_value_and([](auto& res) { return res.exit_code == 0; }))
             {
                 return true;
             }
-
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::GSUTIL);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            print_failure_message(std::move(out), Tools::GSUTIL);
             return false;
         }
     };
@@ -1158,7 +1190,7 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
-            return cmd_execute(cmd) == 0;
+            return cmd_execute(cmd).has_value_and([](int exit_code) { return exit_code == 0; });
         }
 
         bool upload_file(StringView object, const Path& archive) const override
@@ -1169,16 +1201,11 @@ namespace
                 cmd.string_arg("--no-sign-request");
             }
             const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            if (out.has_value_and([](auto& res) { return res.exit_code == 0; }))
             {
                 return true;
             }
-
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::AWSCLI);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            print_failure_message(std::move(out), Tools::GSUTIL);
             return false;
         }
 
@@ -1190,16 +1217,11 @@ namespace
                 cmd.string_arg("--no-sign-request");
             }
             const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            if (out.has_value_and([](auto& res) { return res.exit_code == 0; }))
             {
                 return true;
             }
-
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::AWSCLI);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            print_failure_message(std::move(out), Tools::GSUTIL);
             return false;
         }
 

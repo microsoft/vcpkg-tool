@@ -112,7 +112,7 @@ namespace vcpkg::Commands::Env
 #ifdef _WIN32
         exit_interactive_subprocess();
 #endif
-        Checks::exit_with_code(VCPKG_LINE_INFO, rc);
+        Checks::exit_with_code(VCPKG_LINE_INFO, rc.value_or_exit(VCPKG_LINE_INFO));
     }
 
     void EnvCommand::perform_and_exit(const VcpkgCmdArguments& args,

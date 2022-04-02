@@ -28,7 +28,7 @@ namespace vcpkg::Commands::PortHistory
             VersionScheme scheme;
         };
 
-        ExitCodeAndOutput run_git_command(const VcpkgPaths& paths, const Command& cmd)
+        ExpectedS<ExitCodeAndOutput> run_git_command(const VcpkgPaths& paths, const Command& cmd)
         {
             auto full_cmd = paths.git_cmd_builder(paths.root / ".git", paths.root).raw_arg(cmd.command_line());
 
@@ -73,27 +73,27 @@ namespace vcpkg::Commands::PortHistory
         {
             auto rev_parse_cmd = Command("rev-parse").string_arg(Strings::concat(commit_id, ":ports/", port_name));
             auto rev_parse_output = run_git_command(paths, rev_parse_cmd);
-            if (rev_parse_output.exit_code == 0)
+            if (rev_parse_output.has_value_and([](auto& res) { return res.exit_code == 0; }))
             {
                 // Remove newline character
-                const auto git_tree = Strings::trim(std::move(rev_parse_output.output));
+                const auto git_tree = Strings::trim(std::move(rev_parse_output.get()->output));
 
                 // Do we have a manifest file?
                 auto manifest_cmd = Command("show").string_arg(Strings::concat(git_tree, ":vcpkg.json"));
                 auto manifest_output = run_git_command(paths, manifest_cmd);
-                if (manifest_output.exit_code == 0)
+                if (manifest_output.has_value_and([](auto& res) { return res.exit_code == 0; }))
                 {
                     return get_version_from_text(
-                        manifest_output.output, git_tree, commit_id, commit_date, port_name, true);
+                        manifest_output.get()->output, git_tree, commit_id, commit_date, port_name, true);
                 }
 
                 auto cmd = Command("show").string_arg(Strings::concat(git_tree, ":CONTROL"));
                 auto control_output = run_git_command(paths, cmd);
 
-                if (control_output.exit_code == 0)
+                if (control_output.has_value_and([](auto& res) { return res.exit_code == 0; }))
                 {
                     return get_version_from_text(
-                        control_output.output, git_tree, commit_id, commit_date, port_name, false);
+                        control_output.get()->output, git_tree, commit_id, commit_date, port_name, false);
                 }
             }
 
@@ -113,7 +113,7 @@ namespace vcpkg::Commands::PortHistory
             const auto output = run_git_command(paths, builder);
 
             auto commits = Util::fmap(
-                Strings::split(output.output, '\n'), [](const std::string& line) -> auto {
+                Strings::split(output.value_or_exit(VCPKG_LINE_INFO).output, '\n'), [](const std::string& line) -> auto{
                     auto parts = Strings::split(line, ' ');
                     return std::make_pair(parts[0], parts[1]);
                 });

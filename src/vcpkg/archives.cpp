@@ -162,7 +162,8 @@ namespace
         {
             const auto code =
                 cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path});
-            Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", archive);
+            Checks::check_exit(
+                VCPKG_LINE_INFO, code.value_or_exit(VCPKG_LINE_INFO) == 0, "unzip failed while extracting %s", archive);
         }
 #endif
         else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz")
@@ -248,7 +249,8 @@ namespace vcpkg
     {
         const auto code =
             cmd_execute(Command{tar_tool}.string_arg("xzf").string_arg(archive), WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+        Checks::check_exit(
+            VCPKG_LINE_INFO, code.value_or_exit(VCPKG_LINE_INFO) == 0, "tar failed while extracting %s", archive);
     }
 
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
@@ -257,7 +259,8 @@ namespace vcpkg
         const auto code =
             cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive),
                         WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+        Checks::check_exit(
+            VCPKG_LINE_INFO, code.value_or_exit(VCPKG_LINE_INFO) == 0, "tar failed while extracting %s", archive);
     }
 
     void extract_archive(const VcpkgPaths& paths, const Path& archive, const Path& to_path)
@@ -268,7 +271,7 @@ namespace vcpkg
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
-    int compress_directory_to_zip(const VcpkgPaths& paths, const Path& source, const Path& destination)
+    ExpectedS<int> compress_directory_to_zip(const VcpkgPaths& paths, const Path& source, const Path& destination)
     {
         auto& fs = paths.get_filesystem();
         fs.remove(destination, VCPKG_LINE_INFO);
@@ -311,7 +314,7 @@ namespace vcpkg
         return cmd;
     }
 
-    std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs)
+    std::vector<ExpectedS<ExitCodeAndOutput>> decompress_in_parallel(View<Command> jobs)
     {
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
@@ -319,7 +322,7 @@ namespace vcpkg
         int i = 0;
         for (auto& result : results)
         {
-            if (result.exit_code == 127 && result.output.empty())
+            if (result.has_value() && result.get()->exit_code == 127 && result.get()->output.empty())
             {
                 Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
                 result = cmd_execute_and_capture_output(jobs[i], default_working_directory, get_clean_environment());
