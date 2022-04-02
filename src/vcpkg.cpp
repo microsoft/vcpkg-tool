@@ -260,6 +260,7 @@ int main(const int argc, const char* const* const argv)
     if (const auto p = args.debug.get()) Debug::g_debugging = *p;
     args.imbue_from_environment();
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
+    if (Debug::g_debugging) print_environment_variables();
     args.check_feature_flag_consistency();
 
     bool to_enable_metrics = true;

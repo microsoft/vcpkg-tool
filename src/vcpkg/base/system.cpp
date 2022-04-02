@@ -11,6 +11,12 @@
 #include <sys/sysctl.h>
 #endif
 
+#if defined(_WIN32)
+#include <processenv.h>
+#else
+extern char** environ;
+#endif
+
 namespace
 {
     namespace msg = vcpkg::msg;
@@ -219,6 +225,32 @@ namespace vcpkg
             Checks::check_exit(VCPKG_LINE_INFO, unsetenv(varname.c_str()) == 0);
         }
 #endif
+    }
+
+    void print_environment_variables()
+    {
+        msg::write_unlocalized_text_to_stdout(Color::none, "The following environment variables are currently set:\n");
+#if defined(_WIN32)
+        auto free = [](LPWCH p) { FreeEnvironmentStringsW(p); };
+        std::unique_ptr<WCHAR, decltype(free)> env_block(GetEnvironmentStringsW(), free);
+
+        for (LPWCH i = env_block.get(); *i != L'\0'; ++i)
+        {
+            msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat(Strings::to_utf8(i), '\n'));
+
+            while (*i != L'\0')
+            {
+                ++i;
+            }
+        }
+#else
+        char** s = environ;
+        for (; *s; s++)
+        {
+            msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat(*s, "\n"));
+        }
+#endif
+        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
 
     const ExpectedS<Path>& get_home_dir() noexcept
