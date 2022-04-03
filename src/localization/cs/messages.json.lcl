@@ -265,8 +265,8 @@
       <Item ItemId=";CmakeTargetsExcluded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[note: {count} additional targets are not displayed.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[    # poznámka: Počet vynechaných cílů: {count}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[poznámka: Nezobrazuje se tento počet dalších cílů: {count}.]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[    # note: {count} targets were omitted.]]></Val>
@@ -970,6 +970,9 @@
       <Item ItemId=";VersionCommandHeader" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg package management program version {version}]A;]A;See LICENSE.txt for license information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Verze {version} programu pro správu balíčků vcpkg]A;]A;Informace o licenci najdete v LICENSE.txt.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
