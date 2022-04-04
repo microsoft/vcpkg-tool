@@ -107,14 +107,8 @@ namespace vcpkg
             const T& value() const { return this->m_t; }
             T& value() { return this->m_t; }
 
-            const T* get() const&
-            {
-                return m_is_present ? &m_t : nullptr;
-            }
-            T* get() &
-            {
-                return m_is_present ? &m_t : nullptr;
-            }
+            const T* get() const& { return m_is_present ? &m_t : nullptr; }
+            T* get() & { return m_is_present ? &m_t : nullptr; }
             const T* get() const&& = delete;
             T* get() && = delete;
 
@@ -191,14 +185,8 @@ namespace vcpkg
             const T& value() const { return this->m_t; }
             T& value() { return this->m_t; }
 
-            const T* get() const&
-            {
-                return m_is_present ? &m_t : nullptr;
-            }
-            T* get() &
-            {
-                return m_is_present ? &m_t : nullptr;
-            }
+            const T* get() const& { return m_is_present ? &m_t : nullptr; }
+            T* get() & { return m_is_present ? &m_t : nullptr; }
             const T* get() const&& = delete;
             T* get() && = delete;
 
@@ -250,10 +238,7 @@ namespace vcpkg
                 return *m_t;
             }
 
-            T* get() const
-            {
-                return m_t;
-            }
+            T* get() const { return m_t; }
 
         private:
             T* m_t;
@@ -273,10 +258,7 @@ namespace vcpkg
 
             const T& value() const { return *this->m_t; }
 
-            const T* get() const
-            {
-                return m_t;
-            }
+            const T* get() const { return m_t; }
 
             const T& emplace(const T& t)
             {
@@ -357,22 +339,10 @@ namespace vcpkg
         }
 
         // this allows us to error out when `.get()` would return a pointer to a temporary
-        decltype(auto) get() const&
-        {
-            return this->m_base.get();
-        }
-        decltype(auto) get() &
-        {
-            return this->m_base.get();
-        }
-        decltype(auto) get() const&&
-        {
-            return std::move(this->m_base).get();
-        }
-        decltype(auto) get() &&
-        {
-            return std::move(this->m_base).get();
-        }
+        decltype(auto) get() const& { return this->m_base.get(); }
+        decltype(auto) get() & { return this->m_base.get(); }
+        decltype(auto) get() const&& { return std::move(this->m_base).get(); }
+        decltype(auto) get() && { return std::move(this->m_base).get(); }
 
         template<class F>
         using map_t = decltype(std::declval<F&>()(std::declval<const T&>()));
@@ -451,28 +421,25 @@ namespace vcpkg
         return Optional<std::decay_t<U>>(std::forward<U>(u));
     }
 
-    template<class T>
-    bool operator==(const Optional<T>& o, const T& t)
+    template<class T, class U>
+    auto operator==(const Optional<T>& lhs, const U& rhs) -> decltype(false ? *lhs.get() == rhs : false)
     {
-        if (auto p = o.get()) return *p == t;
-        return false;
+        return lhs.has_value() ? *lhs.get() == rhs : false;
     }
-    template<class T>
-    bool operator==(const T& t, const Optional<T>& o)
+    template<class T, class U>
+    auto operator==(const T& lhs, const Optional<U>& rhs) -> decltype(false ? lhs == *rhs.get() : false)
     {
-        if (auto p = o.get()) return t == *p;
-        return false;
+        return lhs.has_value() ? lhs == *rhs.get() : false;
     }
-    template<class T>
-    bool operator!=(const Optional<T>& o, const T& t)
+
+    template<class T, class U>
+    auto operator!=(const Optional<T>& lhs, const U& rhs) -> decltype(!(lhs == rhs))
     {
-        if (auto p = o.get()) return *p != t;
-        return true;
+        return !(lhs == rhs);
     }
-    template<class T>
-    bool operator!=(const T& t, const Optional<T>& o)
+    template<class T, class U>
+    auto operator!=(const T& lhs, const Optional<U>& rhs) -> decltype(!(lhs == rhs))
     {
-        if (auto p = o.get()) return t != *p;
-        return true;
+        return !(lhs == rhs);
     }
 }

@@ -89,8 +89,8 @@ namespace vcpkg
         return {std::move(manifest_value.first.object()), std::move(manifest_path)};
     }
 
-    static Optional<ManifestConfiguration> config_from_manifest(
-        const Path& manifest_path, const Optional<ManifestAndLocation>& manifest_doc)
+    static Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
+                                                                const Optional<ManifestAndLocation>& manifest_doc)
     {
         if (auto manifest = manifest_doc.get())
         {
@@ -132,10 +132,10 @@ namespace vcpkg
     }
 
     static ConfigurationAndLocation merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
-                                                const Path& manifest_dir,
-                                                Optional<Configuration>&& config_data,
-                                                const Path& config_dir,
-                                                const VcpkgPaths& paths)
+                                                           const Path& manifest_dir,
+                                                           Optional<Configuration>&& config_data,
+                                                           const Path& config_dir,
+                                                           const VcpkgPaths& paths)
     {
         ConfigurationAndLocation ret;
 
@@ -177,7 +177,8 @@ namespace vcpkg
         {
             config->validate_as_active();
 
-            ret = ConfigurationAndLocation{std::move(*config), config_dir, ConfigurationLocation::VcpkgConfigurationFile};
+            ret =
+                ConfigurationAndLocation{std::move(*config), config_dir, ConfigurationLocation::VcpkgConfigurationFile};
         }
 
         if (auto manifest = manifest_data.get())
@@ -1285,10 +1286,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    const ConfigurationAndLocation& VcpkgPaths::get_configuration() const
-    {
-        return m_pimpl->m_config;
-    }
+    const ConfigurationAndLocation& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 
     const RegistrySet& VcpkgPaths::get_registry_set() const
     {

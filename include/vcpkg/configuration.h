@@ -23,6 +23,8 @@ namespace vcpkg
         Optional<std::vector<std::string>> packages;
 
         Json::Value serialize() const;
+
+        Optional<std::string> get_latest_baseline(const VcpkgPaths& paths, LocalizedString& error) const;
     };
 
     struct Configuration

@@ -106,6 +106,9 @@ namespace vcpkg
             return lhs.data() >= rhs.data();
         }
 
+        bool empty() { return m_data.empty(); }
+        void clear() { m_data.clear(); }
+
     private:
         std::string m_data;
 
@@ -314,10 +317,10 @@ namespace vcpkg::msg
 
     inline void print_warning(const LocalizedString& s)
     {
-        print(Color::warning, format(msgErrorMessage).append(s).appendnl());
+        print(Color::warning, format(msgWarningMessage).append(s).appendnl());
     }
     template<class Message, class... Ts>
-    void print_warning(Message m, Ts... args)
+    typename Message::is_message_type print_warning(Message m, Ts... args)
     {
         print(Color::warning, format(msgWarningMessage).append(format(m, args...).appendnl()));
     }
@@ -327,7 +330,7 @@ namespace vcpkg::msg
         print(Color::error, format(msgErrorMessage).append(s).appendnl());
     }
     template<class Message, class... Ts>
-    void print_error(Message m, Ts... args)
+    typename Message::is_message_type print_error(Message m, Ts... args)
     {
         print(Color::error, format(msgErrorMessage).append(format(m, args...).appendnl()));
     }

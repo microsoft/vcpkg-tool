@@ -10,6 +10,11 @@ namespace
 {
     using namespace vcpkg;
 
+    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineGitError,
+                                 (msg::url),
+                                 "",
+                                 "Git failed to fetch remote repository {url}:");
+
     struct RegistryConfigDeserializer : Json::IDeserializer<RegistryConfig>
     {
         constexpr static StringLiteral KIND = "kind";
@@ -535,6 +540,42 @@ namespace
 
 namespace vcpkg
 {
+    static Optional<std::string> get_baseline_from_git_repo(const VcpkgPaths& paths,
+                                                            StringView url,
+                                                            LocalizedString& error)
+    {
+        auto res = paths.git_fetch_from_remote_registry(url, "HEAD");
+        if (res.has_value())
+        {
+            return std::move(*res.get());
+        }
+        else
+        {
+            error = msg::format(msgUpdateBaselineGitError, msg::url = url);
+            return nullopt;
+        }
+    }
+
+    Optional<std::string> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths, LocalizedString& error) const
+    {
+        static constexpr StringLiteral builtin_git_url = "https://github.com/microsoft/vcpkg";
+
+        error.clear();
+
+        if (kind == RegistryConfigDeserializer::KIND_GIT)
+        {
+            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO), error);
+        }
+        else if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
+        {
+            return get_baseline_from_git_repo(paths, builtin_git_url, error);
+        }
+        else
+        {
+            return nullopt;
+        }
+    }
+
     View<StringView> Configuration::known_fields()
     {
         static constexpr StringView known_fields[]{

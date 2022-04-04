@@ -9,133 +9,127 @@
 namespace
 {
     namespace msg = vcpkg::msg;
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoConfiguration, (), "", "There is no configuration file to update.");
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineGitError,
-                                 (msg::url),
+    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoConfiguration,
+                                 (),
                                  "",
-                                 "Git failed to fetch remote repository {url}:");
+                                 "there is no `vcpkg-configuration.json` nor manifest file to update.");
+
+    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoExistingBuiltinBaseline,
+                                 (msg::option),
+                                 "",
+                                 "the manifest file currently does not contain a `builtin-baseline` field; in order to "
+                                 "add one, pass the --{option} switch.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        UpdateBaselineAddBaselineNoManifest,
+        (msg::option),
+        "",
+        "the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.");
 }
 
 namespace vcpkg::Commands
 {
+    static constexpr StringLiteral OPTION_ADD_INITIAL_BASELINE = "add-initial-baseline";
+
+    static constexpr CommandSwitch switches[] = {
+        {OPTION_ADD_INITIAL_BASELINE, "add a `builtin-baseline` to a vcpkg.json that doesn't already have it"},
+    };
+
     static const CommandStructure COMMAND_STRUCTURE{
         create_example_string("x-update-baseline"),
         0,
         0,
+        {switches},
     };
-
-    static constexpr StringLiteral builtin_git_url = "https://github.com/microsoft/vcpkg";
-
-    static Optional<std::string> get_baseline_from_git_repo(const VcpkgPaths& paths, StringView url)
-    {
-        auto res = paths.git_fetch_from_remote_registry(url, "HEAD");
-        if (res.has_value())
-        {
-            return std::move(*res.get());
-        }
-        else
-        {
-            msg::println(Color::warning, msgUpdateBaselineGitError, msg::url = url);
-            msg::write_unlocalized_text_to_stdout(Color::warning, res.error());
-            return nullopt;
-        }
-    }
-
-    static Optional<std::string> get_latest_baseline(const VcpkgPaths& paths, const RegistryConfig& r)
-    {
-        if (r.kind == "git")
-        {
-            return get_baseline_from_git_repo(paths, r.repo.value_or_exit(VCPKG_LINE_INFO));
-        }
-        else if (r.kind == "builtin")
-        {
-            return get_baseline_from_git_repo(paths, builtin_git_url);
-        }
-        else
-        {
-            return nullopt;
-        }
-    }
 
     void UpdateBaselineCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
-        args.parse_arguments(COMMAND_STRUCTURE);
+        auto options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        bool has_builtin_baseline = false;
-        bool config_in_manifest = false;
         auto configuration = paths.get_configuration();
+        auto p_manifest = paths.get_manifest().get();
 
-        vcpkg::Path configuration_file;
-
-        if (configuration.location == ConfigurationLocation::VcpkgConfigurationFile)
+        if (configuration.location == ConfigurationLocation::None && !p_manifest)
         {
-            configuration_file = configuration.directory / "vcpkg-configuration.json";
-        }
-
-        Json::Object manifest;
-        vcpkg::Path manifest_file;
-        if (auto p_manifest = paths.get_manifest().get())
-        {
-            manifest = p_manifest->manifest;
-            manifest_file = p_manifest->path;
-            if (manifest.contains("builtin-baseline"))
-            {
-                has_builtin_baseline = true;
-            }
-            if (manifest.contains("vcpkg-configuration"))
-            {
-                // it should be impossible to have both a manifest vcpkg-configuration, and a regular
-                // vcpkg-configuration
-                Checks::check_exit(VCPKG_LINE_INFO, configuration_file.empty());
-                config_in_manifest = true;
-            }
-        }
-
-        if (configuration_file.empty() && !has_builtin_baseline && !config_in_manifest)
-        {
-            msg::println(Color::warning, msgUpdateBaselineNoConfiguration);
+            msg::print_warning(msgUpdateBaselineNoConfiguration);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        if (has_builtin_baseline)
+        bool has_builtin_baseline = p_manifest && p_manifest->manifest.contains("builtin-baseline");
+        bool add_builtin_baseline = Util::Sets::contains(options.switches, OPTION_ADD_INITIAL_BASELINE);
+
+        if (add_builtin_baseline && !p_manifest)
         {
-            auto new_baseline = get_baseline_from_git_repo(paths, builtin_git_url);
-            if (auto p = new_baseline.get())
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msgUpdateBaselineAddBaselineNoManifest, msg::option = OPTION_ADD_INITIAL_BASELINE);
+        }
+        if (!has_builtin_baseline && !add_builtin_baseline && configuration.location == ConfigurationLocation::None)
+        {
+            msg::print_warning(msgUpdateBaselineNoExistingBuiltinBaseline, msg::option = OPTION_ADD_INITIAL_BASELINE);
+            Checks::exit_success(VCPKG_LINE_INFO);
+        }
+
+        auto updated_configuration = configuration.config;
+        auto updated_manifest = p_manifest ? p_manifest->manifest : Json::Object{};
+        LocalizedString error;
+
+        if (has_builtin_baseline || add_builtin_baseline)
+        {
+            auto synthesized_registry = RegistryConfig{};
+            synthesized_registry.kind = "builtin";
+
+            auto result = synthesized_registry.get_latest_baseline(paths, error);
+
+            if (auto p = result.get())
             {
-                manifest.insert_or_replace("builtin-baseline", std::move(*p));
+                updated_manifest.insert_or_replace("builtin-baseline", *p);
+            }
+            else if (!error.empty())
+            {
+                msg::print_warning(error);
             }
         }
-        else if (auto default_reg = configuration.config.default_reg.get())
+
+        if (auto default_reg = updated_configuration.default_reg.get())
         {
-            auto new_baseline = get_latest_baseline(paths, *default_reg);
+            auto new_baseline = default_reg->get_latest_baseline(paths, error);
             if (auto p = new_baseline.get())
             {
                 default_reg->baseline = std::move(*p);
             }
+            else if (!error.empty())
+            {
+                msg::print_warning(error);
+            }
         }
 
-        for (auto& reg : configuration.config.registries)
+        for (auto& reg : updated_configuration.registries)
         {
-            auto new_baseline = get_latest_baseline(paths, reg);
+            auto new_baseline = reg.get_latest_baseline(paths, error);
             if (auto p = new_baseline.get())
             {
                 reg.baseline = std::move(*p);
             }
+            else if (!error.empty())
+            {
+                msg::print_warning(error);
+            }
         }
 
-        if (config_in_manifest)
+        if (configuration.location == ConfigurationLocation::ManifestFile)
         {
-            manifest.insert_or_replace("vcpkg-configuration", configuration.config.serialize());
+            updated_manifest.insert_or_replace("vcpkg-configuration", updated_configuration.serialize());
         }
-        else
+        else if (configuration.location == ConfigurationLocation::VcpkgConfigurationFile)
+        {
+            paths.get_filesystem().write_contents(configuration.directory / "vcpkg-configuration.json",
+                                                  Json::stringify(configuration.config.serialize(), {}),
+                                                  VCPKG_LINE_INFO);
+        }
+
+        if (p_manifest)
         {
             paths.get_filesystem().write_contents(
-                configuration_file, Json::stringify(configuration.config.serialize(), {}), VCPKG_LINE_INFO);
-        }
-
-        if (config_in_manifest || has_builtin_baseline)
-        {
-            paths.get_filesystem().write_contents(manifest_file, Json::stringify(manifest, {}), VCPKG_LINE_INFO);
+                p_manifest->path, Json::stringify(updated_manifest, {}), VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
