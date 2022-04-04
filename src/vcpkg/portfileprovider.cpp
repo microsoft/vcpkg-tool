@@ -269,6 +269,7 @@ namespace vcpkg::PortFileProvider
                                        "Error: Overlay path \"%s\" must exist and must be a directory",
                                        overlay);
                 }
+                LockGuardPtr<Metrics>(g_metrics)->track_feature("overlay_ports", true);
             }
 
             OverlayProviderImpl(const OverlayProviderImpl&) = delete;
