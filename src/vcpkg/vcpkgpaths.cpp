@@ -1276,7 +1276,7 @@ namespace vcpkg
         }
     }
 
-    Optional<const ManifestAndLocation&> VcpkgPaths::get_manifest_and_location() const
+    Optional<const ManifestAndLocation&> VcpkgPaths::get_manifest() const
     {
         if (auto p = m_pimpl->m_manifest_doc.get())
         {
@@ -1285,7 +1285,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    const ConfigurationAndLocation& VcpkgPaths::get_configuration_and_location() const
+    const ConfigurationAndLocation& VcpkgPaths::get_configuration() const
     {
         return m_pimpl->m_config;
     }

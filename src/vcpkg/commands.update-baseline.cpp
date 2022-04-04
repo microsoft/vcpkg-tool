@@ -63,7 +63,7 @@ namespace vcpkg::Commands
 
         bool has_builtin_baseline = false;
         bool config_in_manifest = false;
-        auto configuration = paths.get_configuration_and_location();
+        auto configuration = paths.get_configuration();
 
         vcpkg::Path configuration_file;
 
@@ -74,7 +74,7 @@ namespace vcpkg::Commands
 
         Json::Object manifest;
         vcpkg::Path manifest_file;
-        if (auto p_manifest = paths.get_manifest_and_location().get())
+        if (auto p_manifest = paths.get_manifest().get())
         {
             manifest = p_manifest->manifest;
             manifest_file = p_manifest->path;

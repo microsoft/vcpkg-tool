@@ -66,7 +66,7 @@ namespace vcpkg::Commands
 
         if (selector == "port")
         {
-            auto manifest = paths.get_manifest_and_location().get();
+            auto manifest = paths.get_manifest().get();
             if (!manifest)
             {
                 Checks::msg_exit_with_message(

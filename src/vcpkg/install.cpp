@@ -917,7 +917,7 @@ namespace vcpkg::Install
 
         LockGuardPtr<Metrics>(g_metrics)->track_feature("install_manifest_mode", paths.manifest_mode_enabled());
 
-        if (auto p = paths.get_manifest_and_location().get())
+        if (auto p = paths.get_manifest().get())
         {
             bool failure = false;
             if (!args.command_arguments.empty())
@@ -999,7 +999,7 @@ namespace vcpkg::Install
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        if (auto manifest = paths.get_manifest_and_location().get())
+        if (auto manifest = paths.get_manifest().get())
         {
             Optional<Path> pkgsconfig;
             auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
