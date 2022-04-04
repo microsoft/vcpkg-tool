@@ -98,7 +98,14 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 
     if (const auto command_function = find_command(Commands::get_available_paths_commands()))
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        // These commands handle telemetry events directly.
+        static constexpr std::array<StringLiteral, 1> skip_commands{
+            "add",
+        };
+        if (!Util::Vectors::contains(skip_commands, command_function->name))
+        {
+            LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
+        }
         return command_function->function->perform_and_exit(args, paths);
     }
 
