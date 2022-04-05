@@ -879,6 +879,8 @@ namespace vcpkg::Install
                                                  ? Dependencies::UnsupportedPortAction::Warn
                                                  : Dependencies::UnsupportedPortAction::Error;
 
+        LockGuardPtr<Metrics>(g_metrics)->track_feature("install_manifest_mode", paths.manifest_mode_enabled());
+
         if (paths.manifest_mode_enabled())
         {
             bool failure = false;
