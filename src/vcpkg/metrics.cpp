@@ -161,6 +161,10 @@ namespace vcpkg
         {
             properties.insert(Strings::concat("feature-flag-", name), Json::Value::boolean(value));
         }
+        void track_option(StringView name, bool value)
+        {
+            properties.insert(Strings::concat("option_", name), Json::Value::boolean(value));
+        }
 
         std::string format_event_data_template() const
         {
@@ -328,7 +332,17 @@ namespace vcpkg
         g_metricmessage.track_property(name, value);
     }
 
+    void Metrics::track_property(const std::string& name, bool value)
+    {
+        if (value)
+        {
+            g_metricmessage.track_property(name, "defined");
+        }
+    }
+
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
+
+    void Metrics::track_option(const std::string& name, bool value) { g_metricmessage.track_option(name, value); }
 
     void Metrics::upload(const std::string& payload)
     {
