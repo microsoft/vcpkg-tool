@@ -4,7 +4,6 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/pragmas.h>
-#include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/stringview.h>
 
 #include <stdio.h>
@@ -90,9 +89,6 @@ namespace vcpkg
         bool is_relative() const { return !is_absolute(); }
 
         friend const char* to_printf_arg(const Path& p) noexcept { return p.m_str.c_str(); }
-
-        friend bool operator==(const Path& lhs, const Path& rhs) noexcept { return lhs.m_str == rhs.m_str; }
-        friend bool operator!=(const Path& lhs, const Path& rhs) noexcept { return lhs.m_str != rhs.m_str; }
 
     private:
         std::string m_str;

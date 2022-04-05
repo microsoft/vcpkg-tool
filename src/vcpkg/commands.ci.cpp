@@ -3,7 +3,7 @@
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/sortedvector.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.print.h>

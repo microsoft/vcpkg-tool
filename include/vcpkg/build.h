@@ -6,8 +6,8 @@
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
-#include <vcpkg/base/zstringview.h>
 
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/packagespec.h>

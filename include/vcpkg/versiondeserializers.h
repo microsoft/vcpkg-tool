@@ -3,7 +3,6 @@
 #include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/base/jsonreader.h>
-#include <vcpkg/base/stringliteral.h>
 
 #include <vcpkg/versions.h>
 

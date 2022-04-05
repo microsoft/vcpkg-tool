@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/cache.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
 #include <string>
 

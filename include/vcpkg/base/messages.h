@@ -6,7 +6,7 @@
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <type_traits>
@@ -43,7 +43,7 @@ namespace vcpkg
 
         LocalizedString& append_raw(StringView s)
         {
-            m_data.append(s.begin(), s.end());
+            m_data.append(s.begin(), s.size());
             return *this;
         }
         LocalizedString& append(const LocalizedString& s)
