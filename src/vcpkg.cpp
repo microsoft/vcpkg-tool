@@ -85,6 +85,11 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
         }
     };
 
+    if (!args.overlay_ports.empty())
+    {
+        LockGuardPtr<Metrics>(g_metrics)->track_feature("overlay_ports", true);
+    }
+
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
     {
         LockGuardPtr<Metrics>(g_metrics)->track_property("command_name", command_function->name);
