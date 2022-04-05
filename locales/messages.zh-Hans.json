@@ -51,6 +51,7 @@
   "ExpectedPortName": "此处需要填写端口名称",
   "ExpectedTripletName": "此处需要填写三联名称",
   "FailedToProvisionCe": "无法预配 vcpkg-ce。",
+  "FailedToStoreBackToMirror": "failed to store back to mirror:",
   "ForceSystemBinariesOnWeirdPlatforms": "必须在 arm、s390x、ppc64le 平台上设置环境变量 VCPKG_FORCE_SYSTEM_BINARIES。",
   "FormattedParseMessageExpression": "    在表达式上: {value}",
   "GenerateMsgErrorParsingFormatArgs": "错误: 正在分析 {value} 的格式字符串:",
@@ -63,6 +64,8 @@
   "IllegalPlatformSpec": "错误: 此上下文中不允许使用平台限定符",
   "InternalErrorMessage": "内部错误: ",
   "InternalErrorMessageContact": "请在 https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug 打开一个包含重现问题的详细步骤的问题。",
+  "JsonErrorFailedToParse": "failed to parse {path}:",
+  "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
   "LicenseExpressionContainsExtraPlus": "SPDX 许可证表达式包含额外的 \"+\"。只有在许可证标识符之后才允许使用这些标识符。",
   "LicenseExpressionContainsInvalidCharacter": "SPDX 许可证表达式包含无效字符 (0x{value:02X} '{value}')。",
   "LicenseExpressionContainsUnicode": "SPDX 许可证表达式包含 unicode 字符(U+{value: 04X}\"{pretty_value}\")，但这些表达式仅限 ASCII。",
@@ -91,6 +94,7 @@
   "ResultsHeader": "结果",
   "SeeURL": "有关详细信息，请参阅 {url}。",
   "SuggestNewVersionScheme": "在端口 \"{package_name}\" 中使用版本方案 \"{new_scheme}\" 而不是 \"{old_scheme}\" 。\n使用 `--{option}` 禁用此检查。",
+  "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnknownBaselineFileContent": "无法识别的基线条目；应为“port：triplet=(fail|skip)”",
   "UnsupportedSystemName": "错误: 无法将 VCPKG_CMAKE_SYSTEM_NAME\"{system_name}\" 映射到 vcvarsall 平台。支持的系统名称为 \"{0}\"、\"Windows\"、\"WindowsStore\"。",
   "UnsupportedToolchain": "错误: 在 triplet {triplet} 中: 找不到有效的工具链组合。\n   请求的目标体系结构为 {arch}\n   所选 Visual Studio 实例位于 {path}\n   可用的工具链组合为 {list}\n",
@@ -110,6 +114,8 @@
   "VersionInvalidRelaxed": "“{version}”不是有效的宽松版本(具有任意数值元素计数的 semver)。",
   "VersionInvalidSemver": "“{version}”不是有效的语义版本，请参阅 <https://semver.org>。",
   "VersionSpecMismatch": "错误: 加载端口失败，因为版本规范不匹配\n   路径: {path}\n   应为: {expected_version}\n   实际: {actual_version}",
+  "WaitingForChildrenToExit": "Waiting for child processes to exit...",
+  "WaitingToTakeFilesystemLock": "waiting to take filesystem lock on {path}...",
   "WarningMessage": "警告:",
   "WarningsTreatedAsErrors": "以前被解释为错误的警告"
 }

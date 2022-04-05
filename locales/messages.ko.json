@@ -51,6 +51,7 @@
   "ExpectedPortName": "여기에 포트 이름이 필요합니다.",
   "ExpectedTripletName": "여기에 삼중 이름이 필요합니다.",
   "FailedToProvisionCe": "vcpkg-ce를 프로비전하지 못했습니다.",
+  "FailedToStoreBackToMirror": "failed to store back to mirror:",
   "ForceSystemBinariesOnWeirdPlatforms": "환경 변수 VCPKG_FORCE_SYSTEM_BINARIES는 arm, s390x 및 ppc64le 플랫폼에서 설정해야 합니다.",
   "FormattedParseMessageExpression": "    식에서: {value}",
   "GenerateMsgErrorParsingFormatArgs": "오류: {value}에 대한 형식 문자열 구문 분석:",
@@ -63,6 +64,8 @@
   "IllegalPlatformSpec": "오류: 이 컨텍스트에서는 플랫폼 한정자가 허용되지 않습니다.",
   "InternalErrorMessage": "내부 오류: ",
   "InternalErrorMessageContact": "https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug에서 문제를 재현하기 위한 자세한 단계와 함께 문제를 여세요.",
+  "JsonErrorFailedToParse": "failed to parse {path}:",
+  "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
   "LicenseExpressionContainsExtraPlus": "SPDX 라이선스 식에는 추가 '+'가 포함되어 있습니다. 라이선스 식별자 바로 뒤에만 허용됩니다.",
   "LicenseExpressionContainsInvalidCharacter": "SPDX 라이선스 식에 잘못된 문자(0x{value:02X} '{value}')가 포함되어 있습니다.",
   "LicenseExpressionContainsUnicode": "SPDX 라이선스 식에는 유니코드 문자(U+{value:04X} '{pretty_value}')가 포함되어 있지만 이러한 식은 ASCII 전용입니다.",
@@ -91,6 +94,7 @@
   "ResultsHeader": "결과",
   "SeeURL": "자세한 내용은 {url}을(를) 참조하세요.",
   "SuggestNewVersionScheme": "\"{package_name}\" 포트에서 \"{old_scheme}\" 대신 버전 체계 \"{new_scheme}\"을 사용하세요.\n이 검사를 사용하지 않으려면 `--{option}`을 사용하세요.",
+  "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnknownBaselineFileContent": "인식할 수 없는 기준 항목입니다. 'port:triplet=(fail|skip)'이 필요합니다.",
   "UnsupportedSystemName": "오류: VCPKG_CMAKE_SYSTEM_NAME '{system_name}'을(를) vcvarsall 플랫폼에 매핑할 수 없습니다. 지원되는 시스템 이름은 '', 'Windows' 및 'WindowsStore'입니다.",
   "UnsupportedToolchain": "오류: 삼중항 {triplet}에서: 유효한 도구 모음 조합을 찾을 수 없습니다.\n     요청한 대상 아키텍처는 {arch}였습니다\n    선택한 Visual Studio 인스턴스는 {path}입니다.\n    사용 가능한 도구 모음 조합은 {list}입니다\n",
@@ -110,6 +114,8 @@
   "VersionInvalidRelaxed": "`{version}`은(는) 올바른 완화 버전이 아닙니다(임의의 숫자 요소 개수가 있는 semver).",
   "VersionInvalidSemver": "'{version}'은(는) 올바른 의미 체계 버전이 아닙니다. <https://semver.org>를 참조하세요.",
   "VersionSpecMismatch": "오류: 버전 사양이 일치하지 않아 포트를 로드하지 못했습니다.\n    경로: {path}\n    예상: {expected_version}\n    실제: {actual_version}",
+  "WaitingForChildrenToExit": "Waiting for child processes to exit...",
+  "WaitingToTakeFilesystemLock": "waiting to take filesystem lock on {path}...",
   "WarningMessage": "경고: ",
   "WarningsTreatedAsErrors": "오류로 해석되는 이전 경고"
 }
