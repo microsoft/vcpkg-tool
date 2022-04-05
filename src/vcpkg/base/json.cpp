@@ -13,9 +13,9 @@ namespace
 {
     using namespace vcpkg;
     DECLARE_AND_REGISTER_MESSAGE(JsonErrorFailedToRead,
-                                 (msg::path, msg::error_code),
+                                 (msg::path, msg::error_msg),
                                  "",
-                                 "failed to read {path}: {error_code}");
+                                 "failed to read {path}: {error_msg}");
     DECLARE_AND_REGISTER_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
 }
 
@@ -1096,7 +1096,7 @@ namespace vcpkg::Json
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            msg::print_error(msgJsonErrorFailedToRead, msg::path = json_file, msg::error_code = ec);
+            msg::print_error(msgJsonErrorFailedToRead, msg::path = json_file, msg::error_msg = ec);
             Checks::exit_fail(li);
         }
         else if (!ret)
