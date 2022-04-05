@@ -51,6 +51,7 @@
   "ExpectedPortName": "expected a port name here",
   "ExpectedTripletName": "expected a triplet name here",
   "FailedToProvisionCe": "Failed to provision vcpkg-ce.",
+  "FailedToStoreBackToMirror": "failed to store back to mirror:",
   "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.",
   "FormattedParseMessageExpression": "    on expression: {value}",
   "GenerateMsgErrorParsingFormatArgs": "error: parsing format string for {value}:",
@@ -63,6 +64,8 @@
   "IllegalPlatformSpec": "error: Platform qualifier is not allowed in this context",
   "InternalErrorMessage": "internal error: ",
   "InternalErrorMessageContact": "Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.",
+  "JsonErrorFailedToParse": "failed to parse {path}:",
+  "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
   "LicenseExpressionContainsExtraPlus": "SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.",
   "LicenseExpressionContainsInvalidCharacter": "SPDX license expression contains an invalid character (0x{value:02X} '{value}').",
   "LicenseExpressionContainsUnicode": "SPDX license expression contains a unicode character (U+{value:04X} '{pretty_value}'), but these expressions are ASCII-only.",
@@ -91,6 +94,7 @@
   "ResultsHeader": "RESULTS",
   "SeeURL": "See {url} for more information.",
   "SuggestNewVersionScheme": "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port \"{package_name}\".\nUse `--{option}` to disable this check.",
+  "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnknownBaselineFileContent": "unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'",
   "UnsupportedSystemName": "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
   "UnsupportedToolchain": "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target architecture was {arch}\n    The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n",
@@ -110,6 +114,8 @@
   "VersionInvalidRelaxed": "`{version}` is not a valid relaxed version (semver with arbitrary numeric element count).",
   "VersionInvalidSemver": "`{version}` is not a valid semantic version, consult <https://semver.org>.",
   "VersionSpecMismatch": "error: Failed to load port because version specs did not match\n    Path: {path}\n    Expected: {expected_version}\n    Actual: {actual_version}",
+  "WaitingForChildrenToExit": "Waiting for child processes to exit...",
+  "WaitingToTakeFilesystemLock": "waiting to take filesystem lock on {path}...",
   "WarningMessage": "warning: ",
   "WarningsTreatedAsErrors": "previous warnings being interpreted as errors"
 }

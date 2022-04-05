@@ -6,7 +6,6 @@
 #include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
@@ -26,6 +25,11 @@ namespace
                                  "=== curl output ===\n"
                                  "{actual}\n"
                                  "=== end curl output ===\n");
+    DECLARE_AND_REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload,
+                                 (),
+                                 "",
+                                 "an unexpected error occurred during bulk download.");
+    DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
 }
 
 namespace vcpkg
@@ -372,7 +376,7 @@ namespace vcpkg
             if (start_size + url_pairs.size() > out->size())
             {
                 // curl stopped before finishing all downloads; retry after some time
-                print2(Color::warning, "Warning: an unexpected error occurred during bulk download.\n");
+                msg::print_warning(msgUnexpectedErrorDuringBulkDownload);
                 std::this_thread::sleep_for(std::chrono::milliseconds(i));
                 url_pairs =
                     View<std::pair<std::string, Path>>{url_pairs.begin() + out->size() - start_size, url_pairs.end()};
@@ -731,7 +735,8 @@ namespace vcpkg
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push.has_value())
                         {
-                            print2(Color::warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
+                            msg::print_warning(msgFailedToStoreBackToMirror);
+                            msg::write_unlocalized_text_to_stdout(Color::warning, maybe_push.error());
                         }
                     }
                     return *url;
