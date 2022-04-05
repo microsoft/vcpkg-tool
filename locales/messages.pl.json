@@ -51,6 +51,7 @@
   "ExpectedPortName": "oczekiwano tutaj nazwy portu",
   "ExpectedTripletName": "oczekiwano tutaj potrójnej nazwy",
   "FailedToProvisionCe": "Nie można aprowizować elementu vcpkg-ce.",
+  "FailedToStoreBackToMirror": "failed to store back to mirror:",
   "ForceSystemBinariesOnWeirdPlatforms": "Zmienna środowiskowa VCPKG_FORCE_SYSTEM_BINARIES musi być ustawiona na platformach arm, s390x i ppc64le.",
   "FormattedParseMessageExpression": "    w przypadku wyrażenia: {value}",
   "GenerateMsgErrorParsingFormatArgs": "błąd: analizowanie ciągu formatu dla wartości {value}:",
@@ -63,6 +64,8 @@
   "IllegalPlatformSpec": "błąd: kwalifikator platformy jest niedozwolony w tym kontekście",
   "InternalErrorMessage": "błąd wewnętrzny: ",
   "InternalErrorMessageContact": "Należy otworzyć problem na stronie https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug, podając szczegółowe kroki w celu odtworzenia problemu.",
+  "JsonErrorFailedToParse": "failed to parse {path}:",
+  "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
   "LicenseExpressionContainsExtraPlus": "Wyrażenie licencji SPDX zawiera dodatkowy znak „+”. Te znaki są tylko dozwolone bezpośrednio po identyfikatorze licencji.",
   "LicenseExpressionContainsInvalidCharacter": "Wyrażenie licencji SPDX zawiera nieprawidłową wartość (0x{value:02X} „{value}”).",
   "LicenseExpressionContainsUnicode": "Wyrażenie licencji SPDX zawiera znak Unicode (U+{value:04X} „{pretty_value}”), ale te wyrażenia są tylko w formacie ASCII.",
@@ -91,6 +94,7 @@
   "ResultsHeader": "WYNIKI",
   "SeeURL": "Aby uzyskać więcej informacji, zobacz adres {url}.",
   "SuggestNewVersionScheme": "Użyj schematu wersji „{new_scheme}” zamiast „{old_scheme}” w pakiecie portu „{package_name}”.\nUżyj opcji „--{option}”, aby wyłączyć tę kontrolę.",
+  "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnknownBaselineFileContent": "nierozpoznawalny wpis punktu odniesienia; oczekiwano elementu \"port:triplet=(fail|skip)\"",
   "UnsupportedSystemName": "Błąd: nie można zmapować VCPKG_CMAKE_SYSTEM_NAME „{system_name}” z platformą vcvarsall. Obsługiwane nazwy systemów to \", „Windows” i „WindowsStore”.",
   "UnsupportedToolchain": "Błąd: w potrójnym pliku {triplet}: nie można odnaleźć prawidłowej kombinacji łańcucha narzędzi.\n    Żądana architektura docelowa została {arch}\n    Wybrane wystąpienie programu Visual Studio znajduje się w ścieżce {path}\n    Dostępne kombinacje łańcucha narzędzi to {list}\n",
@@ -110,6 +114,8 @@
   "VersionInvalidRelaxed": "„{version}“ nie jest prawidłową wersją swobodną (serwer z dowolną liczbą elementów liczbowych).",
   "VersionInvalidSemver": "„{version}“ nie jest prawidłową wersją semantyczną. Zapoznaj się z <https://semver.org>.",
   "VersionSpecMismatch": "błąd: nie można załadować portu, ponieważ specyfikacje wersji nie są zgodne\n    Ścieżka: {path}\n    Oczekiwano: {expected_version}\n    Wartość rzeczywista: {actual_version}",
+  "WaitingForChildrenToExit": "Waiting for child processes to exit...",
+  "WaitingToTakeFilesystemLock": "waiting to take filesystem lock on {path}...",
   "WarningMessage": "ostrzeżenie: ",
   "WarningsTreatedAsErrors": "poprzednie ostrzeżenia interpretowane jako błędy"
 }

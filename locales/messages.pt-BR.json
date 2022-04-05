@@ -51,6 +51,7 @@
   "ExpectedPortName": "esperava-se um nome de porta aqui",
   "ExpectedTripletName": "esperava-se um nome triplo aqui",
   "FailedToProvisionCe": "Falha ao provisionar vcpkg-ce.",
+  "FailedToStoreBackToMirror": "failed to store back to mirror:",
   "ForceSystemBinariesOnWeirdPlatforms": "A variável de ambiente VCPKG_FORCE_SYSTEM_BINARIES deve ser definida nas plataformas arm, s390x e ppc64le.",
   "FormattedParseMessageExpression": "    na expressão: {value}",
   "GenerateMsgErrorParsingFormatArgs": "erro: analisando a cadeia de caracteres de formato para {value}:",
@@ -63,6 +64,8 @@
   "IllegalPlatformSpec": "erro: qualificador de plataforma não é permitido nesse contexto",
   "InternalErrorMessage": "erro interno: ",
   "InternalErrorMessageContact": "Abra um problema no https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug com etapas detalhadas para reproduzir o problema.",
+  "JsonErrorFailedToParse": "failed to parse {path}:",
+  "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
   "LicenseExpressionContainsExtraPlus": "A expressão de licença SPDX contém um '+' extra. Estes só são permitidos diretamente após um identificador de licença.",
   "LicenseExpressionContainsInvalidCharacter": "A expressão da licença SPDX contém um caractere inválido (0x{value:02X} '{value}').",
   "LicenseExpressionContainsUnicode": "A expressão de licença SPDX contém um caractere unicode (U+{value:04X} '{pretty_value}'), mas estas expressões são apenas ASCII.",
@@ -91,6 +94,7 @@
   "ResultsHeader": "RESULTADOS",
   "SeeURL": "Consulte {url} para obter mais informações.",
   "SuggestNewVersionScheme": "Use o esquema de versão \"{new_scheme}\" em vez de \"{old_scheme}\" na porta \"{package_name}\".\nUse `--{option}` para desativar esta verificação.",
+  "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnknownBaselineFileContent": "entrada de linha de base irreconhecível; esperava-se 'port:triplet=(fail|skip)'",
   "UnsupportedSystemName": "Erro: não foi possível mapear VCPKG_CMAKE_SYSTEM_NAME '{system_name}' para uma plataforma vcvarsall. Os nomes de sistema suportados “, 'Windows' e 'WindowsStore'.",
   "UnsupportedToolchain": "Erro: no triplo {triplet}: não foi possível encontrar uma combinação válida de cadeia de ferramentas.\n    A arquitetura de destino solicitada foi {arch}\n    A instância selecionada do Visual Studio está em {path}\n    As combinações de cadeia de ferramentas disponíveis são {list}\n",
@@ -110,6 +114,8 @@
   "VersionInvalidRelaxed": "`{version}` não é uma versão relaxada válida (semver com contagem de elementos numéricos arbitrários).",
   "VersionInvalidSemver": "`{version}` não é uma versão semântica válida, consulte <https://semver.org>.",
   "VersionSpecMismatch": "erro: Falha ao carregar a porta porque as especificações da versão não correspondem\n    Caminho: {path}\n    Esperado: {expected_version}\n    Real: {actual_version}",
+  "WaitingForChildrenToExit": "Waiting for child processes to exit...",
+  "WaitingToTakeFilesystemLock": "waiting to take filesystem lock on {path}...",
   "WarningMessage": "aviso: ",
   "WarningsTreatedAsErrors": "avisos anteriores sendo interpretados como erros"
 }

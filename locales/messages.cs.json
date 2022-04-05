@@ -51,6 +51,7 @@
   "ExpectedPortName": "tady se očekával název portu",
   "ExpectedTripletName": "tady se očekával trojitý název",
   "FailedToProvisionCe": "Nepovedlo se zřídit vcpkg-ce.",
+  "FailedToStoreBackToMirror": "failed to store back to mirror:",
   "ForceSystemBinariesOnWeirdPlatforms": "Proměnná prostředí VCPKG_FORCE_SYSTEM_BINARIES musí být nastavená na platformách arm, s390x a ppc64le.",
   "FormattedParseMessageExpression": "    výraz on: {value}",
   "GenerateMsgErrorParsingFormatArgs": "chyba: analýza řetězce formátu pro {value}:",
@@ -63,6 +64,8 @@
   "IllegalPlatformSpec": "chyba: Kvalifikátor platformy není v tomto kontextu povolen.",
   "InternalErrorMessage": "vnitřní chyba: ",
   "InternalErrorMessageContact": "Otevřete prosím problém na adrese https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug, kde uveďte podrobný postup, jak problém vyvolat.",
+  "JsonErrorFailedToParse": "failed to parse {path}:",
+  "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
   "LicenseExpressionContainsExtraPlus": "Výraz licence SPDX obsahuje symbol „+“ navíc. Tyto možnosti se povolují jen přímo za identifikátorem licence.",
   "LicenseExpressionContainsInvalidCharacter": "Výraz licence SPDX obsahuje neplatný znak (0x{value:02X} '{value}').",
   "LicenseExpressionContainsUnicode": "Licenční výraz SPDX obsahuje znak Unicode (U+{value:04X} '{pretty_value}'), ale tyto výrazy jsou pouze ASCII.",
@@ -91,6 +94,7 @@
   "ResultsHeader": "VÝSLEDKY",
   "SeeURL": "Další informace najdete na adrese {url}.",
   "SuggestNewVersionScheme": "Použijte schéma verze {new_scheme} namísto \"{old_scheme}\" v \"{package_name}\" portu.\nPokud chcete tuto kontrolu zakázat, použijte --{option}.",
+  "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnknownBaselineFileContent": "nerozpoznatelná položka směrného plánu; očekávalo se port:triplet=(fail|skip)",
   "UnsupportedSystemName": "Chyba: Nelze mapovat VCPKG_CMAKE_SYSTEM_NAME {system_name} na platformu vcvarsall. Podporované systémové názvy jsou '', Windows a WindowsStore.",
   "UnsupportedToolchain": "Chyba: V trojitém {triplet}: Nelze najít platnou kombinaci sady nástrojů.\n    Požadovaná cílová architektura byla {arch}\n    Vybraná instance Visual Studio je na {path}\n    Dostupné kombinace sady nástrojů jsou {list}\n",
@@ -110,6 +114,8 @@
   "VersionInvalidRelaxed": "{version} není platná uvolněná verze (semver s počtem libovolných numerických prvků)",
   "VersionInvalidSemver": "{version} není platná sémantická verze, řiďte se <https://semver.org>.",
   "VersionSpecMismatch": "chyba: Nepovedlo se načíst port, protože se neshodovaly specifikace verze.\n    Cesta: {path}\n    Očekáváno: {expected_version}\n    Skutečnost: {actual_version}",
+  "WaitingForChildrenToExit": "Waiting for child processes to exit...",
+  "WaitingToTakeFilesystemLock": "waiting to take filesystem lock on {path}...",
   "WarningMessage": "upozornění: ",
   "WarningsTreatedAsErrors": "předchozí upozornění jsou interpretována jako chyby"
 }

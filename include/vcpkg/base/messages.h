@@ -6,7 +6,7 @@
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <type_traits>
@@ -43,7 +43,7 @@ namespace vcpkg
 
         LocalizedString& append_raw(StringView s)
         {
-            m_data.append(s.begin(), s.end());
+            m_data.append(s.begin(), s.size());
             return *this;
         }
         LocalizedString& append(const LocalizedString& s)
@@ -248,6 +248,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(count, "42");
     DECLARE_MSG_ARG(elapsed, "3.532 min");
     DECLARE_MSG_ARG(email, "vcpkg@microsoft.com");
+    DECLARE_MSG_ARG(error_msg, "File Not Found");
     DECLARE_MSG_ARG(exit_code, "127");
     DECLARE_MSG_ARG(expected_version, "1.3.8");
     DECLARE_MSG_ARG(new_scheme, "version");
@@ -305,12 +306,20 @@ namespace vcpkg::msg
                     "",
                     "error: cannot specify both --no-{option} and --{option}.");
 
+    inline void print_warning(const LocalizedString& s)
+    {
+        print(Color::warning, format(msgErrorMessage).append(s).appendnl());
+    }
     template<class Message, class... Ts>
     void print_warning(Message m, Ts... args)
     {
         print(Color::warning, format(msgWarningMessage).append(format(m, args...).appendnl()));
     }
 
+    inline void print_error(const LocalizedString& s)
+    {
+        print(Color::error, format(msgErrorMessage).append(s).appendnl());
+    }
     template<class Message, class... Ts>
     void print_error(Message m, Ts... args)
     {

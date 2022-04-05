@@ -51,6 +51,7 @@
   "ExpectedPortName": "burada bir bağlantı noktası adı bekleniyordu",
   "ExpectedTripletName": "burada üçlü ad bekleniyordu",
   "FailedToProvisionCe": "vcpkg-ce sağlanamadı.",
+  "FailedToStoreBackToMirror": "failed to store back to mirror:",
   "ForceSystemBinariesOnWeirdPlatforms": "VCPKG_FORCE_SYSTEM_BINARIES ortam değişkeni arm, s390x ve ppc64le platformlarında ayarlanmalıdır.",
   "FormattedParseMessageExpression": "    {value} ifadesinde",
   "GenerateMsgErrorParsingFormatArgs": "hata: {value} için biçim dizesi ayrıştırılıyor:",
@@ -63,6 +64,8 @@
   "IllegalPlatformSpec": "hata: Platform niteleyicisine bu bağlamda izin verilmiyor",
   "InternalErrorMessage": "iç hata: ",
   "InternalErrorMessageContact": "Sorunu yeniden oluşturmak için https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug sayfasındaki ayrıntılı adımları izleyerek bir sorun açın.",
+  "JsonErrorFailedToParse": "failed to parse {path}:",
+  "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
   "LicenseExpressionContainsExtraPlus": "SPDX lisans ifadesi fazladan bir '+' içeriyor. Bunlara yalnızca doğrudan bir lisans tanımlayıcısından sonra izin verilir.",
   "LicenseExpressionContainsInvalidCharacter": "SPDX lisans ifadesi geçersiz bir karakter içeriyor (0x{value:02X} '{value}').",
   "LicenseExpressionContainsUnicode": "SPDX lisans ifadesi bir unicode karakter içeriyor (U+{value:04X} '{pretty_value}'), ancak bu ifadeler yalnızca ASCII.",
@@ -91,6 +94,7 @@
   "ResultsHeader": "SONUÇLAR",
   "SeeURL": "Daha fazla bilgi için bkz. {url}.",
   "SuggestNewVersionScheme": "\"{package_name}\" bağlantı noktasında \"{old_scheme}\" yerine \"{new_scheme}\" sürüm düzenini kullanın.\nBu denetimi devre dışı bırakmak için `--{option}` kullanın.",
+  "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnknownBaselineFileContent": "tanınmayan taban çizgisi girdisi; 'port:triplet=(fail|skip)' bekleniyordu",
   "UnsupportedSystemName": "Hata: VCPKG_CMAKE_SYSTEM_NAME '{system_name}', vcvarsall platformuna eşlenemedi. Desteklenen sistem adları: '', 'Windows' ve 'WindowsStore'.",
   "UnsupportedToolchain": "Hata: {triplet} üçlüsünde: Geçerli bir araç zinciri bileşimi bulunamıyor.\n    İstenen hedef mimari {arch} oldu\n    Seçili Visual Studio örneği {path} konumunda\n    Kullanılabilir araç zinciri bileşimleri: {list}\n",
@@ -110,6 +114,8 @@
   "VersionInvalidRelaxed": "'{version}' geçerli bir esnek sürüm değil (rasgele sayısal öğe sayısına sahip semver).",
   "VersionInvalidSemver": "'{version}' geçerli bir anlamsal sürüm değil, <https://semver.org> adresine başvurun.",
   "VersionSpecMismatch": "hata: Sürüm belirtimleri eşleşmediğinden bağlantı noktası yüklenemedi\n    Yol: {path}\n    Beklenen: {expected_version}\n    Gerçek: {actual_version}",
+  "WaitingForChildrenToExit": "Waiting for child processes to exit...",
+  "WaitingToTakeFilesystemLock": "waiting to take filesystem lock on {path}...",
   "WarningMessage": "uyarı: ",
   "WarningsTreatedAsErrors": "önceki uyarılar hata olarak yorumlanıyor"
 }

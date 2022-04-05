@@ -1,9 +1,9 @@
-#include <vcpkg/base/checks.h>
-#include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringview.h>
 
+#include <string.h>
+
 #include <algorithm>
-#include <cstring>
+#include <utility>
 
 namespace vcpkg
 {
@@ -42,4 +42,20 @@ namespace vcpkg
     bool operator>(StringView lhs, StringView rhs) noexcept { return rhs < lhs; }
     bool operator<=(StringView lhs, StringView rhs) noexcept { return !(rhs < lhs); }
     bool operator>=(StringView lhs, StringView rhs) noexcept { return !(lhs < rhs); }
+
+    std::string operator+(std::string&& l, const StringView& r)
+    {
+        l.append(r.m_ptr, r.m_size);
+        return std::move(l);
+    }
+
+    ZStringView ZStringView::substr(size_t pos) const noexcept
+    {
+        if (pos < size())
+        {
+            return ZStringView{data() + pos, size() - pos};
+        }
+
+        return ZStringView{};
+    }
 }

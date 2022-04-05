@@ -1,5 +1,5 @@
 #include <vcpkg/base/basic_checks.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
