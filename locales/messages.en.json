@@ -65,7 +65,7 @@
   "InternalErrorMessage": "internal error: ",
   "InternalErrorMessageContact": "Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.",
   "JsonErrorFailedToParse": "failed to parse {path}:",
-  "JsonErrorFailedToRead": "failed to read {path}: {error_code}",
+  "JsonErrorFailedToRead": "failed to read {path}: {error_msg}",
   "LicenseExpressionContainsExtraPlus": "SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.",
   "LicenseExpressionContainsInvalidCharacter": "SPDX license expression contains an invalid character (0x{value:02X} '{value}').",
   "LicenseExpressionContainsUnicode": "SPDX license expression contains a unicode character (U+{value:04X} '{pretty_value}'), but these expressions are ASCII-only.",
