@@ -46,6 +46,12 @@ namespace vcpkg
             m_data.append(s.begin(), s.size());
             return *this;
         }
+        template<class... Args>
+        LocalizedString& append_fmt_raw(fmt::string_view s, const Args&... args)
+        {
+            m_data.append(fmt::format(s, args...));
+            return *this;
+        }
         LocalizedString& append(const LocalizedString& s)
         {
             m_data.append(s.m_data);

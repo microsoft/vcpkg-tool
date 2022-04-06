@@ -4,6 +4,7 @@
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/optional.h>
 
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/build.h>
@@ -11,6 +12,7 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <chrono>
 #include <set>
 #include <string>
 #include <vector>
@@ -25,15 +27,19 @@ namespace vcpkg::Install
 
     struct SpecSummary
     {
-        SpecSummary(const PackageSpec& spec, const Dependencies::InstallPlanAction* action);
+        explicit SpecSummary(const Dependencies::InstallPlanAction& action);
+        explicit SpecSummary(const Dependencies::RemovePlanAction& action);
 
         const BinaryParagraph* get_binary_paragraph() const;
-
-        PackageSpec spec;
-        Build::ExtendedBuildResult build_result;
+        const PackageSpec& get_spec() const { return m_spec; }
+        bool is_user_requested_install() const;
+        Optional<Build::ExtendedBuildResult> build_result;
         vcpkg::ElapsedTime timing;
+        std::chrono::system_clock::time_point start_time;
 
-        const Dependencies::InstallPlanAction* action;
+    private:
+        const Dependencies::InstallPlanAction* m_install_action;
+        PackageSpec m_spec;
     };
 
     struct InstallSummary

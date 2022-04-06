@@ -29,7 +29,7 @@ namespace vcpkg
         return parts;
     }
 
-    static Optional<tm> to_utc_time(const std::time_t& t)
+    Optional<tm> to_utc_time(const std::time_t& t)
     {
         tm parts{};
 #if defined(_WIN32)

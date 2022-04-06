@@ -20,6 +20,8 @@ namespace vcpkg::Remove
     using Dependencies::RequestType;
     using Update::OutdatedPackage;
 
+    REGISTER_MESSAGE(RemovingPackage);
+
     static void remove_package(Filesystem& fs,
                                const InstalledPaths& installed,
                                const PackageSpec& spec,
@@ -152,13 +154,8 @@ namespace vcpkg::Remove
 
         switch (action.plan_type)
         {
-            case RemovePlanType::NOT_INSTALLED:
-                vcpkg::printf(Color::success, "Package %s is not installed\n", display_name);
-                break;
-            case RemovePlanType::REMOVE:
-                vcpkg::printf("Removing package %s...\n", display_name);
-                remove_package(fs, paths.installed(), action.spec, status_db);
-                break;
+            case RemovePlanType::NOT_INSTALLED: break;
+            case RemovePlanType::REMOVE: remove_package(fs, paths.installed(), action.spec, status_db); break;
             case RemovePlanType::UNKNOWN:
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -305,8 +302,12 @@ namespace vcpkg::Remove
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        for (const RemovePlanAction& action : remove_plan)
+        // note that we try to "remove" things that aren't installed to trigger purge actions
+        for (std::size_t idx = 0; idx < remove_plan.size(); ++idx)
         {
+            const RemovePlanAction& action = remove_plan[idx];
+            msg::println(msg::format(msgRemovingPackage, msg::spec = action.spec)
+                             .append_fmt_raw(" ({}/{})...", idx + 1, remove_plan.size()));
             perform_remove_plan_action(paths, action, purge, &status_db);
         }
 

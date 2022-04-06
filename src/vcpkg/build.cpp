@@ -232,7 +232,7 @@ namespace vcpkg::Build
 
         if (result.code != BuildResult::SUCCEEDED)
         {
-            print2(Color::error, Build::create_error_message(result.code, spec), '\n');
+            print2(Color::error, Build::create_error_message(result, spec), '\n');
             print2(Build::create_user_troubleshooting_message(*action, paths), '\n');
             return 1;
         }
@@ -1034,7 +1034,7 @@ namespace vcpkg::Build
         {
             // TODO: Capture executed command output and evaluate whether the failure was intended.
             // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
-            return BuildResult::DOWNLOADED;
+            return ExtendedBuildResult{BuildResult::DOWNLOADED};
         }
 
         const auto buildtimeus = timer.microseconds();
@@ -1055,7 +1055,7 @@ namespace vcpkg::Build
             {
                 metrics->track_property("error", "build failed");
                 metrics->track_property("build_error", spec_string);
-                return BuildResult::BUILD_FAILED;
+                return ExtendedBuildResult{BuildResult::BUILD_FAILED};
             }
         }
 
@@ -1071,7 +1071,7 @@ namespace vcpkg::Build
 
         if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
         {
-            return BuildResult::POST_BUILD_CHECKS_FAILED;
+            return ExtendedBuildResult{BuildResult::POST_BUILD_CHECKS_FAILED};
         }
 
         for (auto&& feature : action.feature_list)
@@ -1446,7 +1446,6 @@ namespace vcpkg::Build
     {
         switch (build_result)
         {
-            case BuildResult::NULLVALUE: ++null_value; return;
             case BuildResult::SUCCEEDED: ++succeeded; return;
             case BuildResult::BUILD_FAILED: ++build_failed; return;
             case BuildResult::POST_BUILD_CHECKS_FAILED: ++post_build_checks_failed; return;
@@ -1492,7 +1491,6 @@ namespace vcpkg::Build
     {
         switch (build_result)
         {
-            case BuildResult::NULLVALUE: return "vcpkg::Commands::Build::BuildResult_NULLVALUE";
             case BuildResult::SUCCEEDED: return "SUCCEEDED";
             case BuildResult::BUILD_FAILED: return "BUILD_FAILED";
             case BuildResult::POST_BUILD_CHECKS_FAILED: return "POST_BUILD_CHECKS_FAILED";
@@ -1509,8 +1507,6 @@ namespace vcpkg::Build
     {
         switch (build_result)
         {
-            case BuildResult::NULLVALUE:
-                return LocalizedString::from_raw(to_string_locale_invariant(BuildResult::NULLVALUE));
             case BuildResult::SUCCEEDED: return msg::format(msgBuildResultSucceeded);
             case BuildResult::BUILD_FAILED: return msg::format(msgBuildResultBuildFailed);
             case BuildResult::POST_BUILD_CHECKS_FAILED: return msg::format(msgBuildResultPostBuildChecksFailed);
