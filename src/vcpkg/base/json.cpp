@@ -350,13 +350,13 @@ namespace vcpkg::Json
     Value& Object::insert(StringView key, std::string&& value) { return insert(key, Value::string(std::move(value))); }
     Value& Object::insert(StringView key, Value&& value)
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key), "key '%s' already exists in object", key);
         underlying_.emplace_back(key.to_string(), std::move(value));
         return underlying_.back().second;
     }
     Value& Object::insert(StringView key, const Value& value)
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key), "key '%s' already exists in object", key);
         underlying_.emplace_back(key.to_string(), value);
         return underlying_.back().second;
     }
