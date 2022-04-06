@@ -25,6 +25,7 @@ namespace vcpkg
         Json::Value serialize() const;
 
         Optional<std::string> get_latest_baseline(const VcpkgPaths& paths, LocalizedString& error) const;
+        StringView registry_location() const;
     };
 
     struct Configuration

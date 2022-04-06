@@ -247,6 +247,8 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(expected, "");
     DECLARE_MSG_ARG(actual, "");
     DECLARE_MSG_ARG(list, "");
+    DECLARE_MSG_ARG(old_value, "");
+    DECLARE_MSG_ARG(new_value, "");
 
     DECLARE_MSG_ARG(actual_version, "1.3.8");
     DECLARE_MSG_ARG(arch, "x64");

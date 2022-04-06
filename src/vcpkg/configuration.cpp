@@ -10,10 +10,7 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineGitError,
-                                 (msg::url),
-                                 "",
-                                 "Git failed to fetch remote repository {url}:");
+    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineGitError, (msg::url), "", "git failed to fetch remote repository {url}");
 
     struct RegistryConfigDeserializer : Json::IDeserializer<RegistryConfig>
     {
@@ -551,15 +548,17 @@ namespace vcpkg
         }
         else
         {
-            error = msg::format(msgUpdateBaselineGitError, msg::url = url);
+            error = msg::format(msgUpdateBaselineGitError, msg::url = url)
+                        .appendnl()
+                        .append_raw(Strings::trim(res.error()));
             return nullopt;
         }
     }
 
+    static constexpr StringLiteral BUILTIN_GIT_URL = "https://github.com/microsoft/vcpkg";
+
     Optional<std::string> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths, LocalizedString& error) const
     {
-        static constexpr StringLiteral builtin_git_url = "https://github.com/microsoft/vcpkg";
-
         error.clear();
 
         if (kind == RegistryConfigDeserializer::KIND_GIT)
@@ -568,12 +567,34 @@ namespace vcpkg
         }
         else if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {
-            return get_baseline_from_git_repo(paths, builtin_git_url, error);
+            return get_baseline_from_git_repo(paths, BUILTIN_GIT_URL, error);
         }
         else
         {
             return nullopt;
         }
+    }
+
+    StringView RegistryConfig::registry_location() const
+    {
+        if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
+        {
+            return BUILTIN_GIT_URL;
+        }
+        if (kind == RegistryConfigDeserializer::KIND_FILESYSTEM)
+        {
+            return path.value_or_exit(VCPKG_LINE_INFO);
+        }
+        if (kind == RegistryConfigDeserializer::KIND_GIT)
+        {
+            return repo.value_or_exit(VCPKG_LINE_INFO);
+        }
+        if (kind == RegistryConfigDeserializer::KIND_ARTIFACT)
+        {
+            return location.value_or_exit(VCPKG_LINE_INFO);
+        }
+
+        Checks::unreachable(VCPKG_LINE_INFO);
     }
 
     View<StringView> Configuration::known_fields()
