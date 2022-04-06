@@ -118,7 +118,6 @@ function _keys<T, TSrc extends Record<string, T>>(source: Record<string, T> | nu
 function _keys<T, TSrc extends Array<T>>(source: Array<T> | null | undefined): IterableWithLinq<number>
 function _keys<K, T, TSrc>(source: any | undefined | null): IterableWithLinq<any>
 function _keys<K, T, TSrc>(source: any): IterableWithLinq<any> {
-  //export function keys<K, T, TSrc extends (Array<T> | Record<string,T> | Map<K, T>)>(source: TSrc & (Array<T> | Record<string,T> | Map<K, T>) | null | undefined): IterableWithLinq<IndexOf<TSrc>> {
   if (source) {
     if (Array.isArray(source)) {
       return <IterableWithLinq<IndexOf<TSrc>>>linqify((<Array<T>>source).keys());
