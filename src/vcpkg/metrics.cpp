@@ -147,6 +147,11 @@ namespace vcpkg
             properties.insert_or_replace(name, Json::Value::string(value));
         }
 
+        void track_property(StringView name, bool value)
+        {
+            properties.insert_or_replace(name, Json::Value::boolean(value));
+        }
+
         void track_metric(StringView name, double value)
         {
             measurements.insert_or_replace(name, Json::Value::number(value));
@@ -161,6 +166,7 @@ namespace vcpkg
         {
             properties.insert(Strings::concat("feature-flag-", name), Json::Value::boolean(value));
         }
+
         void track_option(StringView name, bool value)
         {
             properties.insert(Strings::concat("option_", name), Json::Value::boolean(value));
@@ -332,13 +338,7 @@ namespace vcpkg
         g_metricmessage.track_property(name, value);
     }
 
-    void Metrics::track_property(const std::string& name, bool value)
-    {
-        if (value)
-        {
-            g_metricmessage.track_property(name, "defined");
-        }
-    }
+    void Metrics::track_property(const std::string& name, bool value) { g_metricmessage.track_property(name, value); }
 
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
 
