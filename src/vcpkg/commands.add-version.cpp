@@ -35,67 +35,85 @@ namespace
         NotUpdated
     };
 
-    DECLARE_AND_REGISTER_MESSAGE(SuggestNewVersionScheme,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionSuggestNewVersionScheme,
                                  (msg::new_scheme, msg::old_scheme, msg::package_name, msg::option),
                                  "",
                                  "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
                                  "\"{package_name}\".\nUse `--{option}` to disable this check.");
-    DECLARE_AND_REGISTER_MESSAGE(VersionAlreadyInFile,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionVersionAlreadyInFile,
                                  (msg::version, msg::path),
                                  "",
                                  "version {version} is already in {path}");
-    DECLARE_AND_REGISTER_MESSAGE(AddedVersionToFile,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionAddedVersionToFile,
                                  (msg::version, msg::path),
                                  "",
                                  "added version {version} to {path}");
-    DECLARE_AND_REGISTER_MESSAGE(NewFile, (), "", "(new file)");
-    DECLARE_AND_REGISTER_MESSAGE(PortFilesShaUnchanged,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionNewFile, (), "", "(new file)");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionPortFilesShaUnchanged,
                                  (msg::version, msg::path),
                                  "",
                                  "local port files SHA is the same as version {version} in {path}");
-    DECLARE_AND_REGISTER_MESSAGE(CommitChangesReminder, (), "", "Did you remember to commit your changes?");
-    DECLARE_AND_REGISTER_MESSAGE(NoFilesUpdated, (), "", "No files were updated");
-    DECLARE_AND_REGISTER_MESSAGE(NoFilesUpdatedForPort,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionNoFilesUpdatedForPort,
                                  (msg::package_name),
                                  "",
                                  "No files were updated for {package_name}");
-    DECLARE_AND_REGISTER_MESSAGE(PortFilesShaChanged,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionPortFilesShaChanged,
                                  (msg::package_name),
                                  "",
                                  "local changes detected for {package_name} but no changes to version or port version");
-    DECLARE_AND_REGISTER_MESSAGE(VersionIs, (msg::version), "", "version: {version}");
-    DECLARE_AND_REGISTER_MESSAGE(OldShaIs, (msg::value), "{value} is a 40-digit hexadecimal SHA", "old SHA: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(NewShaIs, (msg::value), "{value} is a 40-digit hexadecimal SHA", "new SHA: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(UpdateVersionReminder,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionVersionIs, (msg::version), "", "version: {version}");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionOldShaIs,
+                                 (msg::value),
+                                 "{value} is a 40-digit hexadecimal SHA",
+                                 "old SHA: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionNewShaIs,
+                                 (msg::value),
+                                 "{value} is a 40-digit hexadecimal SHA",
+                                 "new SHA: {value}");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionUpdateVersionReminder,
                                  (),
                                  "",
                                  "Did you remember to update the version or port version?");
-    DECLARE_AND_REGISTER_MESSAGE(OverwriteOptionSuggestion, (), "", "Use --overwrite-version to bypass this check");
-    DECLARE_AND_REGISTER_MESSAGE(UnableToParseVersionsFile, (msg::path), "", "unable to parse versions file {path}");
-    DECLARE_AND_REGISTER_MESSAGE(FileNotFound, (msg::path), "", "couldn't find required file {path}");
-    DECLARE_AND_REGISTER_MESSAGE(IgnoringOptionAll,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionOverwriteOptionSuggestion,
+                                 (),
+                                 "",
+                                 "Use --overwrite-version to bypass this check");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionUnableToParseVersionsFile,
+                                 (msg::path),
+                                 "",
+                                 "unable to parse versions file {path}");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionFileNotFound, (msg::path), "", "couldn't find required file {path}");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionIgnoringOptionAll,
                                  (msg::option),
                                  "",
                                  "ignoring option {option} since a port name argument was provided");
-    DECLARE_AND_REGISTER_MESSAGE(UseOptionAll,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionUseOptionAll,
                                  (msg::option),
                                  "",
                                  "use option {option} to update version files for all ports at once");
-    DECLARE_AND_REGISTER_MESSAGE(LoadPortFailed, (msg::package_name), "", "couldn't load port {package_name}");
-    DECLARE_AND_REGISTER_MESSAGE(PortHasImproperFormat,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionLoadPortFailed,
+                                 (msg::package_name),
+                                 "",
+                                 "couldn't load port {package_name}");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionPortHasImproperFormat,
                                  (msg::package_name),
                                  "",
                                  "the port {package_name} is not properly formatted");
-    DECLARE_AND_REGISTER_MESSAGE(FormatPortSuggestion,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionFormatPortSuggestion,
                                  (msg::command_line),
                                  "",
                                  "Run `{command_line}` to format the file");
-    DECLARE_AND_REGISTER_MESSAGE(CommitResultReminder, (), "", "Don't forget to commit the result!");
-    DECLARE_AND_REGISTER_MESSAGE(NoGitSha,
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionCommitResultReminder, (), "", "Don't forget to commit the result!");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionNoGitSha,
                                  (msg::package_name),
                                  "",
                                  "no local Git SHA was found for port {package_name}");
-    DECLARE_AND_REGISTER_MESSAGE(PortDoesNotExist, (msg::package_name), "", "port {package_name} does not exist");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionPortDoesNotExist,
+                                 (msg::package_name),
+                                 "",
+                                 "port {package_name} does not exist");
 
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
@@ -136,7 +154,7 @@ namespace
             if (DateVersion::try_parse(version.version.text()))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msgSuggestNewVersionScheme,
+                                              msgAddVersionSuggestNewVersionScheme,
                                               msg::new_scheme = VERSION_DATE,
                                               msg::old_scheme = VERSION_STRING,
                                               msg::package_name = port_name,
@@ -145,7 +163,7 @@ namespace
             if (DotVersion::try_parse_relaxed(version.version.text()))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msgSuggestNewVersionScheme,
+                                              msgAddVersionSuggestNewVersionScheme,
                                               msg::new_scheme = VERSION_RELAXED,
                                               msg::old_scheme = VERSION_STRING,
                                               msg::package_name = port_name,
@@ -227,7 +245,7 @@ namespace
             {
                 if (print_success)
                 {
-                    msg::print_success(msgVersionAlreadyInFile,
+                    msg::print_success(msgAddVersionVersionAlreadyInFile,
                                        msg::version = version.to_string(),
                                        msg::path = baseline_path.generic_u8string());
                 }
@@ -243,7 +261,7 @@ namespace
         write_baseline_file(fs, baseline_map, baseline_path);
         if (print_success)
         {
-            msg::print_success(msgAddedVersionToFile,
+            msg::print_success(msgAddVersionAddedVersionToFile,
                                msg::version = version.to_string(),
                                msg::path = baseline_path.generic_u8string());
         }
@@ -271,11 +289,11 @@ namespace
             write_versions_file(fs, new_entry, version_db_file_path);
             if (print_success)
             {
-                msg::println(msg::format(msgAddedVersionToFile,
+                msg::println(msg::format(msgAddVersionAddedVersionToFile,
                                          msg::version = port_version.version.to_string(),
                                          msg::path = version_db_file_path.generic_u8string())
                                  .append_raw(" ")
-                                 .append(msgNewFile));
+                                 .append(msgAddVersionNewFile));
             }
             return UpdateResult::Updated;
         }
@@ -293,13 +311,13 @@ namespace
                 {
                     if (print_success)
                     {
-                        msg::print_success(msgVersionAlreadyInFile,
+                        msg::print_success(msgAddVersionVersionAlreadyInFile,
                                            msg::version = port_version.version.to_string(),
                                            msg::path = version_db_file_path.generic_u8string());
                     }
                     return UpdateResult::NotUpdated;
                 }
-                msg::print_warning(msg::format(msgPortFilesShaUnchanged,
+                msg::print_warning(msg::format(msgAddVersionPortFilesShaUnchanged,
                                                msg::version = found_same_sha->first.version.to_string(),
                                                msg::path = version_db_file_path.generic_u8string())
                                        .appendnl()
@@ -307,10 +325,10 @@ namespace
                                        .append_raw(git_tree)
                                        .appendnl()
                                        .append_raw("-- ")
-                                       .append(msgCommitChangesReminder)
+                                       .append(msgAddVersionCommitChangesReminder)
                                        .appendnl()
                                        .append_raw("***")
-                                       .append(msgNoFilesUpdated)
+                                       .append(msgAddVersionNoFilesUpdated)
                                        .append_raw("***"));
                 if (keep_going) return UpdateResult::NotUpdated;
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -325,19 +343,20 @@ namespace
             {
                 if (!overwrite_version)
                 {
-                    msg::print_error(msg::format(msgPortFilesShaChanged, msg::package_name = port_name)
-                                         .appendnl()
-                                         .append(msgVersionIs, msg::version = port_version.version.to_string())
-                                         .appendnl()
-                                         .append(msgOldShaIs, msg::value = it->second)
-                                         .appendnl()
-                                         .append(msgNewShaIs, msg::value = git_tree)
-                                         .appendnl()
-                                         .append(msgUpdateVersionReminder)
-                                         .appendnl()
-                                         .append_raw("***")
-                                         .append(msgNoFilesUpdated)
-                                         .append_raw("***"));
+                    msg::print_error(
+                        msg::format(msgAddVersionPortFilesShaChanged, msg::package_name = port_name)
+                            .appendnl()
+                            .append(msgAddVersionVersionIs, msg::version = port_version.version.to_string())
+                            .appendnl()
+                            .append(msgAddVersionOldShaIs, msg::value = it->second)
+                            .appendnl()
+                            .append(msgAddVersionNewShaIs, msg::value = git_tree)
+                            .appendnl()
+                            .append(msgAddVersionUpdateVersionReminder)
+                            .appendnl()
+                            .append_raw("***")
+                            .append(msgAddVersionNoFilesUpdated)
+                            .append_raw("***"));
                     if (keep_going) return UpdateResult::NotUpdated;
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
@@ -358,14 +377,15 @@ namespace
             write_versions_file(fs, *versions, version_db_file_path);
             if (print_success)
             {
-                msg::print_success(msgAddedVersionToFile,
+                msg::print_success(msgAddVersionAddedVersionToFile,
                                    msg::version = port_version.version.to_string(),
                                    msg::path = version_db_file_path.generic_u8string());
             }
             return UpdateResult::Updated;
         }
 
-        msg::print_error(msg::format(msgUnableToParseVersionsFile, msg::path = version_db_file_path.generic_u8string())
+        msg::print_error(
+            msg::format(msgAddVersionUnableToParseVersionsFile, msg::path = version_db_file_path.generic_u8string())
                              .appendnl()
                              .append_raw(maybe_versions.error()));
         Checks::exit_fail(VCPKG_LINE_INFO);
@@ -404,7 +424,8 @@ namespace vcpkg::Commands::AddVersion
         auto baseline_path = paths.builtin_registry_versions / "baseline.json";
         if (!fs.exists(baseline_path, VCPKG_LINE_INFO))
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFileNotFound, msg::path = baseline_path.generic_u8string());
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msgAddVersionFileNotFound, msg::path = baseline_path.generic_u8string());
         }
 
         std::vector<std::string> port_names;
@@ -412,7 +433,7 @@ namespace vcpkg::Commands::AddVersion
         {
             if (add_all)
             {
-                msg::print_warning(msgIgnoringOptionAll, msg::option = Strings::concat("--", OPTION_ALL));
+                msg::print_warning(msgAddVersionIgnoringOptionAll, msg::option = Strings::concat("--", OPTION_ALL));
             }
             port_names.emplace_back(args.command_arguments[0]);
         }
@@ -421,7 +442,7 @@ namespace vcpkg::Commands::AddVersion
             if (!add_all)
             {
                 Checks::msg_exit_with_error(
-                    VCPKG_LINE_INFO, msgUseOptionAll, msg::option = Strings::concat("--", OPTION_ALL));
+                    VCPKG_LINE_INFO, msgAddVersionUseOptionAll, msg::option = Strings::concat("--", OPTION_ALL));
             }
 
             for (auto&& port_dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
@@ -450,7 +471,7 @@ namespace vcpkg::Commands::AddVersion
 
             if (!fs.exists(port_dir, VCPKG_LINE_INFO))
             {
-                msg::print_error(msgPortDoesNotExist, msg::package_name = port_name);
+                msg::print_error(msgAddVersionPortDoesNotExist, msg::package_name = port_name);
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -458,7 +479,7 @@ namespace vcpkg::Commands::AddVersion
             auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
             if (!maybe_scf.has_value())
             {
-                msg::print_error(msgLoadPortFailed, msg::package_name = port_name);
+                msg::print_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -477,11 +498,11 @@ namespace vcpkg::Commands::AddVersion
                     if (current_file_content != formatted_content)
                     {
                         auto command_line = fmt::format("vcpkg format-manifest ports/{}/vcpkg.json", port_name);
-                        msg::print_error(msg::format(msgPortHasImproperFormat, msg::package_name = port_name)
+                        msg::print_error(msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
                                              .appendnl()
-                                             .append(msgFormatPortSuggestion, msg::command_line = command_line)
+                                .append(msgAddVersionFormatPortSuggestion, msg::command_line = command_line)
                                              .appendnl()
-                                             .append(msgCommitResultReminder)
+                                .append(msgAddVersionCommitResultReminder)
                                              .appendnl());
                         if (add_all) continue;
                         Checks::exit_fail(VCPKG_LINE_INFO);
@@ -493,12 +514,12 @@ namespace vcpkg::Commands::AddVersion
             auto git_tree_it = git_tree_map.find(port_name);
             if (git_tree_it == git_tree_map.end())
             {
-                msg::print_warning(msg::format(msgNoGitSha, msg::package_name = port_name)
+                msg::print_warning(msg::format(msgAddVersionNoGitSha, msg::package_name = port_name)
                                        .appendnl()
                                        .append_raw("-- ")
-                                       .append(msgCommitChangesReminder)
+                                       .append(msgAddVersionCommitChangesReminder)
                                        .append_raw("***")
-                                       .append(msgNoFilesUpdated)
+                                       .append(msgAddVersionNoFilesUpdated)
                                        .append_raw("***"));
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -520,7 +541,7 @@ namespace vcpkg::Commands::AddVersion
                 paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
             if (updated_versions_file == UpdateResult::NotUpdated && updated_baseline_file == UpdateResult::NotUpdated)
             {
-                msg::println(msgNoFilesUpdatedForPort, msg::package_name = port_name);
+                msg::println(msgAddVersionNoFilesUpdatedForPort, msg::package_name = port_name);
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);
