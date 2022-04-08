@@ -6,8 +6,8 @@
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
-#include <vcpkg/base/zstringview.h>
 
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/packagespec.h>
@@ -31,7 +31,6 @@ namespace vcpkg::Build
 {
     enum class BuildResult
     {
-        NULLVALUE = 0,
         SUCCEEDED,
         BUILD_FAILED,
         POST_BUILD_CHECKS_FAILED,
@@ -197,7 +196,6 @@ namespace vcpkg::Build
 
     struct BuildResultCounts
     {
-        int null_value = 0;
         int succeeded = 0;
         int build_failed = 0;
         int post_build_checks_failed = 0;
@@ -213,7 +211,6 @@ namespace vcpkg::Build
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
-    std::string create_error_message(const BuildResult build_result, const PackageSpec& spec);
     std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
                                                     const VcpkgPaths& paths);
 
@@ -255,7 +252,7 @@ namespace vcpkg::Build
 
     struct ExtendedBuildResult
     {
-        ExtendedBuildResult(BuildResult code);
+        explicit ExtendedBuildResult(BuildResult code);
         ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps);
         ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 
@@ -263,6 +260,8 @@ namespace vcpkg::Build
         std::vector<FeatureSpec> unmet_dependencies;
         std::unique_ptr<BinaryControlFile> binary_control_file;
     };
+
+    LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
@@ -360,6 +359,9 @@ namespace vcpkg::Build
         std::string package_abi;
         Optional<Path> abi_tag_file;
         Optional<const CompilerInfo&> compiler_info;
+        std::vector<Path> relative_port_files;
+        std::vector<std::string> relative_port_hashes;
+        std::vector<Json::Value> heuristic_resources;
     };
 
     void compute_all_abis(const VcpkgPaths& paths,

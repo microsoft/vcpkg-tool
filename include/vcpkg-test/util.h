@@ -5,7 +5,9 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/sortedvector.h>
 
+#include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraph.h>
 
 #include <iomanip>
@@ -55,10 +57,18 @@ namespace Catch
     {
         static const std::string convert(const vcpkg::LocalizedString& value) { return "LL\"" + value.data() + "\""; }
     };
+
+    template<>
+    struct StringMaker<vcpkg::PackageSpec>
+    {
+        static const std::string convert(const vcpkg::PackageSpec& value) { return value.to_string(); }
+    };
 }
 
 namespace vcpkg
 {
+    inline std::ostream& operator<<(std::ostream& os, const PackageSpec& value) { return os << value.to_string(); }
+
     inline std::ostream& operator<<(std::ostream& os, const LocalizedString& value)
     {
         return os << "LL" << std::quoted(value.data());
@@ -121,7 +131,11 @@ namespace vcpkg::Test
     template<class T, class S>
     T&& unwrap(vcpkg::ExpectedT<T, S>&& p)
     {
-        REQUIRE(p.has_value());
+        if (!p.has_value())
+        {
+            INFO(p.error_to_string());
+            REQUIRE(p.has_value());
+        }
         return std::move(*p.get());
     }
 

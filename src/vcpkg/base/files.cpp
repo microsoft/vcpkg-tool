@@ -1,9 +1,9 @@
 #include <vcpkg/base/system_headers.h>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -39,6 +39,11 @@ namespace stdfs = std::filesystem;
 namespace
 {
     using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(WaitingToTakeFilesystemLock,
+                                 (msg::path),
+                                 "",
+                                 "waiting to take filesystem lock on {path}...");
 
     std::atomic<uint64_t> g_us_filesystem_stats(0);
 
@@ -1456,7 +1461,7 @@ namespace vcpkg
         return maybe_directories;
     }
 
-    void Filesystem::write_contents(const Path& file_path, const std::string& data, LineInfo li)
+    void Filesystem::write_contents(const Path& file_path, StringView data, LineInfo li)
     {
         std::error_code ec;
         this->write_contents(file_path, data, ec);
@@ -1465,17 +1470,14 @@ namespace vcpkg
             exit_filesystem_call_error(li, ec, __func__, {file_path});
         }
     }
-    void Filesystem::write_rename_contents(const Path& file_path,
-                                           const Path& temp_name,
-                                           const std::string& data,
-                                           LineInfo li)
+    void Filesystem::write_rename_contents(const Path& file_path, const Path& temp_name, StringView data, LineInfo li)
     {
         auto temp_path = file_path;
         temp_path.replace_filename(temp_name);
         this->write_contents(temp_path, data, li);
         this->rename(temp_path, file_path, li);
     }
-    void Filesystem::write_contents_and_dirs(const Path& file_path, const std::string& data, LineInfo li)
+    void Filesystem::write_contents_and_dirs(const Path& file_path, StringView data, LineInfo li)
     {
         std::error_code ec;
         this->write_contents_and_dirs(file_path, data, ec);
@@ -3036,7 +3038,7 @@ namespace vcpkg
             return FileType::unknown;
 #endif // ^^^ !_WIN32
         }
-        virtual void write_contents(const Path& file_path, const std::string& data, std::error_code& ec) override
+        virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) override
         {
             StatsTimer t(g_us_filesystem_stats);
             auto f = open_for_write(file_path, ec);
@@ -3050,9 +3052,7 @@ namespace vcpkg
             }
         }
 
-        virtual void write_contents_and_dirs(const Path& file_path,
-                                             const std::string& data,
-                                             std::error_code& ec) override
+        virtual void write_contents_and_dirs(const Path& file_path, StringView data, std::error_code& ec) override
         {
             write_contents(file_path, data, ec);
             if (ec)
@@ -3229,7 +3229,7 @@ namespace vcpkg
             auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (!ec && !result->lock_attempt(ec) && !ec)
             {
-                vcpkg::printf("Waiting to take filesystem lock on %s...\n", lockfile);
+                msg::println(msgWaitingToTakeFilesystemLock, msg::path = lockfile);
                 do
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -3245,7 +3245,7 @@ namespace vcpkg
             auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (!ec && !result->lock_attempt(ec) && !ec)
             {
-                Debug::print("Waiting to take filesystem lock on ", lockfile, "...\n");
+                Debug::println(msg::format(msgWaitingToTakeFilesystemLock, msg::path = lockfile));
                 // waits, at most, a second and a half.
                 for (auto wait = std::chrono::milliseconds(100);;)
                 {
@@ -3267,7 +3267,7 @@ namespace vcpkg
             return std::move(result);
         }
 
-        virtual std::vector<Path> find_from_PATH(const std::string& name) const override
+        virtual std::vector<Path> find_from_PATH(StringView name) const override
         {
 #if defined(_WIN32)
             static constexpr StringLiteral EXTS[] = {".cmd", ".exe", ".bat"};
@@ -3325,7 +3325,7 @@ namespace vcpkg
             Strings::append(message, "    ", p.generic_u8string(), '\n');
         }
         message.push_back('\n');
-        print2(message);
+        msg::write_unlocalized_text_to_stdout(Color::none, message);
     }
 
     uint64_t get_filesystem_stats() { return g_us_filesystem_stats.load(); }

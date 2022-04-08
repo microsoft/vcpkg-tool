@@ -120,7 +120,14 @@ namespace vcpkg::Json
         static Value boolean(bool) noexcept;
         static Value integer(int64_t i) noexcept;
         static Value number(double d) noexcept;
-        static Value string(std::string s) noexcept;
+        static Value string(std::string&& s) noexcept;
+        template<class StringLike,
+                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        static Value string(const StringLike& s) noexcept
+        {
+            return string(StringView(s).to_string());
+        }
+
         static Value array(Array&&) noexcept;
         static Value array(const Array&) noexcept;
         static Value object(Object&&) noexcept;
@@ -150,6 +157,13 @@ namespace vcpkg::Json
         using iterator = underlying_t::iterator;
         using const_iterator = underlying_t::const_iterator;
 
+        Value& push_back(std::string&& value);
+        template<class StringLike,
+                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        Value& push_back(const StringLike& value)
+        {
+            return this->push_back(StringView(value).to_string());
+        }
         Value& push_back(Value&& value);
         Object& push_back(Object&& value);
         Array& push_back(Array&& value);
@@ -203,22 +217,35 @@ namespace vcpkg::Json
         ~Object() = default;
 
         // asserts if the key is found
-        Value& insert(std::string key, std::string value);
-        Value& insert(std::string key, Value&& value);
-        Value& insert(std::string key, const Value& value);
-        Object& insert(std::string key, Object&& value);
-        Object& insert(std::string key, const Object& value);
-        Array& insert(std::string key, Array&& value);
-        Array& insert(std::string key, const Array& value);
+        template<class StringLike,
+                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        Value& insert(StringView key, const StringLike& value)
+        {
+            return this->insert(key, StringView(value).to_string());
+        }
+        Value& insert(StringView key, std::string&& value);
+        Value& insert(StringView key, Value&& value);
+        Value& insert(StringView key, const Value& value);
+        Object& insert(StringView key, Object&& value);
+        Object& insert(StringView key, const Object& value);
+        Array& insert(StringView key, Array&& value);
+        Array& insert(StringView key, const Array& value);
 
         // replaces the value if the key is found, otherwise inserts a new
         // value.
-        Value& insert_or_replace(std::string key, Value&& value);
-        Value& insert_or_replace(std::string key, const Value& value);
-        Object& insert_or_replace(std::string key, Object&& value);
-        Object& insert_or_replace(std::string key, const Object& value);
-        Array& insert_or_replace(std::string key, Array&& value);
-        Array& insert_or_replace(std::string key, const Array& value);
+        Value& insert_or_replace(StringView key, std::string&& value);
+        template<class StringLike,
+                 std::enable_if_t<std::is_constructible<StringView, const StringLike&>::value, int> = 0>
+        Value& insert_or_replace(StringView key, const StringLike& value)
+        {
+            return this->insert_or_replace(key, StringView(value).to_string());
+        }
+        Value& insert_or_replace(StringView key, Value&& value);
+        Value& insert_or_replace(StringView key, const Value& value);
+        Object& insert_or_replace(StringView key, Object&& value);
+        Object& insert_or_replace(StringView key, const Object& value);
+        Array& insert_or_replace(StringView key, Array&& value);
+        Array& insert_or_replace(StringView key, const Array& value);
 
         // returns whether the key existed
         bool remove(StringView key) noexcept;

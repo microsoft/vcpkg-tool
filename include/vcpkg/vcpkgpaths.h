@@ -77,6 +77,7 @@ namespace vcpkg
         Path build_dir(const PackageSpec& spec) const;
         Path build_dir(const std::string& package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
+        Path spdx_resource_dir(const PackageSpec& spec) const;
 
         bool is_valid_triplet(Triplet t) const;
         const std::vector<std::string> get_available_triplets_names() const;
@@ -120,8 +121,8 @@ namespace vcpkg
 
         std::string get_toolver_diagnostics() const;
 
-        const Path& get_tool_exe(const std::string& tool) const;
-        const std::string& get_tool_version(const std::string& tool) const;
+        const Path& get_tool_exe(StringView tool) const;
+        const std::string& get_tool_version(StringView tool) const;
 
         Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
 

@@ -1,4 +1,4 @@
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -201,19 +201,19 @@ namespace vcpkg::Export
 
         constexpr ArchiveFormat() = delete;
 
-        constexpr ArchiveFormat(BackingEnum backing_enum, ZStringView extension, ZStringView cmake_option)
+        constexpr ArchiveFormat(BackingEnum backing_enum, StringLiteral extension, StringLiteral cmake_option)
             : backing_enum(backing_enum), m_extension(extension), m_cmake_option(cmake_option)
         {
         }
 
         constexpr operator BackingEnum() const { return backing_enum; }
-        constexpr ZStringView extension() const { return this->m_extension; }
-        constexpr ZStringView cmake_option() const { return this->m_cmake_option; }
+        constexpr StringLiteral extension() const { return this->m_extension; }
+        constexpr StringLiteral cmake_option() const { return this->m_cmake_option; }
 
     private:
         BackingEnum backing_enum;
-        ZStringView m_extension;
-        ZStringView m_cmake_option;
+        StringLiteral m_extension;
+        StringLiteral m_cmake_option;
     };
 
     namespace ArchiveFormatC
@@ -248,8 +248,7 @@ namespace vcpkg::Export
         return exported_archive_path;
     }
 
-    static Optional<std::string> maybe_lookup(std::unordered_map<std::string, std::string> const& m,
-                                              std::string const& key)
+    static Optional<std::string> maybe_lookup(std::map<std::string, std::string, std::less<>> const& m, StringView key)
     {
         const auto it = m.find(key);
         if (it != m.end()) return it->second;
