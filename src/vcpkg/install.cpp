@@ -392,6 +392,15 @@ namespace vcpkg::Install
 
                 if (result.code != Build::BuildResult::SUCCEEDED)
                 {
+                    LocalizedString warnings;
+                    for (auto&& msg : action.build_failure_messages)
+                    {
+                        warnings.append(msg).appendnl();
+                    }
+                    if (!warnings.data().empty())
+                    {
+                        msg::print(Color::warning, warnings);
+                    }
                     msg::println(Color::error, Build::create_error_message(result, action.spec));
                     return result;
                 }

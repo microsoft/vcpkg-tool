@@ -232,7 +232,16 @@ namespace vcpkg::Build
 
         if (result.code != BuildResult::SUCCEEDED)
         {
-            print2(Color::error, Build::create_error_message(result, spec), '\n');
+            LocalizedString warnings;
+            for (auto&& msg : action->build_failure_messages)
+            {
+                warnings.append(msg).appendnl();
+            }
+            if (!warnings.data().empty())
+            {
+                msg::print(Color::warning, warnings);
+            }
+            msg::println(Color::error, Build::create_error_message(result, spec));
             print2(Build::create_user_troubleshooting_message(*action, paths), '\n');
             return 1;
         }
