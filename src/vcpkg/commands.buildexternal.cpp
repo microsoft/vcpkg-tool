@@ -33,13 +33,8 @@ namespace vcpkg::Commands::BuildExternal
         overlays.insert(overlays.begin(), args.command_arguments.at(1));
 
         PortFileProvider::PathsPortFileProvider provider(paths, overlays);
-        Build::Command::perform_and_exit_ex(args,
-                                            spec,
-                                            host_triplet,
-                                            provider,
-                                            binary_cache,
-                                            Build::null_build_logs_recorder(),
-                                            paths);
+        Build::Command::perform_and_exit_ex(
+            args, spec, host_triplet, provider, binary_cache, Build::null_build_logs_recorder(), paths);
     }
 
     void BuildExternalCommand::perform_and_exit(const VcpkgCmdArguments& args,
