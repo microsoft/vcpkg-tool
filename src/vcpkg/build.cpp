@@ -130,7 +130,6 @@ namespace vcpkg::Build
     void Command::perform_and_exit_ex(const VcpkgCmdArguments& args,
                                       const FullPackageSpec& full_spec,
                                       Triplet host_triplet,
-                                      const SourceControlFileAndLocation& scfl,
                                       const PathsPortFileProvider& provider,
                                       BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
@@ -138,7 +137,7 @@ namespace vcpkg::Build
     {
         Checks::exit_with_code(
             VCPKG_LINE_INFO,
-            perform_ex(args, full_spec, host_triplet, scfl, provider, binary_cache, build_logs_recorder, paths));
+            perform_ex(args, full_spec, host_triplet, provider, binary_cache, build_logs_recorder, paths));
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -160,43 +159,44 @@ namespace vcpkg::Build
     int Command::perform_ex(const VcpkgCmdArguments& args,
                             const FullPackageSpec& full_spec,
                             Triplet host_triplet,
-                            const SourceControlFileAndLocation& scfl,
                             const PathsPortFileProvider& provider,
                             BinaryCache& binary_cache,
                             const IBuildLogsRecorder& build_logs_recorder,
                             const VcpkgPaths& paths)
     {
+        const PackageSpec& spec = full_spec.package_spec;
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
-        var_provider.load_dep_info_vars({{full_spec.package_spec}}, host_triplet);
+        var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        // "remove" the port we're trying to build so that the feature install plan will actually
+        // attempt to install it
+        for (auto&& removal : Dependencies::create_remove_plan({spec}, status_db))
+        {
+            if (removal.plan_type != Dependencies::RemovePlanType::REMOVE)
+            {
+                continue;
+            }
+
+            auto maybe_ipv = status_db.get_installed_package_view(removal.spec);
+            auto& ipv = maybe_ipv.value_or_exit(VCPKG_LINE_INFO);
+            for (auto&& status : ipv.all_status_paragraphs())
+            {
+                status.want = Want::PURGE;
+                status.state = InstallState::NOT_INSTALLED;
+                status_db.insert(std::make_unique<StatusParagraph>(std::move(status)));
+            }
+        }
 
         auto action_plan = Dependencies::create_feature_install_plan(
             provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
-        const PackageSpec& spec = full_spec.package_spec;
-        const SourceControlFile& scf = *scfl.source_control_file;
-
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO,
-            spec.name() == scf.core_paragraph->name,
-            Strings::format("The Source field inside the CONTROL file does not match the port directory: '%s' != '%s'",
-                            scf.core_paragraph->name,
-                            spec.name()));
-
         compute_all_abis(paths, action_plan, var_provider, status_db);
 
         InstallPlanAction* action = nullptr;
-        for (auto& install_action : action_plan.already_installed)
-        {
-            if (install_action.spec == full_spec.package_spec)
-            {
-                action = &install_action;
-            }
-        }
         for (auto& install_action : action_plan.install_actions)
         {
             if (install_action.spec == full_spec.package_spec)
@@ -207,6 +207,14 @@ namespace vcpkg::Build
 
         Checks::check_exit(VCPKG_LINE_INFO, action != nullptr);
         ASSUME(action != nullptr);
+        auto& scf = *action->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+        Checks::check_maybe_upgrade(
+            VCPKG_LINE_INFO,
+            spec.name() == scf.core_paragraph->name,
+            Strings::format("The Source field inside the CONTROL file does not match the port directory: '%s' != '%s'",
+                            scf.core_paragraph->name,
+                            spec.name()));
+
         action->build_options = default_build_package_options;
         action->build_options.editable = Editable::YES;
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
@@ -254,14 +262,7 @@ namespace vcpkg::Build
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
         PathsPortFileProvider provider(paths, args.overlay_ports);
-        const auto port_name = spec.package_spec.name();
-        const auto* scfl = provider.get_control_file(port_name).get();
-
-        Checks::check_maybe_upgrade(VCPKG_LINE_INFO, scfl != nullptr, "Error: Couldn't find port '%s'", port_name);
-        ASSUME(scfl != nullptr);
-
-        return perform_ex(
-            args, spec, host_triplet, *scfl, provider, binary_cache, Build::null_build_logs_recorder(), paths);
+        return perform_ex(args, spec, host_triplet, provider, binary_cache, Build::null_build_logs_recorder(), paths);
     }
 
     void BuildCommand::perform_and_exit(const VcpkgCmdArguments& args,
