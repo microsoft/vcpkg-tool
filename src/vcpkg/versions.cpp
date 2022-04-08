@@ -396,7 +396,7 @@ namespace vcpkg
     {
         if (sa == VersionScheme::String && sb == VersionScheme::String)
         {
-            return int_to_vercomp(a.text().compare(b.text()));
+            return a.text() == b.text() ? VerComp::eq : VerComp::unk;
         }
 
         if (sa == VersionScheme::Date && sb == VersionScheme::Date)

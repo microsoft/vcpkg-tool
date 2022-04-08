@@ -817,6 +817,17 @@ TEST_CASE ("version sort date", "[versionplan]")
     CHECK(versions[8].original_string == "2021-01-01.10");
 }
 
+TEST_CASE ("version compare string", "[versionplan]")
+{
+    const Version a_0("a", 0);
+    const Version a_1("a", 1);
+    const Version b_1("b", 1);
+    CHECK(VerComp::lt == compare_versions(VersionScheme::String, a_0, VersionScheme::String, a_1));
+    CHECK(VerComp::eq == compare_versions(VersionScheme::String, a_0, VersionScheme::String, a_0));
+    CHECK(VerComp::gt == compare_versions(VersionScheme::String, a_1, VersionScheme::String, a_0));
+    CHECK(VerComp::unk == compare_versions(VersionScheme::String, a_1, VersionScheme::String, b_1));
+}
+
 TEST_CASE ("version install simple semver", "[versionplan]")
 {
     MockBaselineProvider bp;
