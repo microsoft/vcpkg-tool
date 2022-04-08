@@ -120,6 +120,11 @@ namespace
         (),
         "Printed after BuildingPackageFailed, and followed by a list of dependencies that were missing.",
         "due to the following missing dependencies:");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildAlreadyInstalled,
+                                 (msg::spec),
+                                 "",
+                                 "{spec} is already installed; please remove {spec} before attempting to build it.");
 }
 
 namespace vcpkg::Build
@@ -170,25 +175,6 @@ namespace vcpkg::Build
         var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-        // "remove" the port we're trying to build so that the feature install plan will actually
-        // attempt to install it
-        for (auto&& removal : Dependencies::create_remove_plan({spec}, status_db))
-        {
-            if (removal.plan_type != Dependencies::RemovePlanType::REMOVE)
-            {
-                continue;
-            }
-
-            auto maybe_ipv = status_db.get_installed_package_view(removal.spec);
-            auto& ipv = maybe_ipv.value_or_exit(VCPKG_LINE_INFO);
-            for (auto&& status : ipv.all_status_paragraphs())
-            {
-                status.want = Want::PURGE;
-                status.state = InstallState::NOT_INSTALLED;
-                status_db.insert(std::make_unique<StatusParagraph>(std::move(status)));
-            }
-        }
-
         auto action_plan = Dependencies::create_feature_install_plan(
             provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
 
@@ -197,6 +183,14 @@ namespace vcpkg::Build
         compute_all_abis(paths, action_plan, var_provider, status_db);
 
         InstallPlanAction* action = nullptr;
+        for (auto& install_action : action_plan.already_installed)
+        {
+            if (install_action.spec == full_spec.package_spec)
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgBuildAlreadyInstalled, msg::spec = spec);
+            }
+        }
+
         for (auto& install_action : action_plan.install_actions)
         {
             if (install_action.spec == full_spec.package_spec)
