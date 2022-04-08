@@ -121,6 +121,7 @@
   "VcpkgInvalidCommand": "无效命令: {command_name}",
   "VcpkgSendMetricsButDisabled": "警告: 已通过 --sendmetrics，但指标已禁用。",
   "VersionCommandHeader": "vcpkg 包管理程序版本 {version}\n\n查看 LICENSE.txt 获取许可证信息。",
+  "VersionConstraintViolated": "dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.",
   "VersionInvalidDate": "“{version}”不是有效的日期版本。日期必须采用 YYYY-MM-DD 格式，并且消歧因子必须是不带前导零的点分隔正整数值。",
   "VersionInvalidRelaxed": "“{version}”不是有效的宽松版本(具有任意数值元素计数的 semver)。",
   "VersionInvalidSemver": "“{version}”不是有效的语义版本，请参阅 <https://semver.org>。",

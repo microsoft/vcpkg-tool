@@ -121,6 +121,7 @@
   "VcpkgInvalidCommand": "geçersiz komut: {command_name}",
   "VcpkgSendMetricsButDisabled": "Uyarı: --sendmetrics geçirildi, ancak ölçümler devre dışı bırakıldı.",
   "VersionCommandHeader": "vcpkg paket yönetimi programı sürüm {version}\n\nLisans bilgileri için bkz. LICENSE.txt.",
+  "VersionConstraintViolated": "dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.",
   "VersionInvalidDate": "'{version}' geçerli bir tarih sürümü değil. Tarihler YYYY-AA-GG biçiminde olmalıdır ve belirsizlik gidericiler, başında sıfırlar olmadan noktayla ayrılmış pozitif tamsayı değerleri olmalıdır.",
   "VersionInvalidRelaxed": "'{version}' geçerli bir esnek sürüm değil (rasgele sayısal öğe sayısına sahip semver).",
   "VersionInvalidSemver": "'{version}' geçerli bir anlamsal sürüm değil, <https://semver.org> adresine başvurun.",

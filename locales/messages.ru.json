@@ -121,6 +121,7 @@
   "VcpkgInvalidCommand": "недопустимая команда: {command_name}",
   "VcpkgSendMetricsButDisabled": "Внимание! Передан параметр --sendmetrics, но метрики отключены.",
   "VersionCommandHeader": "Версия программы управления пакетами vcpkg {version}\n\nСм. LICENSE.txt для получения сведений о лицензии.",
+  "VersionConstraintViolated": "dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.",
   "VersionInvalidDate": "\"{version}\" не является допустимой версией даты. Даты должны быть в формате ГГГГ-ММ-ДД, а неоднозначные значения должны быть положительными целыми числами с разделителями-точками без начальных нулей.",
   "VersionInvalidRelaxed": "\"{version}\" не является допустимой нестрогой версией (semver с произвольным количеством числовых элементов).",
   "VersionInvalidSemver": "\"{version}\" не является допустимой семантической версией, см. <https://semver.org>.",
