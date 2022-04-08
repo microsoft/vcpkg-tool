@@ -484,7 +484,9 @@ namespace vcpkg::Commands::AddVersion
             auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
             if (!maybe_scf.has_value())
             {
-                msg::print_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
+                msg::print_error(msg::format(msgAddVersionLoadPortFailed, msg::package_name = port_name)
+                                     .appendnl()
+                                     .append_raw(maybe_scf.error_to_string()));
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -544,12 +546,8 @@ namespace vcpkg::Commands::AddVersion
                                                                 verbose,
                                                                 add_all,
                                                                 skip_version_format_check);
-            auto updated_baseline_file = update_baseline_version(paths,
-                                                                 port_name,
-                                                                 schemed_version.version,
-                                                                 baseline_path,
-                                                                 baseline_map,
-                                                                 verbose);
+            auto updated_baseline_file = update_baseline_version(
+                paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
             if (updated_versions_file == UpdateResult::NotUpdated && updated_baseline_file == UpdateResult::NotUpdated)
             {
                 if (verbose)
