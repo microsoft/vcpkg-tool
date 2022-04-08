@@ -484,9 +484,8 @@ namespace vcpkg::Commands::AddVersion
             auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
             if (!maybe_scf.has_value())
             {
-                msg::print_error(msg::format(msgAddVersionLoadPortFailed, msg::package_name = port_name)
-                                     .appendnl()
-                                     .append_raw(maybe_scf.error_to_string()));
+                msg::print_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
+                print_error_message(maybe_scf.error());
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
