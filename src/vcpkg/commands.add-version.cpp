@@ -245,9 +245,10 @@ namespace
             {
                 if (print_success)
                 {
-                    msg::print_success(msgAddVersionVersionAlreadyInFile,
-                                       msg::version = version.to_string(),
-                                       msg::path = baseline_path.generic_u8string());
+                    msg::println(Color::success,
+                                 msgAddVersionVersionAlreadyInFile,
+                                 msg::version = version.to_string(),
+                                 msg::path = baseline_path.generic_u8string());
                 }
                 return UpdateResult::NotUpdated;
             }
@@ -261,9 +262,10 @@ namespace
         write_baseline_file(fs, baseline_map, baseline_path);
         if (print_success)
         {
-            msg::print_success(msgAddVersionAddedVersionToFile,
-                               msg::version = version.to_string(),
-                               msg::path = baseline_path.generic_u8string());
+            msg::println(Color::success,
+                         msgAddVersionAddedVersionToFile,
+                         msg::version = version.to_string(),
+                         msg::path = baseline_path.generic_u8string());
         }
         return UpdateResult::Updated;
     }
@@ -289,7 +291,8 @@ namespace
             write_versions_file(fs, new_entry, version_db_file_path);
             if (print_success)
             {
-                msg::println(msg::format(msgAddVersionAddedVersionToFile,
+                msg::println(Color::success,
+                             msg::format(msgAddVersionAddedVersionToFile,
                                          msg::version = port_version.version.to_string(),
                                          msg::path = version_db_file_path.generic_u8string())
                                  .append_raw(" ")
@@ -311,9 +314,10 @@ namespace
                 {
                     if (print_success)
                     {
-                        msg::print_success(msgAddVersionVersionAlreadyInFile,
-                                           msg::version = port_version.version.to_string(),
-                                           msg::path = version_db_file_path.generic_u8string());
+                        msg::println(Color::success,
+                                     msgAddVersionVersionAlreadyInFile,
+                                     msg::version = port_version.version.to_string(),
+                                     msg::path = version_db_file_path.generic_u8string());
                     }
                     return UpdateResult::NotUpdated;
                 }
@@ -377,17 +381,18 @@ namespace
             write_versions_file(fs, *versions, version_db_file_path);
             if (print_success)
             {
-                msg::print_success(msgAddVersionAddedVersionToFile,
-                                   msg::version = port_version.version.to_string(),
-                                   msg::path = version_db_file_path.generic_u8string());
+                msg::println(Color::success,
+                             msgAddVersionAddedVersionToFile,
+                             msg::version = port_version.version.to_string(),
+                             msg::path = version_db_file_path.generic_u8string());
             }
             return UpdateResult::Updated;
         }
 
         msg::print_error(
             msg::format(msgAddVersionUnableToParseVersionsFile, msg::path = version_db_file_path.generic_u8string())
-                             .appendnl()
-                             .append_raw(maybe_versions.error()));
+                .appendnl()
+                .append_raw(maybe_versions.error()));
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 }
@@ -418,7 +423,7 @@ namespace vcpkg::Commands::AddVersion
         const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_FORMATTING_CHECK);
         const bool skip_version_format_check =
             Util::Sets::contains(parsed_args.switches, OPTION_SKIP_VERSION_FORMAT_CHECK);
-        const bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
+        const bool verbose = !add_all || Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
 
         auto& fs = paths.get_filesystem();
         auto baseline_path = paths.builtin_registry_versions / "baseline.json";
@@ -498,12 +503,13 @@ namespace vcpkg::Commands::AddVersion
                     if (current_file_content != formatted_content)
                     {
                         auto command_line = fmt::format("vcpkg format-manifest ports/{}/vcpkg.json", port_name);
-                        msg::print_error(msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
-                                             .appendnl()
+                        msg::print_error(
+                            msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
+                                .appendnl()
                                 .append(msgAddVersionFormatPortSuggestion, msg::command_line = command_line)
-                                             .appendnl()
+                                .appendnl()
                                 .append(msgAddVersionCommitResultReminder)
-                                             .appendnl());
+                                .appendnl());
                         if (add_all) continue;
                         Checks::exit_fail(VCPKG_LINE_INFO);
                     }
@@ -518,6 +524,7 @@ namespace vcpkg::Commands::AddVersion
                                        .appendnl()
                                        .append_raw("-- ")
                                        .append(msgAddVersionCommitChangesReminder)
+                                       .appendnl()
                                        .append_raw("***")
                                        .append(msgAddVersionNoFilesUpdated)
                                        .append_raw("***"));
@@ -537,11 +544,18 @@ namespace vcpkg::Commands::AddVersion
                                                                 verbose,
                                                                 add_all,
                                                                 skip_version_format_check);
-            auto updated_baseline_file = update_baseline_version(
-                paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
+            auto updated_baseline_file = update_baseline_version(paths,
+                                                                 port_name,
+                                                                 schemed_version.version,
+                                                                 baseline_path,
+                                                                 baseline_map,
+                                                                 verbose);
             if (updated_versions_file == UpdateResult::NotUpdated && updated_baseline_file == UpdateResult::NotUpdated)
             {
-                msg::println(msgAddVersionNoFilesUpdatedForPort, msg::package_name = port_name);
+                if (verbose)
+                {
+                    msg::println(msgAddVersionNoFilesUpdatedForPort, msg::package_name = port_name);
+                }
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);

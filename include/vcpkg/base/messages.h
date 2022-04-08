@@ -297,7 +297,6 @@ namespace vcpkg::msg
 
     DECLARE_MESSAGE(SeeURL, (msg::url), "", "See {url} for more information.");
     DECLARE_MESSAGE(NoteMessage, (), "", "note: ");
-    DECLARE_MESSAGE(SuccessMessage, (), "", "success: ");
     DECLARE_MESSAGE(WarningMessage, (), "", "warning: ");
     DECLARE_MESSAGE(ErrorMessage, (), "", "error: ");
     DECLARE_MESSAGE(InternalErrorMessage, (), "", "internal error: ");
@@ -312,16 +311,6 @@ namespace vcpkg::msg
                     (msg::option),
                     "",
                     "error: cannot specify both --no-{option} and --{option}.");
-
-    inline void print_success(const LocalizedString& s)
-    {
-        print(Color::success, format(msgSuccessMessage).append(s).appendnl());
-    }
-    template<class Message, class... Ts>
-    void print_success(Message m, Ts... args)
-    {
-        print(Color::success, format(msgSuccessMessage).append(format(m, args...).appendnl()));
-    }
 
     inline void print_warning(const LocalizedString& s)
     {

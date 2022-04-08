@@ -8,7 +8,6 @@ namespace vcpkg::msg
 
     REGISTER_MESSAGE(SeeURL);
     REGISTER_MESSAGE(NoteMessage);
-    REGISTER_MESSAGE(SuccessMessage);
     REGISTER_MESSAGE(WarningMessage);
     REGISTER_MESSAGE(ErrorMessage);
     REGISTER_MESSAGE(InternalErrorMessage);
