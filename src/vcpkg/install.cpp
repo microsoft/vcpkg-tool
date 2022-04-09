@@ -47,10 +47,6 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
     DECLARE_AND_REGISTER_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_AND_REGISTER_MESSAGE(InstallingPackage, (msg::spec), "", "Installing {spec}...");
-    DECLARE_AND_REGISTER_MESSAGE(ElapsedForPackage,
-                                 (msg::spec, msg::elapsed),
-                                 "",
-                                 "Elapsed time to handle {spec}: {elapsed}");
     DECLARE_AND_REGISTER_MESSAGE(HeaderOnlyUsage,
                                  (msg::package_name),
                                  "'header' refers to C/C++ .h files",
@@ -392,7 +388,7 @@ namespace vcpkg::Install
 
                 if (result.code != Build::BuildResult::SUCCEEDED)
                 {
-                    msg::println(Color::error, Build::create_error_message(result, action.spec));
+                    msg::print(Color::error, Build::create_error_message(result, action.spec));
                     return result;
                 }
 
@@ -537,8 +533,8 @@ namespace vcpkg::Install
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
-                print2(Build::create_user_troubleshooting_message(action, paths), '\n');
-                Checks::exit_fail(VCPKG_LINE_INFO);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              Build::create_user_troubleshooting_message(action, paths));
             }
 
             this_install.current_summary->build_result.emplace(std::move(result));
