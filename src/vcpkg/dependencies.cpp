@@ -20,6 +20,12 @@ namespace vcpkg::Dependencies
 {
     namespace
     {
+        DECLARE_AND_REGISTER_MESSAGE(VersionConstraintViolated,
+                                     (msg::spec, msg::expected_version, msg::actual_version),
+                                     "",
+                                     "dependency {spec} was expected to be at least version "
+                                     "{expected_version}, but is currently {actual_version}.");
+
         struct ClusterGraph;
 
         struct ClusterInstalled
@@ -44,6 +50,7 @@ namespace vcpkg::Dependencies
         struct ClusterInstallInfo
         {
             std::map<std::string, std::vector<FeatureSpec>> build_edges;
+            std::map<PackageSpec, std::set<Version, VersionMapLess>> version_constraints;
             bool defaults_requested = false;
         };
 
@@ -127,12 +134,18 @@ namespace vcpkg::Dependencies
                 if (auto vars = maybe_vars.get())
                 {
                     // Qualified dependency resolution is available
-                    auto fullspec_list = filter_dependencies(
-                        *qualified_deps, m_spec.triplet(), host_triplet, *vars, ImplicitDefault::YES);
-
-                    for (auto&& fspec : fullspec_list)
+                    for (auto&& dep : *qualified_deps)
                     {
-                        fspec.expand_fspecs_to(dep_list);
+                        if (dep.platform.evaluate(*vars))
+                        {
+                            auto fullspec = dep.to_full_spec(m_spec.triplet(), host_triplet, ImplicitDefault::YES);
+                            fullspec.expand_fspecs_to(dep_list);
+                            if (auto opt = dep.constraint.try_get_minimum_version())
+                            {
+                                info.version_constraints[fullspec.package_spec].insert(
+                                    std::move(opt).value_or_exit(VCPKG_LINE_INFO));
+                            }
+                        }
                     }
 
                     Util::sort_unique_erase(dep_list);
@@ -145,8 +158,13 @@ namespace vcpkg::Dependencies
                     {
                         if (dep.platform.is_empty())
                         {
-                            dep.to_full_spec(m_spec.triplet(), host_triplet, ImplicitDefault::YES)
-                                .expand_fspecs_to(dep_list);
+                            auto fullspec = dep.to_full_spec(m_spec.triplet(), host_triplet, ImplicitDefault::YES);
+                            fullspec.expand_fspecs_to(dep_list);
+                            if (auto opt = dep.constraint.try_get_minimum_version())
+                            {
+                                info.version_constraints[fullspec.package_spec].insert(
+                                    std::move(opt).value_or_exit(VCPKG_LINE_INFO));
+                            }
                         }
                         else
                         {
@@ -251,6 +269,20 @@ namespace vcpkg::Dependencies
                     return maybe_paragraph.get()->supports_expression;
                 }
                 return nullopt;
+            }
+
+            Optional<Version> get_version() const
+            {
+                if (auto p_installed = m_installed.get())
+                {
+                    return p_installed->ipv.core->package.get_version();
+                }
+                else if (auto p_scfl = m_scfl.get())
+                {
+                    return p_scfl->to_version();
+                }
+                else
+                    return nullopt;
             }
 
             PackageSpec m_spec;
@@ -425,13 +457,15 @@ namespace vcpkg::Dependencies
                                          const SourceControlFileAndLocation& scfl,
                                          const RequestType& request_type,
                                          Triplet host_triplet,
-                                         std::map<std::string, std::vector<FeatureSpec>>&& dependencies)
+                                         std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
+                                         std::vector<LocalizedString>&& build_failure_messages)
         : spec(spec)
         , source_control_file_and_location(scfl)
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , request_type(request_type)
         , build_options{}
         , feature_dependencies(std::move(dependencies))
+        , build_failure_messages(std::move(build_failure_messages))
         , host_triplet(host_triplet)
     {
         for (const auto& kv : feature_dependencies)
@@ -979,6 +1013,27 @@ namespace vcpkg::Dependencies
             // If a cluster only has an installed object and is marked as user requested we should still report it.
             if (auto info_ptr = p_cluster->m_install_info.get())
             {
+                std::vector<LocalizedString> constraint_violations;
+                for (auto&& constraints : info_ptr->version_constraints)
+                {
+                    for (auto&& constraint : constraints.second)
+                    {
+                        auto&& dep_clust = m_graph->get(constraints.first);
+                        auto maybe_v = dep_clust.get_version();
+                        if (auto v = maybe_v.get())
+                        {
+                            if (compare_any(*v, constraint) == VerComp::lt)
+                            {
+                                constraint_violations.push_back(msg::format(msg::msgWarningMessage)
+                                                                    .append(msgVersionConstraintViolated,
+                                                                            msg::spec = constraints.first,
+                                                                            msg::expected_version = constraint,
+                                                                            msg::actual_version = *v));
+                                print2("found constraint violation: ", constraint_violations.back().data(), "\n");
+                            }
+                        }
+                    }
+                }
                 std::map<std::string, std::vector<FeatureSpec>> computed_edges;
                 for (auto&& kv : info_ptr->build_edges)
                 {
@@ -1007,7 +1062,8 @@ namespace vcpkg::Dependencies
                                                   p_cluster->get_scfl_or_exit(),
                                                   p_cluster->request_type,
                                                   m_graph->m_host_triplet,
-                                                  std::move(computed_edges));
+                                                  std::move(computed_edges),
+                                                  std::move(constraint_violations));
             }
             else if (p_cluster->request_type == RequestType::USER_REQUESTED && p_cluster->m_installed.has_value())
             {
@@ -1380,41 +1436,6 @@ namespace vcpkg::Dependencies
         {
             auto it = vermap.find(ver);
             return it == vermap.end() ? nullptr : it->second;
-        }
-
-        static VerComp compare_version_texts(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)
-        {
-            if (sa == VersionScheme::String && sb == VersionScheme::String)
-            {
-                return int_to_vercomp(a.text().compare(b.text()));
-            }
-
-            if (sa == VersionScheme::Date && sb == VersionScheme::Date)
-            {
-                return compare(DateVersion::try_parse(a.text()).value_or_exit(VCPKG_LINE_INFO),
-                               DateVersion::try_parse(b.text()).value_or_exit(VCPKG_LINE_INFO));
-            }
-
-            if ((sa == VersionScheme::Semver || sa == VersionScheme::Relaxed) &&
-                (sb == VersionScheme::Semver || sb == VersionScheme::Relaxed))
-            {
-                return compare(DotVersion::try_parse(a.text(), sa).value_or_exit(VCPKG_LINE_INFO),
-                               DotVersion::try_parse(b.text(), sb).value_or_exit(VCPKG_LINE_INFO));
-            }
-
-            return VerComp::unk;
-        }
-
-        static VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)
-        {
-            const auto inner_compare = compare_version_texts(sa, a, sb, b);
-            if (inner_compare == VerComp::eq)
-            {
-                if (a.port_version() < b.port_version()) return VerComp::lt;
-                if (a.port_version() > b.port_version()) return VerComp::gt;
-            }
-
-            return inner_compare;
         }
 
         bool VersionedPackageGraph::VersionSchemeInfo::is_less_than(const Version& new_ver) const
@@ -1959,7 +1980,8 @@ namespace vcpkg::Dependencies
                                           node.user_requested ? RequestType::USER_REQUESTED
                                                               : RequestType::AUTO_SELECTED,
                                           m_host_triplet,
-                                          std::move(p_vnode->deps));
+                                          std::move(p_vnode->deps),
+                                          {});
                     std::vector<DepSpec> deps;
                     for (auto&& f : ipa.feature_list)
                     {

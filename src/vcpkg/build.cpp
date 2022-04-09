@@ -273,6 +273,15 @@ namespace vcpkg::Build
 
         if (result.code != BuildResult::SUCCEEDED)
         {
+            LocalizedString warnings;
+            for (auto&& msg : action->build_failure_messages)
+            {
+                warnings.append(msg).appendnl();
+            }
+            if (!warnings.data().empty())
+            {
+                msg::print(Color::warning, warnings);
+            }
             msg::print(Color::error, Build::create_error_message(result, spec));
             msg::print(Build::create_user_troubleshooting_message(*action, paths));
             return 1;

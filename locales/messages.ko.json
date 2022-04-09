@@ -121,6 +121,7 @@
   "VcpkgInvalidCommand": "잘못된 명령: {command_name}",
   "VcpkgSendMetricsButDisabled": "경고: --sendmetrics를 전달했지만 메트릭이 사용되지 않도록 설정되었습니다.",
   "VersionCommandHeader": "vcpkg 패키지 관리 프로그램 버전 {version}\n\n라이선스 정보는 LICENSE.txt를 참조하세요.",
+  "VersionConstraintViolated": "dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.",
   "VersionInvalidDate": "`{version}`은(는) 올바른 날짜 버전이 아닙니다. 날짜는 YYYY-MM-DD 형식을 따라야 하며 명확성은 선행 0이 없는 점으로 구분된 양의 정수 값이어야 합니다.",
   "VersionInvalidRelaxed": "`{version}`은(는) 올바른 완화 버전이 아닙니다(임의의 숫자 요소 개수가 있는 semver).",
   "VersionInvalidSemver": "'{version}'은(는) 올바른 의미 체계 버전이 아닙니다. <https://semver.org>를 참조하세요.",
