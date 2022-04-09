@@ -8,11 +8,12 @@
 
 namespace
 {
-    namespace msg = vcpkg::msg;
+    using namespace vcpkg;
+
     DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoConfiguration,
                                  (),
                                  "",
-                                 "there is no `vcpkg-configuration.json` nor manifest file to update.");
+                                 "neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.");
 
     DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoExistingBuiltinBaseline,
                                  (msg::option),
@@ -29,10 +30,6 @@ namespace
                                  (msg::url, msg::old_value, msg::new_value),
                                  "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
                                  "updated registry '{url}': baseline {old_value} -> {new_value}");
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineAlreadyUpToDate,
-                                 (msg::url, msg::value),
-                                 "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                                 "registry '{url}' already up to date: {value}");
     DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoUpdate,
                                  (msg::url, msg::value),
                                  "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
@@ -56,29 +53,35 @@ namespace vcpkg::Commands
         {switches},
     };
 
-    static void print_update_message(StringView url,
-                                     Optional<StringView> p_old_baseline,
-                                     const Optional<std::string>& new_baseline)
+    static void update_baseline_in_config(const VcpkgPaths& paths, RegistryConfig& reg)
     {
-        auto old_baseline = p_old_baseline.value_or("none");
-        if (auto p = new_baseline.get())
+        auto url = reg.registry_location();
+        auto new_baseline_res = reg.get_latest_baseline(paths);
+
+        if (auto new_baseline = new_baseline_res.get())
         {
-            if (p_old_baseline.has_value() && *p == old_baseline)
-            {
-                msg::println(msgUpdateBaselineAlreadyUpToDate, msg::url = url, msg::value = old_baseline);
-            }
-            else
+            if (*new_baseline != reg.baseline)
             {
                 msg::println(msgUpdateBaselineUpdatedBaseline,
                              msg::url = url,
-                             msg::old_value = old_baseline,
-                             msg::new_value = *p);
+                             msg::old_value = reg.baseline.value_or("(none)"),
+                             msg::new_value = new_baseline->value_or("(none)"));
+                reg.baseline = std::move(*new_baseline);
             }
+            // new_baseline == reg.baseline
+            else
+            {
+                msg::println(msgUpdateBaselineNoUpdate, msg::url = url, msg::value = reg.baseline.value_or("(none)"));
+            }
+
+            return;
         }
-        else
-        {
-            msg::println(msgUpdateBaselineNoUpdate, msg::url = url, msg::value = old_baseline);
-        }
+
+        // this isn't an error, since we want to continue attempting to update baselines
+        msg::print_warning(
+            msg::format(msgUpdateBaselineNoUpdate, msg::url = url, msg::value = reg.baseline.value_or("(none)"))
+                .appendnl()
+                .append(new_baseline_res.error()));
     }
 
     void UpdateBaselineCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
@@ -111,8 +114,6 @@ namespace vcpkg::Commands
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        LocalizedString error;
-
         if (has_builtin_baseline || add_builtin_baseline)
         {
             // remove default_reg, since that's filled in with the builtin-baseline
@@ -120,53 +121,27 @@ namespace vcpkg::Commands
 
             auto synthesized_registry = RegistryConfig{};
             synthesized_registry.kind = "builtin";
+            if (auto p = manifest.manifest.get("builtin-baseline"))
+            {
+                synthesized_registry.baseline = p->string().to_string();
+            }
 
-            auto result = synthesized_registry.get_latest_baseline(paths, error);
+            update_baseline_in_config(paths, synthesized_registry);
 
-            auto p_builtin_baseline = manifest.manifest.get("builtin-baseline");
-            auto old_baseline = p_builtin_baseline ? Optional<StringView>(p_builtin_baseline->string()) : nullopt;
-            print_update_message(synthesized_registry.registry_location(), old_baseline, result);
-
-            if (auto p = result.get())
+            if (auto p = synthesized_registry.baseline.get())
             {
                 manifest.manifest.insert_or_replace("builtin-baseline", std::move(*p));
-            }
-            else if (!error.empty())
-            {
-                msg::print_warning(error);
             }
         }
 
         if (auto default_reg = configuration.config.default_reg.get())
         {
-            auto new_baseline = default_reg->get_latest_baseline(paths, error);
-
-            print_update_message(default_reg->registry_location(), default_reg->baseline, new_baseline);
-
-            if (auto p = new_baseline.get())
-            {
-                default_reg->baseline = std::move(*p);
-            }
-            else if (!error.empty())
-            {
-                msg::print_warning(error);
-            }
+            update_baseline_in_config(paths, *default_reg);
         }
 
         for (auto& reg : configuration.config.registries)
         {
-            auto new_baseline = reg.get_latest_baseline(paths, error);
-
-            print_update_message(reg.registry_location(), reg.baseline, new_baseline);
-
-            if (auto p = new_baseline.get())
-            {
-                reg.baseline = std::move(*p);
-            }
-            else if (!error.empty())
-            {
-                msg::print_warning(error);
-            }
+            update_baseline_in_config(paths, reg);
         }
 
         if (configuration.location == ConfigurationLocation::ManifestFile)

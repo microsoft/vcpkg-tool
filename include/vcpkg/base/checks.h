@@ -34,11 +34,6 @@ namespace vcpkg::Checks
         msg_exit_with_message(line_info, msg::format(msg::msgErrorMessage).append(msg::format(m, args...)));
     }
 
-    [[noreturn]] inline void msg_exit_with_error(const LineInfo& line_info, const LocalizedString& s)
-    {
-        msg_exit_with_message(line_info, msg::format(msg::msgErrorMessage).append(s));
-    }
-
     template<class Arg1, class... Args>
     VCPKG_SAL_ANNOTATION(_Post_satisfies_(_Old_(expression)))
     void check_exit(const LineInfo& line_info,

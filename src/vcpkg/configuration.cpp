@@ -537,41 +537,36 @@ namespace
 
 namespace vcpkg
 {
-    static Optional<std::string> get_baseline_from_git_repo(const VcpkgPaths& paths,
-                                                            StringView url,
-                                                            LocalizedString& error)
+    static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths, StringView url)
     {
         auto res = paths.git_fetch_from_remote_registry(url, "HEAD");
-        if (res.has_value())
+        if (auto p = res.get())
         {
-            return std::move(*res.get());
+            return Optional<std::string>(std::move(*p));
         }
         else
         {
-            error = msg::format(msgUpdateBaselineGitError, msg::url = url)
-                        .appendnl()
-                        .append_raw(Strings::trim(res.error()));
-            return nullopt;
+            return msg::format(msgUpdateBaselineGitError, msg::url = url)
+                .appendnl()
+                .append_raw(Strings::trim(res.error()));
         }
     }
 
     static constexpr StringLiteral BUILTIN_GIT_URL = "https://github.com/microsoft/vcpkg";
 
-    Optional<std::string> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths, LocalizedString& error) const
+    ExpectedL<Optional<std::string>> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths) const
     {
-        error.clear();
-
         if (kind == RegistryConfigDeserializer::KIND_GIT)
         {
-            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO), error);
+            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO));
         }
         else if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {
-            return get_baseline_from_git_repo(paths, BUILTIN_GIT_URL, error);
+            return get_baseline_from_git_repo(paths, BUILTIN_GIT_URL);
         }
         else
         {
-            return nullopt;
+            return baseline;
         }
     }
 
