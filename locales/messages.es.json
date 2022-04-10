@@ -121,7 +121,7 @@
   "VcpkgInvalidCommand": "comando no válido: {command_name}",
   "VcpkgSendMetricsButDisabled": "Advertencia: --sendmetrics aprobados, pero las métricas están deshabilitadas.",
   "VersionCommandHeader": "versión del programa de administración de paquetes vcpkg {version}\n\nConsulte LICENSE.txt para obtener información sobre la licencia.",
-  "VersionConstraintViolated": "dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.",
+  "VersionConstraintViolated": "Se esperaba que la dependencia {spec} fuera al menos la versión {expected_version}, pero actualmente es la {actual_version}.",
   "VersionInvalidDate": "'{version}' no es una versión de fecha válida. Las fechas deben tener el formato AAAA-MM-DD y los desambiguadores deben ser valores enteros positivos separados por puntos sin ceros iniciales.",
   "VersionInvalidRelaxed": "'{version}' no es una versión relajada válida (semver con recuento de elementos numéricos arbitrarios).",
   "VersionInvalidSemver": "'{version}' no es una versión semántica válida, consulte <https://semver.org>.",
