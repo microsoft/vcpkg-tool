@@ -113,7 +113,7 @@ namespace vcpkg::Commands::PortHistory
             const auto output = run_git_command(paths, builder);
 
             auto commits = Util::fmap(
-                Strings::split(output.output, '\n'), [](const std::string& line) -> auto{
+                Strings::split(output.output, '\n'), [](const std::string& line) -> auto {
                     auto parts = Strings::split(line, ' ');
                     return std::make_pair(parts[0], parts[1]);
                 });
