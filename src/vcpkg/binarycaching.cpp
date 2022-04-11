@@ -430,7 +430,9 @@ namespace
     };
     struct HttpGetBinaryProvider : IBinaryProvider
     {
-        HttpGetBinaryProvider(const VcpkgPaths& paths, std::vector<std::string>&& url_templates, const std::vector<std::string>& secrets)
+        HttpGetBinaryProvider(const VcpkgPaths& paths,
+                              std::vector<std::string>&& url_templates,
+                              const std::vector<std::string>& secrets)
             : paths(paths), m_url_templates(std::move(url_templates)), m_secrets(secrets)
         {
         }
@@ -2075,7 +2077,8 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     if (!s.url_templates_to_get.empty())
     {
         LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-url-get", "defined");
-        providers.push_back(std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get), s.secrets));
+        providers.push_back(
+            std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get), s.secrets));
     }
 
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||

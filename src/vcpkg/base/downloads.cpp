@@ -281,7 +281,10 @@ namespace vcpkg
         return true;
     }
 
-    static void url_heads_inner(View<std::string> urls, View<std::string> headers, std::vector<int>* out, View<std::string> secrets)
+    static void url_heads_inner(View<std::string> urls,
+                                View<std::string> headers,
+                                std::vector<int>* out,
+                                View<std::string> secrets)
     {
         static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
