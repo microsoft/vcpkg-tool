@@ -17,6 +17,7 @@
   "BuildResultExcluded": "已排除",
   "BuildResultFileConflicts": "FILE_CONFLICTS",
   "BuildResultPostBuildChecksFailed": "POST_BUILD_CHECKS_FAILED",
+  "BuildResultRemoved": "REMOVED",
   "BuildResultSucceeded": "成功",
   "BuildResultSummaryHeader": "{triplet} 的摘要",
   "BuildResultSummaryLine": "    {build_result}: {count}",

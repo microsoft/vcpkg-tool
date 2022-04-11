@@ -17,6 +17,7 @@
   "BuildResultExcluded": "ИСКЛЮЧЕНО",
   "BuildResultFileConflicts": "FILE_CONFLICTS",
   "BuildResultPostBuildChecksFailed": "POST_BUILD_CHECKS_FAILED",
+  "BuildResultRemoved": "REMOVED",
   "BuildResultSucceeded": "УСПЕШНО",
   "BuildResultSummaryHeader": "СВОДКА ПО {triplet}",
   "BuildResultSummaryLine": "    {build_result}: {count}",

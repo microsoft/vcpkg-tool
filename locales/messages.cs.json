@@ -17,6 +17,7 @@
   "BuildResultExcluded": "VYLOUČENÉ",
   "BuildResultFileConflicts": "FILE_CONFLICTS",
   "BuildResultPostBuildChecksFailed": "POST_BUILD_CHECKS_FAILED",
+  "BuildResultRemoved": "REMOVED",
   "BuildResultSucceeded": "ÚSPĚCH",
   "BuildResultSummaryHeader": "SOUHRN PRO {triplet}",
   "BuildResultSummaryLine": "    {build_result}: {count}",

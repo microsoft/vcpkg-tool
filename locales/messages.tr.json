@@ -17,6 +17,7 @@
   "BuildResultExcluded": "HARİÇ TUTULAN",
   "BuildResultFileConflicts": "DOSYA_ÇAKIŞMALARI",
   "BuildResultPostBuildChecksFailed": "DERLEME_SONRASI_DENETİMLER_BAŞARISIZ_OLDU",
+  "BuildResultRemoved": "REMOVED",
   "BuildResultSucceeded": "BAŞARILI OLDU",
   "BuildResultSummaryHeader": "{triplet} ÖZETİ",
   "BuildResultSummaryLine": "    {build_result}: {count}",

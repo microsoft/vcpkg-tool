@@ -17,6 +17,7 @@
   "BuildResultExcluded": "제외됨",
   "BuildResultFileConflicts": "FILE_CONFLICTS",
   "BuildResultPostBuildChecksFailed": "POST_BUILD_CHECKS_FAILED",
+  "BuildResultRemoved": "REMOVED",
   "BuildResultSucceeded": "성공",
   "BuildResultSummaryHeader": "{triplet}에 대한 요약",
   "BuildResultSummaryLine": "    {build_result}: {count}",

@@ -17,6 +17,7 @@
   "BuildResultExcluded": "Excluído",
   "BuildResultFileConflicts": "FILE_CONFLICTS",
   "BuildResultPostBuildChecksFailed": "POST_BUILD_CHECKS_FAILED",
+  "BuildResultRemoved": "REMOVED",
   "BuildResultSucceeded": "BEM-SUCEDIDO",
   "BuildResultSummaryHeader": "RESUMO PARA {triplet}",
   "BuildResultSummaryLine": "    {build_result}: {count}",
