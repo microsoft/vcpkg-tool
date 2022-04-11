@@ -136,7 +136,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(BuildDependenciesMissing,
                                  (),
                                  "",
-                                 "The build command requires all dependences to be already installed.\nThe following "
+                                 "The build command requires all dependencies to be already installed.\nThe following "
                                  "dependencies are missing:\n\n");
 
     DECLARE_AND_REGISTER_MESSAGE(

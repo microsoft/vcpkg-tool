@@ -22,7 +22,7 @@
   "_BothYesAndNoOptionSpecifiedError.comment": "example of {option} is 'editable'.\n",
   "BuildAlreadyInstalled": "{spec} is already installed; please remove {spec} before attempting to build it.",
   "_BuildAlreadyInstalled.comment": "example of {spec} is 'zlib:x64-windows'.\n",
-  "BuildDependenciesMissing": "The build command requires all dependences to be already installed.\nThe following dependencies are missing:\n\n",
+  "BuildDependenciesMissing": "The build command requires all dependencies to be already installed.\nThe following dependencies are missing:\n\n",
   "BuildResultBuildFailed": "BUILD_FAILED",
   "_BuildResultBuildFailed.comment": "Printed after the name of an installed entity to indicate that it failed to build.\n",
   "BuildResultCacheMissing": "CACHE_MISSING",

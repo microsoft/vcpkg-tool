@@ -11,7 +11,7 @@
   "AttemptingToFetchPackagesFromVendor": "Attempting to fetch {count} package(s) from {vendor}",
   "BothYesAndNoOptionSpecifiedError": "error: cannot specify both --no-{option} and --{option}.",
   "BuildAlreadyInstalled": "{spec} is already installed; please remove {spec} before attempting to build it.",
-  "BuildDependenciesMissing": "The build command requires all dependences to be already installed.\nThe following dependencies are missing:\n\n",
+  "BuildDependenciesMissing": "The build command requires all dependencies to be already installed.\nThe following dependencies are missing:\n\n",
   "BuildResultBuildFailed": "BUILD_FAILED",
   "BuildResultCacheMissing": "CACHE_MISSING",
   "BuildResultCascadeDueToMissingDependencies": "CASCADED_DUE_TO_MISSING_DEPENDENCIES",

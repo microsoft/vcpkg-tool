@@ -5,7 +5,7 @@ $CurrentTest = "Build Command"
 # Test that the build command fails if dependencies are missing
 $out = (Run-Vcpkg -TestArgs ($commonArgs + @("build","vcpkg-hello-world-1","--host-triplet",$Triplet)) | Out-String)
 Throw-IfNotFailed
-if ($out -notmatch "The build command requires all dependences to be already installed\.")
+if ($out -notmatch "The build command requires all dependencies to be already installed\.")
 {
     $out
     throw "Expected to fail due to missing dependencies"
