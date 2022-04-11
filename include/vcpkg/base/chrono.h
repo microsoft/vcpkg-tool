@@ -94,16 +94,6 @@ namespace vcpkg
     tm get_current_date_time_local();
 }
 
-template<class Char>
-struct fmt::formatter<vcpkg::ElapsedTime, Char>
-{
-    constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
-    {
-        return vcpkg::basic_format_parse_impl(ctx);
-    }
-    template<class FormatContext>
-    auto format(const vcpkg::ElapsedTime& time, FormatContext& ctx) const -> decltype(ctx.out())
-    {
-        return fmt::formatter<std::string, Char>{}.format(time.to_string(), ctx);
-    }
-};
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ElapsedTime);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ElapsedTimer);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::CTime);

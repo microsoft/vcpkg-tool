@@ -256,11 +256,10 @@ namespace vcpkg::Build
 
         const auto build_timer = ElapsedTimer::create_started();
         const auto result = Build::build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
-        msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer.elapsed());
+        msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            LocalizedString errorMsg =
-                msg::format(msg::msgErrorMessage).append(msg::format(msgBuildDependenciesMissing));
+            LocalizedString errorMsg = msg::format(msg::msgErrorMessage).append(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
                 errorMsg.append_indent().append_raw(p.to_string()).appendnl();
