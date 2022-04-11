@@ -34,6 +34,8 @@
   "_BuildResultFileConflicts.comment": "Printed after the name of an installed entity to indicate that it conflicts with something already installed\n",
   "BuildResultPostBuildChecksFailed": "POST_BUILD_CHECKS_FAILED",
   "_BuildResultPostBuildChecksFailed.comment": "Printed after the name of an installed entity to indicate that it built successfully, but that it failed post build checks.\n",
+  "BuildResultRemoved": "REMOVED",
+  "_BuildResultRemoved.comment": "Printed after the name of an uninstalled entity to indicate that it was successfully uninstalled.\n",
   "BuildResultSucceeded": "SUCCEEDED",
   "_BuildResultSucceeded.comment": "Printed after the name of an installed entity to indicate that it was built and installed successfully.\n",
   "BuildResultSummaryHeader": "SUMMARY FOR {triplet}",

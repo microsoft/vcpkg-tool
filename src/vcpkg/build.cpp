@@ -111,6 +111,12 @@ namespace
                                  "downloaded but no build or install was requested.",
                                  "DOWNLOADED");
 
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildResultRemoved,
+        (),
+        "Printed after the name of an uninstalled entity to indicate that it was successfully uninstalled.",
+        "REMOVED");
+
     DECLARE_AND_REGISTER_MESSAGE(BuildingPackageFailed,
                                  (msg::spec, msg::build_result),
                                  "",
@@ -1463,37 +1469,34 @@ namespace vcpkg::Build
             case BuildResult::EXCLUDED: ++excluded; return;
             case BuildResult::CACHE_MISSING: ++cache_missing; return;
             case BuildResult::DOWNLOADED: ++downloaded; return;
+            case BuildResult::REMOVED: ++removed; return;
             default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    template<class Message>
+    static void print_build_result_summary_line(Message build_result_message, int count)
+    {
+        if (count != 0)
+        {
+            msg::println(
+                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count);
         }
     }
 
     void BuildResultCounts::println(const Triplet& triplet) const
     {
         msg::println(msgBuildResultSummaryHeader, msg::triplet = triplet);
-        // NULLVALUE intentionally not printed
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultSucceeded),
-                     msg::count = succeeded);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultBuildFailed),
-                     msg::count = build_failed);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultPostBuildChecksFailed),
-                     msg::count = post_build_checks_failed);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultFileConflicts),
-                     msg::count = file_conflicts);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultCascadeDueToMissingDependencies),
-                     msg::count = cascaded_due_to_missing_dependencies);
-        msg::println(
-            msgBuildResultSummaryLine, msg::build_result = msg::format(msgBuildResultExcluded), msg::count = excluded);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultCacheMissing),
-                     msg::count = cache_missing);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultDownloaded),
-                     msg::count = downloaded);
+        print_build_result_summary_line(msgBuildResultSucceeded, succeeded);
+        print_build_result_summary_line(msgBuildResultBuildFailed, build_failed);
+        print_build_result_summary_line(msgBuildResultPostBuildChecksFailed, post_build_checks_failed);
+        print_build_result_summary_line(msgBuildResultFileConflicts, file_conflicts);
+        print_build_result_summary_line(msgBuildResultCascadeDueToMissingDependencies,
+                                        cascaded_due_to_missing_dependencies);
+        print_build_result_summary_line(msgBuildResultExcluded, excluded);
+        print_build_result_summary_line(msgBuildResultCacheMissing, cache_missing);
+        print_build_result_summary_line(msgBuildResultDownloaded, downloaded);
+        print_build_result_summary_line(msgBuildResultRemoved, removed);
     }
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result)
@@ -1508,6 +1511,7 @@ namespace vcpkg::Build
             case BuildResult::EXCLUDED: return "EXCLUDED";
             case BuildResult::CACHE_MISSING: return "CACHE_MISSING";
             case BuildResult::DOWNLOADED: return "DOWNLOADED";
+            case BuildResult::REMOVED: return "REMOVED";
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -1525,6 +1529,7 @@ namespace vcpkg::Build
             case BuildResult::EXCLUDED: return msg::format(msgBuildResultExcluded);
             case BuildResult::CACHE_MISSING: return msg::format(msgBuildResultCacheMissing);
             case BuildResult::DOWNLOADED: return msg::format(msgBuildResultDownloaded);
+            case BuildResult::REMOVED: return msg::format(msgBuildResultRemoved);
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
