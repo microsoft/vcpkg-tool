@@ -281,7 +281,10 @@ namespace vcpkg
         return true;
     }
 
-    static void url_heads_inner(View<std::string> urls, View<std::string> headers, std::vector<int>* out)
+    static void url_heads_inner(View<std::string> urls,
+                                View<std::string> headers,
+                                std::vector<int>* out,
+                                View<std::string> secrets)
     {
         static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -315,13 +318,15 @@ namespace vcpkg
 
         if (out->size() != start_size + urls.size())
         {
+            auto command_line = replace_secrets(std::move(cmd).extract(), secrets);
+            auto actual = replace_secrets(Strings::join("\n", lines), secrets);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                         msgCurlReportedUnexpectedResults,
-                                        msg::command_line = cmd.command_line(),
-                                        msg::actual = Strings::join("\n", lines));
+                                        msg::command_line = command_line,
+                                        msg::actual = actual);
         }
     }
-    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers)
+    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets)
     {
         static constexpr size_t batch_size = 100;
 
@@ -330,9 +335,9 @@ namespace vcpkg
         size_t i = 0;
         for (; i + batch_size <= urls.size(); i += batch_size)
         {
-            url_heads_inner({urls.data() + i, batch_size}, headers, &ret);
+            url_heads_inner({urls.data() + i, batch_size}, headers, &ret, secrets);
         }
-        if (i != urls.size()) url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret);
+        if (i != urls.size()) url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret, secrets);
 
         return ret;
     }
