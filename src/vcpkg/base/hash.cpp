@@ -108,11 +108,10 @@ namespace vcpkg::Hash
 
         struct BCryptHasher : Hasher
         {
-            static const BCRYPT_ALG_HANDLE sha256_alg_handle;
-            static const BCRYPT_ALG_HANDLE sha512_alg_handle;
-
             explicit BCryptHasher(Algorithm algo) noexcept
             {
+                static const BCRYPT_ALG_HANDLE sha256_alg_handle = get_alg_handle(BCRYPT_SHA256_ALGORITHM);
+                static const BCRYPT_ALG_HANDLE sha512_alg_handle = get_alg_handle(BCRYPT_SHA512_ALGORITHM);
                 switch (algo)
                 {
                     case Algorithm::Sha256: alg_handle = sha256_alg_handle; break;
@@ -183,8 +182,6 @@ namespace vcpkg::Hash
             BCRYPT_ALG_HANDLE alg_handle = nullptr;
         };
 
-        const BCRYPT_ALG_HANDLE BCryptHasher::sha256_alg_handle = get_alg_handle(BCRYPT_SHA256_ALGORITHM);
-        const BCRYPT_ALG_HANDLE BCryptHasher::sha512_alg_handle = get_alg_handle(BCRYPT_SHA512_ALGORITHM);
 #else
 
         template<class WordTy>
