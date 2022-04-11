@@ -121,7 +121,7 @@
   "VcpkgInvalidCommand": "無效命令: {command_name}",
   "VcpkgSendMetricsButDisabled": "警告: 通過 --sendmetrics，但已停用計量。",
   "VersionCommandHeader": "vcpkg 套件管理程式版本 {version}\n\n請參閱 LICENSE.txt 以尋找授權資訊。",
-  "VersionConstraintViolated": "dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.",
+  "VersionConstraintViolated": "相依性 {spec} 應至少為 {expected_version} 版本，但目前是 {actual_version}。",
   "VersionInvalidDate": "'{version}' 不是有效的日期版本。日期必須採用 YYYY-MM-DD 格式，而消歧異器必須是點分隔的正整數值，且不含前置字元零。",
   "VersionInvalidRelaxed": "'{version}' 不是有效的寬鬆版本 (具有任一數字元素計數的 Semver)。",
   "VersionInvalidSemver": "'{version}' 不是有效的語意版本，請參閱 <https://semver.org>。",

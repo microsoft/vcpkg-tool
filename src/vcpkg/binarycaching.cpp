@@ -196,7 +196,7 @@ namespace
                                std::vector<Path>&& read_dirs,
                                std::vector<Path>&& write_dirs,
                                std::vector<std::string>&& put_url_templates,
-                               std::vector<std::string>&& secrets)
+                               const std::vector<std::string>& secrets)
             : paths(paths)
             , m_read_dirs(std::move(read_dirs))
             , m_write_dirs(std::move(write_dirs))
@@ -430,8 +430,10 @@ namespace
     };
     struct HttpGetBinaryProvider : IBinaryProvider
     {
-        HttpGetBinaryProvider(const VcpkgPaths& paths, std::vector<std::string>&& url_templates)
-            : paths(paths), m_url_templates(std::move(url_templates))
+        HttpGetBinaryProvider(const VcpkgPaths& paths,
+                              std::vector<std::string>&& url_templates,
+                              const std::vector<std::string>& secrets)
+            : paths(paths), m_url_templates(std::move(url_templates)), m_secrets(secrets)
         {
         }
 
@@ -535,7 +537,7 @@ namespace
                     return;
                 }
 
-                auto codes = url_heads(urls, {});
+                auto codes = url_heads(urls, {}, m_secrets);
                 Checks::check_exit(VCPKG_LINE_INFO, codes.size() == urls.size());
                 for (size_t i = 0; i < codes.size(); ++i)
                 {
@@ -558,6 +560,7 @@ namespace
 
         const VcpkgPaths& paths;
         std::vector<std::string> m_url_templates;
+        std::vector<std::string> m_secrets;
     };
     struct NugetBinaryProvider : IBinaryProvider
     {
@@ -2068,13 +2071,14 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
                                                                      std::move(s.archives_to_read),
                                                                      std::move(s.archives_to_write),
                                                                      std::move(s.azblob_templates_to_put),
-                                                                     std::move(s.secrets)));
+                                                                     s.secrets));
     }
 
     if (!s.url_templates_to_get.empty())
     {
         LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-url-get", "defined");
-        providers.push_back(std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get)));
+        providers.push_back(
+            std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get), s.secrets));
     }
 
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||

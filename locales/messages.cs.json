@@ -121,7 +121,7 @@
   "VcpkgInvalidCommand": "neplatný příkaz: {command_name}",
   "VcpkgSendMetricsButDisabled": "Upozornění: proběhla --sendmetrics, ale metriky jsou zakázané.",
   "VersionCommandHeader": "Verze {version} programu pro správu balíčků vcpkg\n\nInformace o licenci najdete v LICENSE.txt.",
-  "VersionConstraintViolated": "dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.",
+  "VersionConstraintViolated": "Očekávalo se, že závislost {spec} bude alespoň verze {expected_version}, ale aktuálně je {actual_version}.",
   "VersionInvalidDate": "{version} není platná verze data. Data musí být ve formátu RRRR-MM-DD a zpřesňující prvky musí být kladné hodnoty integer oddělené tečkami bez úvodních nul.",
   "VersionInvalidRelaxed": "{version} není platná uvolněná verze (semver s počtem libovolných numerických prvků)",
   "VersionInvalidSemver": "{version} není platná sémantická verze, řiďte se <https://semver.org>.",
