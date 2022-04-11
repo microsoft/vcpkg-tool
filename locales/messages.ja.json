@@ -121,7 +121,7 @@
   "VcpkgInvalidCommand": "無効なコマンド: {command_name}",
   "VcpkgSendMetricsButDisabled": "警告: --sendmetrics が渡されましたが、メトリックは無効になっています。",
   "VersionCommandHeader": "vcpkg パッケージ管理プログラムのバージョン {version}\n\nライセンス情報については、LICENSE.txt を参照してください。",
-  "VersionConstraintViolated": "dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.",
+  "VersionConstraintViolated": "依存関係 {spec} が少なくともバージョン {expected_version} であることが必要でしたが、現在は {actual_version} です。",
   "VersionInvalidDate": "'{version}' は有効な日付バージョンではありません。日付は YYYY-MM-DD の形式に従う必要があり、disambiguator は先頭にゼロを付けずにドット区切りの正の整数値にする必要があります。",
   "VersionInvalidRelaxed": "'{version}' は有効な緩やかなバージョンではありません (任意の数値要素数を持つ semver)。",
   "VersionInvalidSemver": "'{version}' は有効なセマンティック バージョンではありません。<https://semver.org> を参照してください。",
