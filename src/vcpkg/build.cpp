@@ -111,6 +111,12 @@ namespace
                                  "downloaded but no build or install was requested.",
                                  "DOWNLOADED");
 
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildResultRemoved,
+        (),
+        "Printed after the name of an uninstalled entity to indicate that it was successfully uninstalled.",
+        "REMOVED");
+
     DECLARE_AND_REGISTER_MESSAGE(BuildingPackageFailed,
                                  (msg::spec, msg::build_result),
                                  "",
@@ -1463,6 +1469,7 @@ namespace vcpkg::Build
             case BuildResult::EXCLUDED: ++excluded; return;
             case BuildResult::CACHE_MISSING: ++cache_missing; return;
             case BuildResult::DOWNLOADED: ++downloaded; return;
+            case BuildResult::REMOVED: ++removed; return;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -1494,6 +1501,8 @@ namespace vcpkg::Build
         msg::println(msgBuildResultSummaryLine,
                      msg::build_result = msg::format(msgBuildResultDownloaded),
                      msg::count = downloaded);
+        msg::println(
+            msgBuildResultSummaryLine, msg::build_result = msg::format(msgBuildResultRemoved), msg::count = removed);
     }
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result)
@@ -1508,6 +1517,7 @@ namespace vcpkg::Build
             case BuildResult::EXCLUDED: return "EXCLUDED";
             case BuildResult::CACHE_MISSING: return "CACHE_MISSING";
             case BuildResult::DOWNLOADED: return "DOWNLOADED";
+            case BuildResult::REMOVED: return "REMOVED";
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -1525,6 +1535,7 @@ namespace vcpkg::Build
             case BuildResult::EXCLUDED: return msg::format(msgBuildResultExcluded);
             case BuildResult::CACHE_MISSING: return msg::format(msgBuildResultCacheMissing);
             case BuildResult::DOWNLOADED: return msg::format(msgBuildResultDownloaded);
+            case BuildResult::REMOVED: return msg::format(msgBuildResultRemoved);
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }

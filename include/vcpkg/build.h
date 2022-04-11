@@ -38,7 +38,8 @@ namespace vcpkg::Build
         CASCADED_DUE_TO_MISSING_DEPENDENCIES,
         EXCLUDED,
         CACHE_MISSING,
-        DOWNLOADED
+        DOWNLOADED,
+        REMOVED
     };
 
     struct IBuildLogsRecorder
@@ -204,6 +205,7 @@ namespace vcpkg::Build
         int excluded = 0;
         int cache_missing = 0;
         int downloaded = 0;
+        int removed = 0;
 
         void increment(const BuildResult build_result);
         void println(const Triplet& triplet) const;

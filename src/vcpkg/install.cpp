@@ -528,6 +528,7 @@ namespace vcpkg::Install
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             Remove::perform_remove_plan_action(paths, action, Remove::Purge::YES, &status_db);
+            results.back().build_result.emplace(BuildResult::REMOVED);
         }
 
         for (auto&& action : action_plan.already_installed)
