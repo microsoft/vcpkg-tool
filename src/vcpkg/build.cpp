@@ -1474,35 +1474,29 @@ namespace vcpkg::Build
         }
     }
 
+    template<class Message>
+    static void print_build_result_summary_line(Message build_result_message, int count)
+    {
+        if (count != 0)
+        {
+            msg::println(
+                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count);
+        }
+    }
+
     void BuildResultCounts::println(const Triplet& triplet) const
     {
         msg::println(msgBuildResultSummaryHeader, msg::triplet = triplet);
-        // NULLVALUE intentionally not printed
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultSucceeded),
-                     msg::count = succeeded);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultBuildFailed),
-                     msg::count = build_failed);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultPostBuildChecksFailed),
-                     msg::count = post_build_checks_failed);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultFileConflicts),
-                     msg::count = file_conflicts);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultCascadeDueToMissingDependencies),
-                     msg::count = cascaded_due_to_missing_dependencies);
-        msg::println(
-            msgBuildResultSummaryLine, msg::build_result = msg::format(msgBuildResultExcluded), msg::count = excluded);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultCacheMissing),
-                     msg::count = cache_missing);
-        msg::println(msgBuildResultSummaryLine,
-                     msg::build_result = msg::format(msgBuildResultDownloaded),
-                     msg::count = downloaded);
-        msg::println(
-            msgBuildResultSummaryLine, msg::build_result = msg::format(msgBuildResultRemoved), msg::count = removed);
+        print_build_result_summary_line(msgBuildResultSucceeded, succeeded);
+        print_build_result_summary_line(msgBuildResultBuildFailed, build_failed);
+        print_build_result_summary_line(msgBuildResultPostBuildChecksFailed, post_build_checks_failed);
+        print_build_result_summary_line(msgBuildResultFileConflicts, file_conflicts);
+        print_build_result_summary_line(msgBuildResultCascadeDueToMissingDependencies,
+                                        cascaded_due_to_missing_dependencies);
+        print_build_result_summary_line(msgBuildResultExcluded, excluded);
+        print_build_result_summary_line(msgBuildResultCacheMissing, cache_missing);
+        print_build_result_summary_line(msgBuildResultDownloaded, downloaded);
+        print_build_result_summary_line(msgBuildResultRemoved, removed);
     }
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result)
