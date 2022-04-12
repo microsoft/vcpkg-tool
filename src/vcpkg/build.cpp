@@ -619,14 +619,15 @@ namespace vcpkg::Build
                                                   const Path& tcfile,
                                                   const Filesystem& fs)
     {
-        return cache.get_lazy(
-            tcfile, [&]() { return Hash::get_file_hash(VCPKG_LINE_INFO, fs, tcfile, Hash::Algorithm::Sha256); });
+        return cache.get_lazy(tcfile, [&]() {
+            return Hash::get_file_hash(fs, tcfile, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
+        });
     }
 
     const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p)
     {
         return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
-            return TripletMapEntry{Hash::get_file_hash(VCPKG_LINE_INFO, fs, p, Hash::Algorithm::Sha256)};
+            return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
         });
     }
 
@@ -784,13 +785,7 @@ namespace vcpkg::Build
 
         const auto& env = paths.get_action_env(abi_info);
         auto& fs = paths.get_filesystem();
-        if (!fs.exists(buildpath, IgnoreErrors{}))
-        {
-            std::error_code err;
-            fs.create_directory(buildpath, err);
-            Checks::check_exit(
-                VCPKG_LINE_INFO, !err.value(), "Failed to create directory '%s', code: %d", buildpath, err.value());
-        }
+        fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
         CompilerInfo compiler_info;
         std::string buf;
@@ -1053,11 +1048,7 @@ namespace vcpkg::Build
         const auto& env = paths.get_action_env(abi_info);
 
         auto buildpath = paths.build_dir(action.spec);
-        if (!fs.exists(buildpath, IgnoreErrors{}))
-        {
-            fs.create_directory(buildpath, VCPKG_LINE_INFO);
-        }
-
+        fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
         int return_code;
         {
@@ -1255,7 +1246,8 @@ namespace vcpkg::Build
                 portfile_cmake_contents += fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
             }
 
-            auto hash = vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, abs_port_file, Hash::Algorithm::Sha256);
+            auto hash =
+                vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
             abi_tag_entries.emplace_back(port_file, hash);
             files.push_back(port_file);
             hashes.push_back(std::move(hash));
@@ -1327,12 +1319,13 @@ namespace vcpkg::Build
             const auto abi_file_path = current_build_tree / (triplet.canonical_name() + ".vcpkg_abi_info.txt");
             fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
 
-            return AbiTagAndFiles{&triplet_abi,
-                                  Hash::get_file_hash(VCPKG_LINE_INFO, fs, abi_file_path, Hash::Algorithm::Sha256),
-                                  abi_file_path,
-                                  std::move(files),
-                                  std::move(hashes),
-                                  run_resource_heuristics(portfile_cmake_contents)};
+            return AbiTagAndFiles{
+                &triplet_abi,
+                Hash::get_file_hash(fs, abi_file_path, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO),
+                abi_file_path,
+                std::move(files),
+                std::move(hashes),
+                run_resource_heuristics(portfile_cmake_contents)};
         }
 
         Debug::print(
@@ -1459,26 +1452,8 @@ namespace vcpkg::Build
         ExtendedBuildResult result = do_build_package_and_clean_buildtrees(args, paths, action);
         build_logs_recorder.record_build_result(paths, spec, result.code);
 
-        std::error_code ec;
-        filesystem.create_directories(abi_package_dir, ec);
-        if (ec)
-        {
-            Checks::exit_with_message(
-                VCPKG_LINE_INFO,
-                Strings::format(
-                    "Could not create %s: %s (%d)", abi_package_dir.c_str(), ec.message().c_str(), ec.value()));
-        }
-
-        filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, ec);
-        if (ec)
-        {
-            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                      Strings::format("Could not copy %s -> %s: %s (%d)",
-                                                      abi_file,
-                                                      abi_file_in_package,
-                                                      ec.message().c_str(),
-                                                      ec.value()));
-        }
+        filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
+        filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
 
         if (result.code == BuildResult::SUCCEEDED)
         {

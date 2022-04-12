@@ -91,22 +91,20 @@ namespace vcpkg::Install
                                           const InstallDir& destination_dir)
     {
         std::vector<std::string> output;
-        std::error_code ec;
 
         const size_t prefix_length = source_dir.native().size();
         const Path& destination = destination_dir.destination();
         std::string destination_subdirectory = destination.filename().to_string();
         const Path& listfile = destination_dir.listfile();
 
-        fs.create_directories(destination, ec);
-        Checks::check_exit(VCPKG_LINE_INFO, !ec, "Could not create destination directory %s", destination);
+        fs.create_directories(destination, VCPKG_LINE_INFO);
         const auto listfile_parent = listfile.parent_path();
-        fs.create_directories(listfile_parent, ec);
-        Checks::check_exit(VCPKG_LINE_INFO, !ec, "Could not create directory for listfile %s", listfile);
+        fs.create_directories(listfile_parent, VCPKG_LINE_INFO);
 
         output.push_back(destination_subdirectory + "/");
         for (auto&& file : files)
         {
+            std::error_code ec;
             const auto status = fs.symlink_status(file, ec);
             if (ec)
             {
@@ -422,7 +420,6 @@ namespace vcpkg::Install
 
             if (action.build_options.clean_downloads == Build::CleanDownloads::YES)
             {
-                std::error_code ec;
                 for (auto& p : fs.get_regular_files_non_recursive(paths.downloads, IgnoreErrors{}))
                 {
                     fs.remove(p, VCPKG_LINE_INFO);
@@ -745,8 +742,8 @@ namespace vcpkg::Install
                 {
                     // CMake file is inside the share folder
                     const auto path = installed.root() / suffix;
-                    const auto contents = fs.read_contents(path, ec);
                     const auto find_package_name = Path(path.parent_path()).filename().to_string();
+                    const auto contents = fs.read_contents(path, ec);
                     if (!ec)
                     {
                         auto targets = get_cmake_add_library_names(contents);
