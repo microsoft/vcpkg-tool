@@ -540,7 +540,7 @@ namespace vcpkg::Hash
                 auto hasher = ShaHasher<Sha512Algorithm>();
                 return f(hasher);
             }
-            default: vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown hashing algorithm: %s", algo);
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 #endif
     }
