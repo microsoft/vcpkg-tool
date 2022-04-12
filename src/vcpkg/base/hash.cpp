@@ -516,7 +516,7 @@ namespace vcpkg::Hash
         {
             case Algorithm::Sha256: return std::make_unique<ShaHasher<Sha256Algorithm>>();
             case Algorithm::Sha512: return std::make_unique<ShaHasher<Sha512Algorithm>>();
-            default: vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown hashing algorithm: %s", algo);
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 #endif
     }
