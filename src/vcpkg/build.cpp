@@ -126,6 +126,48 @@ namespace
         (),
         "Printed after BuildingPackageFailed, and followed by a list of dependencies that were missing.",
         "due to the following missing dependencies:");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildAlreadyInstalled,
+                                 (msg::spec),
+                                 "",
+                                 "{spec} is already installed; please remove {spec} before attempting to build it.");
+
+    DECLARE_AND_REGISTER_MESSAGE(SourceFieldPortNameMismatch,
+                                 (msg::package_name, msg::path),
+                                 "{package_name} and {path} are both names of installable ports/packages. 'Source', "
+                                 "'CONTROL', 'vcpkg.json', and 'name' references are locale-invariant.",
+                                 "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json "
+                                 "file has the name {package_name} and does not match the port directory {path}.");
+
+    DECLARE_AND_REGISTER_MESSAGE(BuildDependenciesMissing,
+                                 (),
+                                 "",
+                                 "The build command requires all dependencies to be already installed.\nThe following "
+                                 "dependencies are missing:\n\n");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildTroubleshootingMessage1,
+        (),
+        "First part of build troubleshooting message, printed before the URI to look for existing bugs.",
+        "Please ensure you're using the latest port files with `git pull` and `vcpkg "
+        "update`.\nThen check for known issues at:");
+    DECLARE_AND_REGISTER_MESSAGE(BuildTroubleshootingMessage2,
+                                 (),
+                                 "Second part of build troubleshooting message, printed after the URI to look for "
+                                 "existing bugs but before the URI to file one.",
+                                 "You can submit a new issue at:");
+    DECLARE_AND_REGISTER_MESSAGE(
+        BuildTroubleshootingMessage3,
+        (msg::package_name),
+        "Third part of build troubleshooting message, printed after the URI to file a bug but "
+        "before version information about vcpkg itself.",
+        "Include '[{package_name}] Build error' in your bug report title, the following version information in your "
+        "bug description, and attach any relevant failure logs from above.");
+}
+
+namespace vcpkg
+{
+    REGISTER_MESSAGE(ElapsedForPackage);
 }
 
 namespace vcpkg::Build
@@ -136,7 +178,6 @@ namespace vcpkg::Build
     void Command::perform_and_exit_ex(const VcpkgCmdArguments& args,
                                       const FullPackageSpec& full_spec,
                                       Triplet host_triplet,
-                                      const SourceControlFileAndLocation& scfl,
                                       const PathsPortFileProvider& provider,
                                       BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
@@ -144,7 +185,7 @@ namespace vcpkg::Build
     {
         Checks::exit_with_code(
             VCPKG_LINE_INFO,
-            perform_ex(args, full_spec, host_triplet, scfl, provider, binary_cache, build_logs_recorder, paths));
+            perform_ex(args, full_spec, host_triplet, provider, binary_cache, build_logs_recorder, paths));
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -166,32 +207,21 @@ namespace vcpkg::Build
     int Command::perform_ex(const VcpkgCmdArguments& args,
                             const FullPackageSpec& full_spec,
                             Triplet host_triplet,
-                            const SourceControlFileAndLocation& scfl,
                             const PathsPortFileProvider& provider,
                             BinaryCache& binary_cache,
                             const IBuildLogsRecorder& build_logs_recorder,
                             const VcpkgPaths& paths)
     {
+        const PackageSpec& spec = full_spec.package_spec;
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
-        var_provider.load_dep_info_vars({{full_spec.package_spec}}, host_triplet);
+        var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-
         auto action_plan = Dependencies::create_feature_install_plan(
             provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
-
-        const PackageSpec& spec = full_spec.package_spec;
-        const SourceControlFile& scf = *scfl.source_control_file;
-
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO,
-            spec.name() == scf.core_paragraph->name,
-            Strings::format("The Source field inside the CONTROL file does not match the port directory: '%s' != '%s'",
-                            scf.core_paragraph->name,
-                            spec.name()));
 
         compute_all_abis(paths, action_plan, var_provider, status_db);
 
@@ -200,9 +230,10 @@ namespace vcpkg::Build
         {
             if (install_action.spec == full_spec.package_spec)
             {
-                action = &install_action;
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgBuildAlreadyInstalled, msg::spec = spec);
             }
         }
+
         for (auto& install_action : action_plan.install_actions)
         {
             if (install_action.spec == full_spec.package_spec)
@@ -213,6 +244,17 @@ namespace vcpkg::Build
 
         Checks::check_exit(VCPKG_LINE_INFO, action != nullptr);
         ASSUME(action != nullptr);
+        auto& scf = *action->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+        const auto& spec_name = spec.name();
+        const auto& core_paragraph_name = scf.core_paragraph->name;
+        if (spec_name != core_paragraph_name)
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msgSourceFieldPortNameMismatch,
+                                        msg::package_name = core_paragraph_name,
+                                        msg::path = spec_name);
+        }
+
         action->build_options = default_build_package_options;
         action->build_options.editable = Editable::YES;
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
@@ -220,18 +262,16 @@ namespace vcpkg::Build
 
         const auto build_timer = ElapsedTimer::create_started();
         const auto result = Build::build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
-        print2("Elapsed time for package ", spec, ": ", build_timer, '\n');
-
+        msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            print2(Color::error, "The build command requires all dependencies to be already installed.\n");
-            print2("The following dependencies are missing:\n\n");
+            LocalizedString errorMsg = msg::format(msg::msgErrorMessage).append(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
-                print2("    ", p, '\n');
+                errorMsg.append_indent().append_raw(p.to_string()).appendnl();
             }
-            print2('\n');
-            Checks::exit_fail(VCPKG_LINE_INFO);
+
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, result.code != BuildResult::EXCLUDED);
@@ -247,8 +287,8 @@ namespace vcpkg::Build
             {
                 msg::print(Color::warning, warnings);
             }
-            msg::println(Color::error, Build::create_error_message(result, spec));
-            print2(Build::create_user_troubleshooting_message(*action, paths), '\n');
+            msg::print(Color::error, Build::create_error_message(result, spec));
+            msg::print(Build::create_user_troubleshooting_message(*action, paths));
             return 1;
         }
 
@@ -269,14 +309,7 @@ namespace vcpkg::Build
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
         PathsPortFileProvider provider(paths, args.overlay_ports);
-        const auto port_name = spec.package_spec.name();
-        const auto* scfl = provider.get_control_file(port_name).get();
-
-        Checks::check_maybe_upgrade(VCPKG_LINE_INFO, scfl != nullptr, "Error: Couldn't find port '%s'", port_name);
-        ASSUME(scfl != nullptr);
-
-        return perform_ex(
-            args, spec, host_triplet, *scfl, provider, binary_cache, Build::null_build_logs_recorder(), paths);
+        return perform_ex(args, spec, host_triplet, provider, binary_cache, Build::null_build_logs_recorder(), paths);
     }
 
     void BuildCommand::perform_and_exit(const VcpkgCmdArguments& args,
@@ -1022,11 +1055,9 @@ namespace vcpkg::Build
         auto buildpath = paths.build_dir(action.spec);
         if (!fs.exists(buildpath, IgnoreErrors{}))
         {
-            std::error_code err;
-            fs.create_directory(buildpath, err);
-            Checks::check_exit(
-                VCPKG_LINE_INFO, !err.value(), "Failed to create directory '%s', code: %d", buildpath, err.value());
+            fs.create_directory(buildpath, VCPKG_LINE_INFO);
         }
+
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
         int return_code;
         {
@@ -1284,7 +1315,7 @@ namespace vcpkg::Build
                 Strings::append(message, "[DEBUG]   ", entry.key, "|", entry.value, "\n");
             }
             Strings::append(message, "[DEBUG] </abientries>\n");
-            print2(message);
+            msg::write_unlocalized_text_to_stdout(Color::none, message);
         }
 
         auto abi_tag_entries_missing = Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
@@ -1551,39 +1582,27 @@ namespace vcpkg::Build
             }
         }
 
+        res.appendnl();
         return res;
     }
 
-    std::string create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
     {
-#if defined(_WIN32)
-        auto vcpkg_update_cmd = ".\\vcpkg";
-#else
-        auto vcpkg_update_cmd = "./vcpkg";
-#endif
-
-        std::string package = action.displayname();
-        if (auto scfl = action.source_control_file_and_location.get())
-        {
-            Strings::append(package, " -> ", scfl->to_version());
-        }
-        return Strings::format("Please ensure you're using the latest portfiles with `git pull` and `%s update`.\n"
-                               "Then check for known issues at:\n"
-                               "  https://github.com/microsoft/vcpkg/issues?q=is%%3Aissue+is%%3Aopen+in%%3Atitle+%s\n"
-                               "You can submit a new issue at:\n"
-                               "  "
-                               "https://github.com/microsoft/vcpkg/issues/"
-                               "new?template=report-package-build-failure.md&title=[%s]+Build+error\n"
-                               "including:\n"
-                               "  package: %s\n"
-                               "%s"
-                               "\n"
-                               "Additionally, attach any relevant sections from the log files above.",
-                               vcpkg_update_cmd,
-                               action.spec.name(),
-                               action.spec.name(),
-                               package,
-                               paths.get_toolver_diagnostics());
+        const auto& spec_name = action.spec.name();
+        LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).appendnl();
+        result.append_indent()
+            .append_raw("https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+")
+            .append_raw(spec_name)
+            .appendnl();
+        result.append(msgBuildTroubleshootingMessage2).appendnl();
+        result.append_indent()
+            .append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
+                            "new?template=report-package-build-failure.md&title=[{}]+Build+error",
+                            spec_name)
+            .appendnl();
+        result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).appendnl();
+        result.append_raw(paths.get_toolver_diagnostics()).appendnl();
+        return result;
     }
 
     static BuildInfo inner_create_buildinfo(Paragraph pgh)

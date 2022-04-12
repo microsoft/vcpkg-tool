@@ -34,12 +34,7 @@ namespace vcpkg::Remove
 
         auto&& ipv = maybe_ipv.value_or_exit(VCPKG_LINE_INFO);
 
-        std::vector<StatusParagraph> spghs;
-        spghs.emplace_back(*ipv.core);
-        for (auto&& feature : ipv.features)
-        {
-            spghs.emplace_back(*feature);
-        }
+        std::vector<StatusParagraph> spghs = ipv.all_status_paragraphs();
 
         for (auto&& spgh : spghs)
         {

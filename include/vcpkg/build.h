@@ -5,6 +5,7 @@
 #include <vcpkg/fwd/portfileprovider.h>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
@@ -25,6 +26,8 @@ namespace vcpkg
 {
     struct BinaryCache;
     struct Environment;
+
+    DECLARE_MESSAGE(ElapsedForPackage, (msg::spec, msg::elapsed), "", "Elapsed time to handle {spec}: {elapsed}");
 }
 
 namespace vcpkg::Build
@@ -56,7 +59,6 @@ namespace vcpkg::Build
         int perform_ex(const VcpkgCmdArguments& args,
                        const FullPackageSpec& full_spec,
                        Triplet host_triplet,
-                       const SourceControlFileAndLocation& scfl,
                        const PortFileProvider::PathsPortFileProvider& provider,
                        BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
@@ -64,7 +66,6 @@ namespace vcpkg::Build
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
                                  const FullPackageSpec& full_spec,
                                  Triplet host_triplet,
-                                 const SourceControlFileAndLocation& scfl,
                                  const PortFileProvider::PathsPortFileProvider& provider,
                                  BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
@@ -213,8 +214,8 @@ namespace vcpkg::Build
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
-    std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
-                                                    const VcpkgPaths& paths);
+    LocalizedString create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
+                                                        const VcpkgPaths& paths);
 
     /// <summary>
     /// Settings from the triplet file which impact the build environment and post-build checks
