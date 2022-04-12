@@ -46,7 +46,10 @@ namespace
                                  "Building {spec} from HEAD...");
     DECLARE_AND_REGISTER_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
     DECLARE_AND_REGISTER_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
-    DECLARE_AND_REGISTER_MESSAGE(InstallingPackage, (msg::spec), "", "Installing {spec}...");
+    DECLARE_AND_REGISTER_MESSAGE(InstallingPackage,
+                                 (msg::action_index, msg::action_count, msg::spec),
+                                 "",
+                                 "Installing {action_index}/{action_count} {spec}...");
     DECLARE_AND_REGISTER_MESSAGE(HeaderOnlyUsage,
                                  (msg::package_name),
                                  "'header' refers to C/C++ .h files",
@@ -481,8 +484,10 @@ namespace vcpkg::Install
             results.emplace_back(action);
             current_summary = &results.back();
 
-            msg::println(msg::format(msgInstallingPackage, msg::spec = action.spec)
-                             .append_fmt_raw(" ({}/{})...", action_index, action_count));
+            msg::println(msgInstallingPackage,
+                         msg::action_index = action_index,
+                         msg::action_count = action_count,
+                         msg::spec = action.spec);
         }
 
         TrackedPackageInstallGuard(const size_t action_index,
@@ -492,8 +497,10 @@ namespace vcpkg::Install
         {
             results.emplace_back(action);
             current_summary = &results.back();
-            msg::println(msg::format(Remove::msgRemovingPackage, msg::spec = action.spec)
-                             .append_fmt_raw(" ({}/{})...", action_index, action_count));
+            msg::println(Remove::msgRemovingPackage,
+                         msg::action_index = action_index,
+                         msg::action_count = action_count,
+                         msg::spec = action.spec);
         }
 
         ~TrackedPackageInstallGuard()

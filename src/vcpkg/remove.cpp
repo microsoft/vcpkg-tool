@@ -301,8 +301,10 @@ namespace vcpkg::Remove
         for (std::size_t idx = 0; idx < remove_plan.size(); ++idx)
         {
             const RemovePlanAction& action = remove_plan[idx];
-            msg::println(msg::format(msgRemovingPackage, msg::spec = action.spec)
-                             .append_fmt_raw(" ({}/{})...", idx + 1, remove_plan.size()));
+            msg::println(msgRemovingPackage,
+                         msg::action_index = idx + 1,
+                         msg::action_count = remove_plan.size(),
+                         msg::spec = action.spec);
             perform_remove_plan_action(paths, action, purge, &status_db);
         }
 
