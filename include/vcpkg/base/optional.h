@@ -421,25 +421,44 @@ namespace vcpkg
         return Optional<std::decay_t<U>>(std::forward<U>(u));
     }
 
+    // these cannot be hidden friends, unfortunately
     template<class T, class U>
-    auto operator==(const Optional<T>& lhs, const U& rhs) -> decltype(false ? *lhs.get() == rhs : false)
+    auto operator==(const Optional<T>& lhs, const Optional<U>& rhs) -> decltype(*lhs.get() == *rhs.get())
+    {
+        if (lhs.has_value() && rhs.has_value())
+        {
+            return *lhs.get() == *rhs.get();
+        }
+        return lhs.has_value() == rhs.has_value();
+    }
+    template<class T, class U>
+    auto operator==(const Optional<T>& lhs, const U& rhs) -> decltype(*lhs.get() == rhs)
     {
         return lhs.has_value() ? *lhs.get() == rhs : false;
     }
     template<class T, class U>
-    auto operator==(const T& lhs, const Optional<U>& rhs) -> decltype(false ? lhs == *rhs.get() : false)
+    auto operator==(const T& lhs, const Optional<U>& rhs) -> decltype(lhs == *rhs.get())
     {
-        return lhs.has_value() ? lhs == *rhs.get() : false;
+        return rhs.has_value() ? lhs == *rhs.get() : false;
     }
 
     template<class T, class U>
-    auto operator!=(const Optional<T>& lhs, const U& rhs) -> decltype(!(lhs == rhs))
+    auto operator!=(const Optional<T>& lhs, const Optional<U>& rhs) -> decltype(*lhs.get() != *rhs.get())
     {
-        return !(lhs == rhs);
+        if (lhs.has_value() && rhs.has_value())
+        {
+            return *lhs.get() != *rhs.get();
+        }
+        return lhs.has_value() != rhs.has_value();
     }
     template<class T, class U>
-    auto operator!=(const T& lhs, const Optional<U>& rhs) -> decltype(!(lhs == rhs))
+    auto operator!=(const Optional<T>& lhs, const U& rhs) -> decltype(*lhs.get() != rhs)
     {
-        return !(lhs == rhs);
+        return lhs.has_value() ? *lhs.get() != rhs : true;
+    }
+    template<class T, class U>
+    auto operator!=(const T& lhs, const Optional<U>& rhs) -> decltype(lhs != *rhs.get())
+    {
+        return rhs.has_value() ? lhs != *rhs.get() : true;
     }
 }
