@@ -247,6 +247,8 @@ namespace vcpkg::msg
 
     DECLARE_MSG_ARG(actual_version, "1.3.8");
     DECLARE_MSG_ARG(arch, "x64");
+    DECLARE_MSG_ARG(base_url, "azblob://");
+    DECLARE_MSG_ARG(binary_source, "azblob");
     DECLARE_MSG_ARG(build_result, "One of the BuildResultXxx messages (such as BuildResultSucceeded/SUCCEEDED)");
     DECLARE_MSG_ARG(column, "42");
     DECLARE_MSG_ARG(command_line, "vcpkg install zlib");
