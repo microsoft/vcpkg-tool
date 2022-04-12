@@ -58,7 +58,7 @@ namespace vcpkg
     struct PackageSpec;
     struct Triplet;
 
-    struct ManifestAndLocation
+    struct ManifestAndPath
     {
         Json::Object manifest;
         Path path;
@@ -153,8 +153,8 @@ namespace vcpkg
                                                                            const Path& relative_path_to_file) const;
         ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 
-        Optional<const ManifestAndLocation&> get_manifest() const;
-        const ConfigurationAndLocation& get_configuration() const;
+        Optional<const ManifestAndPath&> get_manifest() const;
+        const ConfigurationAndSource& get_configuration() const;
         const RegistrySet& get_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo

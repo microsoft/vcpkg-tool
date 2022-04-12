@@ -60,7 +60,7 @@ namespace
 
 namespace vcpkg
 {
-    static ManifestAndLocation load_manifest(const Filesystem& fs, const Path& manifest_dir)
+    static ManifestAndPath load_manifest(const Filesystem& fs, const Path& manifest_dir)
     {
         std::error_code ec;
         auto manifest_path = manifest_dir / "vcpkg.json";
@@ -90,7 +90,7 @@ namespace vcpkg
     }
 
     static Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
-                                                                const Optional<ManifestAndLocation>& manifest_doc)
+                                                                const Optional<ManifestAndPath>& manifest_doc)
     {
         if (auto manifest = manifest_doc.get())
         {
@@ -131,13 +131,13 @@ namespace vcpkg
         return parsed_config_opt;
     }
 
-    static ConfigurationAndLocation merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
+    static ConfigurationAndSource merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
                                                            const Path& manifest_dir,
                                                            Optional<Configuration>&& config_data,
                                                            const Path& config_dir,
                                                            const VcpkgPaths& paths)
     {
-        ConfigurationAndLocation ret;
+        ConfigurationAndSource ret;
 
         if (auto manifest = manifest_data.get())
         {
@@ -169,7 +169,7 @@ namespace vcpkg
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
-                ret = ConfigurationAndLocation{std::move(*config), config_dir, ConfigurationLocation::ManifestFile};
+                ret = ConfigurationAndSource{std::move(*config), config_dir, ConfigurationSource::ManifestFile};
             }
         }
 
@@ -178,7 +178,7 @@ namespace vcpkg
             config->validate_as_active();
 
             ret =
-                ConfigurationAndLocation{std::move(*config), config_dir, ConfigurationLocation::VcpkgConfigurationFile};
+                ConfigurationAndSource{std::move(*config), config_dir, ConfigurationSource::VcpkgConfigurationFile};
         }
 
         if (auto manifest = manifest_data.get())
@@ -516,8 +516,8 @@ namespace vcpkg
 
             std::unique_ptr<IExclusiveFileLock> file_lock_handle;
 
-            Optional<ManifestAndLocation> m_manifest_doc;
-            ConfigurationAndLocation m_config;
+            Optional<ManifestAndPath> m_manifest_doc;
+            ConfigurationAndSource m_config;
             std::unique_ptr<RegistrySet> m_registry_set;
         };
     }
@@ -1277,7 +1277,7 @@ namespace vcpkg
         }
     }
 
-    Optional<const ManifestAndLocation&> VcpkgPaths::get_manifest() const
+    Optional<const ManifestAndPath&> VcpkgPaths::get_manifest() const
     {
         if (auto p = m_pimpl->m_manifest_doc.get())
         {
@@ -1286,7 +1286,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    const ConfigurationAndLocation& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
+    const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 
     const RegistrySet& VcpkgPaths::get_registry_set() const
     {

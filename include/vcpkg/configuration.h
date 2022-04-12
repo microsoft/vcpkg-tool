@@ -25,7 +25,7 @@ namespace vcpkg
         Json::Value serialize() const;
 
         ExpectedL<Optional<std::string>> get_latest_baseline(const VcpkgPaths& paths) const;
-        StringView registry_location() const;
+        StringView pretty_location() const;
     };
 
     struct Configuration
@@ -45,18 +45,18 @@ namespace vcpkg
         static View<StringView> known_fields();
     };
 
-    enum class ConfigurationLocation
+    enum class ConfigurationSource
     {
         None,
         VcpkgConfigurationFile,
         ManifestFile,
     };
 
-    struct ConfigurationAndLocation
+    struct ConfigurationAndSource
     {
         Configuration config;
         Path directory;
-        ConfigurationLocation location = ConfigurationLocation::None;
+        ConfigurationSource source = ConfigurationSource::None;
 
         std::unique_ptr<RegistrySet> instantiate_registry_set(const VcpkgPaths& paths) const
         {

@@ -3,7 +3,7 @@
 namespace vcpkg
 {
     struct Configuration;
-    struct ConfigurationAndLocation;
+    struct ConfigurationAndSource;
     struct RegistryConfig;
     struct ManifestConfiguration;
 }

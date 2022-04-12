@@ -55,7 +55,7 @@ namespace vcpkg::Commands
 
     static void update_baseline_in_config(const VcpkgPaths& paths, RegistryConfig& reg)
     {
-        auto url = reg.registry_location();
+        auto url = reg.pretty_location();
         auto new_baseline_res = reg.get_latest_baseline(paths);
 
         if (auto new_baseline = new_baseline_res.get())
@@ -93,9 +93,9 @@ namespace vcpkg::Commands
 
         auto configuration = paths.get_configuration();
         const bool has_manifest = paths.get_manifest().has_value();
-        auto manifest = has_manifest ? *paths.get_manifest().get() : ManifestAndLocation{};
+        auto manifest = has_manifest ? *paths.get_manifest().get() : ManifestAndPath{};
 
-        if (configuration.location == ConfigurationLocation::None && !has_manifest)
+        if (configuration.source == ConfigurationSource::None && !has_manifest)
         {
             msg::print_warning(msgUpdateBaselineNoConfiguration);
             Checks::exit_success(VCPKG_LINE_INFO);
@@ -108,7 +108,7 @@ namespace vcpkg::Commands
             Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO, msgUpdateBaselineAddBaselineNoManifest, msg::option = OPTION_ADD_INITIAL_BASELINE);
         }
-        if (!has_builtin_baseline && !add_builtin_baseline && configuration.location == ConfigurationLocation::None)
+        if (!has_builtin_baseline && !add_builtin_baseline && configuration.source == ConfigurationSource::None)
         {
             msg::print_warning(msgUpdateBaselineNoExistingBuiltinBaseline, msg::option = OPTION_ADD_INITIAL_BASELINE);
             Checks::exit_success(VCPKG_LINE_INFO);
@@ -144,12 +144,12 @@ namespace vcpkg::Commands
             update_baseline_in_config(paths, reg);
         }
 
-        if (configuration.location == ConfigurationLocation::ManifestFile)
+        if (configuration.source == ConfigurationSource::ManifestFile)
         {
             manifest.manifest.insert_or_replace("vcpkg-configuration", configuration.config.serialize());
         }
 
-        if (!dry_run && configuration.location == ConfigurationLocation::VcpkgConfigurationFile)
+        if (!dry_run && configuration.source == ConfigurationSource::VcpkgConfigurationFile)
         {
             paths.get_filesystem().write_contents(configuration.directory / "vcpkg-configuration.json",
                                                   Json::stringify(configuration.config.serialize(), {}),

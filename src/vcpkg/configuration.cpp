@@ -570,7 +570,7 @@ namespace vcpkg
         }
     }
 
-    StringView RegistryConfig::registry_location() const
+    StringView RegistryConfig::pretty_location() const
     {
         if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {
