@@ -54,18 +54,13 @@ namespace vcpkg::Update
         nullptr,
     };
 
-    DECLARE_AND_REGISTER_MESSAGE(UpdateCommandNoManifestMode,
-                                 (),
-                                 "",
-                                 "Error: the update command does not support manifest mode.");
-    DECLARE_AND_REGISTER_MESSAGE(UpdateCommandDidYouMean, (), "", "Did you mean `vcpkg x-update-baseline`?");
-
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         if (paths.manifest_mode_enabled())
         {
-            msg::println(Color::error, msgUpdateCommandNoManifestMode);
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUpdateCommandDidYouMean);
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                       "Error: the update command does not currently support manifest mode. Instead, "
+                                       "modify your vcpkg.json and run install.");
         }
 
         (void)args.parse_arguments(COMMAND_STRUCTURE);

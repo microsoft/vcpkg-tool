@@ -20,6 +20,11 @@
 
 namespace vcpkg
 {
+    constexpr StringLiteral builtin_registry_git_url()
+    {
+        return "https://github.com/microsoft/vcpkg";
+    }
+
     struct LockFile
     {
         struct EntryData

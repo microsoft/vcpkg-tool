@@ -1246,7 +1246,7 @@ namespace vcpkg
         if (paths.use_git_default_registry())
         {
             return std::make_unique<GitRegistry>(
-                paths, "https://github.com/Microsoft/vcpkg", "HEAD", std::move(baseline));
+                paths, builtin_registry_git_url(), "HEAD", std::move(baseline));
         }
         else
         {

@@ -552,8 +552,6 @@ namespace vcpkg
         }
     }
 
-    static constexpr StringLiteral BUILTIN_GIT_URL = "https://github.com/microsoft/vcpkg";
-
     ExpectedL<Optional<std::string>> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths) const
     {
         if (kind == RegistryConfigDeserializer::KIND_GIT)
@@ -562,7 +560,7 @@ namespace vcpkg
         }
         else if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {
-            return get_baseline_from_git_repo(paths, BUILTIN_GIT_URL);
+            return get_baseline_from_git_repo(paths, builtin_registry_git_url());
         }
         else
         {
@@ -574,7 +572,7 @@ namespace vcpkg
     {
         if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {
-            return BUILTIN_GIT_URL;
+            return builtin_registry_git_url();
         }
         if (kind == RegistryConfigDeserializer::KIND_FILESYSTEM)
         {

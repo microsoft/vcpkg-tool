@@ -29,11 +29,11 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineUpdatedBaseline,
                                  (msg::url, msg::old_value, msg::new_value),
                                  "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                                 "updated registry '{url}': baseline {old_value} -> {new_value}");
+                                 "updated registry '{url}': baseline '{old_value}' -> '{new_value}'");
     DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineNoUpdate,
                                  (msg::url, msg::value),
                                  "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                                 "registry '{url}' not updated: {value}");
+                                 "registry '{url}' not updated: '{value}'");
 }
 
 namespace vcpkg::Commands
@@ -64,14 +64,14 @@ namespace vcpkg::Commands
             {
                 msg::println(msgUpdateBaselineUpdatedBaseline,
                              msg::url = url,
-                             msg::old_value = reg.baseline.value_or("(none)"),
-                             msg::new_value = new_baseline->value_or("(none)"));
+                             msg::old_value = reg.baseline.value_or(""),
+                             msg::new_value = new_baseline->value_or(""));
                 reg.baseline = std::move(*new_baseline);
             }
             // new_baseline == reg.baseline
             else
             {
-                msg::println(msgUpdateBaselineNoUpdate, msg::url = url, msg::value = reg.baseline.value_or("(none)"));
+                msg::println(msgUpdateBaselineNoUpdate, msg::url = url, msg::value = reg.baseline.value_or(""));
             }
 
             return;
@@ -79,7 +79,7 @@ namespace vcpkg::Commands
 
         // this isn't an error, since we want to continue attempting to update baselines
         msg::print_warning(
-            msg::format(msgUpdateBaselineNoUpdate, msg::url = url, msg::value = reg.baseline.value_or("(none)"))
+            msg::format(msgUpdateBaselineNoUpdate, msg::url = url, msg::value = reg.baseline.value_or(""))
                 .appendnl()
                 .append(new_baseline_res.error()));
     }
@@ -119,7 +119,7 @@ namespace vcpkg::Commands
             // remove default_reg, since that's filled in with the builtin-baseline
             configuration.config.default_reg = nullopt;
 
-            auto synthesized_registry = RegistryConfig{};
+            RegistryConfig synthesized_registry;
             synthesized_registry.kind = "builtin";
             if (auto p = manifest.manifest.get("builtin-baseline"))
             {
