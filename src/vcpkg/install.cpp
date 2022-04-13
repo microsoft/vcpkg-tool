@@ -825,20 +825,9 @@ namespace vcpkg::Install
                 for (auto&& library_target_pair : library_targets)
                 {
                     auto config_it = config_files.find(library_target_pair.first);
-                    static constexpr StringLiteral find_package = "find_package(";
-                    static constexpr StringLiteral config_required = " CONFIG REQUIRED)";
                     msg.append_indent();
-                    msg.append_raw(find_package);
-                    if (config_it == config_files.end())
-                    {
-                        msg.append_raw(library_target_pair.first);
-                    }
-                    else
-                    {
-                        msg.append_raw(config_it->second);
-                    }
-
-                    msg.append_raw(config_required);
+                    msg.append_fmt_raw("find_package({} CONFIG REQUIRED)",
+                                       config_it == config_files.end() ? library_target_pair.first : config_it->second);
                     msg.appendnl();
 
                     auto& targets = library_target_pair.second;
@@ -856,10 +845,11 @@ namespace vcpkg::Install
                     }
 
                     msg.append_indent()
-                        .append_raw(fmt::format("target_link_libraries(main PRIVATE {})", Strings::join(" ", targets)))
+                        .append_fmt_raw("target_link_libraries(main PRIVATE {})", Strings::join(" ", targets))
                         .appendnl()
                         .appendnl();
                 }
+
                 ret.message = msg.extract_data();
             }
             ret.cmake_targets_map = std::move(library_targets);
