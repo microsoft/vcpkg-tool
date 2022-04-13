@@ -3,10 +3,14 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/sortedvector.h>
 
+#include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraph.h>
 
+#include <iomanip>
 #include <memory>
 
 #define CHECK_EC(ec)                                                                                                   \
@@ -47,6 +51,28 @@ namespace Catch
     {
         static const std::string& convert(const vcpkg::Triplet& triplet) { return triplet.canonical_name(); }
     };
+
+    template<>
+    struct StringMaker<vcpkg::LocalizedString>
+    {
+        static const std::string convert(const vcpkg::LocalizedString& value) { return "LL\"" + value.data() + "\""; }
+    };
+
+    template<>
+    struct StringMaker<vcpkg::PackageSpec>
+    {
+        static const std::string convert(const vcpkg::PackageSpec& value) { return value.to_string(); }
+    };
+}
+
+namespace vcpkg
+{
+    inline std::ostream& operator<<(std::ostream& os, const PackageSpec& value) { return os << value.to_string(); }
+
+    inline std::ostream& operator<<(std::ostream& os, const LocalizedString& value)
+    {
+        return os << "LL" << std::quoted(value.data());
+    }
 }
 
 namespace vcpkg::Test
@@ -59,12 +85,12 @@ namespace vcpkg::Test
 
     inline auto test_parse_control_file(const std::vector<std::unordered_map<std::string, std::string>>& v)
     {
-        std::vector<vcpkg::Parse::Paragraph> pghs;
+        std::vector<vcpkg::Paragraph> pghs;
         for (auto&& p : v)
         {
             pghs.emplace_back();
             for (auto&& kv : p)
-                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::Parse::TextRowCol{}));
+                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
         }
         return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));
     }
@@ -105,7 +131,11 @@ namespace vcpkg::Test
     template<class T, class S>
     T&& unwrap(vcpkg::ExpectedT<T, S>&& p)
     {
-        REQUIRE(p.has_value());
+        if (!p.has_value())
+        {
+            INFO(p.error_to_string());
+            REQUIRE(p.has_value());
+        }
         return std::move(*p.get());
     }
 
@@ -119,7 +149,7 @@ namespace vcpkg::Test
     inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv, Triplet t = X86_WINDOWS)
     {
         std::vector<FullPackageSpec> ret;
-        Parse::ParserBase parser(sv, "test");
+        ParserBase parser(sv, "test");
         while (!parser.at_eof())
         {
             auto opt = parse_qualified_specifier(parser);

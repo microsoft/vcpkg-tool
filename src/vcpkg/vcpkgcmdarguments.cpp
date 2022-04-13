@@ -189,7 +189,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            if (arg.byte_at_index(option.size()) == '=')
+            if (arg[option.size()] == '=')
             {
                 parser(arg.substr(option.size() + 1), option, place);
                 return TryParseArgumentResult::Found;
@@ -445,7 +445,7 @@ namespace vcpkg
             const auto it = find_option(switches_copy, switch_.name);
             if (it != switches_copy.end())
             {
-                output.switches.insert(switch_.name);
+                output.switches.insert(switch_.name.to_string());
                 switches_copy.erase(it);
             }
             const auto option_it = find_option(options_copy, switch_.name);
@@ -514,7 +514,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        output.multisettings[option.name].push_back(v);
+                        output.multisettings[option.name.to_string()].push_back(v);
                     }
                 }
                 options_copy.erase(it);

@@ -4,6 +4,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/uuid.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
@@ -19,6 +20,67 @@ namespace vcpkg
 {
     LockGuarded<Metrics> g_metrics;
 
+    Optional<StringView> find_first_nonzero_mac(StringView sv)
+    {
+        static constexpr StringLiteral ZERO_MAC = "00-00-00-00-00-00";
+
+        auto first = sv.begin();
+        const auto last = sv.end();
+
+        while (first != last)
+        {
+            // XX-XX-XX-XX-XX-XX
+            // 1  2  3  4  5  6
+            // size = 6 * 2 + 5 = 17
+            first = std::find_if(first, last, ParserBase::is_hex_digit);
+            if (last - first < 17)
+            {
+                break;
+            }
+
+            bool is_first = true;
+            bool is_valid = true;
+            auto end_of_mac = first;
+            for (int i = 0; is_valid && i < 6; ++i)
+            {
+                if (!is_first)
+                {
+                    if (*end_of_mac != '-')
+                    {
+                        is_valid = false;
+                        break;
+                    }
+                    ++end_of_mac;
+                }
+                is_first = false;
+
+                if (!ParserBase::is_hex_digit(*end_of_mac))
+                {
+                    is_valid = false;
+                    break;
+                }
+                ++end_of_mac;
+
+                if (!ParserBase::is_hex_digit(*end_of_mac))
+                {
+                    is_valid = false;
+                    break;
+                }
+                ++end_of_mac;
+            }
+            if (is_valid && StringView{first, end_of_mac} != ZERO_MAC)
+            {
+                return StringView{first, end_of_mac};
+            }
+            else
+            {
+                first = end_of_mac;
+            }
+        }
+
+        return nullopt;
+    }
+
     static std::string get_current_date_time_string()
     {
         auto maybe_time = CTime::get_current_date_time();
@@ -28,82 +90,6 @@ namespace vcpkg
         }
 
         return "";
-    }
-
-    struct append_hexits
-    {
-        constexpr static char hex[17] = "0123456789abcdef";
-        void operator()(std::string& res, std::uint8_t bits) const
-        {
-            res.push_back(hex[(bits >> 4) & 0x0F]);
-            res.push_back(hex[(bits >> 0) & 0x0F]);
-        }
-    };
-    constexpr char append_hexits::hex[17];
-
-    // note: this ignores the bits of these numbers that would be where format and variant go
-    static std::string uuid_of_integers(uint64_t top, uint64_t bottom)
-    {
-        // uuid_field_size in bytes, not hex characters
-        constexpr size_t uuid_top_field_size[] = {4, 2, 2};
-        constexpr size_t uuid_bottom_field_size[] = {2, 6};
-
-        // uuid_field_size in hex characters, not bytes
-        constexpr size_t uuid_size = 8 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 12;
-
-        constexpr static append_hexits write_byte;
-
-        // set the version bits to 4
-        top &= 0xFFFF'FFFF'FFFF'0FFFULL;
-        top |= 0x0000'0000'0000'4000ULL;
-
-        // set the variant bits to 2 (variant one)
-        bottom &= 0x3FFF'FFFF'FFFF'FFFFULL;
-        bottom |= 0x8000'0000'0000'0000ULL;
-
-        std::string res;
-        res.reserve(uuid_size);
-
-        bool first = true;
-        size_t start_byte = 0;
-        for (auto field_size : uuid_top_field_size)
-        {
-            if (!first)
-            {
-                res.push_back('-');
-            }
-            first = false;
-            for (size_t i = start_byte; i < start_byte + field_size; ++i)
-            {
-                auto shift = 64 - (i + 1) * 8;
-                write_byte(res, (top >> shift) & 0xFF);
-            }
-            start_byte += field_size;
-        }
-
-        start_byte = 0;
-        for (auto field_size : uuid_bottom_field_size)
-        {
-            res.push_back('-');
-            for (size_t i = start_byte; i < start_byte + field_size; ++i)
-            {
-                auto shift = 64 - (i + 1) * 8;
-                write_byte(res, (bottom >> shift) & 0xFF);
-            }
-            start_byte += field_size;
-        }
-
-        return res;
-    }
-
-    // UUID format version 4, variant 1
-    // http://en.wikipedia.org/wiki/Universally_unique_identifier
-    // [0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
-    static std::string generate_random_UUID()
-    {
-        std::random_device rnd{};
-        std::uniform_int_distribution<std::uint64_t> uid{};
-        return uuid_of_integers(uid(rnd), uid(rnd));
     }
 
     static const std::string& get_session_id()
@@ -146,9 +132,9 @@ namespace vcpkg
 
     struct MetricMessage
     {
-        std::string user_id = generate_random_UUID();
+        std::string user_id;
         std::string user_timestamp;
-        std::string timestamp = get_current_date_time_string();
+        std::string timestamp;
 
         Json::Object properties;
         Json::Object measurements;
@@ -156,24 +142,34 @@ namespace vcpkg
         Json::Array buildtime_names;
         Json::Array buildtime_times;
 
-        void track_property(const std::string& name, const std::string& value)
+        void track_property(StringView name, const std::string& value)
         {
             properties.insert_or_replace(name, Json::Value::string(value));
         }
 
-        void track_metric(const std::string& name, double value)
+        void track_property(StringView name, bool value)
+        {
+            properties.insert_or_replace(name, Json::Value::boolean(value));
+        }
+
+        void track_metric(StringView name, double value)
         {
             measurements.insert_or_replace(name, Json::Value::number(value));
         }
 
-        void track_buildtime(const std::string& name, double value)
+        void track_buildtime(StringView name, double value)
         {
             buildtime_names.push_back(Json::Value::string(name));
             buildtime_times.push_back(Json::Value::number(value));
         }
-        void track_feature(const std::string& name, bool value)
+        void track_feature(StringView name, bool value)
         {
-            properties.insert("feature-flag-" + name, Json::Value::boolean(value));
+            properties.insert(Strings::concat("feature-flag-", name), Json::Value::boolean(value));
+        }
+
+        void track_option(StringView name, bool value)
+        {
+            properties.insert(Strings::concat("option_", name), Json::Value::boolean(value));
         }
 
         std::string format_event_data_template() const
@@ -262,21 +258,15 @@ namespace vcpkg
 
         if (getmac.exit_code != 0) return "0";
 
-        std::regex mac_regex("([a-fA-F0-9]{2}(-[a-fA-F0-9]{2}){5})");
-        std::sregex_iterator next(getmac.output.begin(), getmac.output.end(), mac_regex);
-        std::sregex_iterator last;
-
-        while (next != last)
+        auto found_mac = find_first_nonzero_mac(getmac.output);
+        if (auto p = found_mac.get())
         {
-            const auto match = *next;
-            if (match[0] != "00-00-00-00-00-00")
-            {
-                return vcpkg::Hash::get_string_hash(match[0].str(), Hash::Algorithm::Sha256);
-            }
-            ++next;
+            return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
         }
-
-        return "0";
+        else
+        {
+            return "0";
+        }
     }
 #endif
 
@@ -348,7 +338,11 @@ namespace vcpkg
         g_metricmessage.track_property(name, value);
     }
 
+    void Metrics::track_property(const std::string& name, bool value) { g_metricmessage.track_property(name, value); }
+
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
+
+    void Metrics::track_option(const std::string& name, bool value) { g_metricmessage.track_option(name, value); }
 
     void Metrics::upload(const std::string& payload)
     {
@@ -493,9 +487,9 @@ namespace vcpkg
 
 #if defined(_WIN32)
         Command builder;
-        builder.path_arg(temp_folder_path_exe);
+        builder.string_arg(temp_folder_path_exe);
         builder.string_arg("x-upload-metrics");
-        builder.path_arg(vcpkg_metrics_txt_path);
+        builder.string_arg(vcpkg_metrics_txt_path);
         cmd_execute_background(builder);
 #else
         // TODO: convert to cmd_execute_background or something.
@@ -512,7 +506,7 @@ namespace vcpkg
                         .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
                         .raw_arg(">/dev/null")
                         .raw_arg("2>&1");
-        auto remove = Command("rm").path_arg(vcpkg_metrics_txt_path);
+        auto remove = Command("rm").string_arg(vcpkg_metrics_txt_path);
         Command cmd_line;
         cmd_line.raw_arg("(").raw_arg(curl.command_line()).raw_arg(";").raw_arg(remove.command_line()).raw_arg(") &");
         cmd_execute_clean(cmd_line);

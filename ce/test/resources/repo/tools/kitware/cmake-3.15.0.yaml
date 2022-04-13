@@ -1,0 +1,34 @@
+
+info:
+  id: tools/kitware/cmake
+  version: 3.15.0
+  description: sample yaml file that might work
+  summary: Kitware's cmake tool
+
+contacts:
+  Garrett Serack: 
+    email: garretts@microsoft.com
+    role: publisher
+  Kitware:
+    email: kitware@kitware.com
+    role: originator
+
+requires:
+    compilers/arm/gcc: 2020.10.0
+    compilers/arm/other: 1.2.3 
+    
+windows:
+  install:
+    unzip: https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0-windows-x86_64.zip
+    sha256: 056378cb599353479c3a8aa2654454b8a3eaa3c8c0872928ba7e09c3ec50774c  
+    strip: 1 # 
+
+not windows: 
+  error: not yet supported
+
+settings:
+  tools:
+    cmake: bin/cmake.exe
+  
+  paths:
+    - bin

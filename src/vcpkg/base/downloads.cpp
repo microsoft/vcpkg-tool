@@ -6,10 +6,31 @@
 #include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
+
+namespace
+{
+    using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(CurlReportedUnexpectedResults,
+                                 (msg::command_line, msg::actual),
+                                 "{command_line} is the command line to call curl.exe, {actual} is the console output "
+                                 "of curl.exe locale-invariant download results.",
+                                 "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\n"
+                                 "Please review the following text for sensitive information and open an issue on the "
+                                 "Microsoft/vcpkg GitHub to help fix this problem!\n"
+                                 "cmd: {command_line}\n"
+                                 "=== curl output ===\n"
+                                 "{actual}\n"
+                                 "=== end curl output ===\n");
+    DECLARE_AND_REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload,
+                                 (),
+                                 "",
+                                 "an unexpected error occurred during bulk download.");
+    DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
+}
 
 namespace vcpkg
 {
@@ -260,9 +281,14 @@ namespace vcpkg
         return true;
     }
 
-    static void url_heads_inner(View<std::string> urls, View<std::string> headers, std::vector<int>* out)
+    static void url_heads_inner(View<std::string> urls,
+                                View<std::string> headers,
+                                std::vector<int>* out,
+                                View<std::string> secrets)
     {
         static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
+
+        const size_t start_size = out->size();
 
         Command cmd;
         cmd.string_arg("curl")
@@ -278,15 +304,29 @@ namespace vcpkg
         {
             cmd.string_arg(url);
         }
-        auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
+
+        std::vector<std::string> lines;
+
+        auto res = cmd_execute_and_stream_lines(cmd, [out, &lines](StringView line) {
+            lines.push_back(line.to_string());
             if (Strings::starts_with(line, guid_marker))
             {
                 out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
             }
         });
         Checks::check_exit(VCPKG_LINE_INFO, res == 0, "curl failed to execute with exit code: %d", res);
+
+        if (out->size() != start_size + urls.size())
+        {
+            auto command_line = replace_secrets(std::move(cmd).extract(), secrets);
+            auto actual = replace_secrets(Strings::join("\n", lines), secrets);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msgCurlReportedUnexpectedResults,
+                                        msg::command_line = command_line,
+                                        msg::actual = actual);
+        }
     }
-    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers)
+    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets)
     {
         static constexpr size_t batch_size = 100;
 
@@ -295,9 +335,9 @@ namespace vcpkg
         size_t i = 0;
         for (; i + batch_size <= urls.size(); i += batch_size)
         {
-            url_heads_inner({urls.data() + i, batch_size}, headers, &ret);
+            url_heads_inner({urls.data() + i, batch_size}, headers, &ret, secrets);
         }
-        if (i != urls.size()) url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret);
+        if (i != urls.size()) url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret, secrets);
 
         return ret;
     }
@@ -318,16 +358,17 @@ namespace vcpkg
         for (auto i : {100, 1000, 10000, 0})
         {
             size_t start_size = out->size();
-            static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
+            static constexpr StringLiteral guid_marker = "5ec47b8e-6776-4d70-b9b3-ac2a57bc0a1c";
 
             Command cmd;
             cmd.string_arg("curl")
+                .string_arg("--create-dirs")
                 .string_arg("--location")
                 .string_arg("-w")
                 .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
             for (auto&& url : url_pairs)
             {
-                cmd.string_arg(url.first).string_arg("-o").path_arg(url.second);
+                cmd.string_arg(url.first).string_arg("-o").string_arg(url.second);
             }
             auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
                 if (Strings::starts_with(line, guid_marker))
@@ -340,7 +381,7 @@ namespace vcpkg
             if (start_size + url_pairs.size() > out->size())
             {
                 // curl stopped before finishing all downloads; retry after some time
-                print2(Color::warning, "Warning: an unexpected error occurred during bulk download.\n");
+                msg::print_warning(msgUnexpectedErrorDuringBulkDownload);
                 std::this_thread::sleep_for(std::chrono::milliseconds(i));
                 url_pairs =
                     View<std::pair<std::string, Path>>{url_pairs.begin() + out->size() - start_size, url_pairs.end()};
@@ -385,7 +426,7 @@ namespace vcpkg
             Command cmd;
             cmd.string_arg("curl");
             cmd.string_arg(url);
-            cmd.string_arg("-T").path_arg(file);
+            cmd.string_arg("-T").string_arg(file);
             auto res = cmd_execute_and_capture_output(cmd);
             if (res.exit_code != 0)
             {
@@ -403,7 +444,7 @@ namespace vcpkg
         }
         cmd.string_arg("-w").string_arg(Strings::concat("\\n", guid_marker, "%{http_code}"));
         cmd.string_arg(url);
-        cmd.string_arg("-T").path_arg(file);
+        cmd.string_arg("-T").string_arg(file);
         int code = 0;
         auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
             if (Strings::starts_with(line, guid_marker))
@@ -555,7 +596,7 @@ namespace vcpkg
             .string_arg(url)
             .string_arg("--create-dirs")
             .string_arg("--output")
-            .path_arg(download_path_part_path);
+            .string_arg(download_path_part_path);
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
@@ -659,7 +700,11 @@ namespace vcpkg
                                    }
                                }).value_or_exit(VCPKG_LINE_INFO);
 
-                    auto res = cmd_execute_and_capture_output(Command{}.raw_arg(cmd), get_clean_environment(), true);
+                    auto res = cmd_execute_and_capture_output(Command{}.raw_arg(cmd),
+                                                              default_working_directory,
+                                                              get_clean_environment(),
+                                                              Encoding::Utf8,
+                                                              EchoInDebug::Show);
                     if (res.exit_code == 0)
                     {
                         auto maybe_error =
@@ -695,7 +740,8 @@ namespace vcpkg
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push.has_value())
                         {
-                            print2(Color::warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
+                            msg::print_warning(msgFailedToStoreBackToMirror);
+                            msg::write_unlocalized_text_to_stdout(Color::warning, maybe_push.error());
                         }
                     }
                     return *url;

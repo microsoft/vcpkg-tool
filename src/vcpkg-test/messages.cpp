@@ -9,7 +9,7 @@ using namespace vcpkg::Commands;
 
 TEST_CASE ("generate message get_all_format_args", "[messages]")
 {
-    msg::LocalizedString err;
+    LocalizedString err;
     auto res = get_all_format_args("hey ho let's go", err);
     CHECK(err.data() == "");
     CHECK(res == std::vector<StringView>{});
@@ -37,7 +37,7 @@ TEST_CASE ("generate message get_all_format_args", "[messages]")
 
 TEST_CASE ("generate message get_format_arg_mismatches", "[messages]")
 {
-    msg::LocalizedString err;
+    LocalizedString err;
     auto res = get_format_arg_mismatches("hey ho", "", err);
     CHECK(err.data() == "");
     CHECK(res.arguments_without_comment == std::vector<StringView>{});
@@ -67,9 +67,4 @@ TEST_CASE ("generate message get_format_arg_mismatches", "[messages]")
     CHECK(err.data() == "");
     CHECK(res.arguments_without_comment == std::vector<StringView>{"go", "ho"});
     CHECK(res.comments_without_argument == std::vector<StringView>{"blah"});
-
-    res = get_format_arg_mismatches("hey {blah} {bloop}", "{Locked}", err);
-    CHECK(err.data() == "");
-    CHECK(res.arguments_without_comment == std::vector<StringView>{});
-    CHECK(res.comments_without_argument == std::vector<StringView>{});
 }

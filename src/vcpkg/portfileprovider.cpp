@@ -21,11 +21,11 @@ namespace
         OverlayRegistryEntry(Path&& p, Version&& v) : root(p), version(v) { }
 
         View<Version> get_port_versions() const override { return {&version, 1}; }
-        ExpectedS<Path> get_path_to_version(const Version& v) const override
+        ExpectedS<PathAndLocation> get_version(const Version& v) const override
         {
             if (v == version)
             {
-                return root;
+                return PathAndLocation{root, ""};
             }
             return Strings::format("Version %s not found; only %s is available.", v.to_string(), version.to_string());
         }
@@ -173,22 +173,25 @@ namespace vcpkg::PortFileProvider
                 const auto& maybe_ent = entry(version_spec.port_name);
                 if (auto ent = maybe_ent.get())
                 {
-                    auto maybe_path = ent->get()->get_path_to_version(version_spec.version);
+                    auto maybe_path = ent->get()->get_version(version_spec.version);
                     if (auto path = maybe_path.get())
                     {
-                        auto maybe_control_file = Paragraphs::try_load_port(m_fs, *path);
+                        auto maybe_control_file = Paragraphs::try_load_port(m_fs, path->path);
                         if (auto scf = maybe_control_file.get())
                         {
                             auto scf_vspec = scf->get()->to_version_spec();
                             if (scf_vspec == version_spec)
                             {
-                                return std::unique_ptr<SourceControlFileAndLocation>(
-                                    new SourceControlFileAndLocation{std::move(*scf), std::move(*path)});
+                                return std::unique_ptr<SourceControlFileAndLocation>(new SourceControlFileAndLocation{
+                                    std::move(*scf),
+                                    std::move(path->path),
+                                    std::move(path->location),
+                                });
                             }
                             else
                             {
                                 return msg::format(msgVersionSpecMismatch,
-                                                   msg::path = *path,
+                                                   msg::path = path->path,
                                                    msg::expected_version = version_spec,
                                                    msg::actual_version = scf_vspec)
                                     .extract_data();
@@ -201,7 +204,7 @@ namespace vcpkg::PortFileProvider
                             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                                        "Error: Failed to load port %s from %s",
                                                        version_spec.port_name,
-                                                       *path);
+                                                       path->path);
                         }
                     }
                     else

@@ -1,0 +1,10 @@
+{
+    "name": "classic-versions-b",
+    "version": "1",
+    "dependencies": [
+        {
+            "name": "classic-versions-a",
+            "version>=": "2"
+        }
+    ]
+}

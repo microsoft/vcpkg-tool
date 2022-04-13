@@ -7,8 +7,11 @@ namespace vcpkg::msg
     DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
 
     REGISTER_MESSAGE(SeeURL);
+    REGISTER_MESSAGE(NoteMessage);
     REGISTER_MESSAGE(WarningMessage);
     REGISTER_MESSAGE(ErrorMessage);
+    REGISTER_MESSAGE(InternalErrorMessage);
+    REGISTER_MESSAGE(InternalErrorMessageContact);
     REGISTER_MESSAGE(BothYesAndNoOptionSpecifiedError);
 
     // basic implementation - the write_unlocalized_text_to_stdout
@@ -152,12 +155,6 @@ namespace vcpkg::msg
         }
     }
 
-    LocalizedString& append_newline(LocalizedString& s)
-    {
-        s.m_data.push_back('\n');
-        return s;
-    }
-
     void threadunsafe_initialize_context()
     {
         Messages& m = messages();
@@ -170,7 +167,7 @@ namespace vcpkg::msg
         m.localized_strings.resize(m.names.size());
         m.initialized = true;
 
-        std::set<StringView, std::less<>> names_set(m.names.begin(), m.names.end());
+        std::set<StringLiteral, std::less<>> names_set(m.names.begin(), m.names.end());
         if (names_set.size() < m.names.size())
         {
             // This will not trigger on any correct code path, so it's fine to use a naive O(n^2)
@@ -212,7 +209,7 @@ namespace vcpkg::msg
             else if (Debug::g_debugging)
             {
                 // we only want to print these in debug
-                names_without_localization.push_back(name);
+                names_without_localization.emplace_back(name);
             }
         }
 
@@ -228,7 +225,7 @@ namespace vcpkg::msg
 
     static std::string locale_file_name(StringView language)
     {
-        std::string filename = "messages";
+        std::string filename = "messages.";
         filename.append(language.begin(), language.end()).append(".json");
         return filename;
     }
@@ -300,6 +297,6 @@ namespace vcpkg::msg
     LocalizedString detail::internal_vformat(::size_t index, fmt::format_args args)
     {
         auto fmt_string = get_format_string(index);
-        return LocalizedString::from_string_unchecked(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
+        return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
     }
 }

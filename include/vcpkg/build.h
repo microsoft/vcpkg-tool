@@ -4,9 +4,10 @@
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
 
-#include <vcpkg/base/cstringview.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/commands.integrate.h>
@@ -25,13 +26,14 @@ namespace vcpkg
 {
     struct BinaryCache;
     struct Environment;
+
+    DECLARE_MESSAGE(ElapsedForPackage, (msg::spec, msg::elapsed), "", "Elapsed time to handle {spec}: {elapsed}");
 }
 
 namespace vcpkg::Build
 {
     enum class BuildResult
     {
-        NULLVALUE = 0,
         SUCCEEDED,
         BUILD_FAILED,
         POST_BUILD_CHECKS_FAILED,
@@ -39,7 +41,8 @@ namespace vcpkg::Build
         CASCADED_DUE_TO_MISSING_DEPENDENCIES,
         EXCLUDED,
         CACHE_MISSING,
-        DOWNLOADED
+        DOWNLOADED,
+        REMOVED
     };
 
     struct IBuildLogsRecorder
@@ -56,7 +59,6 @@ namespace vcpkg::Build
         int perform_ex(const VcpkgCmdArguments& args,
                        const FullPackageSpec& full_spec,
                        Triplet host_triplet,
-                       const SourceControlFileAndLocation& scfl,
                        const PortFileProvider::PathsPortFileProvider& provider,
                        BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
@@ -64,7 +66,6 @@ namespace vcpkg::Build
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
                                  const FullPackageSpec& full_spec,
                                  Triplet host_triplet,
-                                 const SourceControlFileAndLocation& scfl,
                                  const PortFileProvider::PathsPortFileProvider& provider,
                                  BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
@@ -195,18 +196,26 @@ namespace vcpkg::Build
         Build::BackcompatFeatures::PROHIBIT,
     };
 
-    static constexpr std::array<BuildResult, 6> BUILD_RESULT_VALUES = {
-        BuildResult::SUCCEEDED,
-        BuildResult::BUILD_FAILED,
-        BuildResult::POST_BUILD_CHECKS_FAILED,
-        BuildResult::FILE_CONFLICTS,
-        BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES,
-        BuildResult::EXCLUDED};
+    struct BuildResultCounts
+    {
+        int succeeded = 0;
+        int build_failed = 0;
+        int post_build_checks_failed = 0;
+        int file_conflicts = 0;
+        int cascaded_due_to_missing_dependencies = 0;
+        int excluded = 0;
+        int cache_missing = 0;
+        int downloaded = 0;
+        int removed = 0;
 
-    const std::string& to_string(const BuildResult build_result);
-    std::string create_error_message(const BuildResult build_result, const PackageSpec& spec);
-    std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
-                                                    const VcpkgPaths& paths);
+        void increment(const BuildResult build_result);
+        void println(const Triplet& triplet) const;
+    };
+
+    StringLiteral to_string_locale_invariant(const BuildResult build_result);
+    LocalizedString to_string(const BuildResult build_result);
+    LocalizedString create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
+                                                        const VcpkgPaths& paths);
 
     /// <summary>
     /// Settings from the triplet file which impact the build environment and post-build checks
@@ -246,7 +255,7 @@ namespace vcpkg::Build
 
     struct ExtendedBuildResult
     {
-        ExtendedBuildResult(BuildResult code);
+        explicit ExtendedBuildResult(BuildResult code);
         ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps);
         ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 
@@ -254,6 +263,8 @@ namespace vcpkg::Build
         std::vector<FeatureSpec> unmet_dependencies;
         std::unique_ptr<BinaryControlFile> binary_control_file;
     };
+
+    LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
@@ -284,7 +295,7 @@ namespace vcpkg::Build
     extern const std::array<BuildPolicy, size_t(BuildPolicy::COUNT)> ALL_POLICIES;
 
     const std::string& to_string(BuildPolicy policy);
-    CStringView to_cmake_variable(BuildPolicy policy);
+    ZStringView to_cmake_variable(BuildPolicy policy);
 
     struct BuildPolicies
     {
@@ -351,6 +362,9 @@ namespace vcpkg::Build
         std::string package_abi;
         Optional<Path> abi_tag_file;
         Optional<const CompilerInfo&> compiler_info;
+        std::vector<Path> relative_port_files;
+        std::vector<std::string> relative_port_hashes;
+        std::vector<Json::Value> heuristic_resources;
     };
 
     void compute_all_abis(const VcpkgPaths& paths,

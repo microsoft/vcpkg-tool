@@ -1,0 +1,20 @@
+{
+  "extends": "../common/tsconfig.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "types": [
+      "node",
+      "mocha"
+    ],
+    "inlineSourceMap": true,
+  },
+  "include": [
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "node_modules/**",
+    "**/*.d.ts"
+  ]
+}

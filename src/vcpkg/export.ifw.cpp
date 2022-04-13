@@ -15,6 +15,81 @@ namespace vcpkg::Export::IFW
     using Dependencies::ExportPlanType;
     using Install::InstallDir;
 
+    // requires: after_prefix <= semi
+    // requires: *semi == ';'
+    static bool is_character_ref(const char* after_prefix, const char* semi)
+    {
+        if (after_prefix == semi)
+        {
+            return false;
+        }
+
+        if (*after_prefix == '#')
+        {
+            ++after_prefix;
+            if (*after_prefix == 'x')
+            {
+                ++after_prefix;
+                // hex character escape: &#xABC;
+                return after_prefix != semi && std::all_of(after_prefix, semi, ParserBase::is_hex_digit);
+            }
+
+            // decimal character escape: &#123;
+            return after_prefix != semi && std::all_of(after_prefix, semi, ParserBase::is_ascii_digit);
+        }
+
+        // word character escape: &amp;
+        return std::all_of(after_prefix, semi, ParserBase::is_word_char);
+    }
+
+    std::string safe_rich_from_plain_text(StringView text)
+    {
+        // looking for `&`, not followed by:
+        // - '#<numbers>;`
+        // - '#x<hex numbers>;`
+        // - `<numbers, letters, or _>;`
+        // (basically, an HTML character entity reference)
+        constexpr static StringLiteral escaped_amp = "&amp;";
+
+        auto first = text.begin();
+        const auto last = text.end();
+
+        std::string result;
+        for (;;)
+        {
+            auto amp = std::find(first, last, '&');
+            result.append(first, amp);
+            first = amp;
+            if (first == last)
+            {
+                break;
+            }
+
+            ++first; // skip amp
+            if (first == last)
+            {
+                result.append(escaped_amp.data(), escaped_amp.size());
+                break;
+            }
+            else
+            {
+                auto semi = std::find(first, last, ';');
+
+                if (semi != last && is_character_ref(first, semi))
+                {
+                    first = amp;
+                }
+                else
+                {
+                    result.append(escaped_amp.begin(), escaped_amp.end());
+                }
+                result.append(first, semi);
+                first = semi;
+            }
+        }
+        return result;
+    }
+
     namespace
     {
         std::string create_release_date()
@@ -31,14 +106,6 @@ namespace vcpkg::Export::IFW
                                bytes_written);
             const std::string date_time_as_string(mbstr);
             return date_time_as_string;
-        }
-
-        std::string safe_rich_from_plain_text(const std::string& text)
-        {
-            // match standalone ampersand, no HTML number or name
-            std::regex standalone_ampersand(R"###(&(?!(#[0-9]+|\w+);))###");
-
-            return std::regex_replace(text, standalone_ampersand, "&amp;");
         }
 
         Path get_packages_dir_path(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
@@ -341,9 +408,10 @@ namespace vcpkg::Export::IFW
                                failure_point);
 
             auto cmd_line =
-                Command(repogen_exe).string_arg("--packages").path_arg(packages_dir).path_arg(repository_dir);
+                Command(repogen_exe).string_arg("--packages").string_arg(packages_dir).string_arg(repository_dir);
 
-            const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
+            const int exit_code =
+                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW repository generating failed");
 
             vcpkg::printf(Color::success, "Generating repository %s... done.\n", repository_dir);
@@ -367,22 +435,23 @@ namespace vcpkg::Export::IFW
                 cmd_line = Command(binarycreator_exe)
                                .string_arg("--online-only")
                                .string_arg("--config")
-                               .path_arg(config_file)
+                               .string_arg(config_file)
                                .string_arg("--repository")
-                               .path_arg(repository_dir)
-                               .path_arg(installer_file);
+                               .string_arg(repository_dir)
+                               .string_arg(installer_file);
             }
             else
             {
                 cmd_line = Command(binarycreator_exe)
                                .string_arg("--config")
-                               .path_arg(config_file)
+                               .string_arg(config_file)
                                .string_arg("--packages")
-                               .path_arg(packages_dir)
-                               .path_arg(installer_file);
+                               .string_arg(packages_dir)
+                               .string_arg(installer_file);
             }
 
-            const int exit_code = cmd_execute_and_capture_output(cmd_line, get_clean_environment()).exit_code;
+            const int exit_code =
+                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
             Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: IFW installer generating failed");
 
             vcpkg::printf(Color::success, "Generating installer %s... done.\n", installer_file);

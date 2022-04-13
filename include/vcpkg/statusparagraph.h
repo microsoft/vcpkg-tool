@@ -34,7 +34,7 @@ namespace vcpkg
     struct StatusParagraph
     {
         StatusParagraph() noexcept;
-        explicit StatusParagraph(Parse::Paragraph&& fields);
+        explicit StatusParagraph(Paragraph&& fields);
 
         bool is_installed() const { return want == Want::INSTALL && state == InstallState::INSTALLED; }
 
@@ -61,6 +61,8 @@ namespace vcpkg
         const PackageSpec& spec() const { return core->package.spec; }
         std::vector<PackageSpec> dependencies() const;
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies() const;
+
+        std::vector<StatusParagraph> all_status_paragraphs() const;
 
         const StatusParagraph* core;
         std::vector<const StatusParagraph*> features;

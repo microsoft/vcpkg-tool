@@ -35,7 +35,6 @@
 #include <memory>
 #include <mutex>
 #include <random>
-#include <regex>
 #include <set>
 #include <stdexcept>
 #include <string>

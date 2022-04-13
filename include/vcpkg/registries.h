@@ -49,11 +49,20 @@ namespace vcpkg
         bool modified = false;
     };
 
+    struct PathAndLocation
+    {
+        Path path;
+
+        /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
+        /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
+        std::string location;
+    };
+
     struct RegistryEntry
     {
         virtual View<Version> get_port_versions() const = 0;
 
-        virtual ExpectedS<Path> get_path_to_version(const Version& version) const = 0;
+        virtual ExpectedS<PathAndLocation> get_version(const Version& version) const = 0;
 
         virtual ~RegistryEntry() = default;
     };
@@ -70,8 +79,6 @@ namespace vcpkg
         virtual void get_all_port_names(std::vector<std::string>& port_names) const = 0;
 
         virtual Optional<Version> get_baseline_version(StringView port_name) const = 0;
-
-        virtual Optional<Path> get_path_to_baseline_version(StringView port_name) const;
 
         virtual ~RegistryImplementation() = default;
     };

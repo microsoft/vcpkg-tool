@@ -78,11 +78,11 @@ namespace
 
 namespace vcpkg::VisualStudio
 {
-    static constexpr CStringView V_120 = "v120";
-    static constexpr CStringView V_140 = "v140";
-    static constexpr CStringView V_141 = "v141";
-    static constexpr CStringView V_142 = "v142";
-    static constexpr CStringView V_143 = "v143";
+    static constexpr StringLiteral V_120 = "v120";
+    static constexpr StringLiteral V_140 = "v140";
+    static constexpr StringLiteral V_141 = "v141";
+    static constexpr StringLiteral V_142 = "v142";
+    static constexpr StringLiteral V_143 = "v143";
 
     static constexpr CStringView WORKLOAD_NATIVE_DESKTOP = "Microsoft.VisualStudio.Workload.NativeDesktop";
     static constexpr CStringView WORKLOAD_CORE_FEATURES_TOOLS =
@@ -399,7 +399,7 @@ namespace vcpkg::VisualStudio
             }
         }
 
-        const auto maybe_append_path = [&](Path&& path_root, CStringView version, bool check_cl = true) {
+        const auto maybe_append_path = [&](Path&& path_root, ZStringView version, bool check_cl = true) {
             if (check_cl)
             {
                 const auto cl_exe = path_root / "VC" / "bin" / "cl.exe";
@@ -411,7 +411,7 @@ namespace vcpkg::VisualStudio
             instances.emplace_back(std::move(path_root), version.c_str(), VisualStudioInstance::ReleaseType::LEGACY);
         };
 
-        const auto maybe_append_comntools = [&](ZStringView env_var, CStringView version, bool check_cl = true) {
+        const auto maybe_append_comntools = [&](ZStringView env_var, ZStringView version, bool check_cl = true) {
             auto maybe_comntools = get_environment_variable(env_var);
             if (const auto path_as_string = maybe_comntools.get())
             {
@@ -429,7 +429,7 @@ namespace vcpkg::VisualStudio
             }
         };
 
-        const auto maybe_append_legacy_vs = [&](ZStringView env_var, const Path& dir, CStringView version) {
+        const auto maybe_append_legacy_vs = [&](ZStringView env_var, const Path& dir, ZStringView version) {
             // VS instance from environment variable
             maybe_append_comntools(env_var, version);
             // VS instance from Program Files
@@ -486,8 +486,8 @@ namespace vcpkg::VisualStudio
         std::vector<Toolset>& found_toolsets = ret.toolsets;
         std::vector<ToolVersion>& winsdk_versions = ret.winsdk_versions;
 
-        const SortedVector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(fs),
-                                                        VisualStudioInstance::preferred_first_comparator};
+        const SortedVector<VisualStudioInstance, decltype(&VisualStudioInstance::preferred_first_comparator)> sorted{
+            get_visual_studio_instances_internal(fs), VisualStudioInstance::preferred_first_comparator};
 
         const bool v140_is_available = Util::find_if(sorted, [&](const VisualStudioInstance& vs_instance) {
                                            return vs_instance.major_version() == "14";
@@ -550,22 +550,22 @@ namespace vcpkg::VisualStudio
                 {
                     auto toolset_version_full = subdir.filename();
                     auto toolset_version_prefix = toolset_version_full.substr(0, 4);
-                    CStringView toolset_version;
+                    ZStringView toolset_version;
                     std::string vcvars_option = "-vcvars_ver=" + toolset_version_full.to_string();
                     if (toolset_version_prefix.size() != 4)
                     {
                         // unknown toolset
                         continue;
                     }
-                    else if (toolset_version_prefix.byte_at_index(3) == '1')
+                    else if (toolset_version_prefix[3] == '1')
                     {
                         toolset_version = V_141;
                     }
-                    else if (toolset_version_prefix.byte_at_index(3) == '2')
+                    else if (toolset_version_prefix[3] == '2')
                     {
                         toolset_version = V_142;
                     }
-                    else if (toolset_version_prefix.byte_at_index(3) == '3')
+                    else if (toolset_version_prefix[3] == '3')
                     {
                         toolset_version = V_143;
                     }
@@ -655,30 +655,29 @@ namespace vcpkg::VisualStudio
 }
 namespace vcpkg
 {
-    msg::LocalizedString ToolsetsInformation::get_localized_debug_info() const
+    LocalizedString ToolsetsInformation::get_localized_debug_info() const
     {
-        msg::LocalizedString ret;
+        LocalizedString ret;
 
         if (toolsets.empty())
         {
-            ret.append(msg::format(msgVSNoInstances)).appendnl();
+            ret.append(msgVSNoInstances).appendnl();
         }
         else
         {
-            ret.append(msg::format(msgVSExaminedInstances)).appendnl();
+            ret.append(msgVSExaminedInstances).appendnl();
             for (const Toolset& toolset : toolsets)
             {
-                ret.append(msg::LocalizedString::from_string_unchecked(
-                    Strings::concat("    ", toolset.visual_studio_root_path, '\n')));
+                ret.append_indent().append_raw(toolset.visual_studio_root_path).appendnl();
             }
         }
 
         if (!paths_examined.empty())
         {
-            ret.append(msg::format(msgVSExaminedPaths)).appendnl();
+            ret.append(msgVSExaminedPaths).appendnl();
             for (const Path& examinee : paths_examined)
             {
-                ret.append(msg::LocalizedString::from_string_unchecked(Strings::concat("    ", examinee, '\n')));
+                ret.append_indent().append_raw(examinee).appendnl();
             }
         }
 

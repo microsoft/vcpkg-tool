@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
 namespace vcpkg
 {

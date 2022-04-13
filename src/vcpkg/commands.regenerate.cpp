@@ -1,5 +1,5 @@
 #include <vcpkg/base/basic_checks.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
@@ -39,7 +39,7 @@ namespace
     };
 
     static void forward_setting(std::vector<std::string>& forwarded_args,
-                                const std::unordered_map<std::string, std::string>& settings,
+                                const std::map<std::string, std::string, std::less<>>& settings,
                                 StringLiteral name)
     {
         auto found_setting = settings.find(name);

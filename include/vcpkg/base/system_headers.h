@@ -10,11 +10,8 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-#pragma warning(suppress : 4768)
-#include <windows.h>
-
-#pragma warning(suppress : 4768)
 #include <Shlobj.h>
+#include <windows.h>
 
 #else // ^^^^ Windows / Unix vvvv
 
