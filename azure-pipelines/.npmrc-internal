@@ -1,0 +1,2 @@
+registry=https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/vcpkg-ce-npm/npm/registry/
+always-auth=true
