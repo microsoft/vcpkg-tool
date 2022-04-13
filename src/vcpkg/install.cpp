@@ -47,9 +47,9 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}");
     DECLARE_AND_REGISTER_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}");
     DECLARE_AND_REGISTER_MESSAGE(InstallingPackage,
-                                 (msg::action_index, msg::action_count, msg::spec),
+                                 (msg::action_index, msg::count, msg::spec),
                                  "",
-                                 "Installing {action_index}/{action_count} {spec}...");
+                                 "Installing {action_index}/{count} {spec}...");
     DECLARE_AND_REGISTER_MESSAGE(HeaderOnlyUsage,
                                  (msg::package_name),
                                  "'header' refers to C/C++ .h files",
@@ -486,7 +486,7 @@ namespace vcpkg::Install
 
             msg::println(msgInstallingPackage,
                          msg::action_index = action_index,
-                         msg::action_count = action_count,
+                         msg::count = action_count,
                          msg::spec = action.spec);
         }
 
@@ -499,7 +499,7 @@ namespace vcpkg::Install
             current_summary = &results.back();
             msg::println(Remove::msgRemovingPackage,
                          msg::action_index = action_index,
-                         msg::action_count = action_count,
+                         msg::count = action_count,
                          msg::spec = action.spec);
         }
 

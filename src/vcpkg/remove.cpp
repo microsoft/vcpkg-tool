@@ -303,7 +303,7 @@ namespace vcpkg::Remove
             const RemovePlanAction& action = remove_plan[idx];
             msg::println(msgRemovingPackage,
                          msg::action_index = idx + 1,
-                         msg::action_count = remove_plan.size(),
+                         msg::count = remove_plan.size(),
                          msg::spec = action.spec);
             perform_remove_plan_action(paths, action, purge, &status_db);
         }

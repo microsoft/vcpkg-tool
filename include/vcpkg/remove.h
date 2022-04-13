@@ -17,9 +17,9 @@ namespace vcpkg::Remove
     };
 
     DECLARE_MESSAGE(RemovingPackage,
-                    (msg::action_index, msg::action_count, msg::spec),
+                    (msg::action_index, msg::count, msg::spec),
                     "",
-                    "Removing {action_index}/{action_count} {spec}");
+                    "Removing {action_index}/{count} {spec}");
 
     void perform_remove_plan_action(const VcpkgPaths& paths,
                                     const Dependencies::RemovePlanAction& action,
