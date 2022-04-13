@@ -431,6 +431,7 @@ namespace vcpkg::Commands::AddVersion
         const bool verbose = !add_all || Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
 
         auto& fs = paths.get_filesystem();
+        // TODO: Handle consistent port access 
         auto baseline_path = paths.builtin_registry_versions / "baseline.json";
         if (!fs.exists(baseline_path, IgnoreErrors{}))
         {
@@ -454,6 +455,7 @@ namespace vcpkg::Commands::AddVersion
                                    msg::command_name = "x-add-version",
                                    msg::option = OPTION_ALL);
 
+            // TODO: Handle consistent port access 
             for (auto&& port_dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
                 port_names.emplace_back(port_dir.stem().to_string());
@@ -466,6 +468,7 @@ namespace vcpkg::Commands::AddVersion
                 std::map<std::string, vcpkg::Version, std::less<>> ret;
                 return ret;
             }
+            // TODO: Handle consistent port access 
             auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
             return maybe_baseline_map.value_or_exit(VCPKG_LINE_INFO);
         }();
@@ -489,6 +492,7 @@ namespace vcpkg::Commands::AddVersion
 
         for (auto&& port_name : port_names)
         {
+            // TODO: Handle consistent port access 
             auto port_dir = paths.builtin_ports_directory() / port_name;
 
             if (!fs.exists(port_dir, IgnoreErrors{}))
@@ -498,6 +502,7 @@ namespace vcpkg::Commands::AddVersion
                 continue;
             }
 
+            // TODO: Handle consistent port access 
             auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
             if (!maybe_scf.has_value())
             {
@@ -512,6 +517,7 @@ namespace vcpkg::Commands::AddVersion
             if (!skip_formatting_check)
             {
                 // check if manifest file is property formatted
+                // TODO: Handle consistent port access 
                 const auto path_to_manifest = paths.builtin_ports_directory() / port_name / "vcpkg.json";
                 if (fs.exists(path_to_manifest, IgnoreErrors{}))
                 {
@@ -559,6 +565,7 @@ namespace vcpkg::Commands::AddVersion
             const auto& git_tree = git_tree_it->second;
 
             char prefix[] = {port_name[0], '-', '\0'};
+            // TODO: Handle consistent port access 
             auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             auto updated_versions_file = update_version_db_file(paths,
                                                                 port_name,
@@ -569,6 +576,7 @@ namespace vcpkg::Commands::AddVersion
                                                                 verbose,
                                                                 add_all,
                                                                 skip_version_format_check);
+            // TODO: Handle consistent port access 
             auto updated_baseline_file = update_baseline_version(
                 paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
             if (verbose && updated_versions_file == UpdateResult::NotUpdated &&

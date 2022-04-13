@@ -222,6 +222,7 @@ namespace vcpkg::Commands::FormatManifest
         {
             if (path.is_relative())
             {
+                // TODO: Handle consistent port access 
                 path = paths.original_cwd / path;
             }
 
@@ -237,6 +238,7 @@ namespace vcpkg::Commands::FormatManifest
 
         if (format_all)
         {
+            // TODO: Handle consistent port access 
             for (const auto& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
                 auto control_path = dir / "CONTROL";
