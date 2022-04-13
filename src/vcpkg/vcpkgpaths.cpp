@@ -132,10 +132,10 @@ namespace vcpkg
     }
 
     static ConfigurationAndSource merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
-                                                           const Path& manifest_dir,
-                                                           Optional<Configuration>&& config_data,
-                                                           const Path& config_dir,
-                                                           const VcpkgPaths& paths)
+                                                         const Path& manifest_dir,
+                                                         Optional<Configuration>&& config_data,
+                                                         const Path& config_dir,
+                                                         const VcpkgPaths& paths)
     {
         ConfigurationAndSource ret;
 
@@ -177,8 +177,7 @@ namespace vcpkg
         {
             config->validate_as_active();
 
-            ret =
-                ConfigurationAndSource{std::move(*config), config_dir, ConfigurationSource::VcpkgConfigurationFile};
+            ret = ConfigurationAndSource{std::move(*config), config_dir, ConfigurationSource::VcpkgConfigurationFile};
         }
 
         if (auto manifest = manifest_data.get())

@@ -125,7 +125,8 @@ TEST_CASE ("operator==/operator!=", "[optional]")
     using vcpkg::Optional;
     using vcpkg::StringLiteral;
 
-    SECTION ("same type - opt == opt") {
+    SECTION ("same type - opt == opt")
+    {
         Optional<std::string> s1;
         Optional<std::string> s2;
 
@@ -157,7 +158,8 @@ TEST_CASE ("operator==/operator!=", "[optional]")
         CHECK(s2 != s1);
     };
 
-    SECTION ("same type - opt == raw") {
+    SECTION ("same type - opt == raw")
+    {
         Optional<std::string> opt_string;
         std::string string;
 
@@ -182,7 +184,8 @@ TEST_CASE ("operator==/operator!=", "[optional]")
         CHECK(string != opt_string);
     };
 
-    SECTION ("different types - opt == opt") {
+    SECTION ("different types - opt == opt")
+    {
         Optional<std::string> opt_string;
         Optional<StringLiteral> opt_literal;
 
@@ -214,7 +217,8 @@ TEST_CASE ("operator==/operator!=", "[optional]")
         CHECK(opt_literal != opt_string);
     };
 
-    SECTION ("different types - opt == raw") {
+    SECTION ("different types - opt == raw")
+    {
         Optional<std::string> opt_string;
         StringLiteral literal = "";
 
