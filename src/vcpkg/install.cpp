@@ -819,48 +819,48 @@ namespace vcpkg::Install
             }
             else
             {
-                // clang-format off
-                // to preserve output lines
-                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).appendnl()
-                    .append_indent().append(msgCMakeTargetsUsageHueristicMessage).appendnl()
-                    .extract_data();
-                // clang-format on
+                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).appendnl();
+                msg.append_indent().append(msgCMakeTargetsUsageHueristicMessage).appendnl();
 
                 for (auto&& library_target_pair : library_targets)
                 {
                     auto config_it = config_files.find(library_target_pair.first);
-                    if (config_it != config_files.end())
-                        Strings::append(msg, "    find_package(", config_it->second, " CONFIG REQUIRED)\n");
+                    static constexpr StringLiteral find_package = "find_package(";
+                    static constexpr StringLiteral config_required = " CONFIG REQUIRED)";
+                    msg.append_indent();
+                    msg.append_raw(find_package);
+                    if (config_it == config_files.end())
+                    {
+                        msg.append_raw(library_target_pair.first);
+                    }
                     else
-                        Strings::append(msg, "    find_package(", library_target_pair.first, " CONFIG REQUIRED)\n");
+                    {
+                        msg.append_raw(config_it->second);
+                    }
+
+                    msg.append_raw(config_required);
+                    msg.appendnl();
 
                     auto& targets = library_target_pair.second;
-                    Util::sort(targets, [](const std::string& l, const std::string& r) {
+                    Util::sort_unique_erase(targets, [](const std::string& l, const std::string& r) {
                         if (l.size() < r.size()) return true;
                         if (l.size() > r.size()) return false;
                         return l < r;
                     });
-                    targets.erase(std::unique(targets.begin(), targets.end()), targets.end());
 
                     if (targets.size() > 4)
                     {
                         auto omitted = targets.size() - 4;
                         library_target_pair.second.erase(targets.begin() + 4, targets.end());
-                        msg.append(LocalizedString()
-                                       .append_indent()
-                                       .append_raw("# ")
-                                       .append(msgCmakeTargetsExcluded, msg::count = omitted)
-                                       .extract_data());
+                        msg.append_indent().append_raw("# ").append(msgCmakeTargetsExcluded, msg::count = omitted);
                     }
-                    msg.append(LocalizedString()
-                                   .append_indent()
-                                   .append_raw(fmt::format("target_link_libraries(main PRIVATE {})",
-                                                           Strings::join(" ", targets)))
-                                   .appendnl()
-                                   .appendnl()
-                                   .extract_data());
+
+                    msg.append_indent()
+                        .append_raw(fmt::format("target_link_libraries(main PRIVATE {})", Strings::join(" ", targets)))
+                        .appendnl()
+                        .appendnl();
                 }
-                ret.message = std::move(msg);
+                ret.message = msg.extract_data();
             }
             ret.cmake_targets_map = std::move(library_targets);
         }
