@@ -76,7 +76,9 @@ jobs:
       displayName: Use Node 16 or later
       inputs:
         version: "16.x"
-    - script: copy azure-pipelines\.npmrc-internal ce\common\config\rush\.npmrc
+    - script: |
+        copy azure-pipelines\.npmrc-internal ce\common\config\rush\.npmrc
+        vsts-npm-auth -config ce\common\config\rush\.npmrc
       displayName: Use internal .npmrc
     - script: npm install -g @microsoft/rush
       displayName: Install Rush
