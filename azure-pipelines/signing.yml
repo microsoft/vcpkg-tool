@@ -76,9 +76,15 @@ jobs:
       displayName: Use Node 16 or later
       inputs:
         version: "16.x"
+    - script: copy azure-pipelines\.npmrc-internal ce\common\config\rush\.npmrc
+      displayName: Use internal .npmrc
+    - task: npmAuthenticate@0
+      inputs:
+        workingFile: 'ce\common\config\rush\.npmrc'
+      # The working directory change is to get the above .npmrc used when installing rush
     - script: npm install -g @microsoft/rush
       displayName: Install Rush
-      workingDirectory: ce
+      workingDirectory: ce\common\config\rush
     - script: rush update
       displayName: Install vcpkg-ce Dependencies
       workingDirectory: ce
