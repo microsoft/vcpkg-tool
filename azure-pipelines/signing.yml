@@ -78,6 +78,7 @@ jobs:
         version: "16.x"
     - script: |
         copy azure-pipelines\.npmrc-internal ce\common\config\rush\.npmrc
+        npm install -g vsts-npm-auth --registry https://registry.npmjs.com --always-auth false
         vsts-npm-auth -config ce\common\config\rush\.npmrc
       displayName: Use internal .npmrc
     - script: npm install -g @microsoft/rush
