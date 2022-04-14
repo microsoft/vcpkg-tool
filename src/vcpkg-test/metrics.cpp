@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/system.mac.h>
+
 #include <vcpkg/metrics.h>
 
 using namespace vcpkg;
