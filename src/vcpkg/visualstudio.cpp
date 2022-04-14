@@ -269,7 +269,7 @@ namespace vcpkg::VisualStudio
                                                            .string_arg("-products")
                                                            .string_arg("*")
                                                            .string_arg("-requires")
-                                                           .string_arg(WORKLOAD_CORE_FEATURES_TOOLS.c_str())
+                                                           .string_arg(WORKLOAD_CORE_FEATURES_TOOLS)
                                                            .string_arg("-property")
                                                            .string_arg("installationVersion"));
                     Checks::check_exit(VCPKG_LINE_INFO,
@@ -286,7 +286,7 @@ namespace vcpkg::VisualStudio
                                                                                    .string_arg("-products")
                                                                                    .string_arg("*")
                                                                                    .string_arg("-requires")
-                                                                                   .string_arg(WORKLOAD_MSBUILD.c_str())
+                                                                                   .string_arg(WORKLOAD_MSBUILD)
                                                                                    .string_arg("-property")
                                                                                    .string_arg("installationVersion"));
                     Checks::check_exit(VCPKG_LINE_INFO,
@@ -304,7 +304,7 @@ namespace vcpkg::VisualStudio
                                                            .string_arg("-products")
                                                            .string_arg("*")
                                                            .string_arg("-requires")
-                                                           .string_arg(x86_64_toolset.c_str())
+                                                           .string_arg(x86_64_toolset)
                                                            .string_arg("-property")
                                                            .string_arg("installationVersion"));
                     Checks::check_exit(VCPKG_LINE_INFO,
@@ -321,7 +321,7 @@ namespace vcpkg::VisualStudio
                                                                                 .string_arg("-products")
                                                                                 .string_arg("*")
                                                                                 .string_arg("-requires")
-                                                                                .string_arg(COMPONENT_UCRT.c_str())
+                                                                                .string_arg(COMPONENT_UCRT)
                                                                                 .string_arg("-property")
                                                                                 .string_arg("installationVersion"));
                     Checks::check_exit(VCPKG_LINE_INFO,
@@ -340,7 +340,7 @@ namespace vcpkg::VisualStudio
                                                            .string_arg("-products")
                                                            .string_arg("*")
                                                            .string_arg("-requires")
-                                                           .string_arg(COMPONENT_ARM_VCTOOLS.c_str())
+                                                           .string_arg(COMPONENT_ARM_VCTOOLS)
                                                            .string_arg("-property")
                                                            .string_arg("installationVersion"));
                     Checks::check_exit(VCPKG_LINE_INFO,
@@ -359,7 +359,7 @@ namespace vcpkg::VisualStudio
                                                            .string_arg("-products")
                                                            .string_arg("*")
                                                            .string_arg("-requires")
-                                                           .string_arg(COMPONENT_ARM64_VCTOOLS.c_str())
+                                                           .string_arg(COMPONENT_ARM64_VCTOOLS)
                                                            .string_arg("-property")
                                                            .string_arg("installationVersion"));
                     Checks::check_exit(VCPKG_LINE_INFO,
@@ -377,7 +377,7 @@ namespace vcpkg::VisualStudio
                                                                                .string_arg("-products")
                                                                                .string_arg("*")
                                                                                .string_arg("-requires")
-                                                                               .string_arg(COMPONENT_UWP.c_str())
+                                                                               .string_arg(COMPONENT_UWP)
                                                                                .string_arg("-property")
                                                                                .string_arg("installationVersion"));
                     Checks::check_exit(VCPKG_LINE_INFO,
