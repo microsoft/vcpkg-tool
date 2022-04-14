@@ -6,7 +6,7 @@
 
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <type_traits>
@@ -43,7 +43,13 @@ namespace vcpkg
 
         LocalizedString& append_raw(StringView s)
         {
-            m_data.append(s.begin(), s.end());
+            m_data.append(s.begin(), s.size());
+            return *this;
+        }
+        template<class... Args>
+        LocalizedString& append_fmt_raw(fmt::string_view s, const Args&... args)
+        {
+            m_data.append(fmt::format(s, args...));
             return *this;
         }
         LocalizedString& append(const LocalizedString& s)
@@ -62,13 +68,9 @@ namespace vcpkg
             m_data.push_back('\n');
             return *this;
         }
-        LocalizedString& append_indent(int indent = 1)
+        LocalizedString& append_indent(size_t indent = 1)
         {
-            static const StringLiteral INDENT = "    ";
-            for (int i = 0; i < indent; ++i)
-            {
-                m_data.append(INDENT.data(), INDENT.size());
-            }
+            m_data.append(indent * 4, ' ');
             return *this;
         }
 
@@ -148,8 +150,6 @@ namespace vcpkg::msg
         std::string get_examples_for_args(StringView extra, const MessageCheckFormatArgs<Args...>&)
         {
             std::string res(extra.begin(), extra.end());
-            if (res == "{Locked}") return res;
-
             if (!res.empty()) res.push_back('\n');
             (void)(..., res.append(Args::comment()));
             return res;
@@ -247,6 +247,8 @@ namespace vcpkg::msg
 
     DECLARE_MSG_ARG(actual_version, "1.3.8");
     DECLARE_MSG_ARG(arch, "x64");
+    DECLARE_MSG_ARG(base_url, "azblob://");
+    DECLARE_MSG_ARG(binary_source, "azblob");
     DECLARE_MSG_ARG(build_result, "One of the BuildResultXxx messages (such as BuildResultSucceeded/SUCCEEDED)");
     DECLARE_MSG_ARG(column, "42");
     DECLARE_MSG_ARG(command_line, "vcpkg install zlib");
@@ -254,6 +256,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(count, "42");
     DECLARE_MSG_ARG(elapsed, "3.532 min");
     DECLARE_MSG_ARG(email, "vcpkg@microsoft.com");
+    DECLARE_MSG_ARG(error_msg, "File Not Found");
     DECLARE_MSG_ARG(exit_code, "127");
     DECLARE_MSG_ARG(expected_version, "1.3.8");
     DECLARE_MSG_ARG(new_scheme, "version");
@@ -264,10 +267,12 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(row, "42");
     DECLARE_MSG_ARG(spec, "zlib:x64-windows");
     DECLARE_MSG_ARG(system_name, "Darwin");
+    DECLARE_MSG_ARG(tool_name, "aria2");
     DECLARE_MSG_ARG(triplet, "x64-windows");
     DECLARE_MSG_ARG(url, "https://github.com/microsoft/vcpkg");
-    DECLARE_MSG_ARG(version, "1.3.8");
     DECLARE_MSG_ARG(vcpkg_line_info, "/a/b/foo.cpp(13)");
+    DECLARE_MSG_ARG(vendor, "Azure");
+    DECLARE_MSG_ARG(version, "1.3.8");
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of
@@ -309,12 +314,20 @@ namespace vcpkg::msg
                     "",
                     "error: cannot specify both --no-{option} and --{option}.");
 
+    inline void print_warning(const LocalizedString& s)
+    {
+        print(Color::warning, format(msgErrorMessage).append(s).appendnl());
+    }
     template<class Message, class... Ts>
     void print_warning(Message m, Ts... args)
     {
         print(Color::warning, format(msgWarningMessage).append(format(m, args...).appendnl()));
     }
 
+    inline void print_error(const LocalizedString& s)
+    {
+        print(Color::error, format(msgErrorMessage).append(s).appendnl());
+    }
     template<class Message, class... Ts>
     void print_error(Message m, Ts... args)
     {

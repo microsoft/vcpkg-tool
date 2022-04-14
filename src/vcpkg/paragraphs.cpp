@@ -431,23 +431,24 @@ namespace vcpkg::Paragraphs
                 continue;
             }
 
-            if (auto p = impl->get_path_to_baseline_version(port_name))
+            const auto baseline_version = impl->get_baseline_version(port_name);
+            if (!baseline_version) continue; // port is attributed to this registry, but it is not in the baseline
+            const auto port_entry = impl->get_port_entry(port_name);
+            if (!port_entry) continue; // port is attributed to this registry, but there is no version db
+            auto port_location = port_entry->get_version(*baseline_version.get());
+            if (!port_location) continue; // baseline version was not in version db (registry consistency issue)
+            auto maybe_spgh = try_load_port(fs, port_location.get()->path);
+            if (const auto spgh = maybe_spgh.get())
             {
-                auto maybe_spgh = try_load_port(fs, *p.get());
-                if (const auto spgh = maybe_spgh.get())
-                {
-                    ret.paragraphs.push_back({std::move(*spgh), std::move(*p.get())});
-                }
-                else
-                {
-                    ret.errors.emplace_back(std::move(maybe_spgh).error());
-                }
+                ret.paragraphs.push_back({
+                    std::move(*spgh),
+                    std::move(port_location.get()->path),
+                    std::move(port_location.get()->location),
+                });
             }
             else
             {
-                // the registry that owns the name of this port does not actually contain the port
-                // this can happen if R1 contains the port definition for <abc>, but doesn't
-                // declare it owns <abc>.
+                ret.errors.emplace_back(std::move(maybe_spgh).error());
             }
         }
 

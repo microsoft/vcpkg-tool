@@ -5,7 +5,6 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -24,6 +23,11 @@
 #if defined(_WIN32)
 #pragma comment(lib, "Advapi32")
 #endif
+
+namespace
+{
+    DECLARE_AND_REGISTER_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...");
+}
 
 namespace vcpkg
 {
@@ -95,7 +99,7 @@ namespace vcpkg
                         while (true)
                         {
                             std::this_thread::sleep_for(std::chrono::seconds(10));
-                            print2("Waiting for child processes to exit...\n");
+                            msg::println(msgWaitingForChildrenToExit);
                         }
                     }
                 }
@@ -118,7 +122,7 @@ namespace vcpkg
                     while (true)
                     {
                         std::this_thread::sleep_for(std::chrono::seconds(10));
-                        print2("Waiting for child processes to exit...\n");
+                        msg::println(msgWaitingForChildrenToExit);
                     }
                 }
             }
@@ -900,7 +904,7 @@ namespace vcpkg
                 Strings::append(output, sv);
                 if (echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                 {
-                    print2(sv);
+                    msg::write_unlocalized_text_to_stdout(Color::none, sv);
                 }
             },
             wd,

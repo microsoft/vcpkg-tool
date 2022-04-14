@@ -6,7 +6,7 @@
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <utility>
@@ -23,6 +23,7 @@ namespace vcpkg
         static constexpr StringLiteral GIT = "git";
         static constexpr StringLiteral GSUTIL = "gsutil";
         static constexpr StringLiteral AWSCLI = "aws";
+        static constexpr StringLiteral COSCLI = "coscli";
         static constexpr StringLiteral MONO = "mono";
         static constexpr StringLiteral NINJA = "ninja";
         static constexpr StringLiteral POWERSHELL_CORE = "powershell-core";

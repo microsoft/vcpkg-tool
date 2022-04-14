@@ -48,15 +48,6 @@ namespace
 Please send an email to:
     {email}
 containing a brief summary of what you were trying to do and the following data blob:)");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedDataBlob,
-                                 (msg::version, msg::error),
-                                 "{Locked}",
-                                 R"(
-Version={version}
-EXCEPTION='{error}'
-CMD=)");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashedArgument, (msg::value), "{Locked}", "{value}|");
-
     DECLARE_AND_REGISTER_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
         (),
@@ -93,6 +84,8 @@ static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
             return static_cast<decltype(&*it)>(nullptr);
         }
     };
+
+    LockGuardPtr<Metrics>(g_metrics)->track_option("overlay_ports", !args.overlay_ports.empty());
 
     if (const auto command_function = find_command(Commands::get_available_basic_commands()))
     {
@@ -250,7 +243,7 @@ int main(const int argc, const char* const* const argv)
         }
     });
 
-    LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version());
+    LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version.to_string());
 
     register_console_ctrl_handler();
 
@@ -338,16 +331,21 @@ int main(const int argc, const char* const* const argv)
     fflush(stdout);
     msg::println(msgVcpkgHasCrashed, msg::email = Commands::Contact::email());
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashedDataBlob, msg::version = Commands::Version::version(), msg::error = exc_msg);
-    fflush(stdout);
+    msg::println();
+    LocalizedString data_blob;
+    data_blob.append_raw("Version=").append_raw(Commands::Version::version).appendnl();
+    data_blob.append_raw("EXCEPTION=").append_raw(exc_msg).appendnl();
+    data_blob.append_raw("CMD=").appendnl();
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
-        msg::println(msgVcpkgHasCrashedArgument, msg::value = Strings::to_utf8(argv[x]));
+        data_blob.append_raw(Strings::to_utf8(argv[x])).append_raw("|").appendnl();
 #else
-        msg::println(msgVcpkgHasCrashedArgument, msg::value = argv[x]);
+        data_blob.append_raw(argv[x]).append_raw("|").appendnl();
 #endif
     }
+
+    msg::print(data_blob);
     fflush(stdout);
 
     // It is expected that one of the sub-commands will exit cleanly before we get here.
