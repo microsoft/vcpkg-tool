@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-export const project = 'environment.yaml';
 export const undo = 'Z_VCPKG_UNDO';
 export const postscriptVarible = 'Z_VCPKG_POSTSCRIPT';
 export const blank = '\n';
-export const gitArtifact = 'microsoft:system/git';
 export const latestVersion = '*';
 export const vcpkgDownloadFolder = 'VCPKG_DOWNLOADS';
 export const globalConfigurationFile = 'vcpkg-configuration.global.json';

@@ -77,7 +77,6 @@ export class MetadataFile extends BaseMap implements Profile {
   get requires() { return this.demandBlock.requires; }
   get exports() { return this.demandBlock.exports; }
   get install() { return this.demandBlock.install; }
-  get unless() { return this.demandBlock.unless; }
 
   conditionalDemands = new Demands(undefined, this, 'demands');
 

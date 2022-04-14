@@ -9,7 +9,9 @@ import { Session } from '../session';
 import { Uri } from '../util/uri';
 
 export async function installGit(session: Session, name: string, targetLocation: Uri, install: GitInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions & CloneOptions & CloneSettings>): Promise<void> {
-  const gitPath = await session.activation.getAlias('git');
+  // const gitPath = await session.activation.getAlias('git');
+  const gitPath = '';
+
 
   if (!gitPath) {
     throw new Error(i`Git is not installed`);

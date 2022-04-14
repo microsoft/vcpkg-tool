@@ -6,10 +6,9 @@ import { fail } from 'assert';
 import { match } from 'micromatch';
 import { delimiter, resolve } from 'path';
 import { MetadataFile } from '../amf/metadata-file';
-import { gitArtifact, latestVersion } from '../constants';
+import { latestVersion } from '../constants';
 import { FileType } from '../fs/filesystem';
 import { i } from '../i18n';
-import { activateEspIdf, installEspIdf } from '../installers/espidf';
 import { InstallEvents } from '../interfaces/events';
 import { Registries } from '../registries/registries';
 import { Session } from '../session';
@@ -17,6 +16,7 @@ import { linq } from '../util/linq';
 import { Uri } from '../util/uri';
 import { Registry } from './registry';
 import { SetOfDemands } from './SetOfDemands';
+
 
 export type Selections = Map<string, string>;
 export type UID = string;
@@ -84,21 +84,6 @@ class ArtifactBase {
       }
     }
 
-    // check if system/git is already requested
-    if (!linq.entries(artifacts).first(([id, [artifact, name, version]]) => artifact.registryId === 'microsoft' && artifact.shortName === 'system/git')) {
-
-      // nope, should it be?
-      // check if anyone needs git and add it if it isn't there
-      for (const each of this.applicableDemands.installer) {
-        if (each.installerKind === 'git') {
-          const [reg, id, art] = await this.registries.getArtifact(gitArtifact, latestVersion) || [];
-          if (art) {
-            artifacts.set(gitArtifact, [art, gitArtifact, latestVersion]);
-            break;
-          }
-        }
-      }
-    }
     return artifacts;
   }
 }
@@ -247,16 +232,6 @@ export class Artifact extends ArtifactBase {
       this.session.activation.addExports(exportsBlock, this.targetLocation);
     }
 
-    // if espressif install
-    if (this.metadata.info.flags.has('espidf')) {
-      // check for some file that espressif installs to see if it's installed.
-      if (!await this.targetLocation.exists('.espressif')) {
-        await installEspIdf(this.session, events, this.targetLocation);
-      }
-
-      // activate
-      await activateEspIdf(this.session, this.targetLocation);
-    }
     return true;
   }
 
