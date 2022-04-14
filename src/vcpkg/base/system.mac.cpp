@@ -6,6 +6,8 @@
 #include <vcpkg/metrics.h>
 
 #if defined(__linux__)
+#include <unistd.h>
+
 #include <net/if.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
@@ -92,51 +94,79 @@ namespace vcpkg
         {
             return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
         }
-#elif defined(__linux__)
-        auto fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-        if (fd == -1)
+#elif defined(__linux__) || defined(__APPLE__)
+        struct locked_socket
+        {
+            int fd;
+            ~locked_socket() { ::close(fd); }
+            operator int() { return fd; }
+        } fd{socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)};
+
+        if (fd < 0)
         {
             return "0";
         }
 
+        ifconf all_interfaces;
         auto data = std::vector<char>(1024);
+        all_interfaces.ifc_len = data.size();
+        all_interfaces.ifc_buf = data.data();
+        if (ioctl(fd, SIOCGIFCONF, &all_interfaces) < 0) return 0;
 
-        ifconf ifc;
-        ifc.ifc_len = data.size();
-        ifc.ifc_buf = data.data();
-        if (ioctl(fd, SIOCGIFCONF, &ifc) == -1)
+        std::map<StringView, std::string> interface_mac_map;
+        const auto end = all_interfaces.ifc_req + (all_interfaces.ifc_len / sizeof(ifreq));
+        for (auto it = all_interfaces.ifc_req; it != end; ++it)
         {
-            return "0";
-        }
+            auto name = StringView(it->ifr_name);
 
-        const auto end = ifc.ifc_req + (ifc.ifc_len / sizeof(ifreq));
-        for (auto it = ifc.ifc_req; it != end; ++it)
-        {
-            ifreq request;
-            std::strcpy(request.ifr_name, it->ifr_name);
-            if (ioctl(fd, SIOCGIFFLAGS, &request) != -1)
+            ifreq interface;
+            std::memset(&interface, 0, sizeof(ifreq));
+            std::strcpy(interface.ifr_name, name.data());
+
+            if (ioctl(fd, SIOCGIFFLAGS, &interface) >= 0)
             {
-                if (!(request.ifr_flags & IFF_LOOPBACK))
+                if (interface.ifr_flags & IFF_LOOPBACK) continue;
+            }
+
+            std::string mac_address;
+            if (ioctl(fd, SIOCGIFHWADDR, &interface) >= 0)
+            {
+                unsigned char non_zero_mac = 0;
+                const auto bytes = Span<char>(interface.ifr_hwaddr.sa_data, 6);
+                for (size_t i = 0; i < bytes.size(); ++i)
                 {
-                    if (ioctl(fd, SIOCGIFHWADDR, &request) != -1)
+                    if (i != 0)
                     {
-                        const auto bytes = request.ifr_hwaddr.sa_data;
-                        std::string mac_address;
-                        for (int i = 0; i < 6; ++i)
-                        {
-                            if (i != 0)
-                            {
-                                mac_address += "-";
-                            }
-                            static char digits[] = "0123456789ABCDEF";
-                            const auto c = static_cast<unsigned char>(bytes[i]);
-                            mac_address += digits[(c & 0xf0) >> 4];
-                            mac_address += digits[(c & 0x0f)];
-                        }
-                        return Hash::get_string_hash(mac_address, Hash::Algorithm::Sha256);
+                        mac_address += "-";
                     }
+                    static constexpr auto hex_digits = "0123456789ABCDEF";
+                    const auto c = static_cast<unsigned char>(bytes[i]);
+                    mac_address += hex_digits[(c & 0xf0) >> 4];
+                    mac_address += hex_digits[(c & 0x0f)];
+                    non_zero_mac |= c;
+                }
+                if (non_zero_mac)
+                {
+                    interface_mac_map[name] = Hash::get_string_hash(mac_address, Hash::Algorithm::Sha256);
                 }
             }
+        }
+
+        // search for preferred interfaces
+        for (auto&& interface_name : {"eth0", "wlan0"})
+        {
+            auto maybe_preferred = interface_mac_map.find(interface_name);
+            if (maybe_preferred != interface_mac_map.end())
+            {
+                return maybe_preferred->second;
+            }
+        }
+
+        // default to first mac address we find
+        auto first = interface_mac_map.begin();
+        if (first != interface_mac_map.end())
+        {
+            return first->second;
         }
 #endif
         return "0";
