@@ -5,7 +5,7 @@
 
 #include <vcpkg/metrics.h>
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 #include <unistd.h>
 
 #include <net/if.h>
@@ -76,12 +76,8 @@ namespace vcpkg
         return nullopt;
     }
 
-    std::string get_user_mac()
+    std::string get_user_mac_hash()
     {
-        if (!LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
-        {
-            return "{}";
-        }
 #if defined(_WIN32)
         auto getmac = cmd_execute_and_capture_output(Command("getmac"));
         if (getmac.exit_code != 0)
@@ -107,47 +103,61 @@ namespace vcpkg
             return "0";
         }
 
+        // Calling ioctl(fd, SIOCIFCONFIG, ifconf) with ifconf.ifc_req set to NULL
+        // returns the necessary size in bytes for receiving all available addresses
+        // in ifc_len.
         ifconf all_interfaces;
-        auto data = std::vector<char>(1024);
+        memset(&all_interfaces, 0, sizeof(ifconf));
+        if (ioctl(fd, SIOCGIFCONF, &all_interfaces) < 0)
+        {
+            return "0";
+        }
+
+        auto data = std::vector<char>(all_interfaces.ifc_len);
         all_interfaces.ifc_len = data.size();
         all_interfaces.ifc_buf = data.data();
-        if (ioctl(fd, SIOCGIFCONF, &all_interfaces) < 0) return 0;
+        if (ioctl(fd, SIOCGIFCONF, &all_interfaces) < 0)
+        {
+            return "0";
+        }
 
         std::map<StringView, std::string> interface_mac_map;
         const auto end = all_interfaces.ifc_req + (all_interfaces.ifc_len / sizeof(ifreq));
         for (auto it = all_interfaces.ifc_req; it != end; ++it)
         {
-            auto name = StringView(it->ifr_name);
+            auto name = StringView(it->ifr_name, strlen(it->ifr_name));
 
             ifreq interface;
             std::memset(&interface, 0, sizeof(ifreq));
             std::strcpy(interface.ifr_name, name.data());
 
-            if (ioctl(fd, SIOCGIFFLAGS, &interface) >= 0)
+            if ((ioctl(fd, SIOCGIFFLAGS, &interface) >= 0) && !(interface.ifr_flags & IFF_LOOPBACK) &&
+                (ioctl(fd, SIOCGIFHWADDR, &interface) >= 0))
             {
-                if (interface.ifr_flags & IFF_LOOPBACK) continue;
-            }
+                static constexpr char capital_hexits[] = "0123456789ABCDEF";
+                static constexpr size_t mac_size = 6 * 2 + 5; // 6 hex bytes, 5 dashes
 
-            std::string mac_address;
-            if (ioctl(fd, SIOCGIFHWADDR, &interface) >= 0)
-            {
-                unsigned char non_zero_mac = 0;
                 const auto bytes = Span<char>(interface.ifr_hwaddr.sa_data, 6);
-                for (size_t i = 0; i < bytes.size(); ++i)
+                char mac_address[mac_size];
+
+                char* mac = mac_address;
+                unsigned char c = static_cast<unsigned char>(bytes[0]);
+                unsigned char non_zero_mac = c;
+                *mac++ = capital_hexits[(c & 0xf0) >> 4];
+                *mac++ = capital_hexits[(c & 0x0f)];
+                for (int i = 1; i < 6; ++i)
                 {
-                    if (i != 0)
-                    {
-                        mac_address += "-";
-                    }
-                    static constexpr auto hex_digits = "0123456789ABCDEF";
-                    const auto c = static_cast<unsigned char>(bytes[i]);
-                    mac_address += hex_digits[(c & 0xf0) >> 4];
-                    mac_address += hex_digits[(c & 0x0f)];
+                    c = static_cast<unsigned char>(bytes[i]);
+                    *mac++ = '-';
+                    *mac++ = capital_hexits[(c & 0xf0) >> 4];
+                    *mac++ = capital_hexits[(c & 0x0f)];
                     non_zero_mac |= c;
                 }
+                
                 if (non_zero_mac)
                 {
-                    interface_mac_map[name] = Hash::get_string_hash(mac_address, Hash::Algorithm::Sha256);
+                    interface_mac_map[name] =
+                        Hash::get_string_hash(StringView{mac_address, mac_size}, Hash::Algorithm::Sha256);
                 }
             }
         }

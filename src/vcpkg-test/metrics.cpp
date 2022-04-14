@@ -2,8 +2,6 @@
 
 #include <vcpkg/base/system.mac.h>
 
-#include <vcpkg/metrics.h>
-
 using namespace vcpkg;
 
 TEST_CASE ("find_first_nonzero_mac", "[metrics]")

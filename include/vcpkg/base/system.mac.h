@@ -6,5 +6,5 @@
 namespace vcpkg
 {
     Optional<StringView> find_first_nonzero_mac(StringView sv);
-    std::string get_user_mac();
+    std::string get_user_mac_hash();
 }

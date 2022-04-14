@@ -214,9 +214,9 @@ namespace vcpkg
             write_config = true;
         }
 
-        if (config.user_mac.empty())
+        if (config.user_mac.empty() && LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
         {
-            config.user_mac = get_user_mac();
+            config.user_mac = get_user_mac_hash();
             write_config = true;
         }
 
@@ -230,9 +230,7 @@ namespace vcpkg
             g_metricmessage.user_id = config.user_id;
             g_metricmessage.user_timestamp = config.user_time;
 
-#if defined(_WIN32)
             metrics->track_property("user_mac", config.user_mac);
-#endif
 
             g_metrics_disabled = false;
         }
