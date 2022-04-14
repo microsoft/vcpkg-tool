@@ -84,18 +84,19 @@ namespace vcpkg::VisualStudio
     static constexpr StringLiteral V_142 = "v142";
     static constexpr StringLiteral V_143 = "v143";
 
-    static constexpr CStringView WORKLOAD_NATIVE_DESKTOP = "Microsoft.VisualStudio.Workload.NativeDesktop";
-    static constexpr CStringView WORKLOAD_CORE_FEATURES_TOOLS =
+    static constexpr StringLiteral WORKLOAD_NATIVE_DESKTOP = "Microsoft.VisualStudio.Workload.NativeDesktop";
+    static constexpr StringLiteral WORKLOAD_CORE_FEATURES_TOOLS =
         "Microsoft.VisualStudio.ComponentGroup.NativeDesktop.Core";
-    static constexpr CStringView WORKLOAD_MSBUILD = "Microsoft.Component.MSBuild";
-    static constexpr CStringView COMPONENT_VCTOOLS_2015 = "Microsoft.VisualStudio.Component.VC.140";
-    static constexpr CStringView COMPONENT_VCTOOLS_2017_OR_LATER = "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
-    static constexpr CStringView COMPONENT_UCRT = "Microsoft.VisualStudio.Component.Windows10SDK";
-    static constexpr CStringView COMPONENT_ARM_VCTOOLS = "Microsoft.VisualStudio.Component.VC.Tools.arm";
-    static constexpr CStringView COMPONENT_ARM64_VCTOOLS = "Microsoft.VisualStudio.Component.VC.Tools.arm64";
-    static constexpr CStringView COMPONENT_UWP = "Microsoft.VisualStudio.ComponentGroup.UWP.VC";
+    static constexpr StringLiteral WORKLOAD_MSBUILD = "Microsoft.Component.MSBuild";
+    static constexpr StringLiteral COMPONENT_VCTOOLS_2015 = "Microsoft.VisualStudio.Component.VC.140";
+    static constexpr StringLiteral COMPONENT_VCTOOLS_2017_OR_LATER =
+        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
+    static constexpr StringLiteral COMPONENT_UCRT = "Microsoft.VisualStudio.Component.Windows10SDK";
+    static constexpr StringLiteral COMPONENT_ARM_VCTOOLS = "Microsoft.VisualStudio.Component.VC.Tools.arm";
+    static constexpr StringLiteral COMPONENT_ARM64_VCTOOLS = "Microsoft.VisualStudio.Component.VC.Tools.arm64";
+    static constexpr StringLiteral COMPONENT_UWP = "Microsoft.VisualStudio.ComponentGroup.UWP.VC";
 
-    static constexpr CStringView WINDOWS_SDKS[] = {"v8.1", "v10.0"};
+    static constexpr StringLiteral WINDOWS_SDKS[] = {"v8.1", "v10.0"};
 
     enum Installed_Component
     {
@@ -222,7 +223,7 @@ namespace vcpkg::VisualStudio
                     Strings::find_exactly_one_enclosed(instance, "<installationVersion>", "</installationVersion>")
                         .to_string();
 
-                CStringView x86_64_toolset;
+                StringLiteral x86_64_toolset("");
                 // For Visual Studio 2015
                 if (0 == vs_version.compare(0, 3, "14."))
                 {
@@ -250,7 +251,7 @@ namespace vcpkg::VisualStudio
                                                            .string_arg("-products")
                                                            .string_arg("*")
                                                            .string_arg("-requires")
-                                                           .string_arg(WORKLOAD_NATIVE_DESKTOP.c_str())
+                                                           .string_arg(WORKLOAD_NATIVE_DESKTOP)
                                                            .string_arg("-property")
                                                            .string_arg("installationVersion"));
                     Checks::check_exit(VCPKG_LINE_INFO,

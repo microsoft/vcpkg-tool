@@ -420,22 +420,18 @@ namespace vcpkg::Build
         (msg::triplet, msg::arch, msg::path, msg::list),
         "example for {list} is 'x86, arm64'",
         "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
-        "architecture was {arch}\n    "
-        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n"
-        "Please check the required Visual Studio Components:\n"
-        "C++:\n"
-        "   Windows Universal C Runtime\n"
-        "   C++ core desktop features\n"
-        "   One of the following Visual Studio Build tools:\n"
-        "       * Microsoft.VisualStudio.Component.VC.140 (for Visual Studio 2015)\n"
-        "       * MSVC v141/v142/v143 - VS 2017/2019/2022 C++ x64/x86 build tools (for Visual Studio 2017 or later)\n"
-        "   MSBuild\n"
-        "Windows SDK 8.1 or greater\n"
-        "ARM/ARM64:\n"
-        "   MSVC v141/v142/v143 - VS 2017/2019/2022 C++ ARM build tools\n"
-        "   MSVC v141/v142/v143 - VS 2017/2019/2022 C++ ARM64 build tools\n"
-        "UWP:\n"
-        "   Visual Studio Build tools for UWP\n");
+        "architecture was {arch}\n    ");
+
+    DECLARE_AND_REGISTER_MESSAGE(VSInstanceAT, (msg::path), "", "The selected Visual Studio instance is at {path}\n");
+    DECLARE_AND_REGISTER_MESSAGE(ToolsetsAvailableHeader,
+                                 (msg::list),
+                                 "",
+                                 "The available toolchain combinations are { list }\n");
+    DECLARE_AND_REGISTER_MESSAGE(CheckComponents, (), "", "Please check the required Visual Studio Components:\n");
+    DECLARE_AND_REGISTER_MESSAGE(VSBuildComponentsHeader,
+                                 (),
+                                 "",
+                                 "   One of the following Visual Studio Build tools:\n");
 
     DECLARE_AND_REGISTER_MESSAGE(
         UnsupportedSystemName,
@@ -445,6 +441,33 @@ namespace vcpkg::Build
         "Supported system names are '', 'Windows' and 'WindowsStore'.");
 
 #if defined(_WIN32)
+    void print_error_message(const std::string& target_architecture,
+                             const Toolset& toolset,
+                             Triplet triplet,
+                             const std::string& toolset_list)
+    {
+        LocalizedString msg;
+        msg.append_indent().append(msgVSInstanceAT, msg::path = toolset.visual_studio_root_path).appendnl();
+        msg.append_indent().append(msgToolsetsAvailableHeader, msg::list = toolset_list).appendnl();
+        msg.append_indent().append_raw(toolset_list).appendnl();
+        msg.append(msgCheckComponents).appendnl();
+        msg.append_indent().append_raw("C++ -> Windows Universal C Runtime").appendnl();
+        msg.append_indent().append_raw("C++ -> C++ core desktop features").appendnl();
+        msg.append_indent().append_raw("C++ -> Windows Universal C Runtime").appendnl();
+        msg.append_indent().append_raw("C++ -> Windows Universal C Runtime").appendnl();
+        msg.append_indent().append(msgVSBuildComponentsHeader).appendnl();
+        msg.append_indent(2)
+            .append_raw("* Microsoft.VisualStudio.Component.VC.140 (for Visual Studio 2015)")
+            .appendnl();
+        msg.append_indent(2)
+            .append_raw(
+                "* MSVC v141/v142/v143 - VS 2017/2019/2022 C++ x64/x86 build tools (for Visual Studio 2017 or later)")
+            .appendnl();
+        /* further entries here */
+        msg::print(msg);
+        msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
+    }
+
     static ZStringView to_vcvarsall_target(const std::string& cmake_system_name)
     {
         if (cmake_system_name.empty()) return "";
@@ -483,12 +506,7 @@ namespace vcpkg::Build
         const auto toolset_list = Strings::join(
             ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); });
 
-        msg::println(msgUnsupportedToolchain,
-                     msg::triplet = triplet,
-                     msg::arch = target_architecture,
-                     msg::path = toolset.visual_studio_root_path,
-                     msg::list = toolset_list);
-        msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
+        print_error_message(target_architecture, toolset, triplet, toolset_list);
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
 #endif
