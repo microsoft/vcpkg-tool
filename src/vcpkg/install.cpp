@@ -51,6 +51,11 @@ namespace
                                  (msg::package_name),
                                  "'header' refers to C/C++ .h files",
                                  "{package_name} is header-only and can be used from CMake via:");
+    DECLARE_AND_REGISTER_MESSAGE(
+        CMakeTargetsUsageHueristicMessage,
+        (),
+        "Displayed after CMakeTargetsUsage; the # must be kept at the beginning so that the message remains a comment.",
+        "# this is heuristically generated, and may not be correct");
     DECLARE_AND_REGISTER_MESSAGE(CMakeTargetsUsage,
                                  (msg::package_name),
                                  "'targets' are a CMake and Makefile concept",
@@ -814,43 +819,38 @@ namespace vcpkg::Install
             }
             else
             {
-                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).extract_data();
+                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).appendnl();
+                msg.append_indent().append(msgCMakeTargetsUsageHueristicMessage).appendnl();
 
                 for (auto&& library_target_pair : library_targets)
                 {
                     auto config_it = config_files.find(library_target_pair.first);
-                    if (config_it != config_files.end())
-                        Strings::append(msg, "    find_package(", config_it->second, " CONFIG REQUIRED)\n");
-                    else
-                        Strings::append(msg, "    find_package(", library_target_pair.first, " CONFIG REQUIRED)\n");
+                    msg.append_indent();
+                    msg.append_fmt_raw("find_package({} CONFIG REQUIRED)",
+                                       config_it == config_files.end() ? library_target_pair.first : config_it->second);
+                    msg.appendnl();
 
                     auto& targets = library_target_pair.second;
-                    Util::sort(targets, [](const std::string& l, const std::string& r) {
+                    Util::sort_unique_erase(targets, [](const std::string& l, const std::string& r) {
                         if (l.size() < r.size()) return true;
                         if (l.size() > r.size()) return false;
                         return l < r;
                     });
-                    targets.erase(std::unique(targets.begin(), targets.end()), targets.end());
 
                     if (targets.size() > 4)
                     {
                         auto omitted = targets.size() - 4;
                         library_target_pair.second.erase(targets.begin() + 4, targets.end());
-                        msg.append(LocalizedString()
-                                       .append_indent()
-                                       .append_raw("# ")
-                                       .append(msgCmakeTargetsExcluded, msg::count = omitted)
-                                       .extract_data());
+                        msg.append_indent().append_raw("# ").append(msgCmakeTargetsExcluded, msg::count = omitted);
                     }
-                    msg.append(LocalizedString()
-                                   .append_indent()
-                                   .append_raw(fmt::format("target_link_libraries(main PRIVATE {})",
-                                                           Strings::join(" ", targets)))
-                                   .appendnl()
-                                   .appendnl()
-                                   .extract_data());
+
+                    msg.append_indent()
+                        .append_fmt_raw("target_link_libraries(main PRIVATE {})", Strings::join(" ", targets))
+                        .appendnl()
+                        .appendnl();
                 }
-                ret.message = std::move(msg);
+
+                ret.message = msg.extract_data();
             }
             ret.cmake_targets_map = std::move(library_targets);
         }
