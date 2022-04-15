@@ -447,9 +447,15 @@ namespace vcpkg::Build
                              const std::string& toolset_list)
     {
         LocalizedString msg;
+        msg.append_indent()
+            .append(msgUnsupportedToolchain,
+                    msg::triplet = triplet,
+                    msg::arch = target_architecture,
+                    msg::path = toolset.visual_studio_root_path,
+                    msg::list = toolset_list)
+            .appendnl();
         msg.append_indent().append(msgVSInstanceAT, msg::path = toolset.visual_studio_root_path).appendnl();
         msg.append_indent().append(msgToolsetsAvailableHeader, msg::list = toolset_list).appendnl();
-        msg.append_indent().append_raw(toolset_list).appendnl();
         msg.append(msgCheckComponents).appendnl();
         msg.append_indent().append_raw("C++ -> Windows Universal C Runtime").appendnl();
         msg.append_indent().append_raw("C++ -> C++ core desktop features").appendnl();

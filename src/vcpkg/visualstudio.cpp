@@ -280,6 +280,8 @@ namespace vcpkg::VisualStudio
                                        general_output.exit_code == 0,
                                        "Running vswhere.exe failed with message:\n%s",
                                        general_output.output);
+
+                    // Check details when the some of the required components are empty
                     if (!general_output.output.empty() &&
                         0 == general_output.output.compare(0, vs_version.length(), vs_version))
                     {
