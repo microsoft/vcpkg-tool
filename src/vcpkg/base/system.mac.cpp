@@ -149,7 +149,7 @@ namespace vcpkg
                 std::vector<unsigned char> bytes;
 #if defined(AF_PACKET)
                 auto address = reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
-                auto begin = address->ssl_addr;
+                auto begin = address->sll_addr;
 #elif defined(AF_LINK)
                 auto address = reinterpret_cast<sockaddr_dl*>(interface->ifa_addr);
                 auto begin = reinterpret_cast<unsigned char*>(LLADDR(address));
