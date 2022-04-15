@@ -127,6 +127,10 @@ namespace vcpkg
             return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
         }
 #elif defined(__linux__) || defined(__APPLE__)
+        // The getifaddrs(ifaddrs** ifap) function creates a linked list of structures
+        // describing the network interfaces of the local system, and stores
+        // the address of the first item of the list in *ifap.
+        // man page: https://www.man7.org/linux/man-pages/man3/getifaddrs.3.html
         struct ifaddrs_guard
         {
             ifaddrs* ptr = nullptr;
@@ -146,16 +150,16 @@ namespace vcpkg
         {
             if (interface->ifa_addr && interface->ifa_addr->sa_family == AF_TYPE)
             {
-                std::vector<unsigned char> bytes;
+                unsigned char bytes[6];
 #if defined(AF_PACKET)
                 auto address = reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
                 auto begin = address->sll_addr;
 #elif defined(AF_LINK)
                 auto address = reinterpret_cast<sockaddr_dl*>(interface->ifa_addr);
-                auto begin = reinterpret_cast<unsigned char*>(LLADDR(address));
+                auto begin = LLADDR(address);
 #endif
-                bytes.assign(begin, begin + 6);
-                auto maybe_mac = mac_bytes_to_string(bytes);
+                std::memcpy(bytes, begin, 6);
+                auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, 6));
                 if (maybe_mac.empty()) continue;
                 ifname_mac_map.emplace(StringView{interface->ifa_name, strlen(interface->ifa_name)},
                                        Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256));
