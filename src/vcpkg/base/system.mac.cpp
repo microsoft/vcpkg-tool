@@ -3,7 +3,9 @@
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
 
-#if defined(__linux__) || defined(__APPLE__)
+#include <map>
+
+#if defined(__linux__)
 #include <ifaddrs.h>
 
 #include <netpacket/packet.h>
@@ -114,7 +116,7 @@ namespace vcpkg
         {
             return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
         }
-#elif defined(__APPLE__) || defined(__linux__)
+#elif defined(__linux__)
         struct ifaddrs_guard
         {
             ifaddrs* ptr = nullptr;
@@ -129,32 +131,32 @@ namespace vcpkg
             return "0";
         }
 
-        std::map<StringView, std::string> interface_mac_map;
+        std::map<StringView, std::string> ifname_mac_map;
         for (auto interface = interfaces.ptr; interface; interface = interface->ifa_next)
         {
-            auto name = StringView(interface->ifa_name, strlen(interface->ifa_name));
             if (interface->ifa_addr && interface->ifa_addr->sa_family == AF_PACKET)
             {
                 sockaddr_ll address = *reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
                 auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(address.sll_addr, 6));
                 if (maybe_mac.empty()) continue;
-                interface_mac_map[name] = Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256);
+                ifname_mac_map.emplace(StringView{interface->ifa_name, strlen(interface->ifa_name)},
+                                       Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256));
             }
         }
 
         // search for preferred interfaces
         for (auto&& interface_name : {"eth0", "wlan0"})
         {
-            auto maybe_preferred = interface_mac_map.find(interface_name);
-            if (maybe_preferred != interface_mac_map.end())
+            auto maybe_preferred = ifname_mac_map.find(interface_name);
+            if (maybe_preferred != ifname_mac_map.end())
             {
                 return maybe_preferred->second;
             }
         }
 
         // default to first mac address we find
-        auto first = interface_mac_map.begin();
-        if (first != interface_mac_map.end())
+        auto first = ifname_mac_map.begin();
+        if (first != ifname_mac_map.end())
         {
             return first->second;
         }
