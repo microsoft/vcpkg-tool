@@ -74,7 +74,7 @@
   "GenerateMsgNoArgumentValue": "    {{{value}}} se especificó en un comentario, pero no se usó en el mensaje.",
   "GenerateMsgNoCommentValue": "    Se ha usado {{{value}}} en el mensaje, pero no se ha comentado.",
   "GraphCycleDetected": "Ciclo detectado en el gráfico en {package_name}:",
-  "HashFileFailureToRead": "no se pudo leer el '{path}' de archivo para el algoritmo hash: {error}",
+  "HashFileFailureToRead": "failed to read file '{path}' for hashing: ",
   "HeaderOnlyUsage": "{package_name} es de solo encabezado y se puede usar desde CMake a través de:",
   "IllegalFeatures": "error: no se permite la lista de características en este contect",
   "IllegalPlatformSpec": "error: no se permite el calificador de plataforma en este contexto",

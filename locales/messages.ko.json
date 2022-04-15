@@ -74,7 +74,7 @@
   "GenerateMsgNoArgumentValue": "    {{{value}}}이(가) 주석에 지정되었지만 메시지에는 사용되지 않았습니다.",
   "GenerateMsgNoCommentValue": "     {{{value}}}이(가) 메시지에 사용되었지만 주석 처리되지 않았습니다.",
   "GraphCycleDetected": "{package_name}의 그래프 내에서 감지된 주기:",
-  "HashFileFailureToRead": "해싱을 위해 '{path}' 파일을 읽지 못했습니다: {error}",
+  "HashFileFailureToRead": "failed to read file '{path}' for hashing: ",
   "HeaderOnlyUsage": "{package_name}은 헤더 전용이며 다음을 통해 CMake에서 사용할 수 있습니다.",
   "IllegalFeatures": "오류: 이 콘텐츠에서는 기능 목록이 허용되지 않습니다.",
   "IllegalPlatformSpec": "오류: 이 컨텍스트에서는 플랫폼 한정자가 허용되지 않습니다.",

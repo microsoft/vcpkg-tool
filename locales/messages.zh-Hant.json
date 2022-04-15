@@ -74,7 +74,7 @@
   "GenerateMsgNoArgumentValue": "    {{{value}}} 已指定於註解中，但在訊息中並未使用。",
   "GenerateMsgNoCommentValue": "    {{{value}}} 已在訊息中使用，但沒有註解。",
   "GraphCycleDetected": "在圖形中偵測到循環，於 {package_name}:",
-  "HashFileFailureToRead": "無法讀取雜湊的檔案'{path}': {error}",
+  "HashFileFailureToRead": "failed to read file '{path}' for hashing: ",
   "HeaderOnlyUsage": "{package_name} 為僅標頭，可透過下列方式從 CMake 使用:",
   "IllegalFeatures": "錯誤: 此情境中不允許功能清單",
   "IllegalPlatformSpec": "錯誤: 此內容不允許平台限定詞",

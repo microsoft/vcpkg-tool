@@ -74,7 +74,7 @@
   "GenerateMsgNoArgumentValue": "    {{{value}}} がコメントで指定されましたが、メッセージで使用されませんでした。",
   "GenerateMsgNoCommentValue": "    メッセージで {{{value}}} が使用されましたが、コメントされていません。",
   "GraphCycleDetected": "{package_name} のグラフ内で循環が検出されました:",
-  "HashFileFailureToRead": "ハッシュのためにファイル '{path}' を読み取れませんでした: {error}",
+  "HashFileFailureToRead": "failed to read file '{path}' for hashing: ",
   "HeaderOnlyUsage": "{package_name} はヘッダーのみであり、CMake から次の方法で使用できます:",
   "IllegalFeatures": "エラー: このコンテキストでは機能のリストは許可されていません",
   "IllegalPlatformSpec": "エラー: プラットフォーム修飾子はこのコンテキストでは許可されていません",

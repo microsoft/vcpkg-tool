@@ -74,7 +74,7 @@
   "GenerateMsgNoArgumentValue": "    {{{value}}} wurde in einem Kommentar angegeben, aber nicht in der Nachricht verwendet.",
   "GenerateMsgNoCommentValue": "    {{{value}}} wurde in der Nachricht verwendet, aber nicht kommentiert.",
   "GraphCycleDetected": "Zyklische Abhängigkeit im Graphen erkannt bei {package_name}:",
-  "HashFileFailureToRead": "Fehler beim Lesen der Datei „{path}“ für Hashing: {error}",
+  "HashFileFailureToRead": "failed to read file '{path}' for hashing: ",
   "HeaderOnlyUsage": "„{package_name}“ ist Header-only und kann von CMake aus verwendet werden über:",
   "IllegalFeatures": "Fehler: Die Liste der Features ist in diesem Kontext nicht zulässig.",
   "IllegalPlatformSpec": "Fehler: Der Plattformqualifizierer ist in diesem Kontext nicht zulässig.",

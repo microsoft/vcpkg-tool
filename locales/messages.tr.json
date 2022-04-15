@@ -74,7 +74,7 @@
   "GenerateMsgNoArgumentValue": "    {{{value}}} bir açıklamada belirtildi, ancak iletide kullanılmadı.",
   "GenerateMsgNoCommentValue": "    İletide {{{value}}} kullanıldı, ancak açıklama eklenmedi.",
   "GraphCycleDetected": "{package_name} paketindeki grafik içinde döngü algılandı:",
-  "HashFileFailureToRead": "'{path}' dosyası karma işlevi için okunamadı: {error}",
+  "HashFileFailureToRead": "failed to read file '{path}' for hashing: ",
   "HeaderOnlyUsage": "{package_name} yalnızca üst bilgidir ve CMake'ten şu şekilde kullanılabilir:",
   "IllegalFeatures": "hata: Bu bağlamda özellik listesine izin verilmiyor",
   "IllegalPlatformSpec": "hata: Platform niteleyicisine bu bağlamda izin verilmiyor",
