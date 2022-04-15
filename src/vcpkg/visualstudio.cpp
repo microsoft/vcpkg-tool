@@ -177,7 +177,8 @@ namespace vcpkg::VisualStudio
         std::string major_version() const { return version.substr(0, 2); }
     };
 
-    static std::vector<VisualStudioInstance> get_visual_studio_instances_internal(const Filesystem& fs)
+    static std::vector<VisualStudioInstance> get_visual_studio_instances_internal(
+        const Filesystem& fs, const std::string& target_architecture, bool uwp)
     {
         std::vector<VisualStudioInstance> instances;
 
@@ -244,19 +245,37 @@ namespace vcpkg::VisualStudio
                 Components_Support support = Installed_Component::none;
                 if (x86_64_toolset != "")
                 {
-                    const auto general_output =
-                        cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                           .string_arg("-latest")
-                                                           .string_arg("-products")
-                                                           .string_arg("*")
-                                                           .string_arg("-requires")
-                                                           .string_arg(WORKLOAD_NATIVE_DESKTOP)
-                                                           .string_arg(WORKLOAD_CORE_FEATURES_TOOLS)
-                                                           .string_arg(WORKLOAD_MSBUILD)
-                                                           .string_arg(x86_64_toolset)
-                                                           .string_arg(COMPONENT_UCRT)
-                                                           .string_arg("-property")
-                                                           .string_arg("installationVersion"));
+                    auto general_cmd = Command(vswhere_exe)
+                                           .string_arg("-latest")
+                                           .string_arg("-products")
+                                           .string_arg("*")
+                                           .string_arg("-requires")
+                                           .string_arg(WORKLOAD_NATIVE_DESKTOP)
+                                           .string_arg(WORKLOAD_CORE_FEATURES_TOOLS)
+                                           .string_arg(WORKLOAD_MSBUILD)
+                                           .string_arg(COMPONENT_UCRT);
+
+                    if (target_architecture == "x86" || target_architecture == "x64")
+                    {
+                        general_cmd.string_arg(x86_64_toolset);
+                    }
+                    else if (target_architecture == "arm")
+                    {
+                        general_cmd.string_arg(COMPONENT_ARM_VCTOOLS);
+                    }
+                    else if (target_architecture == "arm64")
+                    {
+                        general_cmd.string_arg(COMPONENT_ARM64_VCTOOLS);
+                    }
+
+                    if (uwp)
+                    {
+                        general_cmd.string_arg(COMPONENT_UWP);
+                    }
+
+                    general_cmd.string_arg("-property").string_arg("installationVersion");
+
+                    const auto general_output = cmd_execute_and_capture_output(general_cmd);
                     Checks::check_exit(VCPKG_LINE_INFO,
                                        general_output.exit_code == 0,
                                        "Running vswhere.exe failed with message:\n%s",
@@ -319,24 +338,6 @@ namespace vcpkg::VisualStudio
                             0 == msbuild_output.output.compare(0, vs_version.length(), vs_version))
                             support |= Installed_Component::have_msbuild;
 
-                        const auto x86_x64_toolset_output =
-                            cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                               .string_arg("-latest")
-                                                               .string_arg("-products")
-                                                               .string_arg("*")
-                                                               .string_arg("-requires")
-                                                               .string_arg(x86_64_toolset)
-                                                               .string_arg("-property")
-                                                               .string_arg("installationVersion"));
-                        Checks::check_exit(VCPKG_LINE_INFO,
-                                           x86_x64_toolset_output.exit_code == 0,
-                                           "Running vswhere.exe failed with message:\n%s",
-                                           x86_x64_toolset_output.output);
-
-                        if (!x86_x64_toolset_output.output.empty() &&
-                            0 == x86_x64_toolset_output.output.compare(0, vs_version.length(), vs_version))
-                            support |= Installed_Component::have_x86_x64_toolset;
-
                         const auto ucrt_output = cmd_execute_and_capture_output(Command(vswhere_exe)
                                                                                     .string_arg("-latest")
                                                                                     .string_arg("-products")
@@ -354,60 +355,93 @@ namespace vcpkg::VisualStudio
                             0 == ucrt_output.output.compare(0, vs_version.length(), vs_version))
                             support |= Installed_Component::have_ucrt;
 
-                        // ARM
-                        const auto arm_output = cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                                                   .string_arg("-latest")
-                                                                                   .string_arg("-products")
-                                                                                   .string_arg("*")
-                                                                                   .string_arg("-requires")
-                                                                                   .string_arg(COMPONENT_ARM_VCTOOLS)
-                                                                                   .string_arg("-property")
-                                                                                   .string_arg("installationVersion"));
-                        Checks::check_exit(VCPKG_LINE_INFO,
-                                           arm_output.exit_code == 0,
-                                           "Running vswhere.exe failed with message:\n%s",
-                                           arm_output.output);
+                        // x86 / x64
+                        if (target_architecture == "x86" || target_architecture == "x64")
+                        {
+                            const auto x86_x64_toolset_output =
+                                cmd_execute_and_capture_output(Command(vswhere_exe)
+                                                                   .string_arg("-latest")
+                                                                   .string_arg("-products")
+                                                                   .string_arg("*")
+                                                                   .string_arg("-requires")
+                                                                   .string_arg(x86_64_toolset)
+                                                                   .string_arg("-property")
+                                                                   .string_arg("installationVersion"));
+                            Checks::check_exit(VCPKG_LINE_INFO,
+                                               x86_x64_toolset_output.exit_code == 0,
+                                               "Running vswhere.exe failed with message:\n%s",
+                                               x86_x64_toolset_output.output);
 
-                        if (!arm_output.output.empty() &&
-                            0 == arm_output.output.compare(0, vs_version.length(), vs_version))
-                            support |= Installed_Component::have_arm_toolset;
+                            if (!x86_x64_toolset_output.output.empty() &&
+                                0 == x86_x64_toolset_output.output.compare(0, vs_version.length(), vs_version))
+                                support |= Installed_Component::have_x86_x64_toolset;
+                        }
+
+                        // ARM
+                        if (target_architecture == "arm")
+                        {
+                            const auto arm_output =
+                                cmd_execute_and_capture_output(Command(vswhere_exe)
+                                                                   .string_arg("-latest")
+                                                                   .string_arg("-products")
+                                                                   .string_arg("*")
+                                                                   .string_arg("-requires")
+                                                                   .string_arg(COMPONENT_ARM_VCTOOLS)
+                                                                   .string_arg("-property")
+                                                                   .string_arg("installationVersion"));
+                            Checks::check_exit(VCPKG_LINE_INFO,
+                                               arm_output.exit_code == 0,
+                                               "Running vswhere.exe failed with message:\n%s",
+                                               arm_output.output);
+
+                            if (!arm_output.output.empty() &&
+                                0 == arm_output.output.compare(0, vs_version.length(), vs_version))
+                                support |= Installed_Component::have_arm_toolset;
+                        }
 
                         // ARM64
-                        const auto arm64_output =
-                            cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                               .string_arg("-latest")
-                                                               .string_arg("-products")
-                                                               .string_arg("*")
-                                                               .string_arg("-requires")
-                                                               .string_arg(COMPONENT_ARM64_VCTOOLS)
-                                                               .string_arg("-property")
-                                                               .string_arg("installationVersion"));
-                        Checks::check_exit(VCPKG_LINE_INFO,
-                                           arm64_output.exit_code == 0,
-                                           "Running vswhere.exe failed with message:\n%s",
-                                           arm64_output.output);
+                        if (target_architecture == "arm64")
+                        {
+                            const auto arm64_output =
+                                cmd_execute_and_capture_output(Command(vswhere_exe)
+                                                                   .string_arg("-latest")
+                                                                   .string_arg("-products")
+                                                                   .string_arg("*")
+                                                                   .string_arg("-requires")
+                                                                   .string_arg(COMPONENT_ARM64_VCTOOLS)
+                                                                   .string_arg("-property")
+                                                                   .string_arg("installationVersion"));
+                            Checks::check_exit(VCPKG_LINE_INFO,
+                                               arm64_output.exit_code == 0,
+                                               "Running vswhere.exe failed with message:\n%s",
+                                               arm64_output.output);
 
-                        if (!arm64_output.output.empty() &&
-                            0 == arm64_output.output.compare(0, vs_version.length(), vs_version))
-                            support |= Installed_Component::have_arm64_toolset;
+                            if (!arm64_output.output.empty() &&
+                                0 == arm64_output.output.compare(0, vs_version.length(), vs_version))
+                                support |= Installed_Component::have_arm64_toolset;
+                        }
 
                         // UWP
-                        const auto uwp_output = cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                                                   .string_arg("-latest")
-                                                                                   .string_arg("-products")
-                                                                                   .string_arg("*")
-                                                                                   .string_arg("-requires")
-                                                                                   .string_arg(COMPONENT_UWP)
-                                                                                   .string_arg("-property")
-                                                                                   .string_arg("installationVersion"));
-                        Checks::check_exit(VCPKG_LINE_INFO,
-                                           uwp_output.exit_code == 0,
-                                           "Running vswhere.exe failed with message:\n%s",
-                                           uwp_output.output);
+                        if (uwp)
+                        {
+                            const auto uwp_output =
+                                cmd_execute_and_capture_output(Command(vswhere_exe)
+                                                                   .string_arg("-latest")
+                                                                   .string_arg("-products")
+                                                                   .string_arg("*")
+                                                                   .string_arg("-requires")
+                                                                   .string_arg(COMPONENT_UWP)
+                                                                   .string_arg("-property")
+                                                                   .string_arg("installationVersion"));
+                            Checks::check_exit(VCPKG_LINE_INFO,
+                                               uwp_output.exit_code == 0,
+                                               "Running vswhere.exe failed with message:\n%s",
+                                               uwp_output.output);
 
-                        if (!uwp_output.output.empty() &&
-                            0 == uwp_output.output.compare(0, vs_version.length(), vs_version))
-                            support |= Installed_Component::have_uwp_toolset;
+                            if (!uwp_output.output.empty() &&
+                                0 == uwp_output.output.compare(0, vs_version.length(), vs_version))
+                                support |= Installed_Component::have_uwp_toolset;
+                        }
                     }
                     else
                     {
@@ -501,14 +535,18 @@ namespace vcpkg::VisualStudio
         return toolVersions;
     }
 
-    std::vector<std::string> get_visual_studio_instances(const Filesystem& fs)
+    std::vector<std::string> get_visual_studio_instances(const Filesystem& fs,
+                                                         const std::string& target_architecture,
+                                                         bool uwp)
     {
-        std::vector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(fs)};
+        std::vector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(fs, target_architecture, uwp)};
         std::sort(sorted.begin(), sorted.end(), VisualStudioInstance::preferred_first_comparator);
         return Util::fmap(sorted, [](const VisualStudioInstance& instance) { return instance.to_string(); });
     }
 
-    ToolsetsInformation find_toolset_instances_preferred_first(const Filesystem& fs)
+    ToolsetsInformation find_toolset_instances_preferred_first(const Filesystem& fs,
+                                                               const std::string& target_architecture,
+                                                               bool uwp)
     {
         ToolsetsInformation ret;
 
@@ -520,7 +558,8 @@ namespace vcpkg::VisualStudio
         std::vector<ToolVersion>& winsdk_versions = ret.winsdk_versions;
 
         const SortedVector<VisualStudioInstance, decltype(&VisualStudioInstance::preferred_first_comparator)> sorted{
-            get_visual_studio_instances_internal(fs), VisualStudioInstance::preferred_first_comparator};
+            get_visual_studio_instances_internal(fs, target_architecture, uwp),
+            VisualStudioInstance::preferred_first_comparator};
 
         const bool v140_is_available = Util::find_if(sorted, [&](const VisualStudioInstance& vs_instance) {
                                            return vs_instance.major_version() == "14";

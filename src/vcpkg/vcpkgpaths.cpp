@@ -1331,10 +1331,14 @@ namespace vcpkg
                                  "Error: in triplet {triplet}: Unable to find a valid Windows SDK version");
 
 #if defined(_WIN32)
-    static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)
+    static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl,
+                                                       const Filesystem& fs,
+                                                       const std::string& target_architecture,
+                                                       bool uwp)
     {
-        return impl.toolsets.get_lazy(
-            [&fs]() -> ToolsetsInformation { return VisualStudio::find_toolset_instances_preferred_first(fs); });
+        return impl.toolsets.get_lazy([&fs, &target_architecture, &uwp]() -> ToolsetsInformation {
+            return VisualStudio::find_toolset_instances_preferred_first(fs, target_architecture, uwp);
+        });
     }
 
     static bool toolset_matches_full_version(const Toolset& t, StringView fv)
@@ -1370,7 +1374,10 @@ namespace vcpkg
         msg::println(Color::error, msgErrorVcvarsUnsupported, msg::triplet = prebuildinfo.triplet);
         Checks::exit_fail(VCPKG_LINE_INFO);
 #else
-        const auto& toolsets_info = get_all_toolsets(*m_pimpl, get_filesystem());
+        const auto& toolsets_info = get_all_toolsets(*m_pimpl,
+                                                     get_filesystem(),
+                                                     prebuildinfo.target_architecture,
+                                                     prebuildinfo.cmake_system_name == "WindowsStore");
         View<Toolset> vs_toolsets = toolsets_info.toolsets;
         View<ToolVersion> winsdk_versions = toolsets_info.winsdk_versions;
 

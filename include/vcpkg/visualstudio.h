@@ -26,9 +26,13 @@ namespace vcpkg
 
 namespace vcpkg::VisualStudio
 {
-    std::vector<std::string> get_visual_studio_instances(const Filesystem& fs);
+    std::vector<std::string> get_visual_studio_instances(const Filesystem& fs,
+                                                         const std::string& target_architecture,
+                                                         bool uwp);
 
-    ToolsetsInformation find_toolset_instances_preferred_first(const Filesystem& fs);
+    ToolsetsInformation find_toolset_instances_preferred_first(const Filesystem& fs,
+                                                               const std::string& target_architecture,
+                                                               bool uwp);
 }
 
 #endif
