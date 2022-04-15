@@ -3,15 +3,39 @@
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
 
-#include <vcpkg/metrics.h>
-
 #if defined(__linux__) || defined(__APPLE__)
-#include <unistd.h>
+#include <ifaddrs.h>
 
-#include <net/if.h>
-#include <netinet/in.h>
-#include <sys/ioctl.h>
+#include <netpacket/packet.h>
 #endif
+
+namespace
+{
+    using namespace vcpkg;
+
+    std::string mac_bytes_to_string(const Span<unsigned char>& bytes)
+    {
+        static constexpr char capital_hexits[] = "0123456789ABCDEF";
+        static constexpr size_t mac_size = 6 * 2 + 5; // 6 hex bytes, 5 dashes
+
+        char mac_address[mac_size];
+        char* mac = mac_address;
+        unsigned char c = static_cast<unsigned char>(bytes[0]);
+        *mac++ = capital_hexits[(c & 0xf0) >> 4];
+        *mac++ = capital_hexits[(c & 0x0f)];
+        unsigned char non_zero_mac = c;
+        for (int i = 1; i < 6; ++i)
+        {
+            c = static_cast<unsigned char>(bytes[i]);
+            *mac++ = '-';
+            *mac++ = capital_hexits[(c & 0xf0) >> 4];
+            *mac++ = capital_hexits[(c & 0x0f)];
+            non_zero_mac |= c;
+        }
+
+        return non_zero_mac ? std::string(mac_address, mac_size) : "";
+    }
+}
 
 namespace vcpkg
 {
@@ -90,75 +114,31 @@ namespace vcpkg
         {
             return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
         }
-#elif defined(__linux__) || defined(__APPLE__)
-        struct locked_socket
+#elif defined(__APPLE__) || defined(__linux__)
+        struct ifaddrs_guard
         {
-            int fd;
-            ~locked_socket() { ::close(fd); }
-            operator int() { return fd; }
-        } fd{socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)};
+            ifaddrs* ptr = nullptr;
+            ~ifaddrs_guard()
+            {
+                if (ptr) freeifaddrs(ptr);
+            }
+        } interfaces;
 
-        if (fd < 0)
-        {
-            return "0";
-        }
-
-        // Calling ioctl(fd, SIOCIFCONFIG, ifconf) with ifconf.ifc_req set to NULL
-        // returns the necessary size in bytes for receiving all available addresses
-        // in ifc_len.
-        ifconf all_interfaces;
-        memset(&all_interfaces, 0, sizeof(ifconf));
-        if (ioctl(fd, SIOCGIFCONF, &all_interfaces) < 0)
-        {
-            return "0";
-        }
-
-        auto data = std::vector<char>(all_interfaces.ifc_len);
-        all_interfaces.ifc_len = data.size();
-        all_interfaces.ifc_buf = data.data();
-        if (ioctl(fd, SIOCGIFCONF, &all_interfaces) < 0)
+        if (getifaddrs(&interfaces.ptr) < 0)
         {
             return "0";
         }
 
         std::map<StringView, std::string> interface_mac_map;
-        const auto end = all_interfaces.ifc_req + (all_interfaces.ifc_len / sizeof(ifreq));
-        for (auto it = all_interfaces.ifc_req; it != end; ++it)
+        for (auto interface = interfaces.ptr; interface; interface = interface->ifa_next)
         {
-            auto name = StringView(it->ifr_name, strlen(it->ifr_name));
-
-            ifreq interface;
-            std::memset(&interface, 0, sizeof(ifreq));
-            std::strcpy(interface.ifr_name, name.data());
-
-            if ((ioctl(fd, SIOCGIFFLAGS, &interface) >= 0) && !(interface.ifr_flags & IFF_LOOPBACK) &&
-                (ioctl(fd, SIOCGIFHWADDR, &interface) >= 0))
+            auto name = StringView(interface->ifa_name, strlen(interface->ifa_name));
+            if (interface->ifa_addr && interface->ifa_addr->sa_family == AF_PACKET)
             {
-                static constexpr char capital_hexits[] = "0123456789ABCDEF";
-                static constexpr size_t mac_size = 6 * 2 + 5; // 6 hex bytes, 5 dashes
-
-                const auto bytes = Span<char>(interface.ifr_hwaddr.sa_data, 6);
-                char mac_address[mac_size];
-
-                char* mac = mac_address;
-                unsigned char c = static_cast<unsigned char>(bytes[0]);
-                unsigned char non_zero_mac = c;
-                *mac++ = capital_hexits[(c & 0xf0) >> 4];
-                *mac++ = capital_hexits[(c & 0x0f)];
-                for (int i = 1; i < 6; ++i)
-                {
-                    c = static_cast<unsigned char>(bytes[i]);
-                    *mac++ = '-';
-                    *mac++ = capital_hexits[(c & 0xf0) >> 4];
-                    *mac++ = capital_hexits[(c & 0x0f)];
-                    non_zero_mac |= c;
-                }
-                
-                if (non_zero_mac)
-                {
-                    interface_mac_map[name] =
-                        Hash::get_string_hash(StringView{mac_address, mac_size}, Hash::Algorithm::Sha256);
-                }
+                sockaddr_ll address = *reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
+                auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(address.sll_addr, 6));
+                if (maybe_mac.empty()) continue;
+                interface_mac_map[name] = Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256);
             }
         }
 
