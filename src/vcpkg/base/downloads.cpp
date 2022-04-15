@@ -231,7 +231,7 @@ namespace vcpkg
                                                                  StringView sha512)
     {
         std::string actual_hash =
-            vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, downloaded_path, Hash::Algorithm::Sha512);
+            vcpkg::Hash::get_file_hash(fs, downloaded_path, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
 
         // <HACK to handle NuGet.org changing nupkg hashes.>
         // This is the NEW hash for 7zip

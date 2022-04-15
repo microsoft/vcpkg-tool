@@ -243,9 +243,8 @@ namespace vcpkg
         }
         else
         {
-            std::error_code ec;
-            fs.create_directories(tool_data.exe_path.parent_path(), ec);
-            fs.rename(tool_data.download_path, tool_data.exe_path, ec);
+            fs.create_directories(tool_data.exe_path.parent_path(), IgnoreErrors{});
+            fs.rename(tool_data.download_path, tool_data.exe_path, IgnoreErrors{});
         }
 
         Checks::check_exit(VCPKG_LINE_INFO,

@@ -146,9 +146,7 @@ namespace vcpkg::Export
                                 const Path& output_dir)
     {
         Filesystem& fs = paths.get_filesystem();
-
-        std::error_code ec;
-        fs.create_directories(paths.buildsystems / "tmp", ec);
+        fs.create_directories(paths.buildsystems / "tmp", IgnoreErrors{});
 
         // This file will be placed in "build\native" in the nuget package. Therefore, go up two dirs.
         const std::string targets_redirect_content =
@@ -517,8 +515,7 @@ namespace vcpkg::Export
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
 
         // TODO: error handling
-        std::error_code ec;
-        fs.create_directory(raw_exported_dir_path, ec);
+        fs.create_directory(raw_exported_dir_path, IgnoreErrors{});
 
         // execute the plan
         {

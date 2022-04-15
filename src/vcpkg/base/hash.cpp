@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
@@ -17,7 +18,11 @@
 
 namespace vcpkg::Hash
 {
-    REGISTER_MESSAGE(HashFileFailureToRead);
+    DECLARE_AND_REGISTER_MESSAGE(
+        HashFileFailureToRead,
+        (msg::path),
+        "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
+        "failed to read file '{path}' for hashing: ");
 
     using uchar = unsigned char;
 
@@ -35,16 +40,6 @@ namespace vcpkg::Hash
         return {};
     }
 
-    const char* to_string(Algorithm algo) noexcept
-    {
-        switch (algo)
-        {
-            case Algorithm::Sha256: return "SHA256";
-            case Algorithm::Sha512: return "SHA512";
-            default: vcpkg::Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-    }
-
     template<class UIntTy>
     auto top_bits(UIntTy x) -> std::enable_if_t<std::is_unsigned<UIntTy>::value, uchar>
     {
@@ -58,7 +53,7 @@ namespace vcpkg::Hash
 
     // treats UIntTy as big endian for the purpose of this mapping
     template<class UIntTy>
-    static std::string to_hex(const UIntTy* start, const UIntTy* end) noexcept
+    static std::string to_hex(const UIntTy* start, const UIntTy* end)
     {
         static constexpr char HEX_MAP[] = "0123456789abcdef";
 
@@ -149,7 +144,7 @@ namespace vcpkg::Hash
                 Checks::check_exit(VCPKG_LINE_INFO, NT_SUCCESS(error_code), "Failed to initialize the hasher");
             }
 
-            virtual std::string get_hash() noexcept override
+            virtual std::string get_hash() override
             {
                 const auto hash_size = get_hash_buffer_size();
                 const auto buffer = std::make_unique<uchar[]>(hash_size);
@@ -231,7 +226,7 @@ namespace vcpkg::Hash
                 m_message_length = 0;
             }
 
-            virtual std::string get_hash() noexcept override
+            virtual std::string get_hash() override
             {
                 process_last_chunk();
                 return to_hex(m_impl.begin(), m_impl.end());
@@ -512,7 +507,7 @@ namespace vcpkg::Hash
 #endif
     }
 
-    std::unique_ptr<Hasher> get_hasher_for(Algorithm algo) noexcept
+    std::unique_ptr<Hasher> get_hasher_for(Algorithm algo)
     {
 #if defined(_WIN32)
         return std::make_unique<BCryptHasher>(algo);
@@ -521,13 +516,13 @@ namespace vcpkg::Hash
         {
             case Algorithm::Sha256: return std::make_unique<ShaHasher<Sha256Algorithm>>();
             case Algorithm::Sha512: return std::make_unique<ShaHasher<Sha512Algorithm>>();
-            default: vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown hashing algorithm: %s", algo);
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 #endif
     }
 
     template<class F>
-    static std::string do_hash(Algorithm algo, const F& f) noexcept
+    static std::string do_hash(Algorithm algo, const F& f)
     {
 #if defined(_WIN32)
         auto hasher = BCryptHasher(algo);
@@ -545,12 +540,12 @@ namespace vcpkg::Hash
                 auto hasher = ShaHasher<Sha512Algorithm>();
                 return f(hasher);
             }
-            default: vcpkg::Checks::exit_with_message(VCPKG_LINE_INFO, "Unknown hashing algorithm: %s", algo);
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 #endif
     }
 
-    std::string get_bytes_hash(const void* first, const void* last, Algorithm algo) noexcept
+    std::string get_bytes_hash(const void* first, const void* last, Algorithm algo)
     {
         return do_hash(algo, [first, last](Hasher& hasher) {
             hasher.add_bytes(first, last);
@@ -558,35 +553,43 @@ namespace vcpkg::Hash
         });
     }
 
-    std::string get_string_hash(StringView sv, Algorithm algo) noexcept
+    std::string get_string_hash(StringView sv, Algorithm algo)
     {
         return get_bytes_hash(sv.data(), sv.data() + sv.size(), algo);
     }
 
-    std::string get_file_hash(const Filesystem& fs, const Path& path, Algorithm algo, std::error_code& ec) noexcept
+    ExpectedL<std::string> get_file_hash(const Filesystem& fs, const Path& path, Algorithm algo)
     {
+        std::error_code ec;
         auto file = fs.open_for_read(path, ec);
-        if (ec)
+        if (!ec)
         {
-            return std::string();
+            auto result = do_hash(algo, [&file, &ec](Hasher& hasher) {
+                constexpr std::size_t buffer_size = 1024 * 32;
+                char buffer[buffer_size];
+                do
+                {
+                    const auto this_read = file.read(buffer, 1, buffer_size);
+                    if (this_read != 0)
+                    {
+                        hasher.add_bytes(buffer, buffer + this_read);
+                    }
+                    else if ((ec = file.error()))
+                    {
+                        return std::string();
+                    }
+                } while (!file.eof());
+                return hasher.get_hash();
+            });
+
+            if (!ec)
+            {
+                return std::move(result);
+            }
         }
 
-        return do_hash(algo, [&file, &ec](Hasher& hasher) {
-            constexpr std::size_t buffer_size = 1024 * 32;
-            char buffer[buffer_size];
-            do
-            {
-                const auto this_read = file.read(buffer, 1, buffer_size);
-                if (this_read != 0)
-                {
-                    hasher.add_bytes(buffer, buffer + this_read);
-                }
-                else if ((ec = file.error()))
-                {
-                    return std::string();
-                }
-            } while (!file.eof());
-            return hasher.get_hash();
-        });
+        return msg::format(msg::msgErrorMessage)
+            .append(msgHashFileFailureToRead, msg::path = path)
+            .append_raw(ec.message());
     }
 }

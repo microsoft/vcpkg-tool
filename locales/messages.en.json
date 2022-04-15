@@ -74,7 +74,7 @@
   "GenerateMsgNoArgumentValue": "    {{{value}}} was specified in a comment, but was not used in the message.",
   "GenerateMsgNoCommentValue": "    {{{value}}} was used in the message, but not commented.",
   "GraphCycleDetected": "Cycle detected within graph at {package_name}:",
-  "HashFileFailureToRead": "failed to read file '{path}' for hashing: {error}",
+  "HashFileFailureToRead": "failed to read file '{path}' for hashing: ",
   "HeaderOnlyUsage": "{package_name} is header-only and can be used from CMake via:",
   "IllegalFeatures": "error: List of features is not allowed in this contect",
   "IllegalPlatformSpec": "error: Platform qualifier is not allowed in this context",
