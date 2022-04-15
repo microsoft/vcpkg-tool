@@ -214,7 +214,7 @@ namespace vcpkg
             write_config = true;
         }
 
-        if (config.user_mac.empty() && LockGuardPtr<Metrics>(g_metrics)->metrics_enabled())
+        if (config.user_mac.empty())
         {
             config.user_mac = get_user_mac_hash();
             write_config = true;
