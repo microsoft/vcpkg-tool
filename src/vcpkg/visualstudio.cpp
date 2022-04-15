@@ -285,6 +285,31 @@ namespace vcpkg::VisualStudio
                     if (!general_output.output.empty() &&
                         0 == general_output.output.compare(0, vs_version.length(), vs_version))
                     {
+                        support |= Installed_Component::native_desktop;
+                        support |= Installed_Component::have_core_features;
+                        support |= Installed_Component::have_msbuild;
+                        support |= Installed_Component::have_ucrt;
+
+                        if (target_architecture == "x86" || target_architecture == "x64")
+                        {
+                            support |= Installed_Component::have_x86_x64_toolset;
+                        }
+                        else if (target_architecture == "arm")
+                        {
+                            support |= Installed_Component::have_arm_toolset;
+                        }
+                        else if (target_architecture == "arm64")
+                        {
+                            support |= Installed_Component::have_arm64_toolset;
+                        }
+
+                        if (uwp)
+                        {
+                            support |= Installed_Component::have_uwp_toolset;
+                        }
+                    }
+                    else
+                    {
                         // VC++
                         const auto native_desktop_output =
                             cmd_execute_and_capture_output(Command(vswhere_exe)
@@ -443,31 +468,6 @@ namespace vcpkg::VisualStudio
                             if (!uwp_output.output.empty() &&
                                 0 == uwp_output.output.compare(0, vs_version.length(), vs_version))
                                 support |= Installed_Component::have_uwp_toolset;
-                        }
-                    }
-                    else
-                    {
-                        support |= Installed_Component::native_desktop;
-                        support |= Installed_Component::have_core_features;
-                        support |= Installed_Component::have_msbuild;
-                        support |= Installed_Component::have_ucrt;
-
-                        if (target_architecture == "x86" || target_architecture == "x64")
-                        {
-                            support |= Installed_Component::have_x86_x64_toolset;
-                        }
-                        else if (target_architecture == "arm")
-                        {
-                            support |= Installed_Component::have_arm_toolset;
-                        }
-                        else if (target_architecture == "arm64")
-                        {
-                            support |= Installed_Component::have_arm64_toolset;
-                        }
-
-                        if (uwp)
-                        {
-                            support |= Installed_Component::have_uwp_toolset;
                         }
                     }
                 }

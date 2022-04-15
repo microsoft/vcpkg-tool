@@ -417,16 +417,12 @@ namespace vcpkg::Build
 
     DECLARE_AND_REGISTER_MESSAGE(
         UnsupportedToolchain,
-        (msg::triplet, msg::arch, msg::path, msg::list),
+        (msg::triplet, msg::arch),
         "example for {list} is 'x86, arm64'",
         "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
         "architecture was {arch}\n    ");
 
     DECLARE_AND_REGISTER_MESSAGE(VSInstanceAT, (msg::path), "", "The selected Visual Studio instance is at {path}\n");
-    DECLARE_AND_REGISTER_MESSAGE(ToolsetsAvailableHeader,
-                                 (msg::list),
-                                 "",
-                                 "The available toolchain combinations are { list }\n");
     DECLARE_AND_REGISTER_MESSAGE(CheckComponents, (), "", "Please check the required Visual Studio Components:\n");
     DECLARE_AND_REGISTER_MESSAGE(VSBuildComponentsHeader,
                                  (),
@@ -441,34 +437,50 @@ namespace vcpkg::Build
         "Supported system names are '', 'Windows' and 'WindowsStore'.");
 
 #if defined(_WIN32)
-    void print_error_message(const std::string& target_architecture,
-                             const Toolset& toolset,
-                             Triplet triplet,
-                             const std::string& toolset_list)
+    void print_error_message(const PreBuildInfo& pre_build_info,
+                             const Toolset& toolset)
     {
         LocalizedString msg;
         msg.append_indent()
             .append(msgUnsupportedToolchain,
-                    msg::triplet = triplet,
-                    msg::arch = target_architecture,
-                    msg::path = toolset.visual_studio_root_path,
-                    msg::list = toolset_list)
+                    msg::triplet = pre_build_info.triplet,
+                    msg::arch = pre_build_info.target_architecture)
             .appendnl();
         msg.append_indent().append(msgVSInstanceAT, msg::path = toolset.visual_studio_root_path).appendnl();
-        msg.append_indent().append(msgToolsetsAvailableHeader, msg::list = toolset_list).appendnl();
         msg.append(msgCheckComponents).appendnl();
         msg.append_indent().append_raw("C++ -> Windows Universal C Runtime").appendnl();
         msg.append_indent().append_raw("C++ -> C++ core desktop features").appendnl();
-        msg.append_indent().append_raw("C++ -> Windows Universal C Runtime").appendnl();
-        msg.append_indent().append_raw("C++ -> Windows Universal C Runtime").appendnl();
-        msg.append_indent().append(msgVSBuildComponentsHeader).appendnl();
-        msg.append_indent(2)
-            .append_raw("* Microsoft.VisualStudio.Component.VC.140 (for Visual Studio 2015)")
-            .appendnl();
-        msg.append_indent(2)
-            .append_raw(
-                "* MSVC v141/v142/v143 - VS 2017/2019/2022 C++ x64/x86 build tools (for Visual Studio 2017 or later)")
-            .appendnl();
+        msg.append_indent().append_raw("C++ -> MSBuild").appendnl();
+        if (pre_build_info.target_architecture == "x86" || pre_build_info.target_architecture == "x64")
+        {
+            msg.append_indent().append(msgVSBuildComponentsHeader).appendnl();
+            msg.append_indent(2)
+                .append_raw("* Microsoft.VisualStudio.Component.VC.140 (for Visual Studio 2015)")
+                .appendnl();
+            msg.append_indent(2)
+                .append_raw("* MSVC v141/v142/v143 - VS 2017/2019/2022 C++ x64/x86 build tools (for Visual Studio 2017 "
+                            "or later)")
+                .appendnl();
+        }
+        else if (pre_build_info.target_architecture == "arm")
+        {
+            msg.append_indent()
+                .append_raw("C++ -> MSVC v141/v142/v143 - VS 2019 C++ ARM build tools")
+                .appendnl();
+        }
+        else if(pre_build_info.target_architecture == "arm64")
+        {
+            msg.append_indent()
+                .append_raw("C++ -> MSVC v141/v142/v143 - VS 2019 C++ ARM64 build tools")
+                .appendnl();
+        }
+        if (pre_build_info.cmake_system_name == "WindowsStore")
+        {
+            msg.append_indent().append_raw("C++ -> Visual Studio Build tools for UWP")
+                .appendnl();
+        }
+        msg.appendnl();
+
         /* further entries here */
         msg::print(msg);
         msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
@@ -485,13 +497,14 @@ namespace vcpkg::Build
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
 
-    static ZStringView to_vcvarsall_toolchain(const std::string& target_architecture,
-                                              const Toolset& toolset,
-                                              Triplet triplet)
+    static ZStringView to_vcvarsall_toolchain(const PreBuildInfo& pre_build_info,
+                                              const Toolset& toolset)
     {
-        auto maybe_target_arch = to_cpu_architecture(target_architecture);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architecture);
+        auto maybe_target_arch = to_cpu_architecture(pre_build_info.target_architecture);
+        Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
+                                    maybe_target_arch.has_value(),
+                                    "Invalid architecture string: %s",
+                                    pre_build_info.target_architecture);
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
         // Ask for an arm64 compiler when targeting arm64ec; arm64ec is selected with a different flag on the compiler
         // command line.
@@ -509,10 +522,7 @@ namespace vcpkg::Build
             if (it != toolset.supported_architectures.end()) return it->name;
         }
 
-        const auto toolset_list = Strings::join(
-            ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); });
-
-        print_error_message(target_architecture, toolset, triplet, toolset_list);
+        print_error_message(pre_build_info, toolset);
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
 #endif
@@ -739,7 +749,8 @@ namespace vcpkg::Build
             tonull = "";
         }
 
-        const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, pre_build_info.triplet);
+        const auto arch =
+            to_vcvarsall_toolchain(pre_build_info, toolset);
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
         return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(
