@@ -170,7 +170,7 @@ namespace vcpkg
                 std::memcpy(bytes, address->sll_addr, MAC_BYTES_LENGTH);
 #elif defined(AF_LINK)
                 auto address = reinterpret_cast<sockaddr_dl*>(interface->ifa_addr);
-                if (addres->sdl_alen != MAC_BYTES_LENGTH) continue;
+                if (address->sdl_alen != MAC_BYTES_LENGTH) continue;
                 // The macro LLADDR() returns the start of the link-layer network address.
                 std::memcpy(bytes, LLADDR(address), MAC_BYTES_LENGTH);
 #endif
