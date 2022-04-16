@@ -10,7 +10,8 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineGitError, (msg::url), "", "git failed to fetch remote repository {url}");
+    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineRemoteGitError, (msg::url), "", "git failed to fetch remote repository '{url}'");
+    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineLocalGitError, (msg::path), "", "git failed to parse HEAD for the local vcpkg registry at '{path}'");
 
     struct RegistryConfigDeserializer : Json::IDeserializer<RegistryConfig>
     {
@@ -546,7 +547,7 @@ namespace vcpkg
         }
         else
         {
-            return msg::format(msgUpdateBaselineGitError, msg::url = url)
+            return msg::format(msgUpdateBaselineRemoteGitError, msg::url = url)
                 .appendnl()
                 .append_raw(Strings::trim(res.error()));
         }
@@ -560,7 +561,25 @@ namespace vcpkg
         }
         else if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {
-            return get_baseline_from_git_repo(paths, builtin_registry_git_url());
+            if (paths.use_git_default_registry())
+            {
+                return get_baseline_from_git_repo(paths, builtin_registry_git_url());
+            }
+            else
+            {
+                // use the vcpkg git repository sha from the user's machine
+                auto res = paths.get_current_git_sha();
+                if (auto p = res.get())
+                {
+                    return Optional<std::string>(std::move(*p));
+                }
+                else
+                {
+                    return msg::format(msgUpdateBaselineLocalGitError, msg::path = paths.root)
+                        .appendnl()
+                        .append_raw(Strings::trim(res.error()));
+                }
+            }
         }
         else
         {
