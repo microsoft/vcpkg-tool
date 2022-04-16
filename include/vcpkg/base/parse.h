@@ -37,6 +37,8 @@ namespace vcpkg
         const std::string& get_message() const;
     };
 
+    inline std::string expected_to_string(const std::unique_ptr<ParseError>& ppe) { return ppe->format(); }
+
     struct SourceLoc
     {
         Unicode::Utf8Decoder it;

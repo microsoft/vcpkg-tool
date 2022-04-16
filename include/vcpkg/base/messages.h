@@ -28,8 +28,8 @@ namespace vcpkg
     struct LocalizedString
     {
         LocalizedString() = default;
-        operator StringView() const { return m_data; }
-        const std::string& data() const { return m_data; }
+        operator StringView() const noexcept { return m_data; }
+        const std::string& data() const noexcept { return m_data; }
         std::string extract_data() { return std::exchange(m_data, ""); }
 
         static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }

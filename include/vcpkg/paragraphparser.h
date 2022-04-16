@@ -32,6 +32,11 @@ namespace vcpkg
         }
     };
 
+    inline const std::string& expected_to_string(const std::unique_ptr<ParseControlErrorInfo>& ppcei)
+    {
+        return ppcei->error;
+    }
+
     template<class P>
     using ParseExpected = vcpkg::ExpectedT<std::unique_ptr<P>, std::unique_ptr<ParseControlErrorInfo>>;
 

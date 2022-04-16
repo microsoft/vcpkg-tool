@@ -11,9 +11,6 @@ namespace vcpkg
     struct ExpectedT;
 
     template<class T>
-    using Expected = ExpectedT<T, std::error_code>;
-
-    template<class T>
     using ExpectedS = ExpectedT<T, std::string>;
 
     template<class T>
