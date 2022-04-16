@@ -73,6 +73,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AlreadyInstalled" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is already installed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Już zainstalowano {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AlreadyInstalledNotHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is already installed -- not building from HEAD]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} jest już zainstalowana — nie kompilowanie z nagłówka]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AttemptingToFetchPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Attempting to fetch {count} package(s) from {vendor}]]></Val>
@@ -87,6 +105,24 @@
           <Val><![CDATA[error: cannot specify both --no-{option} and --{option}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[błąd: nie można jednocześnie określić opcji --no-{option} i --{option}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildAlreadyInstalled" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is already installed; please remove {spec} before attempting to build it.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} jest już zainstalowana; usuń {spec} przed podjęciem próby jej skompilowania.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildDependenciesMissing" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The build command requires all dependencies to be already installed.]A;The following dependencies are missing:]A;]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Polecenie kompilacji wymaga zainstalowania wszystkich zależności.]A;Brak następujących zależności:]A;]A;]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -154,6 +190,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuildResultRemoved" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REMOVED]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[USUNIĘTO]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BuildResultSucceeded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[SUCCEEDED]]></Val>
@@ -181,6 +226,51 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuildTroubleshootingMessage1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Please ensure you're using the latest port files with `git pull` and `vcpkg update`.]A;Then check for known issues at:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Upewnij się, że używasz najnowszych plików portów z elementami „git pull” i „vcpkg update”.]A;Następnie sprawdź, czy występują znane problemy pod adresem:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildTroubleshootingMessage2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can submit a new issue at:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Możesz przesłać nowy problem pod adresem:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildTroubleshootingMessage3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Include '[{package_name}]5D; Build error' in your bug report title, the following version information in your bug description, and attach any relevant failure logs from above.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[W tytule raportu o usterce wpisz „[{package_name}]5D; Błąd kompilacji”, w opisie usterki podaj następujące informacje o wersji oraz dołącz wszelkie odpowiednie dzienniki błędów z powyższych.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildingFromHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Building {spec} from HEAD...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Trwa kompilowanie {spec} z nagłówka...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Building {spec}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Trwa kompilowanie {spec}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BuildingPackageFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[building {spec} failed with: {build_result}]]></Val>
@@ -195,6 +285,15 @@
           <Val><![CDATA[due to the following missing dependencies:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[z powodu następujących brakujących zależności:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} udostępnia elementy docelowe narzędzia CMake:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -292,6 +391,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadedSources" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloaded sources for {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pobrane źródła dla {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
@@ -306,6 +414,15 @@
           <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Trwa pobieranie najnowszego pakietu vcpkg-ce...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ElapsedForPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Elapsed time to handle {spec}: {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Czas, który upłynął, aby obsłużyć {spec}: {upłynął}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -436,6 +553,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExcludedPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Excluded {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wykluczono {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedCharacterHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected '{expected}' here]]></Val>
@@ -477,6 +603,15 @@
           <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Nie można aprowizować elementu vcpkg-ce.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToStoreBackToMirror" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to store back to mirror:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nie można przechować z powrotem do dublowania:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -553,6 +688,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HeaderOnlyUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is header-only and can be used from CMake via:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Element {package_name} jest tylko w nagłówku i może być używany z narzędzia CMake za pośrednictwem:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IllegalFeatures" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error: List of features is not allowed in this contect]]></Val>
@@ -571,6 +715,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InstallingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installing {spec}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Trwa instalowanie {spec}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InternalErrorMessage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[internal error: ]]></Val>
@@ -585,6 +738,150 @@
           <Val><![CDATA[Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Należy otworzyć problem na stronie https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug, podając szczegółowe kroki w celu odtworzenia problemu.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgument" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresAbsolutePath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' path arguments for binary config strings must be absolute]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: argumenty ścieżki konfiguracji binarnej "{binary_source}" dla binarnych ciągów konfiguracji muszą być bezwzględne]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresBaseUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a {base_url} base url as the first argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna "{binary_source}" wymaga podstawowego adresu URL {base_url} jako pierwszego argumentu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresBaseUrlAndToken" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna "{binary_source}" wymaga co najmniej podstawowego adresu URL i tokenu SAS]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresNoneArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' does not take arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna „{binary_source}” nie wymaga argumentów]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresOneOrTwoArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 1 or 2 arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna „{binary_source}” wymaga 1 lub 2 argumentów]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresPathArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a path argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna "{binary_source}" wymaga co najmniej argumentu źródłowego]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresPrefix" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a prefix]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna "{binary_source}" wymaga co najmniej prefiksu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresSingleArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' does not take more than 1 argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna "{binary_source}" nie wymaga więcej niż 1 argumentu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresSingleStringArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' expects a single string argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna "{binary_source}" oczekuje argumentu pojedynczego ciągu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires non-empty source]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna "{binary_source}" wymaga niepustego źródła]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresSourceArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a source argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna "{binary_source}" wymaga co najmniej argumentu źródłowego]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresTwoOrThreeArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 2 or 3 arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna „{binary_source}” wymaga 2 lub 3 argumentów]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresValidToken" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna "{binary_source}" wymaga tokenu SAS bez poprzedzającego znaku "?", jako drugiego argumentu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonErrorFailedToParse" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to parse {path}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nie można przeanalizować ścieżki {path}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonErrorFailedToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to read {path}: {error_msg}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nie można odczytać ścieżki {path}: {error_msg}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -805,6 +1102,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";RemovingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Removing {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Usuwanie {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";RestoredPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Restored {count} package(s) from {vendor} in {elapsed}]]></Val>
@@ -832,6 +1138,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SourceFieldPortNameMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The 'Source' field inside the CONTROL file, or "name" field inside the vcpkg.json file has the name {package_name} and does not match the port directory {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pole „Source” wewnątrz pliku CONTROL lub pole „name” wewnątrz pliku vcpkg.json ma nazwę {package_name} i nie jest zgodne z katalogiem portów {path}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use `--{option}` to disable this check.]]></Val>
@@ -841,11 +1156,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedErrorDuringBulkDownload" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[an unexpected error occurred during bulk download.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[wystąpił nieoczekiwany błąd podczas pobierania zbiorczego.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnknownBaselineFileContent" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip)']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[nierozpoznawalny wpis punktu odniesienia; oczekiwano elementu "port:triplet=(fail|skip)"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownBinaryProviderType" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieznany typ dostawcy danych binarnych: prawidłowymi dostawcami są "clear", "default", "nuget", "nugetconfig", "interactive" i "files"]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -976,6 +1309,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionConstraintViolated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[zależność {spec} powinna być co najmniej wersją {expected_version}, ale obecnie jest w wersji {actual_version}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionInvalidDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.]]></Val>
@@ -1008,6 +1350,24 @@
           <Val><![CDATA[error: Failed to load port because version specs did not match]A;    Path: {path}]A;    Expected: {expected_version}]A;    Actual: {actual_version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[błąd: nie można załadować portu, ponieważ specyfikacje wersji nie są zgodne]A;    Ścieżka: {path}]A;    Oczekiwano: {expected_version}]A;    Wartość rzeczywista: {actual_version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WaitingForChildrenToExit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Waiting for child processes to exit...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Trwa oczekiwanie na zakończenie procesów podrzędnych...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WaitingToTakeFilesystemLock" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[trwa oczekiwanie na zablokowanie systemu plików na ścieżce {path}...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

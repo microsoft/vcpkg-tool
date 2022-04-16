@@ -73,6 +73,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AlreadyInstalled" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is already installed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} 已安裝]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AlreadyInstalledNotHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is already installed -- not building from HEAD]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} 已安裝 -- 未從 HEAD 建立]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AttemptingToFetchPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Attempting to fetch {count} package(s) from {vendor}]]></Val>
@@ -87,6 +105,24 @@
           <Val><![CDATA[error: cannot specify both --no-{option} and --{option}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[錯誤: 無法同時指定 --no-{option} 和 --{option}。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildAlreadyInstalled" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is already installed; please remove {spec} before attempting to build it.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} 已安裝; 請先移除 {spec}，再嘗試建置。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildDependenciesMissing" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The build command requires all dependencies to be already installed.]A;The following dependencies are missing:]A;]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[建置命令需要已安裝所有相依性。]A;遺失下列相依性:]A;]A;]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -154,6 +190,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuildResultRemoved" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REMOVED]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已移除]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BuildResultSucceeded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[SUCCEEDED]]></Val>
@@ -181,6 +226,51 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuildTroubleshootingMessage1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Please ensure you're using the latest port files with `git pull` and `vcpkg update`.]A;Then check for known issues at:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[請確定您使用最新的連接埠檔案與 'git pull' 和 'vcpkg update'。]A;然後在下列位置查看已知問題:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildTroubleshootingMessage2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can submit a new issue at:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[您可以在下列位置提交新問題:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildTroubleshootingMessage3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Include '[{package_name}]5D; Build error' in your bug report title, the following version information in your bug description, and attach any relevant failure logs from above.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在錯誤報表標題中包含 '[{package_name}]5D; 組建錯誤'、在錯誤描述中包含下列版本資訊，以及附加上述任何相關的失敗記錄。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildingFromHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Building {spec} from HEAD...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[從 HEAD 建立 {spec}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Building {spec}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在建立 {spec}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BuildingPackageFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[building {spec} failed with: {build_result}]]></Val>
@@ -195,6 +285,15 @@
           <Val><![CDATA[due to the following missing dependencies:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[因為下列缺少相依性:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} 提供 CMake 目標:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -292,6 +391,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadedSources" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloaded sources for {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已下載 {spec} 的來源]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
@@ -306,6 +414,15 @@
           <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[正在下載最新的 vcpkg-ce 搭售方案...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ElapsedForPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Elapsed time to handle {spec}: {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[處理 {spec} 已耗用時間: {elapsed}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -436,6 +553,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExcludedPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Excluded {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已排除 {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedCharacterHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected '{expected}' here]]></Val>
@@ -477,6 +603,15 @@
           <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[無法佈建 vcpkg-ce。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToStoreBackToMirror" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to store back to mirror:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無法儲存回鏡像:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -553,6 +688,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HeaderOnlyUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is header-only and can be used from CMake via:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} 為僅標頭，可透過下列方式從 CMake 使用:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IllegalFeatures" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error: List of features is not allowed in this contect]]></Val>
@@ -571,6 +715,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InstallingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installing {spec}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在安裝 {spec}...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InternalErrorMessage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[internal error: ]]></Val>
@@ -585,6 +738,150 @@
           <Val><![CDATA[Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[請在 https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug 開啟問題，並提供詳細步驟以重現問題。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgument" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresAbsolutePath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' path arguments for binary config strings must be absolute]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config 字串的二進位 config '{binary_source}' 路徑引數必須是絕對]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresBaseUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a {base_url} base url as the first argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 需要 {base_url} 基底 URL 做為第一個引數]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresBaseUrlAndToken" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 至少需要基底 URL 和 SAS 權杖]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresNoneArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' does not take arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位設定 '{binary_source}' 不接受引數]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresOneOrTwoArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 1 or 2 arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 需要 1 或 2 個引數]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresPathArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a path argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 至少需要路徑引數]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresPrefix" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a prefix]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 至少需要首碼]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresSingleArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' does not take more than 1 argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 不接受超過 1 個引數]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresSingleStringArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' expects a single string argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 需要單一字串引數]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires non-empty source]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 需要非空白的來源]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresSourceArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a source argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 至少需要來源引數]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresTwoOrThreeArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 2 or 3 arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 需要 2 或 3 個引數]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresValidToken" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[引數無效: 二進位 config '{binary_source}' 需要 SAS 權杖，而前一個引數沒有 '?' 做為第二個引數]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonErrorFailedToParse" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to parse {path}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無法剖析 {path}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonErrorFailedToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to read {path}: {error_msg}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無法讀取 {path}: {error_msg}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -805,6 +1102,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";RemovingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Removing {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在移除 {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";RestoredPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Restored {count} package(s) from {vendor} in {elapsed}]]></Val>
@@ -832,6 +1138,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SourceFieldPortNameMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The 'Source' field inside the CONTROL file, or "name" field inside the vcpkg.json file has the name {package_name} and does not match the port directory {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[CONTROL 檔案內的 'Source' 欄位，或 vcpkg.json 檔案內的 "name" 欄位名稱為 {package_name}，與連接埠目錄 {path} 不相符。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use `--{option}` to disable this check.]]></Val>
@@ -841,11 +1156,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedErrorDuringBulkDownload" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[an unexpected error occurred during bulk download.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[大量下載期間發生意外的錯誤。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnknownBaselineFileContent" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip)']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[無法辨識的基準專案; 預期為 'port:triplet=(fail|skip)']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownBinaryProviderType" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未知的二進位提供者類型: 有效的提供者為 'clear'、'default'、'nuget'、'nugetconfig'、'interactive' 和 'files']]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -976,6 +1309,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionConstraintViolated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[相依性 {spec} 應至少為 {expected_version} 版本，但目前是 {actual_version}。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionInvalidDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.]]></Val>
@@ -1008,6 +1350,24 @@
           <Val><![CDATA[error: Failed to load port because version specs did not match]A;    Path: {path}]A;    Expected: {expected_version}]A;    Actual: {actual_version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[錯誤: 無法載入連接埠，因為版本規格不相符]A;    路徑: {path}]A;    預期: {expected_version}]A;    實際: {actual_version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WaitingForChildrenToExit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Waiting for child processes to exit...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在等待子行程離開...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WaitingToTakeFilesystemLock" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在等候 {path} 上的檔案系統鎖定...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

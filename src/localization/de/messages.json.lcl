@@ -73,6 +73,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AlreadyInstalled" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is already installed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} ist bereits installiert.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AlreadyInstalledNotHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is already installed -- not building from HEAD]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} ist bereits installiert – wird nicht aus HEAD erstellt.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AttemptingToFetchPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Attempting to fetch {count} package(s) from {vendor}]]></Val>
@@ -87,6 +105,24 @@
           <Val><![CDATA[error: cannot specify both --no-{option} and --{option}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Fehler: --no-{option} und --{option} können nicht gleichzeitig angegeben werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildAlreadyInstalled" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is already installed; please remove {spec} before attempting to build it.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{spec}“ ist bereits installiert; entfernen Sie „{spec}“, bevor Sie versuchen, es zu erstellen.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildDependenciesMissing" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The build command requires all dependencies to be already installed.]A;The following dependencies are missing:]A;]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Für den Buildbefehl müssen alle Abhängigkeiten bereits installiert sein.]A;Die folgenden Abhängigkeiten fehlen:]A;]A;]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -154,6 +190,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuildResultRemoved" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REMOVED]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ENTFERNT]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BuildResultSucceeded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[SUCCEEDED]]></Val>
@@ -181,6 +226,51 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuildTroubleshootingMessage1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Please ensure you're using the latest port files with `git pull` and `vcpkg update`.]A;Then check for known issues at:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Stellen Sie sicher, dass Sie die neuesten Portdateien mit „git pull“ und „vcpkg update“ verwenden.]A;Überprüfen Sie dann auf bekannte Probleme unter:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildTroubleshootingMessage2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can submit a new issue at:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sie können ein neues Problem einreichen unter:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildTroubleshootingMessage3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Include '[{package_name}]5D; Build error' in your bug report title, the following version information in your bug description, and attach any relevant failure logs from above.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Schließen Sie „[{package_name}]5D; Buildfehler“ in Ihren Titel des Fehlerberichts, die folgenden Versionsinformationen in Ihre Fehlerbeschreibung ein, und fügen Sie alle relevanten Fehlerprotokolle von oben an.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildingFromHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Building {spec} from HEAD...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} wird aus HEAD erstellt...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Building {spec}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} wird erstellt...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BuildingPackageFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[building {spec} failed with: {build_result}]]></Val>
@@ -195,6 +285,15 @@
           <Val><![CDATA[due to the following missing dependencies:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[aufgrund der folgenden fehlenden Abhängigkeiten:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{package_name}“ stellt CMake-Ziele bereit:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -292,6 +391,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadedSources" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloaded sources for {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Heruntergeladene Quellen für {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
@@ -306,6 +414,15 @@
           <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Das neueste vcpkg-ce-Paket wird heruntergeladen...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ElapsedForPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Elapsed time to handle {spec}: {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Verstrichene Zeit für die Bearbeitung von {spec}: {elapsed}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -436,6 +553,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExcludedPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Excluded {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ausgeschlossen: {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedCharacterHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected '{expected}' here]]></Val>
@@ -477,6 +603,15 @@
           <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Fehler beim Bereitstellen von vcpkg-ce.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToStoreBackToMirror" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to store back to mirror:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Fehler beim Speichern in der Spiegelung:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -553,6 +688,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HeaderOnlyUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is header-only and can be used from CMake via:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[„{package_name}“ ist Header-only und kann von CMake aus verwendet werden über:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IllegalFeatures" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[error: List of features is not allowed in this contect]]></Val>
@@ -571,6 +715,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InstallingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installing {spec}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} wird installiert...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InternalErrorMessage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[internal error: ]]></Val>
@@ -585,6 +738,24 @@
           <Val><![CDATA[Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Geben Sie unter „https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug“ das Problem mit detaillierten Schritten an, um das Problem zu reproduzieren.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonErrorFailedToParse" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to parse {path}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Fehler beim Analysieren von „{path}“:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonErrorFailedToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to read {path}: {error_msg}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Fehler beim Lesen von „{path}“: {error_msg}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -805,6 +976,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";RemovingPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Removing {spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} wird entfernt]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";RestoredPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Restored {count} package(s) from {vendor} in {elapsed}]]></Val>
@@ -832,11 +1012,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SourceFieldPortNameMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The 'Source' field inside the CONTROL file, or "name" field inside the vcpkg.json file has the name {package_name} and does not match the port directory {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Das Feld „Source“ innerhalb der CONTROL-Datei oder das Feld „name“ innerhalb der Datei „vcpkg.json“ weist den Namen „{package_name}“ auf und stimmt nicht mit dem Portverzeichnis „{path}“ überein.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use `--{option}` to disable this check.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Verwenden Sie das Versionsschema „{new_scheme}“ anstelle von „{old_scheme}“ in Port „{package_name}“. ]A;Verwenden Sie „--{option}“, um diese Überprüfung zu deaktivieren.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedErrorDuringBulkDownload" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[an unexpected error occurred during bulk download.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Unerwarteter Fehler beim Massendownload.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -976,6 +1174,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionConstraintViolated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Es wurde erwartet, dass die Abhängigkeit {spec} mindestens Version {expected_version} ist, sie ist derzeit aber {actual_version}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionInvalidDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[`{version}` is not a valid date version. Dates must follow the format YYYY-MM-DD and disambiguators must be dot-separated positive integer values without leading zeroes.]]></Val>
@@ -1008,6 +1215,24 @@
           <Val><![CDATA[error: Failed to load port because version specs did not match]A;    Path: {path}]A;    Expected: {expected_version}]A;    Actual: {actual_version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Fehler: Fehler: Fehler beim Laden des Ports, weil Versionsspezifikationen nicht übereinstimmen]A;    Pfad: {path}]A;    Erwartet: {expected_version}]A;    Tatsächlich: {actual_version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WaitingForChildrenToExit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Waiting for child processes to exit...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Es wird auf das Beenden untergeordneter Prozesse gewartet...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WaitingToTakeFilesystemLock" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Es wird auf die Sperre des Dateisystems für „{path}“ gewartet...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
