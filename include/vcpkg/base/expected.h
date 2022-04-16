@@ -49,26 +49,87 @@ namespace vcpkg
     template<class T, class S>
     struct ExpectedT
     {
-        constexpr ExpectedT() = default;
-
         // Constructors are intentionally implicit
-
-        ExpectedT(const S& s, ExpectedRightTag = {}) : value_is_error(true), m_s(s), m_t() { }
+        ExpectedT(const S& s, ExpectedRightTag = {}) : value_is_error(true), m_s(s) { }
         template<class U = S, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
-        ExpectedT(S&& s, ExpectedRightTag = {}) : value_is_error(true), m_s(std::move(s)), m_t()
+        ExpectedT(S&& s, ExpectedRightTag = {}) : value_is_error(true), m_s(std::move(s))
         {
         }
 
-        ExpectedT(const T& t, ExpectedLeftTag = {}) : value_is_error(false), m_s(), m_t(t) { }
+        ExpectedT(const T& t, ExpectedLeftTag = {}) : value_is_error(false), m_t(t) { }
         template<class U = T, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
-        ExpectedT(T&& t, ExpectedLeftTag = {}) : value_is_error(false), m_s(), m_t(std::move(t))
+        ExpectedT(T&& t, ExpectedLeftTag = {}) : value_is_error(false), m_t(std::move(t))
         {
         }
 
-        ExpectedT(const ExpectedT&) = default;
-        ExpectedT(ExpectedT&&) = default;
-        ExpectedT& operator=(const ExpectedT&) = default;
-        ExpectedT& operator=(ExpectedT&&) = default;
+        ExpectedT(const ExpectedT& other) : value_is_error(other.value_is_error)
+        {
+            if (value_is_error)
+            {
+                ::new (&m_s) S(other.m_s);
+            }
+            else
+            {
+                ::new (&m_t) ExpectedHolder<T>(other.m_t);
+            }
+        }
+
+        ExpectedT(ExpectedT&& other) : value_is_error(other.value_is_error)
+        {
+            if (value_is_error)
+            {
+                ::new (&m_s) S(std::move(other.m_s));
+            }
+            else
+            {
+                ::new (&m_t) ExpectedHolder<T>(std::move(other.m_t));
+            }
+        }
+
+        // copy assign is deleted to avoid creating "valueless by exception" states
+        ExpectedT& operator=(const ExpectedT& other) = delete;
+
+        ExpectedT& operator=(ExpectedT&& other) noexcept // enforces termination
+        {
+            if (value_is_error)
+            {
+                if (other.value_is_error)
+                {
+                    m_s = std::move(other.m_s);
+                }
+                else
+                {
+                    m_s.~S();
+                    ::new (&m_t) ExpectedHolder<T>(std::move(other.m_t));
+                }
+            }
+            else
+            {
+                if (other.value_is_error)
+                {
+                    m_t.~ExpectedHolder<T>();
+                    ::new (&m_s) S(std::move(other.m_s));
+                }
+                else
+                {
+                    m_t = std::move(other.m_t);
+                }
+            }
+
+            return *this;
+        }
+
+        ~ExpectedT()
+        {
+            if (value_is_error)
+            {
+                m_s.~S();
+            }
+            else
+            {
+                m_t.~ExpectedHolder<T>();
+            }
+        }
 
         explicit constexpr operator bool() const noexcept { return !value_is_error; }
         constexpr bool has_value() const noexcept { return !value_is_error; }
@@ -220,9 +281,13 @@ namespace vcpkg
             }
         }
 
+        union
+        {
+            S m_s;
+            ExpectedHolder<T> m_t;
+        };
+
         bool value_is_error = false;
-        S m_s;
-        ExpectedHolder<T> m_t;
     };
 
     template<class T>

@@ -269,7 +269,8 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
     ]
 })json"));
 
-    auto parsed = test_parse_manifest(R"json({
+    {
+        auto parsed = test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -279,10 +280,12 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
         }
     ]
 })json");
-    REQUIRE(parsed.has_value());
-    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+        REQUIRE(parsed.has_value());
+        CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+    }
 
-    parsed = test_parse_manifest(R"json({
+    {
+        auto parsed = test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -292,10 +295,12 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
         }
     ]
 })json");
-    REQUIRE(parsed.has_value());
-    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+        REQUIRE(parsed.has_value());
+        CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+    }
 
-    parsed = test_parse_manifest(R"json({
+    {
+        auto parsed = test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -305,10 +310,12 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
         }
     ]
 })json");
-    REQUIRE(parsed.has_value());
-    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+        REQUIRE(parsed.has_value());
+        CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+    }
 
-    parsed = test_parse_manifest(R"json({
+    {
+        auto parsed = test_parse_manifest(R"json({
     "name": "zlib",
     "version-string": "abcd",
     "overrides": [
@@ -318,8 +325,9 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
         }
     ]
 })json");
-    REQUIRE(parsed.has_value());
-    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+        REQUIRE(parsed.has_value());
+        CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+    }
 }
 
 TEST_CASE ("manifest constraints", "[manifests]")

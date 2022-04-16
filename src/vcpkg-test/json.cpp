@@ -36,175 +36,242 @@ TEST_CASE ("JSON stringify weird strings", "[json]")
 
 TEST_CASE ("JSON parse keywords", "[json]")
 {
-    auto res = Json::parse("true");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_boolean());
-    REQUIRE(res.get()->first.boolean());
-    res = Json::parse(" false ");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_boolean());
-    REQUIRE(!res.get()->first.boolean());
-    res = Json::parse(" null\t ");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_null());
+    {
+        auto res = Json::parse("true");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_boolean());
+        REQUIRE(res.get()->first.boolean());
+    }
+
+    {
+        auto res = Json::parse(" false ");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_boolean());
+        REQUIRE(!res.get()->first.boolean());
+    }
+
+    {
+        auto res = Json::parse(" null\t ");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_null());
+    }
 }
 
 TEST_CASE ("JSON parse strings", "[json]")
 {
-    auto res = Json::parse(R"("")");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string().size() == 0);
+    {
+        auto res = Json::parse(R"("")");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string().size() == 0);
+    }
 
-    res = Json::parse(R"("\ud800")"); // unpaired surrogate
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == "\xED\xA0\x80");
+    {
+        auto res = Json::parse(R"("\ud800")"); // unpaired surrogate
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == "\xED\xA0\x80");
+    }
 
     const auto make_json_string = [](vcpkg::StringView sv) { return '"' + sv.to_string() + '"'; };
     const vcpkg::StringView radical = U8_STR("⎷");
     const vcpkg::StringView grin = U8_STR("😁");
 
-    res = Json::parse(R"("\uD83D\uDE01")"); // paired surrogates for grin
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == grin.to_string());
+    {
+        auto res = Json::parse(R"("\uD83D\uDE01")"); // paired surrogates for grin
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == grin.to_string());
+    }
 
-    res = Json::parse(make_json_string(radical)); // character in BMP
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == radical);
+    {
+        auto res = Json::parse(make_json_string(radical)); // character in BMP
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == radical);
+    }
 
-    res = Json::parse(make_json_string(grin)); // character above BMP
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == grin);
+    {
+        auto res = Json::parse(make_json_string(grin)); // character above BMP
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == grin);
+    }
 }
 
 TEST_CASE ("JSON parse strings with escapes", "[json]")
 {
-    auto res = Json::parse(R"("\t")");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == "\t");
+    {
+        auto res = Json::parse(R"("\t")");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == "\t");
+    }
 
-    res = Json::parse(R"("\\")");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == "\\");
+    {
+        auto res = Json::parse(R"("\\")");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == "\\");
+    }
 
-    res = Json::parse(R"("\/")");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == "/");
+    {
+        auto res = Json::parse(R"("\/")");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == "/");
+    }
 
-    res = Json::parse(R"("\b")");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == "\b");
+    {
+        auto res = Json::parse(R"("\b")");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == "\b");
+    }
 
-    res = Json::parse(R"("\f")");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == "\f");
+    {
+        auto res = Json::parse(R"("\f")");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == "\f");
+    }
 
-    res = Json::parse(R"("\n")");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == "\n");
+    {
+        auto res = Json::parse(R"("\n")");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == "\n");
+    }
 
-    res = Json::parse(R"("\r")");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == "\r");
+    {
+        auto res = Json::parse(R"("\r")");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == "\r");
+    }
 
-    res = Json::parse(R"("This is a \"test\", hopefully it worked")");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_string());
-    REQUIRE(res.get()->first.string() == R"(This is a "test", hopefully it worked)");
+    {
+        auto res = Json::parse(R"("This is a \"test\", hopefully it worked")");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_string());
+        REQUIRE(res.get()->first.string() == R"(This is a "test", hopefully it worked)");
+    }
 }
 
 TEST_CASE ("JSON parse integers", "[json]")
 {
-    auto res = Json::parse("0");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_integer());
-    REQUIRE(res.get()->first.integer() == 0);
-    res = Json::parse("12345");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_integer());
-    REQUIRE(res.get()->first.integer() == 12345);
-    res = Json::parse("-12345");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_integer());
-    REQUIRE(res.get()->first.integer() == -12345);
-    res = Json::parse("9223372036854775807"); // INT64_MAX
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_integer());
-    REQUIRE(res.get()->first.integer() == 9223372036854775807);
-    res = Json::parse("-9223372036854775808");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_integer());
-    REQUIRE(res.get()->first.integer() == (-9223372036854775807 - 1)); // INT64_MIN (C++'s parser is fun)
+    {
+        auto res = Json::parse("0");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_integer());
+        REQUIRE(res.get()->first.integer() == 0);
+    }
+
+    {
+        auto res = Json::parse("12345");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_integer());
+        REQUIRE(res.get()->first.integer() == 12345);
+    }
+
+    {
+        auto res = Json::parse("-12345");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_integer());
+        REQUIRE(res.get()->first.integer() == -12345);
+    }
+
+    {
+        auto res = Json::parse("9223372036854775807"); // INT64_MAX
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_integer());
+        REQUIRE(res.get()->first.integer() == 9223372036854775807);
+    }
+
+    {
+        auto res = Json::parse("-9223372036854775808");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_integer());
+        REQUIRE(res.get()->first.integer() == (-9223372036854775807 - 1)); // INT64_MIN (C++'s parser is fun)
+    }
 }
 
 TEST_CASE ("JSON parse floats", "[json]")
 {
-    auto res = Json::parse("0.0");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_number());
-    REQUIRE(!res.get()->first.is_integer());
-    REQUIRE(res.get()->first.number() == 0.0);
-    REQUIRE(!signbit(res.get()->first.number()));
-    res = Json::parse("-0.0");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_number());
-    REQUIRE(res.get()->first.number() == 0.0);
-    REQUIRE(signbit(res.get()->first.number()));
-    res = Json::parse("12345.6789");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_number());
-    REQUIRE_THAT(res.get()->first.number(), Catch::WithinULP(12345.6789, 3));
-    res = Json::parse("-12345.6789");
-    REQUIRE(res);
-    REQUIRE(res.get()->first.is_number());
-    REQUIRE_THAT(res.get()->first.number(), Catch::WithinULP(-12345.6789, 3));
+    {
+        auto res = Json::parse("0.0");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_number());
+        REQUIRE(!res.get()->first.is_integer());
+        REQUIRE(res.get()->first.number() == 0.0);
+        REQUIRE(!signbit(res.get()->first.number()));
+    }
+
+    {
+        auto res = Json::parse("-0.0");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_number());
+        REQUIRE(res.get()->first.number() == 0.0);
+        REQUIRE(signbit(res.get()->first.number()));
+    }
+
+    {
+        auto res = Json::parse("12345.6789");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_number());
+        REQUIRE_THAT(res.get()->first.number(), Catch::WithinULP(12345.6789, 3));
+    }
+
+    {
+        auto res = Json::parse("-12345.6789");
+        REQUIRE(res);
+        REQUIRE(res.get()->first.is_number());
+        REQUIRE_THAT(res.get()->first.number(), Catch::WithinULP(-12345.6789, 3));
+    }
 }
 
 TEST_CASE ("JSON parse arrays", "[json]")
 {
-    auto res = Json::parse("[]");
-    REQUIRE(res);
-    auto val = std::move(res.get()->first);
-    REQUIRE(val.is_array());
-    REQUIRE(val.array().size() == 0);
+    {
+        auto res = Json::parse("[]");
+        REQUIRE(res);
+        auto val = std::move(res.get()->first);
+        REQUIRE(val.is_array());
+        REQUIRE(val.array().size() == 0);
+    }
 
-    res = Json::parse("[123]");
-    REQUIRE(res);
-    val = std::move(res.get()->first);
-    REQUIRE(val.is_array());
-    REQUIRE(val.array().size() == 1);
-    REQUIRE(val.array()[0].is_integer());
-    REQUIRE(val.array()[0].integer() == 123);
+    {
+        auto res = Json::parse("[123]");
+        REQUIRE(res);
+        auto val = std::move(res.get()->first);
+        REQUIRE(val.is_array());
+        REQUIRE(val.array().size() == 1);
+        REQUIRE(val.array()[0].is_integer());
+        REQUIRE(val.array()[0].integer() == 123);
+    }
 
-    res = Json::parse("[123, 456]");
-    REQUIRE(res);
-    val = std::move(res.get()->first);
-    REQUIRE(val.is_array());
-    REQUIRE(val.array().size() == 2);
-    REQUIRE(val.array()[0].is_integer());
-    REQUIRE(val.array()[0].integer() == 123);
-    REQUIRE(val.array()[1].is_integer());
-    REQUIRE(val.array()[1].integer() == 456);
+    {
+        auto res = Json::parse("[123, 456]");
+        REQUIRE(res);
+        auto val = std::move(res.get()->first);
+        REQUIRE(val.is_array());
+        REQUIRE(val.array().size() == 2);
+        REQUIRE(val.array()[0].is_integer());
+        REQUIRE(val.array()[0].integer() == 123);
+        REQUIRE(val.array()[1].is_integer());
+        REQUIRE(val.array()[1].integer() == 456);
+    }
 
-    res = Json::parse("[123, 456, [null]]");
-    REQUIRE(res);
-    val = std::move(res.get()->first);
-    REQUIRE(val.is_array());
-    REQUIRE(val.array().size() == 3);
-    REQUIRE(val.array()[2].is_array());
-    REQUIRE(val.array()[2].array().size() == 1);
-    REQUIRE(val.array()[2].array()[0].is_null());
+    {
+        auto res = Json::parse("[123, 456, [null]]");
+        REQUIRE(res);
+        auto val = std::move(res.get()->first);
+        REQUIRE(val.is_array());
+        REQUIRE(val.array().size() == 3);
+        REQUIRE(val.array()[2].is_array());
+        REQUIRE(val.array()[2].array().size() == 1);
+        REQUIRE(val.array()[2].array()[0].is_null());
+    }
 }
 
 TEST_CASE ("JSON parse objects", "[json]")
@@ -254,32 +321,38 @@ TEST_CASE ("JSON duplicated object keys", "[json]")
 
 TEST_CASE ("JSON support unicode characters in errors", "[json]")
 {
-    // unicode characters w/ bytes >1
-    auto res = Json::parse(R"json("Δx/Δt" "")json", "filename");
-    REQUIRE(!res);
-    CHECK(res.error()->format() ==
-          R"(filename:1:9: error: Unexpected character; expected EOF
+    {
+        // unicode characters w/ bytes >1
+        auto res = Json::parse(R"json("Δx/Δt" "")json", "filename");
+        REQUIRE(!res);
+        CHECK(res.error()->format() ==
+              R"(filename:1:9: error: Unexpected character; expected EOF
     on expression: "Δx/Δt" ""
                            ^
 )");
+    }
 
-    // full width unicode characters
-    // note that the A is full width
-    res = Json::parse(R"json("姐姐aＡ" "")json", "filename");
-    REQUIRE(!res);
-    CHECK(res.error()->format() ==
-          R"(filename:1:8: error: Unexpected character; expected EOF
+    {
+        // full width unicode characters
+        // note that the A is full width
+        auto res = Json::parse(R"json("姐姐aＡ" "")json", "filename");
+        REQUIRE(!res);
+        CHECK(res.error()->format() ==
+              R"(filename:1:8: error: Unexpected character; expected EOF
     on expression: "姐姐aＡ" ""
                              ^
 )");
+    }
 
-    // incorrect errors in the face of combining characters
-    // (this test should be fixed once the underlying bug is fixed)
-    res = Json::parse(R"json("é" "")json", "filename");
-    REQUIRE(!res);
-    CHECK(res.error()->format() ==
-          R"(filename:1:6: error: Unexpected character; expected EOF
+    {
+        // incorrect errors in the face of combining characters
+        // (this test should be fixed once the underlying bug is fixed)
+        auto res = Json::parse(R"json("é" "")json", "filename");
+        REQUIRE(!res);
+        CHECK(res.error()->format() ==
+              R"(filename:1:6: error: Unexpected character; expected EOF
     on expression: "é" ""
                         ^
 )");
+    }
 }
