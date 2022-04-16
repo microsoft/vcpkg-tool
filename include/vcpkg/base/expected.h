@@ -13,19 +13,6 @@
 
 namespace vcpkg
 {
-    template<class T>
-    static constexpr bool always_false = false;
-
-    template<class T>
-    inline std::string expected_to_string(const T&)
-    {
-        static_assert(always_false<T>, "boom");
-    }
-
-    inline const std::string& expected_to_string(const std::string& str) noexcept { return str; }
-
-    inline const std::string& expected_to_string(const LocalizedString& str) noexcept { return str.data(); }
-
     struct ExpectedLeftTag
     {
     };
@@ -110,11 +97,19 @@ namespace vcpkg
             return *m_t.get();
         }
 
-        const S& error() const& { return m_s; }
+        const S& error() const&
+        {
+            exit_if_not_error();
+            return m_s;
+        }
 
-        S&& error() && { return std::move(m_s); }
+        S&& error() &&
+        {
+            exit_if_not_error();
+            return std::move(m_s);
+        }
 
-        std::string error_to_string() const { return expected_to_string(m_s); }
+        std::string error_to_string() const { return fmt::format("{}", error()); }
 
         typename ExpectedHolder<T>::const_pointer get() const
         {
@@ -209,9 +204,6 @@ namespace vcpkg
         }
 
     private:
-        template<class, class>
-        friend struct ExpectedT;
-
         void exit_if_error(const LineInfo& line_info) const
         {
             if (value_is_error)
@@ -220,8 +212,19 @@ namespace vcpkg
             }
         }
 
+        void exit_if_not_error() const
+        {
+            if (!value_is_error)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+
         bool value_is_error = false;
         S m_s;
         ExpectedHolder<T> m_t;
     };
+
+    template<class T>
+    using ExpectedS = ExpectedT<T, std::string>;
 }

@@ -2,16 +2,18 @@
 
 #include <vcpkg/base/fwd/messages.h>
 
-#include <string>
-#include <system_error>
-
 namespace vcpkg
 {
-    template<class T, class S>
-    struct ExpectedT;
+    struct ExpectedLeftTag;
+    struct ExpectedRightTag;
 
     template<class T>
-    using ExpectedS = ExpectedT<T, std::string>;
+    struct ExpectedHolder;
+    template<class T>
+    struct ExpectedHolder<T&>;
+
+    template<class T, class S>
+    struct ExpectedT;
 
     template<class T>
     using ExpectedL = ExpectedT<T, LocalizedString>;

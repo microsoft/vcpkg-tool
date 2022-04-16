@@ -1,4 +1,5 @@
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
@@ -12,8 +13,128 @@
 
 static std::atomic<uint64_t> g_load_ports_stats(0);
 
+namespace
+{
+    using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading,
+                                 (msg::path, msg::error_msg),
+                                 "",
+                                 "while loading {path}: {error_msg}");
+
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoWhileParsing,
+                                 (msg::path),
+                                 "Errors are printed on lines after this message",
+                                 "while parsing {path}:");
+
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields,
+                                 (msg::path),
+                                 "",
+                                 "there are invalid fields in the control or manifest file of {path}.");
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields2,
+                                 (),
+                                 "",
+                                 "The following fields were not expected:");
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoEntry, (msg::path, msg::error_msg), "", "In {path}: {error_msg}");
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoMissingFields,
+                                 (msg::path),
+                                 "",
+                                 "there are missing fields in the control file of {path}");
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoMissingFields2,
+                                 (),
+                                 "Errors are printed on lines after this message",
+                                 "The following fields were missing:");
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields,
+                                 (msg::path),
+                                 "",
+                                 "there are fields with invalid types in the CONTROL or manifest file of {path}");
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields2,
+                                 (),
+                                 "Errors are printed on lines after this message",
+                                 "The following fields had the wrong types:");
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry,
+                                 (msg::value, msg::expected),
+                                 "{value} is the name of a field in an on-disk file, {expected} is a short description "
+                                 "of what it should be like 'a non-negative integer' (which isn't localized yet)",
+                                 "{value} was expected to be {expected}");
+}
+
 namespace vcpkg
 {
+    void ParseControlErrorInfo::format_to(LocalizedString& target) const
+    {
+        if (!error.empty())
+        {
+            target.append(msg::msgErrorMessage)
+                .append(msgParseControlErrorInfoWhileLoading, msg::path = name, msg::error_msg = error)
+                .appendnl();
+        }
+
+        if (!other_errors.empty())
+        {
+            target.append(msg::msgErrorMessage)
+                .append(msgParseControlErrorInfoWhileParsing, msg::path = name)
+                .appendnl();
+            for (auto&& msg : other_errors)
+            {
+                target.append_indent().append_raw(msg).appendnl();
+            }
+        }
+
+        if (!extra_fields.empty())
+        {
+            target.append(msg::msgErrorMessage)
+                .append(msgParseControlErrorInfoInvalidFields, msg::path = name)
+                .appendnl();
+            target.append(msgParseControlErrorInfoInvalidFields2).appendnl();
+            for (auto&& pr : extra_fields)
+            {
+                target.append_indent()
+                    .append(msgParseControlErrorInfoEntry,
+                            msg::path = pr.first,
+                            msg::error_msg = Strings::join(", ", pr.second))
+                    .appendnl();
+            }
+        }
+
+        if (!missing_fields.empty())
+        {
+            target.append(msg::msgErrorMessage)
+                .append(msgParseControlErrorInfoMissingFields, msg::path = name)
+                .appendnl();
+            target.append(msgParseControlErrorInfoMissingFields2).appendnl();
+            for (auto&& pr : missing_fields)
+            {
+                target.append_indent()
+                    .append(msgParseControlErrorInfoEntry,
+                            msg::path = pr.first,
+                            msg::error_msg = Strings::join(", ", pr.second))
+                    .appendnl();
+            }
+        }
+
+        if (!expected_types.empty())
+        {
+            target.append(msg::msgErrorMessage)
+                .append(msgParseControlErrorInfoWrongTypeFields, msg::path = name)
+                .appendnl();
+            target.append(msgParseControlErrorInfoWrongTypeFields2).appendnl();
+            for (auto&& pr : expected_types)
+            {
+                target.append_indent()
+                    .append(msgParseControlErrorInfoTypesEntry, msg::value = pr.first, msg::expected = pr.second)
+                    .appendnl();
+            }
+        }
+    }
+
+    LocalizedString ParseControlErrorInfo::format() const
+    {
+        LocalizedString result;
+        format_to(result);
+        return result;
+    }
+
     static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, const std::string& fieldname)
     {
         auto it = fields->find(fieldname);
