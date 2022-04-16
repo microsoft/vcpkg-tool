@@ -51,80 +51,52 @@ namespace
 
 namespace vcpkg
 {
-    Optional<StringView> find_first_nonzero_mac(StringView sv)
-    {
-        static constexpr StringLiteral ZERO_MAC = "00-00-00-00-00-00";
-
-        auto first = sv.begin();
-        const auto last = sv.end();
-
-        while (first != last)
-        {
-            // XX-XX-XX-XX-XX-XX
-            // 1  2  3  4  5  6
-            // size = 6 * 2 + 5 = 17
-            first = std::find_if(first, last, ParserBase::is_hex_digit);
-            if (last - first < 17)
-            {
-                break;
-            }
-
-            bool is_first = true;
-            bool is_valid = true;
-            auto end_of_mac = first;
-            for (int i = 0; is_valid && i < 6; ++i)
-            {
-                if (!is_first)
-                {
-                    if (*end_of_mac != '-')
-                    {
-                        is_valid = false;
-                        break;
-                    }
-                    ++end_of_mac;
-                }
-                is_first = false;
-
-                if (!ParserBase::is_hex_digit(*end_of_mac))
-                {
-                    is_valid = false;
-                    break;
-                }
-                ++end_of_mac;
-
-                if (!ParserBase::is_hex_digit(*end_of_mac))
-                {
-                    is_valid = false;
-                    break;
-                }
-                ++end_of_mac;
-            }
-            if (is_valid && StringView{first, end_of_mac} != ZERO_MAC)
-            {
-                return StringView{first, end_of_mac};
-            }
-            else
-            {
-                first = end_of_mac;
-            }
-        }
-
-        return nullopt;
-    }
-
     std::string get_user_mac_hash()
     {
 #if defined(_WIN32)
-        auto getmac = cmd_execute_and_capture_output(Command("getmac"));
+        // getmac /V /NH /FO CSV
+        // outputs each interface on its own comma-separated line
+        // "connection name","network adapter","physical address","transport name"
+        static constexpr StringLiteral ZERO_MAC = "00-00-00-00-00-00";
+        static constexpr size_t CONNECTION_NAME = 0;
+        static constexpr size_t PHYSICAL_ADDRESS = 2;
+        auto getmac = cmd_execute_and_capture_output(
+            Command("getmac").string_arg("/V").string_arg("/NH").string_arg("/FO").string_arg("CSV"));
         if (getmac.exit_code != 0)
         {
             return "0";
         }
 
-        auto found_mac = find_first_nonzero_mac(getmac.output);
-        if (auto p = found_mac.get())
+        std::map<std::string, std::string> ifname_mac_map;
+        for (auto&& line : Strings::split(getmac.output, '\n'))
         {
-            return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
+            auto values = Strings::split(line, ',');
+            if (values.size() != 4)
+            {
+                return "0";
+            }
+
+            auto&& name = Strings::replace_all(values[CONNECTION_NAME], "\"", "");
+            auto&& mac = Strings::replace_all(values[PHYSICAL_ADDRESS], "\"", "");
+            if (mac == ZERO_MAC) continue;
+            ifname_mac_map.emplace(name, Hash::get_string_hash(mac, Hash::Algorithm::Sha256));
+        }
+
+        // search for preferred interfaces
+        for (auto&& interface_name : {"Local Area Connection", "Wi-Fi"})
+        {
+            auto maybe_preferred = ifname_mac_map.find(interface_name);
+            if (maybe_preferred != ifname_mac_map.end())
+            {
+                return maybe_preferred->second;
+            }
+        }
+
+        // default to first mac address we find
+        auto first = ifname_mac_map.begin();
+        if (first != ifname_mac_map.end())
+        {
+            return first->second;
         }
 #elif defined(__linux__) || defined(__APPLE__)
         // The getifaddrs(ifaddrs** ifap) function creates a linked list of structures
@@ -174,7 +146,7 @@ namespace vcpkg
                 // The macro LLADDR() returns the start of the link-layer network address.
                 std::memcpy(bytes, LLADDR(address), MAC_BYTES_LENGTH);
 #endif
-                auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, 6));
+                auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
                 if (maybe_mac.empty()) continue;
                 ifname_mac_map.emplace(StringView{interface->ifa_name, strlen(interface->ifa_name)},
                                        Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256));
