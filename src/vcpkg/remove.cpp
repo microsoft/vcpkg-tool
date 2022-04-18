@@ -34,12 +34,7 @@ namespace vcpkg::Remove
 
         auto&& ipv = maybe_ipv.value_or_exit(VCPKG_LINE_INFO);
 
-        std::vector<StatusParagraph> spghs;
-        spghs.emplace_back(*ipv.core);
-        for (auto&& feature : ipv.features)
-        {
-            spghs.emplace_back(*feature);
-        }
+        std::vector<StatusParagraph> spghs = ipv.all_status_paragraphs();
 
         for (auto&& spgh : spghs)
         {
@@ -306,8 +301,10 @@ namespace vcpkg::Remove
         for (std::size_t idx = 0; idx < remove_plan.size(); ++idx)
         {
             const RemovePlanAction& action = remove_plan[idx];
-            msg::println(msg::format(msgRemovingPackage, msg::spec = action.spec)
-                             .append_fmt_raw(" ({}/{})...", idx + 1, remove_plan.size()));
+            msg::println(msgRemovingPackage,
+                         msg::action_index = idx + 1,
+                         msg::count = remove_plan.size(),
+                         msg::spec = action.spec);
             perform_remove_plan_action(paths, action, purge, &status_db);
         }
 

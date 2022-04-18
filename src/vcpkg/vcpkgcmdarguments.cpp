@@ -138,14 +138,7 @@ namespace vcpkg
             if (arg.size() > 0 && arg[0] == '@')
             {
                 arg.erase(arg.begin());
-                std::error_code ec;
-                auto lines = fs.read_lines(arg, ec);
-                if (ec)
-                {
-                    print2(Color::error, "Error: Could not open response file ", arg, '\n');
-                    Checks::exit_fail(VCPKG_LINE_INFO);
-                }
-
+                auto lines = fs.read_lines(arg, VCPKG_LINE_INFO);
                 v.insert(v.end(), std::make_move_iterator(lines.begin()), std::make_move_iterator(lines.end()));
             }
             else

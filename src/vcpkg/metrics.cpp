@@ -132,9 +132,9 @@ namespace vcpkg
 
     struct MetricMessage
     {
-        std::string user_id = generate_random_UUID();
+        std::string user_id;
         std::string user_timestamp;
-        std::string timestamp = get_current_date_time_string();
+        std::string timestamp;
 
         Json::Object properties;
         Json::Object measurements;

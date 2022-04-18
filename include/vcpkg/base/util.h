@@ -259,7 +259,7 @@ namespace vcpkg::Util
         }
     }
 
-    template<class Range, class Comp = std::less<typename Range::value_type>>
+    template<class Range, class Comp = std::less<>>
     void sort(Range& cont, Comp comp = Comp())
     {
         using std::begin;
@@ -273,12 +273,12 @@ namespace vcpkg::Util
         return std::any_of(rng.begin(), rng.end(), std::move(pred));
     }
 
-    template<class Range>
-    Range&& sort_unique_erase(Range&& cont)
+    template<class Range, class Comp = std::less<>>
+    Range&& sort_unique_erase(Range&& cont, Comp comp = Comp())
     {
         using std::begin;
         using std::end;
-        std::sort(begin(cont), end(cont));
+        std::sort(begin(cont), end(cont), comp);
         cont.erase(std::unique(begin(cont), end(cont)), end(cont));
 
         return std::forward<Range>(cont);
