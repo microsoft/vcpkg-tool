@@ -234,14 +234,12 @@ namespace vcpkg
         auto free = [](LPWCH p) { FreeEnvironmentStringsW(p); };
         std::unique_ptr<WCHAR, decltype(free)> env_block(GetEnvironmentStringsW(), free);
 
-        for (LPWCH i = env_block.get(); *i != L'\0'; ++i)
+        for (LPWCH i = env_block.get();;)
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat(Strings::to_utf8(i), '\n'));
-
-            while (*i != L'\0')
-            {
-                ++i;
-            }
+            auto this_length = strlen(i);
+            if (this_length == 0) { break; }
+            msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat(Strings::to_utf8(i, this_length), '\n'));
+            i += this_length + 1;
         }
 #else
         char** s = environ;
