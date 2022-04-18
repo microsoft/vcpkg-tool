@@ -41,7 +41,7 @@ namespace
     {
         static constexpr char capital_hexits[] = "0123456789ABCDEF";
         // 6 hex bytes, 5 dashes
-        static constexpr size_t MAC_STRING_LENGTH = MAC_BYTES_LENGTH * 2 + 5; 
+        static constexpr size_t MAC_STRING_LENGTH = MAC_BYTES_LENGTH * 2 + 5;
 
         char mac_address[MAC_STRING_LENGTH];
         char* mac = mac_address;
@@ -190,6 +190,7 @@ namespace vcpkg
         }
         return preferred_interface_or_default(ifname_mac_map);
 #elif defined(SIOCGIFHWADDR)
+        // fallback when getifaddrs() is not available
         struct socket_guard
         {
             int fd = -1;
