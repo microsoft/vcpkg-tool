@@ -263,7 +263,7 @@ int main(const int argc, const char* const* const argv)
     if (const auto p = args.debug_env.get(); p && *p)
     {
         msg::write_unlocalized_text_to_stdout(Color::none,
-                                              "The following environment variables are currently set:\n" +
+                                              "[DEBUG] The following environment variables are currently set:\n" +
                                                   get_environment_variables() + '\n');
     }
     else if (Debug::g_debugging)
