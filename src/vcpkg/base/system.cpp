@@ -12,6 +12,7 @@
 #endif
 
 #if defined(_WIN32)
+// needed for mingw
 #include <processenv.h>
 #else
 extern char** environ;
