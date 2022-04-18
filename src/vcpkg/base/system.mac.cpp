@@ -131,10 +131,11 @@ namespace vcpkg
                 if (interface->ifa_flags & IFF_LOOPBACK) continue;
 
                 unsigned char bytes[6];
+                std::memset(bytes, 0, MAC_BYTES_LENGTH);
                 // Convert the generic sockaddr into a specified representation
                 // based on the value of sa_family, on macOS the AF_PACKET
                 // family is not available so we fall back to AF_LINK.
-                // AF_SOCKET and sockaddr_ll: https://man7.org/linux/man-pages/man7/packet.7.html
+                // AF_PACKET and sockaddr_ll: https://man7.org/linux/man-pages/man7/packet.7.html
                 // AF_LINK and sockaddr_dl: https://illumos.org/man/3SOCKET/sockaddr_dl
 #if defined(AF_PACKET)
                 auto address = reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
@@ -154,7 +155,7 @@ namespace vcpkg
         }
 
         // search for preferred interfaces
-        for (auto&& interface_name : {"eth0", "wlan0", "en0"})
+        for (auto&& interface_name : {"eth0", "wlan0", "en0", "hn0"})
         {
             auto maybe_preferred = ifname_mac_map.find(interface_name);
             if (maybe_preferred != ifname_mac_map.end())
