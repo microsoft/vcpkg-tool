@@ -167,6 +167,8 @@ namespace vcpkg
 
         constexpr static StringLiteral DEBUG_SWITCH = "debug";
         Optional<bool> debug = nullopt;
+        constexpr static StringLiteral DEBUG_ENV_SWITCH = "debug-env";
+        Optional<bool> debug_env = nullopt;
         constexpr static StringLiteral SEND_METRICS_SWITCH = "sendmetrics";
         Optional<bool> send_metrics = nullopt;
         // fully disable metrics -- both printing and sending

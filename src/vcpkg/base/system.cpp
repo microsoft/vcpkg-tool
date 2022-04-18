@@ -227,9 +227,9 @@ namespace vcpkg
 #endif
     }
 
-    void print_environment_variables()
+    std::string get_environment_variables()
     {
-        msg::write_unlocalized_text_to_stdout(Color::none, "The following environment variables are currently set:\n");
+        std::string result;
 #if defined(_WIN32)
         auto free = [](LPWCH p) { FreeEnvironmentStringsW(p); };
         std::unique_ptr<WCHAR, decltype(free)> env_block(GetEnvironmentStringsW(), free);
@@ -238,17 +238,19 @@ namespace vcpkg
         {
             auto this_length = strlen(i);
             if (this_length == 0) { break; }
-            msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat(Strings::to_utf8(i, this_length), '\n'));
+            result += Strings::to_utf8(i, this_length);
+            result += '\n';
             i += this_length + 1;
         }
 #else
         char** s = environ;
         for (; *s; s++)
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat(*s, "\n"));
+            result += *s;
+            result += '\n';
         }
 #endif
-        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
+        return result;
     }
 
     const ExpectedS<Path>& get_home_dir() noexcept
