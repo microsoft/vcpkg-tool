@@ -24,3 +24,4 @@ node_modules/
 /vcpkg-root
 .vscode/settings.json
 .vscode/launch.json
+.vscode/launch.json

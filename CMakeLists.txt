@@ -176,6 +176,12 @@ else()
     )
 endif()
 
+include(CheckSymbolExists)
+check_symbol_exists(getifaddrs "ifaddrs.h" VCPKG_HAVE_IFADDRS)
+if (VCPKG_HAVE_IFADDRS)
+    target_compile_definitions(vcpkglib PRIVATE VCPKG_HAVE_IFADDRS)
+endif()
+
 set(CPP_ATOMIC_LIBRARY "")
 include(CheckCXXSourceCompiles)
 if(NOT MSVC)
