@@ -13,8 +13,6 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versions.h>
 
-#include <optional>
-
 using namespace vcpkg;
 
 namespace
@@ -27,7 +25,8 @@ namespace
 
     static constexpr StringLiteral OPTION_ALL = "all";
     static constexpr StringLiteral OPTION_OVERWRITE_VERSION = "overwrite-version";
-    static constexpr StringLiteral OPTION_SKIP_VERSION_FORMAT_CHECK = "skip-formatting-check";
+    static constexpr StringLiteral OPTION_SKIP_FORMATTING_CHECK = "skip-formatting-check";
+    static constexpr StringLiteral OPTION_SKIP_VERSION_FORMAT_CHECK = "skip-version-format-check";
     static constexpr StringLiteral OPTION_COMMIT = "commit";
     static constexpr StringLiteral OPTION_COMMIT_AMEND = "amend";
     static constexpr StringLiteral OPTION_COMMIT_MESSAGE = "commit-message";
@@ -307,6 +306,7 @@ namespace vcpkg::Commands::AddVersion
     const CommandSwitch COMMAND_SWITCHES[] = {
         {OPTION_ALL, "Process versions for all ports."},
         {OPTION_OVERWRITE_VERSION, "Overwrite `git-tree` of an existing version."},
+        {OPTION_SKIP_FORMATTING_CHECK, "Skips the formatting check of vcpkg.json files."},
         {OPTION_COMMIT, "Commits the results."},
         {OPTION_COMMIT_AMEND, "Amend the result to the last commit instead of creating a new one."},
         {OPTION_SKIP_VERSION_FORMAT_CHECK, "Skips the version format check."},
@@ -330,6 +330,7 @@ namespace vcpkg::Commands::AddVersion
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
         const bool add_all = Util::Sets::contains(parsed_args.switches, OPTION_ALL);
         const bool overwrite_version = Util::Sets::contains(parsed_args.switches, OPTION_OVERWRITE_VERSION);
+        const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_FORMATTING_CHECK);
         const bool skip_version_format_check =
             Util::Sets::contains(parsed_args.switches, OPTION_SKIP_VERSION_FORMAT_CHECK);
         const bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
@@ -420,7 +421,7 @@ namespace vcpkg::Commands::AddVersion
 
             const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
 
-            if (!skip_version_format_check)
+            if (!skip_formatting_check)
             {
                 // check if manifest file is property formatted
                 const auto path_to_manifest = paths.builtin_ports_directory() / port_name / "vcpkg.json";
@@ -458,7 +459,7 @@ namespace vcpkg::Commands::AddVersion
 
             char prefix[] = {port_name[0], '-', '\0'};
             auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
-			updated_files.push_back(port_versions_path);
+            updated_files.push_back(port_versions_path);
             update_version_db_file(paths,
                                    port_name,
                                    schemed_version,
