@@ -50,6 +50,10 @@ namespace
                                  "",
                                  "added version {version} to {path}");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionNewFile, (), "", "(new file)");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionUncommittedChanges,
+                                 (msg::package_name),
+                                 "",
+                                 "there are uncommitted changes for {package_name}");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionPortFilesShaUnchanged,
                                  (msg::package_name, msg::version),
                                  "",
@@ -510,6 +514,14 @@ namespace vcpkg::Commands::AddVersion
                     }
                 }
             }
+
+            // find local uncommitted changes on port
+            auto maybe_changes = paths.git_port_has_local_changes(port_name);
+            if (maybe_changes.has_value() && maybe_changes.value_or_exit(VCPKG_LINE_INFO))
+            {
+                msg::print_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
+            }
+
             const auto& schemed_version = scf->to_schemed_version();
 
             auto git_tree_it = git_tree_map.find(port_name);
