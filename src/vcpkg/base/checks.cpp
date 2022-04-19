@@ -1,7 +1,7 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 
 #include <stdlib.h>
 
@@ -78,7 +78,8 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_with_message(const LineInfo& line_info, StringView error_message)
     {
-        print2(Color::error, error_message, '\n');
+        msg::write_unlocalized_text_to_stdout(Color::error, error_message);
+        msg::write_unlocalized_text_to_stdout(Color::error, "\n");
         exit_fail(line_info);
     }
     [[noreturn]] void Checks::msg_exit_with_message(const LineInfo& line_info, const LocalizedString& error_message)
@@ -89,8 +90,7 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_with_message_and_line(const LineInfo& line_info, StringView error_message)
     {
-        msg::print(Color::error, locale_invariant_lineinfo(line_info));
-        print2(Color::error, error_message, '\n');
+        msg::println(Color::error, locale_invariant_lineinfo(line_info).append_raw(error_message));
         exit_fail(line_info);
     }
 
@@ -137,7 +137,8 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_maybe_upgrade(const LineInfo& line_info, StringView error_message)
     {
-        print2(Color::error, error_message, '\n');
+        msg::write_unlocalized_text_to_stdout(Color::error, error_message);
+        msg::write_unlocalized_text_to_stdout(Color::error, "\n");
         display_upgrade_message();
         exit_fail(line_info);
     }

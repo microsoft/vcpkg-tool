@@ -67,7 +67,8 @@ namespace vcpkg::Dependencies
                           const SourceControlFileAndLocation& scfl,
                           const RequestType& request_type,
                           Triplet host_triplet,
-                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies);
+                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
+                          std::vector<LocalizedString>&& build_failure_messages);
 
         std::string displayname() const;
         const std::string& public_abi() const;
@@ -86,6 +87,7 @@ namespace vcpkg::Dependencies
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
         std::vector<PackageSpec> package_dependencies;
+        std::vector<LocalizedString> build_failure_messages;
         InternalFeatureSet feature_list;
         Triplet host_triplet;
 

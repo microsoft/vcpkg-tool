@@ -243,9 +243,8 @@ namespace vcpkg
         }
         else
         {
-            std::error_code ec;
-            fs.create_directories(tool_data.exe_path.parent_path(), ec);
-            fs.rename(tool_data.download_path, tool_data.exe_path, ec);
+            fs.create_directories(tool_data.exe_path.parent_path(), IgnoreErrors{});
+            fs.rename(tool_data.download_path, tool_data.exe_path, IgnoreErrors{});
         }
 
         Checks::check_exit(VCPKG_LINE_INFO,
@@ -615,6 +614,33 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
         }
     };
 
+    struct CosCliProvider : ToolProvider
+    {
+        virtual StringLiteral tool_data_name() const override { return Tools::COSCLI; }
+        virtual StringLiteral exe_stem() const override { return Tools::COSCLI; }
+        virtual std::array<int, 3> default_min_version() const override { return {0, 11, 0}; }
+
+        virtual ExpectedS<std::string> get_version(const VcpkgPaths&, const Path& exe_path) const override
+        {
+            auto cmd = Command(exe_path).string_arg("--version");
+            auto rc = cmd_execute_and_capture_output(cmd);
+            if (rc.exit_code != 0)
+            {
+                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
+                        expected_right_tag};
+            }
+
+            /* Sample output:
+coscli version v0.11.0-beta
+                */
+
+            const auto idx = rc.output.find("coscli version v");
+            Checks::check_exit(
+                VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of coscli version string: %s", rc.output);
+            return {rc.output.substr(idx), expected_left_tag};
+        }
+    };
+
     struct IfwInstallerBaseProvider : ToolProvider
     {
         virtual StringLiteral tool_data_name() const override { return "installerbase"; }
@@ -794,6 +820,14 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
                         return {"aws", "0"};
                     }
                     return get_path(paths, AwsCliProvider());
+                }
+                if (tool == Tools::COSCLI)
+                {
+                    if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
+                    {
+                        return {"cos", "0"};
+                    }
+                    return get_path(paths, CosCliProvider());
                 }
                 if (tool == Tools::TAR)
                 {

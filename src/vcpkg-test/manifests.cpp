@@ -1,7 +1,6 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/paragraphs.h>
@@ -25,8 +24,10 @@ static Json::Object parse_json_object(StringView sv)
     }
     else
     {
-        vcpkg::print2("Error found while parsing JSON document:\n", sv, '\n');
-        Checks::exit_with_message(VCPKG_LINE_INFO, json.error()->format());
+        INFO("Error found while parsing JSON document:");
+        INFO(sv.to_string());
+        FAIL(json.error()->format());
+        return Json::Object{};
     }
 }
 

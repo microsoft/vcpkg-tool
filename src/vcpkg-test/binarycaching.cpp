@@ -260,7 +260,8 @@ Build-Depends: bzip
                                         scfl,
                                         Dependencies::RequestType::USER_REQUESTED,
                                         Test::ARM_UWP,
-                                        {{"a", {}}, {"b", {}}});
+                                        {{"a", {}}, {"b", {}}},
+                                        {});
 
     ipa.abi_info = Build::AbiInfo{};
     ipa.abi_info.get()->package_abi = "packageabi";
@@ -390,7 +391,8 @@ Description:
                               scfl,
                               Dependencies::RequestType::USER_REQUESTED,
                               Test::ARM_UWP,
-                              std::map<std::string, std::vector<FeatureSpec>>{});
+                              std::map<std::string, std::vector<FeatureSpec>>{},
+                              std::vector<LocalizedString>{});
     Dependencies::InstallPlanAction& ipa_without_abi = install_plan.back();
 
     // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider

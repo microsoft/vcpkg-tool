@@ -756,7 +756,7 @@ namespace vcpkg
                     continue;
                 }
                 helpers.emplace(file.stem().to_string(),
-                                Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha256));
+                                Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
             }
             return helpers;
         });
@@ -765,7 +765,8 @@ namespace vcpkg
     StringView VcpkgPaths::get_ports_cmake_hash() const
     {
         return m_pimpl->ports_cmake_hash.get_lazy([this]() -> std::string {
-            return Hash::get_file_hash(VCPKG_LINE_INFO, get_filesystem(), ports_cmake, Hash::Algorithm::Sha256);
+            return Hash::get_file_hash(get_filesystem(), ports_cmake, Hash::Algorithm::Sha256)
+                .value_or_exit(VCPKG_LINE_INFO);
         });
     }
 

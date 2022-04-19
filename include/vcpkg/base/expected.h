@@ -5,7 +5,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
 #include <functional>
 #include <system_error>
@@ -180,6 +180,8 @@ namespace vcpkg
         const S& error() const& { return this->m_s.error(); }
 
         S&& error() && { return std::move(this->m_s.error()); }
+
+        std::string error_to_string() const { return Strings::concat(m_s.to_string()); }
 
         typename ExpectedHolder<T>::const_pointer get() const
         {

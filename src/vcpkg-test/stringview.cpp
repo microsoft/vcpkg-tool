@@ -1,8 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include <vcpkg/base/stringliteral.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/zstringview.h>
 
 using namespace vcpkg;
 

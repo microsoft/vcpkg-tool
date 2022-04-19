@@ -162,11 +162,10 @@ if (Test-Path $installedDir)
         const auto exported_dir_path = vcpkg_root_path / "chocolatey_exports";
         const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
 
-        std::error_code ec;
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
-        fs.create_directory(raw_exported_dir_path, ec);
+        fs.create_directory(raw_exported_dir_path, VCPKG_LINE_INFO);
         fs.remove_all(exported_dir_path, VCPKG_LINE_INFO);
-        fs.create_directory(exported_dir_path, ec);
+        fs.create_directory(exported_dir_path, VCPKG_LINE_INFO);
 
         // execute the plan
         std::map<PackageSpec, std::string> packages_version;
@@ -209,7 +208,7 @@ if (Test-Path $installedDir)
                 per_package_dir_path / Strings::concat(binary_paragraph.spec.name(), ".nuspec");
             fs.write_contents(nuspec_file_path, nuspec_file_content, VCPKG_LINE_INFO);
 
-            fs.create_directory(per_package_dir_path / "tools", ec);
+            fs.create_directory(per_package_dir_path / "tools", IgnoreErrors{});
 
             const std::string chocolatey_install_content = create_chocolatey_install_contents();
             const auto chocolatey_install_file_path = per_package_dir_path / "tools" / "chocolateyInstall.ps1";

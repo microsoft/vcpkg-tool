@@ -128,7 +128,6 @@ namespace
                                     const Path& output_path)
     {
         auto new_path = output_path + ".tmp";
-        std::error_code ec;
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
         fs.write_contents(new_path,
                           Json::stringify(serialize_baseline(baseline_map), Json::JsonStyle::with_spaces(2)),
@@ -141,7 +140,6 @@ namespace
                                     const Path& output_path)
     {
         auto new_path = output_path + ".tmp";
-        std::error_code ec;
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
         fs.write_contents(
             new_path, Json::stringify(serialize_versions(versions), Json::JsonStyle::with_spaces(2)), VCPKG_LINE_INFO);

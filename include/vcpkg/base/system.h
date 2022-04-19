@@ -5,7 +5,6 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/zstringview.h>
 
 namespace vcpkg
 {

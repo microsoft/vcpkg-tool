@@ -1,9 +1,9 @@
 #include <vcpkg/base/system_headers.h>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -39,6 +39,11 @@ namespace stdfs = std::filesystem;
 namespace
 {
     using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(WaitingToTakeFilesystemLock,
+                                 (msg::path),
+                                 "",
+                                 "waiting to take filesystem lock on {path}...");
 
     std::atomic<uint64_t> g_us_filesystem_stats(0);
 
@@ -3224,7 +3229,7 @@ namespace vcpkg
             auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (!ec && !result->lock_attempt(ec) && !ec)
             {
-                vcpkg::printf("Waiting to take filesystem lock on %s...\n", lockfile);
+                msg::println(msgWaitingToTakeFilesystemLock, msg::path = lockfile);
                 do
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -3240,7 +3245,7 @@ namespace vcpkg
             auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (!ec && !result->lock_attempt(ec) && !ec)
             {
-                Debug::print("Waiting to take filesystem lock on ", lockfile, "...\n");
+                Debug::println(msg::format(msgWaitingToTakeFilesystemLock, msg::path = lockfile));
                 // waits, at most, a second and a half.
                 for (auto wait = std::chrono::milliseconds(100);;)
                 {
@@ -3320,7 +3325,7 @@ namespace vcpkg
             Strings::append(message, "    ", p.generic_u8string(), '\n');
         }
         message.push_back('\n');
-        print2(message);
+        msg::write_unlocalized_text_to_stdout(Color::none, message);
     }
 
     uint64_t get_filesystem_stats() { return g_us_filesystem_stats.load(); }
