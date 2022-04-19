@@ -512,18 +512,16 @@ TEST_CASE ("Path::make_parent_path and Path::parent_path", "[filesystem][files]"
 #endif // ^^^ !_WIN32
 }
 
-#if not defined(_WIN32) // the windows implementation uses stdfs::relative
-TEST_CASE ("Path::relative", "[filesystem][files]")
+TEST_CASE ("Path::lexically_relative", "[filesystem][files]")
 {
     auto& fs = setup();
-    CHECK(fs.relative("test/test", "test", VCPKG_LINE_INFO).native() == "test");
-    CHECK(fs.relative("test/test", ".", VCPKG_LINE_INFO).native() == "test/test");
-    CHECK(fs.relative("test/test", "test4", VCPKG_LINE_INFO).native() == "../test/test");
-    CHECK(fs.relative("test4", "test", VCPKG_LINE_INFO).native() == "../test4");
-    CHECK(fs.relative("test4", "test/test", VCPKG_LINE_INFO).native() == "../../test4");
-    CHECK(fs.relative("teet/tt", "test/tt", VCPKG_LINE_INFO).native() == "../../teet/tt");
+    CHECK(fs.lexically_relative("/test/test", "/test").native() == "test");
+    CHECK(fs.lexically_relative("/test/test", "/").native() == "test/test");
+    CHECK(fs.lexically_relative("/test/test", "/test4").native() == "../test/test");
+    CHECK(fs.lexically_relative("/test4", "/test").native() == "../test4");
+    CHECK(fs.lexically_relative("/test4", "/test/test").native() == "../../test4");
+    CHECK(fs.lexically_relative("/teet/tt", "/test/tt").native() == "../../teet/tt");
 }
-#endif // ^^^ !_WIN32
 
 static void test_path_decomposition(
     Path input, bool is_absolute, StringView expected_stem, StringView expected_extension, StringView ads = {})

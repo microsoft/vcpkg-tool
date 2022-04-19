@@ -3016,15 +3016,9 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
         }
 
-        virtual Path relative(const Path& file, const Path& base, std::error_code& ec) const override
+        virtual Path lexically_relative(const Path& abs_file, const Path& base) const override
         {
-#if defined(_WIN32)
-            return from_stdfs_path(stdfs::relative(to_stdfs_path(file), to_stdfs_path(base), ec));
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-            Path abs_file = almost_canonical(file, ec);
-            if (ec) return {};
-            Path abs_base = almost_canonical(base, ec);
-            if (ec) return {};
+            Path abs_base = base;
             if (abs_base.native().back() != '/')
             {
                 abs_base += "/";
@@ -3048,6 +3042,18 @@ namespace vcpkg
             // from common base to abd_file
             relative += StringView(&*(mismatch.first), &*abs_file.native().end());
             return relative;
+        }
+
+        virtual Path relative(const Path& file, const Path& base, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            return from_stdfs_path(stdfs::relative(to_stdfs_path(file), to_stdfs_path(base), ec));
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+            Path abs_file = almost_canonical(file, ec);
+            if (ec) return {};
+            Path abs_base = almost_canonical(base, ec);
+            if (ec) return {};
+            return lexically_relative(abs_file, abs_base);
 #endif // ^^^ !_WIN32
         }
 

@@ -323,6 +323,8 @@ namespace vcpkg
         virtual Path absolute(const Path& target, std::error_code& ec) const = 0;
         Path absolute(const Path& target, LineInfo li) const;
 
+        virtual Path lexically_relative(const Path& abs_file, const Path& abs_base) const = 0;
+
         virtual Path relative(const Path& file, const Path& base, std::error_code& ec) const = 0;
         Path relative(const Path& file, const Path& base, LineInfo li) const;
         // absolute/system_complete + lexically_normal + fixup_win32_path_case
