@@ -39,12 +39,7 @@ namespace vcpkg::Commands::X_Download
         nullptr,
     };
 
-    static bool is_hex(StringView sha)
-    {
-        return std::all_of(sha.begin(), sha.end(), [](char ch) {
-            return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
-        });
-    }
+    static bool is_hex(StringView sha) { return std::all_of(sha.begin(), sha.end(), ParserBase::is_hex_digit); }
     static bool is_sha512(StringView sha) { return sha.size() == 128 && is_hex(sha); }
 
     static Optional<std::string> get_sha512_check(const VcpkgCmdArguments& args, const ParsedArguments& parsed)
@@ -114,7 +109,7 @@ namespace vcpkg::Commands::X_Download
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: path was not a regular file: %s", file);
             }
-            auto actual_hash = Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha512);
+            auto actual_hash = Hash::get_file_hash(fs, file, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
             if (!Strings::case_insensitive_ascii_equals(*hash, actual_hash))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: file to store does not match hash");

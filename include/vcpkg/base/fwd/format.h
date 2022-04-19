@@ -19,3 +19,14 @@ namespace fmt
             return fmt::formatter<Base, Char, void>::format(static_cast<Base>(val), ctx);                              \
         }                                                                                                              \
     }
+
+#define VCPKG_FORMAT_WITH_TO_STRING(Type)                                                                              \
+    template<typename Char>                                                                                            \
+    struct fmt::formatter<Type, Char, void> : fmt::formatter<std::string, Char, void>                                  \
+    {                                                                                                                  \
+        template<typename FormatContext>                                                                               \
+        auto format(Type const& val, FormatContext& ctx) const -> decltype(ctx.out())                                  \
+        {                                                                                                              \
+            return fmt::formatter<std::string, Char, void>::format(val.to_string(), ctx);                              \
+        }                                                                                                              \
+    }

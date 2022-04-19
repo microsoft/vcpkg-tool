@@ -141,10 +141,12 @@ namespace vcpkg::Commands::DependInfo
             constexpr StringLiteral OPTION_SORT_REVERSE = "reverse";
             constexpr StringLiteral OPTION_SORT_TREE = "x-tree";
 
-            static const std::map<std::string, SortMode> sortModesMap{{OPTION_SORT_LEXICOGRAPHICAL, Lexicographical},
-                                                                      {OPTION_SORT_TOPOLOGICAL, Topological},
-                                                                      {OPTION_SORT_REVERSE, ReverseTopological},
-                                                                      {OPTION_SORT_TREE, Treelogical}};
+            static const std::map<StringLiteral, SortMode, std::less<>> sortModesMap{
+                {OPTION_SORT_LEXICOGRAPHICAL, Lexicographical},
+                {OPTION_SORT_TOPOLOGICAL, Topological},
+                {OPTION_SORT_REVERSE, ReverseTopological},
+                {OPTION_SORT_TREE, Treelogical},
+            };
 
             auto iter = options.settings.find(OPTION_SORT);
             if (iter != options.settings.end())
@@ -219,7 +221,7 @@ namespace vcpkg::Commands::DependInfo
             return s;
         }
 
-        std::string create_graph_as_string(const std::unordered_set<std::string>& switches,
+        std::string create_graph_as_string(const std::set<std::string, std::less<>>& switches,
                                            const std::vector<PackageDependInfo>& depend_info)
         {
             if (Util::Sets::contains(switches, OPTION_DOT))
@@ -308,13 +310,8 @@ namespace vcpkg::Commands::DependInfo
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return Input::check_and_get_full_package_spec(
-                std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text);
+                std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
-
-        for (auto&& spec : specs)
-        {
-            Input::check_triplet(spec.package_spec.triplet(), paths);
-        }
 
         PathsPortFileProvider provider(paths, args.overlay_ports);
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);

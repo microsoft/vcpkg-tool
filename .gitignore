@@ -8,8 +8,17 @@
 /CMakeSettings.json
 /out
 .DS_Store
-# Qt Creator CMake project files
 CMakeLists.txt.user
 .cache
 /vcpkg-ce.zip
-/vcpkg-ce/**
+node_modules/
+**/.rush/
+**/dist/
+/ce/test/**/*.d.ts
+/ce/test/**/*.map
+/ce/test/**/*.js
+/ce/ce/vcpkg-ce.build.log
+/ce/common/config/rush/pnpm-lock.yaml
+/ce/test/vcpkg-ce.test.build.log
+/ce/common/temp
+/vcpkg-root

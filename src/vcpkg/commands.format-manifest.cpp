@@ -62,7 +62,6 @@ namespace
 
     Optional<ToWrite> read_control_file(Filesystem& fs, Path&& control_path)
     {
-        std::error_code ec;
         Debug::print("Reading ", control_path, "\n");
 
         auto manifest_path = Path(control_path.parent_path()) / "vcpkg.json";

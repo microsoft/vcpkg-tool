@@ -3,6 +3,6 @@ set(VCPKG_CRT_LINKAGE dynamic)
 set(VCPKG_LIBRARY_LINKAGE static)
 
 set(VCPKG_CMAKE_SYSTEM_NAME Linux)
-if(PORT STREQUAL "rapidjson")
+if(PORT STREQUAL "vcpkg-hello-world-2")
     set(VCPKG_DISABLE_COMPILER_TRACKING 1)
 endif()

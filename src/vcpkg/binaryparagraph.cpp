@@ -30,10 +30,8 @@ namespace vcpkg
 
     BinaryParagraph::BinaryParagraph() = default;
 
-    BinaryParagraph::BinaryParagraph(Parse::Paragraph fields)
+    BinaryParagraph::BinaryParagraph(Paragraph fields)
     {
-        using namespace vcpkg::Parse;
-
         ParagraphParser parser(std::move(fields));
 
         {
@@ -108,7 +106,7 @@ namespace vcpkg
                                      const std::string& abi_tag,
                                      const std::vector<FeatureSpec>& deps)
         : spec(spgh.name, triplet)
-        , version(spgh.version)
+        , version(spgh.raw_version)
         , port_version(spgh.port_version)
         , description(spgh.description)
         , maintainers(spgh.maintainers)

@@ -3,6 +3,7 @@
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/archives.h>
 #include <vcpkg/build.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.h>
@@ -152,62 +153,64 @@ namespace vcpkg::Export::Prefab
         return json;
     }
 
-    Optional<std::string> find_ndk_version(const std::string& content)
+    Optional<StringView> find_ndk_version(StringView content)
     {
-        std::smatch pkg_match;
-        std::regex pkg_regex(R"(Pkg\.Revision\s*=\s*(\d+)(\.\d+)(\.\d+)\s*)");
+        constexpr static StringLiteral pkg_revision = "Pkg.Revision";
 
-        if (std::regex_search(content, pkg_match, pkg_regex))
+        constexpr static auto is_version_character = [](char ch) {
+            return ch == '.' || ParserBase::is_ascii_digit(ch);
+        };
+
+        auto first = content.begin();
+        auto last = content.end();
+
+        for (;;)
         {
-            for (const auto& p : pkg_match)
-            {
-                std::string delimiter = "=";
-                std::string s = p.str();
-                auto it = s.find(delimiter);
-                if (it != std::string::npos)
-                {
-                    std::string token = (s.substr(s.find(delimiter) + 1, s.size()));
-                    return Strings::trim(std::move(token));
-                }
-            }
+            first = Util::search_and_skip(first, last, pkg_revision);
+            if (first == last) break;
+
+            first = std::find_if_not(first, last, ParserBase::is_whitespace);
+            if (first == last) break;
+            if (*first != '=') continue;
+
+            // Pkg.Revision = x.y.z
+            ++first; // skip =
+            first = std::find_if_not(first, last, ParserBase::is_whitespace);
+            auto end_of_version = std::find_if_not(first, last, is_version_character);
+            if (first == end_of_version) continue;
+            return StringView{first, end_of_version};
         }
+
         return {};
     }
 
-    Optional<NdkVersion> to_version(const std::string& version)
+    Optional<NdkVersion> to_version(StringView version)
     {
         if (version.size() > 100) return {};
-        size_t last = 0;
-        size_t next = 0;
-        std::vector<int> fragments(0);
+        std::vector<int> fragments;
 
-        while ((next = version.find(".", last)) != std::string::npos)
+        for (auto first = version.begin(), last = version.end(); first != last;)
         {
-            fragments.push_back(std::stoi(version.substr(last, next - last)));
-            last = next + 1;
+            auto next = std::find(first, last, '.');
+            auto parsed = Strings::strto<int>(StringView{first, next});
+            if (auto p = parsed.get())
+            {
+                fragments.push_back(*p);
+            }
+            else
+            {
+                return {};
+            }
+            if (next == last) break;
+            ++next;
+            first = next;
         }
-        fragments.push_back(std::stoi(version.substr(last)));
-        if (fragments.size() == kFragmentSize)
+
+        if (fragments.size() == 3)
         {
-            return NdkVersion(fragments[0], fragments[1], fragments[2]);
+            return NdkVersion{fragments[0], fragments[1], fragments[2]};
         }
         return {};
-    }
-
-    static void compress_directory(const VcpkgPaths& paths, const Path& source, const Path& destination)
-    {
-        auto& fs = paths.get_filesystem();
-        fs.remove(destination, VCPKG_LINE_INFO);
-#if defined(_WIN32)
-        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
-
-        cmd_execute_and_capture_output(
-            Command(seven_zip_exe).string_arg("a").path_arg(destination).path_arg(source / "*"),
-            get_clean_environment());
-#else
-        cmd_execute_clean(Command{"zip"}.string_arg("--quiet").string_arg("-r").path_arg(destination).string_arg("*"),
-                          InWorkingDirectory{source});
-#endif
     }
 
     static void maven_install(const Path& aar, const Path& pom, const Options& prefab_options)
@@ -360,8 +363,6 @@ namespace vcpkg::Export::Prefab
 
         std::unordered_map<std::string, std::string> version_map;
 
-        std::error_code error_code;
-
         std::unordered_map<std::string, std::set<PackageSpec>> empty_package_dependencies;
 
         //
@@ -406,7 +407,7 @@ namespace vcpkg::Export::Prefab
             auto prefab_directory = package_directory / "prefab";
             auto modules_directory = prefab_directory / "modules";
 
-            utils.create_directories(modules_directory, error_code);
+            utils.create_directories(modules_directory, IgnoreErrors{});
 
             std::string artifact_id = prefab_options.maybe_artifact_id.value_or(name);
             std::string group_id = prefab_options.maybe_group_id.value_or("com.vcpkg.ndk.support");
@@ -427,14 +428,14 @@ namespace vcpkg::Export::Prefab
 
             auto meta_dir = package_directory / "META-INF";
 
-            utils.create_directories(meta_dir, error_code);
+            utils.create_directories(meta_dir, IgnoreErrors{});
 
             const auto share_root = paths.packages() / Strings::format("%s_%s", name, action.spec.triplet());
 
             utils.copy_file(share_root / "share" / name / "copyright",
                             meta_dir / "LICENSE",
                             CopyOptions::overwrite_existing,
-                            error_code);
+                            IgnoreErrors{});
 
             PackageMetadata pm;
             pm.name = artifact_id;
@@ -542,7 +543,7 @@ namespace vcpkg::Export::Prefab
                 {
                     auto module_dir = modules_directory / name;
                     auto module_libs_dir = module_dir / "libs";
-                    utils.create_directories(module_libs_dir, error_code);
+                    utils.create_directories(module_libs_dir, IgnoreErrors{});
                     auto installed_headers_dir = installed_dir / "include";
                     auto exported_headers_dir = module_dir / "include";
 
@@ -580,7 +581,7 @@ namespace vcpkg::Export::Prefab
                         }
                         auto module_dir = modules_directory / module_name;
                         auto module_libs_dir = module_dir / "libs" / Strings::format("android.%s", ab.abi);
-                        utils.create_directories(module_libs_dir, error_code);
+                        utils.create_directories(module_libs_dir, IgnoreErrors{});
 
                         auto abi_path = module_libs_dir / "abi.json";
 
@@ -593,8 +594,10 @@ namespace vcpkg::Export::Prefab
                         auto installed_module_path = libs / module.filename();
                         auto exported_module_path = module_libs_dir / module.filename();
 
-                        utils.copy_file(
-                            installed_module_path, exported_module_path, CopyOptions::overwrite_existing, error_code);
+                        utils.copy_file(installed_module_path,
+                                        exported_module_path,
+                                        CopyOptions::overwrite_existing,
+                                        IgnoreErrors{});
                         if (prefab_options.enable_debug)
                         {
                             print2(Strings::format(
@@ -633,7 +636,9 @@ namespace vcpkg::Export::Prefab
                     "[DEBUG] Exporting AAR And POM\n\tAAR Path %s\n\tPOM Path %s\n", exported_archive_path, pom_path));
             }
 
-            compress_directory(paths, package_directory, exported_archive_path);
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               compress_directory_to_zip(paths, package_directory, exported_archive_path) != 0,
+                               Strings::concat("Failed to compress folder ", package_directory));
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"

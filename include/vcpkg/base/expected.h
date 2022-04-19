@@ -5,8 +5,9 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
+#include <functional>
 #include <system_error>
 #include <type_traits>
 
@@ -71,6 +72,27 @@ namespace vcpkg
         std::error_code m_err;
     };
 
+    template<>
+    struct ErrorHolder<LocalizedString>
+    {
+        ErrorHolder() : m_is_error(false) { }
+        template<class U>
+        ErrorHolder(U&& err) : m_is_error(true), m_err(std::forward<U>(err))
+        {
+        }
+
+        bool has_error() const { return m_is_error; }
+
+        const LocalizedString& error() const { return m_err; }
+        LocalizedString& error() { return m_err; }
+
+        const std::string& to_string() const { return m_err.data(); }
+
+    private:
+        bool m_is_error;
+        LocalizedString m_err;
+    };
+
     struct ExpectedLeftTag
     {
     };
@@ -112,13 +134,13 @@ namespace vcpkg
         // Constructors are intentionally implicit
 
         ExpectedT(const S& s, ExpectedRightTag = {}) : m_s(s) { }
-        template<class = std::enable_if<!std::is_reference<S>::value>>
+        template<class U = S, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
         ExpectedT(S&& s, ExpectedRightTag = {}) : m_s(std::move(s))
         {
         }
 
         ExpectedT(const T& t, ExpectedLeftTag = {}) : m_t(t) { }
-        template<class = std::enable_if<!std::is_reference<T>::value>>
+        template<class U = T, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
         ExpectedT(T&& t, ExpectedLeftTag = {}) : m_t(std::move(t))
         {
         }
@@ -131,10 +153,22 @@ namespace vcpkg
         explicit constexpr operator bool() const noexcept { return !m_s.has_error(); }
         constexpr bool has_value() const noexcept { return !m_s.has_error(); }
 
+        const T&& value_or_exit(const LineInfo& line_info) const&&
+        {
+            exit_if_error(line_info);
+            return std::move(*this->m_t.get());
+        }
+
         T&& value_or_exit(const LineInfo& line_info) &&
         {
             exit_if_error(line_info);
             return std::move(*this->m_t.get());
+        }
+
+        T& value_or_exit(const LineInfo& line_info) &
+        {
+            exit_if_error(line_info);
+            return *this->m_t.get();
         }
 
         const T& value_or_exit(const LineInfo& line_info) const&
@@ -146,6 +180,8 @@ namespace vcpkg
         const S& error() const& { return this->m_s.error(); }
 
         S&& error() && { return std::move(this->m_s.error()); }
+
+        std::string error_to_string() const { return Strings::concat(m_s.to_string()); }
 
         typename ExpectedHolder<T>::const_pointer get() const
         {
@@ -165,11 +201,13 @@ namespace vcpkg
             return this->m_t.get();
         }
 
+        using const_ref_type = decltype(*std::declval<typename ExpectedHolder<T>::const_pointer>());
+        using move_ref_type = decltype(std::move(*std::declval<typename ExpectedHolder<T>::pointer>()));
         template<class F>
         using map_t = decltype(std::declval<F&>()(*std::declval<typename ExpectedHolder<T>::const_pointer>()));
 
-        template<class F, class U = map_t<F>>
-        ExpectedT<U, S> map(F f) const&
+        template<class F>
+        ExpectedT<map_t<F>, S> map(F f) const&
         {
             if (has_value())
             {
@@ -177,7 +215,7 @@ namespace vcpkg
             }
             else
             {
-                return {error(), expected_right_tag};
+                return ExpectedT<map_t<F>, S>{m_s};
             }
         }
 
@@ -185,8 +223,8 @@ namespace vcpkg
         using move_map_t =
             decltype(std::declval<F&>()(std::move(*std::declval<typename ExpectedHolder<T>::pointer>())));
 
-        template<class F, class U = move_map_t<F>>
-        ExpectedT<U, S> map(F f) &&
+        template<class F>
+        ExpectedT<move_map_t<F>, S> map(F f) &&
         {
             if (has_value())
             {
@@ -194,37 +232,54 @@ namespace vcpkg
             }
             else
             {
-                return {std::move(*this).error(), expected_right_tag};
+                return ExpectedT<move_map_t<F>, S>{std::move(m_s)};
             }
         }
 
-        template<class F, class U = map_t<F>>
-        U then(F f) const&
+        template<class F>
+        ExpectedT& replace_error(F&& specific_error_generator)
+        {
+            if (m_s.has_error())
+            {
+                m_s.error() = std::forward<F>(specific_error_generator)();
+            }
+
+            return *this;
+        }
+
+        template<class F, class... Args>
+        std::invoke_result_t<F, const_ref_type, Args&&...> then(F f, Args&&... args) const&
         {
             if (has_value())
             {
-                return f(*m_t.get());
+                return std::invoke(f, *m_t.get(), static_cast<Args&&>(args)...);
             }
             else
             {
-                return U{error(), expected_right_tag};
+                return std::invoke_result_t<F, const_ref_type, Args&&...>{m_s};
             }
         }
 
-        template<class F, class U = move_map_t<F>>
-        U then(F f) &&
+        template<class F, class... Args>
+        std::invoke_result_t<F, move_ref_type, Args&&...> then(F f, Args&&... args) &&
         {
             if (has_value())
             {
-                return f(std::move(*m_t.get()));
+                return std::invoke(f, std::move(*m_t.get()), static_cast<Args&&>(args)...);
             }
             else
             {
-                return U{std::move(*this).error(), expected_right_tag};
+                return std::invoke_result_t<F, move_ref_type, Args&&...>{std::move(m_s)};
             }
         }
 
     private:
+        template<class, class>
+        friend struct ExpectedT;
+
+        explicit ExpectedT(const ErrorHolder<S>& err) : m_s(err) { }
+        explicit ExpectedT(ErrorHolder<S>&& err) : m_s(static_cast<ErrorHolder<S>&&>(err)) { }
+
         void exit_if_error(const LineInfo& line_info) const
         {
             if (m_s.has_error())

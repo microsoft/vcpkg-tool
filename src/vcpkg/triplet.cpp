@@ -28,11 +28,11 @@ namespace std
 
 namespace vcpkg
 {
-    Triplet Triplet::from_canonical_name(std::string&& triplet_as_string)
+    Triplet Triplet::from_canonical_name(std::string triplet_as_string)
     {
         static std::unordered_set<TripletInstance> g_triplet_instances;
-        std::string s(Strings::ascii_to_lowercase(std::move(triplet_as_string)));
-        const auto p = g_triplet_instances.emplace(std::move(s));
+        Strings::ascii_to_lowercase(&triplet_as_string[0], &triplet_as_string[0] + triplet_as_string.size());
+        const auto p = g_triplet_instances.emplace(std::move(triplet_as_string));
         return &*p.first;
     }
 
@@ -59,6 +59,10 @@ namespace vcpkg
         if (Strings::starts_with(this->canonical_name(), "arm64-"))
         {
             return CPUArchitecture::ARM64;
+        }
+        if (Strings::starts_with(this->canonical_name(), "arm64ec-"))
+        {
+            return CPUArchitecture::ARM64EC;
         }
         if (Strings::starts_with(this->canonical_name(), "s390x-"))
         {

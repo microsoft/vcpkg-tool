@@ -10,12 +10,9 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 
-using namespace vcpkg::Parse;
-using namespace vcpkg;
-
 static std::atomic<uint64_t> g_load_ports_stats(0);
 
-namespace vcpkg::Parse
+namespace vcpkg
 {
     static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, const std::string& fieldname)
     {
@@ -78,7 +75,7 @@ namespace vcpkg::Parse
     }
 
     template<class T, class F>
-    static Optional<std::vector<T>> parse_list_until_eof(StringLiteral plural_item_name, Parse::ParserBase& parser, F f)
+    static Optional<std::vector<T>> parse_list_until_eof(StringLiteral plural_item_name, ParserBase& parser, F f)
     {
         std::vector<T> ret;
         parser.skip_whitespace();
@@ -104,7 +101,7 @@ namespace vcpkg::Parse
                                                                     StringView origin,
                                                                     TextRowCol textrowcol)
     {
-        auto parser = Parse::ParserBase(str, origin, textrowcol);
+        auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<std::string>("default features", parser, &parse_feature_name);
         if (!opt) return {parser.get_error()->format(), expected_right_tag};
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
@@ -113,7 +110,7 @@ namespace vcpkg::Parse
                                                                                     StringView origin,
                                                                                     TextRowCol textrowcol)
     {
-        auto parser = Parse::ParserBase(str, origin, textrowcol);
+        auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<ParsedQualifiedSpecifier>(
             "dependencies", parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
         if (!opt) return {parser.get_error()->format(), expected_right_tag};
@@ -124,7 +121,7 @@ namespace vcpkg::Parse
                                                                StringView origin,
                                                                TextRowCol textrowcol)
     {
-        auto parser = Parse::ParserBase(str, origin, textrowcol);
+        auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<Dependency>("dependencies", parser, [](ParserBase& parser) {
             auto loc = parser.cur_loc();
             return parse_qualified_specifier(parser).then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
@@ -144,7 +141,7 @@ namespace vcpkg::Parse
 
 namespace vcpkg::Paragraphs
 {
-    struct PghParser : private Parse::ParserBase
+    struct PghParser : private ParserBase
     {
     private:
         void get_fieldvalue(std::string& fieldvalue)
@@ -166,7 +163,7 @@ namespace vcpkg::Paragraphs
 
         void get_fieldname(std::string& fieldname)
         {
-            fieldname = match_zero_or_more(is_alphanumdash).to_string();
+            fieldname = match_while(is_alphanumdash).to_string();
             if (fieldname.empty()) return add_error("expected fieldname");
         }
 
@@ -197,7 +194,7 @@ namespace vcpkg::Paragraphs
         }
 
     public:
-        PghParser(StringView text, StringView origin) : Parse::ParserBase(text, origin) { }
+        PghParser(StringView text, StringView origin) : ParserBase(text, origin) { }
 
         ExpectedS<std::vector<Paragraph>> get_paragraphs()
         {
@@ -208,7 +205,7 @@ namespace vcpkg::Paragraphs
             {
                 paragraphs.emplace_back();
                 get_paragraph(paragraphs.back());
-                match_zero_or_more(is_lineend);
+                match_while(is_lineend);
             }
             if (get_error()) return get_error()->format();
 
@@ -434,23 +431,24 @@ namespace vcpkg::Paragraphs
                 continue;
             }
 
-            if (auto p = impl->get_path_to_baseline_version(port_name))
+            const auto baseline_version = impl->get_baseline_version(port_name);
+            if (!baseline_version) continue; // port is attributed to this registry, but it is not in the baseline
+            const auto port_entry = impl->get_port_entry(port_name);
+            if (!port_entry) continue; // port is attributed to this registry, but there is no version db
+            auto port_location = port_entry->get_version(*baseline_version.get());
+            if (!port_location) continue; // baseline version was not in version db (registry consistency issue)
+            auto maybe_spgh = try_load_port(fs, port_location.get()->path);
+            if (const auto spgh = maybe_spgh.get())
             {
-                auto maybe_spgh = try_load_port(fs, *p.get());
-                if (const auto spgh = maybe_spgh.get())
-                {
-                    ret.paragraphs.push_back({std::move(*spgh), std::move(*p.get())});
-                }
-                else
-                {
-                    ret.errors.emplace_back(std::move(maybe_spgh).error());
-                }
+                ret.paragraphs.push_back({
+                    std::move(*spgh),
+                    std::move(port_location.get()->path),
+                    std::move(port_location.get()->location),
+                });
             }
             else
             {
-                // the registry that owns the name of this port does not actually contain the port
-                // this can happen if R1 contains the port definition for <abc>, but doesn't
-                // declare it owns <abc>.
+                ret.errors.emplace_back(std::move(maybe_spgh).error());
             }
         }
 

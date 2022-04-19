@@ -2,7 +2,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/system.print.h>
+#include <vcpkg/base/messages.h>
 
 #include <string>
 #include <unordered_map>
@@ -10,6 +10,11 @@
 
 namespace vcpkg::Graphs
 {
+    DECLARE_MESSAGE(GraphCycleDetected,
+                    (msg::package_name),
+                    "A list of package names comprising the cycle will be printed after this message.",
+                    "Cycle detected within graph at {package_name}:");
+
     enum class ExplorationStatus
     {
         // We have not visited this vertex
@@ -67,12 +72,12 @@ namespace vcpkg::Graphs
                 case ExplorationStatus::FULLY_EXPLORED: return;
                 case ExplorationStatus::PARTIALLY_EXPLORED:
                 {
-                    print2("Cycle detected within graph at ", f.to_string(vertex), ":\n");
+                    msg::println(msgGraphCycleDetected, msg::package_name = vertex);
                     for (auto&& node : exploration_status)
                     {
                         if (node.second == ExplorationStatus::PARTIALLY_EXPLORED)
                         {
-                            print2("    ", f.to_string(node.first), '\n');
+                            msg::println(LocalizedString().append_indent().append_raw(node.first.to_string()));
                         }
                     }
                     Checks::exit_fail(VCPKG_LINE_INFO);

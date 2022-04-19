@@ -2,7 +2,7 @@
 
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/parse.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.info.h>
@@ -12,7 +12,7 @@
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
-#include <vcpkg/versiont.h>
+#include <vcpkg/versions.h>
 
 namespace vcpkg::Commands::Info
 {
@@ -57,7 +57,7 @@ namespace vcpkg::Commands::Info
             std::vector<PackageSpec> specs_to_write;
             for (auto&& arg : args.command_arguments)
             {
-                Parse::ParserBase parser(arg, "<command>");
+                ParserBase parser(arg, "<command>");
                 auto maybe_qpkg = parse_qualified_specifier(parser);
                 if (!parser.at_eof() || !maybe_qpkg)
                 {
@@ -117,7 +117,7 @@ namespace vcpkg::Commands::Info
 
             for (auto&& arg : args.command_arguments)
             {
-                Parse::ParserBase parser(arg, "<command>");
+                ParserBase parser(arg, "<command>");
                 auto maybe_pkg = parse_package_name(parser);
                 if (!parser.at_eof() || !maybe_pkg)
                 {

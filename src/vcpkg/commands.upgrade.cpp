@@ -1,4 +1,5 @@
 #include <vcpkg/base/lockguarded.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
@@ -17,18 +18,21 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+using namespace vcpkg;
+using Install::KeepGoing;
+
 namespace vcpkg::Commands::Upgrade
 {
-    using Install::KeepGoing;
-    using Install::to_keep_going;
-
     static constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
+    // --keep-going is preserved for compatibility with old releases of vcpkg.
     static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
+    static constexpr StringLiteral OPTION_NO_KEEP_GOING = "no-keep-going";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 3> INSTALL_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 4> INSTALL_SWITCHES = {{
         {OPTION_NO_DRY_RUN, "Actually upgrade"},
-        {OPTION_KEEP_GOING, "Continue installing packages on failure"},
+        {OPTION_KEEP_GOING, ""},
+        {OPTION_NO_KEEP_GOING, "Stop installing packages on failure"},
         {OPTION_ALLOW_UNSUPPORTED_PORT, "Instead of erroring on an unsupported port, continue with a warning."},
     }};
 
@@ -39,6 +43,25 @@ namespace vcpkg::Commands::Upgrade
         {INSTALL_SWITCHES, {}},
         nullptr,
     };
+
+    static KeepGoing determine_keep_going(bool keep_going_set, bool no_keep_going_set)
+    {
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               !(keep_going_set && no_keep_going_set),
+                               msg::msgBothYesAndNoOptionSpecifiedError,
+                               msg::option = OPTION_KEEP_GOING);
+        if (keep_going_set)
+        {
+            return KeepGoing::YES;
+        }
+
+        if (no_keep_going_set)
+        {
+            return KeepGoing::NO;
+        }
+
+        return KeepGoing::YES;
+    }
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
@@ -55,12 +78,13 @@ namespace vcpkg::Commands::Upgrade
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
         const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
-        const KeepGoing keep_going = to_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING));
+        const KeepGoing keep_going = determine_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING),
+                                                          Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING));
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? Dependencies::UnsupportedPortAction::Warn
                                                  : Dependencies::UnsupportedPortAction::Error;
 
-        BinaryCache binary_cache{args};
+        BinaryCache binary_cache{args, paths};
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
@@ -70,13 +94,9 @@ namespace vcpkg::Commands::Upgrade
 
         // input sanitization
         const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return Input::check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text);
+            return Input::check_and_get_package_spec(
+                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
-
-        for (auto&& spec : specs)
-        {
-            Input::check_triplet(spec.triplet(), paths);
-        }
 
         Dependencies::ActionPlan action_plan;
         if (specs.empty())
@@ -125,9 +145,9 @@ namespace vcpkg::Commands::Upgrade
 
                 const auto& control_file = maybe_control_file.value_or_exit(VCPKG_LINE_INFO);
                 const auto& control_paragraph = *control_file.source_control_file->core_paragraph;
-                auto control_version = VersionT(control_paragraph.version, control_paragraph.port_version);
+                auto control_version = Version(control_paragraph.raw_version, control_paragraph.port_version);
                 const auto& installed_paragraph = (*installed_status)->package;
-                auto installed_version = VersionT(installed_paragraph.version, installed_paragraph.port_version);
+                auto installed_version = Version(installed_paragraph.version, installed_paragraph.port_version);
                 if (control_version == installed_version)
                 {
                     up_to_date.push_back(spec);

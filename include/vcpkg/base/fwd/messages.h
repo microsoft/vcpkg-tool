@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/stringview.h>
+
 namespace vcpkg
 {
 #if defined(_WIN32)
@@ -20,12 +22,10 @@ namespace vcpkg
     };
 #endif
 
-    struct StringView;
+    struct LocalizedString;
 }
 
 namespace vcpkg::msg
 {
-    struct LocalizedString;
-
     void write_unlocalized_text_to_stdout(Color c, vcpkg::StringView sv);
 }

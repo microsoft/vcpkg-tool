@@ -1,3 +1,4 @@
+#include <vcpkg/base/hash.h>
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.find.h>
@@ -5,12 +6,13 @@
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
+#include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
-#include <vcpkg/versiont.h>
+#include <vcpkg/versions.h>
 
 using namespace vcpkg;
 using vcpkg::PortFileProvider::PathsPortFileProvider;
@@ -25,7 +27,7 @@ namespace
             auto& source_paragraph = scf->core_paragraph;
             Json::Object& library_obj = obj.insert(source_paragraph->name, Json::Object());
             library_obj.insert("package_name", Json::Value::string(source_paragraph->name));
-            library_obj.insert("version", Json::Value::string(source_paragraph->version));
+            library_obj.insert("version", Json::Value::string(source_paragraph->raw_version));
             library_obj.insert("port_version", Json::Value::integer(source_paragraph->port_version));
             Json::Array& desc = library_obj.insert("description", Json::Array());
             for (const auto& line : source_paragraph->description)
@@ -39,7 +41,7 @@ namespace
     constexpr const int s_name_and_ver_columns = 41;
     void do_print(const SourceParagraph& source_paragraph, bool full_desc)
     {
-        auto full_version = VersionT(source_paragraph.version, source_paragraph.port_version).to_string();
+        auto full_version = Version(source_paragraph.raw_version, source_paragraph.port_version).to_string();
         if (full_desc)
         {
             vcpkg::printf("%-20s %-16s %s\n",
@@ -91,12 +93,8 @@ namespace
     }
 
     constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
-    constexpr StringLiteral OPTION_JSON = "x-json";
 
-    constexpr std::array<CommandSwitch, 2> FindSwitches = {{
-        {OPTION_FULLDESC, "Do not truncate long text"},
-        {OPTION_JSON, "(experimental) List libraries in JSON format"},
-    }};
+    constexpr std::array<CommandSwitch, 1> FindSwitches = {{{OPTION_FULLDESC, "Do not truncate long text"}}};
 
     const CommandStructure FindCommandStructure = {
         Strings::format("Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', "
@@ -208,7 +206,7 @@ namespace vcpkg::Commands
     {
         const ParsedArguments options = args.parse_arguments(FindCommandStructure);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
-        const bool enable_json = Util::Sets::contains(options.switches, OPTION_JSON);
+        const bool enable_json = args.json.value_or(false);
         auto&& selector = args.command_arguments[0];
         Optional<StringView> filter;
         if (args.command_arguments.size() == 2)
@@ -220,19 +218,35 @@ namespace vcpkg::Commands
         {
             if (full_description)
             {
-                print2(Color::warning, "--%s has no effect on find artifact", OPTION_FULLDESC);
+                print2(Color::warning, "--%s has no effect on find artifact\n", OPTION_FULLDESC);
             }
 
             if (enable_json)
             {
-                print2(Color::warning, "--%s has no effect on find artifact", OPTION_JSON);
+                print2(Color::warning, "--x-json has no effect on find artifact\n");
             }
 
+            auto metrics = LockGuardPtr<Metrics>(g_metrics);
+            metrics->track_property("command_context", "artifact");
+            if (filter.has_value())
+            {
+                metrics->track_property(
+                    "command_args",
+                    Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
+            }
             perform_find_artifact_and_exit(paths, filter);
         }
 
         if (selector == "port")
         {
+            auto metrics = LockGuardPtr<Metrics>(g_metrics);
+            metrics->track_property("command_context", "port");
+            if (filter.has_value())
+            {
+                metrics->track_property(
+                    "command_args",
+                    Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
+            }
             perform_find_port_and_exit(paths, full_description, enable_json, filter, args.overlay_ports);
         }
 

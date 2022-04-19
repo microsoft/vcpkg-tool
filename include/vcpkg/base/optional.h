@@ -26,7 +26,6 @@ namespace vcpkg
         template<class T, bool B = std::is_copy_constructible<T>::value>
         struct OptionalStorage
         {
-            VCPKG_MSVC_WARNING(suppress : 26495)
             constexpr OptionalStorage() noexcept : m_is_present(false), m_inactive() { }
             constexpr OptionalStorage(const T& t) : m_is_present(true), m_t(t) { }
             constexpr OptionalStorage(T&& t) : m_is_present(true), m_t(std::move(t)) { }
@@ -54,13 +53,11 @@ namespace vcpkg
                 if (m_is_present) m_t.~T();
             }
 
-            VCPKG_MSVC_WARNING(suppress : 26495)
             OptionalStorage(const OptionalStorage& o) : m_is_present(o.m_is_present), m_inactive()
             {
                 if (m_is_present) new (&m_t) T(o.m_t);
             }
 
-            VCPKG_MSVC_WARNING(suppress : 26495)
             OptionalStorage(OptionalStorage&& o) noexcept : m_is_present(o.m_is_present), m_inactive()
             {
                 if (m_is_present)
@@ -144,7 +141,6 @@ namespace vcpkg
         template<class T>
         struct OptionalStorage<T, false>
         {
-            VCPKG_MSVC_WARNING(suppress : 26495)
             constexpr OptionalStorage() noexcept : m_is_present(false), m_inactive() { }
             constexpr OptionalStorage(T&& t) : m_is_present(true), m_t(std::move(t)) { }
 
@@ -153,7 +149,6 @@ namespace vcpkg
                 if (m_is_present) m_t.~T();
             }
 
-            VCPKG_MSVC_WARNING(suppress : 26495)
             OptionalStorage(OptionalStorage&& o) noexcept : m_is_present(o.m_is_present), m_inactive()
             {
                 if (m_is_present)
@@ -400,6 +395,7 @@ namespace vcpkg
 
             return !rhs.m_base.has_value();
         }
+        friend bool operator!=(const Optional& lhs, const Optional& rhs) noexcept { return !(lhs == rhs); }
 
     private:
         details::OptionalStorage<T> m_base;

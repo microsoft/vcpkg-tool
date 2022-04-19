@@ -15,6 +15,7 @@ namespace vcpkg
         AMD64 = 0x8664,    // x64
         ARM = 0x1c0,       // ARM little endian
         ARM64 = 0xaa64,    // ARM64 little endian
+        ARM64EC = 0xa641,  // ARM64 "emulation compatible"
         ARMNT = 0x1c4,     // ARM Thumb-2 little endian
         EBC = 0xebc,       // EFI byte code
         I386 = 0x14c,      // Intel 386 or later processors and compatible processors

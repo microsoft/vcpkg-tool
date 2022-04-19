@@ -20,6 +20,8 @@ namespace vcpkg::Remove
     using Dependencies::RequestType;
     using Update::OutdatedPackage;
 
+    REGISTER_MESSAGE(RemovingPackage);
+
     static void remove_package(Filesystem& fs,
                                const InstalledPaths& installed,
                                const PackageSpec& spec,
@@ -32,12 +34,7 @@ namespace vcpkg::Remove
 
         auto&& ipv = maybe_ipv.value_or_exit(VCPKG_LINE_INFO);
 
-        std::vector<StatusParagraph> spghs;
-        spghs.emplace_back(*ipv.core);
-        for (auto&& feature : ipv.features)
-        {
-            spghs.emplace_back(*feature);
-        }
+        std::vector<StatusParagraph> spghs = ipv.all_status_paragraphs();
 
         for (auto&& spgh : spghs)
         {
@@ -152,13 +149,8 @@ namespace vcpkg::Remove
 
         switch (action.plan_type)
         {
-            case RemovePlanType::NOT_INSTALLED:
-                vcpkg::printf(Color::success, "Package %s is not installed\n", display_name);
-                break;
-            case RemovePlanType::REMOVE:
-                vcpkg::printf("Removing package %s...\n", display_name);
-                remove_package(fs, paths.installed(), action.spec, status_db);
-                break;
+            case RemovePlanType::NOT_INSTALLED: break;
+            case RemovePlanType::REMOVE: remove_package(fs, paths.installed(), action.spec, status_db); break;
             case RemovePlanType::UNKNOWN:
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -240,11 +232,8 @@ namespace vcpkg::Remove
             }
             specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
                 return Input::check_and_get_package_spec(
-                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text);
+                    std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
             });
-
-            for (auto&& spec : specs)
-                Input::check_triplet(spec.triplet(), paths);
         }
 
         const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
@@ -308,8 +297,14 @@ namespace vcpkg::Remove
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        for (const RemovePlanAction& action : remove_plan)
+        // note that we try to "remove" things that aren't installed to trigger purge actions
+        for (std::size_t idx = 0; idx < remove_plan.size(); ++idx)
         {
+            const RemovePlanAction& action = remove_plan[idx];
+            msg::println(msgRemovingPackage,
+                         msg::action_index = idx + 1,
+                         msg::count = remove_plan.size(),
+                         msg::spec = action.spec);
             perform_remove_plan_action(paths, action, purge, &status_db);
         }
 

@@ -53,13 +53,13 @@ namespace vcpkg::Test
                                                             const char* default_features,
                                                             const char* triplet)
     {
-        return std::make_unique<StatusParagraph>(Parse::Paragraph{{"Package", {name, {}}},
-                                                                  {"Version", {"1", {}}},
-                                                                  {"Architecture", {triplet, {}}},
-                                                                  {"Multi-Arch", {"same", {}}},
-                                                                  {"Depends", {depends, {}}},
-                                                                  {"Default-Features", {default_features, {}}},
-                                                                  {"Status", {"install ok installed", {}}}});
+        return std::make_unique<StatusParagraph>(Paragraph{{"Package", {name, {}}},
+                                                           {"Version", {"1", {}}},
+                                                           {"Architecture", {triplet, {}}},
+                                                           {"Multi-Arch", {"same", {}}},
+                                                           {"Depends", {depends, {}}},
+                                                           {"Default-Features", {default_features, {}}},
+                                                           {"Status", {"install ok installed", {}}}});
     }
 
     std::unique_ptr<StatusParagraph> make_status_feature_pgh(const char* name,
@@ -67,12 +67,12 @@ namespace vcpkg::Test
                                                              const char* depends,
                                                              const char* triplet)
     {
-        return std::make_unique<StatusParagraph>(Parse::Paragraph{{"Package", {name, {}}},
-                                                                  {"Feature", {feature, {}}},
-                                                                  {"Architecture", {triplet, {}}},
-                                                                  {"Multi-Arch", {"same", {}}},
-                                                                  {"Depends", {depends, {}}},
-                                                                  {"Status", {"install ok installed", {}}}});
+        return std::make_unique<StatusParagraph>(Paragraph{{"Package", {name, {}}},
+                                                           {"Feature", {feature, {}}},
+                                                           {"Architecture", {triplet, {}}},
+                                                           {"Multi-Arch", {"same", {}}},
+                                                           {"Depends", {depends, {}}},
+                                                           {"Status", {"install ok installed", {}}}});
     }
 
     PackageSpec PackageSpecMap::emplace(const char* name,
@@ -109,6 +109,15 @@ namespace vcpkg::Test
 
     static void check_json_eq(const Json::Value& l, const Json::Value& r, std::string& path, bool ordered);
 
+    static void double_set_difference(const std::set<std::string>& a,
+                                      const std::set<std::string>& b,
+                                      std::vector<std::string>& a_extra,
+                                      std::vector<std::string>& b_extra)
+    {
+        std::set_difference(a.begin(), a.end(), b.begin(), b.end(), std::back_inserter(a_extra));
+        std::set_difference(b.begin(), b.end(), a.begin(), a.end(), std::back_inserter(b_extra));
+    }
+
     static void check_json_eq(const Json::Object& l, const Json::Object& r, std::string& path, bool ordered)
     {
         std::set<std::string> keys_l;
@@ -123,7 +132,10 @@ namespace vcpkg::Test
         }
         {
             INFO(path)
-            CHECK(keys_l == keys_r);
+            std::vector<std::string> l_extra, r_extra;
+            double_set_difference(keys_l, keys_r, l_extra, r_extra);
+            CHECK(l_extra == std::vector<std::string>{});
+            CHECK(r_extra == std::vector<std::string>{});
             if (ordered && keys_l == keys_r)
             {
                 size_t index = 0;

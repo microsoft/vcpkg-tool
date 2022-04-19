@@ -1,0 +1,66 @@
+/**
+ * This is the main configuration file for Rush.
+ * For full documentation, please see https://rushjs.io
+ */
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/rush/v5/rush.schema.json",
+  "rushVersion": "5.61.4",
+  "pnpmVersion": "6.29.1",
+  /**
+   * Options that are only used when the PNPM package manager is selected
+   */
+  "pnpmOptions": {},
+  "nodeSupportedVersionRange": ">=14.17.0 <17.0.0",
+  "suppressNodeLtsWarning": true,
+  "projectFolderMinDepth": 1,
+  "projectFolderMaxDepth": 5,
+  "gitPolicy": {},
+  "repository": {
+    "url": "https://github.com/microsoft/vcpkg-tool"
+  },
+  /**
+   * Event hooks are customized script actions that Rush executes when specific events occur
+   */
+  "eventHooks": {
+    /**
+     * The list of shell commands to run before the Rush installation starts
+     */
+    "preRushInstall": [
+      // "common/scripts/pre-rush-install.js"
+    ],
+    /**
+     * The list of shell commands to run after the Rush installation finishes
+     */
+    "postRushInstall": [],
+    /**
+     * The list of shell commands to run before the Rush build command starts
+     */
+    "preRushBuild": [],
+    /**
+     * The list of shell commands to run after the Rush build command finishes
+     */
+    "postRushBuild": []
+  },
+  "variants": [],
+  "telemetryEnabled": false,
+  "projects": [
+    {
+      "packageName": "@microsoft/vcpkg-ce",
+      "projectFolder": "./ce",
+      "reviewCategory": "production",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "vcpkg-ce.test",
+      "projectFolder": "./test",
+      "reviewCategory": "production",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "tar-stream",
+      "projectFolder": "./custom/tar-stream",
+      "reviewCategory": "production",
+      "shouldPublish": false
+    }
+  ]
+}

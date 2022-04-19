@@ -25,7 +25,7 @@ namespace vcpkg::Commands::PortHistory
             std::string version_string;
             std::string version;
             int port_version;
-            Versions::Scheme scheme;
+            VersionScheme scheme;
         };
 
         ExitCodeAndOutput run_git_command(const VcpkgPaths& paths, const Command& cmd)
@@ -47,7 +47,7 @@ namespace vcpkg::Commands::PortHistory
             {
                 if (const auto& scf = maybe_scf->get())
                 {
-                    auto version = scf->core_paragraph->version;
+                    auto version = scf->core_paragraph->raw_version;
                     auto port_version = scf->core_paragraph->port_version;
                     auto scheme = scf->core_paragraph->version_scheme;
                     return HistoryVersion{
@@ -154,8 +154,7 @@ namespace vcpkg::Commands::PortHistory
         nullptr,
     };
 
-    static Optional<std::string> maybe_lookup(std::unordered_map<std::string, std::string> const& m,
-                                              std::string const& key)
+    static Optional<std::string> maybe_lookup(std::map<std::string, std::string, std::less<>> const& m, StringView key)
     {
         const auto it = m.find(key);
         if (it != m.end()) return it->second;

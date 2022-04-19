@@ -7,7 +7,7 @@
 #include <vcpkg-test/util.h>
 
 namespace Strings = vcpkg::Strings;
-using vcpkg::Parse::Paragraph;
+using vcpkg::Paragraph;
 
 namespace
 {
@@ -18,7 +18,7 @@ namespace
         {
             pghs.emplace_back();
             for (auto&& kv : p)
-                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::Parse::TextRowCol{}));
+                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
         }
         return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));
     }
@@ -27,7 +27,7 @@ namespace
     {
         Paragraph pgh;
         for (auto&& kv : v)
-            pgh.emplace(kv.first, std::make_pair(kv.second, vcpkg::Parse::TextRowCol{}));
+            pgh.emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
 
         return vcpkg::BinaryParagraph(std::move(pgh));
     }
@@ -45,7 +45,7 @@ TEST_CASE ("SourceParagraph construct minimum", "[paragraph]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 0);
@@ -109,7 +109,7 @@ TEST_CASE ("SourceParagraph construct maximum", "[paragraph]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "s");
-    REQUIRE(pgh.core_paragraph->version == "v");
+    REQUIRE(pgh.core_paragraph->raw_version == "v");
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
     REQUIRE(pgh.core_paragraph->description.size() == 1);
@@ -182,7 +182,7 @@ TEST_CASE ("SourceParagraph construct qualified dependencies", "[paragraph]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);
