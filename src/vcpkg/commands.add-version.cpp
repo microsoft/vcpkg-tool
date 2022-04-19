@@ -51,9 +51,9 @@ namespace
                                  "added version {version} to {path}");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionNewFile, (), "", "(new file)");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionPortFilesShaUnchanged,
-                                 (msg::version, msg::path),
+                                 (msg::package_name, msg::version),
                                  "",
-                                 "local port files SHA is the same as version {version} in {path}");
+                                 "checked-in files for {package_name} are unchanged from version {version}");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionNoFilesUpdatedForPort,
@@ -63,7 +63,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(AddVersionPortFilesShaChanged,
                                  (msg::package_name),
                                  "",
-                                 "local changes detected for {package_name} but no changes to version or port version");
+                                 "checked-in files for {package_name} have changed but the version was not updated");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionVersionIs, (msg::version), "", "version: {version}");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionOldShaIs,
                                  (msg::value),
@@ -96,15 +96,12 @@ namespace
         AddVersionUseOptionAll,
         (msg::command_name, msg::option),
         "The -- before {option} must be preserved as they're part of the help message for the user.",
-        "{command_name} with no arguments requires passing --{option} to update version files for all ports at once");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionLoadPortFailed,
-                                 (msg::package_name),
-                                 "",
-                                 "couldn't load port {package_name}");
+        "{command_name} with no arguments requires passing --{option} to update all port versions at once");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionLoadPortFailed, (msg::package_name), "", "can't load port {package_name}");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionPortHasImproperFormat,
                                  (msg::package_name),
                                  "",
-                                 "the port {package_name} is not properly formatted");
+                                 "{package_name} is not properly formatted");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionFormatPortSuggestion,
                                  (msg::command_line),
                                  "",
@@ -113,11 +110,8 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(AddVersionNoGitSha,
                                  (msg::package_name),
                                  "",
-                                 "no local Git SHA was found for port {package_name}");
-    DECLARE_AND_REGISTER_MESSAGE(AddVersionPortDoesNotExist,
-                                 (msg::package_name),
-                                 "",
-                                 "port {package_name} does not exist");
+                                 "can't obtain SHA for port {package_name}");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionPortDoesNotExist, (msg::package_name), "", "{package_name} does not exist");
 
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
@@ -322,8 +316,8 @@ namespace
                     return UpdateResult::NotUpdated;
                 }
                 msg::print_warning(msg::format(msgAddVersionPortFilesShaUnchanged,
-                                               msg::version = found_same_sha->first.version,
-                                               msg::path = version_db_file_path)
+                                               msg::package_name = port_name,
+                                               msg::version = found_same_sha->first.version)
                                        .appendnl()
                                        .append_raw("-- SHA: ")
                                        .append_raw(git_tree)
