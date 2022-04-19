@@ -20,13 +20,13 @@ requires:
   weird/range: '>= 1.0 <= 2.0 2.0.0'
   nuget/range: (2.0,3.0] 2.3.4
 
-settings:
+exports:
   tools:
     CC: foo/bar/cl.exe
     CXX: bin/baz/cl.exe
     Whatever: some/tool/path/foo
 
-  variables:
+  environment:
     test: abc
     cxxflags: 
       - foo=bar

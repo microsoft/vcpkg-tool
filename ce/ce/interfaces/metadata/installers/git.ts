@@ -37,10 +37,4 @@ export interface CloneSettings {
 export interface GitInstaller extends Installer, CloneSettings {
   /** the git repo location to be cloned */
   location: string;
-
-  /**
-   * determines if the thing being installed is esp-idf, and if so, it should do some other installations after
-   * the git install.
-   */
-  espidf?: boolean;
 }

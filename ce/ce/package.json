@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/vcpkg-ce",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "vcpkg-ce",
   "main": "dist/main.js",
   "typings": "dist/exports.d.ts",
