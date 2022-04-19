@@ -610,7 +610,7 @@ export class Activation {
     if (this.definesCount) {
       let defines = '';
       for await (const [name, value] of this.defines) {
-        defines += value ? `-D ${name}=${value} ` : `-D ${name} `;
+        defines += value ? `-D${name}=${value} ` : `-D${name} `;
       }
       if (defines) {
         env['DEFINES'] = defines;
