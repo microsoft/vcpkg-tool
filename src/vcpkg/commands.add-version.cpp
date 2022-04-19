@@ -337,12 +337,12 @@ namespace vcpkg::Commands::AddVersion
         const bool commit = Util::Sets::contains(parsed_args.switches, OPTION_COMMIT);
         const bool amend = Util::Sets::contains(parsed_args.switches, OPTION_COMMIT_AMEND);
 
-        std::optional<std::string> commit_message;
+        Optional<std::string> commit_message;
         const auto iter_commit_message = parsed_args.settings.find(OPTION_COMMIT_MESSAGE);
         if (iter_commit_message != parsed_args.settings.end())
         {
             commit_message.emplace(iter_commit_message->second);
-            if (commit_message.value().empty())
+            if (commit_message.get()->empty())
             {
                 print2(Color::error, "Error: The specified commit message must be not empty.\n.");
                 Checks::exit_fail(VCPKG_LINE_INFO);
