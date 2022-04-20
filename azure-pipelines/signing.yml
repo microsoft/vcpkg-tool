@@ -30,6 +30,11 @@ variables:
   - group: vcpkg-dependency-source-blobs
   - name: FMT_TARBALL_URL
     value: "$(fmt-tarball-url)"
+  - group: vcpkgdockercontainers-secrets
+  - name: AZURE_CONTAINER_REGISTRY_USERNAME
+    value: "$(vcpkgdockercontainers-pull-username)"
+  - name: AZURE_CONTAINER_REGISTRY_PASSWORD
+    value: "$(vcpkgdockercontainers-pull-password)"
   # If the user didn't override the signing type, then only real-sign on main.
   - ${{ if ne(parameters.SignTypeOverride, 'default') }}:
     - name: SignType
@@ -243,6 +248,7 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
+          docker login vcpkgdockercontainers.azurecr.io -u $AZURE_CONTAINER_REGISTRY_USERNAME -p $AZURE_CONTAINER_REGISTRY_PASSWORD
           docker build --build-arg "VCPKG_FMT_URL=$FMT_TARBALL_URL" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile .
           docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh
           docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
