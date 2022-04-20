@@ -140,6 +140,7 @@ namespace vcpkg
 
         const DownloadManager& get_download_manager() const;
 
+        ExpectedL<bool> git_port_has_local_changes(StringView port_name) const;
         ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
 
         // Git manipulation for remote registries
