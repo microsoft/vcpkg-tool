@@ -12,7 +12,7 @@ describe('MSBuild Generator', () => {
 
   after(local.after.bind(local));
 
-  it('Generates locations in order', () => {
+  it('Generates locations in order', async () => {
 
     const activation = new Activation(local.session);
 
@@ -22,10 +22,10 @@ describe('MSBuild Generator', () => {
       ['c', 'csetting'],
       ['b', 'bsetting'],
       ['prop', ['first', 'seco>nd', 'third']]
-    ]).forEach(([key, value]) => activation.properties.set(key, typeof value === 'string' ? [value] : value));
+    ]).forEach(([key, value]) => activation.addProperty(key, typeof value === 'string' ? [value] : value));
 
-    activation.locations.set('somepath', local.fs.file('c:/tmp'));
-    activation.paths.set('include', [local.fs.file('c:/tmp'), local.fs.file('c:/tmp2')]);
+    activation.addLocation('somepath', local.fs.file('c:/tmp'));
+    activation.addPath('include', [local.fs.file('c:/tmp'), local.fs.file('c:/tmp2')]);
 
     const expected = (platform() === 'win32') ? `<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -59,6 +59,6 @@ describe('MSBuild Generator', () => {
   </PropertyGroup>
 </Project>` ;
 
-    strict.equal(activation.generateMSBuild([]), expected);
+    strict.equal(await activation.generateMSBuild([]), expected);
   });
 });

@@ -120,7 +120,7 @@ export class Registries extends Yaml<YAMLDictionary | YAMLSequence> implements D
     }
     return 0;
   }
-  get keys(): Array<string> {
+  override get keys(): Array<string> {
     if (isMap(this.node)) {
       return this.node.items.map(({ key }) => this.asString(key) || '');
     }
@@ -160,6 +160,7 @@ export class Registries extends Yaml<YAMLDictionary | YAMLSequence> implements D
   }
   /** @internal */
   override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
     if (this.exists()) {
       for (const [key, registry] of this) {
         yield* registry.validate();
@@ -175,6 +176,7 @@ export class Registry extends Entity implements IRegistry {
 
   /** @internal */
   override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
     //
     if (this.registryKind === undefined) {
       yield {
@@ -190,6 +192,8 @@ class LocalRegistry extends Registry {
   readonly location = new Strings(undefined, this, 'location');
   /** @internal */
   override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+
     //
     if (this.registryKind !== 'artifact') {
       yield {
@@ -204,6 +208,8 @@ class LocalRegistry extends Registry {
 class RemoteRegistry extends Registry {
   readonly location = new Strings(undefined, this, 'location');
   override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+
     //
     if (this.registryKind !== 'artifact') {
       yield {

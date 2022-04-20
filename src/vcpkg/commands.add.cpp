@@ -99,8 +99,7 @@ namespace vcpkg::Commands
                 specs.push_back(std::move(value));
             }
 
-            const auto& manifest_path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO);
-            auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest_path, *manifest);
+            auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest->path, manifest->manifest);
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
@@ -133,7 +132,7 @@ namespace vcpkg::Commands
             }
 
             paths.get_filesystem().write_contents(
-                manifest_path, Json::stringify(serialize_manifest(manifest_scf), {}), VCPKG_LINE_INFO);
+                manifest->path, Json::stringify(serialize_manifest(manifest_scf), {}), VCPKG_LINE_INFO);
             msg::println(msgAddPortSucceded);
 
             auto metrics = LockGuardPtr<Metrics>(g_metrics);

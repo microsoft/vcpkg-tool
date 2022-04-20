@@ -17,6 +17,8 @@ export class Contact extends Entity implements IContact {
   /** @internal */
   override *validate(): Iterable<ValidationError> {
     yield* super.validate();
+    yield* this.validateChildKeys(['email', 'role']);
+    yield* this.validateChild('email', 'string');
   }
 }
 

@@ -104,6 +104,10 @@ export class CommandLine {
     return !!this.switches['debug'];
   }
 
+  get verbose() {
+    return !!this.switches['verbose'];
+  }
+
   get fromVCPKG() {
     return !!this.switches['from-vcpkg'];
   }

@@ -2,13 +2,11 @@
 // Licensed under the MIT License.
 
 
-import { Activation } from '../../artifacts/activation';
 import { Session } from '../../session';
 import { Dictionary, Sequence } from '../collections';
 import { Validation } from '../validation';
-import { AlternativeFulfillment } from './alternative-fulfillment';
+import { Exports } from './exports';
 import { Installer } from './installers/Installer';
-import { Settings } from './Settings';
 import { VersionReference } from './version-reference';
 
 /**
@@ -35,7 +33,7 @@ export interface Demands extends Validation {
   seeAlso: Dictionary<VersionReference>;
 
   /** settings that should be applied to the context when activated */
-  settings: Settings;
+  exports: Exports;
 
   /**
    * defines what should be physically laid out on disk for this artifact
@@ -48,10 +46,7 @@ export interface Demands extends Validation {
    */
   install: Sequence<Installer>;
 
-  /** a means to an alternative fulfillment */
-  unless: AlternativeFulfillment;
 
   init(session: Session): Promise<Demands>;
-  setActivation(activation: Activation): void;
 }
 

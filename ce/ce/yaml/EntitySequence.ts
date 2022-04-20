@@ -16,7 +16,6 @@ export /** @internal */ class EntitySequence<TElement extends Yaml<YAMLDictionar
   static override create(): YAMLDictionary {
     return new YAMLDictionary();
   }
-
   get length(): number {
     if (this.node) {
       if (isSeq(this.node)) {

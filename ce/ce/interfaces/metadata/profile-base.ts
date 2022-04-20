@@ -15,7 +15,7 @@ type Primitive = string | number | boolean;
  *
  * Any other keys are considered HostQueries and a matching set of Demands
  * A HostQuery is a query string that can be used to qualify
- * 'requires'/'see-also'/'settings'/'install'/'use' objects
+ * 'requires'/'see-also'/'exports'/'install'/'use' objects
  *
  * @see the section below in this document entitled 'Host/Environment Queries"
  */

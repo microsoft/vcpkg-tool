@@ -927,7 +927,7 @@ namespace vcpkg::Install
 
         LockGuardPtr<Metrics>(g_metrics)->track_property("install_manifest_mode", paths.manifest_mode_enabled());
 
-        if (paths.manifest_mode_enabled())
+        if (auto p = paths.get_manifest().get())
         {
             bool failure = false;
             if (!args.command_arguments.empty())
@@ -948,7 +948,7 @@ namespace vcpkg::Install
             }
             if (failure)
             {
-                msg::println(msgUsingManifestAt, msg::path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO));
+                msg::println(msgUsingManifestAt, msg::path = p->path);
                 print2("\n");
                 print_usage(MANIFEST_COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -1018,8 +1018,7 @@ namespace vcpkg::Install
                 LockGuardPtr<Metrics>(g_metrics)->track_property("x-write-nuget-packages-config", "defined");
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
-            const auto& manifest_path = paths.get_manifest_path().value_or_exit(VCPKG_LINE_INFO);
-            auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest_path, *manifest);
+            auto maybe_manifest_scf = SourceControlFile::parse_manifest_object(manifest->path, manifest->manifest);
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
@@ -1030,7 +1029,7 @@ namespace vcpkg::Install
             auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
 
             if (auto maybe_error = manifest_scf.check_against_feature_flags(
-                    manifest_path, paths.get_feature_flags(), paths.get_registry_set().is_default_builtin_registry()))
+                    manifest->path, paths.get_feature_flags(), paths.get_registry_set().is_default_builtin_registry()))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
             }
@@ -1096,7 +1095,7 @@ namespace vcpkg::Install
 
             std::vector<std::string> extended_overlay_ports;
             extended_overlay_ports.reserve(args.overlay_ports.size() + 2);
-            extended_overlay_ports.push_back(manifest_path.parent_path().to_string());
+            extended_overlay_ports.push_back(manifest->path.parent_path().to_string());
             Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
             if (paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry())
             {
