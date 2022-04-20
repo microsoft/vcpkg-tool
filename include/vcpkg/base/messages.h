@@ -279,6 +279,9 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(vendor, "Azure");
     DECLARE_MSG_ARG(version, "1.3.8");
     DECLARE_MSG_ARG(action_index, "340");
+    DECLARE_MSG_ARG(param1, "amend");
+    DECLARE_MSG_ARG(param2, "commit-message");
+    DECLARE_MSG_ARG(param3, "commit");
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of

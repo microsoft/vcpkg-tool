@@ -121,6 +121,10 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(AddVersionPortDoesNotExist, (msg::package_name), "", "{package_name} does not exist");
     DECLARE_AND_REGISTER_MESSAGE(EmptyCommitMessage, (), "", "commit message must not be empty.");
     DECLARE_AND_REGISTER_MESSAGE(GitCommitFailed, (), "", "failed to commit changes. The git output is: ");
+    DECLARE_AND_REGISTER_MESSAGE(AssumeParam,
+                                 (msg::param1, msg::param2, msg::param3),
+                                 "",
+                                 "`--{param1}` or `{param2}` was specified, assuming `--{param3}`");
 
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
@@ -450,11 +454,10 @@ namespace vcpkg::Commands::AddVersion
 
         if ((amend || commit_message) && !commit)
         {
-            printf(Color::warning,
-                   "Warning: `--%s` or `--%s` was specified, assuming `--%s`\n",
-                   OPTION_COMMIT_AMEND,
-                   OPTION_COMMIT_MESSAGE,
-                   OPTION_COMMIT);
+            msg::print_warning(msgAssumeParam,
+                               msg::param1 = OPTION_COMMIT_AMEND,
+                               msg::param2 = OPTION_COMMIT_MESSAGE,
+                               msg::param3 = OPTION_COMMIT);
         }
 
         auto& fs = paths.get_filesystem();
