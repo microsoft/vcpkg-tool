@@ -3,7 +3,6 @@
 
 import { TarBzUnpacker, TarGzUnpacker, TarUnpacker } from '../archivers/tar';
 import { Unpacker } from '../archivers/unpacker';
-import { Activation } from '../artifacts/activation';
 import { acquireArtifactFile } from '../fs/acquire';
 import { InstallEvents, InstallOptions } from '../interfaces/events';
 import { UnTarInstaller } from '../interfaces/metadata/installers/tar';
@@ -12,7 +11,7 @@ import { Uri } from '../util/uri';
 import { applyAcquireOptions, artifactFileName } from './util';
 
 
-export async function installUnTar(session: Session, activation: Activation, name: string, targetLocation: Uri, install: UnTarInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions>): Promise<void> {
+export async function installUnTar(session: Session, name: string, targetLocation: Uri, install: UnTarInstaller, events: Partial<InstallEvents>, options: Partial<InstallOptions>): Promise<void> {
   const file = await acquireArtifactFile(session, [...install.location].map(each => session.parseUri(each)), artifactFileName(name, install, '.tar'), events, applyAcquireOptions(options, install));
   const x = await file.readBlock(0, 128);
   let unpacker: Unpacker;

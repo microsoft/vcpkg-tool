@@ -4,7 +4,6 @@
 
 import { extname } from 'path';
 import { Document, isMap, LineCounter, parseDocument, YAMLMap } from 'yaml';
-import { Activation } from '../artifacts/activation';
 import { Registry } from '../artifacts/registry';
 import { i } from '../i18n';
 import { ErrorKind } from '../interfaces/error-kind';
@@ -39,6 +38,7 @@ export class MetadataFile extends BaseMap implements Profile {
     this.context.session = session;
     this.context.file = session.parseUri(this.context.filename);
     this.context.folder = this.context.file.parent;
+    await this.demandBlock.init(session);
     return this;
   }
 
@@ -75,13 +75,8 @@ export class MetadataFile extends BaseMap implements Profile {
 
   get seeAlso() { return this.demandBlock.seeAlso; }
   get requires() { return this.demandBlock.requires; }
-  get settings() { return this.demandBlock.settings; }
+  get exports() { return this.demandBlock.exports; }
   get install() { return this.demandBlock.install; }
-  get unless() { return this.demandBlock.unless; }
-
-  setActivation(activation: Activation): void {
-    this.demandBlock.setActivation(activation);
-  }
 
   conditionalDemands = new Demands(undefined, this, 'demands');
 
@@ -171,6 +166,7 @@ export class MetadataFile extends BaseMap implements Profile {
   /** @internal */
   override *validate(): Iterable<ValidationError> {
     yield* super.validate();
+    yield* this.validateChildKeys(['info', 'contacts', 'registries', 'global', 'demands', 'apply', 'exports', 'requires', 'install', 'seeAlso', 'unless']);
 
     // verify that we have info
     if (!this.document.has('info')) {
@@ -201,7 +197,7 @@ export class MetadataFile extends BaseMap implements Profile {
     yield* this.install.validate();
     yield* this.registries.validate();
     yield* this.contacts.validate();
-    yield* this.settings.validate();
+    yield* this.exports.validate();
     yield* this.globalSettings.validate();
     yield* this.requires.validate();
     yield* this.seeAlso.validate();

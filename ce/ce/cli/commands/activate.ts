@@ -4,9 +4,8 @@
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
-import { projectFile } from '../format';
 import { activateProject } from '../project';
-import { debug, error } from '../styling';
+import { error } from '../styling';
 import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
 import { WhatIf } from '../switches/whatIf';
@@ -37,9 +36,6 @@ export class ActivateCommand extends Command {
       error(i`Unable to find project in folder (or parent folders) for ${session.currentDirectory.fsPath}`);
       return false;
     }
-
-    debug(i`Deactivating project ${projectFile(projectManifest.metadata.context.file)}`);
-    await session.deactivate();
 
     return await activateProject(projectManifest, {
       force: this.commandLine.force,

@@ -33,6 +33,7 @@
 #include <vcpkg/commands.regenerate.h>
 #include <vcpkg/commands.search.h>
 #include <vcpkg/commands.setinstalled.h>
+#include <vcpkg/commands.update-baseline.h>
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/commands.upload-metrics.h>
 #include <vcpkg/commands.use.h>
@@ -103,6 +104,7 @@ namespace vcpkg::Commands
         static const RegenerateCommand regenerate{};
         static const SearchCommand search{};
         static const Update::UpdateCommand update{};
+        static const UpdateBaselineCommand update_baseline{};
         static const UseCommand use{};
         static const X_VSInstances::VSInstancesCommand vsinstances{};
         static const ZCeCommand ce{};
@@ -126,6 +128,7 @@ namespace vcpkg::Commands
             {"portsdiff", &portsdiff},
             {"search", &search},
             {"update", &update},
+            {"x-update-baseline", &update_baseline},
             {"use", &use},
             {"x-add-version", &add_version},
             {"x-ci-clean", &ciclean},

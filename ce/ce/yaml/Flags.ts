@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import { Scalar } from 'yaml';
+import { ValidationError } from '../interfaces/validation-error';
 import { Yaml, YAMLSequence } from './yaml-types';
 
 
@@ -21,5 +22,10 @@ export /** @internal */ class Flags extends Yaml<YAMLSequence> {
     } else {
       this.node.delete(flag);
     }
+  }
+
+  override *validate(): Iterable<ValidationError> {
+    yield* super.validate();
+    yield* this.validateIsSequence();
   }
 }

@@ -12,7 +12,7 @@ import { NugetRegistry } from './registries/nuget-registry';
  *
  * Any other keys are considered HostQueries and a matching set of Demands
  * A HostQuery is a query string that can be used to qualify
- * 'requires'/'see-also'/'settings'/'install'/'use' objects
+ * 'requires'/'see-also'/'exports'/'install'/'use' objects
  */
 export type Profile = ProfileBase;
 

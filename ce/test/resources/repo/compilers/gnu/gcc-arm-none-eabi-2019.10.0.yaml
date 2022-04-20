@@ -18,7 +18,7 @@ windows:
 not windows: 
   error: not yet supported
 
-settings:
+exports:
   tools:
     CC: bin/arm-none-eabi-gcc.exe
     CXX: bin/arm-none-eabi-g++.exe

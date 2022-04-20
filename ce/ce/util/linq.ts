@@ -1,17 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-export interface Dictionary<T> {
+export class Record<K extends string, T> implements Record<K, T> {
   [key: string]: T;
-}
-
-export class Dictionary<T> implements Dictionary<T> {
-}
-
-export function ToDictionary<T>(keys: Array<string>, each: (index: string) => T) {
-  const result = new Dictionary<T>();
-  keys.map((v, i, a) => result[v] = each(v));
-  return result;
 }
 
 export type IndexOf<T> = T extends Map<T, infer V> ? T : T extends Array<infer V> ? number : string;
@@ -32,6 +23,7 @@ export interface IterableWithLinq<T> extends Iterable<T> {
   first(predicate?: (each: T) => boolean): T | undefined;
   selectNonNullable<V>(selector: (each: T) => V): IterableWithLinq<NonNullable<V>>;
   select<V>(selector: (each: T) => V): IterableWithLinq<V>;
+  selectAsync<V>(selector: (each: T) => V): AsyncGenerator<V>;
   selectMany<V>(selector: (each: T) => Iterable<V>): IterableWithLinq<V>;
   where(predicate: (each: T) => boolean): IterableWithLinq<T>;
   forEach(action: (each: T) => void): void;
@@ -39,7 +31,7 @@ export interface IterableWithLinq<T> extends Iterable<T> {
   toArray(): Array<T>;
   toObject<V, U>(selector: (each: T) => [V, U]): Record<string, U>;
   results(): Promise<void>;
-  toDictionary<TValue>(keySelector: (each: T) => string, selector: (each: T) => TValue): Dictionary<TValue>;
+  toRecord<TValue>(keySelector: (each: T) => string, selector: (each: T) => TValue): Record<string, TValue>;
   toMap<TKey, TValue>(keySelector: (each: T) => TKey, selector: (each: T) => TValue): Map<TKey, TValue>;
   groupBy<TKey, TValue>(keySelector: (each: T) => TKey, selector: (each: T) => TValue): Map<TKey, Array<TValue>>;
 
@@ -82,9 +74,9 @@ function linqify<T>(iterable: Iterable<T> | IterableIterator<T>): IterableWithLi
     join: <any>join.bind(iterable),
     count: len.bind(iterable),
     results: <any>results.bind(iterable),
-    toDictionary: <any>toDictionary.bind(iterable),
     toMap: <any>toMap.bind(iterable),
     groupBy: <any>groupBy.bind(iterable),
+    selectAsync: <any>selectAsync.bind(iterable),
   };
   r.linq = r;
   return r;
@@ -95,7 +87,7 @@ function len<T>(this: Iterable<T>): number {
 }
 
 export function keys<K, T>(source: Map<K, T> | null | undefined): Iterable<K>
-export function keys<T, TSrc extends Dictionary<T>>(source: Dictionary<T> | null | undefined): Iterable<string>
+export function keys<T, TSrc extends Record<string, T>>(source: Record<string, T> | null | undefined): Iterable<string>
 export function keys<T, TSrc extends Array<T>>(source: Array<T> | null | undefined): Iterable<number>
 export function keys<K, T, TSrc>(source: any | undefined | null): Iterable<any>
 export function keys<K, T, TSrc>(source: any): Iterable<any> {
@@ -122,11 +114,10 @@ export function keys<K, T, TSrc>(source: any): Iterable<any> {
 
 /** returns an IterableWithLinq<> for keys in the collection */
 function _keys<K, T>(source: Map<K, T> | null | undefined): IterableWithLinq<K>
-function _keys<T, TSrc extends Dictionary<T>>(source: Dictionary<T> | null | undefined): IterableWithLinq<string>
+function _keys<T, TSrc extends Record<string, T>>(source: Record<string, T> | null | undefined): IterableWithLinq<string>
 function _keys<T, TSrc extends Array<T>>(source: Array<T> | null | undefined): IterableWithLinq<number>
 function _keys<K, T, TSrc>(source: any | undefined | null): IterableWithLinq<any>
 function _keys<K, T, TSrc>(source: any): IterableWithLinq<any> {
-  //export function keys<K, T, TSrc extends (Array<T> | Dictionary<T> | Map<K, T>)>(source: TSrc & (Array<T> | Dictionary<T> | Map<K, T>) | null | undefined): IterableWithLinq<IndexOf<TSrc>> {
   if (source) {
     if (Array.isArray(source)) {
       return <IterableWithLinq<IndexOf<TSrc>>>linqify((<Array<T>>source).keys());
@@ -149,7 +140,7 @@ function isIterable<T>(source: any): source is Iterable<T> {
   return !!source && !!source[Symbol.iterator];
 }
 
-export function values<K, T, TSrc extends (Array<T> | Dictionary<T> | Map<K, T>)>(source: (Iterable<T> | Array<T> | Dictionary<T> | Map<K, T> | Set<T>) | null | undefined): Iterable<T> {
+export function values<K, T, TSrc extends (Array<T> | Record<string, T> | Map<K, T>)>(source: (Iterable<T> | Array<T> | Record<string, T> | Map<K, T> | Set<T>) | null | undefined): Iterable<T> {
   if (source) {
     // map
     if (source instanceof Map || source instanceof Set) {
@@ -174,17 +165,18 @@ export const linq = {
   keys: _keys,
   find: _find,
   startsWith: _startsWith,
+  join: _join
 };
 
 /** returns an IterableWithLinq<> for values in the collection
  *
  * @note - null/undefined/empty values are considered 'empty'
 */
-function _values<K, T>(source: (Array<T> | Dictionary<T> | Map<K, T> | Set<T> | Iterable<T>) | null | undefined): IterableWithLinq<T> {
+function _values<K, T>(source: (Array<T> | Record<string, T> | Map<K, T> | Set<T> | Iterable<T>) | null | undefined): IterableWithLinq<T> {
   return (source) ? linqify(values(source)) : linqify([]);
 }
 
-export function entries<K, T, TSrc extends (Array<T> | Dictionary<T> | Map<K, T> | undefined | null)>(source: TSrc & (Array<T> | Dictionary<T> | Map<K, T>) | null | undefined): Iterable<[IndexOf<TSrc>, T]> {
+export function entries<K, T, TSrc extends (Array<T> | Record<string, T> | Map<K, T> | undefined | null)>(source: TSrc & (Array<T> | Record<string, T> | Map<K, T>) | null | undefined): Iterable<[IndexOf<TSrc>, T]> {
   if (source) {
     if (Array.isArray(source)) {
       return <Iterable<[IndexOf<TSrc>, T]>><any>source.entries();
@@ -205,23 +197,26 @@ export function entries<K, T, TSrc extends (Array<T> | Dictionary<T> | Map<K, T>
 }
 
 /** returns an IterableWithLinq<{key,value}> for the source */
-function _entries<K, T, TSrc extends (Array<T> | Dictionary<T> | Map<K, T> | undefined | null)>(source: TSrc & (Array<T> | Dictionary<T> | Map<K, T>) | null | undefined): IterableWithLinq<[IndexOf<TSrc>, T]> {
+function _entries<K, T, TSrc extends (Array<T> | Record<string, T> | Map<K, T> | undefined | null)>(source: TSrc & (Array<T> | Record<string, T> | Map<K, T>) | null | undefined): IterableWithLinq<[IndexOf<TSrc>, T]> {
   return <any>linqify(source ? entries(<any>source) : [])
 }
 
 /** returns the first value where the key equals the match value (case-insensitive) */
-function _find<K, T, TSrc extends (Array<T> | Dictionary<T> | Map<K, T> | undefined | null)>(source: TSrc & (Array<T> | Dictionary<T> | Map<K, T>) | null | undefined, match: string): T | undefined {
+function _find<K, T, TSrc extends (Array<T> | Record<string, T> | Map<K, T> | undefined | null)>(source: TSrc & (Array<T> | Record<string, T> | Map<K, T>) | null | undefined, match: string): T | undefined {
   return _entries(source).first(([key,]) => key.toString().localeCompare(match, undefined, { sensitivity: 'base' }) === 0)?.[1];
 }
 
 /** returns the first value where the key starts with the match value (case-insensitive) */
-function _startsWith<K, T, TSrc extends (Array<T> | Dictionary<T> | Map<K, T> | undefined | null)>(source: TSrc & (Array<T> | Dictionary<T> | Map<K, T>) | null | undefined, match: string): T | undefined {
+function _startsWith<K, T, TSrc extends (Array<T> | Record<string, T> | Map<K, T> | undefined | null)>(source: TSrc & (Array<T> | Record<string, T> | Map<K, T>) | null | undefined, match: string): T | undefined {
   match = match.toLowerCase();
   return _entries(source).first(([key,]) => key.toString().toLowerCase().startsWith(match))?.[1];
 }
 
+function _join<K, T>(source: (Array<T> | Record<string, T> | Map<K, T> | Set<T> | Iterable<T>) | null | undefined, delimiter: string): string {
+  return source ? _values(source).join(delimiter) : '';
+}
 
-export function length<T, K>(source?: string | Iterable<T> | Dictionary<T> | Array<T> | Map<K, T> | Set<T>): number {
+export function length<T, K>(source?: string | Iterable<T> | Record<string, T> | Array<T> | Map<K, T> | Set<T>): number {
   if (source) {
     if (Array.isArray(source) || typeof (source) === 'string') {
       return source.length;
@@ -235,14 +230,6 @@ export function length<T, K>(source?: string | Iterable<T> | Dictionary<T> | Arr
     return source ? Object.values(source).length : 0;
   }
   return 0;
-}
-
-function toDictionary<TElement, TValue>(this: Iterable<TElement>, keySelector: (each: TElement) => string, selector: (each: TElement) => TValue): Dictionary<TValue> {
-  const result = new Dictionary<TValue>();
-  for (const each of this) {
-    result[keySelector(each)] = selector(each);
-  }
-  return result;
 }
 
 function toMap<TElement, TValue, TKey>(this: Iterable<TElement>, keySelector: (each: TElement) => TKey, selector: (each: TElement) => TValue): Map<TKey, TValue> {
@@ -297,6 +284,13 @@ function select<T, V>(this: Iterable<T>, selector: (each: T) => V): IterableWith
     }
   }.bind(this)());
 }
+
+async function* selectAsync<T, V>(this: Iterable<T>, selector: (each: T) => Promise<V>) {
+  for (const each of this) {
+    yield selector(each)
+  }
+}
+
 
 function selectMany<T, V>(this: Iterable<T>, selector: (each: T) => Iterable<V>): IterableWithLinq<V> {
   return linqify(function* (this: Iterable<T>) {
@@ -369,7 +363,7 @@ function toArray<T>(this: Iterable<T>): Array<T> {
 }
 
 function toObject<T, V>(this: Iterable<T>, selector: (each: T) => [string, V]): Record<string, V> {
-  const result = <Record<string, V>>{};
+  const result = new Record<string, V>();
   for (const each of this) {
     const [key, value] = selector(each);
     result[key] = value;
@@ -395,7 +389,7 @@ function bifurcate<T>(this: Iterable<T>, predicate: (each: T) => boolean): Array
 }
 
 function distinct<T>(this: Iterable<T>, selector?: (each: T) => any): IterableWithLinq<T> {
-  const hash = new Dictionary<boolean>();
+  const hash = new Record<string, boolean>();
   return linqify(function* (this: Iterable<T>) {
 
     if (!selector) {
@@ -412,7 +406,7 @@ function distinct<T>(this: Iterable<T>, selector?: (each: T) => any): IterableWi
 }
 
 function duplicates<T>(this: Iterable<T>, selector?: (each: T) => any): IterableWithLinq<T> {
-  const hash = new Dictionary<boolean>();
+  const hash = new Record<string, boolean>();
   return linqify(function* (this: Iterable<T>) {
 
     if (!selector) {
@@ -468,3 +462,4 @@ export function countWhere<T>(from: Iterable<T>, predicate: (e: T) => boolean | 
   }
   return v;
 }
+
