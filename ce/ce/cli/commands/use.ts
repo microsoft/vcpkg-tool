@@ -4,9 +4,10 @@
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { Registries } from '../../registries/registries';
-import { installArtifacts, selectArtifacts, showArtifacts } from '../artifacts';
+import { selectArtifacts, showArtifacts } from '../artifacts';
 import { Command } from '../command';
 import { cmdSwitch } from '../format';
+import { activate } from '../project';
 import { error, log, warning } from '../styling';
 import { MSBuildProps } from '../switches/msbuild-props';
 import { Project } from '../switches/project';
@@ -63,14 +64,9 @@ export class UseCommand extends Command {
       return false;
     }
 
-    const [success, artifactStatus, activation] = await installArtifacts(session, artifacts.artifacts, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
+    const success = await activate(artifacts, false, { force: this.commandLine.force, language: this.commandLine.language, allLanguages: this.commandLine.allLanguages });
     if (success) {
       log(i`Activating individual artifacts`);
-      await session.setActivationInPostscript(activation, false);
-      const propsFile = this.msbuildProps.value;
-      if (propsFile) {
-        await propsFile.writeUTF8(activation.generateMSBuild(artifactStatus.keys()));
-      }
     } else {
       return false;
     }

@@ -23,19 +23,13 @@ export async function openProject(location: Uri): Promise<ProjectManifest> {
   return new ProjectManifest(session, await session.openManifest(location));
 }
 
-export async function activate(artifacts: ArtifactMap, options?: ActivationOptions) {
+export async function activate(artifacts: ArtifactMap, createUndoFile: boolean, options?: ActivationOptions) {
   // install the items in the project
-  const [success, artifactStatus, activation] = await installArtifacts(session, artifacts.artifacts, options);
+  const [success, artifactStatus] = await installArtifacts(session, artifacts.artifacts, options);
 
   if (success) {
-    // create an MSBuild props file if indicated by the user
-    const propsFile = options?.msbuildProps;
-    if (propsFile) {
-      await propsFile.writeUTF8(activation.generateMSBuild(artifactStatus.keys()));
-    }
-
-    // activate all the tools in the project
-    await session.setActivationInPostscript(activation);
+    const backupFile = createUndoFile ? session.tmpFolder.join(`previous-environment-${Date.now().toFixed()}.json`) : undefined;
+    await session.activation.activate(artifacts.artifacts, session.environment, session.postscriptFile, backupFile, options?.msbuildProps);
   }
 
   return success;
@@ -51,7 +45,7 @@ export async function activateProject(project: ProjectManifest, options?: Activa
     return false;
   }
 
-  if (await activate(artifacts, options)) {
+  if (await activate(artifacts, true, options)) {
     trackActivation();
     log(blank);
     log(i`Project ${projectFile(project.metadata.context.folder)} activated`);

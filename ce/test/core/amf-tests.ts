@@ -112,21 +112,21 @@ describe('Amf', () => {
     doc.requires.set('range/with/resolved', <any>{ range: '1.*', resolved: '1.0.0' });
     strict.equal(doc.requires.get('range/with/resolved')!.raw, '1.* 1.0.0');
 
-    strict.equal(doc.settings.tools.get('CC'), 'foo/bar/cl.exe', 'should have a value');
-    strict.equal(doc.settings.tools.get('CXX'), 'bin/baz/cl.exe', 'should have a value');
-    strict.equal(doc.settings.tools.get('Whatever'), 'some/tool/path/foo', 'should have a value');
+    strict.equal(doc.exports.tools.get('CC'), 'foo/bar/cl.exe', 'should have a value');
+    strict.equal(doc.exports.tools.get('CXX'), 'bin/baz/cl.exe', 'should have a value');
+    strict.equal(doc.exports.tools.get('Whatever'), 'some/tool/path/foo', 'should have a value');
 
-    doc.settings.tools.delete('CXX');
-    strict.equal(doc.settings.tools.keys.length, 2, 'should only have two tools now');
+    doc.exports.tools.delete('CXX');
+    strict.equal(doc.exports.tools.keys.length, 2, 'should only have two tools now');
 
-    strict.sequenceEqual(doc.settings.variables.get('test'), ['abc'], 'variables should be an array');
-    strict.sequenceEqual(doc.settings.variables.get('cxxflags'), ['foo=bar', 'bar=baz'], 'variables should be an array');
+    strict.sequenceEqual(doc.exports.environment.get('test'), ['abc'], 'variables should be an array');
+    strict.sequenceEqual(doc.exports.environment.get('cxxflags'), ['foo=bar', 'bar=baz'], 'variables should be an array');
 
-    doc.settings.variables.add('test').add('another value');
-    strict.sequenceEqual(doc.settings.variables.get('test'), ['abc', 'another value'], 'variables should be an array of two items now');
+    doc.exports.environment.add('test').add('another value');
+    strict.sequenceEqual(doc.exports.environment.get('test'), ['abc', 'another value'], 'variables should be an array of two items now');
 
-    doc.settings.paths.add('bin').add('hello/there');
-    strict.deepEqual(doc.settings.paths.get('bin')?.length, 3, 'there should be three paths in bin now');
+    doc.exports.paths.add('bin').add('hello/there');
+    strict.deepEqual(doc.exports.paths.get('bin')?.length, 3, 'there should be three paths in bin now');
 
     strict.sequenceEqual(doc.conditionalDemands.keys, ['windows and arm'], 'should have one conditional demand');
     /*
@@ -166,6 +166,6 @@ describe('Amf', () => {
     strict.ok(doc.isFormatValid, 'Ensure it is valid yaml');
 
     SuiteLocal.log(doc.validationErrors);
-    strict.equal(doc.validationErrors.length, 2, `Expecting two errors, found: ${JSON.stringify(doc.validationErrors, null, 2)}`);
+    strict.equal(doc.validationErrors.length, 7, `Expecting two errors, found: ${JSON.stringify(doc.validationErrors, null, 2)}`);
   });
 });

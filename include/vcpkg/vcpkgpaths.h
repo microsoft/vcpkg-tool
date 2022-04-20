@@ -59,6 +59,12 @@ namespace vcpkg
     struct PackageSpec;
     struct Triplet;
 
+    struct ManifestAndPath
+    {
+        Json::Object manifest;
+        Path path;
+    };
+
     struct VcpkgPaths
     {
         struct TripletFile
@@ -140,6 +146,7 @@ namespace vcpkg
 
         const DownloadManager& get_download_manager() const;
 
+        ExpectedL<bool> git_port_has_local_changes(StringView port_name) const;
         ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
 
         // Git manipulation for remote registries
@@ -153,8 +160,8 @@ namespace vcpkg
                                                                            const Path& relative_path_to_file) const;
         ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 
-        Optional<const Json::Object&> get_manifest() const;
-        Optional<const Path&> get_manifest_path() const;
+        Optional<const ManifestAndPath&> get_manifest() const;
+        const ConfigurationAndSource& get_configuration() const;
         const RegistrySet& get_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo

@@ -4,7 +4,7 @@
 import { strict } from 'assert';
 import { Readable, Writable } from 'stream';
 import { i } from '../i18n';
-import { Dictionary } from '../util/linq';
+import { Record } from '../util/linq';
 import { Uri } from '../util/uri';
 import { FileStat, FileSystem, FileType, ReadHandle, WriteStreamOptions } from './filesystem';
 
@@ -20,7 +20,7 @@ export function schemeOf(uri: string) {
 
 export class UnifiedFileSystem extends FileSystem {
 
-  private filesystems: Dictionary<FileSystem> = {};
+  private filesystems = new Record<string, FileSystem>();
 
   /** registers a scheme to a given filesystem
    *

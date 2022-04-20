@@ -42,7 +42,7 @@ export class FindCommand extends Command {
     const table = new Table('Artifact', 'Version', 'Summary');
 
     for (const each of this.inputs) {
-      for (const [registry, id, artifacts] of await registries.search({ idOrShortName: each, version: this.version.value })) {
+      for (const [registry, id, artifacts] of await registries.search({ keyword: each, version: this.version.value })) {
         const latest = artifacts[0];
         if (!latest.metadata.info.dependencyOnly) {
           const name = artifactIdentity(latest.registryId, id, latest.shortName);
