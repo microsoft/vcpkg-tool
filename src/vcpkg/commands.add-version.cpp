@@ -119,6 +119,8 @@ namespace
                                  "",
                                  "can't obtain SHA for port {package_name}");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionPortDoesNotExist, (msg::package_name), "", "{package_name} does not exist");
+    DECLARE_AND_REGISTER_MESSAGE(EmptyCommitMessage, (), "", "Error: The specified commit message must be not empty.");
+    DECLARE_AND_REGISTER_MESSAGE(GitCommitFailed, (), "", "Error: Failed to commit the changes. The git output is: ");
 
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
@@ -442,8 +444,7 @@ namespace vcpkg::Commands::AddVersion
             commit_message.emplace(iter_commit_message->second);
             if (commit_message.get()->empty())
             {
-                print2(Color::error, "Error: The specified commit message must be not empty.\n.");
-                Checks::exit_fail(VCPKG_LINE_INFO);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgEmptyCommitMessage);
             }
         }
 
@@ -603,7 +604,7 @@ namespace vcpkg::Commands::AddVersion
                                                  amend);
             if (result.exit_code != 0)
             {
-                printf(Color::error, "Error: Failed to commit the changes. The git output is: %s\n", result.output);
+                msg::print_error(msg::format(msgGitCommitFailed).appendnl().append_raw(result.output).appendnl());
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
