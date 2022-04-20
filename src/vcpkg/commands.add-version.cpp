@@ -119,8 +119,8 @@ namespace
                                  "",
                                  "can't obtain SHA for port {package_name}");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionPortDoesNotExist, (msg::package_name), "", "{package_name} does not exist");
-    DECLARE_AND_REGISTER_MESSAGE(EmptyCommitMessage, (), "", "Error: The specified commit message must be not empty.");
-    DECLARE_AND_REGISTER_MESSAGE(GitCommitFailed, (), "", "Error: Failed to commit the changes. The git output is: ");
+    DECLARE_AND_REGISTER_MESSAGE(EmptyCommitMessage, (), "", "commit message must not be empty.");
+    DECLARE_AND_REGISTER_MESSAGE(GitCommitFailed, (), "", "failed to commit changes. The git output is: ");
 
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
