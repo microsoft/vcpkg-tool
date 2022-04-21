@@ -1647,7 +1647,6 @@ namespace vcpkg::Build
                                                         const VcpkgPaths& paths,
                                                         Optional<Path>&& issue_body)
     {
-
         std::string package = action.displayname();
         if (auto scfl = action.source_control_file_and_location.get())
         {
