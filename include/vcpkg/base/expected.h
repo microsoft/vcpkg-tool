@@ -50,15 +50,15 @@ namespace vcpkg
     struct ExpectedT
     {
         // Constructors are intentionally implicit
-        ExpectedT(const S& s, ExpectedRightTag = {}) : value_is_error(true), m_s(s) { }
+        ExpectedT(const S& s, ExpectedRightTag = {}) : m_s(s), value_is_error(true) { }
         template<class U = S, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
-        ExpectedT(S&& s, ExpectedRightTag = {}) : value_is_error(true), m_s(std::move(s))
+        ExpectedT(S&& s, ExpectedRightTag = {}) : m_s(std::move(s)), value_is_error(true)
         {
         }
 
-        ExpectedT(const T& t, ExpectedLeftTag = {}) : value_is_error(false), m_t(t) { }
+        ExpectedT(const T& t, ExpectedLeftTag = {}) : m_t(t), value_is_error(false) { }
         template<class U = T, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
-        ExpectedT(T&& t, ExpectedLeftTag = {}) : value_is_error(false), m_t(std::move(t))
+        ExpectedT(T&& t, ExpectedLeftTag = {}) : m_t(std::move(t)), value_is_error(false)
         {
         }
 
@@ -287,7 +287,7 @@ namespace vcpkg
             ExpectedHolder<T> m_t;
         };
 
-        bool value_is_error = false;
+        bool value_is_error;
     };
 
     template<class T>
