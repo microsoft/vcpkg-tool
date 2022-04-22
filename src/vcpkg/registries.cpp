@@ -481,7 +481,7 @@ namespace
             return (*pscf)->to_version();
         }
         print_error_message(maybe_scf.error());
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: failed to load port from %s", port_path);
+        return nullopt;
     }
 
     void BuiltinFilesRegistry::get_all_port_names(std::vector<std::string>& out) const
