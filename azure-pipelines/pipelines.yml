@@ -53,7 +53,6 @@ jobs:
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
         filePath: 'azure-pipelines/end-to-end-tests.ps1'
-        arguments: '-Triplet x64-linux -WorkingRoot work -VcpkgRoot $(VCPKG_ROOT)'
         workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
         pwsh: true
     - bash: |
@@ -100,7 +99,6 @@ jobs:
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
         filePath: 'azure-pipelines/end-to-end-tests.ps1'
-        arguments: '-Triplet x64-osx -WorkingRoot work -VcpkgRoot $(VCPKG_ROOT)'
         workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
         pwsh: true
 - job: windows
@@ -140,7 +138,6 @@ jobs:
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
         filePath: 'azure-pipelines/end-to-end-tests.ps1'
-        arguments: '-Triplet x86-windows -WorkingRoot work'
         workingDirectory: '$(Build.SourcesDirectory)/build.x86.debug'
         pwsh: true
     - task: Powershell@2
