@@ -612,8 +612,11 @@ namespace
     {
         auto maybe_version_entries =
             load_versions_file(m_fs, VersionDbType::Filesystem, m_path / registry_versions_dir_name, port_name, m_path);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: %s", maybe_version_entries.error());
+        if (!maybe_version_entries.has_value())
+        {
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: %s", maybe_version_entries.error());
+        }
+
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
         auto res = std::make_unique<FilesystemRegistryEntry>(port_name.to_string());
