@@ -9,6 +9,7 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/view.h>
 
+#include <vcpkg/build.h>
 #include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
 
@@ -196,4 +197,25 @@ namespace vcpkg
     private:
         VersionDbEntryDeserializer underlying;
     };
+
+    struct CommandRegistryPaths
+    {
+        Path root_path;
+        Path git_directory_path;
+        Path ports_directory_path;
+        Path version_directory_path;
+    };
+
+    CommandRegistryPaths resolve_command_registry_paths(const Filesystem& fs,
+                                                        const VcpkgPaths& paths,
+                                                        const VcpkgCmdArguments& args,
+                                                        Build::Editable is_editable);
+
+    ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_registry_versions(
+        const VcpkgPaths& paths, const CommandRegistryPaths& registry_paths, StringView port_name);
+
+    ExpectedS<std::map<std::string, Version, std::less<>>> get_registry_baseline(
+        const VcpkgPaths& paths, const CommandRegistryPaths& registry_paths);
+
+    GitConfig get_registry_git_config(const VcpkgPaths& paths, const CommandRegistryPaths& registry_paths);
 }

@@ -6,6 +6,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.print.h>
 
+#include <vcpkg/build.h>
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/paragraphs.h>
@@ -274,16 +275,20 @@ namespace
         return UpdateResult::Updated;
     }
 
-    static UpdateResult update_version_db_file(const VcpkgPaths& paths,
+    static UpdateResult update_version_db_file(const CommandRegistryPaths& registry_paths,
+                                               const VcpkgPaths& paths,
                                                const std::string& port_name,
                                                const SchemedVersion& port_version,
                                                const std::string& git_tree,
-                                               const Path& version_db_file_path,
                                                bool overwrite_version,
                                                bool print_success,
                                                bool keep_going,
                                                bool skip_version_format_check)
     {
+        char prefix[] = {port_name[0], '-', '\0'};
+        auto version_db_file_path =
+            registry_paths.version_directory_path / prefix / Strings::concat(port_name, ".json");
+
         auto& fs = paths.get_filesystem();
         if (!fs.exists(version_db_file_path, IgnoreErrors{}))
         {
@@ -305,7 +310,7 @@ namespace
             return UpdateResult::Updated;
         }
 
-        auto maybe_versions = get_builtin_versions(paths, port_name);
+        auto maybe_versions = get_registry_versions(paths, registry_paths, port_name);
         if (auto versions = maybe_versions.get())
         {
             const auto& versions_end = versions->end();
@@ -431,11 +436,19 @@ namespace vcpkg::Commands::AddVersion
         const bool verbose = !add_all || Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
 
         auto& fs = paths.get_filesystem();
-        // TODO: Handle consistent port access 
-        auto baseline_path = paths.builtin_registry_versions / "baseline.json";
+        CommandRegistryPaths registry_paths = resolve_command_registry_paths(fs, paths, args, Build::Editable::YES);
+
+        auto baseline_path = registry_paths.version_directory_path / "baseline.json";
         if (!fs.exists(baseline_path, IgnoreErrors{}))
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddVersionFileNotFound, msg::path = baseline_path);
+        }
+
+        auto git_config = get_registry_git_config(paths, registry_paths);
+        if (!fs.exists(git_config.git_dir, VCPKG_LINE_INFO))
+        {
+            vcpkg::printf(Color::error, "Error: Couldn't find required directory `%s`\n.", git_config.git_dir);
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         std::vector<std::string> port_names;
@@ -455,8 +468,8 @@ namespace vcpkg::Commands::AddVersion
                                    msg::command_name = "x-add-version",
                                    msg::option = OPTION_ALL);
 
-            // TODO: Handle consistent port access 
-            for (auto&& port_dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
+            for (auto&& port_dir :
+                 fs.get_directories_non_recursive(registry_paths.ports_directory_path, VCPKG_LINE_INFO))
             {
                 port_names.emplace_back(port_dir.stem().to_string());
             }
@@ -468,18 +481,16 @@ namespace vcpkg::Commands::AddVersion
                 std::map<std::string, vcpkg::Version, std::less<>> ret;
                 return ret;
             }
-            // TODO: Handle consistent port access 
-            auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
+            auto maybe_baseline_map = get_registry_baseline(paths, registry_paths);
             return maybe_baseline_map.value_or_exit(VCPKG_LINE_INFO);
         }();
 
         // Get tree-ish from local repository state.
-        auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
+        auto maybe_git_tree_map = paths.git_get_registry_port_treeish_map(registry_paths.ports_directory_path);
         auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Find ports with uncommited changes
         std::set<std::string> changed_ports;
-        auto git_config = paths.git_builtin_config();
         auto maybe_changes = git_ports_with_uncommitted_changes(git_config);
         if (auto changes = maybe_changes.get())
         {
@@ -492,8 +503,7 @@ namespace vcpkg::Commands::AddVersion
 
         for (auto&& port_name : port_names)
         {
-            // TODO: Handle consistent port access 
-            auto port_dir = paths.builtin_ports_directory() / port_name;
+            auto port_dir = registry_paths.ports_directory_path / port_name;
 
             if (!fs.exists(port_dir, IgnoreErrors{}))
             {
@@ -502,8 +512,8 @@ namespace vcpkg::Commands::AddVersion
                 continue;
             }
 
-            // TODO: Handle consistent port access 
-            auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
+            // Get version information of the local port
+            auto maybe_scf = Paragraphs::try_load_port(fs, registry_paths.ports_directory_path / port_name);
             if (!maybe_scf.has_value())
             {
                 msg::print_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
@@ -517,8 +527,7 @@ namespace vcpkg::Commands::AddVersion
             if (!skip_formatting_check)
             {
                 // check if manifest file is property formatted
-                // TODO: Handle consistent port access 
-                const auto path_to_manifest = paths.builtin_ports_directory() / port_name / "vcpkg.json";
+                const auto path_to_manifest = registry_paths.ports_directory_path / port_name / "vcpkg.json";
                 if (fs.exists(path_to_manifest, IgnoreErrors{}))
                 {
                     const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
@@ -526,7 +535,7 @@ namespace vcpkg::Commands::AddVersion
                     const auto formatted_content = Json::stringify(json, {});
                     if (current_file_content != formatted_content)
                     {
-                        auto command_line = fmt::format("vcpkg format-manifest ports/{}/vcpkg.json", port_name);
+                        auto command_line = fmt::format("vcpkg format-port {}", port_name);
                         msg::print_error(
                             msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
                                 .appendnl()
@@ -562,21 +571,17 @@ namespace vcpkg::Commands::AddVersion
                 Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                 continue;
             }
-            const auto& git_tree = git_tree_it->second;
 
-            char prefix[] = {port_name[0], '-', '\0'};
-            // TODO: Handle consistent port access 
-            auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
-            auto updated_versions_file = update_version_db_file(paths,
+            const auto& git_tree = git_tree_it->second;
+            auto updated_versions_file = update_version_db_file(registry_paths,
+                                                                paths,
                                                                 port_name,
                                                                 schemed_version,
                                                                 git_tree,
-                                                                port_versions_path,
                                                                 overwrite_version,
                                                                 verbose,
                                                                 add_all,
                                                                 skip_version_format_check);
-            // TODO: Handle consistent port access 
             auto updated_baseline_file = update_baseline_version(
                 paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
             if (verbose && updated_versions_file == UpdateResult::NotUpdated &&

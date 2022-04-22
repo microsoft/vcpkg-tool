@@ -1017,10 +1017,15 @@ namespace vcpkg
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
-        const auto local_repo = this->root / ".git";
+        return git_get_registry_port_treeish_map(this->builtin_ports_directory());
+    }
+
+    ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_registry_port_treeish_map(
+        const Path& ports_dir) const
+    {
         const auto git_cmd = git_cmd_builder({}, {})
                                  .string_arg("-C")
-                                 .string_arg(this->builtin_ports_directory())
+                                 .string_arg(ports_dir)
                                  .string_arg("ls-tree")
                                  .string_arg("-d")
                                  .string_arg("HEAD")
@@ -1028,7 +1033,8 @@ namespace vcpkg
 
         auto output = cmd_execute_and_capture_output(git_cmd);
         if (output.exit_code != 0)
-            return Strings::format("Error: Couldn't get local treeish objects for ports.\n%s", output.output);
+            return Strings::format(
+                "Error: Couldn't get treeish objects for ports from ports directory %s.\n%s", ports_dir, output.output);
 
         std::map<std::string, std::string, std::less<>> ret;
         const auto lines = Strings::split(output.output, '\n');
