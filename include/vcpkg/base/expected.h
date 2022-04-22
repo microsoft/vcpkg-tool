@@ -101,6 +101,7 @@ namespace vcpkg
                 {
                     m_s.~S();
                     ::new (&m_t) ExpectedHolder<T>(std::move(other.m_t));
+                    value_is_error = false;
                 }
             }
             else
@@ -109,6 +110,7 @@ namespace vcpkg
                 {
                     m_t.~ExpectedHolder<T>();
                     ::new (&m_s) S(std::move(other.m_s));
+                    value_is_error = true;
                 }
                 else
                 {
