@@ -30,8 +30,26 @@ namespace vcpkg
             return !missing_fields.empty() || !extra_fields.empty() || !expected_types.empty() ||
                    !other_errors.empty() || !error.empty();
         }
-    };
 
+        void format_to(LocalizedString& target) const;
+        LocalizedString format() const;
+    };
+} // namespace vcpkg
+
+template<typename Char>
+struct fmt::formatter<std::unique_ptr<vcpkg::ParseControlErrorInfo>, Char, void>
+    : fmt::formatter<std::string, Char, void>
+{
+    template<typename FormatContext>
+    auto format(std::unique_ptr<vcpkg::ParseControlErrorInfo> const& val, FormatContext& ctx) const
+        -> decltype(ctx.out())
+    {
+        return fmt::formatter<std::string, Char, void>::format(val->format().data(), ctx);
+    }
+};
+
+namespace vcpkg
+{
     template<class P>
     using ParseExpected = vcpkg::ExpectedT<std::unique_ptr<P>, std::unique_ptr<ParseControlErrorInfo>>;
 

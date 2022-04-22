@@ -1384,42 +1384,17 @@ namespace vcpkg
     {
         Checks::check_exit(VCPKG_LINE_INFO, error_info_list.size() > 0);
 
+        LocalizedString error_message;
         for (auto&& error_info : error_info_list)
         {
-            Checks::check_exit(VCPKG_LINE_INFO, error_info != nullptr);
-            if (!error_info->error.empty())
-            {
-                print2(Color::error, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
-            }
-
-            if (!error_info->other_errors.empty())
-            {
-                print2(Color::error, "Errors occurred while parsing ", error_info->name, "\n");
-                for (auto&& msg : error_info->other_errors)
-                    print2("    ", msg, '\n');
-            }
+            error_info->format_to(error_message);
+            error_message.appendnl();
         }
 
-        bool have_remaining_fields = false;
-        for (auto&& error_info : error_info_list)
-        {
-            if (!error_info->extra_fields.empty())
-            {
-                print2(Color::error,
-                       "Error: There are invalid fields in the control or manifest file of ",
-                       error_info->name,
-                       '\n');
-                print2("The following fields were not expected:\n");
-
-                for (const auto& pr : error_info->extra_fields)
-                {
-                    print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
-                }
-                have_remaining_fields = true;
-            }
-        }
-
-        if (have_remaining_fields)
+        if (std::any_of(
+                error_info_list.begin(),
+                error_info_list.end(),
+                [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
         {
             print2("This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
                    Strings::join("\n    ", get_list_of_valid_fields()),
@@ -1430,37 +1405,6 @@ namespace vcpkg
             auto bootstrap = "./bootstrap-vcpkg.sh";
 #endif
             vcpkg::printf("You may need to update the vcpkg binary; try running %s to update.\n\n", bootstrap);
-        }
-
-        for (auto&& error_info : error_info_list)
-        {
-            if (!error_info->missing_fields.empty())
-            {
-                print2(Color::error, "Error: There are missing fields in the control file of ", error_info->name, '\n');
-                print2("The following fields were missing:\n");
-                for (const auto& pr : error_info->missing_fields)
-                {
-                    print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
-                }
-            }
-        }
-
-        for (auto&& error_info : error_info_list)
-        {
-            if (!error_info->expected_types.empty())
-            {
-                print2(Color::error,
-                       "Error: There are invalid field types in the CONTROL or manifest file of ",
-                       error_info->name,
-                       '\n');
-                print2("The following fields had the wrong types:\n\n");
-
-                for (const auto& pr : error_info->expected_types)
-                {
-                    vcpkg::printf("    %s was expected to be %s\n", pr.first, pr.second);
-                }
-                print2("\n");
-            }
         }
     }
 

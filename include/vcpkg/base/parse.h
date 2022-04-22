@@ -36,7 +36,20 @@ namespace vcpkg
         std::string format() const;
         const std::string& get_message() const;
     };
+} // namespace vcpkg
 
+template<typename Char>
+struct fmt::formatter<std::unique_ptr<vcpkg::ParseError>, Char, void> : fmt::formatter<std::string, Char, void>
+{
+    template<typename FormatContext>
+    auto format(std::unique_ptr<vcpkg::ParseError> const& val, FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        return fmt::formatter<std::string, Char, void>::format(val->format(), ctx);
+    }
+};
+
+namespace vcpkg
+{
     struct SourceLoc
     {
         Unicode::Utf8Decoder it;
