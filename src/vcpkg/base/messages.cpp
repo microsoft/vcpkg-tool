@@ -297,6 +297,27 @@ namespace vcpkg::msg
     LocalizedString detail::internal_vformat(::size_t index, fmt::format_args args)
     {
         auto fmt_string = get_format_string(index);
-        return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
+        try
+        {
+            return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
+        }
+        catch (...)
+        {
+            auto default_format_string = get_default_format_string(index);
+            try
+            {
+                return LocalizedString::from_raw(
+                    fmt::vformat({default_format_string.data(), default_format_string.size()}, args));
+            }
+            catch (...)
+            {
+                ::fprintf(stderr,
+                          "INTERNAL ERROR: failed to format default format string for index %zu\nformat string: %.*s\n",
+                          index,
+                          (int)default_format_string.size(),
+                          default_format_string.data());
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
     }
 }
