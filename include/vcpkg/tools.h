@@ -1,15 +1,17 @@
 #pragma once
 
-#include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/expected.h>
 
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/optional.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/stringview.h>
 
+#include <initializer_list>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace vcpkg
 {
@@ -37,6 +39,29 @@ namespace vcpkg
         static constexpr StringLiteral SEVEN_ZIP_MSI = "7zip_msi";
     }
 
+    struct ToolVersion
+    {
+        std::string original_text;
+        std::vector<uint64_t> version;
+
+        friend bool operator==(const ToolVersion& lhs, const ToolVersion& rhs);
+        friend bool operator!=(const ToolVersion& lhs, const ToolVersion& rhs) { return !(lhs == rhs); }
+        friend bool operator<(const ToolVersion& lhs, const ToolVersion& rhs);
+        friend bool operator>(const ToolVersion& lhs, const ToolVersion& rhs) { return rhs < lhs; }
+        friend bool operator>=(const ToolVersion& lhs, const ToolVersion& rhs) { return !(lhs < rhs); }
+        friend bool operator<=(const ToolVersion& lhs, const ToolVersion& rhs) { return !(rhs < lhs); }
+
+        static ToolVersion from_values(std::initializer_list<uint64_t>);
+        static ExpectedL<ToolVersion> try_parse_git(StringView git_version);
+        static ExpectedL<ToolVersion> try_parse_numeric(StringView string_version);
+    };
+
+    struct PathAndVersion
+    {
+        Path path;
+        ToolVersion version;
+    };
+
     struct ToolCache
     {
         virtual ~ToolCache() = default;
@@ -45,8 +70,6 @@ namespace vcpkg
         virtual const Path& get_tool_path(const VcpkgPaths& paths, StringView tool) const = 0;
         virtual const std::string& get_tool_version(const VcpkgPaths& paths, StringView tool) const = 0;
     };
-
-    Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version);
 
     std::unique_ptr<ToolCache> get_tool_cache(RequireExactVersions abiToolVersionHandling);
 }

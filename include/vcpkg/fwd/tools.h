@@ -8,5 +8,7 @@ namespace vcpkg
         NO,
     };
 
+    struct ToolVersion;
     struct ToolCache;
+    struct PathAndVersion;
 }
