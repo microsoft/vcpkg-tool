@@ -25,20 +25,29 @@ namespace vcpkg
     template<class T>
     struct ExpectedHolder
     {
-        ExpectedHolder() = default;
-        ExpectedHolder(const T& t) : t(t) { }
-        ExpectedHolder(T&& t) : t(std::move(t)) { }
+        ExpectedHolder() = delete;
+        ExpectedHolder(const ExpectedHolder&) = default;
+        ExpectedHolder(ExpectedHolder&&) = default;
+        ExpectedHolder& operator=(const ExpectedHolder&) = default;
+        ExpectedHolder& operator=(ExpectedHolder&&) = default;
+        template<class Fwd, std::enable_if_t<!std::is_same_v<ExpectedHolder, std::remove_reference_t<Fwd>>, int> = 0>
+        ExpectedHolder(Fwd&& t) : t(std::forward<Fwd>(t))
+        {
+        }
         using pointer = T*;
         using const_pointer = const T*;
         T* get() noexcept { return &t; }
         const T* get() const noexcept { return &t; }
         T t;
     };
+
     template<class T>
     struct ExpectedHolder<T&>
     {
+        ExpectedHolder() = delete;
         ExpectedHolder(T& t) : t(&t) { }
-        ExpectedHolder() : t(nullptr) { }
+        ExpectedHolder(const ExpectedHolder&) = default;
+        ExpectedHolder& operator=(const ExpectedHolder&) = default;
         using pointer = T*;
         using const_pointer = T*;
         T* get() noexcept { return t; }
@@ -50,15 +59,30 @@ namespace vcpkg
     struct ExpectedT
     {
         // Constructors are intentionally implicit
-        ExpectedT(const S& s, ExpectedRightTag = {}) : m_s(s), value_is_error(true) { }
-        template<class U = S, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
-        ExpectedT(S&& s, ExpectedRightTag = {}) : m_s(std::move(s)), value_is_error(true)
+        template<class ConvToS,
+                 std::enable_if_t<std::is_convertible_v<ConvToS, S> && !std::is_same_v<T, S> &&
+                                      !std::is_same_v<std::remove_reference_t<ConvToS>, T>,
+                                  int> = 0>
+        ExpectedT(ConvToS&& s) : m_s(std::forward<ConvToS>(s)), value_is_error(true)
         {
         }
 
-        ExpectedT(const T& t, ExpectedLeftTag = {}) : m_t(t), value_is_error(false) { }
-        template<class U = T, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
-        ExpectedT(T&& t, ExpectedLeftTag = {}) : m_t(std::move(t)), value_is_error(false)
+        template<class ConvToS, std::enable_if_t<std::is_convertible_v<ConvToS, S>, int> = 0>
+        ExpectedT(ConvToS&& s, ExpectedRightTag) : m_s(std::forward<ConvToS>(s)), value_is_error(true)
+        {
+        }
+
+        template<class ConvToT,
+                 std::enable_if_t<std::is_convertible_v<ConvToT, T> && !std::is_same_v<T, S> &&
+                                      !std::is_same_v<std::remove_reference_t<ConvToT>, S>,
+                                  int> = 0,
+                 int = 1>
+        ExpectedT(ConvToT&& t) : m_t(std::forward<ConvToT>(t)), value_is_error(false)
+        {
+        }
+
+        template<class ConvToT, std::enable_if_t<std::is_convertible_v<ConvToT, T>, int> = 0>
+        ExpectedT(ConvToT&& t, ExpectedLeftTag) : m_t(std::forward<ConvToT>(t)), value_is_error(false)
         {
         }
 
