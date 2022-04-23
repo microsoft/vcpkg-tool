@@ -263,7 +263,7 @@ Expected result: 2.17.1.2
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            return PathAndVersion{candidate, *version};
+            return PathAndVersion{candidate, actual_version};
         }
 
         return nullopt;
@@ -331,8 +331,10 @@ Expected result: 2.17.1.2
                                      const ToolData& tool_data)
     {
         auto downloaded_path = fetch_tool(paths, tool_provider.tool_data_name(), tool_data);
-        auto downloaded_version = tool_provider.get_version(paths, downloaded_path).value_or_exit(VCPKG_LINE_INFO);
-        return {std::move(downloaded_path), std::move(downloaded_version)};
+        return {std::move(downloaded_path),
+                ToolVersion::try_parse_numeric(
+                    tool_provider.get_version(paths, downloaded_path).value_or_exit(VCPKG_LINE_INFO))
+                    .value_or_exit(VCPKG_LINE_INFO)};
     }
 
     static PathAndVersion get_path(const VcpkgPaths& paths, const ToolProvider& tool, RequireExactVersions compare_kind)
@@ -833,7 +835,7 @@ coscli version v0.11.0-beta
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        return {"cmake", "0"};
+                        return {"cmake", ToolVersion{}};
                     }
                     return get_path(paths, CMakeProvider(), abiToolVersionHandling);
                 }
@@ -841,7 +843,7 @@ coscli version v0.11.0-beta
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        return {"git", "0"};
+                        return {"git", ToolVersion{}};
                     }
                     return get_path(paths, GitProvider(), RequireExactVersions::NO);
                 }
@@ -849,7 +851,7 @@ coscli version v0.11.0-beta
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        return {"ninja", "0"};
+                        return {"ninja", ToolVersion{}};
                     }
                     return get_path(paths, NinjaProvider(), RequireExactVersions::NO);
                 }
@@ -857,7 +859,7 @@ coscli version v0.11.0-beta
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        return {"pwsh", "0"};
+                        return {"pwsh", ToolVersion{}};
                     }
                     return get_path(paths, PowerShellCoreProvider(), abiToolVersionHandling);
                 }
@@ -871,7 +873,7 @@ coscli version v0.11.0-beta
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        return {"gsutil", "0"};
+                        return {"gsutil", ToolVersion{}};
                     }
                     return get_path(paths, GsutilProvider(), RequireExactVersions::NO);
                 }
@@ -879,7 +881,7 @@ coscli version v0.11.0-beta
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        return {"aws", "0"};
+                        return {"aws", ToolVersion{}};
                     }
                     return get_path(paths, AwsCliProvider(), RequireExactVersions::NO);
                 }
@@ -887,7 +889,7 @@ coscli version v0.11.0-beta
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
-                        return {"cos", "0"};
+                        return {"cos", ToolVersion{}};
                     }
                     return get_path(paths, CosCliProvider(), RequireExactVersions::NO);
                 }
@@ -907,7 +909,7 @@ coscli version v0.11.0-beta
                         );
                     }
 
-                    return {tars[0], {}};
+                    return {tars[0], ToolVersion{}};
                 }
 
                 // For other tools, we simply always auto-download them.
