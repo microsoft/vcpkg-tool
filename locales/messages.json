@@ -182,7 +182,7 @@
   "_HashFileFailureToRead.comment": "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)\nexample of {path} is '/foo/bar'.\n",
   "HeaderOnlyUsage": "{package_name} is header-only and can be used from CMake via:",
   "_HeaderOnlyUsage.comment": "'header' refers to C/C++ .h files\nexample of {package_name} is 'zlib'.\n",
-  "IllegalFeatures": "error: List of features is not allowed in this contect",
+  "IllegalFeatures": "error: List of features is not allowed in this context",
   "IllegalPlatformSpec": "error: Platform qualifier is not allowed in this context",
   "InstallingPackage": "Installing {action_index}/{count} {spec}...",
   "_InstallingPackage.comment": "example of {action_index} is '340'.\nexample of {count} is '42'.\nexample of {spec} is 'zlib:x64-windows'.\n",

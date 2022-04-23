@@ -711,9 +711,9 @@
       </Item>
       <Item ItemId=";IllegalFeatures" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[error: List of features is not allowed in this contect]]></Val>
+          <Val><![CDATA[error: List of features is not allowed in this context]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[error: no se permite la lista de características en este contect]]></Val>
+            <Val><![CDATA[error: no se permite la lista de características en este context]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
