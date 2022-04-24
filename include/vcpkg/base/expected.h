@@ -196,8 +196,6 @@ namespace vcpkg
             return std::move(m_s);
         }
 
-        std::string error_to_string() const { return fmt::format("{}", error()); }
-
         typename ExpectedHolder<T>::const_pointer get() const
         {
             if (value_is_error)
@@ -295,7 +293,7 @@ namespace vcpkg
         {
             if (value_is_error)
             {
-                Checks::exit_with_message(line_info, error_to_string());
+                Checks::exit_with_message(line_info, fmt::format("{}", error()));
             }
         }
 
