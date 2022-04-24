@@ -3061,7 +3061,11 @@ namespace vcpkg
             if (::lstat(target.c_str(), &s) == 0)
             {
                 ec.clear();
+#ifdef __APPLE__
                 return s.st_mtimespec.tv_sec * 1'000'000'000 + s.st_mtimespec.tv_nsec;
+#else
+                return s.st_mtim.tv_sec * 1'000'000'000 + s.st_mtim.tv_nsec;
+#endif
             }
 
             ec.assign(errno, std::generic_category());
