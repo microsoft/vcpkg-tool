@@ -90,7 +90,7 @@ namespace fmt
             return vcpkg::basic_format_parse_impl(ctx);
         }
         template<class FormatContext>
-        auto format(const ConstructTracker<kind>& ct, FormatContext& ctx) const -> decltype(ctx.out())
+        auto format(const ConstructTracker<kind>&, FormatContext& ctx) const -> decltype(ctx.out())
         {
             return format_to(ctx.out(), "a construct tracker");
         }
