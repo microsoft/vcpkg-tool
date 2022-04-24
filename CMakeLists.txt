@@ -344,7 +344,10 @@ endif()
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/"
     DESTINATION "include/vcpkg"
     FILES_MATCHING
-    PATTERN "include/vcpkg/*.h" "include/vcpkg/fwd/*.h" "include/vcpkg/base/*.h" "include/vcpkg/base/fwd/*.h"
+    PATTERN "include/vcpkg/*.h" 
+    PATTERN "include/vcpkg/fwd/*.h" 
+    PATTERN "include/vcpkg/base/*.h" 
+    PATTERN "include/vcpkg/base/fwd/*.h"
 )
 
 install(TARGETS vcpkglib RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
