@@ -142,7 +142,7 @@ find_package(fmt REQUIRED)
 
 # === Target: vcpkglib ===
 
-add_library(vcpkglib OBJECT
+add_library(vcpkglib
     ${VCPKGLIB_BASE_SOURCES}
     ${VCPKGLIB_SOURCES}
     ${VCPKGLIB_BASE_INCLUDES}
@@ -241,6 +241,7 @@ endif()
 
 # === Target: vcpkg ===
 
+if(0)
 add_executable(vcpkg ${VCPKG_SOURCES})
 target_link_libraries(vcpkg PRIVATE vcpkglib)
 vcpkg_target_add_warning_options(vcpkg)
@@ -255,6 +256,7 @@ if(VCPKG_ADD_SOURCELINK)
 endif()
 if(VCPKG_PDB_SUFFIX)
     set_property(TARGET vcpkg PROPERTY PDB_NAME "vcpkg${VCPKG_PDB_SUFFIX}")
+endif()
 endif()
 
 # === Target: generate-message-map ===
@@ -338,7 +340,5 @@ endif()
 # === Installation ===
 # ====================
 
-install(TARGETS vcpkg
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+set_target_properties(vcpkglib PROPERTIES PUBLIC_HEADER ${VCPKGLIB_BASE_INCLUDES} ${VCPKGLIB_INCLUDES})
+install(TARGETS vcpkglib RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib PUBLIC_HEADER DESTINATION include)
