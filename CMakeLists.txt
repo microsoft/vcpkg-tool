@@ -342,7 +342,7 @@ endif()
 
 # install directory instead of using PUBLIC_HEADER to maintain directory heirarchy
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/vcpkg"
-    DESTINATION "include/vcpkg"
+    DESTINATION "include"
     FILES_MATCHING
     PATTERN "*.h" 
     PATTERN "fwd/*.h" 
