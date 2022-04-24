@@ -45,7 +45,7 @@ namespace
             ++cr->alive;
             ++cr->copies;
         }
-        ConstructTracker(ConstructTracker&& other) : cr(other.cr), moved_from(other.moved_from)
+        ConstructTracker(ConstructTracker&& other) noexcept : cr(other.cr), moved_from(other.moved_from)
         {
             other.moved_from = true;
             ++cr->alive;
@@ -63,7 +63,7 @@ namespace
             ++cr->copy_assigns;
             return *this;
         }
-        ConstructTracker& operator=(ConstructTracker&& other)
+        ConstructTracker& operator=(ConstructTracker&& other) noexcept
         {
             if (this != &other)
             {
@@ -323,4 +323,72 @@ TEST_CASE ("move assignment error error", "[expected]")
     CHECK(error.moves == 0);
     CHECK(error.move_assigns == 1);
     value.check_nothing();
+}
+
+TEST_CASE ("map", "[expected]")
+{
+    ConstructRoot<0> value;
+    ConstructRoot<1> error;
+    using TestType = ExpectedT<ConstructTracker<0>, ConstructTracker<1>>;
+    {
+        TestType originally_value(value);
+        auto result = originally_value.map(
+            [&value](auto&& mv) -> std::enable_if_t<std::is_same_v<decltype(mv), const ConstructTracker<0>&>, int> {
+                CHECK(!mv.moved_from);
+                CHECK(mv.cr == &value);
+                return 42;
+            });
+        static_assert(std::is_same_v<decltype(result), ExpectedT<int, ConstructTracker<1>>>, "Bad map(const&) type");
+        CHECK(result.value_or_exit(VCPKG_LINE_INFO) == 42);
+    }
+
+    value.check_nothing();
+    error.check_nothing();
+
+    {
+        TestType originally_value(value);
+        auto result =
+            std::move(originally_value)
+                .map([&value](auto&& mv) -> std::enable_if_t<std::is_same_v<decltype(mv), ConstructTracker<0>&&>, int> {
+                    CHECK(!mv.moved_from);
+                    CHECK(mv.cr == &value);
+                    return 42;
+                });
+        static_assert(std::is_same_v<decltype(result), ExpectedT<int, ConstructTracker<1>>>, "Bad map(&&) type");
+        CHECK(result.value_or_exit(VCPKG_LINE_INFO) == 42);
+    }
+
+    value.check_nothing();
+    error.check_nothing();
+
+    {
+        TestType originally_error(error);
+        auto result = originally_error.map(
+            [](auto&& mv) -> std::enable_if_t<std::is_same_v<decltype(mv), const ConstructTracker<0>&>, int> {
+                FAIL();
+                return 42;
+            });
+        CHECK(result.error().cr == &error);
+    }
+
+    value.check_nothing();
+    CHECK(error.copies == 1);
+    error.copies = 0;
+    error.check_nothing();
+
+    {
+        TestType originally_error(error);
+        auto result =
+            std::move(originally_error)
+                .map([](auto&& mv) -> std::enable_if_t<std::is_same_v<decltype(mv), ConstructTracker<0>&&>, int> {
+                    FAIL();
+                    return 42;
+                });
+        CHECK(result.error().cr == &error);
+    }
+
+    value.check_nothing();
+    CHECK(error.moves == 1);
+    error.moves = 0;
+    error.check_nothing();
 }

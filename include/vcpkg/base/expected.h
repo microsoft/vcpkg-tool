@@ -216,15 +216,16 @@ namespace vcpkg
             return m_t.get();
         }
 
+        // map(F): returns an Expected<result_of_calling_F, S>
+        //
+        // If *this holds a value, returns an expected holding the value F(*get())
+        // Otherwise, returns an expected containing a copy of error()
         template<class F>
-        using map_t = decltype(std::declval<F&>()(*std::declval<typename ExpectedHolder<T>::const_pointer>()));
-
-        template<class F>
-        ExpectedT<map_t<F>, S> map(F f) const&
+        ExpectedT<decltype(std::declval<F&>()(std::declval<const T&>())), S> map(F f) const&
         {
             if (value_is_error)
             {
-                return ExpectedT<map_t<F>, S>{m_s, expected_right_tag};
+                return {m_s, expected_right_tag};
             }
             else
             {
@@ -233,15 +234,11 @@ namespace vcpkg
         }
 
         template<class F>
-        using move_map_t =
-            decltype(std::declval<F&>()(std::move(*std::declval<typename ExpectedHolder<T>::pointer>())));
-
-        template<class F>
-        ExpectedT<move_map_t<F>, S> map(F f) &&
+        ExpectedT<decltype(std::declval<F&>()(std::declval<T>())), S> map(F f) &&
         {
             if (value_is_error)
             {
-                return ExpectedT<move_map_t<F>, S>{std::move(m_s), expected_right_tag};
+                return {std::move(m_s), expected_right_tag};
             }
             else
             {
@@ -249,25 +246,59 @@ namespace vcpkg
             }
         }
 
+        // map_error(F): returns an Expected<T, result_of_calling_F>
+        //
+        // If *this holds a value, returns an expected holding the same value.
+        // Otherwise, returns an expected containing f(error())
         template<class F>
-        ExpectedT& replace_error(F&& specific_error_generator)
+        ExpectedT<T, decltype(std::declval<F&>()(std::declval<const S&>()))> map_error(F f) const&
         {
             if (value_is_error)
             {
-                m_s = std::forward<F>(specific_error_generator)();
+                return {f(m_s), expected_right_tag};
             }
-
-            return *this;
+            else
+            {
+                return {*m_t.get(), expected_left_tag};
+            }
         }
 
-        using const_ref_type = decltype(*std::declval<typename ExpectedHolder<T>::const_pointer>());
-        using move_ref_type = decltype(std::move(*std::declval<typename ExpectedHolder<T>::pointer>()));
-        template<class F, class... Args>
-        std::invoke_result_t<F, const_ref_type, Args&&...> then(F f, Args&&... args) const&
+        template<class F>
+        ExpectedT<T, decltype(std::declval<F&>()(std::declval<S>()))> map_error(F f) &&
         {
             if (value_is_error)
             {
-                return std::invoke_result_t<F, const_ref_type, Args&&...>(m_s, expected_right_tag);
+                return {f(std::move(m_s)), expected_right_tag};
+            }
+            else
+            {
+                return {std::move(*m_t.get()), expected_left_tag};
+            }
+        }
+
+        // then: f(T, Args...)
+        // If *this contains a value, returns INVOKE(f, *get(), forward(args)...)
+        // Otherwise, returns error() put into the same type.
+    private:
+        template<class Test>
+        struct IsThenCompatibleExpected : std::false_type
+        {
+        };
+
+        template<class OtherTy>
+        struct IsThenCompatibleExpected<ExpectedT<OtherTy, S>> : std::true_type
+        {
+        };
+
+    public:
+        template<class F, class... Args>
+        std::invoke_result_t<F, const T&, Args...> then(F f, Args&&... args) const&
+        {
+            static_assert(IsThenCompatibleExpected<std::invoke_result_t<F, const T&, Args...>>::value,
+                          "then expects f to return an expected with the same error type");
+            if (value_is_error)
+            {
+                return {m_s, expected_right_tag};
             }
             else
             {
@@ -276,11 +307,13 @@ namespace vcpkg
         }
 
         template<class F, class... Args>
-        std::invoke_result_t<F, move_ref_type, Args&&...> then(F f, Args&&... args) &&
+        std::invoke_result_t<F, T&&, Args...> then(F f, Args&&... args) &&
         {
+            static_assert(IsThenCompatibleExpected<std::invoke_result_t<F, T&&, Args...>>::value,
+                          "then expects f to return an expected with the same error type");
             if (value_is_error)
             {
-                return std::invoke_result_t<F, move_ref_type, Args&&...>(std::move(m_s), expected_right_tag);
+                return {m_s, expected_right_tag};
             }
             else
             {
