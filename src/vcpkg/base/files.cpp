@@ -3097,6 +3097,10 @@ namespace vcpkg
 
         virtual Path lexically_relative(const Path& abs_file, const Path& base) const override
         {
+            if (abs_file.is_relative() || base.is_relative())
+            {
+                return {};
+            }
             Path abs_base = base;
             if (abs_base.native().back() != '/')
             {
@@ -3118,7 +3122,7 @@ namespace vcpkg
             {
                 if (*mismatch.second == '/') relative += "../";
             }
-            // from common base to abd_file
+            // from common base to abs_file
             relative += StringView(&*(mismatch.first), &*abs_file.native().end());
             return relative;
         }
