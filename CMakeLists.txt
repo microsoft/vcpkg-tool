@@ -150,6 +150,10 @@ add_library(vcpkglib
 )
 target_include_directories(vcpkglib PUBLIC include)
 
+# vcpkg wasn't intended to be used as a library so it obviously doesn't export anything
+# exporting everything by settings WINDOWS_EXPORT_ALL_SYMBOLS to ON then
+set_target_properties(vcpkglib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 vcpkg_target_add_warning_options(vcpkglib)
 target_compile_definitions(vcpkglib PUBLIC
     VCPKG_VERSION=${VCPKG_VERSION}
