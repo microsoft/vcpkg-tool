@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/checks.h>
+
 #include <stddef.h>
 
 namespace vcpkg::Unicode
@@ -26,6 +28,8 @@ namespace vcpkg::Unicode
         UnexpectedStart = 5,
         UnexpectedEof = 6,
     };
+
+    DECLARE_MESSAGE(Utf8DecoderDereferencedAtEof, (), "", "dereferenced Utf8Decoder at the end of a string.");
 
     const std::error_category& utf8_category() noexcept;
 
@@ -118,7 +122,9 @@ namespace vcpkg::Unicode
         {
             if (is_eof())
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, "Dereferenced Utf8Decoder on the end of a string");
+                msg::print(Color::error, msg::msgInternalErrorMessage);
+                msg::println(Color::error, msgUtf8DecoderDereferencedAtEof);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msg::msgInternalErrorMessageContact);
             }
             return current_;
         }

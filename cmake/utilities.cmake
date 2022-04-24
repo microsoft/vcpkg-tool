@@ -48,7 +48,9 @@ function(vcpkg_target_add_warning_options TARGET)
                     -Wno-missing-field-initializers
                     )
             else()
-                target_compile_options(${TARGET} PRIVATE -analyze -analyze:stacksize 39000)
+                # -wd6553 is to workaround a violation in the Windows SDK
+                # c:\program files (x86)\windows kits\10\include\10.0.22000.0\um\winreg.h(780) : warning C6553: The annotation for function 'RegOpenKeyExW' on _Param_(3) does not apply to a value type.
+                target_compile_options(${TARGET} PRIVATE -analyze -analyze:stacksize 39000 -wd6553)
             endif()
         endif()
 

@@ -5,7 +5,6 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/zstringview.h>
 
 namespace vcpkg
 {
@@ -18,6 +17,10 @@ namespace vcpkg
 
 #ifdef _WIN32
     const ExpectedS<Path>& get_appdata_local() noexcept;
+
+    const ExpectedS<Path>& get_system_root() noexcept;
+
+    const ExpectedS<Path>& get_system32() noexcept;
 #endif
 
     Optional<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);

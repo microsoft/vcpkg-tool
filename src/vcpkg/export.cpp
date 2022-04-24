@@ -1,4 +1,4 @@
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -146,9 +146,7 @@ namespace vcpkg::Export
                                 const Path& output_dir)
     {
         Filesystem& fs = paths.get_filesystem();
-
-        std::error_code ec;
-        fs.create_directories(paths.buildsystems / "tmp", ec);
+        fs.create_directories(paths.buildsystems / "tmp", IgnoreErrors{});
 
         // This file will be placed in "build\native" in the nuget package. Therefore, go up two dirs.
         const std::string targets_redirect_content =
@@ -170,16 +168,16 @@ namespace vcpkg::Export
         // -NoDefaultExcludes is needed for ".vcpkg-root"
         Command cmd;
 #ifndef _WIN32
-        cmd.path_arg(paths.get_tool_exe(Tools::MONO));
+        cmd.string_arg(paths.get_tool_exe(Tools::MONO));
 #endif
-        cmd.path_arg(paths.get_tool_exe(Tools::NUGET))
+        cmd.string_arg(paths.get_tool_exe(Tools::NUGET))
             .string_arg("pack")
-            .path_arg(nuspec_file_path)
+            .string_arg(nuspec_file_path)
             .string_arg("-OutputDirectory")
-            .path_arg(output_dir)
+            .string_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        const auto output = cmd_execute_and_capture_output(cmd, get_clean_environment());
+        const auto output = cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
         const auto exit_code = output.exit_code;
         if (exit_code != 0)
         {
@@ -201,19 +199,19 @@ namespace vcpkg::Export
 
         constexpr ArchiveFormat() = delete;
 
-        constexpr ArchiveFormat(BackingEnum backing_enum, const char* extension, const char* cmake_option)
+        constexpr ArchiveFormat(BackingEnum backing_enum, StringLiteral extension, StringLiteral cmake_option)
             : backing_enum(backing_enum), m_extension(extension), m_cmake_option(cmake_option)
         {
         }
 
         constexpr operator BackingEnum() const { return backing_enum; }
-        constexpr CStringView extension() const { return this->m_extension; }
-        constexpr CStringView cmake_option() const { return this->m_cmake_option; }
+        constexpr StringLiteral extension() const { return this->m_extension; }
+        constexpr StringLiteral cmake_option() const { return this->m_cmake_option; }
 
     private:
         BackingEnum backing_enum;
-        const char* m_extension;
-        const char* m_cmake_option;
+        StringLiteral m_extension;
+        StringLiteral m_cmake_option;
     };
 
     namespace ArchiveFormatC
@@ -234,22 +232,21 @@ namespace vcpkg::Export
         const auto exported_archive_path = output_dir / exported_archive_filename;
 
         Command cmd;
-        cmd.path_arg(cmake_exe)
+        cmd.string_arg(cmake_exe)
             .string_arg("-E")
             .string_arg("tar")
             .string_arg("cf")
-            .path_arg(exported_archive_path)
+            .string_arg(exported_archive_path)
             .string_arg(Strings::concat("--format=", format.cmake_option()))
             .string_arg("--")
-            .path_arg(raw_exported_dir);
+            .string_arg(raw_exported_dir);
 
-        const int exit_code = cmd_execute_clean(cmd, InWorkingDirectory{raw_exported_dir.parent_path()});
+        const int exit_code = cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()});
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s creation failed", exported_archive_path);
         return exported_archive_path;
     }
 
-    static Optional<std::string> maybe_lookup(std::unordered_map<std::string, std::string> const& m,
-                                              std::string const& key)
+    static Optional<std::string> maybe_lookup(std::map<std::string, std::string, std::less<>> const& m, StringView key)
     {
         const auto it = m.find(key);
         if (it != m.end()) return it->second;
@@ -458,12 +455,6 @@ namespace vcpkg::Export
             }
         };
 
-#if defined(_MSC_VER) && _MSC_VER <= 1900
-// there's a bug in VS 2015 that causes a bunch of "unreferenced local variable" warnings
-#pragma warning(push)
-#pragma warning(disable : 4189)
-#endif
-
         options_implies(OPTION_NUGET,
                         ret.nuget,
                         {
@@ -499,9 +490,6 @@ namespace vcpkg::Export
                             {OPTION_CHOCOLATEY_VERSION_SUFFIX, ret.chocolatey_options.maybe_version_suffix},
                         });
 
-#if defined(_MSC_VER) && _MSC_VER <= 1900
-#pragma warning(pop)
-#endif
         return ret;
     }
 
@@ -527,8 +515,7 @@ namespace vcpkg::Export
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
 
         // TODO: error handling
-        std::error_code ec;
-        fs.create_directory(raw_exported_dir_path, ec);
+        fs.create_directory(raw_exported_dir_path, IgnoreErrors{});
 
         // execute the plan
         {

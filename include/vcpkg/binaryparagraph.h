@@ -12,7 +12,7 @@ namespace vcpkg
     struct BinaryParagraph
     {
         BinaryParagraph();
-        explicit BinaryParagraph(Parse::Paragraph fields);
+        explicit BinaryParagraph(Paragraph fields);
         BinaryParagraph(const SourceParagraph& spgh,
                         Triplet triplet,
                         const std::string& abi_tag,
@@ -31,6 +31,8 @@ namespace vcpkg
         std::string dir() const;
 
         bool is_feature() const { return !feature.empty(); }
+
+        Version get_version() const { return {version, port_version}; }
 
         PackageSpec spec;
         std::string version;

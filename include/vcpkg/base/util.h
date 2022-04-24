@@ -27,7 +27,9 @@ namespace vcpkg::Util
         template<class Vec, class Key>
         bool contains(const Vec& container, const Key& item)
         {
-            return std::find(container.begin(), container.end(), item) != container.end();
+            using std::begin;
+            using std::end;
+            return std::find(begin(container), end(container), item) != end(container);
         }
         template<class T>
         std::vector<T> concat(View<T> r1, View<T> r2)
@@ -128,10 +130,82 @@ namespace vcpkg::Util
         return ret;
     }
 
+    template<class Container, class T>
+    void erase_remove(Container& cont, const T& el)
+    {
+        cont.erase(std::remove(cont.begin(), cont.end(), el), cont.end());
+    }
     template<class Container, class Pred>
     void erase_remove_if(Container& cont, Pred pred)
     {
         cont.erase(std::remove_if(cont.begin(), cont.end(), pred), cont.end());
+    }
+
+    template<class ForwardIt1, class ForwardIt2>
+    ForwardIt1 search_and_skip(ForwardIt1 first, ForwardIt1 last, ForwardIt2 s_first, ForwardIt2 s_last)
+    {
+        first = std::search(first, last, s_first, s_last);
+        if (first != last)
+        {
+            std::advance(first, std::distance(s_first, s_last));
+        }
+        return first;
+    }
+
+    template<class ForwardIt1, class ForwardRange2>
+    ForwardIt1 search_and_skip(ForwardIt1 first, ForwardIt1 last, const ForwardRange2& rng)
+    {
+        using std::begin;
+        using std::end;
+
+        return ::vcpkg::Util::search_and_skip(first, last, begin(rng), end(rng));
+    }
+
+    template<class ForwardIt1, class ForwardRange2>
+    ForwardIt1 search(ForwardIt1 first, ForwardIt1 last, const ForwardRange2& rng)
+    {
+        using std::begin;
+        using std::end;
+
+        return std::search(first, last, begin(rng), end(rng));
+    }
+
+    // 0th is the first occurence
+    // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
+    // returns the 1 before the 4
+    template<class InputIt, class V>
+    auto find_nth(InputIt first, InputIt last, const V& v, size_t n)
+    {
+        first = std::find(first, last, v);
+        for (size_t i = 0; i < n && first != last; ++i)
+        {
+            ++first;
+            first = std::find(first, last, v);
+        }
+
+        return first;
+    }
+    template<class R, class V>
+    auto find_nth(R& r, const V& v, size_t n)
+    {
+        using std::begin;
+        using std::end;
+
+        return find_nth(begin(r), end(r), v, n);
+    }
+
+    // 0th is the last occurence
+    // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
+    // returns the 1 before the 2
+    template<class R, class V>
+    auto find_nth_from_last(R& r, const V& v, size_t n)
+    {
+        using std::end;
+        using std::rbegin;
+        using std::rend;
+
+        auto res = find_nth(rbegin(r), rend(r), v, n);
+        return res == rend(r) ? end(r) : res.base() - 1;
     }
 
     template<class Container, class V>
@@ -178,7 +252,7 @@ namespace vcpkg::Util
         }
     }
 
-    template<class Range, class Comp = std::less<typename Range::value_type>>
+    template<class Range, class Comp = std::less<>>
     void sort(Range& cont, Comp comp = Comp())
     {
         using std::begin;
@@ -192,12 +266,12 @@ namespace vcpkg::Util
         return std::any_of(rng.begin(), rng.end(), std::move(pred));
     }
 
-    template<class Range>
-    Range&& sort_unique_erase(Range&& cont)
+    template<class Range, class Comp = std::less<>>
+    Range&& sort_unique_erase(Range&& cont, Comp comp = Comp())
     {
         using std::begin;
         using std::end;
-        std::sort(begin(cont), end(cont));
+        std::sort(begin(cont), end(cont), comp);
         cont.erase(std::unique(begin(cont), end(cont)), end(cont));
 
         return std::forward<Range>(cont);

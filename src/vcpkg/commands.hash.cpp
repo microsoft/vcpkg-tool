@@ -28,7 +28,7 @@ namespace vcpkg::Commands::Hash
             algorithm = vcpkg::Hash::algorithm_from_string(args.command_arguments[1]).value_or_exit(VCPKG_LINE_INFO);
         }
 
-        const std::string hash = vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, file_to_hash, algorithm);
+        const std::string hash = vcpkg::Hash::get_file_hash(fs, file_to_hash, algorithm).value_or_exit(VCPKG_LINE_INFO);
         print2(hash, '\n');
         Checks::exit_success(VCPKG_LINE_INFO);
     }

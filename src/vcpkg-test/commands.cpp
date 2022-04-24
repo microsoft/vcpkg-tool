@@ -63,6 +63,7 @@ TEST_CASE ("list of commands is correct", "[commands]")
         "remove",
         "search",
         "update",
+        "x-update-baseline",
         "upgrade",
         "use",
         "version",
