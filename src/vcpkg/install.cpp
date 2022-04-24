@@ -1120,22 +1120,9 @@ namespace vcpkg::Install
 
             std::string hash;
             {
-                auto timer = ElapsedTimer::create_started();
                 auto hasher = Hash::get_hasher_for(Hash::Algorithm::Sha256);
-                for (auto&& path : args.overlay_ports)
-                {
-                    for (auto&& file : fs.get_regular_files_recursive(path, VCPKG_LINE_INFO))
-                    {
-                        hasher->add_bytes(fs.read_contents(file, VCPKG_LINE_INFO));
-                    }
-                }
-                hasher->add_bytes(paths.get_configuration_hash());
-                hasher->add_bytes(Json::stringify(manifest->manifest, Json::JsonStyle{}.with_spaces(0)));
                 hasher->add_bytes(default_triplet.to_string());
                 hasher->add_bytes(host_triplet.to_string());
-                hasher->add_bytes(fs.read_contents(paths.get_triplet_file_path(default_triplet), VCPKG_LINE_INFO));
-                hasher->add_bytes(fs.read_contents(paths.get_triplet_file_path(host_triplet), VCPKG_LINE_INFO));
-                hasher->add_bytes(fs.read_contents(paths.get_triplet_file_path(host_triplet), VCPKG_LINE_INFO));
                 for (const auto& feature : features)
                 {
                     hasher->add_bytes(feature);
@@ -1148,16 +1135,59 @@ namespace vcpkg::Install
                         hasher->add_bytes(maybe_git_sha.value_or_exit(VCPKG_LINE_INFO));
                     }
                 }
-                Debug::print("Time needed to compute hash for stamp: ", timer.elapsed().to_string(), "\n");
                 hash = hasher->get_hash();
-                if (fs.exists(paths.installed().hashfile_path(), VCPKG_LINE_INFO))
+
+                auto have_file_change = [&]() {
+                    auto last_install = fs.last_write_time(paths.installed().stampfile_path(), VCPKG_LINE_INFO);
+                    for (auto&& path : args.overlay_ports)
+                    {
+                        if (fs.last_write_time(path, VCPKG_LINE_INFO) > last_install)
+                        {
+                            return true;
+                        }
+                        for (auto&& file : fs.get_files_recursive(path, VCPKG_LINE_INFO))
+                        {
+                            if (fs.last_write_time(file, VCPKG_LINE_INFO) > last_install)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+
+                    if (fs.last_write_time(paths.get_manifest().value_or_exit(VCPKG_LINE_INFO).path, VCPKG_LINE_INFO) >
+                        last_install)
+                    {
+                        return true;
+                    }
+                    auto config_file = paths.get_configuration().directory / "vcpkg-configuration.json";
+                    if (fs.exists(config_file, VCPKG_LINE_INFO))
+                    {
+                        if (fs.last_write_time(config_file, VCPKG_LINE_INFO) > last_install)
+                        {
+                            return true;
+                        }
+                    }
+                    if (fs.last_write_time(paths.get_triplet_file_path(default_triplet), VCPKG_LINE_INFO) >
+                        last_install)
+                    {
+                        return true;
+                    }
+                    if (fs.last_write_time(paths.get_triplet_file_path(host_triplet), VCPKG_LINE_INFO) > last_install)
+                    {
+                        return true;
+                    }
+                    return false;
+                };
+
+                if (check_stamp && fs.exists(paths.installed().stampfile_path(), VCPKG_LINE_INFO))
                 {
-                    if (check_stamp && fs.read_contents(paths.installed().hashfile_path(), VCPKG_LINE_INFO) == hash)
+                    if (fs.read_contents(paths.installed().stampfile_path(), VCPKG_LINE_INFO) == hash &&
+                        !have_file_change())
                     {
                         msg::println(msgStampNotChanged, msg::option = OPTION_CHECK_STAMP);
                         Checks::exit_success(VCPKG_LINE_INFO);
                     }
-                    fs.remove(paths.installed().hashfile_path(), VCPKG_LINE_INFO);
+                    fs.remove(paths.installed().stampfile_path(), VCPKG_LINE_INFO);
                 }
             }
 
@@ -1201,7 +1231,7 @@ namespace vcpkg::Install
                                                pkgsconfig,
                                                host_triplet);
 
-            fs.write_contents_and_dirs(paths.installed().hashfile_path(), hash, VCPKG_LINE_INFO);
+            fs.write_contents_and_dirs(paths.installed().stampfile_path(), hash, VCPKG_LINE_INFO);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 

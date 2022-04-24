@@ -1428,13 +1428,6 @@ namespace vcpkg
         return m_pimpl->m_env_cache.get_compiler_info(*this, abi_info);
     }
 
-    std::string VcpkgPaths::get_configuration_hash() const
-    {
-        return Hash::get_string_hash(
-            Json::stringify(m_pimpl->m_config.config.serialize(), Json::JsonStyle{}.with_spaces(0)),
-            Hash::Algorithm::Sha512);
-    }
-
     Filesystem& VcpkgPaths::get_filesystem() const { return m_pimpl->m_fs; }
 
     bool VcpkgPaths::use_git_default_registry() const { return m_pimpl->m_bundle.m_usegitregistry; }
