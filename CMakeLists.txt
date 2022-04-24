@@ -142,7 +142,7 @@ find_package(fmt REQUIRED)
 
 # === Target: vcpkglib ===
 
-add_library(vcpkglib
+add_library(vcpkglib STATIC
     ${VCPKGLIB_BASE_SOURCES}
     ${VCPKGLIB_SOURCES}
     ${VCPKGLIB_BASE_INCLUDES}
