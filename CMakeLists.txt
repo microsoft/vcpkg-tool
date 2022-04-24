@@ -341,13 +341,13 @@ endif()
 # ====================
 
 # install directory instead of using PUBLIC_HEADER to maintain directory heirarchy
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/"
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/vcpkg"
     DESTINATION "include/vcpkg"
     FILES_MATCHING
-    PATTERN "include/vcpkg/*.h" 
-    PATTERN "include/vcpkg/fwd/*.h" 
-    PATTERN "include/vcpkg/base/*.h" 
-    PATTERN "include/vcpkg/base/fwd/*.h"
+    PATTERN "*.h" 
+    PATTERN "fwd/*.h" 
+    PATTERN "base/*.h" 
+    PATTERN "base/fwd/*.h"
 )
 
 install(TARGETS vcpkglib RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
