@@ -40,16 +40,6 @@ namespace vcpkg::Hash
         return {};
     }
 
-    const char* to_string(Algorithm algo) noexcept
-    {
-        switch (algo)
-        {
-            case Algorithm::Sha256: return "SHA256";
-            case Algorithm::Sha512: return "SHA512";
-            default: vcpkg::Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-    }
-
     void Hasher::add_bytes(StringView data) { add_bytes(data.data(), data.data() + data.size()); }
 
     template<class UIntTy>
