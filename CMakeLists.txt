@@ -340,6 +340,11 @@ endif()
 # === Installation ===
 # ====================
 
-list(APPEND VCPKGLIB_INCLUDES ${VCPKGLIB_BASE_INCLUDES})
-set_target_properties(vcpkglib PROPERTIES PUBLIC_HEADER "${VCPKGLIB_INCLUDES}")
-install(TARGETS vcpkglib RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib PUBLIC_HEADER DESTINATION include)
+# install directory instead of using PUBLIC_HEADER to maintain directory heirarchy
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/"
+    DESTINATION "include/vcpkg"
+    FILES_MATCHING
+    PATTERN "include/vcpkg/*.h" "include/vcpkg/fwd/*.h" "include/vcpkg/base/*.h" "include/vcpkg/base/fwd/*.h"
+)
+
+install(TARGETS vcpkglib RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
