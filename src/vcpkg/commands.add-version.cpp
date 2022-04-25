@@ -116,6 +116,10 @@ namespace
                                  "",
                                  "can't obtain SHA for port {package_name}");
     DECLARE_AND_REGISTER_MESSAGE(AddVersionPortDoesNotExist, (msg::package_name), "", "{package_name} does not exist");
+    DECLARE_AND_REGISTER_MESSAGE(AddVersionDetectLocalChangesError,
+                                 (),
+                                 "",
+                                 "skipping detection of local changes due to unexpected format in git status output");
 
     using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
@@ -468,6 +472,25 @@ namespace vcpkg::Commands::AddVersion
         auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
         auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
+        std::set<std::string> changed_ports;
+        auto maybe_changes = paths.git_builtin_ports_status();
+        if (auto changes = maybe_changes.get())
+        {
+            // each path is in the form /ports/{port_name}/file
+            static constexpr size_t PORT_DIR_NAME = 1;
+            for (auto&& change : *changes)
+            {
+                auto values = Strings::split(change, '/');
+                if (values.size() < 2)
+                {
+                    changed_ports.clear();
+                    msg::print_warning(msgAddVersionDetectLocalChangesError);
+                    break;
+                }
+                changed_ports.emplace(values[PORT_DIR_NAME]);
+            }
+        }
+
         for (auto&& port_name : port_names)
         {
             auto port_dir = paths.builtin_ports_directory() / port_name;
@@ -516,8 +539,7 @@ namespace vcpkg::Commands::AddVersion
             }
 
             // find local uncommitted changes on port
-            auto maybe_changes = paths.git_port_has_local_changes(port_name);
-            if (maybe_changes.has_value() && maybe_changes.value_or_exit(VCPKG_LINE_INFO))
+            if (Util::Sets::contains(changed_ports, port_name))
             {
                 msg::print_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
             }

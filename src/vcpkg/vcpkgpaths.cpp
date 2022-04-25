@@ -33,6 +33,7 @@ namespace
     using namespace vcpkg;
 
     DECLARE_AND_REGISTER_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
+    DECLARE_AND_REGISTER_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
 
     static Path process_input_directory_impl(
         Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
@@ -1008,20 +1009,37 @@ namespace vcpkg
         }
     }
 
-    ExpectedL<bool> VcpkgPaths::git_port_has_local_changes(StringView port_name) const
+    ExpectedL<std::vector<std::string>> VcpkgPaths::git_builtin_ports_status() const
     {
         const auto cmd = git_cmd_builder({}, {})
                              .string_arg("status")
                              .string_arg("--porcelain=v1")
                              .string_arg("--")
-                             .string_arg(Strings::concat("ports/", port_name));
+                             .string_arg("ports/");
+
         auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code == 0)
+        if (output.exit_code != 0)
         {
-            return !output.output.empty();
+            return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
+                .appendnl()
+                .append_raw(output.output);
         }
 
-        return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line());
+        static constexpr size_t STATUS = 0;
+        static constexpr size_t PATH = 1;
+
+        std::vector<std::string> status_paths;
+        auto lines = Strings::split(output.output, '\n');
+        for (auto&& line : lines)
+        {
+            auto&& values = Strings::split(line, ' ');
+            if (values.size() != 2)
+            {
+                return msg::format(msgGitUnexpectedCommandOutput).appendnl().append_raw(output.output);
+            }
+            status_paths.emplace_back(values[PATH]);
+        }
+        return status_paths;
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
