@@ -3056,7 +3056,7 @@ namespace vcpkg
 #if defined(_WIN32)
             auto result = stdfs::last_write_time(to_stdfs_path(target), ec);
             return result.time_since_epoch().count();
-#else  // ^^^ _WIN32 // !_WIN32 vvv
+#else // ^^^ _WIN32 // !_WIN32 vvv
             struct stat s;
             if (::lstat(target.c_str(), &s) == 0)
             {
