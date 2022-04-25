@@ -72,7 +72,7 @@ export abstract class ArtifactRegistry implements Registry {
 
         if (!amf.isValid) {
           for (const err of amf.validationErrors) {
-            repo.session.channels.warning(`Validation errors in metadata file ${err}}`);
+            repo.session.channels.warning(err);
           }
           throw new Error('invalid manifest');
         }
@@ -120,7 +120,7 @@ export abstract class ArtifactRegistry implements Registry {
     }
 
     if (criteria?.keyword) {
-      query.summary.contains(criteria.keyword);
+      query.id.contains(criteria.keyword);
     }
 
     return [...(await this.openArtifacts(query.items, parent)).entries()].map(each => [this, ...each]);

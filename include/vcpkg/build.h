@@ -5,9 +5,10 @@
 #include <vcpkg/fwd/portfileprovider.h>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
-#include <vcpkg/base/zstringview.h>
 
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/packagespec.h>
@@ -25,13 +26,14 @@ namespace vcpkg
 {
     struct BinaryCache;
     struct Environment;
+
+    DECLARE_MESSAGE(ElapsedForPackage, (msg::spec, msg::elapsed), "", "Elapsed time to handle {spec}: {elapsed}");
 }
 
 namespace vcpkg::Build
 {
     enum class BuildResult
     {
-        NULLVALUE = 0,
         SUCCEEDED,
         BUILD_FAILED,
         POST_BUILD_CHECKS_FAILED,
@@ -39,7 +41,8 @@ namespace vcpkg::Build
         CASCADED_DUE_TO_MISSING_DEPENDENCIES,
         EXCLUDED,
         CACHE_MISSING,
-        DOWNLOADED
+        DOWNLOADED,
+        REMOVED
     };
 
     struct IBuildLogsRecorder
@@ -56,7 +59,6 @@ namespace vcpkg::Build
         int perform_ex(const VcpkgCmdArguments& args,
                        const FullPackageSpec& full_spec,
                        Triplet host_triplet,
-                       const SourceControlFileAndLocation& scfl,
                        const PortFileProvider::PathsPortFileProvider& provider,
                        BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
@@ -64,7 +66,6 @@ namespace vcpkg::Build
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
                                  const FullPackageSpec& full_spec,
                                  Triplet host_triplet,
-                                 const SourceControlFileAndLocation& scfl,
                                  const PortFileProvider::PathsPortFileProvider& provider,
                                  BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
@@ -197,7 +198,6 @@ namespace vcpkg::Build
 
     struct BuildResultCounts
     {
-        int null_value = 0;
         int succeeded = 0;
         int build_failed = 0;
         int post_build_checks_failed = 0;
@@ -206,6 +206,7 @@ namespace vcpkg::Build
         int excluded = 0;
         int cache_missing = 0;
         int downloaded = 0;
+        int removed = 0;
 
         void increment(const BuildResult build_result);
         void println(const Triplet& triplet) const;
@@ -213,8 +214,8 @@ namespace vcpkg::Build
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
-    std::string create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
-                                                    const VcpkgPaths& paths);
+    LocalizedString create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
+                                                        const VcpkgPaths& paths);
 
     /// <summary>
     /// Settings from the triplet file which impact the build environment and post-build checks
@@ -254,7 +255,7 @@ namespace vcpkg::Build
 
     struct ExtendedBuildResult
     {
-        ExtendedBuildResult(BuildResult code);
+        explicit ExtendedBuildResult(BuildResult code);
         ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps);
         ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 

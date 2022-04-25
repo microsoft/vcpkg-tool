@@ -107,6 +107,11 @@ namespace vcpkg
             const T& value() const { return this->m_t; }
             T& value() { return this->m_t; }
 
+            const T* get() const& { return m_is_present ? &m_t : nullptr; }
+            T* get() & { return m_is_present ? &m_t : nullptr; }
+            const T* get() const&& = delete;
+            T* get() && = delete;
+
             void destroy()
             {
                 m_is_present = false;
@@ -180,6 +185,11 @@ namespace vcpkg
             const T& value() const { return this->m_t; }
             T& value() { return this->m_t; }
 
+            const T* get() const& { return m_is_present ? &m_t : nullptr; }
+            T* get() & { return m_is_present ? &m_t : nullptr; }
+            const T* get() const&& = delete;
+            T* get() && = delete;
+
             template<class... Args>
             T& emplace(Args&&... args)
             {
@@ -228,6 +238,8 @@ namespace vcpkg
                 return *m_t;
             }
 
+            T* get() const { return m_t; }
+
         private:
             T* m_t;
         };
@@ -246,6 +258,8 @@ namespace vcpkg
 
             const T& value() const { return *this->m_t; }
 
+            const T* get() const { return m_t; }
+
             const T& emplace(const T& t)
             {
                 m_t = &t;
@@ -260,6 +274,10 @@ namespace vcpkg
     template<class T>
     struct Optional
     {
+    private:
+        details::OptionalStorage<T> m_base;
+
+    public:
         constexpr Optional() noexcept { }
 
         // Constructors are intentionally implicit
@@ -320,12 +338,11 @@ namespace vcpkg
             return this->m_base.has_value() ? std::move(this->m_base.value()) : static_cast<T&&>(default_value);
         }
 
-        typename std::add_pointer<const T>::type get() const
-        {
-            return this->m_base.has_value() ? &this->m_base.value() : nullptr;
-        }
-
-        typename std::add_pointer<T>::type get() { return this->m_base.has_value() ? &this->m_base.value() : nullptr; }
+        // this allows us to error out when `.get()` would return a pointer to a temporary
+        decltype(auto) get() const& { return this->m_base.get(); }
+        decltype(auto) get() & { return this->m_base.get(); }
+        decltype(auto) get() const&& { return std::move(this->m_base).get(); }
+        decltype(auto) get() && { return std::move(this->m_base).get(); }
 
         template<class F>
         using map_t = decltype(std::declval<F&>()(std::declval<const T&>()));
@@ -396,9 +413,6 @@ namespace vcpkg
             return !rhs.m_base.has_value();
         }
         friend bool operator!=(const Optional& lhs, const Optional& rhs) noexcept { return !(lhs == rhs); }
-
-    private:
-        details::OptionalStorage<T> m_base;
     };
 
     template<class U>
@@ -407,28 +421,44 @@ namespace vcpkg
         return Optional<std::decay_t<U>>(std::forward<U>(u));
     }
 
-    template<class T>
-    bool operator==(const Optional<T>& o, const T& t)
+    // these cannot be hidden friends, unfortunately
+    template<class T, class U>
+    auto operator==(const Optional<T>& lhs, const Optional<U>& rhs) -> decltype(*lhs.get() == *rhs.get())
     {
-        if (auto p = o.get()) return *p == t;
-        return false;
+        if (lhs.has_value() && rhs.has_value())
+        {
+            return *lhs.get() == *rhs.get();
+        }
+        return lhs.has_value() == rhs.has_value();
     }
-    template<class T>
-    bool operator==(const T& t, const Optional<T>& o)
+    template<class T, class U>
+    auto operator==(const Optional<T>& lhs, const U& rhs) -> decltype(*lhs.get() == rhs)
     {
-        if (auto p = o.get()) return t == *p;
-        return false;
+        return lhs.has_value() ? *lhs.get() == rhs : false;
     }
-    template<class T>
-    bool operator!=(const Optional<T>& o, const T& t)
+    template<class T, class U>
+    auto operator==(const T& lhs, const Optional<U>& rhs) -> decltype(lhs == *rhs.get())
     {
-        if (auto p = o.get()) return *p != t;
-        return true;
+        return rhs.has_value() ? lhs == *rhs.get() : false;
     }
-    template<class T>
-    bool operator!=(const T& t, const Optional<T>& o)
+
+    template<class T, class U>
+    auto operator!=(const Optional<T>& lhs, const Optional<U>& rhs) -> decltype(*lhs.get() != *rhs.get())
     {
-        if (auto p = o.get()) return t != *p;
-        return true;
+        if (lhs.has_value() && rhs.has_value())
+        {
+            return *lhs.get() != *rhs.get();
+        }
+        return lhs.has_value() != rhs.has_value();
+    }
+    template<class T, class U>
+    auto operator!=(const Optional<T>& lhs, const U& rhs) -> decltype(*lhs.get() != rhs)
+    {
+        return lhs.has_value() ? *lhs.get() != rhs : true;
+    }
+    template<class T, class U>
+    auto operator!=(const T& lhs, const Optional<U>& rhs) -> decltype(lhs != *rhs.get())
+    {
+        return rhs.has_value() ? lhs != *rhs.get() : true;
     }
 }

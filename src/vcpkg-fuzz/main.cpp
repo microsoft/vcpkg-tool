@@ -1,7 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/unicode.h>
 
 #include <vcpkg/platform-expression.h>
@@ -16,6 +16,18 @@ using namespace vcpkg;
 
 namespace
 {
+    DECLARE_AND_REGISTER_MESSAGE(FuzzInvalidKind, (msg::value), "example of {value} is 'utf-8'", "invalid kind: {}");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzExpectedOneOf,
+                                 (),
+                                 "the list after the colon should stay the same, they're literal values",
+                                 "expected one of: utf-8, json, platform-expr");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}");
+
+    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpInput, (), "", "accepts input on stdin.");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptions, (), "", "options:");
+    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptionKind, (), "", "one of {{utf-8, json, platform-expr}}");
+
     enum class FuzzKind
     {
         None,
@@ -68,14 +80,16 @@ namespace
                     }
                     else
                     {
-                        print2(Color::error, "Invalid kind: ", value, "\n");
-                        print2(Color::error, "  Expected one of: utf-8, json, platform-expr\n\n");
+                        msg::print_error(msg::format(msgFuzzInvalidKind, msg::value = value)
+                                             .appendnl()
+                                             .append_indent()
+                                             .append(msgFuzzExpectedOneOf));
                         print_help_and_exit(true);
                     }
                 }
                 else
                 {
-                    print2("Unknown option: ", key, "\n\n");
+                    msg::print_error(msgFuzzUnknownOption, msg::option = key);
                     print_help_and_exit(true);
                 }
             }
@@ -99,19 +113,30 @@ namespace
 
         [[noreturn]] void print_help_and_exit(bool invalid = false)
         {
-            constexpr auto help =
-                R"(
-Usage: vcpkg-fuzz <options>
+            auto color = invalid ? Color::error : Color::none;
 
-Accepts input on stdin.
+            auto message = msg::format(msgFuzzHelpUsage).appendnl().appendnl();
+            message.append(msgFuzzHelpInput).appendnl().appendnl();
+            message.append(msgFuzzHelpOptions).appendnl();
 
-Options:
-  --kind=...                One of {utf-8, json}
-)";
+            struct
+            {
+                StringLiteral option;
+                LocalizedString help;
+            } options[] = {
+                {"kind", msg::format(msgFuzzHelpOptionKind)},
+            };
 
-            auto color = invalid ? Color::error : Color::success;
+            for (const auto& option : options)
+            {
+                auto start_option = fmt::format("  --{}=...", option.option);
+                message.append_raw(start_option)
+                    .append_raw(std::string(30 - start_option.size(), ' '))
+                    .append(option.help)
+                    .appendnl();
+            }
 
-            print2(color, help);
+            msg::print(color, message);
             if (invalid)
             {
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -176,6 +201,8 @@ Options:
 
 int main(int argc, char** argv)
 {
+    msg::threadunsafe_initialize_context();
+
     auto args = FuzzArgs(argc, argv);
 
     if (args.kind == FuzzKind::None)

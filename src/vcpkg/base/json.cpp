@@ -1,13 +1,23 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/unicode.h>
 
 #include <vcpkg/documentation.h>
 
 #include <inttypes.h>
+
+namespace
+{
+    using namespace vcpkg;
+    DECLARE_AND_REGISTER_MESSAGE(JsonErrorFailedToRead,
+                                 (msg::path, msg::error_msg),
+                                 "",
+                                 "failed to read {path}: {error_msg}");
+    DECLARE_AND_REGISTER_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
+}
 
 namespace vcpkg::Json
 {
@@ -340,13 +350,13 @@ namespace vcpkg::Json
     Value& Object::insert(StringView key, std::string&& value) { return insert(key, Value::string(std::move(value))); }
     Value& Object::insert(StringView key, Value&& value)
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key), "key '%s' already exists in object", key);
         underlying_.emplace_back(key.to_string(), std::move(value));
         return underlying_.back().second;
     }
     Value& Object::insert(StringView key, const Value& value)
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key), "key '%s' already exists in object", key);
         underlying_.emplace_back(key.to_string(), value);
         return underlying_.back().second;
     }
@@ -1087,13 +1097,14 @@ namespace vcpkg::Json
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            print2(Color::error, "Failed to read ", json_file, ": ", ec.message(), "\n");
+            msg::print_error(msgJsonErrorFailedToRead, msg::path = json_file, msg::error_msg = ec);
             Checks::exit_fail(li);
         }
         else if (!ret)
         {
-            print2(Color::error, "Failed to parse ", json_file, ":\n");
-            print2(ret.error()->format());
+            msg::print_error(msgJsonErrorFailedToParse, msg::path = json_file);
+            msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->format());
+            msg::println();
             Checks::exit_fail(li);
         }
         return ret.value_or_exit(li);

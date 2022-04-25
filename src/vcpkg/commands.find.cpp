@@ -1,3 +1,4 @@
+#include <vcpkg/base/hash.h>
 #include <vcpkg/base/system.print.h>
 
 #include <vcpkg/commands.find.h>
@@ -5,6 +6,7 @@
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
+#include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
@@ -224,11 +226,27 @@ namespace vcpkg::Commands
                 print2(Color::warning, "--x-json has no effect on find artifact\n");
             }
 
+            auto metrics = LockGuardPtr<Metrics>(g_metrics);
+            metrics->track_property("command_context", "artifact");
+            if (filter.has_value())
+            {
+                metrics->track_property(
+                    "command_args",
+                    Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
+            }
             perform_find_artifact_and_exit(paths, filter);
         }
 
         if (selector == "port")
         {
+            auto metrics = LockGuardPtr<Metrics>(g_metrics);
+            metrics->track_property("command_context", "port");
+            if (filter.has_value())
+            {
+                metrics->track_property(
+                    "command_args",
+                    Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
+            }
             perform_find_port_and_exit(paths, full_description, enable_json, filter, args.overlay_ports);
         }
 

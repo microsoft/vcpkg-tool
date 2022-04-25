@@ -16,7 +16,6 @@ export /** @internal */ class ScalarMap<TElement extends Primitive = Primitive> 
     this.node.set(key, value);
   }
 
-
   add(key: string): TElement {
     this.assert(true);
     this.node.set(key, '');
@@ -26,9 +25,8 @@ export /** @internal */ class ScalarMap<TElement extends Primitive = Primitive> 
   *[Symbol.iterator](): Iterator<[string, TElement]> {
     if (this.node) {
       for (const { key, value } of this.node.items) {
-        const v = isScalar(value) ? this.asPrimitive(value) : undefined;
-        if (v) {
-          yield [key, value];
+        if (isScalar(value)) {
+          yield [this.asString(key)!, <any>this.asPrimitive(value)];
         }
       }
     }
