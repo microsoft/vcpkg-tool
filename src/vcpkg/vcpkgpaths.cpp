@@ -1025,7 +1025,10 @@ namespace vcpkg
                 .append_raw(output.output);
         }
 
-        static constexpr size_t STATUS = 0;
+        // Output of git status --porcelain=v1 is in the form: XY PATH
+        // where X represents the index status and Y the working tree status
+        // for now we ignore the status and only care about the paths
+        // static constexpr size_t STATUS = 0;
         static constexpr size_t PATH = 1;
 
         std::vector<std::string> status_paths;
