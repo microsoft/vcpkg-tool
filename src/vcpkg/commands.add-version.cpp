@@ -1,6 +1,8 @@
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.print.h>
 
@@ -472,23 +474,17 @@ namespace vcpkg::Commands::AddVersion
         auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
         auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
+        // Find ports with uncommited changes
         std::set<std::string> changed_ports;
-        auto maybe_changes = paths.git_builtin_ports_status();
+        auto git_config = paths.git_builtin_config();
+        auto maybe_changes = git_ports_with_uncommitted_changes(git_config);
         if (auto changes = maybe_changes.get())
         {
-            // each path is in the form /ports/{port_name}/file
-            static constexpr size_t PORT_DIR_NAME = 1;
-            for (auto&& change : *changes)
-            {
-                auto values = Strings::split(change, '/');
-                if (values.size() < 2)
-                {
-                    changed_ports.clear();
-                    msg::print_warning(msgAddVersionDetectLocalChangesError);
-                    break;
-                }
-                changed_ports.emplace(values[PORT_DIR_NAME]);
-            }
+            changed_ports.insert(changes->begin(), changes->end());
+        }
+        else if (verbose)
+        {
+            msg::print_warning(msgAddVersionDetectLocalChangesError);
         }
 
         for (auto&& port_name : port_names)

@@ -32,9 +32,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
-    DECLARE_AND_REGISTER_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
-
     static Path process_input_directory_impl(
         Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
     {
@@ -913,6 +910,15 @@ namespace vcpkg
         return m_pimpl->m_tool_cache->get_tool_version(*this, tool);
     }
 
+    GitConfig VcpkgPaths::git_builtin_config() const
+    {
+        GitConfig conf;
+        conf.git_exe = get_tool_exe(Tools::GIT);
+        conf.git_dir = this->root / ".git";
+        conf.git_work_tree = this->root;
+        return conf;
+    }
+
     Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
     {
         Command ret(get_tool_exe(Tools::GIT));
@@ -1007,42 +1013,6 @@ namespace vcpkg
         {
             return {std::move(output.output), expected_right_tag};
         }
-    }
-
-    ExpectedL<std::vector<std::string>> VcpkgPaths::git_builtin_ports_status() const
-    {
-        const auto cmd = git_cmd_builder({}, {})
-                             .string_arg("status")
-                             .string_arg("--porcelain=v1")
-                             .string_arg("--")
-                             .string_arg("ports/");
-
-        auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code != 0)
-        {
-            return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-                .appendnl()
-                .append_raw(output.output);
-        }
-
-        // Output of git status --porcelain=v1 is in the form: XY PATH
-        // where X represents the index status and Y the working tree status
-        // for now we ignore the status and only care about the paths
-        // static constexpr size_t STATUS = 0;
-        static constexpr size_t PATH = 1;
-
-        std::vector<std::string> status_paths;
-        auto lines = Strings::split(output.output, '\n');
-        for (auto&& line : lines)
-        {
-            auto&& values = Strings::split(line, ' ');
-            if (values.size() != 2)
-            {
-                return msg::format(msgGitUnexpectedCommandOutput).appendnl().append_raw(output.output);
-            }
-            status_paths.emplace_back(values[PATH]);
-        }
-        return status_paths;
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
