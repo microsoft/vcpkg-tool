@@ -11,6 +11,7 @@
 
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/lazy.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.h>
@@ -130,6 +131,7 @@ namespace vcpkg
         const Path& get_tool_exe(StringView tool) const;
         const std::string& get_tool_version(StringView tool) const;
 
+        GitConfig git_builtin_config() const;
         Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
 
         // Git manipulation in the vcpkg directory
@@ -140,7 +142,6 @@ namespace vcpkg
 
         const DownloadManager& get_download_manager() const;
 
-        ExpectedL<bool> git_port_has_local_changes(StringView port_name) const;
         ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
 
         // Git manipulation for remote registries
