@@ -7,21 +7,18 @@
 
 #if !defined(_WIN32)
 #include <net/if.h>
-
-#if defined(VCPKG_HAVE_IFADDRS)
+#if defined(__APPLE__)
 #include <ifaddrs.h>
 
-#if defined(AF_PACKET)
-#include <netpacket/packet.h>
-#define AF_TYPE AF_PACKET
-#elif defined(AF_LINK)
 #include <net/if_dl.h>
 #define AF_TYPE AF_LINK
-#endif
-#endif
+#elif defined(__linux__)
+#include <ifaddrs.h>
 
+#include <netpacket/packet.h>
+#define AF_TYPE AF_PACKET
+#else
 // Fallback to use ioctl calls for systems without getifaddrs()
-#if !defined(VCPKG_HAVE_IFADDRS) || !defined(AF_TYPE)
 #include <unistd.h>
 
 #include <netinet/in.h>
@@ -134,7 +131,7 @@ namespace vcpkg
         {
             return first->second;
         }
-#elif defined(VCPKG_HAVE_IFADDRS) && defined(AF_TYPE)
+#elif defined(__linux__) || defined(__APPLE__)
         // The getifaddrs(ifaddrs** ifap) function creates a linked list of structures
         // describing the network interfaces of the local system, and stores
         // the address of the first item of the list in *ifap.
@@ -172,11 +169,11 @@ namespace vcpkg
                 // AF_PACKET and sockaddr_ll: https://man7.org/linux/man-pages/man7/packet.7.html
                 // AF_LINK and sockaddr_dl: https://illumos.org/man/3SOCKET/sockaddr_dl
                 std::memset(bytes, 0, MAC_BYTES_LENGTH);
-#if defined(AF_PACKET)
+#if defined(__linux__)
                 auto address = reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
                 if (address->sll_halen != MAC_BYTES_LENGTH) continue;
                 std::memcpy(bytes, address->sll_addr, MAC_BYTES_LENGTH);
-#elif defined(AF_LINK)
+#elif defined(__APPLE__)
                 auto address = reinterpret_cast<sockaddr_dl*>(interface->ifa_addr);
                 if (address->sdl_alen != MAC_BYTES_LENGTH) continue;
                 // The macro LLADDR() returns the start of the link-layer network address.
@@ -189,7 +186,7 @@ namespace vcpkg
             }
         }
         return preferred_interface_or_default(ifname_mac_map);
-#elif defined(SIOCGIFHWADDR)
+#else
         // fallback when getifaddrs() is not available
         struct socket_guard
         {
