@@ -14,9 +14,10 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(GitUnexpectedCommandOutput, (), "", "unexpected git output");
     DECLARE_AND_REGISTER_MESSAGE(GitStatusUnknownFileStatus,
                                  (msg::value),
-                                 "{value} is a single character indicating file status, e.g.: A, U, M, D",
+                                 "{value} is a single character indicating file status, for example: A, U, M, D",
                                  "unknown file status: {value}");
     DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
+    DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
     DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines");
 
     Command git_cmd_builder(const GitConfig& config)
@@ -39,18 +40,12 @@ namespace vcpkg
 {
     std::string try_extract_port_name_from_path(StringView path)
     {
-        using std::begin;
-        using std::end;
-
         static constexpr StringLiteral prefix = "ports/";
         static constexpr size_t min_path_size = sizeof("ports/*/") - 1;
         if (path.size() >= min_path_size && Strings::starts_with(path, prefix))
         {
-            using std::begin;
-            using std::end;
-
             auto no_prefix = path.substr(prefix.size());
-            auto slash = Strings::find_first_of(no_prefix, "/");
+            auto slash = std::find(no_prefix.begin(), no_prefix.end(), '/');
             if (slash != no_prefix.end())
             {
                 return std::string(no_prefix.begin(), slash);
@@ -63,17 +58,16 @@ namespace vcpkg
     {
         // Output of git status --porcelain=v1 is in the form:
         //
-        // XY PATH
+        // XY ORIG_PATH
         // or
-        // XY ORIG_PATH -> PATH
+        // XY ORIG_PATH -> NEW_PATH
         //
         // X: is the status on the index
         // Y: is the status on the work tree
         // ORIG_PATH: is the original filepath for rename operations
         // PATH: is the path of the modified file
-        static constexpr StringLiteral RENAME_TOKEN = "->";
-        static constexpr auto skip_whitespace_but_no_lineend = [](char32_t c) { return c == ' ' || c == '\t'; };
-
+        //
+        // https://git-scm.com/docs/git-status
         auto extract_status = [](ParserBase& parser, GitStatusLine::Status& into) -> bool {
             using Status = GitStatusLine::Status;
 
@@ -101,37 +95,44 @@ namespace vcpkg
 
         std::vector<GitStatusLine> results;
         ParserBase parser(output, "git status");
-        for (;;)
+        while (!parser.at_eof())
         {
-            if (parser.at_eof())
-            {
-                break;
-            }
-
             GitStatusLine result;
+
+            // Parse "XY"
             if (!extract_status(parser, result.index_status) || !extract_status(parser, result.work_tree_status))
             {
                 break;
             }
-            parser.skip_whitespace();
+            parser.skip_tabs_spaces();
+
+            // Parse "ORIG_PATH"
             auto orig_path = parser.match_until(ParserBase::is_whitespace).to_string();
-            parser.match_while(skip_whitespace_but_no_lineend);
             if (ParserBase::is_lineend(parser.cur()))
             {
                 result.path = orig_path;
             }
-            else if (parser.try_match_keyword(RENAME_TOKEN))
-            {
-                parser.skip_whitespace();
-                auto path = parser.match_until(ParserBase::is_whitespace).to_string();
-                result.original_path = orig_path;
-                result.path = path;
-                parser.match_while(skip_whitespace_but_no_lineend);
-            }
             else
             {
-                parser.add_error(msg::format(msgGitStatusOutputExpectedRenameOrNewline), parser.cur_loc());
-                break;
+                // Parse "-> NEW_PATH"
+                parser.skip_tabs_spaces();
+                if (parser.try_match_keyword("->"))
+                {
+                    parser.skip_tabs_spaces();
+                    if (ParserBase::is_lineend(parser.cur()))
+                    {
+                        parser.add_error(msg::format(msgGitStatusOutputExpectedFileName), parser.cur_loc());
+                        break;
+                    }
+                    auto path = parser.match_until(ParserBase::is_whitespace).to_string();
+                    result.old_path = orig_path;
+                    result.path = path;
+                }
+                else
+                {
+                    parser.add_error(msg::format(msgGitStatusOutputExpectedRenameOrNewline), parser.cur_loc());
+                    break;
+                }
             }
 
             if (!ParserBase::is_lineend(parser.cur()))
@@ -139,6 +140,7 @@ namespace vcpkg
                 parser.add_error(msg::format(msgGitStatusOutputExpectedNewLine), parser.cur_loc());
                 break;
             }
+
             parser.next();
             results.push_back(result);
         }

@@ -35,8 +35,7 @@ namespace vcpkg
         Status index_status = Status::Unknown;
         Status work_tree_status = Status::Unknown;
         std::string path;
-        std::string original_path;
-        std::string full_line;
+        std::string old_path;
     };
 
     // Try to extract a port name from a path.
