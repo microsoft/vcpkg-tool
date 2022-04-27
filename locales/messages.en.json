@@ -102,7 +102,7 @@
   "GraphCycleDetected": "Cycle detected within graph at {package_name}:",
   "HashFileFailureToRead": "failed to read file '{path}' for hashing: ",
   "HeaderOnlyUsage": "{package_name} is header-only and can be used from CMake via:",
-  "IllegalFeatures": "error: List of features is not allowed in this contect",
+  "IllegalFeatures": "error: List of features is not allowed in this context",
   "IllegalPlatformSpec": "error: Platform qualifier is not allowed in this context",
   "InstallingPackage": "Installing {action_index}/{count} {spec}...",
   "InternalErrorMessage": "internal error: ",
