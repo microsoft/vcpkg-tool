@@ -39,6 +39,11 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).)");
     REQUIRE(result.has_value());
     CHECK(*result.get() == ToolVersion::from_values({3, 22, 2}));
 
+    result = ToolVersion::try_parse_numeric(R"(cmake version 3.22.2......
+CMake suite maintained and supported by Kitware (kitware.com/cmake).)");
+    REQUIRE(result.has_value());
+    CHECK(*result.get() == ToolVersion::from_values({3, 22, 2}));
+
     result = ToolVersion::try_parse_numeric(R"(aria2 version 1.35.0
 Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa)");
     REQUIRE(result.has_value());

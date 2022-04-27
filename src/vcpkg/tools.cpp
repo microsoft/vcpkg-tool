@@ -62,7 +62,7 @@ git version 2.17.1.windows.2
 
 Expected result: 2.17.1.windows.2 / {2, 17, 1, 2}
 */
-        constexpr StringLiteral prefix = "git version ";
+        static constexpr StringLiteral prefix = "git version ";
         auto first = git_version.begin();
         const auto last = git_version.end();
 
