@@ -55,7 +55,7 @@ namespace
                                  "'header' refers to C/C++ .h files",
                                  "{package_name} is header-only and can be used from CMake via:");
     DECLARE_AND_REGISTER_MESSAGE(
-        CMakeTargetsUsageHueristicMessage,
+        CMakeTargetsUsageHeuristicMessage,
         (),
         "Displayed after CMakeTargetsUsage; the # must be kept at the beginning so that the message remains a comment.",
         "# this is heuristically generated, and may not be correct");
@@ -824,7 +824,7 @@ namespace vcpkg::Install
             else
             {
                 auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).appendnl();
-                msg.append_indent().append(msgCMakeTargetsUsageHueristicMessage).appendnl();
+                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).appendnl();
 
                 for (auto&& library_target_pair : library_targets)
                 {
