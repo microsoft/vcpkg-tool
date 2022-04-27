@@ -232,16 +232,18 @@ namespace vcpkg
     {
         std::string result;
 #if defined(_WIN32)
-        auto free = [](LPWCH p) { FreeEnvironmentStringsW(p); };
-        std::unique_ptr<WCHAR, decltype(free)> env_block(GetEnvironmentStringsW(), free);
-
-        for (LPWCH i = env_block.get();;)
+        struct EnvironmentStringsW
         {
-            auto this_length = strlen(i);
-            if (this_length == 0) { break; }
-            result += Strings::to_utf8(i, this_length);
-            result += '\n';
-            i += this_length + 1;
+            LPWCH strings;
+            EnvironmentStringsW() : strings(GetEnvironmentStringsW()) { }
+            ~EnvironmentStringsW() { FreeEnvironmentStringsW(strings); }
+            EnvironmentStringsW(const EnvironmentStringsW&) = delete;
+        } env_block;
+
+        size_t len;
+        for (LPWCH i = env_block.strings; 0 != (len = wcslen(i)); i += len + 1)
+        {
+            result.append(Strings::to_utf8(i, len)).push_back('\n');
         }
 #else
         char** s = environ;
