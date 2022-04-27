@@ -41,6 +41,7 @@ namespace vcpkg
 
     struct ToolVersion
     {
+        // Has no semantic meaning -- this is only used for pretty user output
         std::string original_text;
         std::vector<uint64_t> version;
 

@@ -24,7 +24,12 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(ToolVersionMetadataIllFormed,
                                  (msg::actual),
                                  "{actual} is the actual text attempted to be parsed as a version number",
-                                 "Unable to recognize {actual} as a tool version number.");
+                                 "Unable to recognize '{actual}' as a tool version number.");
+
+    DECLARE_AND_REGISTER_MESSAGE(GitVersionIllFormed,
+                                 (),
+                                 "Displayed when parsing a git version fails.",
+                                 "Unexpected output of git when attempting to determine git's version.");
 }
 
 namespace vcpkg
@@ -55,35 +60,58 @@ namespace vcpkg
         /* Sample output:
 git version 2.17.1.windows.2
 
-Expected result: 2.17.1.2
+Expected result: 2.17.1.windows.2 / {2, 17, 1, 2}
 */
         constexpr StringLiteral prefix = "git version ";
         auto first = git_version.begin();
         const auto last = git_version.end();
 
         first = std::search(first, last, prefix.begin(), prefix.end());
-        if (first != last)
+        if (first == last)
         {
-            first += prefix.size();
+            return msg::format(msg::msgErrorMessage).append(msgGitVersionIllFormed).appendnl().append_raw(git_version);
         }
 
-        std::string accumulator;
-        for (; first != last; ++first)
+        first += prefix.size();
+        const auto original_start = first;
+        ToolVersion result;
+        const char* last_first_numeric = nullptr;
+        bool accept_numeric = true;
+        for (; first != last && !ParserBase::is_whitespace(*first); ++first)
         {
             if (*first == '.')
             {
-                if (accumulator.empty() || accumulator.back() != '.')
+                accept_numeric = true;
+                if (last_first_numeric)
                 {
-                    accumulator.push_back(*first);
+                    StringView this_number{last_first_numeric, first};
+                    result.version.push_back(Strings::strto<long long>(this_number).value_or_exit(VCPKG_LINE_INFO));
+                    last_first_numeric = nullptr;
                 }
             }
-            else if (ParserBase::is_ascii_digit(*first))
+            else if (ParserBase::is_ascii_digit(*first) && accept_numeric)
             {
-                accumulator.push_back(*first);
+                if (last_first_numeric == nullptr)
+                {
+                    last_first_numeric = first;
+                }
+            }
+            else
+            {
+                // ban this block between dots because it contains non-numeric content
+                accept_numeric = false;
+                last_first_numeric = nullptr;
             }
         }
 
-        return ToolVersion::try_parse_numeric(accumulator);
+        if (last_first_numeric)
+        {
+            StringView this_number{last_first_numeric, first};
+            result.version.push_back(Strings::strto<long long>(this_number).value_or_exit(VCPKG_LINE_INFO));
+        }
+
+        result.original_text.assign(original_start, first - original_start);
+        return result;
     }
 
     ExpectedL<ToolVersion> ToolVersion::try_parse_numeric(StringView string_version)

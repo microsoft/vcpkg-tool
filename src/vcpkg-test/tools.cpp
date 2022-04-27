@@ -58,12 +58,41 @@ Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa)");
 
 TEST_CASE ("parse git version", "[tools]")
 {
-    REQUIRE(ToolVersion::try_parse_git("git version 2.17.1.windows.2\n").value_or_exit(VCPKG_LINE_INFO) ==
-            ToolVersion::try_parse_numeric("2.17.1.2").value_or_exit(VCPKG_LINE_INFO));
-    REQUIRE(ToolVersion::try_parse_git("git version 2.17.1.2\n").value_or_exit(VCPKG_LINE_INFO) ==
-            ToolVersion::try_parse_numeric("2.17.1.2").value_or_exit(VCPKG_LINE_INFO));
-    REQUIRE(ToolVersion::try_parse_git("git version 2.17.1.2").value_or_exit(VCPKG_LINE_INFO) ==
-            ToolVersion::try_parse_numeric("2.17.1.2").value_or_exit(VCPKG_LINE_INFO));
+    {
+        auto result = ToolVersion::try_parse_git("git version 2.17.1.windows.2\n").value_or_exit(VCPKG_LINE_INFO);
+        CHECK(result.original_text == "2.17.1.windows.2");
+        CHECK(result.version == std::vector<uint64_t>{2, 17, 1, 2});
+    }
 
-    REQUIRE(!ToolVersion::try_parse_git("2.17.1.2").has_value());
+    {
+        auto result = ToolVersion::try_parse_git("git version 2.17.....1.windows.2\n").value_or_exit(VCPKG_LINE_INFO);
+        CHECK(result.original_text == "2.17.....1.windows.2");
+        CHECK(result.version == std::vector<uint64_t>{2, 17, 1, 2});
+    }
+
+    {
+        auto result = ToolVersion::try_parse_git("git version 2.17.....1.windows.2..\n").value_or_exit(VCPKG_LINE_INFO);
+        CHECK(result.original_text == "2.17.....1.windows.2..");
+        CHECK(result.version == std::vector<uint64_t>{2, 17, 1, 2});
+    }
+
+    {
+        auto result = ToolVersion::try_parse_git("git version 2.17.1.2\n").value_or_exit(VCPKG_LINE_INFO);
+        CHECK(result.original_text == "2.17.1.2");
+        CHECK(result.version == std::vector<uint64_t>{2, 17, 1, 2});
+    }
+
+    {
+        auto result = ToolVersion::try_parse_git("git version 2.17.1.2").value_or_exit(VCPKG_LINE_INFO);
+        CHECK(result.original_text == "2.17.1.2");
+        CHECK(result.version == std::vector<uint64_t>{2, 17, 1, 2});
+    }
+
+    {
+        auto result = ToolVersion::try_parse_git("git version 2.2\n").value_or_exit(VCPKG_LINE_INFO);
+        CHECK(result.original_text == "2.2");
+        CHECK(result.version == std::vector<uint64_t>{2, 2});
+    }
+
+    CHECK(!ToolVersion::try_parse_git("2.17.1.2").has_value());
 }
