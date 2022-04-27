@@ -5,6 +5,7 @@
 #if defined(_MSC_VER)
 // pch.h only is used for performance with MSVC
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/pragmas.h>
 #endif

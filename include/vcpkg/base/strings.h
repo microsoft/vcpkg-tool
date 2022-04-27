@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
@@ -9,6 +10,7 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <type_traits>
 #include <vector>
 
 namespace vcpkg::Strings::details
@@ -41,21 +43,18 @@ namespace vcpkg::Strings::details
 
     std::string format_internal(const char* fmtstr, ...);
 
-    inline void append_internal(std::string& into, char c) { into += c; }
-    template<class T, class = decltype(std::to_string(std::declval<T>()))>
+    inline void append_internal(std::string& into, char c) { into.push_back(c); }
+    template<class T, std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
     inline void append_internal(std::string& into, T x)
     {
-        into += std::to_string(x);
+        fmt::format_to(std::back_inserter(into), FMT_STRING("{}"), x);
     }
     inline void append_internal(std::string& into, const char* v) { into.append(v); }
     inline void append_internal(std::string& into, const std::string& s) { into.append(s); }
-    inline void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
+    inline void append_internal(std::string& into, StringView s) { into.append(s.data(), s.size()); }
     inline void append_internal(std::string& into, LineInfo ln)
     {
-        into.append(ln.file_name);
-        into.push_back(':');
-        into += std::to_string(ln.line_number);
-        into.push_back(':');
+        fmt::format_to(std::back_inserter(into), FMT_STRING("{}:{}:"), ln.file_name, ln.line_number);
     }
 
     template<class T, class = decltype(std::declval<const T&>().to_string(std::declval<std::string&>()))>
@@ -156,45 +155,49 @@ namespace vcpkg::Strings
     bool starts_with(StringView s, StringView pattern);
 
     template<class InputIterator, class Transformer>
-    std::string join(const char* delimiter, InputIterator begin, InputIterator end, Transformer transformer)
+    std::string join(StringView delimiter, InputIterator first, InputIterator last, Transformer transformer)
     {
-        if (begin == end)
-        {
-            return std::string();
-        }
-
         std::string output;
-        append(output, transformer(*begin));
-        for (auto it = std::next(begin); it != end; ++it)
+        if (first != last)
         {
-            output.append(delimiter);
-            append(output, transformer(*it));
+            append(output, transformer(*first));
+            while (++first != last)
+            {
+                output.append(delimiter.data(), delimiter.size());
+                append(output, transformer(*first));
+            }
         }
 
         return output;
     }
 
     template<class Container, class Transformer>
-    std::string join(const char* delimiter, const Container& v, Transformer transformer)
+    std::string join(StringView delimiter, const Container& v, Transformer transformer)
     {
-        const auto begin = std::begin(v);
-        const auto end = std::end(v);
-
-        return join(delimiter, begin, end, transformer);
+        return join(delimiter, std::begin(v), std::end(v), transformer);
     }
 
     template<class InputIterator>
-    std::string join(const char* delimiter, InputIterator begin, InputIterator end)
+    std::string join(StringView delimiter, InputIterator first, InputIterator last)
     {
-        using Element = decltype(*begin);
-        return join(delimiter, begin, end, [](const Element& x) -> const Element& { return x; });
+        std::string output;
+        if (first != last)
+        {
+            append(output, *first);
+            while (++first != last)
+            {
+                output.append(delimiter.data(), delimiter.size());
+                append(output, *first);
+            }
+        }
+
+        return output;
     }
 
     template<class Container>
-    std::string join(const char* delimiter, const Container& v)
+    std::string join(StringView delimiter, const Container& v)
     {
-        using Element = decltype(*std::begin(v));
-        return join(delimiter, v, [](const Element& x) -> const Element& { return x; });
+        return join(delimiter, std::begin(v), std::end(v));
     }
 
     [[nodiscard]] std::string replace_all(const char* s, StringView search, StringView rep);

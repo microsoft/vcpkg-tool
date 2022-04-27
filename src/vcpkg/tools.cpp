@@ -39,20 +39,7 @@ namespace vcpkg
 
     ToolVersion ToolVersion::from_values(std::initializer_list<uint64_t> values)
     {
-        ToolVersion result;
-        result.version = values;
-        auto first = values.begin();
-        const auto last = values.end();
-        if (first != last)
-        {
-            fmt::format_to(std::back_inserter(result.original_text), FMT_STRING("{}"), *first);
-            while (++first != last)
-            {
-                fmt::format_to(std::back_inserter(result.original_text), FMT_STRING(".{}"), *first);
-            }
-        }
-
-        return result;
+        return ToolVersion{Strings::join(".", values.begin(), values.end()), std::vector<uint64_t>(values)};
     }
 
     ExpectedL<ToolVersion> ToolVersion::try_parse_git(StringView git_version)
