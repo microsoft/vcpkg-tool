@@ -365,7 +365,9 @@ Expected result: 2.17.1.windows.2 / {2, 17, 1, 2}
                     .value_or_exit(VCPKG_LINE_INFO)};
     }
 
-    static PathAndVersion get_path(const VcpkgPaths& paths, const ToolProvider& tool, RequireExactVersions compare_kind)
+    static PathAndVersion get_path(const VcpkgPaths& paths,
+                                   const ToolProvider& tool,
+                                   RequireExactVersions compare_kind = RequireExactVersions::NO)
     {
         auto& fs = paths.get_filesystem();
 
@@ -873,7 +875,7 @@ coscli version v0.11.0-beta
                     {
                         return {"git", ToolVersion{}};
                     }
-                    return get_path(paths, GitProvider(), RequireExactVersions::NO);
+                    return get_path(paths, GitProvider());
                 }
                 if (tool == Tools::NINJA)
                 {
@@ -881,7 +883,7 @@ coscli version v0.11.0-beta
                     {
                         return {"ninja", ToolVersion{}};
                     }
-                    return get_path(paths, NinjaProvider(), RequireExactVersions::NO);
+                    return get_path(paths, NinjaProvider());
                 }
                 if (tool == Tools::POWERSHELL_CORE)
                 {
@@ -891,19 +893,18 @@ coscli version v0.11.0-beta
                     }
                     return get_path(paths, PowerShellCoreProvider(), abiToolVersionHandling);
                 }
-                if (tool == Tools::NUGET) return get_path(paths, NuGetProvider(), RequireExactVersions::NO);
-                if (tool == Tools::ARIA2) return get_path(paths, Aria2Provider(), RequireExactVersions::NO);
-                if (tool == Tools::NODE) return get_path(paths, NodeProvider(), RequireExactVersions::NO);
-                if (tool == Tools::IFW_INSTALLER_BASE)
-                    return get_path(paths, IfwInstallerBaseProvider(), RequireExactVersions::NO);
-                if (tool == Tools::MONO) return get_path(paths, MonoProvider(), RequireExactVersions::NO);
+                if (tool == Tools::NUGET) return get_path(paths, NuGetProvider());
+                if (tool == Tools::ARIA2) return get_path(paths, Aria2Provider());
+                if (tool == Tools::NODE) return get_path(paths, NodeProvider());
+                if (tool == Tools::IFW_INSTALLER_BASE) return get_path(paths, IfwInstallerBaseProvider());
+                if (tool == Tools::MONO) return get_path(paths, MonoProvider());
                 if (tool == Tools::GSUTIL)
                 {
                     if (get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
                     {
                         return {"gsutil", ToolVersion{}};
                     }
-                    return get_path(paths, GsutilProvider(), RequireExactVersions::NO);
+                    return get_path(paths, GsutilProvider());
                 }
                 if (tool == Tools::AWSCLI)
                 {
@@ -911,7 +912,7 @@ coscli version v0.11.0-beta
                     {
                         return {"aws", ToolVersion{}};
                     }
-                    return get_path(paths, AwsCliProvider(), RequireExactVersions::NO);
+                    return get_path(paths, AwsCliProvider());
                 }
                 if (tool == Tools::COSCLI)
                 {
@@ -919,7 +920,7 @@ coscli version v0.11.0-beta
                     {
                         return {"cos", ToolVersion{}};
                     }
-                    return get_path(paths, CosCliProvider(), RequireExactVersions::NO);
+                    return get_path(paths, CosCliProvider());
                 }
                 if (tool == Tools::TAR)
                 {
