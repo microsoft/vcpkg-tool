@@ -46,7 +46,7 @@ namespace vcpkg
                                  (),
                                  "",
                                  "error: Platform qualifier is not allowed in this context");
-    DECLARE_AND_REGISTER_MESSAGE(IllegalFeatures, (), "", "error: List of features is not allowed in this contect");
+    DECLARE_AND_REGISTER_MESSAGE(IllegalFeatures, (), "", "error: List of features is not allowed in this context");
 
     static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
