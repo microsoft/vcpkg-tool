@@ -102,7 +102,7 @@
   "GraphCycleDetected": "{package_name} paketindeki grafik içinde döngü algılandı:",
   "HashFileFailureToRead": "'{path}' dosyası karma işlevi için okunamadı: ",
   "HeaderOnlyUsage": "{package_name} yalnızca üst bilgidir ve CMake'ten şu şekilde kullanılabilir:",
-  "IllegalFeatures": "hata: Bu bağlamda özellik listesine izin verilmiyor",
+  "IllegalFeatures": "error: List of features is not allowed in this context",
   "IllegalPlatformSpec": "hata: Platform niteleyicisine bu bağlamda izin verilmiyor",
   "InstallingPackage": "{action_index}/{count} {spec} yükleniyor...",
   "InternalErrorMessage": "iç hata: ",

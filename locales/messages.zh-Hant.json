@@ -102,7 +102,7 @@
   "GraphCycleDetected": "在圖形中偵測到循環，於 {package_name}:",
   "HashFileFailureToRead": "無法讀取檔案 '{path}' 進行雜湊:",
   "HeaderOnlyUsage": "{package_name} 為僅標頭，可透過下列方式從 CMake 使用:",
-  "IllegalFeatures": "錯誤: 此情境中不允許功能清單",
+  "IllegalFeatures": "error: List of features is not allowed in this context",
   "IllegalPlatformSpec": "錯誤: 此內容不允許平台限定詞",
   "InstallingPackage": "正在安裝 {action_index}/{count} {spec}...",
   "InternalErrorMessage": "內部錯誤:",

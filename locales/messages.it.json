@@ -102,7 +102,7 @@
   "GraphCycleDetected": "Ciclo rilevato nel grafico in {package_name}:",
   "HashFileFailureToRead": "non è stato possibile leggere il file '{path}' per l'hashing: ",
   "HeaderOnlyUsage": "{package_name} è di sola intestazione e può essere usato da CMake tramite:",
-  "IllegalFeatures": "errore: elenco di funzionalità non consentito in questo contesto",
+  "IllegalFeatures": "error: List of features is not allowed in this context",
   "IllegalPlatformSpec": "errore: qualificatore di piattaforma non consentito in questo contesto",
   "InstallingPackage": "Installing {action_index}/{count} {spec}...",
   "InternalErrorMessage": "errore interno:",

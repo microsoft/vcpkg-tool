@@ -102,7 +102,7 @@
   "GraphCycleDetected": "{package_name}의 그래프 내에서 감지된 주기:",
   "HashFileFailureToRead": "해시에 대한 파일 '{path}'을(를) 읽지 못했습니다.",
   "HeaderOnlyUsage": "{package_name}은 헤더 전용이며 다음을 통해 CMake에서 사용할 수 있습니다.",
-  "IllegalFeatures": "오류: 이 콘텐츠에서는 기능 목록이 허용되지 않습니다.",
+  "IllegalFeatures": "error: List of features is not allowed in this context",
   "IllegalPlatformSpec": "오류: 이 컨텍스트에서는 플랫폼 한정자가 허용되지 않습니다.",
   "InstallingPackage": "{action_index}/{count} {spec}을(를) 설치하는 중...",
   "InternalErrorMessage": "내부 오류: ",

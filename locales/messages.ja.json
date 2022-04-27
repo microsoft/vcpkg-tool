@@ -102,7 +102,7 @@
   "GraphCycleDetected": "{package_name} のグラフ内で循環が検出されました:",
   "HashFileFailureToRead": "ハッシュのためにファイル '{path}' を読み取れませんでした: ",
   "HeaderOnlyUsage": "{package_name} はヘッダーのみであり、CMake から次の方法で使用できます:",
-  "IllegalFeatures": "エラー: このコンテキストでは機能のリストは許可されていません",
+  "IllegalFeatures": "error: List of features is not allowed in this context",
   "IllegalPlatformSpec": "エラー: プラットフォーム修飾子はこのコンテキストでは許可されていません",
   "InstallingPackage": "{action_index}/{count} {spec} をインストールしています...",
   "InternalErrorMessage": "内部エラー: ",

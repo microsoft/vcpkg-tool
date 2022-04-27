@@ -102,7 +102,7 @@
   "GraphCycleDetected": "Обнаружен цикл в графе в {package_name}:",
   "HashFileFailureToRead": "не удалось прочитать файл \"{path}\" для хэширования: ",
   "HeaderOnlyUsage": "{package_name} является заголовочным и может использоваться из CMake через:",
-  "IllegalFeatures": "ошибка: список компонентов не разрешен в этом контексте",
+  "IllegalFeatures": "error: List of features is not allowed in this context",
   "IllegalPlatformSpec": "ошибка: квалификатор платформы не разрешен в этом контексте",
   "InstallingPackage": "Выполняется установка {action_index}/{count} {spec}…",
   "InternalErrorMessage": "внутренняя ошибка: ",
