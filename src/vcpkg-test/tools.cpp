@@ -76,6 +76,12 @@ TEST_CASE ("parse git version", "[tools]")
     }
 
     {
+        auto result = ToolVersion::try_parse_git("git version 2.17.....1.windows.2.\n").value_or_exit(VCPKG_LINE_INFO);
+        CHECK(result.original_text == "2.17.....1.windows.2.");
+        CHECK(result.version == std::vector<uint64_t>{2, 17, 1, 2});
+    }
+
+    {
         auto result = ToolVersion::try_parse_git("git version 2.17.....1.windows.2..\n").value_or_exit(VCPKG_LINE_INFO);
         CHECK(result.original_text == "2.17.....1.windows.2..");
         CHECK(result.version == std::vector<uint64_t>{2, 17, 1, 2});
