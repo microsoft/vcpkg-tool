@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "生成 {spec} 失败，结果为: {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "由于缺少以下依赖项:",
   "CMakeTargetsUsage": "{package_name} 提供 CMake 目标:",
-  "CMakeTargetsUsageHueristicMessage": "# 这是启发式生成的，并且可能不正确",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "vcpkg 已崩溃；没有其他详细信息可用。",
   "ChecksUnreachableCode": "已访问无法访问的代码",
   "ChecksUpdateVcpkg": "通过重新运行 bootstrap-vcpkg 更新 vcpkg 可能会解决此故障。",

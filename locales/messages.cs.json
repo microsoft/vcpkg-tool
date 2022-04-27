@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "sestavení {spec} selhalo s: {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "kvůli následujícím chybějícím závislostem:",
   "CMakeTargetsUsage": "{package_name} poskytuje cíle CMake:",
-  "CMakeTargetsUsageHueristicMessage": "# toto je heuristicky generované a nemusí být správné",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "vcpkg se zhroutilo. blížší podrobnosti nejsou k dispozici.",
   "ChecksUnreachableCode": "nedosažitelný kód byl dosažen",
   "ChecksUpdateVcpkg": "aktualizace vcpkg opětovným spuštěním bootstrap-vcpkg může tuto chybu vyřešit.",

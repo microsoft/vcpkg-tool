@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "échec de la génération de {spec} avec : {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "en raison des dépendances manquantes suivantes :",
   "CMakeTargetsUsage": "{package_name} fournit des cibles CMake :",
-  "CMakeTargetsUsageHueristicMessage": "# ceci est généré de manière heuristique et peut ne pas être correct",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "vcpkg s’est bloqué; aucun détail supplémentaire n’est disponible.",
   "ChecksUnreachableCode": "code inaccessible atteint",
   "ChecksUpdateVcpkg": "la mise à jour de vcpkg en réexécutant bootstrap-vcpkg peut résoudre cet échec.",

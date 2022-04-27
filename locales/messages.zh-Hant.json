@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "建置 {spec} 失敗，原因: {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "因為下列缺少相依性:",
   "CMakeTargetsUsage": "{package_name} 提供 CMake 目標:",
-  "CMakeTargetsUsageHueristicMessage": "#這是啟發式產生的，可能不正確",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "vcpkg 已損毀; 沒有其他詳細資料。",
   "ChecksUnreachableCode": "已連線到無法連線的代碼",
   "ChecksUpdateVcpkg": "重新執行 bootstrap-vcpkg 來更新 vcpkg 或許可以解決此失敗問題。",

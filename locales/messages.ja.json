@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "{spec} のビルドに失敗しました: {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "次の依存関係がないためです。",
   "CMakeTargetsUsage": "{package_name} は CMake ターゲットを提供します:",
-  "CMakeTargetsUsageHueristicMessage": "# これはヒューリスティックに生成され、正しくない可能性があります",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "vcpkg がクラッシュしました。その他の詳細はありません。",
   "ChecksUnreachableCode": "到達できないコードに達しました",
   "ChecksUpdateVcpkg": "bootstrap-vcpkg を再実行して vcpkg を更新すると、このエラーが解決される可能性があります。",

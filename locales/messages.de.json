@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "Fehler beim Erstellen von \"{spec}\": {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "aufgrund der folgenden fehlenden Abhängigkeiten:",
   "CMakeTargetsUsage": "„{package_name}“ stellt CMake-Ziele bereit:",
-  "CMakeTargetsUsageHueristicMessage": "# this is heuristically generated, and may be not correct",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "„vcpkg“ ist abgestürzt; es sind keine weiteren Details verfügbar.",
   "ChecksUnreachableCode": "Nicht erreichbarer Code wurde erreicht.",
   "ChecksUpdateVcpkg": "Das Aktualisieren von vcpkg durch erneutes Ausführen von „bootstrap-vcpkg“ kann diesen Fehler möglicherweise beheben.",

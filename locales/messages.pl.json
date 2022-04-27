@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "kompilowanie {spec} nie powiodło się. {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "z powodu następujących brakujących zależności:",
   "CMakeTargetsUsage": "{package_name} udostępnia elementy docelowe narzędzia CMake:",
-  "CMakeTargetsUsageHueristicMessage": "# ten element jest generowany heurystycznie i może być niepoprawny",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "Pakiet vcpkg uległ awarii; nie są dostępne żadne dodatkowe szczegóły",
   "ChecksUnreachableCode": "osiągnięto nieosiągalny kod",
   "ChecksUpdateVcpkg": "zaktualizowanie pakietu vcpkg przez ponowne uruchomienie pakietu bootstrap-vcpkg może rozwiązać ten problem.",

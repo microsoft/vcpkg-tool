@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "error en la compilación de {spec} con: {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "debido a que faltan las siguientes dependencias:",
   "CMakeTargetsUsage": "{package_name} proporciona destinos de CMake:",
-  "CMakeTargetsUsageHueristicMessage": "# esto se genera de forma heurística y puede que no sea correcto",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "vcpkg se bloqueó; no hay detalles adicionales disponibles.",
   "ChecksUnreachableCode": "se ha alcanzado un código inaccesible",
   "ChecksUpdateVcpkg": "actualizar vcpkg volviendo a ejecutar bootstrap-vcpkg puede resolver este error.",

@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "сбой {spec} при построении: {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "из-за следующих отсутствующих зависимостей:",
   "CMakeTargetsUsage": "{package_name} предоставляет целевые объекты CMake:",
-  "CMakeTargetsUsageHueristicMessage": "# этот элемент создан эвристически и может быть неверным",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "сбой vcpkg; дополнительные сведения недоступны.",
   "ChecksUnreachableCode": "достигнут недостижимый код",
   "ChecksUpdateVcpkg": "обновление vcpkg путем повторного запуска bootstrap-vcpkg может устранить этот сбой.",

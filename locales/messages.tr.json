@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "derleme {spec} başarısız oldu: {build_result}",
   "BuildingPackageFailedDueToMissingDeps": "şu eksik bağımlılıklar nedeniyle:",
   "CMakeTargetsUsage": "{package_name} CMake hedefleri sağlar:",
-  "CMakeTargetsUsageHueristicMessage": "# bu buluşsal olarak oluşturuldu ve doğru olmayabilir",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "vcpkg kilitlendi; ek ayrıntı yok.",
   "ChecksUnreachableCode": "ulaşılamayan koda ulaşıldı",
   "ChecksUpdateVcpkg": "vcpkg’nin bootstrap-vcpkg’nin yeniden çalıştırılarak güncelleştirilmesi bu hatayı çözebilir.",

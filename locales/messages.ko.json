@@ -57,7 +57,7 @@
   "BuildingPackageFailed": "{build_result}(으)로 {spec}을(를) 빌드하지 못했습니다.",
   "BuildingPackageFailedDueToMissingDeps": "다음과 같은 누락된 종속성 때문에",
   "CMakeTargetsUsage": "{package_name}은 CMake 대상을 제공합니다.",
-  "CMakeTargetsUsageHueristicMessage": "# 이 값은 추론적으로 생성되며 올바르지 않을 수 있습니다.",
+  "CMakeTargetsUsageHeuristicMessage": "# this is heuristically generated, and may not be correct",
   "ChecksFailedCheck": "vcpkg가 충돌했습니다. 추가 정보가 없습니다.",
   "ChecksUnreachableCode": "연결할 수 없는 코드에 도달했습니다",
   "ChecksUpdateVcpkg": "bootstrap-vcpkg를 다시 실행하여 vcpkg를 업데이트하면 이 오류가 해결될 수 있습니다.",
