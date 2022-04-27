@@ -934,9 +934,10 @@ coscli version v0.11.0-beta
                 {
                     if (paths.get_filesystem().exists(p_tool_data->exe_path, IgnoreErrors{}))
                     {
-                        return {p_tool_data->exe_path, p_tool_data->sha512};
+                        return {p_tool_data->exe_path, p_tool_data->version};
                     }
-                    return {fetch_tool(paths, tool, *p_tool_data), p_tool_data->sha512};
+
+                    return {fetch_tool(paths, tool, *p_tool_data), p_tool_data->version};
                 }
 
                 Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Unknown or unavailable tool: %s", tool);
