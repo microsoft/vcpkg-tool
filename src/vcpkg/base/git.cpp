@@ -6,6 +6,8 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/archives.h>
+
 namespace
 {
     using namespace vcpkg;
@@ -19,7 +21,6 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
     DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
     DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines");
-
     DECLARE_AND_REGISTER_MESSAGE(GitFailedToInitializeLocalRepository,
                                  (msg::path),
                                  "",
@@ -28,6 +29,17 @@ namespace
                                  (msg::value, msg::url),
                                  "{value} is a 40-digit hex string",
                                  "failed to fetch ref {value} from repository {url}");
+    DECLARE_AND_REGISTER_MESSAGE(GitCheckoutPortTreeFailed,
+                                 (msg::package_name, msg::value),
+                                 "{value} is a 40-digit hex",
+                                 "while checking out {package_name} with SHA {value}");
+    DECLARE_AND_REGISTER_MESSAGE(GitErrorWhileRemovingFiles, (msg::path), "", "failed to remove {path}");
+    DECLARE_AND_REGISTER_MESSAGE(GitErrorCreatingDirectory, (msg::path), "", "failed to create {path}");
+    DECLARE_AND_REGISTER_MESSAGE(GitCheckoutFailedToCreateArchive, (), "", "failed to create .tar file");
+    DECLARE_AND_REGISTER_MESSAGE(GitErrorRenamingFile,
+                                 (msg::old_value, msg::new_value),
+                                 "{old_value} is the original path of a renamed file, {new_value} is the new path",
+                                 "failed to rename {old_value} to {new_value}");
 
     Command git_cmd_builder(const GitConfig& config)
     {
@@ -303,5 +315,84 @@ namespace vcpkg
         }
 
         return maybe_sha.error();
+    }
+
+    ExpectedL<Path> git_checkout_port(const GitConfig& config,
+                                      Filesystem& fs,
+                                      const Path& cmake_exe,
+                                      const Path& containing_dir,
+                                      StringView port_name,
+                                      StringView git_object)
+    {
+        const auto destination = containing_dir / port_name / git_object;
+        const auto destination_tmp = containing_dir / port_name / Strings::concat(git_object, ".tmp");
+        const auto destination_tar = containing_dir / port_name / Strings::concat(git_object, ".tar");
+
+        if (fs.exists(destination, IgnoreErrors{}))
+        {
+            return destination;
+        }
+
+        std::error_code ec;
+        auto error_prelude =
+            msg::format(msgGitCheckoutPortTreeFailed, msg::package_name = port_name, msg::value = git_object)
+                .appendnl();
+        Path failure_point;
+        fs.remove_all(destination_tmp, ec, failure_point);
+        if (ec)
+        {
+            // while checking out {port_name} with SHA {git_object}
+            // failed to remove {failure_point}
+            return error_prelude.append(msgGitErrorWhileRemovingFiles, msg::path = failure_point)
+                .appendnl()
+                .append_raw(ec.message());
+        }
+
+        fs.create_directories(destination_tmp, ec);
+        if (ec)
+        {
+            // while checking out {port_name} with SHA {git_object}
+            // failed to create {destination_tmp}
+            return error_prelude.append(msgGitErrorCreatingDirectory, msg::path = destination_tmp)
+                .appendnl()
+                .append_raw(ec.message());
+        }
+
+        const auto tar_cmd = git_cmd_builder(config)
+                                 .string_arg("archive")
+                                 .string_arg(git_object)
+                                 .string_arg("-o")
+                                 .string_arg(destination_tar);
+        const auto tar_output = cmd_execute_and_capture_output(tar_cmd);
+        if (tar_output.exit_code != 0)
+        {
+            // while checking out {port_name} with SHA {git_object}
+            // failed to create {destination_tmp}
+            return error_prelude.append(msgGitCheckoutFailedToCreateArchive).appendnl().append_raw(tar_output.output);
+        }
+
+        extract_tar_cmake(cmake_exe, destination_tar, destination_tmp);
+        fs.remove(destination_tar, ec);
+        if (ec)
+        {
+            // while checking out {port_name} with SHA {git_object}
+            // failed to remove {failure_point}
+            return error_prelude.append(msgGitErrorWhileRemovingFiles, msg::path = destination_tar)
+                .appendnl()
+                .append_raw(ec.message());
+        }
+
+        fs.rename_with_retry(destination_tmp, destination, ec);
+        if (ec)
+        {
+            // while checking out {port_name} with SHA {git_object}
+            // failed to rename {destination_tmp} to {destination}
+            return error_prelude
+                .append(msgGitErrorRenamingFile, msg::old_value = destination_tmp, msg::new_value = destination)
+                .appendnl()
+                .append_raw(ec.message());
+        }
+
+        return destination;
     }
 }

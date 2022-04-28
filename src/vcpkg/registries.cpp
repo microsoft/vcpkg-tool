@@ -9,6 +9,7 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
+#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versiondeserializers.h>
@@ -666,11 +667,13 @@ namespace
 
             auto path_to_baseline = Path(registry_versions_dir_name.to_string()) / "baseline.json";
 
-            auto maybe_contents = git_show(m_paths.git_registries_config(), m_baseline_identifier, path_to_baseline);
+            auto maybe_contents =
+                git_show(m_paths.git_registries_config(), m_baseline_identifier, path_to_baseline.generic_u8string());
             if (!maybe_contents.has_value())
             {
                 get_lock_entry().ensure_up_to_date(m_paths);
-                maybe_contents = git_show(m_paths.git_registries_config(), m_baseline_identifier, path_to_baseline);
+                maybe_contents = git_show(
+                    m_paths.git_registries_config(), m_baseline_identifier, path_to_baseline.generic_u8string());
             }
             if (!maybe_contents.has_value())
             {
@@ -690,7 +693,8 @@ namespace
                         m_repo,
                         maybe_fetch.error());
                 }
-                maybe_contents = git_show(m_paths.git_registries_config(), m_baseline_identifier, path_to_baseline);
+                maybe_contents = git_show(
+                    m_paths.git_registries_config(), m_baseline_identifier, path_to_baseline.generic_u8string());
             }
 
             if (!maybe_contents.has_value())
@@ -772,13 +776,20 @@ namespace
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
-        return m_paths.git_checkout_port(port_name, git_tree, m_paths.root / ".git")
-            .map([&git_tree](Path&& p) -> PathAndLocation {
-                return {
-                    std::move(p),
-                    "git+https://github.com/Microsoft/vcpkg@" + git_tree,
-                };
-            });
+        auto maybe_path = git_checkout_port(m_paths.git_builtin_config(),
+                                            m_paths.get_filesystem(),
+                                            m_paths.get_tool_exe(Tools::CMAKE),
+                                            m_paths.versions_output(),
+                                            port_name,
+                                            git_tree);
+        if (auto path = maybe_path.get())
+        {
+            return PathAndLocation{
+                std::move(*path),
+                "git+https://github.com/Microsoft/vcpkg@" + git_tree,
+            };
+        }
+        return std::move(maybe_path.error_to_string());
     }
     // } BuiltinRegistryEntry::RegistryEntry
 

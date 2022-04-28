@@ -62,8 +62,17 @@ namespace vcpkg
                                                           Filesystem& fs,
                                                           StringView uri,
                                                           StringView ref);
-
+    // returns the current git commit SHA
     ExpectedL<std::string> git_current_sha(const GitConfig& config, Optional<std::string> maybe_embedded_sha = nullopt);
+
+    // checks out a port version into containing_dir
+    // returns the path to the checked out port
+    ExpectedL<Path> git_checkout_port(const GitConfig& config,
+                                      Filesystem& fs,
+                                      const Path& cmake_exe,
+                                      const Path& containing_dir,
+                                      StringView port_name,
+                                      StringView git_object);
 
     /* ==== Testable helpers =====*/
     // Try to extract a port name from a path.

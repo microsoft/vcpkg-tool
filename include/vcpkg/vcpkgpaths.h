@@ -140,9 +140,7 @@ namespace vcpkg
         // gets the embedded git sha of the vcpkg instance
         Optional<std::string> git_embedded_sha() const;
 
-        // Git manipulation in the vcpkg directory
         std::string get_current_git_sha_baseline_message() const;
-        ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
 
         const DownloadManager& get_download_manager() const;
 
