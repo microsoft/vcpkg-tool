@@ -46,8 +46,8 @@ namespace vcpkg
     // the directory pointed at by config.work_tree should already exist
     ExpectedL<bool> git_fetch(const GitConfig& config, StringView uri, StringView ref);
 
-    // returns the current commit SHA of REF_HEAD
-    ExpectedL<std::string> git_rev_parse(const GitConfig& config);
+    // returns the current commit of the specified ref (HEAD by default)
+    ExpectedL<std::string> git_rev_parse(const GitConfig& config, StringView ref = "HEAD");
 
     /* ===== Git business application layer =====*/
     // returns a list of ports that have uncommitted/unmerged changes
@@ -59,6 +59,9 @@ namespace vcpkg
                                                           Filesystem& fs,
                                                           StringView uri,
                                                           StringView ref);
+
+    ExpectedL<std::string> git_current_sha(const GitConfig& config, Optional<std::string> maybe_embedded_sha = nullopt);
+
     /* ==== Testable helpers =====*/
     // Try to extract a port name from a path.
     // The path should start with the "ports/" prefix

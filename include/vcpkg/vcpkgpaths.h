@@ -131,11 +131,16 @@ namespace vcpkg
         const Path& get_tool_exe(StringView tool) const;
         const std::string& get_tool_version(StringView tool) const;
 
+        // gets git configuration for the built-in registry
         GitConfig git_builtin_config() const;
+
+        // gets git configuration for registires
         GitConfig git_registries_config() const;
 
+        // gets the embedded git sha of the vcpkg instance
+        Optional<std::string> git_embedded_sha() const;
+
         // Git manipulation in the vcpkg directory
-        ExpectedS<std::string> get_current_git_sha() const;
         std::string get_current_git_sha_baseline_message() const;
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedS<std::string> git_show(const std::string& treeish, const Path& dot_git_dir) const;

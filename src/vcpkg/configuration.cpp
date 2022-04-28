@@ -569,7 +569,7 @@ namespace vcpkg
             else
             {
                 // use the vcpkg git repository sha from the user's machine
-                auto res = paths.get_current_git_sha();
+                auto res = git_current_sha(paths.git_builtin_config(), paths.git_embedded_sha());
                 if (auto p = res.get())
                 {
                     return Optional<std::string>(std::move(*p));
@@ -578,7 +578,7 @@ namespace vcpkg
                 {
                     return msg::format(msgUpdateBaselineLocalGitError, msg::path = paths.root)
                         .appendnl()
-                        .append_raw(Strings::trim(res.error()));
+                        .append(res.error());
                 }
             }
         }

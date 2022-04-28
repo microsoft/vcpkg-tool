@@ -210,9 +210,9 @@ namespace vcpkg
         return true;
     }
 
-    ExpectedL<std::string> git_rev_parse(const GitConfig& config)
+    ExpectedL<std::string> git_rev_parse(const GitConfig& config, StringView ref)
     {
-        Command get_fetch_head = git_cmd_builder(config).string_arg("rev-parse").string_arg("FETCH_HEAD");
+        Command get_fetch_head = git_cmd_builder(config).string_arg("rev-parse").string_arg(ref);
         auto fetch_head_output = cmd_execute_and_capture_output(get_fetch_head);
         if (fetch_head_output.exit_code != 0)
         {
@@ -258,12 +258,28 @@ namespace vcpkg
             return maybe_fetch.error();
         }
 
-        auto maybe_rev_parse = git_rev_parse(config);
+        auto maybe_rev_parse = git_rev_parse(config, "FETCH_HEAD");
         if (!maybe_rev_parse.has_value())
         {
             return maybe_rev_parse.error();
         }
 
         return maybe_rev_parse.value_or_exit(VCPKG_LINE_INFO);
+    }
+
+    ExpectedL<std::string> git_current_sha(const GitConfig& config, Optional<std::string> maybe_embedded_sha) 
+    {
+        if (auto sha = maybe_embedded_sha.get())
+        {
+            return *sha;
+        }
+
+        auto maybe_sha = git_rev_parse(config);
+        if (auto sha = maybe_sha.get())
+        {
+            return *sha;
+        }
+
+        return maybe_sha.error();
     }
 }

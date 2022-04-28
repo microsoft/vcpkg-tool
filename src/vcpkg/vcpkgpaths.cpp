@@ -924,7 +924,7 @@ namespace vcpkg
         GitConfig conf;
         conf.git_exe = get_tool_exe(Tools::GIT);
         conf.git_dir = m_pimpl->m_registries_dot_git_dir;
-        conf.git_dir = m_pimpl->m_registries_work_tree_dir;
+        conf.git_work_tree = m_pimpl->m_registries_work_tree_dir;
         return conf;
     }
 
@@ -943,24 +943,8 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedS<std::string> VcpkgPaths::get_current_git_sha() const
-    {
-        if (auto sha = m_pimpl->m_bundle.m_embedded_git_sha.get())
-        {
-            return {*sha, expected_left_tag};
-        }
-        auto cmd = git_cmd_builder(this->root / ".git", this->root);
-        cmd.string_arg("rev-parse").string_arg("HEAD");
-        auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code != 0)
-        {
-            return {std::move(output.output), expected_right_tag};
-        }
-        else
-        {
-            return {Strings::trim(std::move(output.output)), expected_left_tag};
-        }
-    }
+    Optional<std::string> VcpkgPaths::git_embedded_sha() const { return m_pimpl->m_bundle.m_embedded_git_sha; }
+
     std::string VcpkgPaths::get_toolver_diagnostics() const
     {
         std::string ret;
@@ -968,7 +952,7 @@ namespace vcpkg
         if (m_pimpl->m_bundle.m_readonly)
         {
             Strings::append(ret, "    vcpkg-readonly: true\n");
-            const auto sha = get_current_git_sha();
+            const auto sha = git_current_sha(this->git_builtin_config(), this->git_embedded_sha());
             Strings::append(ret, "    vcpkg-scripts version: ", sha ? StringView(*sha.get()) : "unknown", "\n");
         }
         else
@@ -995,7 +979,7 @@ namespace vcpkg
     }
     std::string VcpkgPaths::get_current_git_sha_baseline_message() const
     {
-        auto maybe_cur_sha = get_current_git_sha();
+        const auto maybe_cur_sha = git_current_sha(this->git_builtin_config(), this->git_embedded_sha());
         if (auto p_sha = maybe_cur_sha.get())
         {
             return Strings::concat(
