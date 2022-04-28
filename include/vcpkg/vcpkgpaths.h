@@ -149,9 +149,6 @@ namespace vcpkg
         // Git manipulation for remote registries
         Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
 
-        // runs `git fetch {uri} {treeish}`
-        ExpectedS<std::string> git_find_object_id_for_remote_registry_path(StringView hash,
-                                                                           const Path& relative_path_to_file) const;
         ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 
         Optional<const ManifestAndPath&> get_manifest() const;

@@ -1030,21 +1030,6 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedS<std::string> VcpkgPaths::git_find_object_id_for_remote_registry_path(StringView hash,
-                                                                                   const Path& relative_path) const
-    {
-        auto revision = Strings::format("%s:%s", hash, relative_path.generic_u8string());
-        Command git_rev_parse = git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
-                                    .string_arg("rev-parse")
-                                    .string_arg(revision);
-
-        auto git_rev_parse_output = cmd_execute_and_capture_output(git_rev_parse);
-        if (git_rev_parse_output.exit_code != 0)
-        {
-            return {git_rev_parse_output.output, expected_right_tag};
-        }
-        return {Strings::trim(git_rev_parse_output.output).to_string(), expected_left_tag};
-    }
     ExpectedS<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const
     {
         auto& fs = get_filesystem();

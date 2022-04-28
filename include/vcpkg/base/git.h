@@ -40,19 +40,19 @@ namespace vcpkg
 
     /* ===== Git command abstractions  =====*/
     // run git status on a repository, optionaly a specific subpath can be queried
-    ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path = "");
+    ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path = {});
 
     // fetch a repository into the specified work tree
     // the directory pointed at by config.work_tree should already exist
     ExpectedL<bool> git_fetch(const GitConfig& config, StringView uri, StringView ref);
 
     // returns the current commit of the specified ref (HEAD by default)
-    ExpectedL<std::string> git_rev_parse(const GitConfig& config, StringView ref = "HEAD");
+    ExpectedL<std::string> git_rev_parse(const GitConfig& config, StringView ref, StringView path = {});
 
     // runs `git show {git_object}`, optionally a path inside the object can be given
-    ExpectedL<std::string> git_show(const GitConfig& config, StringView git_object, StringView path = "");
+    ExpectedL<std::string> git_show(const GitConfig& config, StringView git_object, StringView path = {});
 
-    /* ===== Git business application layer =====*/
+    /* ===== Git application business logic =====*/
     // returns a list of ports that have uncommitted/unmerged changes
     ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config);
 

@@ -82,8 +82,9 @@ namespace
             return m_versions_tree.get([this]() -> Path {
                 auto e = get_lock_entry();
                 e.ensure_up_to_date(m_paths);
-                auto maybe_tree = m_paths.git_find_object_id_for_remote_registry_path(
-                    e.commit_id(), registry_versions_dir_name.to_string());
+                auto maybe_tree =
+                    git_rev_parse(m_paths.git_registries_config(), e.commit_id(), registry_versions_dir_name);
+
                 if (!maybe_tree)
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-no-versions-at-commit",
@@ -122,8 +123,8 @@ namespace
             }
             if (!m_stale_versions_tree.has_value())
             {
-                auto maybe_tree = m_paths.git_find_object_id_for_remote_registry_path(
-                    e.commit_id(), registry_versions_dir_name.to_string());
+                auto maybe_tree = git_rev_parse(
+                    m_paths.git_registries_config(), e.commit_id(), registry_versions_dir_name.to_string());
                 if (!maybe_tree)
                 {
                     // This could be caused by git gc or otherwise -- fall back to full fetch

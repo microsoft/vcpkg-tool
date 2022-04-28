@@ -222,18 +222,26 @@ namespace vcpkg
         return true;
     }
 
-    ExpectedL<std::string> git_rev_parse(const GitConfig& config, StringView ref)
+    ExpectedL<std::string> git_rev_parse(const GitConfig& config, StringView ref, StringView path)
     {
-        const auto get_fetch_head = git_cmd_builder(config).string_arg("rev-parse").string_arg(ref);
-        auto fetch_head_output = cmd_execute_and_capture_output(get_fetch_head);
-        if (fetch_head_output.exit_code != 0)
+        auto cmd = git_cmd_builder(config).string_arg("rev-parse");
+        if (path.empty())
+        {
+            cmd.string_arg(ref);
+        }
+        else
+        {
+            cmd.string_arg(Strings::concat(ref, ":", path));
+        }
+        auto output = cmd_execute_and_capture_output(cmd);
+        if (output.exit_code != 0)
         {
             // failed to execute {command_line} for repository
-            return msg::format(msgGitCommandFailed, msg::command_line = get_fetch_head.command_line())
+            return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
                 .appendnl()
-                .append_raw(fetch_head_output.output);
+                .append_raw(output.output);
         }
-        return Strings::trim(fetch_head_output.output).to_string();
+        return Strings::trim(output.output).to_string();
     }
 
     ExpectedL<std::string> git_show(const GitConfig& config, StringView git_object, StringView path)
@@ -308,7 +316,7 @@ namespace vcpkg
             return *sha;
         }
 
-        auto maybe_sha = git_rev_parse(config);
+        auto maybe_sha = git_rev_parse(config, "HEAD");
         if (auto sha = maybe_sha.get())
         {
             return *sha;
