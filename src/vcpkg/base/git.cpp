@@ -179,6 +179,51 @@ namespace vcpkg
         return parse_git_status_output(output.output);
     }
 
+    ExpectedL<bool> git_fetch(const GitConfig& config, StringView uri, StringView ref)
+    {
+        Command init_registries_git_dir = git_cmd_builder(config).string_arg("init");
+        auto init_output = cmd_execute_and_capture_output(init_registries_git_dir);
+        if (init_output.exit_code != 0)
+        {
+            // failed to initialize local repository in {work_tree}
+            return msg::format(msgGitFailedToInitializeLocalRepository, msg::path = config.git_work_tree)
+                .appendnl()
+                .append_raw(init_output.output);
+        }
+
+        Command fetch_git_ref = git_cmd_builder(config)
+                                    .string_arg("fetch")
+                                    .string_arg("--update-shallow")
+                                    .string_arg("--")
+                                    .string_arg(uri)
+                                    .string_arg(ref);
+
+        auto fetch_output = cmd_execute_and_capture_output(fetch_git_ref);
+        if (fetch_output.exit_code != 0)
+        {
+            // failed to fetch ref {treeish} from repository {url}
+            return msg::format(msgGitFailedToFetchRefFromRepository, msg::value = ref, msg::url = uri)
+                .appendnl()
+                .append_raw(fetch_output.output);
+        }
+
+        return true;
+    }
+
+    ExpectedL<std::string> git_rev_parse(const GitConfig& config)
+    {
+        Command get_fetch_head = git_cmd_builder(config).string_arg("rev-parse").string_arg("FETCH_HEAD");
+        auto fetch_head_output = cmd_execute_and_capture_output(get_fetch_head);
+        if (fetch_head_output.exit_code != 0)
+        {
+            // failed to execute {command_line} for repository
+            return msg::format(msgGitCommandFailed, msg::command_line = get_fetch_head.command_line())
+                .appendnl()
+                .append_raw(fetch_head_output.output);
+        }
+        return Strings::trim(fetch_head_output.output).to_string();
+    }
+
     ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config)
     {
         auto maybe_results = git_status(config, "ports");
@@ -201,48 +246,24 @@ namespace vcpkg
     ExpectedL<std::string> git_fetch_from_remote_registry(const GitConfig& config,
                                                           Filesystem& fs,
                                                           StringView uri,
-                                                          StringView treeish)
+                                                          StringView ref)
     {
         fs.create_directories(config.git_work_tree, VCPKG_LINE_INFO);
-
-        Command init_registries_git_dir = git_cmd_builder(config).string_arg("init");
-        auto init_output = cmd_execute_and_capture_output(init_registries_git_dir);
-        if (init_output.exit_code != 0)
-        {
-            // failed to initialize local repository in {work_tree}
-            return msg::format(msgGitFailedToInitializeLocalRepository, msg::path = config.git_work_tree)
-                .appendnl()
-                .append_raw(init_output.output);
-        }
-
         const auto lock_file = config.git_work_tree / ".vcpkg-lock";
-
         auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
-        Command fetch_git_ref = git_cmd_builder(config)
-                                    .string_arg("fetch")
-                                    .string_arg("--update-shallow")
-                                    .string_arg("--")
-                                    .string_arg(uri)
-                                    .string_arg(treeish);
 
-        auto fetch_output = cmd_execute_and_capture_output(fetch_git_ref);
-        if (fetch_output.exit_code != 0)
+        auto maybe_fetch = git_fetch(config, uri, ref);
+        if (!maybe_fetch.has_value())
         {
-            // failed to fetch ref {treeish} from repository {url}
-            return msg::format(msgGitFailedToFetchRefFromRepository, msg::value = treeish, msg::url = uri)
-                .appendnl()
-                .append_raw(fetch_output.output);
+            return maybe_fetch.error();
         }
 
-        Command get_fetch_head = git_cmd_builder(config).string_arg("rev-parse").string_arg("FETCH_HEAD");
-        auto fetch_head_output = cmd_execute_and_capture_output(get_fetch_head);
-        if (fetch_head_output.exit_code != 0)
+        auto maybe_rev_parse = git_rev_parse(config);
+        if (!maybe_rev_parse.has_value())
         {
-            // failed to execute {command_line} for repository
-            return msg::format(msgGitCommandFailed, msg::command_line = get_fetch_head.command_line())
-                .appendnl()
-                .append_raw(fetch_head_output.output);
+            return maybe_rev_parse.error();
         }
-        return Strings::trim(fetch_head_output.output).to_string();
+
+        return maybe_rev_parse.value_or_exit(VCPKG_LINE_INFO);
     }
 }

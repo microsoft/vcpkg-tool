@@ -1128,42 +1128,6 @@ namespace vcpkg
 #undef PRELUDE
     }
 
-    Optional<std::string> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
-    {
-        auto& fs = get_filesystem();
-
-        const auto& work_tree = m_pimpl->m_registries_work_tree_dir;
-        fs.create_directories(work_tree, VCPKG_LINE_INFO);
-
-        auto lock_file = work_tree / ".vcpkg-lock";
-
-        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
-
-        const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
-
-        Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
-        auto init_output = cmd_execute_and_capture_output(init_registries_git_dir);
-        if (init_output.exit_code != 0)
-        {
-            return Strings::format(
-                "Error: Failed to initialize local repository %s.\n%s\n", work_tree, init_output.output);
-        }
-        Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
-                                    .string_arg("fetch")
-                                    .string_arg("--update-shallow")
-                                    .string_arg("--")
-                                    .string_arg(repo)
-                                    .string_arg(treeish);
-
-        auto fetch_output = cmd_execute_and_capture_output(fetch_git_ref);
-        if (fetch_output.exit_code != 0)
-        {
-            return Strings::format(
-                "Error: Failed to fetch ref %s from repository %s.\n%s\n", treeish, repo, fetch_output.output);
-        }
-        return nullopt;
-    }
-
     // returns an error if there was an unexpected error; returns nullopt if the file doesn't exist at the specified
     // hash
     ExpectedS<std::string> VcpkgPaths::git_show_from_remote_registry(StringView hash, const Path& relative_path) const

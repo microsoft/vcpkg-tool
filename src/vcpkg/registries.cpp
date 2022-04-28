@@ -672,7 +672,9 @@ namespace
             if (!maybe_contents.has_value())
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
-                if (auto err = m_paths.git_fetch(m_repo, m_baseline_identifier))
+                auto maybe_fetch = git_fetch_from_remote_registry(
+                    m_paths.git_registries_config(), m_paths.get_filesystem(), m_repo, m_baseline_identifier);
+                if (!maybe_fetch.has_value())
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
                                                                      "defined");
@@ -683,7 +685,7 @@ namespace
                         m_repo,
                         maybe_contents.error(),
                         m_repo,
-                        *err.get());
+                        maybe_fetch.error());
                 }
                 maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             }
@@ -1135,7 +1137,8 @@ namespace vcpkg
         if (it == range.second)
         {
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
-            auto x = git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), repo, reference);
+            auto x =
+                git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), repo, reference);
             it = lockdata.emplace(repo.to_string(),
                                   EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
             modified = true;
@@ -1151,8 +1154,9 @@ namespace vcpkg
             StringView reference(data->second.reference);
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
 
-            data->second.commit_id = git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), repo, reference)
-                                         .value_or_exit(VCPKG_LINE_INFO);
+            data->second.commit_id =
+                git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), repo, reference)
+                    .value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
             lockfile->modified = true;
         }

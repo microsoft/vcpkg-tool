@@ -145,9 +145,9 @@ namespace vcpkg
         ExpectedS<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
 
         // Git manipulation for remote registries
-        // runs `git fetch {uri} {treeish}`
         Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
-        Optional<std::string> git_fetch(StringView uri, StringView treeish) const;
+
+        // runs `git fetch {uri} {treeish}`
         ExpectedS<std::string> git_show_from_remote_registry(StringView hash, const Path& relative_path_to_file) const;
         ExpectedS<std::string> git_find_object_id_for_remote_registry_path(StringView hash,
                                                                            const Path& relative_path_to_file) const;

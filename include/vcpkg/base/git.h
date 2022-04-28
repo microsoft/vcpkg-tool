@@ -39,20 +39,26 @@ namespace vcpkg
     };
 
     /* ===== Git command abstractions  =====*/
-    // Run git status on a repository, optionaly a specific subpath can be queried
+    // run git status on a repository, optionaly a specific subpath can be queried
     ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path = "");
 
+    // fetch a repository into the specified work tree
+    // the directory pointed at by config.work_tree should already exist
+    ExpectedL<bool> git_fetch(const GitConfig& config, StringView uri, StringView ref);
+
+    // returns the current commit SHA of REF_HEAD
+    ExpectedL<std::string> git_rev_parse(const GitConfig& config);
+
     /* ===== Git business application layer =====*/
-    // Returns a list of ports that have uncommitted/unmerged changes
+    // returns a list of ports that have uncommitted/unmerged changes
     ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config);
 
-    // Runs 'git fetch {url} {treeish}' and returns the hash of FETCH_HEAD
+    // runs 'git fetch {url} {treeish}' and returns the hash of FETCH_HEAD
     // set {treeish} to HEAD for the default branch
     ExpectedL<std::string> git_fetch_from_remote_registry(const GitConfig& config,
                                                           Filesystem& fs,
                                                           StringView uri,
-                                                          StringView treeish);
-
+                                                          StringView ref);
     /* ==== Testable helpers =====*/
     // Try to extract a port name from a path.
     // The path should start with the "ports/" prefix
