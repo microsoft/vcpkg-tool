@@ -1095,22 +1095,6 @@ namespace vcpkg
 #undef PRELUDE
     }
 
-    // returns an error if there was an unexpected error; returns nullopt if the file doesn't exist at the specified
-    // hash
-    ExpectedS<std::string> VcpkgPaths::git_show_from_remote_registry(StringView hash, const Path& relative_path) const
-    {
-        auto revision = Strings::format("%s:%s", hash, relative_path.generic_u8string());
-        Command git_show = git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
-                               .string_arg("show")
-                               .string_arg(revision);
-
-        auto git_show_output = cmd_execute_and_capture_output(git_show);
-        if (git_show_output.exit_code != 0)
-        {
-            return {git_show_output.output, expected_right_tag};
-        }
-        return {git_show_output.output, expected_left_tag};
-    }
     ExpectedS<std::string> VcpkgPaths::git_find_object_id_for_remote_registry_path(StringView hash,
                                                                                    const Path& relative_path) const
     {

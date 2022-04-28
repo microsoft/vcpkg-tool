@@ -665,11 +665,12 @@ namespace
             }
 
             auto path_to_baseline = Path(registry_versions_dir_name.to_string()) / "baseline.json";
-            auto maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+
+            auto maybe_contents = git_show(m_paths.git_registries_config(), m_baseline_identifier, path_to_baseline);
             if (!maybe_contents.has_value())
             {
                 get_lock_entry().ensure_up_to_date(m_paths);
-                maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+                maybe_contents = git_show(m_paths.git_registries_config(), m_baseline_identifier, path_to_baseline);
             }
             if (!maybe_contents.has_value())
             {
@@ -689,7 +690,7 @@ namespace
                         m_repo,
                         maybe_fetch.error());
                 }
-                maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+                maybe_contents = git_show(m_paths.git_registries_config(), m_baseline_identifier, path_to_baseline);
             }
 
             if (!maybe_contents.has_value())

@@ -226,10 +226,14 @@ namespace vcpkg
 
     ExpectedL<std::string> git_show(const GitConfig& config, StringView git_object, StringView path)
     {
-        auto cmd = git_cmd_builder(config).string_arg("show").string_arg(git_object);
-        if (!path.empty())
+        auto cmd = git_cmd_builder(config).string_arg("show");
+        if (path.empty())
         {
-            cmd.string_arg(":").string_arg(path);
+            cmd.string_arg(git_object);
+        }
+        else
+        {
+            cmd.string_arg(Strings::concat(git_object, ":", path));
         }
         auto output = cmd_execute_and_capture_output(cmd);
         if (output.exit_code != 0)
