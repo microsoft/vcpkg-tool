@@ -991,45 +991,6 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
-    {
-        const auto local_repo = this->root / ".git";
-        const auto git_cmd = git_cmd_builder({}, {})
-                                 .string_arg("-C")
-                                 .string_arg(this->builtin_ports_directory())
-                                 .string_arg("ls-tree")
-                                 .string_arg("-d")
-                                 .string_arg("HEAD")
-                                 .string_arg("--");
-
-        auto output = cmd_execute_and_capture_output(git_cmd);
-        if (output.exit_code != 0)
-            return Strings::format("Error: Couldn't get local treeish objects for ports.\n%s", output.output);
-
-        std::map<std::string, std::string, std::less<>> ret;
-        const auto lines = Strings::split(output.output, '\n');
-        // The first line of the output is always the parent directory itself.
-        for (auto&& line : lines)
-        {
-            // The default output comes in the format:
-            // <mode> SP <type> SP <object> TAB <file>
-            auto split_line = Strings::split(line, '\t');
-            if (split_line.size() != 2)
-                return Strings::format("Error: Unexpected output from command `%s`. Couldn't split by `\\t`.\n%s",
-                                       git_cmd.command_line(),
-                                       line);
-
-            auto file_info_section = Strings::split(split_line[0], ' ');
-            if (file_info_section.size() != 3)
-                return Strings::format("Error: Unexpected output from command `%s`. Couldn't split by ` `.\n%s",
-                                       git_cmd.command_line(),
-                                       line);
-
-            ret.emplace(split_line[1], file_info_section.back());
-        }
-        return ret;
-    }
-
     ExpectedS<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const
     {
         auto& fs = get_filesystem();

@@ -5,6 +5,7 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
 
@@ -18,9 +19,12 @@ namespace
                                  (msg::value),
                                  "{value} is a single character indicating file status, for example: A, U, M, D",
                                  "unknown file status: {value}");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name");
-    DECLARE_AND_REGISTER_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines");
+    DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedNewLine, (), "", "expected new line");
+    DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedPath, (), "", "expected a path");
+    DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedNewLineOrPath, (), "", "expected new line or path");
+    DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedValue, (), "", "expected a value");
+    DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedGitObjectType, (), "", "expected one a valid type git object type");
+    DECLARE_AND_REGISTER_MESSAGE(GitParseExpectedGitObject, (), "", "expected a Git SHA");
     DECLARE_AND_REGISTER_MESSAGE(GitFailedToInitializeLocalRepository,
                                  (msg::path),
                                  "",
@@ -142,7 +146,7 @@ namespace vcpkg
                     parser.skip_tabs_spaces();
                     if (ParserBase::is_lineend(parser.cur()))
                     {
-                        parser.add_error(msg::format(msgGitStatusOutputExpectedFileName), parser.cur_loc());
+                        parser.add_error(msg::format(msgGitParseExpectedPath), parser.cur_loc());
                         break;
                     }
                     auto path = parser.match_until(ParserBase::is_whitespace).to_string();
@@ -151,14 +155,14 @@ namespace vcpkg
                 }
                 else
                 {
-                    parser.add_error(msg::format(msgGitStatusOutputExpectedRenameOrNewline), parser.cur_loc());
+                    parser.add_error(msg::format(msgGitParseExpectedNewLineOrPath), parser.cur_loc());
                     break;
                 }
             }
 
             if (!ParserBase::is_lineend(parser.cur()))
             {
-                parser.add_error(msg::format(msgGitStatusOutputExpectedNewLine), parser.cur_loc());
+                parser.add_error(msg::format(msgGitParseExpectedNewLine), parser.cur_loc());
                 break;
             }
 
@@ -246,6 +250,105 @@ namespace vcpkg
                 .append_raw(output.output);
         }
         return Strings::trim(output.output).to_string();
+    }
+
+    ExpectedL<std::vector<GitLsTreeLine>> parse_git_ls_tree_output(StringView output)
+    {
+        // Output of ls-tree is a list of git objects in the tree, each line is in the format
+        //
+        // MODE TYPE TREEISH    PATH
+        //
+        // https://git-scm.com/docs/git-ls-tree/
+        static constexpr StringLiteral valid_types[]{
+            "blob",
+            "tree",
+            "commit",
+        };
+
+        const auto extract_value = [](ParserBase& parser, std::string& into) -> bool {
+            if (parser.is_whitespace(parser.cur()))
+            {
+                parser.add_error(msg::format(msgGitParseExpectedValue), parser.cur_loc());
+                return false;
+            }
+
+            into = parser.match_until(ParserBase::is_whitespace).to_string();
+            parser.skip_tabs_spaces();
+            return !into.empty();
+        };
+
+        std::vector<GitLsTreeLine> results;
+
+        ParserBase parser(output, "git ls-tree");
+        while (!parser.at_eof())
+        {
+            GitLsTreeLine result;
+
+            if (!(extract_value(parser, result.mode) && extract_value(parser, result.type) &&
+                  extract_value(parser, result.git_object) && extract_value(parser, result.path)))
+            {
+                break;
+            }
+
+            if (std::find(std::begin(valid_types), std::end(valid_types), result.type) == std::end(valid_types))
+            {
+                parser.add_error(msg::format(msgGitParseExpectedGitObjectType), parser.cur_loc());
+                break;
+            }
+
+            if (result.git_object.size() != 40)
+            {
+                parser.add_error(msg::format(msgGitParseExpectedGitObject), parser.cur_loc());
+                break;
+            }
+
+            if (!parser.is_lineend(parser.cur()))
+            {
+                parser.add_error(msg::format(msgGitParseExpectedNewLine), parser.cur_loc());
+                break;
+            }
+
+            results.emplace_back(result);
+            parser.next();
+        }
+
+        if (auto error = parser.get_error())
+        {
+            return msg::format(msgGitUnexpectedCommandOutput).append_raw(error->format());
+        }
+
+        return results;
+    }
+
+    ExpectedL<std::vector<GitLsTreeLine>> git_ls_tree(
+        const GitConfig& config, StringView ref, StringView path, Git::Recursive recursive, Git::DirsOnly dirs_only)
+    {
+        auto cmd = git_cmd_builder(config).string_arg("ls-tree").string_arg(ref);
+
+        if (Util::Enum::to_bool(recursive))
+        {
+            cmd.string_arg("-r");
+        }
+
+        if (Util::Enum::to_bool(dirs_only))
+        {
+            cmd.string_arg("-d");
+        }
+
+        if (!path.empty())
+        {
+            cmd.string_arg("--").string_arg(path);
+        }
+
+        auto output = cmd_execute_and_capture_output(cmd);
+        if (output.exit_code != 0)
+        {
+            return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
+                .appendnl()
+                .append_raw(output.output);
+        }
+
+        return parse_git_ls_tree_output(output.output);
     }
 
     ExpectedL<std::string> git_show(const GitConfig& config, StringView git_object, StringView path)
@@ -412,5 +515,26 @@ namespace vcpkg
         }
 
         return destination;
+    }
+
+    ExpectedL<std::unordered_map<std::string, std::string>> git_ports_tree_map(const GitConfig& config, StringView ref)
+    {
+        auto maybe_files = git_ls_tree(config, ref, "ports/", Git::Recursive::NO, Git::DirsOnly::YES);
+        if (!maybe_files)
+        {
+            return maybe_files.error();
+        }
+
+        static constexpr StringLiteral prefix = "ports/";
+        static constexpr size_t prefix_size = prefix.size() - 1;
+        std::unordered_map<std::string, std::string> results;
+        for (auto&& file : maybe_files.value_or_exit(VCPKG_LINE_INFO))
+        {
+            if (Strings::starts_with(file.path, prefix))
+            {
+                results.emplace(file.path.substr(0, prefix_size), file.git_object);
+            }
+        }
+        return results;
     }
 }

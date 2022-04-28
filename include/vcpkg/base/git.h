@@ -8,6 +8,21 @@
 
 namespace vcpkg
 {
+    namespace Git
+    {
+        enum class DirsOnly
+        {
+            NO = 0,
+            YES
+        };
+
+        enum class Recursive
+        {
+            NO = 0,
+            YES
+        };
+    }
+
     struct GitConfig
     {
         Path git_exe;
@@ -38,6 +53,14 @@ namespace vcpkg
         std::string old_path;
     };
 
+    struct GitLsTreeLine
+    {
+        std::string mode;
+        std::string type;
+        std::string git_object;
+        std::string path;
+    };
+
     /* ===== Git command abstractions  =====*/
     // run git status on a repository, optionaly a specific subpath can be queried
     ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path = {});
@@ -51,6 +74,13 @@ namespace vcpkg
 
     // returns the current commit of the specified ref (HEAD by default)
     ExpectedL<std::string> git_rev_parse(const GitConfig& config, StringView ref, StringView path = {});
+
+    // lists the contents of a tree object
+    ExpectedL<std::vector<GitLsTreeLine>> git_ls_tree(const GitConfig& config,
+                                                      StringView ref,
+                                                      StringView path = {},
+                                                      Git::Recursive recursive = Git::Recursive::NO,
+                                                      Git::DirsOnly dirs_only = Git::DirsOnly::NO);
 
     // runs `git show {git_object}`, optionally a path inside the object can be given
     ExpectedL<std::string> git_show(const GitConfig& config, StringView git_object, StringView path = {});
@@ -77,11 +107,16 @@ namespace vcpkg
                                       StringView port_name,
                                       StringView git_object);
 
+    ExpectedL<std::unordered_map<std::string, std::string>> git_ports_tree_map(const GitConfig& config, StringView ref);
+
     /* ==== Testable helpers =====*/
     // Try to extract a port name from a path.
     // The path should start with the "ports/" prefix
     std::string try_extract_port_name_from_path(StringView path);
 
-    // Attempts to parse the git status output returns a parsing error message on failure
+    // attempts to parse git status output
     ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView git_status_output);
+
+    // attempts to parse git ls-tree output
+    ExpectedL<std::vector<GitLsTreeLine>> parse_git_ls_tree_output(StringView git_ls_tree_output);
 }

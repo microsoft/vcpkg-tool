@@ -471,7 +471,7 @@ namespace vcpkg::Commands::AddVersion
         }();
 
         // Get tree-ish from local repository state.
-        auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
+        auto maybe_git_tree_map = git_ports_tree_map(paths.git_builtin_config(), "HEAD");
         auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Find ports with uncommited changes
