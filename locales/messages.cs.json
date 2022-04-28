@@ -108,7 +108,7 @@
   "GraphCycleDetected": "V grafu byl zjištěn cyklus v {package_name}:",
   "HashFileFailureToRead": "nepovedlo se přečíst {path} souboru pro hashování: ",
   "HeaderOnlyUsage": "{package_name} je jenom hlavička a dá se použít z CMake přes:",
-  "IllegalFeatures": "error: List of features is not allowed in this context",
+  "IllegalFeatures": "Chyba: Seznam funkcí není v tomto kontextu povolený.",
   "IllegalPlatformSpec": "chyba: Kvalifikátor platformy není v tomto kontextu povolen.",
   "InstallingPackage": "Instaluje se {action_index}/{count} {spec}...",
   "InternalErrorMessage": "vnitřní chyba: ",

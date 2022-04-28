@@ -108,7 +108,7 @@
   "GraphCycleDetected": "在 {package_name} 的图形中检测到循环:",
   "HashFileFailureToRead": "无法读取用于哈希的文件“{path}”: ",
   "HeaderOnlyUsage": "{package_name} 是仅限标头的，可通过以下方式从 CMake 使用:",
-  "IllegalFeatures": "error: List of features is not allowed in this context",
+  "IllegalFeatures": "错误: 在此上下文中不允许使用功能列表",
   "IllegalPlatformSpec": "错误: 此上下文中不允许使用平台限定符",
   "InstallingPackage": "正在安装 {action_index}/{count} 个 {spec}...",
   "InternalErrorMessage": "内部错误: ",
