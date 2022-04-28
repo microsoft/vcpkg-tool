@@ -134,7 +134,7 @@ namespace vcpkg
         // gets git configuration for the built-in registry
         GitConfig git_builtin_config() const;
 
-        // gets git configuration for registires
+        // gets git configuration for remote registries
         GitConfig git_registries_config() const;
 
         // gets the embedded git sha of the vcpkg instance
@@ -143,7 +143,6 @@ namespace vcpkg
         // Git manipulation in the vcpkg directory
         std::string get_current_git_sha_baseline_message() const;
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
-        ExpectedS<std::string> git_show(const std::string& treeish, const Path& dot_git_dir) const;
 
         const DownloadManager& get_download_manager() const;
 

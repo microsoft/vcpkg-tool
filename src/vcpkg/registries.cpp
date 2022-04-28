@@ -393,9 +393,11 @@ namespace
 
         if (!fs.exists(destination, IgnoreErrors{}))
         {
+            static constexpr StringLiteral BASELINE_FILE_PATH = "versions/baseline.json";
             const auto destination_tmp = destination_parent / "baseline.json.tmp";
-            auto treeish = Strings::concat(commit_sha, ":versions/baseline.json");
-            auto maybe_contents = paths.git_show(treeish, paths.root / ".git");
+
+            auto treeish = Strings::concat(commit_sha, ":", BASELINE_FILE_PATH);
+            auto maybe_contents = git_show(paths.git_builtin_config(), commit_sha, BASELINE_FILE_PATH);
             if (auto contents = maybe_contents.get())
             {
                 std::error_code ec;

@@ -991,23 +991,6 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<std::string> VcpkgPaths::git_show(const std::string& treeish, const Path& dot_git_dir) const
-    {
-        // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
-        // git clone --no-checkout --local {vcpkg_root} {dot_git_dir}
-        Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir).string_arg("show").string_arg(treeish);
-
-        auto output = cmd_execute_and_capture_output(showcmd);
-        if (output.exit_code == 0)
-        {
-            return {std::move(output.output), expected_left_tag};
-        }
-        else
-        {
-            return {std::move(output.output), expected_right_tag};
-        }
-    }
-
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
         const auto local_repo = this->root / ".git";

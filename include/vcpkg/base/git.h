@@ -49,6 +49,9 @@ namespace vcpkg
     // returns the current commit of the specified ref (HEAD by default)
     ExpectedL<std::string> git_rev_parse(const GitConfig& config, StringView ref = "HEAD");
 
+    // runs `git show {git_object}`, optionally a path inside the object can be given
+    ExpectedL<std::string> git_show(const GitConfig& config, StringView git_object, StringView path = "");
+
     /* ===== Git business application layer =====*/
     // returns a list of ports that have uncommitted/unmerged changes
     ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config);

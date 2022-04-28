@@ -191,12 +191,12 @@ namespace vcpkg
                 .append_raw(init_output.output);
         }
 
-        Command fetch_git_ref = git_cmd_builder(config)
-                                    .string_arg("fetch")
-                                    .string_arg("--update-shallow")
-                                    .string_arg("--")
-                                    .string_arg(uri)
-                                    .string_arg(ref);
+        const auto fetch_git_ref = git_cmd_builder(config)
+                                       .string_arg("fetch")
+                                       .string_arg("--update-shallow")
+                                       .string_arg("--")
+                                       .string_arg(uri)
+                                       .string_arg(ref);
 
         auto fetch_output = cmd_execute_and_capture_output(fetch_git_ref);
         if (fetch_output.exit_code != 0)
@@ -212,7 +212,7 @@ namespace vcpkg
 
     ExpectedL<std::string> git_rev_parse(const GitConfig& config, StringView ref)
     {
-        Command get_fetch_head = git_cmd_builder(config).string_arg("rev-parse").string_arg(ref);
+        const auto get_fetch_head = git_cmd_builder(config).string_arg("rev-parse").string_arg(ref);
         auto fetch_head_output = cmd_execute_and_capture_output(get_fetch_head);
         if (fetch_head_output.exit_code != 0)
         {
@@ -222,6 +222,24 @@ namespace vcpkg
                 .append_raw(fetch_head_output.output);
         }
         return Strings::trim(fetch_head_output.output).to_string();
+    }
+
+    ExpectedL<std::string> git_show(const GitConfig& config, StringView git_object, StringView path)
+    {
+        auto cmd = git_cmd_builder(config).string_arg("show").string_arg(git_object);
+        if (!path.empty())
+        {
+            cmd.string_arg(":").string_arg(path);
+        }
+        auto output = cmd_execute_and_capture_output(cmd);
+        if (output.exit_code != 0)
+        {
+            return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
+                .appendnl()
+                .append_raw(output.output);
+        }
+
+        return std::move(output.output);
     }
 
     ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config)
@@ -267,7 +285,7 @@ namespace vcpkg
         return maybe_rev_parse.value_or_exit(VCPKG_LINE_INFO);
     }
 
-    ExpectedL<std::string> git_current_sha(const GitConfig& config, Optional<std::string> maybe_embedded_sha) 
+    ExpectedL<std::string> git_current_sha(const GitConfig& config, Optional<std::string> maybe_embedded_sha)
     {
         if (auto sha = maybe_embedded_sha.get())
         {

@@ -93,7 +93,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 for (const std::string& control_file : {"CONTROL", "vcpkg.json"})
                 {
                     auto treeish = Strings::concat(version_entry.second, ':', control_file);
-                    auto maybe_file = paths.git_show(Strings::concat(treeish), paths.root / ".git");
+                    auto maybe_file = git_show(paths.git_builtin_config(), version_entry.second, control_file);
                     if (!maybe_file.has_value()) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
