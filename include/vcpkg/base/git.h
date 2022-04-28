@@ -42,6 +42,9 @@ namespace vcpkg
     // run git status on a repository, optionaly a specific subpath can be queried
     ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path = {});
 
+    // initializes a git repository
+    ExpectedL<bool> git_init(const GitConfig& config);
+
     // fetch a repository into the specified work tree
     // the directory pointed at by config.work_tree should already exist
     ExpectedL<bool> git_fetch(const GitConfig& config, StringView uri, StringView ref);

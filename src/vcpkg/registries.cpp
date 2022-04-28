@@ -790,7 +790,7 @@ namespace
                 "git+https://github.com/Microsoft/vcpkg@" + git_tree,
             };
         }
-        return std::move(maybe_path.error_to_string());
+        return maybe_path.error_to_string();
     }
     // } BuiltinRegistryEntry::RegistryEntry
 
