@@ -1135,7 +1135,7 @@ namespace vcpkg
         if (it == range.second)
         {
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
-            auto x = paths.git_fetch_from_remote_registry(repo, reference);
+            auto x = git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), repo, reference);
             it = lockdata.emplace(repo.to_string(),
                                   EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
             modified = true;
@@ -1151,8 +1151,8 @@ namespace vcpkg
             StringView reference(data->second.reference);
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
 
-            data->second.commit_id =
-                paths.git_fetch_from_remote_registry(repo, reference).value_or_exit(VCPKG_LINE_INFO);
+            data->second.commit_id = git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), repo, reference)
+                                         .value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
             lockfile->modified = true;
         }

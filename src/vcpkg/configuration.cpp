@@ -546,17 +546,12 @@ namespace vcpkg
 {
     static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths, StringView url)
     {
-        auto res = paths.git_fetch_from_remote_registry(url, "HEAD");
+        auto res = git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), url, "HEAD");
         if (auto p = res.get())
         {
             return Optional<std::string>(std::move(*p));
         }
-        else
-        {
-            return msg::format(msgUpdateBaselineRemoteGitError, msg::url = url)
-                .appendnl()
-                .append_raw(Strings::trim(res.error()));
-        }
+        return msg::format(msgUpdateBaselineRemoteGitError, msg::url = url).appendnl().append(res.error());
     }
 
     ExpectedL<Optional<std::string>> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths) const

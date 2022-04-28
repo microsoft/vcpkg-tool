@@ -919,6 +919,15 @@ namespace vcpkg
         return conf;
     }
 
+    GitConfig VcpkgPaths::git_registries_config() const
+    {
+        GitConfig conf;
+        conf.git_exe = get_tool_exe(Tools::GIT);
+        conf.git_dir = m_pimpl->m_registries_dot_git_dir;
+        conf.git_dir = m_pimpl->m_registries_work_tree_dir;
+        return conf;
+    }
+
     Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
     {
         Command ret(get_tool_exe(Tools::GIT));
@@ -1117,52 +1126,6 @@ namespace vcpkg
 
         return destination;
 #undef PRELUDE
-    }
-
-    ExpectedS<std::string> VcpkgPaths::git_fetch_from_remote_registry(StringView repo, StringView treeish) const
-    {
-        auto& fs = get_filesystem();
-
-        const auto& work_tree = m_pimpl->m_registries_work_tree_dir;
-        fs.create_directories(work_tree, VCPKG_LINE_INFO);
-        const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
-
-        Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
-        auto init_output = cmd_execute_and_capture_output(init_registries_git_dir);
-        if (init_output.exit_code != 0)
-        {
-            return {Strings::format(
-                        "Error: Failed to initialize local repository %s.\n%s\n", work_tree, init_output.output),
-                    expected_right_tag};
-        }
-
-        auto lock_file = work_tree / ".vcpkg-lock";
-
-        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
-        Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
-                                    .string_arg("fetch")
-                                    .string_arg("--update-shallow")
-                                    .string_arg("--")
-                                    .string_arg(repo)
-                                    .string_arg(treeish);
-
-        auto fetch_output = cmd_execute_and_capture_output(fetch_git_ref);
-        if (fetch_output.exit_code != 0)
-        {
-            return {Strings::format(
-                        "Error: Failed to fetch ref %s from repository %s.\n%s\n", treeish, repo, fetch_output.output),
-                    expected_right_tag};
-        }
-
-        Command get_fetch_head =
-            git_cmd_builder(dot_git_dir, work_tree).string_arg("rev-parse").string_arg("FETCH_HEAD");
-        auto fetch_head_output = cmd_execute_and_capture_output(get_fetch_head);
-        if (fetch_head_output.exit_code != 0)
-        {
-            return {Strings::format("Error: Failed to rev-parse FETCH_HEAD.\n%s\n", fetch_head_output.output),
-                    expected_right_tag};
-        }
-        return {Strings::trim(fetch_head_output.output).to_string(), expected_left_tag};
     }
 
     Optional<std::string> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const

@@ -100,6 +100,8 @@
   "GenerateMsgNoArgumentValue": "    {{{value}}} was specified in a comment, but was not used in the message.",
   "GenerateMsgNoCommentValue": "    {{{value}}} was used in the message, but not commented.",
   "GitCommandFailed": "failed to execute: {command_line}",
+  "GitFailedToFetchRefFromRepository": "failed to fetch ref {value} from repository {url}",
+  "GitFailedToInitializeLocalRepository": "failed to initialize local repository in {path}",
   "GitStatusOutputExpectedFileName": "expected a file name",
   "GitStatusOutputExpectedNewLine": "expected new line",
   "GitStatusOutputExpectedRenameOrNewline": "expected renamed file or new lines",
