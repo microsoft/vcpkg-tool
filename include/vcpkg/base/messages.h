@@ -279,6 +279,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(vendor, "Azure");
     DECLARE_MSG_ARG(version, "1.3.8");
     DECLARE_MSG_ARG(action_index, "340");
+    DECLARE_MSG_ARG(git_ref, "f1e506946a98a6090a88b237e6a618c5aeb5a217");
 #undef DECLARE_MSG_ARG
 
 // These are `...` instead of

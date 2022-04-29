@@ -706,6 +706,7 @@ namespace vcpkg
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
     Path VcpkgPaths::versions_output() const { return buildtrees() / "versioning_" / "versions"; }
+    Path VcpkgPaths::registries_output() const { return m_pimpl->m_registries_work_tree_dir; }
 
     Path InstalledPaths::listfile_path(const BinaryParagraph& pgh) const
     {
@@ -988,61 +989,6 @@ namespace vcpkg
         else
         {
             return Strings::concat("Failed to determine the current commit:\n", maybe_cur_sha.error());
-        }
-    }
-
-    ExpectedS<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const
-    {
-        auto& fs = get_filesystem();
-        fs.create_directories(m_pimpl->m_registries_git_trees, VCPKG_LINE_INFO);
-
-        auto git_tree_final = m_pimpl->m_registries_git_trees / object;
-        if (fs.exists(git_tree_final, IgnoreErrors{}))
-        {
-            return git_tree_final;
-        }
-
-        auto pid = get_process_id();
-
-        Path git_tree_temp = Strings::format("%s.tmp%ld", git_tree_final, pid);
-        Path git_tree_temp_tar = Strings::format("%s.tmp%ld.tar", git_tree_final, pid);
-        fs.remove_all(git_tree_temp, VCPKG_LINE_INFO);
-        fs.create_directory(git_tree_temp, VCPKG_LINE_INFO);
-
-        const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
-        Command git_archive = git_cmd_builder(dot_git_dir, m_pimpl->m_registries_work_tree_dir)
-                                  .string_arg("archive")
-                                  .string_arg("--format")
-                                  .string_arg("tar")
-                                  .string_arg(object)
-                                  .string_arg("--output")
-                                  .string_arg(git_tree_temp_tar);
-        auto git_archive_output = cmd_execute_and_capture_output(git_archive);
-        if (git_archive_output.exit_code != 0)
-        {
-            return {Strings::format("git archive failed with message:\n%s", git_archive_output.output),
-                    expected_right_tag};
-        }
-
-        extract_tar_cmake(get_tool_exe(Tools::CMAKE), git_tree_temp_tar, git_tree_temp);
-        // Attempt to remove temporary files, though non-critical.
-        fs.remove(git_tree_temp_tar, IgnoreErrors{});
-
-        std::error_code ec;
-        fs.rename_with_retry(git_tree_temp, git_tree_final, ec);
-        if (fs.exists(git_tree_final, IgnoreErrors{}))
-        {
-            return git_tree_final;
-        }
-
-        if (ec)
-        {
-            return {Strings::format("rename to %s failed with message:\n%s", git_tree_final, ec.message()),
-                    expected_right_tag};
-        }
-        else
-        {
-            return {"Unknown error", expected_right_tag};
         }
     }
 

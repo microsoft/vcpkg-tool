@@ -106,6 +106,7 @@ namespace vcpkg
 
         Path baselines_output() const;
         Path versions_output() const;
+        Path registries_output() const;
 
         const Path original_cwd;
         const Path root;
@@ -146,8 +147,6 @@ namespace vcpkg
 
         // Git manipulation for remote registries
         Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
-
-        ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 
         Optional<const ManifestAndPath&> get_manifest() const;
         const ConfigurationAndSource& get_configuration() const;

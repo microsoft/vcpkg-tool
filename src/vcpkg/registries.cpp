@@ -96,7 +96,11 @@ namespace
                         e.commit_id(),
                         maybe_tree.error());
                 }
-                auto maybe_path = m_paths.git_checkout_object_from_remote_registry(*maybe_tree.get());
+                auto maybe_path = git_checkout_registry_port(m_paths.git_registries_config(),
+                                                             m_paths.get_filesystem(),
+                                                             m_paths.get_tool_exe(Tools::CMAKE),
+                                                             m_paths.registries_output(),
+                                                             *maybe_tree.get());
                 if (!maybe_path)
                 {
                     Checks::exit_with_message(VCPKG_LINE_INFO,
@@ -130,7 +134,11 @@ namespace
                     // This could be caused by git gc or otherwise -- fall back to full fetch
                     return {get_versions_tree_path(), false};
                 }
-                auto maybe_path = m_paths.git_checkout_object_from_remote_registry(*maybe_tree.get());
+                auto maybe_path = git_checkout_registry_port(m_paths.git_registries_config(),
+                                                             m_paths.get_filesystem(),
+                                                             m_paths.get_tool_exe(Tools::CMAKE),
+                                                             m_paths.registries_output(),
+                                                             *maybe_tree.get());
                 if (!maybe_path)
                 {
                     // This could be caused by git gc or otherwise -- fall back to full fetch
@@ -844,13 +852,21 @@ namespace
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
-        return parent.m_paths.git_checkout_object_from_remote_registry(git_tree).map(
-            [this, &git_tree](Path&& p) -> PathAndLocation {
-                return {
-                    std::move(p),
-                    Strings::concat("git+", parent.m_repo, "@", git_tree),
-                };
-            });
+        auto maybe_path = git_checkout_registry_port(parent.m_paths.git_registries_config(),
+                                                     parent.m_paths.get_filesystem(),
+                                                     parent.m_paths.get_tool_exe(Tools::CMAKE),
+                                                     parent.m_paths.registries_output(),
+                                                     git_tree);
+
+        if (auto path = maybe_path.get())
+        {
+            return PathAndLocation{
+                std::move(*path),
+                Strings::concat("git+", parent.m_repo, "@", git_tree),
+            };
+        }
+
+        return maybe_path.error_to_string();
     }
 
     void GitRegistryEntry::fill_data_from_path(const Filesystem& fs, const Path& port_versions_path) const

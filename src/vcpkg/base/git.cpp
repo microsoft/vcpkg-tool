@@ -4,6 +4,7 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -30,13 +31,18 @@ namespace
                                  "",
                                  "failed to initialize local repository in {path}");
     DECLARE_AND_REGISTER_MESSAGE(GitFailedToFetchRefFromRepository,
-                                 (msg::value, msg::url),
-                                 "{value} is a 40-digit hex string",
-                                 "failed to fetch ref {value} from repository {url}");
-    DECLARE_AND_REGISTER_MESSAGE(GitCheckoutPortTreeFailed,
-                                 (msg::package_name, msg::value),
-                                 "{value} is a 40-digit hex",
-                                 "while checking out {package_name} with SHA {value}");
+                                 (msg::git_ref, msg::url),
+                                 "",
+                                 "failed to fetch ref {git_ref} from repository {url}");
+    DECLARE_AND_REGISTER_MESSAGE(GitCheckoutPortFailed,
+                                 (msg::package_name, msg::git_ref, msg::path),
+                                 "",
+                                 "while checking out {package_name} with SHA {git_ref} into {path}");
+
+    DECLARE_AND_REGISTER_MESSAGE(GitCheckoutRegistryPortFailed,
+                                 (msg::git_ref, msg::path),
+                                 "",
+                                 "while checking out {git_ref} into {path}");
     DECLARE_AND_REGISTER_MESSAGE(GitErrorWhileRemovingFiles, (msg::path), "", "failed to remove {path}");
     DECLARE_AND_REGISTER_MESSAGE(GitErrorCreatingDirectory, (msg::path), "", "failed to create {path}");
     DECLARE_AND_REGISTER_MESSAGE(GitCheckoutFailedToCreateArchive, (), "", "failed to create .tar file");
@@ -222,7 +228,7 @@ namespace vcpkg
         if (output.exit_code != 0)
         {
             // failed to fetch ref {treeish} from repository {url}
-            return msg::format(msgGitFailedToFetchRefFromRepository, msg::value = ref, msg::url = uri)
+            return msg::format(msgGitFailedToFetchRefFromRepository, msg::git_ref = ref, msg::url = uri)
                 .appendnl()
                 .append_raw(output.output);
         }
@@ -438,33 +444,25 @@ namespace vcpkg
         return maybe_sha.error();
     }
 
-    ExpectedL<Path> git_checkout_port(const GitConfig& config,
-                                      Filesystem& fs,
-                                      const Path& cmake_exe,
-                                      const Path& containing_dir,
-                                      StringView port_name,
-                                      StringView git_object)
+    ExpectedL<Path> archive_and_extract_object(
+        const GitConfig& config, Filesystem& fs, const Path& cmake_exe, const Path& destination, StringView git_object)
     {
-        const auto destination = containing_dir / port_name / git_object;
-        const auto destination_tmp = containing_dir / port_name / Strings::concat(git_object, ".tmp");
-        const auto destination_tar = containing_dir / port_name / Strings::concat(git_object, ".tar");
-
         if (fs.exists(destination, IgnoreErrors{}))
         {
             return destination;
         }
 
+        const auto pid = get_process_id();
+        const auto destination_tmp = fmt::format("{}.{}.tmp", destination.generic_u8string(), pid);
+        const auto destination_tar = fmt::format("{}.{}.tmp.tar", destination.generic_u8string(), pid);
+
         std::error_code ec;
-        auto error_prelude =
-            msg::format(msgGitCheckoutPortTreeFailed, msg::package_name = port_name, msg::value = git_object)
-                .appendnl();
         Path failure_point;
         fs.remove_all(destination_tmp, ec, failure_point);
         if (ec)
         {
-            // while checking out {port_name} with SHA {git_object}
             // failed to remove {failure_point}
-            return error_prelude.append(msgGitErrorWhileRemovingFiles, msg::path = failure_point)
+            return msg::format(msgGitErrorWhileRemovingFiles, msg::path = failure_point)
                 .appendnl()
                 .append_raw(ec.message());
         }
@@ -472,9 +470,8 @@ namespace vcpkg
         fs.create_directories(destination_tmp, ec);
         if (ec)
         {
-            // while checking out {port_name} with SHA {git_object}
             // failed to create {destination_tmp}
-            return error_prelude.append(msgGitErrorCreatingDirectory, msg::path = destination_tmp)
+            return msg::format(msgGitErrorCreatingDirectory, msg::path = destination_tmp)
                 .appendnl()
                 .append_raw(ec.message());
         }
@@ -487,18 +484,16 @@ namespace vcpkg
         const auto tar_output = cmd_execute_and_capture_output(tar_cmd);
         if (tar_output.exit_code != 0)
         {
-            // while checking out {port_name} with SHA {git_object}
             // failed to create {destination_tmp}
-            return error_prelude.append(msgGitCheckoutFailedToCreateArchive).appendnl().append_raw(tar_output.output);
+            return msg::format(msgGitCheckoutFailedToCreateArchive).appendnl().append_raw(tar_output.output);
         }
 
         extract_tar_cmake(cmake_exe, destination_tar, destination_tmp);
         fs.remove(destination_tar, ec);
         if (ec)
         {
-            // while checking out {port_name} with SHA {git_object}
             // failed to remove {failure_point}
-            return error_prelude.append(msgGitErrorWhileRemovingFiles, msg::path = destination_tar)
+            return msg::format(msgGitErrorWhileRemovingFiles, msg::path = destination_tar)
                 .appendnl()
                 .append_raw(ec.message());
         }
@@ -506,15 +501,56 @@ namespace vcpkg
         fs.rename_with_retry(destination_tmp, destination, ec);
         if (ec)
         {
-            // while checking out {port_name} with SHA {git_object}
             // failed to rename {destination_tmp} to {destination}
-            return error_prelude
-                .append(msgGitErrorRenamingFile, msg::old_value = destination_tmp, msg::new_value = destination)
+            return msg::format(msgGitErrorRenamingFile, msg::old_value = destination_tmp, msg::new_value = destination)
                 .appendnl()
                 .append_raw(ec.message());
         }
 
         return destination;
+    }
+
+    ExpectedL<Path> git_checkout_port(const GitConfig& config,
+                                      Filesystem& fs,
+                                      const Path& cmake_exe,
+                                      const Path& containing_dir,
+                                      StringView port_name,
+                                      StringView git_object)
+    {
+        const auto destination = containing_dir / port_name / git_object;
+
+        // while checking out {port_name} with SHA {git_object}
+        auto error_prelude = msg::format(msgGitCheckoutPortFailed,
+                                         msg::package_name = port_name,
+                                         msg::git_ref = git_object,
+                                         msg::path = destination)
+                                 .appendnl();
+        auto maybe_path = archive_and_extract_object(config, fs, cmake_exe, destination, git_object);
+        if (auto path = maybe_path.get())
+        {
+            return *path;
+        }
+
+        return error_prelude.append(maybe_path.error());
+    }
+
+    ExpectedL<Path> git_checkout_registry_port(const GitConfig& config,
+                                               Filesystem& fs,
+                                               const Path& cmake_exe,
+                                               const Path& containing_dir,
+                                               StringView git_object)
+    {
+        const auto destination = containing_dir / git_object;
+        auto error_prelude =
+            msg::format(msgGitCheckoutRegistryPortFailed, msg::git_ref = git_object, msg::path = destination)
+                .appendnl();
+        auto maybe_path = archive_and_extract_object(config, fs, cmake_exe, destination, git_object);
+        if (auto path = maybe_path.get())
+        {
+            return *path;
+        }
+
+        return error_prelude.append(maybe_path.error());
     }
 
     ExpectedL<std::unordered_map<std::string, std::string>> git_ports_tree_map(const GitConfig& config, StringView ref)

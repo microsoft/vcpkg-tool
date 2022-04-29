@@ -5,6 +5,7 @@
 
 #include <set>
 #include <vector>
+#include <unordered_map>
 
 namespace vcpkg
 {
@@ -99,13 +100,19 @@ namespace vcpkg
     ExpectedL<std::string> git_current_sha(const GitConfig& config, Optional<std::string> maybe_embedded_sha = nullopt);
 
     // checks out a port version into containing_dir
-    // returns the path to the checked out port
     ExpectedL<Path> git_checkout_port(const GitConfig& config,
                                       Filesystem& fs,
                                       const Path& cmake_exe,
                                       const Path& containing_dir,
                                       StringView port_name,
                                       StringView git_object);
+
+    // checks out a registry port into containing dir
+    ExpectedL<Path> git_checkout_registry_port(const GitConfig& config,
+                                               Filesystem& fs,
+                                               const Path& cmake_exe,
+                                               const Path& containing_dir,
+                                               StringView git_object);
 
     ExpectedL<std::unordered_map<std::string, std::string>> git_ports_tree_map(const GitConfig& config, StringView ref);
 
