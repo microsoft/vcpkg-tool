@@ -40,9 +40,9 @@ Z_VCPKG_init() {
 Z_VCPKG_bootstrap() {
   VCPKG_BASE_VERSION='latest'
 
-  if [ $VCPKG_BASE_VERSION != 'latest' ] # always update latest
-      || [ ! -f "${VCPKG_ROOT}/vcpkg" ] # not installed
-      || [ ! -f "${VCPKG_ROOT}/vcpkg-one-liner-version.txt" ] # 2022-03-30 or older
+  if [ $VCPKG_BASE_VERSION != 'latest' ] \
+      || [ ! -f "${VCPKG_ROOT}/vcpkg" ] \
+      || [ ! -f "${VCPKG_ROOT}/vcpkg-one-liner-version.txt" ] \
       || [ "$(cat ${VCPKG_ROOT}/vcpkg-one-liner-version.txt)" != $VCPKG_BASE_VERSION ]; then
     return 0;
   fi
