@@ -38,8 +38,22 @@ Z_VCPKG_init() {
 }
 
 Z_VCPKG_bootstrap() {
-  if [ -f "${VCPKG_ROOT}/vcpkg" ]; then
-    return 0
+  VCPKG_BASE_VERSION='latest'
+  do_bootstrap=0
+  if [ ! -f "${VCPKG_ROOT}/vcpkg" ]; then
+    do_bootstrap=1
+  fi
+
+  if [$VCPKG_BASE_VERSION == 'latest']; then
+    do_bootstrap=1
+  fi
+
+  if [$do_bootstrap = '0'] && [ "$(cat \"${VCPKG_ROOT}/vcpkg-one-liner-version.txt\")" != $VCPKG_BASE_VERSION ]; then
+    do_bootstrap=1
+  fi
+
+  if [$do_bootstrap = '0']; then
+    return 0;
   fi
 
   # it's not there!

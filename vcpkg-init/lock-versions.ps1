@@ -18,4 +18,7 @@ Set-Content -Path "$Destination\vcpkg-init.ps1" -Value $pwshInstaller -NoNewline
 
 $shInstaller = Get-Content "$PSScriptRoot\vcpkg-init" -Raw -Encoding ascii
 $shInstaller = $shInstaller.Replace($versionUnlockedUri, $versionLockedUri)
+$shLatestLine = "VCPKG_BASE_VERSION='latest'"
+$shLockedLine = "VCPKG_BASE_VERSION='$VcpkgBaseVersion'"
+$shInstaller = $shInstaller.Replace($shLatestLine, $shLockedLine)
 Set-Content -Path "$Destination\vcpkg-init" -Value $shInstaller -NoNewline -Encoding ascii
