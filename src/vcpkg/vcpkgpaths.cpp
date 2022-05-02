@@ -944,7 +944,7 @@ namespace vcpkg
         }
         else
         {
-            auto maybe_output = git_show(git_builtin_config(), Git::ShowArgs("HEAD").format("format:%h %cs (%cr)"));
+            auto maybe_output = Git::Show(git_builtin_config()).object("HEAD").format("%h %cs (%cr)").run();
             if (auto output = maybe_output.get())
             {
                 Strings::append(ret, "    vcpkg-scripts version: ", *output, "\n");

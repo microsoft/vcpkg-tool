@@ -11,40 +11,6 @@
 
 namespace vcpkg
 {
-    namespace Git
-    {
-        enum class DirsOnly
-        {
-            NO = 0,
-            YES
-        };
-
-        enum class Recursive
-        {
-            NO = 0,
-            YES
-        };
-
-        struct ShowArgs
-        {
-            // runs `git show <object>` where object can be a commit, tag, tree or blob
-            // the output of the command depends on the type of object
-            explicit ShowArgs(StringView object) : m_object(object){};
-
-            ShowArgs& path(StringView path) { return m_path = make_optional<>(path), *this; };
-            ShowArgs& format(StringView format) { return m_format = make_optional<>(format), *this; }
-
-            const std::string& object() const { return m_object; }
-            const Optional<std::string>& path() const { return m_path; }
-            const Optional<std::string> format() const { return m_format; }
-
-        private:
-            std::string m_object;
-            Optional<std::string> m_path;
-            Optional<std::string> m_format;
-        };
-    }
-
     struct GitConfig
     {
         Path git_exe;
@@ -84,6 +50,50 @@ namespace vcpkg
     };
 
     Command git_cmd_builder(const GitConfig& config);
+    namespace Git
+    {
+        enum class DirsOnly
+        {
+            NO = 0,
+            YES
+        };
+
+        enum class Recursive
+        {
+            NO = 0,
+            YES
+        };
+
+        struct Show
+        {
+            // constructs a `git show {object}` command
+            explicit Show(const GitConfig& config) : m_config(config) { }
+
+            // object can be a commit, tag, tree or blob (HEAD by default)
+            Show& object(StringView object) { return (m_object = make_optional<>(object)), *this; }
+
+            // optionally add a path relative to the object
+            Show& path(StringView path) { return (m_path = make_optional<>(path)), *this; }
+
+            // optionally set an output format (--pretty=format:{format})
+            Show& format(StringView format) { return (m_format = make_optional<>(format)), *this; }
+
+            // shows the command line without running it
+            std::string cmd() const;
+
+            // runs the command
+            // the output of the command depends on the type of object
+            ExpectedL<std::string> run() const;
+
+        private:
+            Command build_cmd() const;
+
+            GitConfig m_config;
+            Optional<std::string> m_object;
+            Optional<std::string> m_path;
+            Optional<std::string> m_format;
+        };
+    }
 
     /* ===== Git command abstractions  =====*/
     // run git status on a repository, optionaly a specific subpath can be queried
@@ -105,9 +115,6 @@ namespace vcpkg
                                                       StringView path = {},
                                                       Git::Recursive recursive = Git::Recursive::NO,
                                                       Git::DirsOnly dirs_only = Git::DirsOnly::NO);
-
-    // runs `git show {git_object}`, optionally a path inside the object can be given
-    ExpectedL<std::string> git_show(const GitConfig& config, Git::ShowArgs args);
 
     /* ===== Git application business logic =====*/
     // returns a list of ports that have uncommitted/unmerged changes

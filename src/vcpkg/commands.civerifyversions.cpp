@@ -94,7 +94,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 {
                     auto treeish = Strings::concat(version_entry.second, ':', control_file);
                     auto maybe_file =
-                        git_show(paths.git_builtin_config(), Git::ShowArgs(version_entry.second).path(control_file));
+                        Git::Show(paths.git_builtin_config()).object(version_entry.second).path(control_file).run();
                     if (!maybe_file.has_value()) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);

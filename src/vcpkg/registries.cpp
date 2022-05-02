@@ -408,7 +408,7 @@ namespace
 
             auto treeish = Strings::concat(commit_sha, ":", BASELINE_FILE_PATH);
             auto maybe_contents =
-                git_show(paths.git_builtin_config(), Git::ShowArgs(commit_sha).path(BASELINE_FILE_PATH));
+                Git::Show(paths.git_builtin_config()).object(commit_sha).path(BASELINE_FILE_PATH).run();
             if (auto contents = maybe_contents.get())
             {
                 std::error_code ec;
@@ -680,15 +680,17 @@ namespace
 
             auto path_to_baseline = Path(registry_versions_dir_name.to_string()) / "baseline.json";
 
-            auto maybe_contents =
-                git_show(m_paths.git_registries_config(),
-                         Git::ShowArgs(m_baseline_identifier).path(path_to_baseline.generic_u8string()));
+            auto maybe_contents = Git::Show(m_paths.git_registries_config())
+                                      .object(m_baseline_identifier)
+                                      .path(path_to_baseline.generic_u8string())
+                                      .run();
             if (!maybe_contents.has_value())
             {
                 get_lock_entry().ensure_up_to_date(m_paths);
-                maybe_contents =
-                    git_show(m_paths.git_registries_config(),
-                             Git::ShowArgs(m_baseline_identifier).path(path_to_baseline.generic_u8string()));
+                maybe_contents = Git::Show(m_paths.git_registries_config())
+                                     .object(m_baseline_identifier)
+                                     .path(path_to_baseline.generic_u8string())
+                                     .run();
             }
             if (!maybe_contents.has_value())
             {
@@ -708,9 +710,10 @@ namespace
                         m_repo,
                         maybe_fetch.error());
                 }
-                maybe_contents =
-                    git_show(m_paths.git_registries_config(),
-                             Git::ShowArgs(m_baseline_identifier).path(path_to_baseline.generic_u8string()));
+                maybe_contents = Git::Show(m_paths.git_registries_config())
+                                     .object(m_baseline_identifier)
+                                     .path(path_to_baseline.generic_u8string())
+                                     .run();
             }
 
             if (!maybe_contents.has_value())
