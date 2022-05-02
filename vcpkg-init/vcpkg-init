@@ -39,29 +39,13 @@ Z_VCPKG_init() {
 
 Z_VCPKG_bootstrap() {
   VCPKG_BASE_VERSION='latest'
-  do_bootstrap=0
-  if [ ! -f "${VCPKG_ROOT}/vcpkg" ]; then
-    echo 'updating due to no binary'
-    do_bootstrap=1
-  fi
 
-  if [ $VCPKG_BASE_VERSION == 'latest' ]; then
-    echo 'updating due to latest'
-    do_bootstrap=1
-  fi
-
-  if [ $do_bootstrap = '0' ] && [ "$(cat \"${VCPKG_ROOT}/vcpkg-one-liner-version.txt\")" != $VCPKG_BASE_VERSION ]; then
-    echo 'updating due to version mismatch'
-    do_bootstrap=1
-  fi
-
-  if [ $do_bootstrap = '0' ]; then
-    echo 'no update'
+  if [ $VCPKG_BASE_VERSION != 'latest' ] # always update latest
+      || [ ! -f "${VCPKG_ROOT}/vcpkg" ] # not installed
+      || [ ! -f "${VCPKG_ROOT}/vcpkg-one-liner-version.txt" ] # 2022-03-30 or older
+      || [ "$(cat ${VCPKG_ROOT}/vcpkg-one-liner-version.txt)" != $VCPKG_BASE_VERSION ]; then
     return 0;
   fi
-
-  # it's not there!
-  # let's install it where we want it
 
   echo installing vcpkg in $VCPKG_ROOT
 
@@ -80,6 +64,7 @@ Z_VCPKG_bootstrap() {
 
   chmod +x "${VCPKG_ROOT}/vcpkg"
   "${VCPKG_ROOT}/vcpkg" z-bootstrap-standalone
+  echo $VCPKG_BASE_VERSION > "${VCPKG_ROOT}/vcpkg-one-liner-version.txt"
   return 0;
 }
 
