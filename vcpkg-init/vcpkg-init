@@ -41,18 +41,22 @@ Z_VCPKG_bootstrap() {
   VCPKG_BASE_VERSION='latest'
   do_bootstrap=0
   if [ ! -f "${VCPKG_ROOT}/vcpkg" ]; then
+    echo 'updating due to no binary'
     do_bootstrap=1
   fi
 
-  if [$VCPKG_BASE_VERSION == 'latest']; then
+  if [ $VCPKG_BASE_VERSION == 'latest' ]; then
+    echo 'updating due to latest'
     do_bootstrap=1
   fi
 
-  if [$do_bootstrap = '0'] && [ "$(cat \"${VCPKG_ROOT}/vcpkg-one-liner-version.txt\")" != $VCPKG_BASE_VERSION ]; then
+  if [ $do_bootstrap = '0' ] && [ "$(cat \"${VCPKG_ROOT}/vcpkg-one-liner-version.txt\")" != $VCPKG_BASE_VERSION ]; then
+    echo 'updating due to version mismatch'
     do_bootstrap=1
   fi
 
-  if [$do_bootstrap = '0']; then
+  if [ $do_bootstrap = '0' ]; then
+    echo 'no update'
     return 0;
   fi
 
