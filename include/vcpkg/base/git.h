@@ -1,11 +1,13 @@
 #pragma once
 
+#include <vcpkg/base/fwd/system.process.h>
+
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 
 #include <set>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 namespace vcpkg
 {
@@ -21,6 +23,25 @@ namespace vcpkg
         {
             NO = 0,
             YES
+        };
+
+        struct ShowArgs
+        {
+            // runs `git show <object>` where object can be a commit, tag, tree or blob
+            // the output of the command depends on the type of object
+            explicit ShowArgs(StringView object) : m_object(object){};
+
+            ShowArgs& path(StringView path) { return m_path = make_optional<>(path), *this; };
+            ShowArgs& format(StringView format) { return m_format = make_optional<>(format), *this; }
+
+            const std::string& object() const { return m_object; }
+            const Optional<std::string>& path() const { return m_path; }
+            const Optional<std::string> format() const { return m_format; }
+
+        private:
+            std::string m_object;
+            Optional<std::string> m_path;
+            Optional<std::string> m_format;
         };
     }
 
@@ -62,6 +83,8 @@ namespace vcpkg
         std::string path;
     };
 
+    Command git_cmd_builder(const GitConfig& config);
+
     /* ===== Git command abstractions  =====*/
     // run git status on a repository, optionaly a specific subpath can be queried
     ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path = {});
@@ -84,7 +107,7 @@ namespace vcpkg
                                                       Git::DirsOnly dirs_only = Git::DirsOnly::NO);
 
     // runs `git show {git_object}`, optionally a path inside the object can be given
-    ExpectedL<std::string> git_show(const GitConfig& config, StringView git_object, StringView path = {});
+    ExpectedL<std::string> git_show(const GitConfig& config, Git::ShowArgs args);
 
     /* ===== Git application business logic =====*/
     // returns a list of ports that have uncommitted/unmerged changes
@@ -98,6 +121,9 @@ namespace vcpkg
                                                           StringView ref);
     // returns the current git commit SHA
     ExpectedL<std::string> git_current_sha(const GitConfig& config, Optional<std::string> maybe_embedded_sha = nullopt);
+
+    LocalizedString git_current_sha_message(const GitConfig& config,
+                                            Optional<std::string> maybe_embedded_sha = nullopt);
 
     // checks out a port version into containing_dir
     ExpectedL<Path> git_checkout_port(const GitConfig& config,

@@ -1,3 +1,4 @@
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
@@ -88,7 +89,10 @@ namespace vcpkg::Commands::PortsDiff
         const auto checkout_this_dir =
             Strings::format(R"(.\%s)", ports_dir_name); // Must be relative to the root of the repository
 
-        auto cmd = paths.git_cmd_builder(dot_git_dir, temp_checkout_path)
+        GitConfig config = paths.git_builtin_config();
+        config.git_work_tree = temp_checkout_path;
+
+        auto cmd = git_cmd_builder(config)
                        .string_arg("checkout")
                        .string_arg(git_commit_id)
                        .string_arg("-f")
@@ -97,9 +101,8 @@ namespace vcpkg::Commands::PortsDiff
                        .string_arg(checkout_this_dir)
                        .string_arg(".vcpkg-root");
         cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
-        cmd_execute_and_capture_output(paths.git_cmd_builder(dot_git_dir, temp_checkout_path).string_arg("reset"),
-                                       default_working_directory,
-                                       get_clean_environment());
+        cmd_execute_and_capture_output(
+            git_cmd_builder(config).string_arg("reset"), default_working_directory, get_clean_environment());
         const auto ports_at_commit = Paragraphs::load_overlay_ports(fs, temp_checkout_path / ports_dir_name);
         std::map<std::string, Version> names_and_versions;
         for (auto&& port : ports_at_commit)
@@ -115,7 +118,7 @@ namespace vcpkg::Commands::PortsDiff
     {
         static const std::string VALID_COMMIT_OUTPUT = "commit\n";
 
-        auto cmd = paths.git_cmd_builder(paths.root / ".git", paths.root)
+        auto cmd = git_cmd_builder(paths.git_builtin_config())
                        .string_arg("cat-file")
                        .string_arg("-t")
                        .string_arg(git_commit_id);

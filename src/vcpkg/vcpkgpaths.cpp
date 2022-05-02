@@ -189,11 +189,12 @@ namespace vcpkg
                 if (!is_git_commit_sha(*p_baseline))
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
-                    Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                               "Error: the top-level builtin-baseline%s was not a valid commit sha: "
-                                               "expected 40 lowercase hexadecimal characters.\n%s\n",
-                                               Strings::concat(" (", *p_baseline, ')'),
-                                               paths.get_current_git_sha_baseline_message());
+                    Checks::exit_maybe_upgrade(
+                        VCPKG_LINE_INFO,
+                        "Error: the top-level builtin-baseline%s was not a valid commit sha: "
+                        "expected 40 lowercase hexadecimal characters.\n%s\n",
+                        Strings::concat(" (", *p_baseline, ')'),
+                        git_current_sha_message(paths.git_builtin_config(), paths.git_embedded_sha()));
                 }
 
                 if (ret.config.default_reg)
@@ -929,21 +930,6 @@ namespace vcpkg
         return conf;
     }
 
-    Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
-    {
-        Command ret(get_tool_exe(Tools::GIT));
-        if (!dot_git_dir.empty())
-        {
-            ret.string_arg(Strings::concat("--git-dir=", dot_git_dir));
-        }
-        if (!work_tree.empty())
-        {
-            ret.string_arg(Strings::concat("--work-tree=", work_tree));
-        }
-        ret.string_arg("-c").string_arg("core.autocrlf=false");
-        return ret;
-    }
-
     Optional<std::string> VcpkgPaths::git_embedded_sha() const { return m_pimpl->m_bundle.m_embedded_git_sha; }
 
     std::string VcpkgPaths::get_toolver_diagnostics() const
@@ -958,18 +944,10 @@ namespace vcpkg
         }
         else
         {
-            const auto dot_git_dir = root / ".git";
-            Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir)
-                                  .string_arg("show")
-                                  .string_arg("--pretty=format:%h %cd (%cr)")
-                                  .string_arg("-s")
-                                  .string_arg("--date=short")
-                                  .string_arg("HEAD");
-
-            auto output = cmd_execute_and_capture_output(showcmd);
-            if (output.exit_code == 0)
+            auto maybe_output = git_show(git_builtin_config(), Git::ShowArgs("HEAD").format("format:%h %cs (%cr)"));
+            if (auto output = maybe_output.get())
             {
-                Strings::append(ret, "    vcpkg-scripts version: ", output.output, "\n");
+                Strings::append(ret, "    vcpkg-scripts version: ", *output, "\n");
             }
             else
             {
@@ -977,19 +955,6 @@ namespace vcpkg
             }
         }
         return ret;
-    }
-    std::string VcpkgPaths::get_current_git_sha_baseline_message() const
-    {
-        const auto maybe_cur_sha = git_current_sha(this->git_builtin_config(), this->git_embedded_sha());
-        if (auto p_sha = maybe_cur_sha.get())
-        {
-            return Strings::concat(
-                "You can use the current commit as a baseline, which is:\n    \"builtin-baseline\": \"", *p_sha, '"');
-        }
-        else
-        {
-            return Strings::concat("Failed to determine the current commit:\n", maybe_cur_sha.error());
-        }
     }
 
     Optional<const ManifestAndPath&> VcpkgPaths::get_manifest() const

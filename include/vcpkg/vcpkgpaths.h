@@ -141,12 +141,7 @@ namespace vcpkg
         // gets the embedded git sha of the vcpkg instance
         Optional<std::string> git_embedded_sha() const;
 
-        std::string get_current_git_sha_baseline_message() const;
-
         const DownloadManager& get_download_manager() const;
-
-        // Git manipulation for remote registries
-        Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
 
         Optional<const ManifestAndPath&> get_manifest() const;
         const ConfigurationAndSource& get_configuration() const;

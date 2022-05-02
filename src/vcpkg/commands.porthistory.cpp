@@ -1,3 +1,4 @@
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
@@ -30,7 +31,7 @@ namespace vcpkg::Commands::PortHistory
 
         ExitCodeAndOutput run_git_command(const VcpkgPaths& paths, const Command& cmd)
         {
-            auto full_cmd = paths.git_cmd_builder(paths.root / ".git", paths.root).raw_arg(cmd.command_line());
+            auto full_cmd = git_cmd_builder(paths.git_builtin_config()).raw_arg(cmd.command_line());
 
             return cmd_execute_and_capture_output(full_cmd);
         }

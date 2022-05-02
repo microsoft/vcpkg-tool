@@ -50,6 +50,15 @@ namespace
                                  (msg::old_value, msg::new_value),
                                  "{old_value} is the original path of a renamed file, {new_value} is the new path",
                                  "failed to rename {old_value} to {new_value}");
+    DECLARE_AND_REGISTER_MESSAGE(GitSuggestCurrentCommitAsBaseline,
+                                 (),
+                                 "",
+                                 "you can use the current commit as a baseline by adding this line to your manifest:");
+    DECLARE_AND_REGISTER_MESSAGE(GitFailedDetectingCurrentCommit, (), "", "failed to determine current commit");
+}
+
+namespace vcpkg
+{
 
     Command git_cmd_builder(const GitConfig& config)
     {
@@ -65,10 +74,7 @@ namespace
         }
         return cmd;
     }
-}
 
-namespace vcpkg
-{
     std::string try_extract_port_name_from_path(StringView path)
     {
         static constexpr StringLiteral prefix = "ports/";
@@ -357,17 +363,24 @@ namespace vcpkg
         return parse_git_ls_tree_output(output.output);
     }
 
-    ExpectedL<std::string> git_show(const GitConfig& config, StringView git_object, StringView path)
+    ExpectedL<std::string> git_show(const GitConfig& config, Git::ShowArgs args)
     {
         auto cmd = git_cmd_builder(config).string_arg("show");
-        if (path.empty())
+
+        if (auto format = args.path().get())
         {
-            cmd.string_arg(git_object);
+            cmd.string_arg(*format);
+        }
+
+        if (auto path = args.path().get())
+        {
+            cmd.string_arg(Strings::concat(args.object(), ":", *path));
         }
         else
         {
-            cmd.string_arg(Strings::concat(git_object, ":", path));
+            cmd.string_arg(args.object());
         }
+
         auto output = cmd_execute_and_capture_output(cmd);
         if (output.exit_code != 0)
         {
@@ -442,6 +455,21 @@ namespace vcpkg
         }
 
         return maybe_sha.error();
+    }
+
+    LocalizedString git_current_sha_message(const GitConfig& config, Optional<std::string> maybe_embedded_sha)
+    {
+        const auto maybe_cur_sha = git_current_sha(config, maybe_embedded_sha);
+        if (auto p_sha = maybe_cur_sha.get())
+        {
+            return msg::format(msgGitSuggestCurrentCommitAsBaseline)
+                .appendnl()
+                .append_fmt_raw(R"("builtin-baseline": "{}")", *p_sha);
+        }
+        else
+        {
+            return msg::format(msgGitFailedDetectingCurrentCommit).appendnl().append(maybe_cur_sha.error());
+        }
     }
 
     ExpectedL<Path> archive_and_extract_object(
