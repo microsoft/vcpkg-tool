@@ -43,7 +43,7 @@ Z_VCPKG_bootstrap() {
   if [ $VCPKG_BASE_VERSION != 'latest' ] \
       && [ -f "${VCPKG_ROOT}/vcpkg" ] \
       && [ -f "${VCPKG_ROOT}/vcpkg-one-liner-version.txt" ] \
-      && [ "$(cat "${VCPKG_ROOT}/vcpkg-one-liner-version.txt")" == $VCPKG_BASE_VERSION ]; then
+      && [ "$(cat "${VCPKG_ROOT}/vcpkg-one-liner-version.txt")" = $VCPKG_BASE_VERSION ]; then
     return 0;
   fi
 

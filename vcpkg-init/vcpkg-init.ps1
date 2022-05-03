@@ -89,7 +89,7 @@ function bootstrap-vcpkg {
   [bool]$do_bootstrap = -not (test-path $VCPKG_SCRIPT) -or ($VCPKG_INIT_VERSION -eq 'latest')
   if(-not $do_bootstrap -and (test-path $VCPKG_VERSION_MARKER)) {
     $previous_version = Get-Content -Path $VCPKG_VERSION_MARKER -Raw
-    if ($previous_version -ne $VCPKG_INIT_VERSION) {
+    if ($previous_version.Trim() -ne $VCPKG_INIT_VERSION) {
       $do_bootstrap = $true
     }
   }
@@ -109,7 +109,7 @@ function bootstrap-vcpkg {
   $PATH = $ENV:PATH
   $ENV:PATH="$VCPKG_ROOT;$PATH"
 
-  Set-Content -Path $VCPKG_VERSION_MARKER -Value $VCPKG_INIT_VERSION -Force -NoNewline
+  Set-Content -Path $VCPKG_VERSION_MARKER -Value "$VCPKG_INIT_VERSION`n" -Force -NoNewline
 
   z-vcpkg-debug "Bootstrapped vcpkg: ${VCPKG_ROOT}"
 
