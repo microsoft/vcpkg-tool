@@ -73,6 +73,8 @@ if( $ENV:VCPKG_ROOT ) {
 
 $VCPKG = "${VCPKG_ROOT}/vcpkg.exe"
 $SCRIPT:VCPKG_SCRIPT = "${VCPKG_ROOT}/vcpkg-init.ps1"
+$SCRIPT:VCPKG_VERSION_MARKER = "${VCPKG_ROOT}/vcpkg-one-liner-version.txt"
+$SCRIPT:VCPKG_INIT_VERSION = 'latest'
 
 $remove = $args.IndexOf('--remove-vcpkg') -gt -1
 
@@ -84,7 +86,15 @@ if( $remove ) {
 }
 
 function bootstrap-vcpkg {
-  if( test-path $VCPKG_SCRIPT ) {
+  [bool]$do_bootstrap = -not (test-path $VCPKG_SCRIPT) -or ($VCPKG_INIT_VERSION -eq 'latest')
+  if(-not $do_bootstrap -and (test-path $VCPKG_VERSION_MARKER)) {
+    $previous_version = Get-Content -Path $VCPKG_VERSION_MARKER -Raw
+    if ($previous_version.Trim() -ne $VCPKG_INIT_VERSION) {
+      $do_bootstrap = $true
+    }
+  }
+
+  if( -not $do_bootstrap ) {
     return $true
   }
 
@@ -98,6 +108,8 @@ function bootstrap-vcpkg {
 
   $PATH = $ENV:PATH
   $ENV:PATH="$VCPKG_ROOT;$PATH"
+
+  Set-Content -Path $VCPKG_VERSION_MARKER -Value "$VCPKG_INIT_VERSION`n" -Force -NoNewline
 
   z-vcpkg-debug "Bootstrapped vcpkg: ${VCPKG_ROOT}"
 

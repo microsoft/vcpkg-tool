@@ -32,8 +32,6 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}");
-
     static Path process_input_directory_impl(
         Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
     {
@@ -912,6 +910,15 @@ namespace vcpkg
         return m_pimpl->m_tool_cache->get_tool_version(*this, tool);
     }
 
+    GitConfig VcpkgPaths::git_builtin_config() const
+    {
+        GitConfig conf;
+        conf.git_exe = get_tool_exe(Tools::GIT);
+        conf.git_dir = this->root / ".git";
+        conf.git_work_tree = this->root;
+        return conf;
+    }
+
     Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
     {
         Command ret(get_tool_exe(Tools::GIT));
@@ -1006,22 +1013,6 @@ namespace vcpkg
         {
             return {std::move(output.output), expected_right_tag};
         }
-    }
-
-    ExpectedL<bool> VcpkgPaths::git_port_has_local_changes(StringView port_name) const
-    {
-        const auto cmd = git_cmd_builder({}, {})
-                             .string_arg("status")
-                             .string_arg("--porcelain=v1")
-                             .string_arg("--")
-                             .string_arg(Strings::concat("ports/", port_name));
-        auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code == 0)
-        {
-            return !output.output.empty();
-        }
-
-        return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line());
     }
 
     ExpectedS<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
