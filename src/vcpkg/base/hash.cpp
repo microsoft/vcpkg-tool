@@ -558,6 +558,8 @@ namespace vcpkg::Hash
         return get_bytes_hash(sv.data(), sv.data() + sv.size(), algo);
     }
 
+    std::string get_string_sha256(StringView s) { return get_string_hash(s, Hash::Algorithm::Sha256); }
+
     ExpectedL<std::string> get_file_hash(const Filesystem& fs, const Path& path, Algorithm algo)
     {
         std::error_code ec;
