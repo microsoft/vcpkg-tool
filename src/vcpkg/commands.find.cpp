@@ -226,7 +226,7 @@ namespace vcpkg::Commands
                 print2(Color::warning, "--x-json has no effect on find artifact\n");
             }
 
-            Optional<std::string> filter_hash = filter.then(Hash::get_string_sha256);
+            Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             auto args_hash = Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256);
             {
                 auto metrics = LockGuardPtr<Metrics>(g_metrics);
@@ -242,7 +242,7 @@ namespace vcpkg::Commands
 
         if (selector == "port")
         {
-            Optional<std::string> filter_hash = filter.then(Hash::get_string_sha256);
+            Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             {
                 auto metrics = LockGuardPtr<Metrics>(g_metrics);
                 metrics->track_property("command_context", "port");
