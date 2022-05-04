@@ -226,27 +226,31 @@ namespace vcpkg::Commands
                 print2(Color::warning, "--x-json has no effect on find artifact\n");
             }
 
-            auto metrics = LockGuardPtr<Metrics>(g_metrics);
-            metrics->track_property("command_context", "artifact");
-            if (filter.has_value())
+            auto args_hash = Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256);
             {
-                metrics->track_property(
-                    "command_args",
-                    Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
-            }
+                auto metrics = LockGuardPtr<Metrics>(g_metrics);
+                metrics->track_property("command_context", "artifact");
+                if (filter.has_value())
+                {
+                    metrics->track_property("command_args", args_hash);
+                }
+            } // unlock metrics
+
             perform_find_artifact_and_exit(paths, filter);
         }
 
         if (selector == "port")
         {
-            auto metrics = LockGuardPtr<Metrics>(g_metrics);
-            metrics->track_property("command_context", "port");
-            if (filter.has_value())
+            auto filter_hash = Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256);
             {
-                metrics->track_property(
-                    "command_args",
-                    Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
+                auto metrics = LockGuardPtr<Metrics>(g_metrics);
+                metrics->track_property("command_context", "port");
+                if (filter.has_value())
+                {
+                    metrics->track_property("command_args", filter_hash);
+                }
             }
+
             perform_find_port_and_exit(paths, full_description, enable_json, filter, args.overlay_ports);
         }
 
