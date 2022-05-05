@@ -296,18 +296,29 @@ namespace vcpkg::msg
 
     LocalizedString detail::internal_vformat(::size_t index, fmt::format_args args)
     {
+        std::string res;
+        detail::internal_vformat_to(res, index, args);
+        return LocalizedString::from_raw(std::move(res));
+    }
+
+    void detail::internal_vformat_to_raw(std::string& out, StringView f, fmt::format_args args)
+    {
+        fmt::vformat_to(std::back_inserter(out), {f.data(), f.size()}, args);
+    }
+
+    void detail::internal_vformat_to(std::string& out, ::size_t index, fmt::format_args args)
+    {
         auto fmt_string = get_format_string(index);
         try
         {
-            return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
+            detail::internal_vformat_to_raw(out, fmt_string, args);
         }
         catch (...)
         {
             auto default_format_string = get_default_format_string(index);
             try
             {
-                return LocalizedString::from_raw(
-                    fmt::vformat({default_format_string.data(), default_format_string.size()}, args));
+                detail::internal_vformat_to_raw(out, fmt_string, args);
             }
             catch (...)
             {
@@ -319,5 +330,11 @@ namespace vcpkg::msg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
+    }
+
+    void detail::internal_vprint(Color c, ::size_t index, fmt::format_args args)
+    {
+        auto res = internal_vformat(index, args);
+        msg::write_unlocalized_text_to_stdout(c, res);
     }
 }

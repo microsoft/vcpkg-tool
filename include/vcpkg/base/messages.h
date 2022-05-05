@@ -18,6 +18,29 @@ namespace vcpkg
     {
         template<class Tag, class Type>
         struct MessageArgument;
+
+        template<class Tag, class Type>
+        struct MessageArgument
+        {
+            const Type* parameter; // always valid
+        };
+        template<class... Tags>
+        struct MessageCheckFormatArgs
+        {
+            static constexpr void check_format_args(const Tags&...) noexcept { }
+        };
+        template<class... Args>
+        MessageCheckFormatArgs<Args...> make_message_check_format_args(const Args&... args);
+
+        template<class Message, class... Tags, class... Ts>
+        fmt::format_args make_format_args(detail::MessageArgument<Tags, Ts>... args) {
+            static_assert((Message::check_format_args((Tags{})...), true), "");
+            return fmt::make_format_args(fmt::arg(Tags::name(), *args.parameter)...);
+        }
+
+        void internal_vformat_to_raw(std::string& out, StringView f, fmt::format_args args);
+        void internal_vformat_to(std::string& out, ::size_t index, fmt::format_args args);
+        void internal_vprint(Color c, ::size_t index, fmt::format_args args);
     }
     namespace msg
     {
@@ -47,9 +70,9 @@ namespace vcpkg
             return *this;
         }
         template<class... Args>
-        LocalizedString& append_fmt_raw(fmt::string_view s, const Args&... args)
+        LocalizedString& append_fmt_raw(StringView s, const Args&... args)
         {
-            m_data.append(fmt::format(s, args...));
+            msg::detail::internal_vformat_to_raw(m_data, s, fmt::make_format_args(args...));
             return *this;
         }
         LocalizedString& append(const LocalizedString& s)
@@ -58,9 +81,10 @@ namespace vcpkg
             return *this;
         }
         template<class Message, class... Args>
-        LocalizedString& append(Message m, const Args&... args)
+        LocalizedString& append(Message m, Args... args)
         {
-            return append(msg::format(m, args...));
+            msg::detail::internal_vformat_to(m_data, m.index, msg::detail::make_format_args<Message>(args...));
+            return *this;
         }
 
         LocalizedString& appendnl()
@@ -132,22 +156,8 @@ namespace vcpkg::msg
 {
     namespace detail
     {
-        template<class Tag, class Type>
-        struct MessageArgument
-        {
-            const Type* parameter; // always valid
-        };
-
-        template<class... Tags>
-        struct MessageCheckFormatArgs
-        {
-            static constexpr void check_format_args(const Tags&...) noexcept { }
-        };
 
         LocalizedString internal_vformat(::size_t index, fmt::format_args args);
-
-        template<class... Args>
-        MessageCheckFormatArgs<Args...> make_message_check_format_args(const Args&... args);
 
         template<class... Args>
         std::string get_examples_for_args(StringView extra, const MessageCheckFormatArgs<Args...>&)
@@ -180,11 +190,7 @@ namespace vcpkg::msg
     template<class Message, class... Tags, class... Ts>
     LocalizedString format(Message, detail::MessageArgument<Tags, Ts>... args)
     {
-        // avoid generating code, but still typeck
-        // (and avoid unused typedef warnings)
-        static_assert((Message::check_format_args((Tags{})...), true), "");
-        return detail::internal_vformat(Message::index,
-                                        fmt::make_format_args(fmt::arg(Tags::name(), *args.parameter)...));
+        return detail::internal_vformat(Message::index, detail::make_format_args<Message>(args...));
     }
 
     inline void println() { msg::write_unlocalized_text_to_stdout(Color::none, "\n"); }
@@ -205,23 +211,25 @@ namespace vcpkg::msg
     template<class Message, class... Ts>
     void print(Message m, Ts... args)
     {
-        print(format(m, args...));
+        detail::internal_vprint(Color::none, m.index, detail::make_format_args<Message>(args...));
     }
     template<class Message, class... Ts>
     void println(Message m, Ts... args)
     {
-        print(format(m, args...).appendnl());
+        detail::internal_vprint(Color::none, m.index, detail::make_format_args<Message>(args...));
+        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
 
     template<class Message, class... Ts>
     void print(Color c, Message m, Ts... args)
     {
-        print(c, format(m, args...));
+        detail::internal_vprint(c, m.index, detail::make_format_args<Message>(args...));
     }
     template<class Message, class... Ts>
     void println(Color c, Message m, Ts... args)
     {
-        print(c, format(m, args...).appendnl());
+        detail::internal_vprint(c, m.index, detail::make_format_args<Message>(args...));
+        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
 
 // these use `constexpr static` instead of `inline` in order to work with GCC 6;
