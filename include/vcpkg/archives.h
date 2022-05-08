@@ -22,6 +22,8 @@ namespace vcpkg
                                   const Path& destination_dir);
 
 #ifdef _WIN32
+    // Extract the 7z archive part of a self extracting 7z installer
+    void win32_extract_self_extracting_7z(const VcpkgPaths& paths, const Path& archive, const Path& to_path);
     // Extract `archive` to `to_path`, deleting `to_path` first. `archive` must be a zip file.
     // This function will use potentially less performant tools that are reliably available on any machine.
     void win32_extract_bootstrap_zip(const VcpkgPaths& paths, const Path& archive, const Path& to_path);

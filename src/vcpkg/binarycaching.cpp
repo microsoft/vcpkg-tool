@@ -25,19 +25,86 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(AwsFailedToDownload,
-                                 (msg::exit_code),
+    DECLARE_AND_REGISTER_MESSAGE(ObjectStorageToolFailed,
+                                 (msg::exit_code, msg::tool_name),
                                  "",
-                                 "aws failed to download with exit code: {exit_code}");
-    DECLARE_AND_REGISTER_MESSAGE(AwsAttemptingToFetchPackages,
-                                 (msg::count),
+                                 "{tool_name} failed with exit code: {exit_code}");
+    DECLARE_AND_REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor,
+                                 (msg::count, msg::vendor),
                                  "",
-                                 "Attempting to fetch {count} packages from AWS");
-    DECLARE_AND_REGISTER_MESSAGE(AwsRestoredPackages,
-                                 (msg::count, msg::elapsed),
+                                 "Attempting to fetch {count} package(s) from {vendor}");
+    DECLARE_AND_REGISTER_MESSAGE(RestoredPackagesFromVendor,
+                                 (msg::count, msg::elapsed, msg::vendor),
                                  "",
-                                 "Restored {count} packages from AWS servers in {elapsed}");
-    DECLARE_AND_REGISTER_MESSAGE(AwsUploadedPackages, (msg::count), "", "Uploaded binaries to {count} AWS servers");
+                                 "Restored {count} package(s) from {vendor} in {elapsed}");
+    DECLARE_AND_REGISTER_MESSAGE(UploadedPackagesToVendor,
+                                 (msg::count, msg::elapsed, msg::vendor),
+                                 "",
+                                 "Uploaded {count} package(s) to {vendor} in {elapsed}");
+    DECLARE_AND_REGISTER_MESSAGE(UnknownBinaryProviderType,
+                                 (),
+                                 "",
+                                 "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
+                                 "'nugetconfig', 'interactive', and 'files'");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPrefix,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' requires at least a prefix");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresSource,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' requires non-empty source");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgument, (), "", "invalid argument");
+    DECLARE_AND_REGISTER_MESSAGE(
+        InvalidArgumentRequiresSourceArgument,
+        (msg::binary_source),
+        "",
+        "invalid argument: binary config '{binary_source}' requires at least a source argument");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresPathArgument,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' requires at least a path argument");
+    DECLARE_AND_REGISTER_MESSAGE(
+        InvalidArgumentRequiresAbsolutePath,
+        (msg::binary_source),
+        "",
+        "invalid argument: binary config '{binary_source}' path arguments for binary config strings must be absolute");
+    DECLARE_AND_REGISTER_MESSAGE(
+        InvalidArgumentRequiresBaseUrl,
+        (msg::base_url, msg::binary_source),
+        "",
+        "invalid argument: binary config '{binary_source}' requires a {base_url} base url as the first argument");
+    DECLARE_AND_REGISTER_MESSAGE(
+        InvalidArgumentRequiresBaseUrlAndToken,
+        (msg::binary_source),
+        "",
+        "invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresValidToken,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' requires a SAS token without a "
+                                 "preceeding '?' as the second argument");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresNoneArguments,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' does not take arguments");
+    DECLARE_AND_REGISTER_MESSAGE(
+        InvalidArgumentRequiresSingleArgument,
+        (msg::binary_source),
+        "",
+        "invalid argument: binary config '{binary_source}' does not take more than 1 argument");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresSingleStringArgument,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' expects a single string argument");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresOneOrTwoArguments,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' requires 1 or 2 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(InvalidArgumentRequiresTwoOrThreeArguments,
+                                 (msg::binary_source),
+                                 "",
+                                 "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments");
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -193,7 +260,7 @@ namespace
                                std::vector<Path>&& read_dirs,
                                std::vector<Path>&& write_dirs,
                                std::vector<std::string>&& put_url_templates,
-                               std::vector<std::string>&& secrets)
+                               const std::vector<std::string>& secrets)
             : paths(paths)
             , m_read_dirs(std::move(read_dirs))
             , m_write_dirs(std::move(write_dirs))
@@ -427,8 +494,10 @@ namespace
     };
     struct HttpGetBinaryProvider : IBinaryProvider
     {
-        HttpGetBinaryProvider(const VcpkgPaths& paths, std::vector<std::string>&& url_templates)
-            : paths(paths), m_url_templates(std::move(url_templates))
+        HttpGetBinaryProvider(const VcpkgPaths& paths,
+                              std::vector<std::string>&& url_templates,
+                              const std::vector<std::string>& secrets)
+            : paths(paths), m_url_templates(std::move(url_templates)), m_secrets(secrets)
         {
         }
 
@@ -532,7 +601,7 @@ namespace
                     return;
                 }
 
-                auto codes = url_heads(urls, {});
+                auto codes = url_heads(urls, {}, m_secrets);
                 Checks::check_exit(VCPKG_LINE_INFO, codes.size() == urls.size());
                 for (size_t i = 0; i < codes.size(); ++i)
                 {
@@ -555,6 +624,7 @@ namespace
 
         const VcpkgPaths& paths;
         std::vector<std::string> m_url_templates;
+        std::vector<std::string> m_secrets;
     };
     struct NugetBinaryProvider : IBinaryProvider
     {
@@ -916,52 +986,16 @@ namespace
         bool m_use_nuget_cache;
     };
 
-    bool gsutil_stat(const std::string& url)
+    struct ObjectStorageProvider : IBinaryProvider
     {
-        Command cmd;
-        cmd.string_arg("gsutil").string_arg("-q").string_arg("stat").string_arg(url);
-        const auto res = cmd_execute(cmd);
-        return res == 0;
-    }
-
-    bool gsutil_upload_file(const std::string& gcs_object, const Path& archive)
-    {
-        Command cmd;
-        cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").string_arg(archive).string_arg(gcs_object);
-        const auto out = cmd_execute_and_capture_output(cmd);
-        if (out.exit_code == 0)
-        {
-            return true;
-        }
-
-        print2(Color::warning, "gsutil failed to upload with exit code: ", out.exit_code, '\n', out.output);
-        return false;
-    }
-
-    bool gsutil_download_file(const std::string& gcs_object, const Path& archive)
-    {
-        Command cmd;
-        cmd.string_arg("gsutil").string_arg("-q").string_arg("cp").string_arg(gcs_object).string_arg(archive);
-        const auto out = cmd_execute_and_capture_output(cmd);
-        if (out.exit_code == 0)
-        {
-            return true;
-        }
-
-        print2(Color::warning, "gsutil failed to download with exit code: ", out.exit_code, '\n', out.output);
-        return false;
-    }
-
-    struct GcsBinaryProvider : IBinaryProvider
-    {
-        GcsBinaryProvider(const VcpkgPaths& paths,
-                          std::vector<std::string>&& read_prefixes,
-                          std::vector<std::string>&& write_prefixes)
+        ObjectStorageProvider(const VcpkgPaths& paths,
+                              std::vector<std::string>&& read_prefixes,
+                              std::vector<std::string>&& write_prefixes)
             : paths(paths), m_read_prefixes(std::move(read_prefixes)), m_write_prefixes(std::move(write_prefixes))
         {
         }
 
-        static std::string make_gcs_path(const std::string& prefix, const std::string& abi)
+        static std::string make_object_path(const std::string& prefix, const std::string& abi)
         {
             return Strings::concat(prefix, abi, ".zip");
         }
@@ -988,225 +1022,16 @@ namespace
 
                     auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    url_paths.emplace_back(make_gcs_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
-                                           make_temp_archive_path(paths.buildtrees(), action.spec));
+                    url_paths.emplace_back(
+                        make_object_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
+                        make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
 
                 if (url_paths.empty()) break;
 
-                print2("Attempting to fetch ", url_paths.size(), " packages from GCS.\n");
-                std::vector<Command> jobs;
-                std::vector<size_t> idxs;
-                for (size_t idx = 0; idx < url_paths.size(); ++idx)
-                {
-                    auto&& action = actions[url_indices[idx]];
-                    auto&& url_path = url_paths[idx];
-                    if (!gsutil_download_file(url_path.first, url_path.second)) continue;
-                    jobs.push_back(decompress_zip_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
-                    idxs.push_back(idx);
-                }
-
-                const auto job_results = decompress_in_parallel(jobs);
-
-                for (size_t j = 0; j < jobs.size(); ++j)
-                {
-                    const auto idx = idxs[j];
-                    if (job_results[j].exit_code != 0)
-                    {
-                        Debug::print("Failed to decompress ", url_paths[idx].second, '\n');
-                        continue;
-                    }
-
-                    // decompression success
-                    ++restored_count;
-                    fs.remove(url_paths[idx].second, VCPKG_LINE_INFO);
-                    cache_status[url_indices[idx]]->mark_restored();
-                }
-            }
-
-            print2("Restored ",
-                   restored_count,
-                   " packages from GCS servers in ",
-                   timer.elapsed(),
-                   ". Use --debug for more information.\n");
-        }
-
-        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
-        {
-            return RestoreResult::unavailable;
-        }
-
-        void push_success(const Dependencies::InstallPlanAction& action) const override
-        {
-            if (m_write_prefixes.empty()) return;
-            const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-            auto& spec = action.spec;
-            const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
-            if (code != 0)
-            {
-                vcpkg::print2(
-                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
-                return;
-            }
-            size_t upload_count = 0;
-            for (const auto& prefix : m_write_prefixes)
-            {
-                if (gsutil_upload_file(make_gcs_path(prefix, abi), tmp_archive_path))
-                {
-                    ++upload_count;
-                }
-            }
-
-            print2("Uploaded binaries to ", upload_count, " GCS remotes.\n");
-        }
-
-        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
-        {
-            std::vector<CacheAvailability> actions_availability{actions.size()};
-            for (const auto& prefix : m_read_prefixes)
-            {
-                for (size_t idx = 0; idx < actions.size(); ++idx)
-                {
-                    auto&& action = actions[idx];
-                    const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                    if (!cache_status[idx]->should_attempt_precheck(this))
-                    {
-                        continue;
-                    }
-
-                    if (gsutil_stat(make_gcs_path(prefix, abi)))
-                    {
-                        actions_availability[idx] = CacheAvailability::available;
-                        cache_status[idx]->mark_available(this);
-                    }
-                }
-            }
-
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
-                const auto this_cache_status = cache_status[idx];
-                if (this_cache_status && actions_availability[idx] == CacheAvailability::unavailable)
-                {
-                    this_cache_status->mark_unavailable(this);
-                }
-            }
-        }
-
-    private:
-        const VcpkgPaths& paths;
-
-        std::vector<std::string> m_read_prefixes;
-        std::vector<std::string> m_write_prefixes;
-    };
-
-    bool awscli_stat(const VcpkgPaths& paths, const std::string& url, const bool no_sign_request)
-    {
-        auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("ls").string_arg(url);
-        if (no_sign_request)
-        {
-            cmd.string_arg("--no-sign-request");
-        }
-        return cmd_execute(cmd) == 0;
-    }
-
-    bool awscli_upload_file(const VcpkgPaths& paths,
-                            const std::string& aws_object,
-                            const Path& archive,
-                            const bool no_sign_request)
-    {
-        auto cmd =
-            Command{paths.get_tool_exe(Tools::AWSCLI)}.string_arg("s3").string_arg("cp").string_arg(archive).string_arg(
-                aws_object);
-        if (no_sign_request)
-        {
-            cmd.string_arg("--no-sign-request");
-        }
-        const auto out = cmd_execute_and_capture_output(cmd);
-        if (out.exit_code == 0)
-        {
-            return true;
-        }
-
-        msg::println(Color::warning, msgAwsFailedToDownload, msg::exit_code = out.exit_code);
-        msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
-        return false;
-    }
-
-    bool awscli_download_file(const VcpkgPaths& paths,
-                              const std::string& aws_object,
-                              const Path& archive,
-                              const bool no_sign_request)
-    {
-        auto cmd = Command{paths.get_tool_exe(Tools::AWSCLI)}
-                       .string_arg("s3")
-                       .string_arg("cp")
-                       .string_arg(aws_object)
-                       .string_arg(archive);
-        if (no_sign_request)
-        {
-            cmd.string_arg("--no-sign-request");
-        }
-        const auto out = cmd_execute_and_capture_output(cmd);
-        if (out.exit_code == 0)
-        {
-            return true;
-        }
-
-        msg::println(Color::warning, msgAwsFailedToDownload, msg::exit_code = out.exit_code);
-        msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
-        return false;
-    }
-
-    struct AwsBinaryProvider : IBinaryProvider
-    {
-        AwsBinaryProvider(const VcpkgPaths& paths,
-                          std::vector<std::string>&& read_prefixes,
-                          std::vector<std::string>&& write_prefixes,
-                          const bool no_sign_request)
-            : paths(paths)
-            , m_read_prefixes(std::move(read_prefixes))
-            , m_write_prefixes(std::move(write_prefixes))
-            , m_no_sign_request(no_sign_request)
-        {
-        }
-
-        static std::string make_aws_path(const std::string& prefix, const std::string& abi)
-        {
-            return Strings::concat(prefix, abi, ".zip");
-        }
-
-        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
-        {
-            auto& fs = paths.get_filesystem();
-
-            const auto timer = ElapsedTimer::create_started();
-
-            size_t restored_count = 0;
-            for (const auto& prefix : m_read_prefixes)
-            {
-                std::vector<std::pair<std::string, Path>> url_paths;
-                std::vector<size_t> url_indices;
-
-                for (size_t idx = 0; idx < cache_status.size(); ++idx)
-                {
-                    const auto this_cache_status = cache_status[idx];
-                    if (!this_cache_status || !this_cache_status->should_attempt_restore(this))
-                    {
-                        continue;
-                    }
-
-                    auto&& action = actions[idx];
-                    clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    url_paths.emplace_back(make_aws_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
-                                           make_temp_archive_path(paths.buildtrees(), action.spec));
-                    url_indices.push_back(idx);
-                }
-
-                if (url_paths.empty()) break;
-
-                msg::println(msgAwsAttemptingToFetchPackages, msg::count = url_paths.size());
+                msg::println(
+                    msgAttemptingToFetchPackagesFromVendor, msg::count = url_paths.size(), msg::vendor = vendor());
 
                 std::vector<Command> jobs;
                 std::vector<size_t> idxs;
@@ -1214,7 +1039,7 @@ namespace
                 {
                     auto&& action = actions[url_indices[idx]];
                     auto&& url_path = url_paths[idx];
-                    if (!awscli_download_file(paths, url_path.first, url_path.second, m_no_sign_request)) continue;
+                    if (!download_file(url_path.first, url_path.second)) continue;
                     jobs.push_back(decompress_zip_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
                     idxs.push_back(idx);
                 }
@@ -1238,7 +1063,10 @@ namespace
                 }
             }
 
-            msg::println(msgAwsRestoredPackages, msg::count = restored_count, msg::elapsed = timer.elapsed());
+            msg::println(msgRestoredPackagesFromVendor,
+                         msg::count = restored_count,
+                         msg::elapsed = timer.elapsed(),
+                         msg::vendor = vendor());
         }
 
         RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
@@ -1249,6 +1077,7 @@ namespace
         void push_success(const Dependencies::InstallPlanAction& action) const override
         {
             if (m_write_prefixes.empty()) return;
+            const auto timer = ElapsedTimer::create_started();
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
@@ -1263,13 +1092,16 @@ namespace
             size_t upload_count = 0;
             for (const auto& prefix : m_write_prefixes)
             {
-                if (awscli_upload_file(paths, make_aws_path(prefix, abi), tmp_archive_path, m_no_sign_request))
+                if (upload_file(make_object_path(prefix, abi), tmp_archive_path))
                 {
                     ++upload_count;
                 }
             }
 
-            msg::println(msgAwsUploadedPackages, msg::count = upload_count);
+            msg::println(msgUploadedPackagesToVendor,
+                         msg::count = upload_count,
+                         msg::elapsed = timer.elapsed(),
+                         msg::vendor = vendor());
         }
 
         void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -1286,7 +1118,7 @@ namespace
                         continue;
                     }
 
-                    if (awscli_stat(paths, make_aws_path(prefix, abi), m_no_sign_request))
+                    if (stat(make_object_path(prefix, abi)))
                     {
                         actions_availability[idx] = CacheAvailability::available;
                         cache_status[idx]->mark_available(this);
@@ -1304,13 +1136,196 @@ namespace
             }
         }
 
-    private:
+    protected:
+        virtual StringLiteral vendor() const = 0;
+        virtual bool stat(StringView url) const = 0;
+        virtual bool upload_file(StringView object, const Path& archive) const = 0;
+        virtual bool download_file(StringView object, const Path& archive) const = 0;
+
         const VcpkgPaths& paths;
 
+    private:
         std::vector<std::string> m_read_prefixes;
         std::vector<std::string> m_write_prefixes;
+    };
 
+    struct GcsBinaryProvider : ObjectStorageProvider
+    {
+        GcsBinaryProvider(const VcpkgPaths& paths,
+                          std::vector<std::string>&& read_prefixes,
+                          std::vector<std::string>&& write_prefixes)
+            : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
+        {
+        }
+
+        StringLiteral vendor() const override { return "GCS"; }
+
+        Command command() const { return Command{paths.get_tool_exe(Tools::GSUTIL)}; }
+
+        bool stat(StringView url) const override
+        {
+            auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
+            return cmd_execute(cmd) == 0;
+        }
+
+        bool upload_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::GSUTIL);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+
+        bool download_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::GSUTIL);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+    };
+
+    struct AwsBinaryProvider : ObjectStorageProvider
+    {
+        AwsBinaryProvider(const VcpkgPaths& paths,
+                          std::vector<std::string>&& read_prefixes,
+                          std::vector<std::string>&& write_prefixes,
+                          const bool no_sign_request)
+            : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
+            , m_no_sign_request(no_sign_request)
+        {
+        }
+
+        StringLiteral vendor() const override { return "AWS"; }
+
+        Command command() const { return Command{paths.get_tool_exe(Tools::AWSCLI)}; }
+
+        bool stat(StringView url) const override
+        {
+            auto cmd = command().string_arg("s3").string_arg("ls").string_arg(url);
+            if (m_no_sign_request)
+            {
+                cmd.string_arg("--no-sign-request");
+            }
+            return cmd_execute(cmd) == 0;
+        }
+
+        bool upload_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object);
+            if (m_no_sign_request)
+            {
+                cmd.string_arg("--no-sign-request");
+            }
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::AWSCLI);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+
+        bool download_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
+            if (m_no_sign_request)
+            {
+                cmd.string_arg("--no-sign-request");
+            }
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::AWSCLI);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+
+    private:
         bool m_no_sign_request;
+    };
+
+    struct CosBinaryProvider : ObjectStorageProvider
+    {
+        CosBinaryProvider(const VcpkgPaths& paths,
+                          std::vector<std::string>&& read_prefixes,
+                          std::vector<std::string>&& write_prefixes)
+            : ObjectStorageProvider(paths, std::move(read_prefixes), std::move(write_prefixes))
+        {
+        }
+
+        StringLiteral vendor() const override { return "COS"; }
+
+        Command command() const { return Command{paths.get_tool_exe(Tools::COSCLI)}; }
+
+        bool stat(StringView url) const override
+        {
+            auto cmd = command().string_arg("ls").string_arg(url);
+            return cmd_execute(cmd) == 0;
+        }
+
+        bool upload_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("cp").string_arg(archive).string_arg(object);
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::COSCLI);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
+
+        bool download_file(StringView object, const Path& archive) const override
+        {
+            auto cmd = command().string_arg("cp").string_arg(object).string_arg(archive);
+            const auto out = cmd_execute_and_capture_output(cmd);
+            if (out.exit_code == 0)
+            {
+                return true;
+            }
+
+            msg::println(Color::warning,
+                         msgObjectStorageToolFailed,
+                         msg::exit_code = out.exit_code,
+                         msg::tool_name = Tools::COSCLI);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            return false;
+        }
     };
 }
 
@@ -1568,6 +1583,8 @@ namespace vcpkg
         aws_read_prefixes.clear();
         aws_write_prefixes.clear();
         aws_no_sign_request = false;
+        cos_read_prefixes.clear();
+        cos_write_prefixes.clear();
         sources_to_read.clear();
         sources_to_write.clear();
         configs_to_read.clear();
@@ -1643,7 +1660,7 @@ namespace
             {
                 if (segments.size() != 1)
                 {
-                    return add_error("unexpected arguments: binary config 'clear' does not take arguments",
+                    return add_error(msg::format(msgInvalidArgumentRequiresNoneArguments, msg::binary_source = "clear"),
                                      segments[1].first);
                 }
 
@@ -1653,30 +1670,32 @@ namespace
             {
                 if (segments.size() < 2)
                 {
-                    return add_error("expected arguments: binary config 'files' requires at least a path argument",
+                    return add_error(msg::format(msgInvalidArgumentRequiresPathArgument, msg::binary_source = "files"),
                                      segments[0].first);
                 }
 
                 Path p = segments[1].second;
                 if (!p.is_absolute())
                 {
-                    return add_error("expected arguments: path arguments for binary config strings must be absolute",
+                    return add_error(msg::format(msgInvalidArgumentRequiresAbsolutePath, msg::binary_source = "files"),
                                      segments[1].first);
                 }
 
                 handle_readwrite(state->archives_to_read, state->archives_to_write, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
-                    return add_error("unexpected arguments: binary config 'files' requires 1 or 2 arguments",
-                                     segments[3].first);
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "files"),
+                        segments[3].first);
                 }
             }
             else if (segments[0].second == "interactive")
             {
                 if (segments.size() > 1)
                 {
-                    return add_error("unexpected arguments: binary config 'interactive' does not accept any arguments",
-                                     segments[1].first);
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresNoneArguments, msg::binary_source = "interactive"),
+                        segments[1].first);
                 }
 
                 state->interactive = true;
@@ -1686,43 +1705,47 @@ namespace
                 if (segments.size() < 2)
                 {
                     return add_error(
-                        "expected arguments: binary config 'nugetconfig' requires at least a source argument",
+                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nugetconfig"),
                         segments[0].first);
                 }
 
                 Path p = segments[1].second;
                 if (!p.is_absolute())
                 {
-                    return add_error("expected arguments: path arguments for binary config strings must be absolute",
-                                     segments[1].first);
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresAbsolutePath, msg::binary_source = "nugetconfig"),
+                        segments[1].first);
                 }
 
                 handle_readwrite(state->configs_to_read, state->configs_to_write, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
-                    return add_error("unexpected arguments: binary config 'nugetconfig' requires 1 or 2 arguments",
-                                     segments[3].first);
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nugetconfig"),
+                        segments[3].first);
                 }
             }
             else if (segments[0].second == "nuget")
             {
                 if (segments.size() < 2)
                 {
-                    return add_error("expected arguments: binary config 'nuget' requires at least a source argument",
-                                     segments[0].first);
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"),
+                        segments[0].first);
                 }
 
                 auto&& p = segments[1].second;
                 if (p.empty())
                 {
-                    return add_error("unexpected arguments: binary config 'nuget' requires non-empty source");
+                    return add_error(msg::format(msgInvalidArgumentRequiresSource, msg::binary_source = "nuget"));
                 }
 
                 handle_readwrite(state->sources_to_read, state->sources_to_write, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
-                    return add_error("unexpected arguments: binary config 'nuget' requires 1 or 2 arguments",
-                                     segments[3].first);
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nuget"),
+                        segments[3].first);
                 }
             }
             else if (segments[0].second == "nugettimeout")
@@ -1755,8 +1778,9 @@ namespace
             {
                 if (segments.size() > 2)
                 {
-                    return add_error("unexpected arguments: binary config 'default' does not take more than 1 argument",
-                                     segments[0].first);
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresSingleArgument, msg::binary_source = "default"),
+                        segments[0].first);
                 }
 
                 const auto& maybe_home = default_cache_path();
@@ -1774,28 +1798,29 @@ namespace
                 if (segments.size() < 3)
                 {
                     return add_error(
-                        "expected arguments: binary config 'azblob' requires at least a base-url and a SAS token",
+                        msg::format(msgInvalidArgumentRequiresBaseUrlAndToken, msg::binary_source = "azblob"),
                         segments[0].first);
                 }
 
                 if (!Strings::starts_with(segments[1].second, "https://"))
                 {
-                    return add_error(
-                        "invalid argument: binary config 'azblob' requires an https base url as the first argument",
-                        segments[1].first);
+                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                 msg::base_url = "https://",
+                                                 msg::binary_source = "azblob"),
+                                     segments[1].first);
                 }
 
                 if (Strings::starts_with(segments[2].second, "?"))
                 {
-                    return add_error("invalid argument: binary config 'azblob' requires a SAS token without a "
-                                     "preceeding '?' as the second argument",
+                    return add_error(msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = "azblob"),
                                      segments[2].first);
                 }
 
                 if (segments.size() > 4)
                 {
-                    return add_error("unexpected arguments: binary config 'azblob' requires 2 or 3 arguments",
-                                     segments[4].first);
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "azblob"),
+                        segments[4].first);
                 }
 
                 auto p = segments[1].second;
@@ -1820,21 +1845,23 @@ namespace
                 // Scheme: x-gcs,<prefix>[,<readwrite>]
                 if (segments.size() < 2)
                 {
-                    return add_error("expected arguments: binary config 'gcs' requires at least a prefix",
+                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "gcs"),
                                      segments[0].first);
                 }
 
                 if (!Strings::starts_with(segments[1].second, "gs://"))
                 {
-                    return add_error(
-                        "invalid argument: binary config 'gcs' requires a gs:// base url as the first argument",
-                        segments[1].first);
+                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                 msg::base_url = "gs://",
+                                                 msg::binary_source = "gcs"),
+                                     segments[1].first);
                 }
 
                 if (segments.size() > 3)
                 {
-                    return add_error("unexpected arguments: binary config 'gcs' requires 1 or 2 arguments",
-                                     segments[3].first);
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "gcs"),
+                        segments[3].first);
                 }
 
                 auto p = segments[1].second;
@@ -1850,21 +1877,23 @@ namespace
                 // Scheme: x-aws,<prefix>[,<readwrite>]
                 if (segments.size() < 2)
                 {
-                    return add_error("expected arguments: binary config 'aws' requires at least a prefix",
+                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "aws"),
                                      segments[0].first);
                 }
 
                 if (!Strings::starts_with(segments[1].second, "s3://"))
                 {
-                    return add_error(
-                        "invalid argument: binary config 'aws' requires a s3:// base url as the first argument",
-                        segments[1].first);
+                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                 msg::base_url = "s3://",
+                                                 msg::binary_source = "aws"),
+                                     segments[1].first);
                 }
 
                 if (segments.size() > 3)
                 {
-                    return add_error("unexpected arguments: binary config 'aws' requires 1 or 2 arguments",
-                                     segments[3].first);
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "aws"),
+                        segments[3].first);
                 }
 
                 auto p = segments[1].second;
@@ -1879,8 +1908,8 @@ namespace
             {
                 if (segments.size() != 2)
                 {
-                    return add_error(
-                        "expected arguments: binary config 'x-aws-config' expects a single string argument");
+                    return add_error(msg::format(msgInvalidArgumentRequiresSingleStringArgument,
+                                                 msg::binary_source = "x-aws-config"));
                 }
 
                 auto no_sign_request = false;
@@ -1890,17 +1919,46 @@ namespace
                 }
                 else
                 {
-                    return add_error("unexpected argument", segments[1].first);
+                    return add_error(msg::format(msgInvalidArgument), segments[1].first);
                 }
 
                 state->aws_no_sign_request = no_sign_request;
             }
+            else if (segments[0].second == "x-cos")
+            {
+                // Scheme: x-cos,<prefix>[,<readwrite>]
+                if (segments.size() < 2)
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "cos"),
+                                     segments[0].first);
+                }
+
+                if (!Strings::starts_with(segments[1].second, "cos://"))
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                 msg::base_url = "cos://",
+                                                 msg::binary_source = "cos"),
+                                     segments[1].first);
+                }
+
+                if (segments.size() > 3)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "cos"),
+                        segments[3].first);
+                }
+
+                auto p = segments[1].second;
+                if (p.back() != '/')
+                {
+                    p.push_back('/');
+                }
+
+                handle_readwrite(state->cos_read_prefixes, state->cos_write_prefixes, std::move(p), segments, 2);
+            }
             else
             {
-                return add_error(
-                    "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', "
-                    "'interactive', and 'files'",
-                    segments[0].first);
+                return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
             }
         }
     };
@@ -2168,19 +2226,26 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
             paths, std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes), s.aws_no_sign_request));
     }
 
+    if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
+    {
+        providers.push_back(std::make_unique<CosBinaryProvider>(
+            paths, std::move(s.cos_read_prefixes), std::move(s.cos_write_prefixes)));
+    }
+
     if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.azblob_templates_to_put.empty())
     {
         providers.push_back(std::make_unique<ArchivesBinaryProvider>(paths,
                                                                      std::move(s.archives_to_read),
                                                                      std::move(s.archives_to_write),
                                                                      std::move(s.azblob_templates_to_put),
-                                                                     std::move(s.secrets)));
+                                                                     s.secrets));
     }
 
     if (!s.url_templates_to_get.empty())
     {
         LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-url-get", "defined");
-        providers.push_back(std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get)));
+        providers.push_back(
+            std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get), s.secrets));
     }
 
     if (!s.sources_to_read.empty() || !s.sources_to_write.empty() || !s.configs_to_read.empty() ||
@@ -2412,6 +2477,10 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
         "**Experimental: will change or be removed without warning** Adds an AWS S3 source. "
         "Adds an AWS configuration; currently supports only 'no-sign-request' parameter that is an equivalent to the "
         "'--no-sign-request parameter of the AWS cli.");
+    tbl.format("x-cos,<prefix>[,<rw>]",
+               "**Experimental: will change or be removed without warning** Adds an COS source. "
+               "Uses the cos CLI for uploads and downloads. Prefix should include cos:// scheme and be suffixed "
+               "with a `/`.");
     tbl.format("interactive", "Enables interactive credential management for some source types");
     tbl.blank();
     tbl.text("The `<rw>` optional parameter for certain strings controls whether they will be consulted for "

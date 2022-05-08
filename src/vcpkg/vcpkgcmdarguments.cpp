@@ -138,14 +138,7 @@ namespace vcpkg
             if (arg.size() > 0 && arg[0] == '@')
             {
                 arg.erase(arg.begin());
-                std::error_code ec;
-                auto lines = fs.read_lines(arg, ec);
-                if (ec)
-                {
-                    print2(Color::error, "Error: Could not open response file ", arg, '\n');
-                    Checks::exit_fail(VCPKG_LINE_INFO);
-                }
-
+                auto lines = fs.read_lines(arg, VCPKG_LINE_INFO);
                 v.insert(v.end(), std::make_move_iterator(lines.begin()), std::make_move_iterator(lines.end()));
             }
             else
@@ -305,6 +298,7 @@ namespace vcpkg
 
             constexpr static std::pair<StringView, Optional<bool> VcpkgCmdArguments::*> switches[] = {
                 {DEBUG_SWITCH, &VcpkgCmdArguments::debug},
+                {DEBUG_ENV_SWITCH, &VcpkgCmdArguments::debug_env},
                 {DISABLE_METRICS_SWITCH, &VcpkgCmdArguments::disable_metrics},
                 {SEND_METRICS_SWITCH, &VcpkgCmdArguments::send_metrics},
                 {PRINT_METRICS_SWITCH, &VcpkgCmdArguments::print_metrics},
@@ -383,6 +377,9 @@ namespace vcpkg
 
         parse_feature_flags(feature_flags, args);
 
+        // --debug-env implies --debug
+        if (const auto p = args.debug_env.get()) args.debug_env = *p;
+
         return args;
     }
 
@@ -445,7 +442,7 @@ namespace vcpkg
             const auto it = find_option(switches_copy, switch_.name);
             if (it != switches_copy.end())
             {
-                output.switches.insert(switch_.name);
+                output.switches.insert(switch_.name.to_string());
                 switches_copy.erase(it);
             }
             const auto option_it = find_option(options_copy, switch_.name);
@@ -514,7 +511,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        output.multisettings[option.name].push_back(v);
+                        output.multisettings[option.name.to_string()].push_back(v);
                     }
                 }
                 options_copy.erase(it);
@@ -1022,6 +1019,7 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::BINARY_SOURCES_ARG;
 
     constexpr StringLiteral VcpkgCmdArguments::DEBUG_SWITCH;
+    constexpr StringLiteral VcpkgCmdArguments::DEBUG_ENV_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::SEND_METRICS_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::DISABLE_METRICS_ENV;
     constexpr StringLiteral VcpkgCmdArguments::DISABLE_METRICS_SWITCH;

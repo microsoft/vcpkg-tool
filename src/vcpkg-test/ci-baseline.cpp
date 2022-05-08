@@ -289,7 +289,8 @@ TEST_CASE ("Applies Skips and Fails", "[ci-baseline]")
     ExclusionsMap exclusions;
     exclusions.insert(x64_uwp);   // example triplet
     exclusions.insert(x64_linux); // example host triplet
-    auto actual_expected_failures = parse_and_apply_ci_baseline(expected_from_example_input, exclusions);
+    auto actual_expected_failures =
+        parse_and_apply_ci_baseline(expected_from_example_input, exclusions, SkipFailures::No);
     const SortedVector<PackageSpec> expected_expected_failures{
         PackageSpec{"aubio", x64_uwp},
         PackageSpec{"bde", x64_linux},
@@ -308,4 +309,17 @@ TEST_CASE ("Applies Skips and Fails", "[ci-baseline]")
     CHECK(exclusions.triplets.size() == 2);
     CHECK(exclusions.triplets[0].exclusions == SortedVector<std::string>{"catch-classic"});
     CHECK(exclusions.triplets[1].exclusions == SortedVector<std::string>{"catch-classic", "bill-made-up-another-skip"});
+
+    exclusions.triplets[0].exclusions.clear();
+    exclusions.triplets[1].exclusions.clear();
+
+    actual_expected_failures = parse_and_apply_ci_baseline(expected_from_example_input, exclusions, SkipFailures::Yes);
+    CHECK(actual_expected_failures == expected_expected_failures);
+    CHECK(exclusions.triplets.size() == 2);
+    CHECK(exclusions.triplets[0].exclusions ==
+          SortedVector<std::string>{
+              "aubio", "blitz", "blosc", "bond", "botan", "c-ares", "caf", "casclib", "catch-classic"});
+    CHECK(exclusions.triplets[1].exclusions ==
+          SortedVector<std::string>{
+              "bde", "buck-yeh-bux", "buck-yeh-bux-mariadb-client", "catch-classic", "bill-made-up-another-skip"});
 }

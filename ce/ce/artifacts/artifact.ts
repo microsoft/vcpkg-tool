@@ -1,19 +1,22 @@
+/* eslint-disable prefer-const */
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 import { fail } from 'assert';
-import { resolve } from 'path';
+import { match } from 'micromatch';
+import { delimiter, resolve } from 'path';
 import { MetadataFile } from '../amf/metadata-file';
-import { gitArtifact, gitUniqueIdPrefix, latestVersion } from '../constants';
+import { latestVersion } from '../constants';
+import { FileType } from '../fs/filesystem';
 import { i } from '../i18n';
 import { InstallEvents } from '../interfaces/events';
 import { Registries } from '../registries/registries';
 import { Session } from '../session';
 import { linq } from '../util/linq';
 import { Uri } from '../util/uri';
-import { Activation } from './activation';
 import { Registry } from './registry';
 import { SetOfDemands } from './SetOfDemands';
+
 
 export type Selections = Map<string, string>;
 export type UID = string;
@@ -81,25 +84,13 @@ class ArtifactBase {
       }
     }
 
-
-    if (!linq.startsWith(artifacts, gitUniqueIdPrefix)) {
-      // check if anyone needs git and add it if it isn't there
-      for (const each of this.applicableDemands.installer) {
-        if (each.installerKind === 'git') {
-          const [reg, id, art] = await this.registries.getArtifact(gitArtifact, latestVersion) || [];
-          if (art) {
-            artifacts.set(gitArtifact, [art, gitArtifact, latestVersion]);
-            break;
-          }
-        }
-      }
-    }
     return artifacts;
   }
 }
 
 export class Artifact extends ArtifactBase {
   isPrimary = false;
+  allPaths: Array<string> = [];
 
   constructor(session: Session, metadata: MetadataFile, public shortName: string = '', public targetLocation: Uri, public readonly registryId: string, public readonly registryUri: Uri) {
     super(session, metadata);
@@ -125,35 +116,25 @@ export class Artifact extends ArtifactBase {
     return `${this.registryUri.toString()}::${this.id}::${this.version}`;
   }
 
-  async install(activation: Activation, events: Partial<InstallEvents>, options: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<boolean> {
+  async install(events: Partial<InstallEvents>, options: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<boolean> {
     let installing = false;
     try {
       // is it installed?
       const applicableDemands = this.applicableDemands;
-      applicableDemands.setActivation(activation);
 
-      let isFailing = false;
-      for (const error of applicableDemands.errors) {
-        this.session.channels.error(error);
-        isFailing = true;
+      this.session.channels.error(applicableDemands.errors, this);
+
+      if (applicableDemands.errors.length) {
+        throw Error('Error message from Artifact');
       }
 
-      if (isFailing) {
-        throw Error('errors present');
-      }
-
-      // warnings
-      for (const warning of applicableDemands.warnings) {
-        this.session.channels.warning(warning);
-      }
-
-      // messages
-      for (const message of applicableDemands.messages) {
-        this.session.channels.message(message);
-      }
+      this.session.channels.warning(applicableDemands.warnings, this);
+      this.session.channels.message(applicableDemands.messages, this);
 
       if (await this.isInstalled && !options.force) {
-        await this.loadActivationSettings(activation);
+        if (!await this.loadActivationSettings(events)) {
+          throw new Error(i`Failed during artifact activation`);
+        }
         return false;
       }
       installing = true;
@@ -176,12 +157,14 @@ export class Artifact extends ArtifactBase {
         if (!installer) {
           fail(i`Unknown installer type ${installInfo!.installerKind}`);
         }
-        await installer(this.session, activation, this.id, this.targetLocation, installInfo, events, options);
+        await installer(this.session, this.id, this.targetLocation, installInfo, events, options);
       }
 
       // after we unpack it, write out the installed manifest
       await this.writeManifest();
-      await this.loadActivationSettings(activation);
+      if (!await this.loadActivationSettings(events)) {
+        throw new Error(i`Failed during artifact activation`);
+      }
       return true;
     } catch (err) {
       if (installing) {
@@ -209,109 +192,57 @@ export class Artifact extends ArtifactBase {
     await this.targetLocation.delete({ recursive: true, useTrash: false });
   }
 
-  async loadActivationSettings(activation: Activation) {
+  matchFilesInArtifact(glob: string) {
+    const results = match(this.allPaths, glob.trim(), { dot: true, cwd: this.targetLocation.fsPath, unescape: true });
+    if (results.length === 0) {
+      this.session.channels.warning(i`Unable to resolve '${glob}' to files in the artifact folder`, this);
+      return [];
+    }
+    return results;
+  }
+
+  resolveBraces(text: string, mustBeSingle = false) {
+    return text.replace(/\{(.*?)\}/g, (m, e) => {
+      const results = this.matchFilesInArtifact(e);
+      if (mustBeSingle && results.length > 1) {
+        this.session.channels.warning(i`Glob ${m} resolved to multiple locations. Using first location.`, this);
+        return results[0];
+      }
+      return results.join(delimiter);
+    });
+  }
+
+  resolveBracesAndSplit(text: string): Array<string> {
+    return this.resolveBraces(text).split(delimiter);
+  }
+
+  isGlob(path: string) {
+    return path.indexOf('*') !== -1 || path.indexOf('?') !== -1;
+  }
+
+  async loadActivationSettings(events: Partial<InstallEvents>) {
     // construct paths (bin, lib, include, etc.)
     // construct tools
     // compose variables
     // defines
 
-    const l = this.targetLocation.toString().length + 1;
-    const allPaths = (await this.targetLocation.readDirectory(undefined, { recursive: true })).select(([name, stat]) => name.toString().substr(l));
-
-    for (const settingBlock of this.applicableDemands.settings) {
-      // **** defines ****
-      // eslint-disable-next-line prefer-const
-      for (let [key, value] of settingBlock.defines) {
-        if (value === 'true') {
-          value = '1';
-        }
-
-        const v = activation.defines.get(key);
-        if (v && v !== value) {
-          // conflict. todo: what do we want to do?
-          this.session.channels.warning(i`Duplicate define ${key} during activation. New value will replace old `);
-        }
-        activation.defines.set(key, value);
-      }
-
-      // **** paths ****
-      for (const key of settingBlock.paths.keys) {
-        if (!key) {
-          continue;
-        }
-
-        const pathEnvVariable = key.toUpperCase();
-        const p = activation.paths.getOrDefault(pathEnvVariable, []);
-        const l = settingBlock.paths.get(key);
-        const uris = new Set<Uri>();
-
-        for (const location of l ?? []) {
-          // check that each path is an actual path.
-          const path = await this.sanitizeAndValidatePath(location);
-          if (path && !uris.has(path)) {
-            uris.add(path);
-            p.push(path);
-          }
-        }
-      }
-
-      // **** tools ****
-      for (const key of settingBlock.tools.keys) {
-        const envVariable = key.toUpperCase();
-
-        if (activation.tools.has(envVariable)) {
-          this.session.channels.error(i`Duplicate tool declared ${key} during activation. Probably not a good thing?`);
-        }
-
-        const p = settingBlock.tools.get(key) || '';
-        const uri = await this.sanitizeAndValidatePath(p);
-        if (uri) {
-          activation.tools.set(envVariable, uri.fsPath);
-        } else {
-          if (p) {
-            activation.tools.set(envVariable, p);
-            // this.session.channels.warning(i`Invalid tool path '${p}'`);
-          }
-        }
-      }
-
-      // **** variables ****
-      for (const [key, value] of settingBlock.variables) {
-        const envKey = activation.environment.getOrDefault(key, []);
-        envKey.push(...value);
-      }
-
-      // **** properties ****
-      for (const [key, value] of settingBlock.properties) {
-        const envKey = activation.properties.getOrDefault(key, []);
-        envKey.push(...value);
-      }
-
-      // **** locations ****
-      for (const locationName of settingBlock.locations.keys) {
-        if (activation.locations.has(locationName)) {
-          this.session.channels.error(i`Duplicate location declared ${locationName} during activation. Probably not a good thing?`);
-        }
-
-        const p = settingBlock.locations.get(locationName) || '';
-        const uri = await this.sanitizeAndValidatePath(p);
-        if (uri) {
-          activation.locations.set(locationName, uri);
-        }
-      }
+    // record all the files in the artifact
+    this.allPaths = (await this.targetLocation.readDirectory(undefined, { recursive: true })).select(([name, stat]) => stat === FileType.Directory ? name.fsPath + '/' : name.fsPath);
+    for (const exportsBlock of this.applicableDemands.exports) {
+      this.session.activation.addExports(exportsBlock, this.targetLocation);
     }
+
+    return true;
   }
 
   async sanitizeAndValidatePath(path: string) {
-    if (!path.startsWith('.')) {
-      try {
-        const loc = this.session.fileSystem.file(resolve(path));
-        if (await loc.exists()) {
-          return loc;
-        }
-      } catch {
-        // no worries, treat it like a relative path.
+    try {
+      const loc = this.session.fileSystem.file(resolve(this.targetLocation.fsPath, path));
+      if (await loc.exists()) {
+        return loc;
       }
+    } catch {
+      // no worries, treat it like a relative path.
     }
     const loc = this.targetLocation.join(sanitizePath(path));
     if (await loc.exists()) {
@@ -353,6 +284,6 @@ export class ProjectManifest extends ArtifactBase {
 
 export class InstalledArtifact extends Artifact {
   constructor(session: Session, metadata: MetadataFile) {
-    super(session, metadata, '', Uri.invalid, 'OnDisk?', Uri.invalid); /* fixme ? */
+    super(session, metadata, '', Uri.invalid, 'OnDisk?', Uri.invalid);
   }
 }

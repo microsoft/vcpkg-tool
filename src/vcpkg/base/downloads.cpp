@@ -6,7 +6,6 @@
 #include <vcpkg/base/lockguarded.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
@@ -26,6 +25,11 @@ namespace
                                  "=== curl output ===\n"
                                  "{actual}\n"
                                  "=== end curl output ===\n");
+    DECLARE_AND_REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload,
+                                 (),
+                                 "",
+                                 "an unexpected error occurred during bulk download.");
+    DECLARE_AND_REGISTER_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:");
 }
 
 namespace vcpkg
@@ -227,7 +231,7 @@ namespace vcpkg
                                                                  StringView sha512)
     {
         std::string actual_hash =
-            vcpkg::Hash::get_file_hash(VCPKG_LINE_INFO, fs, downloaded_path, Hash::Algorithm::Sha512);
+            vcpkg::Hash::get_file_hash(fs, downloaded_path, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
 
         // <HACK to handle NuGet.org changing nupkg hashes.>
         // This is the NEW hash for 7zip
@@ -277,7 +281,10 @@ namespace vcpkg
         return true;
     }
 
-    static void url_heads_inner(View<std::string> urls, View<std::string> headers, std::vector<int>* out)
+    static void url_heads_inner(View<std::string> urls,
+                                View<std::string> headers,
+                                std::vector<int>* out,
+                                View<std::string> secrets)
     {
         static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -311,13 +318,15 @@ namespace vcpkg
 
         if (out->size() != start_size + urls.size())
         {
+            auto command_line = replace_secrets(std::move(cmd).extract(), secrets);
+            auto actual = replace_secrets(Strings::join("\n", lines), secrets);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                         msgCurlReportedUnexpectedResults,
-                                        msg::command_line = cmd.command_line(),
-                                        msg::actual = Strings::join("\n", lines));
+                                        msg::command_line = command_line,
+                                        msg::actual = actual);
         }
     }
-    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers)
+    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets)
     {
         static constexpr size_t batch_size = 100;
 
@@ -326,9 +335,9 @@ namespace vcpkg
         size_t i = 0;
         for (; i + batch_size <= urls.size(); i += batch_size)
         {
-            url_heads_inner({urls.data() + i, batch_size}, headers, &ret);
+            url_heads_inner({urls.data() + i, batch_size}, headers, &ret, secrets);
         }
-        if (i != urls.size()) url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret);
+        if (i != urls.size()) url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret, secrets);
 
         return ret;
     }
@@ -349,10 +358,11 @@ namespace vcpkg
         for (auto i : {100, 1000, 10000, 0})
         {
             size_t start_size = out->size();
-            static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
+            static constexpr StringLiteral guid_marker = "5ec47b8e-6776-4d70-b9b3-ac2a57bc0a1c";
 
             Command cmd;
             cmd.string_arg("curl")
+                .string_arg("--create-dirs")
                 .string_arg("--location")
                 .string_arg("-w")
                 .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
@@ -371,7 +381,7 @@ namespace vcpkg
             if (start_size + url_pairs.size() > out->size())
             {
                 // curl stopped before finishing all downloads; retry after some time
-                print2(Color::warning, "Warning: an unexpected error occurred during bulk download.\n");
+                msg::print_warning(msgUnexpectedErrorDuringBulkDownload);
                 std::this_thread::sleep_for(std::chrono::milliseconds(i));
                 url_pairs =
                     View<std::pair<std::string, Path>>{url_pairs.begin() + out->size() - start_size, url_pairs.end()};
@@ -730,7 +740,8 @@ namespace vcpkg
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push.has_value())
                         {
-                            print2(Color::warning, "Warning: failed to store back to mirror:\n", maybe_push.error());
+                            msg::print_warning(msgFailedToStoreBackToMirror);
+                            msg::write_unlocalized_text_to_stdout(Color::warning, maybe_push.error());
                         }
                     }
                     return *url;

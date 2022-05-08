@@ -177,6 +177,7 @@ else()
 endif()
 
 set(CPP_ATOMIC_LIBRARY "")
+include(CheckCXXSourceCompiles)
 if(NOT MSVC)
     # Some platforms require a explicit linkage against libatomic to operate on 64-bit numbers
     set(TEST_SOURCE "
@@ -276,6 +277,9 @@ if (BUILD_TESTING)
         ${VCPKG_TEST_INCLUDES}
     )
     target_link_libraries(vcpkg-test PRIVATE vcpkglib)
+    if(ANDROID)
+        target_link_libraries(vcpkg-test PRIVATE log)
+    endif()
     vcpkg_target_add_warning_options(vcpkg-test)
 
     add_test(NAME default COMMAND vcpkg-test --order rand --rng-seed time)

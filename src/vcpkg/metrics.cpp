@@ -4,6 +4,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/uuid.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
@@ -91,82 +92,6 @@ namespace vcpkg
         return "";
     }
 
-    struct append_hexits
-    {
-        constexpr static char hex[17] = "0123456789abcdef";
-        void operator()(std::string& res, std::uint8_t bits) const
-        {
-            res.push_back(hex[(bits >> 4) & 0x0F]);
-            res.push_back(hex[(bits >> 0) & 0x0F]);
-        }
-    };
-    constexpr char append_hexits::hex[17];
-
-    // note: this ignores the bits of these numbers that would be where format and variant go
-    static std::string uuid_of_integers(uint64_t top, uint64_t bottom)
-    {
-        // uuid_field_size in bytes, not hex characters
-        constexpr size_t uuid_top_field_size[] = {4, 2, 2};
-        constexpr size_t uuid_bottom_field_size[] = {2, 6};
-
-        // uuid_field_size in hex characters, not bytes
-        constexpr size_t uuid_size = 8 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 12;
-
-        constexpr static append_hexits write_byte;
-
-        // set the version bits to 4
-        top &= 0xFFFF'FFFF'FFFF'0FFFULL;
-        top |= 0x0000'0000'0000'4000ULL;
-
-        // set the variant bits to 2 (variant one)
-        bottom &= 0x3FFF'FFFF'FFFF'FFFFULL;
-        bottom |= 0x8000'0000'0000'0000ULL;
-
-        std::string res;
-        res.reserve(uuid_size);
-
-        bool first = true;
-        size_t start_byte = 0;
-        for (auto field_size : uuid_top_field_size)
-        {
-            if (!first)
-            {
-                res.push_back('-');
-            }
-            first = false;
-            for (size_t i = start_byte; i < start_byte + field_size; ++i)
-            {
-                auto shift = 64 - (i + 1) * 8;
-                write_byte(res, (top >> shift) & 0xFF);
-            }
-            start_byte += field_size;
-        }
-
-        start_byte = 0;
-        for (auto field_size : uuid_bottom_field_size)
-        {
-            res.push_back('-');
-            for (size_t i = start_byte; i < start_byte + field_size; ++i)
-            {
-                auto shift = 64 - (i + 1) * 8;
-                write_byte(res, (bottom >> shift) & 0xFF);
-            }
-            start_byte += field_size;
-        }
-
-        return res;
-    }
-
-    // UUID format version 4, variant 1
-    // http://en.wikipedia.org/wiki/Universally_unique_identifier
-    // [0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
-    static std::string generate_random_UUID()
-    {
-        std::random_device rnd{};
-        std::uniform_int_distribution<std::uint64_t> uid{};
-        return uuid_of_integers(uid(rnd), uid(rnd));
-    }
-
     static const std::string& get_session_id()
     {
         static const std::string ID = generate_random_UUID();
@@ -207,9 +132,9 @@ namespace vcpkg
 
     struct MetricMessage
     {
-        std::string user_id = generate_random_UUID();
+        std::string user_id;
         std::string user_timestamp;
-        std::string timestamp = get_current_date_time_string();
+        std::string timestamp;
 
         Json::Object properties;
         Json::Object measurements;
@@ -217,24 +142,34 @@ namespace vcpkg
         Json::Array buildtime_names;
         Json::Array buildtime_times;
 
-        void track_property(const std::string& name, const std::string& value)
+        void track_property(StringView name, const std::string& value)
         {
             properties.insert_or_replace(name, Json::Value::string(value));
         }
 
-        void track_metric(const std::string& name, double value)
+        void track_property(StringView name, bool value)
+        {
+            properties.insert_or_replace(name, Json::Value::boolean(value));
+        }
+
+        void track_metric(StringView name, double value)
         {
             measurements.insert_or_replace(name, Json::Value::number(value));
         }
 
-        void track_buildtime(const std::string& name, double value)
+        void track_buildtime(StringView name, double value)
         {
             buildtime_names.push_back(Json::Value::string(name));
             buildtime_times.push_back(Json::Value::number(value));
         }
-        void track_feature(const std::string& name, bool value)
+        void track_feature(StringView name, bool value)
         {
-            properties.insert("feature-flag-" + name, Json::Value::boolean(value));
+            properties.insert(Strings::concat("feature-flag-", name), Json::Value::boolean(value));
+        }
+
+        void track_option(StringView name, bool value)
+        {
+            properties.insert(Strings::concat("option_", name), Json::Value::boolean(value));
         }
 
         std::string format_event_data_template() const
@@ -403,7 +338,11 @@ namespace vcpkg
         g_metricmessage.track_property(name, value);
     }
 
+    void Metrics::track_property(const std::string& name, bool value) { g_metricmessage.track_property(name, value); }
+
     void Metrics::track_feature(const std::string& name, bool value) { g_metricmessage.track_feature(name, value); }
+
+    void Metrics::track_option(const std::string& name, bool value) { g_metricmessage.track_option(name, value); }
 
     void Metrics::upload(const std::string& payload)
     {
