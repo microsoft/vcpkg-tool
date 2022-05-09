@@ -264,7 +264,11 @@ endfunction()
             [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
             default_working_directory);
 
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, exit_code == 0 ? "" : Strings::join("\n", lines));
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           exit_code == 0,
+                           "Run command: \"%s\" failed with the following results:\n%s\n",
+                           cmd_launch_cmake.command_line(),
+                           Strings::join("\n", lines));
 
         const auto end = lines.cend();
 
