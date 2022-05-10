@@ -740,8 +740,10 @@ namespace vcpkg::PostBuildLint
             std::string dirs = "    file(REMOVE_RECURSE";
             for (auto&& empty_dir : empty_directories)
             {
-                Strings::append(
-                    dirs, " \"${CURRENT_PACKAGES_DIR}", empty_dir.native().substr(dir.native().size()), '"');
+                Strings::append(dirs,
+                                " \"${CURRENT_PACKAGES_DIR}",
+                                empty_dir.generic_u8string().substr(dir.generic_u8string().size()),
+                                '"');
             }
             dirs += ")\n";
             print2(
