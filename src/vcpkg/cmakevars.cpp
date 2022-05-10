@@ -248,6 +248,14 @@ endfunction()
         return dep_info_path;
     }
 
+    DECLARE_AND_REGISTER_MESSAGE(CommandFailed,
+                                 (msg::command_line, msg::list),
+                                 "",
+                                 "command:\n"
+                                 "{command_line}\n"
+                                 "failed with the following results:\n"
+                                 "{list}\n");
+
     void TripletCMakeVarProvider::launch_and_split(
         const Path& script_path, std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const
     {
@@ -264,11 +272,14 @@ endfunction()
             [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
             default_working_directory);
 
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           exit_code == 0,
-                           "Run command: \"%s\" failed with the following results:\n%s\n",
-                           cmd_launch_cmake.command_line(),
-                           Strings::join("\n", lines));
+        if (exit_code != 0)
+        {
+            msg::println(Color::error,
+                         msgCommandFailed,
+                         msg::command_line = cmd_launch_cmake.command_line(),
+                         msg::list = Strings::join(", ", lines));
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         const auto end = lines.cend();
 
