@@ -7,6 +7,12 @@ namespace vcpkg::msg
     DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
 
     REGISTER_MESSAGE(SeeURL);
+    REGISTER_MESSAGE(NoteMessage);
+    REGISTER_MESSAGE(WarningMessage);
+    REGISTER_MESSAGE(ErrorMessage);
+    REGISTER_MESSAGE(InternalErrorMessage);
+    REGISTER_MESSAGE(InternalErrorMessageContact);
+    REGISTER_MESSAGE(BothYesAndNoOptionSpecifiedError);
 
     // basic implementation - the write_unlocalized_text_to_stdout
 #if defined(_WIN32)
@@ -133,8 +139,8 @@ namespace vcpkg::msg
             // }
             // requires: names.size() == default_strings.size() == localized_strings.size()
             std::vector<StringLiteral> names;
-            std::vector<StringLiteral> default_strings;       // const after startup
-            std::vector<StringLiteral> localization_comments; // const after startup
+            std::vector<StringLiteral> default_strings;     // const after startup
+            std::vector<std::string> localization_comments; // const after startup
 
             bool initialized = false;
             std::vector<std::string> localized_strings;
@@ -149,12 +155,6 @@ namespace vcpkg::msg
         }
     }
 
-    LocalizedString& append_newline(LocalizedString& s)
-    {
-        s.m_data.push_back('\n');
-        return s;
-    }
-
     void threadunsafe_initialize_context()
     {
         Messages& m = messages();
@@ -167,7 +167,7 @@ namespace vcpkg::msg
         m.localized_strings.resize(m.names.size());
         m.initialized = true;
 
-        std::set<StringView, std::less<>> names_set(m.names.begin(), m.names.end());
+        std::set<StringLiteral, std::less<>> names_set(m.names.begin(), m.names.end());
         if (names_set.size() < m.names.size())
         {
             // This will not trigger on any correct code path, so it's fine to use a naive O(n^2)
@@ -209,7 +209,7 @@ namespace vcpkg::msg
             else if (Debug::g_debugging)
             {
                 // we only want to print these in debug
-                names_without_localization.push_back(name);
+                names_without_localization.emplace_back(name);
             }
         }
 
@@ -225,7 +225,7 @@ namespace vcpkg::msg
 
     static std::string locale_file_name(StringView language)
     {
-        std::string filename = "messages";
+        std::string filename = "messages.";
         filename.append(language.begin(), language.end()).append(".json");
         return filename;
     }
@@ -250,13 +250,13 @@ namespace vcpkg::msg
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }
 
-    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment)
+    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment)
     {
         Messages& m = messages();
         const auto res = m.names.size();
         m.names.push_back(name);
         m.default_strings.push_back(format_string);
-        m.localization_comments.push_back(comment);
+        m.localization_comments.push_back(std::move(comment));
         return res;
     }
 
@@ -297,6 +297,27 @@ namespace vcpkg::msg
     LocalizedString detail::internal_vformat(::size_t index, fmt::format_args args)
     {
         auto fmt_string = get_format_string(index);
-        return LocalizedString::from_string_unchecked(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
+        try
+        {
+            return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
+        }
+        catch (...)
+        {
+            auto default_format_string = get_default_format_string(index);
+            try
+            {
+                return LocalizedString::from_raw(
+                    fmt::vformat({default_format_string.data(), default_format_string.size()}, args));
+            }
+            catch (...)
+            {
+                ::fprintf(stderr,
+                          "INTERNAL ERROR: failed to format default format string for index %zu\nformat string: %.*s\n",
+                          index,
+                          (int)default_format_string.size(),
+                          default_format_string.data());
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
     }
 }

@@ -2,7 +2,7 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/span.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
@@ -23,13 +23,13 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsUnicode,
                                  (msg::value, msg::pretty_value),
-                                 "",
-                                 "SPDX license expression contains a unicode character (U+{value:04x} "
+                                 "example of {value:04X} is '22BB'\nexample of {pretty_value} is '⊻'",
+                                 "SPDX license expression contains a unicode character (U+{value:04X} "
                                  "'{pretty_value}'), but these expressions are ASCII-only.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsInvalidCharacter,
                                  (msg::value),
-                                 "",
-                                 "SPDX license expression contains an invalid character (0x{value:02x} '{value}').");
+                                 "example of {value:02X} is '7B'\nexample of {value} is '{'",
+                                 "SPDX license expression contains an invalid character (0x{value:02X} '{value}').");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus,
                                  (),
                                  "",
@@ -65,41 +65,41 @@ namespace
                                  "There was a close parenthesis without an opening parenthesis.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectLicenseFoundCompound,
                                  (msg::value),
-                                 "",
+                                 "Example of {value} is 'AND'",
                                  "Expected a license name, found the compound {value}.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectExceptionFoundCompound,
                                  (msg::value),
-                                 "",
+                                 "Example of {value} is 'AND'",
                                  "Expected an exception name, found the compound {value}.");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWith,
                                  (),
-                                 "",
+                                 "AND, OR, and WITH are all keywords and should not be translated.",
                                  "Expected either AND or OR, found WITH (WITH is only allowed after license names, not "
                                  "parenthesized expressions).");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundOrWithFoundWord,
-                                 (msg::value),
-                                 "",
-                                 "Expected either AND, OR, or WITH, found a license or exception name: '{value}'.");
-    DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionExpectCompoundFoundWord,
-                                 (msg::value),
-                                 "",
-                                 "Expected either AND or OR, found a license or exception name: '{value}'.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        LicenseExpressionExpectCompoundOrWithFoundWord,
+        (msg::value),
+        "example of {value} is 'MIT'.\nAND, OR, and WITH are all keywords and should not be translated.",
+        "Expected either AND, OR, or WITH, found a license or exception name: '{value}'.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        LicenseExpressionExpectCompoundFoundWord,
+        (msg::value),
+        "Example of {value} is 'MIT'.\nAND and OR are both keywords and should not be translated.",
+        "Expected either AND or OR, found a license or exception name: '{value}'.");
     DECLARE_AND_REGISTER_MESSAGE(
         LicenseExpressionUnknownLicense,
         (msg::value),
-        "",
+        "Example of {value} is 'unknownlicense'",
         "Unknown license identifier '{value}'. Known values are listed at https://spdx.org/licenses/");
     DECLARE_AND_REGISTER_MESSAGE(LicenseExpressionUnknownException,
                                  (msg::value),
-                                 "",
+                                 "Example of {value} is 'unknownexception'",
                                  "Unknown license exception identifier '{value}'. Known values are listed at "
                                  "https://spdx.org/licenses/exceptions-index.html");
 } // anonymous namespace
 
 namespace vcpkg
 {
-    using namespace vcpkg::Parse;
-
     template<class Lhs, class Rhs>
     static bool paragraph_equal(const Lhs& lhs, const Rhs& rhs)
     {
@@ -185,7 +185,7 @@ namespace vcpkg
         return valid_fields;
     }
 
-    void print_error_message(Span<const std::unique_ptr<Parse::ParseControlErrorInfo>> error_info_list);
+    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);
 
     std::string Type::to_string(const Type& t)
     {
@@ -446,12 +446,12 @@ namespace vcpkg
             return fpgh;
     }
 
-    ParseExpected<SourceControlFile> SourceControlFile::parse_control_file(
-        StringView origin, std::vector<Parse::Paragraph>&& control_paragraphs)
+    ParseExpected<SourceControlFile> SourceControlFile::parse_control_file(StringView origin,
+                                                                           std::vector<Paragraph>&& control_paragraphs)
     {
         if (control_paragraphs.size() == 0)
         {
-            auto ret = std::make_unique<Parse::ParseControlErrorInfo>();
+            auto ret = std::make_unique<ParseControlErrorInfo>();
             ret->name = origin.to_string();
             return ret;
         }
@@ -574,10 +574,11 @@ namespace vcpkg
             if (has_ge_constraint)
             {
                 dep.constraint.type = VersionConstraintKind::Minimum;
-                auto h = dep.constraint.value.find('#');
+                const auto& constraint_value = dep.constraint.value;
+                auto h = constraint_value.find('#');
                 if (h != std::string::npos)
                 {
-                    auto opt = Strings::strto<int>(dep.constraint.value.c_str() + h + 1);
+                    auto opt = Strings::strto<int>(ZStringView{constraint_value}.substr(h + 1));
                     auto v = opt.get();
                     if (v && *v > 0)
                     {
@@ -794,9 +795,9 @@ namespace vcpkg
     // * a string, which must be an SPDX license expression.
     //   EBNF located at: https://github.com/microsoft/vcpkg/blob/master/docs/maintainers/manifest-files.md#license
     // * `null`, for when the license of the package cannot be described by an SPDX expression
-    struct SpdxLicenseExpressionParser : Parse::ParserBase
+    struct SpdxLicenseExpressionParser : ParserBase
     {
-        SpdxLicenseExpressionParser(StringView sv, StringView origin) : Parse::ParserBase(sv, origin) { }
+        SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin) { }
 
         static const StringLiteral* case_insensitive_find(View<StringLiteral> lst, StringView id)
         {
@@ -816,7 +817,7 @@ namespace vcpkg
         void eat_idstring(std::string& result, Expecting& expecting)
         {
             auto loc = cur_loc();
-            auto token = match_zero_or_more(is_idstring_element);
+            auto token = match_while(is_idstring_element);
 
             if (Strings::starts_with(token, "DocumentRef-"))
             {
@@ -998,7 +999,7 @@ namespace vcpkg
         }
     };
 
-    std::string parse_spdx_license_expression(StringView sv, Parse::ParseMessages& messages)
+    std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages)
     {
         auto parser = SpdxLicenseExpressionParser(sv, "<license string>");
         auto result = parser.parse();
@@ -1021,7 +1022,7 @@ namespace vcpkg
 
             for (const auto& warning : parser.messages().warnings)
             {
-                msg::println(Color::warning, warning.format("<manifest>", Parse::MessageKind::Warning));
+                msg::println(Color::warning, warning.format("<manifest>", MessageKind::Warning));
             }
             if (auto err = parser.get_error())
             {
@@ -1290,8 +1291,8 @@ namespace vcpkg
         return ret;
     }
 
-    Parse::ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_object(StringView origin,
-                                                                                     const Json::Object& manifest)
+    ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_object(StringView origin,
+                                                                              const Json::Object& manifest)
     {
         Json::Reader reader;
 
@@ -1401,7 +1402,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    void print_error_message(Span<const std::unique_ptr<Parse::ParseControlErrorInfo>> error_info_list)
+    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
     {
         Checks::check_exit(VCPKG_LINE_INFO, error_info_list.size() > 0);
 
@@ -1563,7 +1564,7 @@ namespace vcpkg
                     }
                     if (pgh.size() == 1)
                     {
-                        obj.insert(name, Json::Value::string(pgh.front()));
+                        obj.insert(name, pgh.front());
                         return;
                     }
                 }
@@ -1587,7 +1588,7 @@ namespace vcpkg
         auto serialize_optional_string = [&](Json::Object& obj, StringLiteral name, const std::string& s) {
             if (!s.empty() || debug)
             {
-                obj.insert(name, Json::Value::string(s));
+                obj.insert(name, s);
             }
         };
         auto serialize_dependency = [&](Json::Array& arr, const Dependency& dep) {
@@ -1603,7 +1604,7 @@ namespace vcpkg
                     dep_obj.insert(el.first.to_string(), el.second);
                 }
 
-                dep_obj.insert(DependencyDeserializer::NAME, Json::Value::string(dep.name));
+                dep_obj.insert(DependencyDeserializer::NAME, dep.name);
                 if (dep.host) dep_obj.insert(DependencyDeserializer::HOST, Json::Value::boolean(true));
 
                 auto features_copy = dep.features;
@@ -1628,7 +1629,7 @@ namespace vcpkg
                     {
                         Strings::append(s, '#', dep.constraint.port_version);
                     }
-                    dep_obj.insert(DependencyDeserializer::VERSION_GE, Json::Value::string(std::move(s)));
+                    dep_obj.insert(DependencyDeserializer::VERSION_GE, std::move(s));
                 }
             }
         };

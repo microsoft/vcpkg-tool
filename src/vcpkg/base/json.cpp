@@ -1,13 +1,23 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/unicode.h>
 
 #include <vcpkg/documentation.h>
 
 #include <inttypes.h>
+
+namespace
+{
+    using namespace vcpkg;
+    DECLARE_AND_REGISTER_MESSAGE(JsonErrorFailedToRead,
+                                 (msg::path, msg::error_msg),
+                                 "",
+                                 "failed to read {path}: {error_msg}");
+    DECLARE_AND_REGISTER_MESSAGE(JsonErrorFailedToParse, (msg::path), "", "failed to parse {path}:");
+}
 
 namespace vcpkg::Json
 {
@@ -258,7 +268,7 @@ namespace vcpkg::Json
         val.underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::Number>(), d);
         return val;
     }
-    Value Value::string(std::string s) noexcept
+    Value Value::string(std::string&& s) noexcept
     {
         if (!Unicode::utf8_is_valid_string(s.data(), s.data() + s.size()))
         {
@@ -312,6 +322,7 @@ namespace vcpkg::Json
     }
     // } struct Value
     // struct Array {
+    Value& Array::push_back(std::string&& value) { return this->push_back(Json::Value::string(std::move(value))); }
     Value& Array::push_back(Value&& value)
     {
         underlying_.push_back(std::move(value));
@@ -336,37 +347,32 @@ namespace vcpkg::Json
     bool operator==(const Array& lhs, const Array& rhs) { return lhs.underlying_ == rhs.underlying_; }
     // } struct Array
     // struct Object {
-    Value& Object::insert(std::string key, std::string value) { return insert(key, Value::string(std::move(value))); }
-    Value& Object::insert(std::string key, Value&& value)
+    Value& Object::insert(StringView key, std::string&& value) { return insert(key, Value::string(std::move(value))); }
+    Value& Object::insert(StringView key, Value&& value)
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
-        underlying_.push_back({std::move(key), std::move(value)});
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key), "key '%s' already exists in object", key);
+        underlying_.emplace_back(key.to_string(), std::move(value));
         return underlying_.back().second;
     }
-    Value& Object::insert(std::string key, const Value& value)
+    Value& Object::insert(StringView key, const Value& value)
     {
-        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key));
-        underlying_.push_back({std::move(key), value});
+        vcpkg::Checks::check_exit(VCPKG_LINE_INFO, !contains(key), "key '%s' already exists in object", key);
+        underlying_.emplace_back(key.to_string(), value);
         return underlying_.back().second;
     }
-    Array& Object::insert(std::string key, Array&& value)
+    Array& Object::insert(StringView key, Array&& value) { return insert(key, Value::array(std::move(value))).array(); }
+    Array& Object::insert(StringView key, const Array& value) { return insert(key, Value::array(value)).array(); }
+    Object& Object::insert(StringView key, Object&& value)
     {
-        return insert(std::move(key), Value::array(std::move(value))).array();
+        return insert(key, Value::object(std::move(value))).object();
     }
-    Array& Object::insert(std::string key, const Array& value)
-    {
-        return insert(std::move(key), Value::array(value)).array();
-    }
-    Object& Object::insert(std::string key, Object&& value)
-    {
-        return insert(std::move(key), Value::object(std::move(value))).object();
-    }
-    Object& Object::insert(std::string key, const Object& value)
-    {
-        return insert(std::move(key), Value::object(value)).object();
-    }
+    Object& Object::insert(StringView key, const Object& value) { return insert(key, Value::object(value)).object(); }
 
-    Value& Object::insert_or_replace(std::string key, Value&& value)
+    Value& Object::insert_or_replace(StringView key, std::string&& value)
+    {
+        return this->insert_or_replace(key, Json::Value::string(std::move(value)));
+    }
+    Value& Object::insert_or_replace(StringView key, Value&& value)
     {
         auto v = get(key);
         if (v)
@@ -376,11 +382,11 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.push_back({std::move(key), std::move(value)});
+            underlying_.emplace_back(key, std::move(value));
             return underlying_.back().second;
         }
     }
-    Value& Object::insert_or_replace(std::string key, const Value& value)
+    Value& Object::insert_or_replace(StringView key, const Value& value)
     {
         auto v = get(key);
         if (v)
@@ -390,25 +396,25 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.push_back({std::move(key), std::move(value)});
+            underlying_.emplace_back(key, std::move(value));
             return underlying_.back().second;
         }
     }
-    Array& Object::insert_or_replace(std::string key, Array&& value)
+    Array& Object::insert_or_replace(StringView key, Array&& value)
     {
-        return insert_or_replace(std::move(key), Value::array(std::move(value))).array();
+        return insert_or_replace(key, Value::array(std::move(value))).array();
     }
-    Array& Object::insert_or_replace(std::string key, const Array& value)
+    Array& Object::insert_or_replace(StringView key, const Array& value)
     {
-        return insert_or_replace(std::move(key), Value::array(value)).array();
+        return insert_or_replace(key, Value::array(value)).array();
     }
-    Object& Object::insert_or_replace(std::string key, Object&& value)
+    Object& Object::insert_or_replace(StringView key, Object&& value)
     {
-        return insert_or_replace(std::move(key), Value::object(std::move(value))).object();
+        return insert_or_replace(key, Value::object(std::move(value))).object();
     }
-    Object& Object::insert_or_replace(std::string key, const Object& value)
+    Object& Object::insert_or_replace(StringView key, const Object& value)
     {
-        return insert_or_replace(std::move(key), Value::object(value)).object();
+        return insert_or_replace(key, Value::object(value)).object();
     }
 
     auto Object::internal_find_key(StringView key) const noexcept -> underlying_t::const_iterator
@@ -470,35 +476,26 @@ namespace vcpkg::Json
     // auto parse() {
     namespace
     {
-        struct Parser : private Parse::ParserBase
+        struct Parser : private ParserBase
         {
-            Parser(StringView text, StringView origin) : Parse::ParserBase(text, origin), style_() { }
+            Parser(StringView text, StringView origin) : ParserBase(text, origin), style_() { }
 
             char32_t next() noexcept
             {
                 auto ch = cur();
                 if (ch == '\r') style_.newline_kind = JsonStyle::Newline::CrLf;
                 if (ch == '\t') style_.set_tabs();
-                return Parse::ParserBase::next();
+                return ParserBase::next();
             }
 
-            static constexpr bool is_digit(char32_t code_point) noexcept
-            {
-                return code_point >= '0' && code_point <= '9';
-            }
-            static constexpr bool is_hex_digit(char32_t code_point) noexcept
-            {
-                return is_digit(code_point) || (code_point >= 'a' && code_point <= 'f') ||
-                       (code_point >= 'A' && code_point <= 'F');
-            }
             static bool is_number_start(char32_t code_point) noexcept
             {
-                return code_point == '-' || is_digit(code_point);
+                return code_point == '-' || is_ascii_digit(code_point);
             }
 
             static unsigned char from_hex_digit(char32_t code_point) noexcept
             {
-                if (is_digit(code_point))
+                if (is_ascii_digit(code_point))
                 {
                     return static_cast<unsigned char>(code_point) - '0';
                 }
@@ -664,7 +661,7 @@ namespace vcpkg::Json
                         floating = true;
                         current = next();
                     }
-                    else if (is_digit(current))
+                    else if (is_ascii_digit(current))
                     {
                         add_error("Unexpected digits after a leading zero");
                         return Value();
@@ -682,7 +679,7 @@ namespace vcpkg::Json
                     }
                 }
 
-                while (is_digit(current))
+                while (is_ascii_digit(current))
                 {
                     number_to_parse.push_back(static_cast<char>(current));
                     current = next();
@@ -692,12 +689,12 @@ namespace vcpkg::Json
                     floating = true;
                     number_to_parse.push_back('.');
                     current = next();
-                    if (!is_digit(current))
+                    if (!is_ascii_digit(current))
                     {
                         add_error("Expected digits after the decimal point");
                         return Value();
                     }
-                    while (is_digit(current))
+                    while (is_ascii_digit(current))
                     {
                         number_to_parse.push_back(static_cast<char>(current));
                         current = next();
@@ -990,8 +987,8 @@ namespace vcpkg::Json
                 }
             }
 
-            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(
-                StringView json, StringView origin) noexcept
+            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
+                                                                                             StringView origin) noexcept
             {
                 StatsTimer t(g_json_parsing_stats);
 
@@ -1003,11 +1000,11 @@ namespace vcpkg::Json
                 if (!parser.at_eof())
                 {
                     parser.add_error("Unexpected character; expected EOF");
-                    return std::move(parser).extract_error();
+                    return parser.extract_error();
                 }
                 else if (parser.get_error())
                 {
-                    return std::move(parser).extract_error();
+                    return parser.extract_error();
                 }
                 else
                 {
@@ -1032,7 +1029,7 @@ namespace vcpkg::Json
 
     static constexpr bool is_lower_digit(char ch)
     {
-        return Parse::ParserBase::is_lower_alpha(ch) || Parse::ParserBase::is_ascii_digit(ch);
+        return ParserBase::is_lower_alpha(ch) || ParserBase::is_ascii_digit(ch);
     }
 
     bool IdentifierDeserializer::is_ident(StringView sv)
@@ -1065,7 +1062,7 @@ namespace vcpkg::Json
                 return false; // we're a reserved identifier
             }
             if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
-                sv.byte_at_index(3) >= '1' && sv.byte_at_index(3) <= '9')
+                sv[3] >= '1' && sv[3] <= '9')
             {
                 return false; // we're a reserved identifier
             }
@@ -1081,14 +1078,14 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse_file(const Filesystem& fs,
-                                                                                           const Path& json_file,
-                                                                                           std::error_code& ec) noexcept
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
+                                                                                   const Path& json_file,
+                                                                                   std::error_code& ec) noexcept
     {
         auto res = fs.read_contents(json_file, ec);
         if (ec)
         {
-            return std::unique_ptr<Parse::IParseError>();
+            return std::unique_ptr<ParseError>();
         }
 
         return parse(std::move(res), json_file);
@@ -1100,20 +1097,21 @@ namespace vcpkg::Json
         auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
-            print2(Color::error, "Failed to read ", json_file, ": ", ec.message(), "\n");
+            msg::print_error(msgJsonErrorFailedToRead, msg::path = json_file, msg::error_msg = ec);
             Checks::exit_fail(li);
         }
         else if (!ret)
         {
-            print2(Color::error, "Failed to parse ", json_file, ":\n");
-            print2(ret.error()->format());
+            msg::print_error(msgJsonErrorFailedToParse, msg::path = json_file);
+            msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->format());
+            msg::println();
             Checks::exit_fail(li);
         }
         return ret.value_or_exit(li);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<Parse::IParseError>> parse(StringView json,
-                                                                                      StringView origin) noexcept
+    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
+                                                                              StringView origin) noexcept
     {
         return Parser::parse(json, origin);
     }

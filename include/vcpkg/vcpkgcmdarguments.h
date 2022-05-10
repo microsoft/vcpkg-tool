@@ -8,21 +8,20 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
 #include <map>
 #include <memory>
-#include <unordered_map>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 namespace vcpkg
 {
     struct ParsedArguments
     {
-        std::unordered_set<std::string> switches;
-        std::unordered_map<std::string, std::string> settings;
-        std::unordered_map<std::string, std::vector<std::string>> multisettings;
+        std::set<std::string, std::less<>> switches;
+        std::map<std::string, std::string, std::less<>> settings;
+        std::map<std::string, std::vector<std::string>, std::less<>> multisettings;
     };
 
     struct CommandSwitch
@@ -168,6 +167,8 @@ namespace vcpkg
 
         constexpr static StringLiteral DEBUG_SWITCH = "debug";
         Optional<bool> debug = nullopt;
+        constexpr static StringLiteral DEBUG_ENV_SWITCH = "debug-env";
+        Optional<bool> debug_env = nullopt;
         constexpr static StringLiteral SEND_METRICS_SWITCH = "sendmetrics";
         Optional<bool> send_metrics = nullopt;
         // fully disable metrics -- both printing and sending
@@ -255,8 +256,8 @@ namespace vcpkg
         Optional<std::string> asset_sources_template_env;        // for ASSET_SOURCES_ENV
         std::unique_ptr<std::string> asset_sources_template_arg; // for ASSET_SOURCES_ARG
 
-        std::unordered_set<std::string> command_switches;
-        std::unordered_map<std::string, std::vector<std::string>> command_options;
+        std::set<std::string, std::less<>> command_switches;
+        std::map<std::string, std::vector<std::string>, std::less<>> command_options;
 
         std::vector<std::string> forwardable_arguments;
     };

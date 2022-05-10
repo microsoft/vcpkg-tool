@@ -11,12 +11,20 @@
 #include <sys/sysctl.h>
 #endif
 
+#if defined(_WIN32)
+// needed for mingw
+#include <processenv.h>
+#else
+extern char** environ;
+#endif
+
 namespace
 {
+    namespace msg = vcpkg::msg;
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureW6432Malformed,
-                                 (vcpkg::msg::value),
+                                 (msg::arch),
                                  "",
-                                 "Failed to parse %PROCESSOR_ARCHITEW6432% ({value}) as a valid CPU architecture. "
+                                 "Failed to parse %PROCESSOR_ARCHITEW6432% ({arch}) as a valid CPU architecture. "
                                  "Falling back to %PROCESSOR_ARCHITECTURE%.");
 
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMissing,
@@ -25,9 +33,9 @@ namespace
                                  "The required environment variable %PROCESSOR_ARCHITECTURE% is missing.");
 
     DECLARE_AND_REGISTER_MESSAGE(ProcessorArchitectureMalformed,
-                                 (vcpkg::msg::value),
+                                 (msg::arch),
                                  "",
-                                 "Failed to parse %PROCESSOR_ARCHITECTURE% ({value}) as a valid CPU architecture.");
+                                 "Failed to parse %PROCESSOR_ARCHITECTURE% ({arch}) as a valid CPU architecture.");
 }
 
 namespace vcpkg
@@ -48,6 +56,7 @@ namespace vcpkg
         if (Strings::case_insensitive_ascii_equals(arch, "amd64")) return CPUArchitecture::X64;
         if (Strings::case_insensitive_ascii_equals(arch, "arm")) return CPUArchitecture::ARM;
         if (Strings::case_insensitive_ascii_equals(arch, "arm64")) return CPUArchitecture::ARM64;
+        if (Strings::case_insensitive_ascii_equals(arch, "arm64ec")) return CPUArchitecture::ARM64EC;
         if (Strings::case_insensitive_ascii_equals(arch, "s390x")) return CPUArchitecture::S390X;
         if (Strings::case_insensitive_ascii_equals(arch, "ppc64le")) return CPUArchitecture::PPC64LE;
         return nullopt;
@@ -61,6 +70,7 @@ namespace vcpkg
             case CPUArchitecture::X64: return "x64";
             case CPUArchitecture::ARM: return "arm";
             case CPUArchitecture::ARM64: return "arm64";
+            case CPUArchitecture::ARM64EC: return "arm64ec";
             case CPUArchitecture::S390X: return "s390x";
             case CPUArchitecture::PPC64LE: return "ppc64le";
             default: Checks::exit_with_message(VCPKG_LINE_INFO, "unexpected vcpkg::CPUArchitecture");
@@ -89,14 +99,14 @@ namespace vcpkg
                 return *parsed;
             }
 
-            msg::print(Color::warning, msgProcessorArchitectureW6432Malformed, msg::value = *w6432);
+            msg::print(Color::warning, msgProcessorArchitectureW6432Malformed, msg::arch = *w6432);
         }
 
         const auto raw_processor_architecture = get_environment_variable("PROCESSOR_ARCHITECTURE");
         const auto processor_architecture = raw_processor_architecture.get();
         if (!processor_architecture)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, msgProcessorArchitectureMissing);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgProcessorArchitectureMissing);
         }
 
         const auto raw_parsed_processor_architecture = to_cpu_architecture(*processor_architecture);
@@ -105,8 +115,8 @@ namespace vcpkg
             return *parsed_processor_architecture;
         }
 
-        Checks::exit_with_message(
-            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::value = *processor_architecture);
+        Checks::msg_exit_with_message(
+            VCPKG_LINE_INFO, msgProcessorArchitectureMalformed, msg::arch = *processor_architecture);
 #else // ^^^ defined(_WIN32) / !defined(_WIN32) vvv
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(__APPLE__)
@@ -218,6 +228,32 @@ namespace vcpkg
 #endif
     }
 
+    std::string get_environment_variables()
+    {
+        std::string result;
+#if defined(_WIN32)
+        const struct EnvironmentStringsW
+        {
+            LPWCH strings;
+            EnvironmentStringsW() : strings(GetEnvironmentStringsW()) { Checks::check_exit(VCPKG_LINE_INFO, strings); }
+            ~EnvironmentStringsW() { FreeEnvironmentStringsW(strings); }
+        } env_block;
+
+        size_t len;
+        for (LPWCH i = env_block.strings; *i; i += len + 1)
+        {
+            len = wcslen(i);
+            result.append(Strings::to_utf8(i, len)).push_back('\n');
+        }
+#else
+        for (char** s = environ; *s; s++)
+        {
+            result.append(*s).push_back('\n');
+        }
+#endif
+        return result;
+    }
+
     const ExpectedS<Path>& get_home_dir() noexcept
     {
         static ExpectedS<Path> s_home = []() -> ExpectedS<Path> {
@@ -269,6 +305,29 @@ namespace vcpkg
             return {std::move(p), ExpectedLeftTag{}};
         }();
         return s_home;
+    }
+
+    const ExpectedS<Path>& get_system_root() noexcept
+    {
+        static const ExpectedS<Path> s_system_root = []() -> ExpectedS<Path> {
+            auto env = get_environment_variable("SystemRoot");
+            if (const auto p = env.get())
+            {
+                return Path(std::move(*p));
+            }
+            else
+            {
+                return std::string("Expected the SystemRoot environment variable to be always set on Windows.");
+            }
+        }();
+        return s_system_root;
+    }
+
+    const ExpectedS<Path>& get_system32() noexcept
+    {
+        // This needs to be lowercase or msys-ish tools break. See https://github.com/microsoft/vcpkg-tool/pull/418/
+        static const ExpectedS<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "system32"; });
+        return s_system32;
     }
 #else
     static const ExpectedS<Path>& get_xdg_cache_home() noexcept

@@ -94,8 +94,8 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
 
 using Dependencies::DependDefaults;
 
-template<class T>
-T unwrap(ExpectedS<T> e)
+template<class T, class E>
+T unwrap(ExpectedT<T, E> e)
 {
     if (!e.has_value())
     {
@@ -137,7 +137,7 @@ static void check_name_and_version(const Dependencies::InstallPlanAction& ipa,
     }
 }
 
-static void check_semver_version(const ExpectedS<DotVersion>& maybe_version,
+static void check_semver_version(const ExpectedL<DotVersion>& maybe_version,
                                  const std::string& version_string,
                                  const std::string& prerelease_string,
                                  uint64_t major,
@@ -155,7 +155,7 @@ static void check_semver_version(const ExpectedS<DotVersion>& maybe_version,
     CHECK(actual_version.identifiers == identifiers);
 }
 
-static void check_relaxed_version(const ExpectedS<DotVersion>& maybe_version,
+static void check_relaxed_version(const ExpectedL<DotVersion>& maybe_version,
                                   const std::vector<uint64_t>& version,
                                   const std::vector<std::string>& identifiers = {})
 {
@@ -164,7 +164,7 @@ static void check_relaxed_version(const ExpectedS<DotVersion>& maybe_version,
     CHECK(actual_version.identifiers == identifiers);
 }
 
-static void check_date_version(const ExpectedS<DateVersion>& maybe_version,
+static void check_date_version(const ExpectedL<DateVersion>& maybe_version,
                                const std::string& version_string,
                                const std::vector<uint64_t>& identifiers)
 {
@@ -841,6 +841,45 @@ TEST_CASE ("version sort date", "[versionplan]")
     CHECK(versions[6].original_string == "2021-01-01.1.1");
     CHECK(versions[7].original_string == "2021-01-01.2");
     CHECK(versions[8].original_string == "2021-01-01.10");
+}
+
+TEST_CASE ("version compare string", "[versionplan]")
+{
+    const Version a_0("a", 0);
+    const Version a_1("a", 1);
+    const Version b_1("b", 1);
+    CHECK(VerComp::lt == compare_versions(VersionScheme::String, a_0, VersionScheme::String, a_1));
+    CHECK(VerComp::eq == compare_versions(VersionScheme::String, a_0, VersionScheme::String, a_0));
+    CHECK(VerComp::gt == compare_versions(VersionScheme::String, a_1, VersionScheme::String, a_0));
+    CHECK(VerComp::unk == compare_versions(VersionScheme::String, a_1, VersionScheme::String, b_1));
+}
+
+TEST_CASE ("version compare_any", "[versionplan]")
+{
+    const Version a_0("a", 0);
+    const Version a_1("a", 1);
+    const Version b_1("b", 1);
+    CHECK(VerComp::lt == compare_any(a_0, a_1));
+    CHECK(VerComp::gt == compare_any(a_1, a_0));
+    CHECK(VerComp::eq == compare_any(a_0, a_0));
+    CHECK(VerComp::unk == compare_any(a_1, b_1));
+
+    const Version v_0_0("0", 0);
+    const Version v_1_0("1", 0);
+    const Version v_1_1_1("1.1", 1);
+    CHECK(VerComp::lt == compare_any(v_0_0, v_1_0));
+    CHECK(VerComp::gt == compare_any(v_1_1_1, v_1_0));
+    CHECK(VerComp::eq == compare_any(v_0_0, v_0_0));
+
+    const Version date_0("2021-04-05", 0);
+    const Version date_1("2022-02-01", 0);
+    CHECK(VerComp::eq == compare_any(date_0, date_0));
+    CHECK(VerComp::lt == compare_any(date_0, date_1));
+
+    CHECK(VerComp::unk == compare_any(date_0, a_0));
+    // Note: dates are valid relaxed dotversions, so these are valid comparisons
+    CHECK(VerComp::gt == compare_any(date_0, v_0_0));
+    CHECK(VerComp::gt == compare_any(date_0, v_1_1_1));
 }
 
 TEST_CASE ("version install simple semver", "[versionplan]")

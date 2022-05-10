@@ -1,0 +1,16 @@
+color: true
+require: 
+ - 'source-map-support/register'
+monkeyPatch: true
+spec: ./**/*.js
+ignore: 
+  - "./**/*.d.ts"
+  - "./node_modules/**"
+  - "../common/**/node_modules/**"
+
+# this section enables npm watch-test to work right
+watch-files: ../*/**/*.js
+watch-ignore: 
+  - "./node_modules/**"
+  - "../common/**/node_modules/**"
+  - "./**/*.js"

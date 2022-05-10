@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/parse.h>
+
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/json.h>
@@ -9,11 +12,6 @@
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
 #include <vcpkg/versions.h>
-
-namespace vcpkg::Parse
-{
-    struct ParserBase;
-}
 
 namespace vcpkg
 {
@@ -26,7 +24,8 @@ namespace vcpkg
     struct PackageSpec
     {
         PackageSpec() = default;
-        PackageSpec(std::string name, Triplet triplet) : m_name(std::move(name)), m_triplet(triplet) { }
+        PackageSpec(const std::string& name, Triplet triplet) : m_name(name), m_triplet(triplet) { }
+        PackageSpec(std::string&& name, Triplet triplet) : m_name(std::move(name)), m_triplet(triplet) { }
 
         const std::string& name() const;
 
@@ -194,25 +193,11 @@ namespace vcpkg
         ExpectedS<PackageSpec> to_package_spec(Triplet default_triplet) const;
     };
 
-    Optional<std::string> parse_feature_name(Parse::ParserBase& parser);
-    Optional<std::string> parse_package_name(Parse::ParserBase& parser);
+    Optional<std::string> parse_feature_name(ParserBase& parser);
+    Optional<std::string> parse_package_name(ParserBase& parser);
     ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input);
-    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(Parse::ParserBase& parser);
+    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(ParserBase& parser);
 }
-
-template<class Char>
-struct fmt::formatter<vcpkg::PackageSpec, Char>
-{
-    constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
-    {
-        return vcpkg::basic_format_parse_impl(ctx);
-    }
-    template<class FormatContext>
-    auto format(const vcpkg::PackageSpec& spec, FormatContext& ctx) const -> decltype(ctx.out())
-    {
-        return fmt::formatter<std::string, Char>{}.format(spec.to_string(), ctx);
-    }
-};
 
 template<>
 struct std::hash<vcpkg::PackageSpec>
@@ -236,3 +221,6 @@ struct std::hash<vcpkg::FeatureSpec>
         return hash;
     }
 };
+
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::PackageSpec);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::FeatureSpec);

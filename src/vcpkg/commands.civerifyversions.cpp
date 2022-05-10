@@ -359,7 +359,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 continue;
             }
 
-            const char prefix[] = {port_name.byte_at_index(0), '-', '\0'};
+            const char prefix[] = {port_name[0], '-', '\0'};
             auto versions_file_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             if (!fs.exists(versions_file_path, IgnoreErrors{}))
             {

@@ -224,9 +224,6 @@ namespace vcpkg::Json
         StatsTimer m_stat_timer;
     };
 
-    VCPKG_MSVC_WARNING(push)
-    VCPKG_MSVC_WARNING(disable : 4505)
-
     template<class Type>
     Optional<Type> IDeserializer<Type>::visit(Reader& r, const Value& value)
     {
@@ -291,8 +288,6 @@ namespace vcpkg::Json
     {
         return nullopt;
     }
-
-    VCPKG_MSVC_WARNING(pop)
 
     struct StringDeserializer final : IDeserializer<std::string>
     {

@@ -23,13 +23,17 @@ namespace vcpkg
         void track_metric(const std::string& name, double value);
         void track_buildtime(const std::string& name, double value);
         void track_property(const std::string& name, const std::string& value);
+        void track_property(const std::string& name, bool value);
         void track_feature(const std::string& feature, bool value);
+        void track_option(const std::string& option, bool value);
 
         bool metrics_enabled();
 
         void upload(const std::string& payload);
         void flush(Filesystem& fs);
     };
+
+    Optional<StringView> find_first_nonzero_mac(StringView sv);
 
     extern LockGuarded<Metrics> g_metrics;
 }

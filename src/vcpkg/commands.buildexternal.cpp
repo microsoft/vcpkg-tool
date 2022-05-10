@@ -33,19 +33,8 @@ namespace vcpkg::Commands::BuildExternal
         overlays.insert(overlays.begin(), args.command_arguments.at(1));
 
         PortFileProvider::PathsPortFileProvider provider(paths, overlays);
-        auto maybe_scfl = provider.get_control_file(spec.package_spec.name());
-
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_scfl.has_value(), "could not load control file for %s", spec.package_spec.name());
-
-        Build::Command::perform_and_exit_ex(args,
-                                            spec,
-                                            host_triplet,
-                                            maybe_scfl.value_or_exit(VCPKG_LINE_INFO),
-                                            provider,
-                                            binary_cache,
-                                            Build::null_build_logs_recorder(),
-                                            paths);
+        Build::Command::perform_and_exit_ex(
+            args, spec, host_triplet, provider, binary_cache, Build::null_build_logs_recorder(), paths);
     }
 
     void BuildExternalCommand::perform_and_exit(const VcpkgCmdArguments& args,

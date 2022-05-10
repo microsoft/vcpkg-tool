@@ -251,16 +251,18 @@ endfunction()
     void TripletCMakeVarProvider::launch_and_split(
         const Path& script_path, std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const
     {
-        static constexpr CStringView PORT_START_GUID = "d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af";
-        static constexpr CStringView PORT_END_GUID = "8c504940-be29-4cba-9f8f-6cd83e9d87b7";
-        static constexpr CStringView BLOCK_START_GUID = "c35112b6-d1ba-415b-aa5d-81de856ef8eb";
-        static constexpr CStringView BLOCK_END_GUID = "e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f";
+        static constexpr StringLiteral PORT_START_GUID = "d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af";
+        static constexpr StringLiteral PORT_END_GUID = "8c504940-be29-4cba-9f8f-6cd83e9d87b7";
+        static constexpr StringLiteral BLOCK_START_GUID = "c35112b6-d1ba-415b-aa5d-81de856ef8eb";
+        static constexpr StringLiteral BLOCK_END_GUID = "e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f";
 
         const auto cmd_launch_cmake = vcpkg::make_cmake_cmd(paths, script_path, {});
 
         std::vector<std::string> lines;
         auto const exit_code = cmd_execute_and_stream_lines(
-            cmd_launch_cmake, [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); });
+            cmd_launch_cmake,
+            [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
+            default_working_directory);
 
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, exit_code == 0 ? "" : Strings::join("\n", lines));
 

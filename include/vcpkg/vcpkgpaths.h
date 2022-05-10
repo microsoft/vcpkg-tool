@@ -11,6 +11,7 @@
 
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/lazy.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.h>
@@ -23,7 +24,7 @@ namespace vcpkg
 {
     struct ToolsetArchOption
     {
-        CStringView name;
+        ZStringView name;
         CPUArchitecture host_arch;
         CPUArchitecture target_arch;
     };
@@ -34,7 +35,7 @@ namespace vcpkg
         Path dumpbin;
         Path vcvarsall;
         std::vector<std::string> vcvarsall_options;
-        CStringView version;
+        ZStringView version;
         std::string full_version;
         std::vector<ToolsetArchOption> supported_architectures;
     };
@@ -58,6 +59,12 @@ namespace vcpkg
     struct PackageSpec;
     struct Triplet;
 
+    struct ManifestAndPath
+    {
+        Json::Object manifest;
+        Path path;
+    };
+
     struct VcpkgPaths
     {
         struct TripletFile
@@ -77,6 +84,7 @@ namespace vcpkg
         Path build_dir(const PackageSpec& spec) const;
         Path build_dir(const std::string& package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
+        Path spdx_resource_dir(const PackageSpec& spec) const;
 
         bool is_valid_triplet(Triplet t) const;
         const std::vector<std::string> get_available_triplets_names() const;
@@ -120,9 +128,10 @@ namespace vcpkg
 
         std::string get_toolver_diagnostics() const;
 
-        const Path& get_tool_exe(const std::string& tool) const;
-        const std::string& get_tool_version(const std::string& tool) const;
+        const Path& get_tool_exe(StringView tool) const;
+        const std::string& get_tool_version(StringView tool) const;
 
+        GitConfig git_builtin_config() const;
         Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
 
         // Git manipulation in the vcpkg directory
@@ -146,8 +155,8 @@ namespace vcpkg
                                                                            const Path& relative_path_to_file) const;
         ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 
-        Optional<const Json::Object&> get_manifest() const;
-        Optional<const Path&> get_manifest_path() const;
+        Optional<const ManifestAndPath&> get_manifest() const;
+        const ConfigurationAndSource& get_configuration() const;
         const RegistrySet& get_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo

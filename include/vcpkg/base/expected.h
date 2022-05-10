@@ -5,7 +5,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/stringliteral.h>
+#include <vcpkg/base/stringview.h>
 
 #include <functional>
 #include <system_error>
@@ -72,6 +72,27 @@ namespace vcpkg
         std::error_code m_err;
     };
 
+    template<>
+    struct ErrorHolder<LocalizedString>
+    {
+        ErrorHolder() : m_is_error(false) { }
+        template<class U>
+        ErrorHolder(U&& err) : m_is_error(true), m_err(std::forward<U>(err))
+        {
+        }
+
+        bool has_error() const { return m_is_error; }
+
+        const LocalizedString& error() const { return m_err; }
+        LocalizedString& error() { return m_err; }
+
+        const std::string& to_string() const { return m_err.data(); }
+
+    private:
+        bool m_is_error;
+        LocalizedString m_err;
+    };
+
     struct ExpectedLeftTag
     {
     };
@@ -113,13 +134,13 @@ namespace vcpkg
         // Constructors are intentionally implicit
 
         ExpectedT(const S& s, ExpectedRightTag = {}) : m_s(s) { }
-        template<class = std::enable_if<!std::is_reference<S>::value>>
+        template<class U = S, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
         ExpectedT(S&& s, ExpectedRightTag = {}) : m_s(std::move(s))
         {
         }
 
         ExpectedT(const T& t, ExpectedLeftTag = {}) : m_t(t) { }
-        template<class = std::enable_if<!std::is_reference<T>::value>>
+        template<class U = T, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
         ExpectedT(T&& t, ExpectedLeftTag = {}) : m_t(std::move(t))
         {
         }
@@ -159,6 +180,8 @@ namespace vcpkg
         const S& error() const& { return this->m_s.error(); }
 
         S&& error() && { return std::move(this->m_s.error()); }
+
+        std::string error_to_string() const { return Strings::concat(m_s.to_string()); }
 
         typename ExpectedHolder<T>::const_pointer get() const
         {
@@ -211,6 +234,17 @@ namespace vcpkg
             {
                 return ExpectedT<move_map_t<F>, S>{std::move(m_s)};
             }
+        }
+
+        template<class F>
+        ExpectedT& replace_error(F&& specific_error_generator)
+        {
+            if (m_s.has_error())
+            {
+                m_s.error() = std::forward<F>(specific_error_generator)();
+            }
+
+            return *this;
         }
 
         template<class F, class... Args>

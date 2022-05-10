@@ -176,6 +176,33 @@ else()
     )
 endif()
 
+set(CPP_ATOMIC_LIBRARY "")
+include(CheckCXXSourceCompiles)
+if(NOT MSVC)
+    # Some platforms require a explicit linkage against libatomic to operate on 64-bit numbers
+    set(TEST_SOURCE "
+#include <stdint.h>
+#include <atomic>
+std::atomic<uintptr_t> x;
+std::atomic<uintmax_t> y;
+int main() {
+    return x + y;
+}
+")
+    check_cxx_source_compiles("${TEST_SOURCE}" CPP_ATOMIC_BUILTIN)
+    if(NOT CPP_ATOMIC_BUILTIN)
+        list(APPEND CMAKE_REQUIRED_LIBRARIES atomic)
+        set(CPP_ATOMIC_LIBRARY atomic)
+        check_cxx_source_compiles("${TEST_SOURCE}" CPP_ATOMIC_WITH_LIBATOMIC)
+        if (NOT CPP_ATOMIC_WITH_LIBATOMIC)
+            message(
+                FATAL_ERROR "unable to link C++ std::atomic code: you may need \
+                to install GNU libatomic"
+            )
+        endif()
+    endif()
+endif()
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(vcpkglib
@@ -183,6 +210,7 @@ target_link_libraries(vcpkglib
         fmt::fmt
     PRIVATE
         Threads::Threads
+        ${CPP_ATOMIC_LIBRARY}
 )
 
 if(MSVC)
@@ -229,6 +257,16 @@ if(VCPKG_PDB_SUFFIX)
     set_property(TARGET vcpkg PROPERTY PDB_NAME "vcpkg${VCPKG_PDB_SUFFIX}")
 endif()
 
+# === Target: generate-message-map ===
+
+add_custom_target(generate-message-map
+   COMMAND vcpkg x-generate-default-message-map --no-allow-incorrect-comments locales/messages.json
+   COMMAND vcpkg x-generate-default-message-map --no-output-comments locales/messages.en.json
+   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+   COMMENT "Update locales/messages.json"
+   VERBATIM
+)
+
 # === Target: vcpkg-test ===
 
 if (BUILD_TESTING)
@@ -239,6 +277,9 @@ if (BUILD_TESTING)
         ${VCPKG_TEST_INCLUDES}
     )
     target_link_libraries(vcpkg-test PRIVATE vcpkglib)
+    if(ANDROID)
+        target_link_libraries(vcpkg-test PRIVATE log)
+    endif()
     vcpkg_target_add_warning_options(vcpkg-test)
 
     add_test(NAME default COMMAND vcpkg-test --order rand --rng-seed time)

@@ -1,0 +1,22 @@
+{
+  "extends": "../common/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "types": [
+      "node"
+    ],
+    "inlineSourceMap": true
+  },
+  "include": [
+    "./**/*.ts"
+  ],
+  "exclude": [
+    ".scripts/**",
+    "**/dist/**",
+    "test/scenarios/**",
+    "resources",
+    "node_modules/**",
+    "**/*.d.ts"
+  ]
+}
