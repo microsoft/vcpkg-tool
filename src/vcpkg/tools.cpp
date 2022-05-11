@@ -264,6 +264,21 @@ namespace vcpkg
         return {std::move(downloaded_path), std::move(downloaded_version)};
     }
 
+    static bool should_force_vcpkg_downloaded_binaries(const ToolData* tool_data)
+    {
+        // If the tool doesn't have a downloaded URL, we cannot force the downloaded version
+        if (tool_data->url.empty())
+        {
+            return false;
+        }
+        // If the VCPKG_FORCE_DOWNLOADED_BINARIES env var is set, it takes precedence
+        if (get_environment_variable("VCPKG_FORCE_DOWNLOADED_BINARIES").has_value())
+        {
+            return true;
+        }
+        // Otherwise don't force downloaded binaries
+        return false;
+    }
     static PathAndVersion get_path(const VcpkgPaths& paths, const ToolProvider& tool, bool exact_version = false)
     {
         auto& fs = paths.get_filesystem();
@@ -271,21 +286,26 @@ namespace vcpkg
         std::array<int, 3> min_version = tool.default_min_version();
 
         std::vector<Path> candidate_paths;
+        auto search_system_tool = true; // Search the tool in the system by default
         auto maybe_tool_data = parse_tool_data_from_xml(paths, tool.tool_data_name());
         if (auto tool_data = maybe_tool_data.get())
         {
             candidate_paths.push_back(tool_data->exe_path);
             min_version = tool_data->version;
+            search_system_tool = !should_force_vcpkg_downloaded_binaries(tool_data);
         }
 
-        StringLiteral exe_stem = tool.exe_stem();
-        if (!exe_stem.empty())
+        if (search_system_tool)
         {
-            auto paths_from_path = fs.find_from_PATH(exe_stem);
-            candidate_paths.insert(candidate_paths.end(), paths_from_path.cbegin(), paths_from_path.cend());
-        }
+            StringLiteral exe_stem = tool.exe_stem();
+            if (!exe_stem.empty())
+            {
+                auto paths_from_path = fs.find_from_PATH(exe_stem);
+                candidate_paths.insert(candidate_paths.end(), paths_from_path.cbegin(), paths_from_path.cend());
+            }
 
-        tool.add_special_paths(candidate_paths);
+            tool.add_special_paths(candidate_paths);
+        }
 
         const auto maybe_path = find_first_with_sufficient_version(
             paths, tool, candidate_paths, [&min_version, exact_version](const std::array<int, 3>& actual_version) {
