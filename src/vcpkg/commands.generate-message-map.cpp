@@ -120,12 +120,6 @@ namespace vcpkg::Commands
     FormatArgMismatches get_format_arg_mismatches(StringView value, StringView comment, LocalizedString& error)
     {
         FormatArgMismatches res;
-
-        if (Strings::contains(comment, "{Locked}"))
-        {
-            return res;
-        }
-
         auto comment_args = get_all_format_args(comment, error);
         // ignore error; comments are allowed to be incorrect format strings
         auto value_args = get_all_format_args(value, error);

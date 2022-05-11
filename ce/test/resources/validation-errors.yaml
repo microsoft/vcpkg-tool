@@ -1,0 +1,14 @@
+info: 
+  nothing: here
+
+goober ):  
+  install: bugger me
+
+goober: 
+  install: not correct
+
+floopy: floo
+
+windows and target:x64: 
+  install: 
+    nupkg: floobaloo/1.2.3

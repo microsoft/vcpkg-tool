@@ -1,7 +1,6 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/paragraphs.h>
@@ -25,8 +24,10 @@ static Json::Object parse_json_object(StringView sv)
     }
     else
     {
-        vcpkg::print2("Error found while parsing JSON document:\n", sv, '\n');
-        Checks::exit_with_message(VCPKG_LINE_INFO, json.error()->format());
+        INFO("Error found while parsing JSON document:");
+        INFO(sv.to_string());
+        FAIL(json.error()->format());
+        return Json::Object{};
     }
 }
 
@@ -36,8 +37,8 @@ enum class PrintErrors : bool
     Yes,
 };
 
-static Parse::ParseExpected<SourceControlFile> test_parse_manifest(const Json::Object& obj,
-                                                                   PrintErrors print = PrintErrors::Yes)
+static ParseExpected<SourceControlFile> test_parse_manifest(const Json::Object& obj,
+                                                            PrintErrors print = PrintErrors::Yes)
 {
     auto res = SourceControlFile::parse_manifest_object("<test manifest>", obj);
     if (!res.has_value() && print == PrintErrors::Yes)
@@ -46,7 +47,7 @@ static Parse::ParseExpected<SourceControlFile> test_parse_manifest(const Json::O
     }
     return res;
 }
-static Parse::ParseExpected<SourceControlFile> test_parse_manifest(StringView obj, PrintErrors print = PrintErrors::Yes)
+static ParseExpected<SourceControlFile> test_parse_manifest(StringView obj, PrintErrors print = PrintErrors::Yes)
 {
     return test_parse_manifest(parse_json_object(obj), print);
 }
@@ -983,20 +984,20 @@ static std::string test_serialized_license(StringView license)
 
 static bool license_is_parseable(StringView license)
 {
-    Parse::ParseMessages messages;
+    ParseMessages messages;
     parse_spdx_license_expression(license, messages);
     return messages.error == nullptr;
 }
 static bool license_is_strict(StringView license)
 {
-    Parse::ParseMessages messages;
+    ParseMessages messages;
     parse_spdx_license_expression(license, messages);
     return messages.error == nullptr && messages.warnings.empty();
 }
 
-static std::string test_format_parse_warning(const Parse::ParseMessage& msg)
+static std::string test_format_parse_warning(const ParseMessage& msg)
 {
-    return msg.format("<license string>", Parse::MessageKind::Warning).extract_data();
+    return msg.format("<license string>", MessageKind::Warning).extract_data();
 }
 
 TEST_CASE ("simple license in manifest", "[manifests][license]")
@@ -1046,7 +1047,7 @@ TEST_CASE ("license serialization", "[manifests][license]")
 
 TEST_CASE ("license error messages", "[manifests][license]")
 {
-    Parse::ParseMessages messages;
+    ParseMessages messages;
     parse_spdx_license_expression("", messages);
     REQUIRE(messages.error);
     CHECK(messages.error->format() == R"(<license string>:1:1: error: SPDX license expression was empty.

@@ -3,8 +3,8 @@
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/view.h>
-#include <vcpkg/base/zstringview.h>
 
 #include <functional>
 #include <string>
@@ -28,12 +28,8 @@ namespace vcpkg
     struct Command
     {
         Command() = default;
-        explicit Command(const Path& p) { path_arg(p); }
         explicit Command(StringView s) { string_arg(s); }
-        explicit Command(const std::string& s) { string_arg(s); }
-        explicit Command(const char* s) { string_arg({s, ::strlen(s)}); }
 
-        Command& path_arg(const Path& p) & { return string_arg(p); }
         Command& string_arg(StringView s) &;
         Command& raw_arg(StringView s) &
         {
@@ -56,7 +52,6 @@ namespace vcpkg
             return *this;
         }
 
-        Command&& path_arg(const Path& p) && { return std::move(path_arg(p)); }
         Command&& string_arg(StringView s) && { return std::move(string_arg(s)); };
         Command&& raw_arg(StringView s) && { return std::move(raw_arg(s)); }
         Command&& forwarded_args(View<std::string> args) && { return std::move(forwarded_args(args)); }

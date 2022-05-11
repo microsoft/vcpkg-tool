@@ -9,7 +9,6 @@
 #include <vcpkg-test/util.h>
 
 using namespace vcpkg;
-using namespace vcpkg::Parse;
 
 TEST_CASE ("parse depends", "[dependencies]")
 {

@@ -80,12 +80,11 @@ namespace vcpkg::Commands::PortsDiff
     static std::map<std::string, Version> read_ports_from_commit(const VcpkgPaths& paths,
                                                                  const std::string& git_commit_id)
     {
-        std::error_code ec;
         auto& fs = paths.get_filesystem();
         const auto dot_git_dir = paths.root / ".git";
         const auto ports_dir_name = paths.builtin_ports_directory().filename();
         const auto temp_checkout_path = paths.root / Strings::format("%s-%s", ports_dir_name, git_commit_id);
-        fs.create_directory(temp_checkout_path, ec);
+        fs.create_directory(temp_checkout_path, IgnoreErrors{});
         const auto checkout_this_dir =
             Strings::format(R"(.\%s)", ports_dir_name); // Must be relative to the root of the repository
 

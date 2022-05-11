@@ -1,6 +1,5 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/util.h>
 
 #include <algorithm>
@@ -8,7 +7,23 @@
 
 using namespace vcpkg;
 
-namespace vcpkg::Parse
+namespace
+{
+    DECLARE_AND_REGISTER_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors");
+
+    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression,
+                                 (msg::value),
+                                 "Example of {value} is 'x64 & windows'",
+                                 "    on expression: {value}");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        ExpectedCharacterHere,
+        (msg::expected),
+        "{expected} is a locale-invariant delimiter; for example, the ':' or '=' in 'zlib:x64-windows=skip'",
+        "expected '{expected}' here");
+}
+
+namespace vcpkg
 {
     static void advance_rowcol(char32_t ch, int& row, int& column)
     {
@@ -37,21 +52,10 @@ namespace vcpkg::Parse
         return res;
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageLocation,
-                                 (msg::path, msg::row, msg::column),
-                                 "{Locked}",
-                                 "{path}:{row}:{column}: ");
-    DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression,
-                                 (msg::value),
-                                 "Example of {value} is 'x64 & windows'",
-                                 "    on expression: {value}");
-
     LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
     {
-        LocalizedString res = msg::format(msgFormattedParseMessageLocation,
-                                          msg::path = origin,
-                                          msg::row = location.row,
-                                          msg::column = location.column);
+        LocalizedString res =
+            LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
         if (kind == MessageKind::Warning)
         {
             res.append(msg::format(msg::msgWarningMessage));
@@ -64,7 +68,7 @@ namespace vcpkg::Parse
 
         res.appendnl();
 
-        auto line_end = Util::find_if(location.it, Parse::ParserBase::is_lineend);
+        auto line_end = Util::find_if(location.it, ParserBase::is_lineend);
         StringView line = StringView{
             location.start_of_line.pointer_to_current(),
             line_end.pointer_to_current(),
@@ -95,6 +99,24 @@ namespace vcpkg::Parse
 
     const std::string& ParseError::get_message() const { return this->message; }
 
+    void ParseMessages::exit_if_errors_or_warnings(StringView origin) const
+    {
+        for (const auto& warning : warnings)
+        {
+            msg::println(warning.format(origin, MessageKind::Warning));
+        }
+
+        if (error)
+        {
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, LocalizedString::from_raw(error->format()));
+        }
+
+        if (!warnings.empty())
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgWarningsTreatedAsErrors);
+        }
+    }
+
     ParserBase::ParserBase(StringView text, StringView origin, TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
@@ -103,6 +125,62 @@ namespace vcpkg::Parse
         , m_text(text)
         , m_origin(origin)
     {
+    }
+
+    StringView ParserBase::skip_whitespace() { return match_while(is_whitespace); }
+    StringView ParserBase::skip_tabs_spaces()
+    {
+        return match_while([](char32_t ch) { return ch == ' ' || ch == '\t'; });
+    }
+
+    void ParserBase::skip_to_eof() { m_it = m_it.end(); }
+    void ParserBase::skip_newline()
+    {
+        if (cur() == '\r') next();
+        if (cur() == '\n') next();
+    }
+    void ParserBase::skip_line()
+    {
+        match_until(is_lineend);
+        skip_newline();
+    }
+
+    bool ParserBase::require_character(char ch)
+    {
+        if (static_cast<char32_t>(ch) == cur())
+        {
+            next();
+            return false;
+        }
+
+        add_error(msg::format(msgExpectedCharacterHere, msg::expected = ch));
+        return true;
+    }
+
+    bool ParserBase::try_match_keyword(StringView keyword_content)
+    {
+        auto encoded = m_it;
+        // check that the encoded stream matches the keyword:
+        for (const char ch : keyword_content)
+        {
+            if (encoded.is_eof() || *encoded != static_cast<char32_t>(ch))
+            {
+                return false;
+            }
+
+            ++encoded;
+        }
+
+        // whole keyword matched, now check for a word boundary:
+        if (!encoded.is_eof() && !is_whitespace(*encoded))
+        {
+            return false;
+        }
+
+        // success
+        m_it = encoded;
+        m_column += static_cast<int>(keyword_content.size());
+        return true;
     }
 
     char32_t ParserBase::next()

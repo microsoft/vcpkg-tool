@@ -167,7 +167,7 @@ namespace vcpkg::msg
         m.localized_strings.resize(m.names.size());
         m.initialized = true;
 
-        std::set<StringView, std::less<>> names_set(m.names.begin(), m.names.end());
+        std::set<StringLiteral, std::less<>> names_set(m.names.begin(), m.names.end());
         if (names_set.size() < m.names.size())
         {
             // This will not trigger on any correct code path, so it's fine to use a naive O(n^2)
@@ -209,7 +209,7 @@ namespace vcpkg::msg
             else if (Debug::g_debugging)
             {
                 // we only want to print these in debug
-                names_without_localization.push_back(name);
+                names_without_localization.emplace_back(name);
             }
         }
 

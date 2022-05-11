@@ -29,8 +29,8 @@ namespace vcpkg
 
 namespace fmt
 {
-    template<class Char>
-    struct formatter<vcpkg::LineInfo, Char>
+    template<>
+    struct formatter<vcpkg::LineInfo, char>
     {
         constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
         {
@@ -43,13 +43,27 @@ namespace fmt
         }
     };
 
-    template<class Char>
-    struct formatter<vcpkg::StringView, Char> : formatter<string_view, Char>
+    template<>
+    struct formatter<vcpkg::StringView, char> : formatter<string_view, char>
     {
         template<class FormatContext>
         auto format(vcpkg::StringView sv, FormatContext& ctx) const -> decltype(ctx.out())
         {
-            return formatter<string_view, Char>::format(string_view(sv.data(), sv.size()), ctx);
+            return formatter<string_view, char>::format(string_view(sv.data(), sv.size()), ctx);
+        }
+    };
+
+    template<>
+    struct formatter<std::error_code, char> : formatter<std::string, char>
+    {
+        constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
+        {
+            return vcpkg::basic_format_parse_impl(ctx);
+        }
+        template<class FormatContext>
+        auto format(const std::error_code& ec, FormatContext& ctx) const -> decltype(ctx.out())
+        {
+            return formatter<std::string, char>::format(ec.message(), ctx);
         }
     };
 }

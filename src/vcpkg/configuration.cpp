@@ -10,6 +10,15 @@ namespace
 {
     using namespace vcpkg;
 
+    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineRemoteGitError,
+                                 (msg::url),
+                                 "",
+                                 "git failed to fetch remote repository '{url}'");
+    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineLocalGitError,
+                                 (msg::path),
+                                 "",
+                                 "git failed to parse HEAD for the local vcpkg registry at '{path}'");
+
     struct RegistryConfigDeserializer : Json::IDeserializer<RegistryConfig>
     {
         constexpr static StringLiteral KIND = "kind";
@@ -276,15 +285,13 @@ namespace
         Json::Object ret;
         for (const auto& el : obj)
         {
-            auto value = el.second;
-
-            if (!value.is_string())
+            if (!el.second.is_string())
             {
                 r.add_generic_error(type_name(), "value of [\"", el.first, "\"] must be a string");
                 continue;
             }
 
-            ret.insert_or_replace(el.first.to_string(), el.second);
+            ret.insert_or_replace(el.first, el.second);
         }
         return ret;
     }
@@ -299,7 +306,7 @@ namespace
             if (r.optional_object_field(obj, key, value, string_deserializer))
             {
                 if (errors_count != r.errors()) return;
-                put_into.insert_or_replace(key.to_string(), Json::Value::string(value));
+                put_into.insert_or_replace(key, std::move(value));
             }
         };
         auto extract_object = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
@@ -311,7 +318,7 @@ namespace
                 }
                 else
                 {
-                    put_into.insert_or_replace(key.to_string(), *value);
+                    put_into.insert_or_replace(key, *value);
                 }
             }
         };
@@ -321,7 +328,7 @@ namespace
             if (r.optional_object_field(obj, key, value, DictionaryDeserializer::instance))
             {
                 if (errors_count != r.errors()) return;
-                put_into.insert_or_replace(key.to_string(), value);
+                put_into.insert_or_replace(key, value);
             }
         };
 
@@ -331,7 +338,7 @@ namespace
             auto&& key = el.first;
             if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
             {
-                ret.insert_or_replace(key.to_string(), el.second);
+                ret.insert_or_replace(key, el.second);
             }
         }
         extract_string(obj, CE_ERROR, ret);
@@ -349,7 +356,7 @@ namespace
         Json::Object ret;
         for (const auto& el : obj)
         {
-            auto key = el.first.to_string();
+            const auto key = el.first;
             if (Strings::starts_with(key, "$"))
             {
                 // Put comments back without attempting to parse.
@@ -391,9 +398,8 @@ namespace
         {
             if (Strings::starts_with(el.first, "$"))
             {
-                auto key = el.first.to_string();
-                extra_info.insert_or_replace(key, el.second);
-                comment_keys.push_back(key);
+                extra_info.insert_or_replace(el.first, el.second);
+                comment_keys.emplace_back(el.first);
             }
         }
 
@@ -441,7 +447,7 @@ namespace
         auto extract_object = [](const Json::Object& obj, StringView key, Json::Object& put_into) {
             if (auto value = obj.get(key))
             {
-                put_into.insert_or_replace(key.to_string(), *value);
+                put_into.insert_or_replace(key, *value);
             }
         };
 
@@ -456,7 +462,7 @@ namespace
                 Json::Object serialized_demands;
                 for (const auto& el : demands->object())
                 {
-                    auto key = el.first.to_string();
+                    auto key = el.first;
                     if (Strings::starts_with(key, "$"))
                     {
                         serialized_demands.insert_or_replace(key, el.second);
@@ -478,7 +484,7 @@ namespace
         {
             if (Util::find(Configuration::known_fields(), el.first) == std::end(Configuration::known_fields()))
             {
-                put_into.insert_or_replace(el.first.to_string(), el.second);
+                put_into.insert_or_replace(el.first, el.second);
             }
         }
 
@@ -497,7 +503,7 @@ namespace
         std::vector<StringView> ret;
         for (const auto& el : obj)
         {
-            auto key = el.first.to_string();
+            auto key = el.first;
             if (Strings::starts_with(key, "$"))
             {
                 continue;
@@ -538,6 +544,77 @@ namespace
 
 namespace vcpkg
 {
+    static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths, StringView url)
+    {
+        auto res = paths.git_fetch_from_remote_registry(url, "HEAD");
+        if (auto p = res.get())
+        {
+            return Optional<std::string>(std::move(*p));
+        }
+        else
+        {
+            return msg::format(msgUpdateBaselineRemoteGitError, msg::url = url)
+                .appendnl()
+                .append_raw(Strings::trim(res.error()));
+        }
+    }
+
+    ExpectedL<Optional<std::string>> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths) const
+    {
+        if (kind == RegistryConfigDeserializer::KIND_GIT)
+        {
+            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO));
+        }
+        else if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
+        {
+            if (paths.use_git_default_registry())
+            {
+                return get_baseline_from_git_repo(paths, builtin_registry_git_url());
+            }
+            else
+            {
+                // use the vcpkg git repository sha from the user's machine
+                auto res = paths.get_current_git_sha();
+                if (auto p = res.get())
+                {
+                    return Optional<std::string>(std::move(*p));
+                }
+                else
+                {
+                    return msg::format(msgUpdateBaselineLocalGitError, msg::path = paths.root)
+                        .appendnl()
+                        .append_raw(Strings::trim(res.error()));
+                }
+            }
+        }
+        else
+        {
+            return baseline;
+        }
+    }
+
+    StringView RegistryConfig::pretty_location() const
+    {
+        if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
+        {
+            return builtin_registry_git_url();
+        }
+        if (kind == RegistryConfigDeserializer::KIND_FILESYSTEM)
+        {
+            return path.value_or_exit(VCPKG_LINE_INFO);
+        }
+        if (kind == RegistryConfigDeserializer::KIND_GIT)
+        {
+            return repo.value_or_exit(VCPKG_LINE_INFO);
+        }
+        if (kind == RegistryConfigDeserializer::KIND_ARTIFACT)
+        {
+            return location.value_or_exit(VCPKG_LINE_INFO);
+        }
+
+        Checks::unreachable(VCPKG_LINE_INFO);
+    }
+
     View<StringView> Configuration::known_fields()
     {
         static constexpr StringView known_fields[]{
@@ -661,7 +738,7 @@ namespace vcpkg
 
         for (const auto& el : extra_info)
         {
-            obj.insert(el.first.to_string(), el.second);
+            obj.insert(el.first, el.second);
         }
 
         if (auto default_registry = default_reg.get())

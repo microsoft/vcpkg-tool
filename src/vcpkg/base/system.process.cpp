@@ -5,7 +5,6 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -25,6 +24,11 @@
 #if defined(_WIN32)
 #pragma comment(lib, "Advapi32")
 #endif
+
+namespace
+{
+    DECLARE_AND_REGISTER_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...");
+}
 
 namespace vcpkg
 {
@@ -96,7 +100,7 @@ namespace vcpkg
                         while (true)
                         {
                             std::this_thread::sleep_for(std::chrono::seconds(10));
-                            print2("Waiting for child processes to exit...\n");
+                            msg::println(msgWaitingForChildrenToExit);
                         }
                     }
                 }
@@ -119,7 +123,7 @@ namespace vcpkg
                     while (true)
                     {
                         std::this_thread::sleep_for(std::chrono::seconds(10));
-                        print2("Waiting for child processes to exit...\n");
+                        msg::println(msgWaitingForChildrenToExit);
                     }
                 }
             }
@@ -246,7 +250,7 @@ namespace vcpkg
         {
             cmd.string_arg(var.s);
         }
-        cmd.string_arg("-P").path_arg(cmake_script);
+        cmd.string_arg("-P").string_arg(cmake_script);
         return cmd;
     }
 
@@ -261,7 +265,11 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path)
     {
+<<<<<<< HEAD
         static constexpr StringLiteral common_env[] = {
+=======
+        static const std::vector<std::string> common_env = {
+>>>>>>> ras0219-msft/dev/roschuma/keep-env
             "ALLUSERSPROFILE",
             "APPDATA",
             "CommonProgramFiles",
@@ -304,7 +312,10 @@ namespace vcpkg
             // Environment variables to tell git to use custom SSH executable or command
             "GIT_SSH",
             "GIT_SSH_COMMAND",
+<<<<<<< HEAD
             // Needed for private git repos. (#23225)
+=======
+>>>>>>> ras0219-msft/dev/roschuma/keep-env
             "GIT_ASKPASS",
             // Environment variables needed for ssh-agent based authentication
             "SSH_AUTH_SOCK",
@@ -341,7 +352,11 @@ namespace vcpkg
 
         // This map's keys are uppercase var names and values are actual assignments
         // e.g. { "PROGRAMFILES", "ProgramFiles=C:\\Program Files" }
+<<<<<<< HEAD
         std::map<std::string, std::string, std::less<>> env_map;
+=======
+        std::map<std::string, std::string> env_map;
+>>>>>>> ras0219-msft/dev/roschuma/keep-env
 
         for (const auto& item : extra_env)
         {
@@ -608,6 +623,7 @@ namespace vcpkg
             {
                 while (ReadFile(child_stdout, static_cast<void*>(buf), buffer_size, &bytes_read, nullptr))
                 {
+                    std::replace(buf, buf + bytes_read, '\0', '?');
                     f(StringView{buf, static_cast<size_t>(bytes_read)});
                 }
             }
@@ -766,7 +782,7 @@ namespace vcpkg
         if (!wd.working_directory.empty())
         {
             real_command_line_builder.string_arg("cd");
-            real_command_line_builder.path_arg(wd.working_directory);
+            real_command_line_builder.string_arg(wd.working_directory);
             real_command_line_builder.raw_arg("&&");
         }
 
@@ -836,7 +852,7 @@ namespace vcpkg
         else
         {
             actual_cmd_line = Command("cd")
-                                  .path_arg(wd.working_directory)
+                                  .string_arg(wd.working_directory)
                                   .raw_arg("&&")
                                   .raw_arg(cmd_line.command_line())
                                   .raw_arg("2>&1")
@@ -904,7 +920,7 @@ namespace vcpkg
                 Strings::append(output, sv);
                 if (echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                 {
-                    print2(sv);
+                    msg::write_unlocalized_text_to_stdout(Color::none, sv);
                 }
             },
             wd,

@@ -31,6 +31,12 @@ namespace vcpkg::Export::Prefab
         std::string to_string();
         void to_string(std::string& out);
 
+        friend bool operator==(const NdkVersion& lhs, const NdkVersion& rhs)
+        {
+            return lhs.m_major == rhs.m_major && lhs.m_minor == rhs.m_minor && lhs.m_patch == rhs.m_patch;
+        }
+        friend bool operator!=(const NdkVersion& lhs, const NdkVersion& rhs) { return !(lhs == rhs); }
+
     private:
         int m_major;
         int m_minor;
@@ -74,6 +80,6 @@ namespace vcpkg::Export::Prefab
                    const VcpkgPaths& paths,
                    const Options& prefab_options,
                    const Triplet& triplet);
-    Optional<std::string> find_ndk_version(const std::string& content);
-    Optional<NdkVersion> to_version(const std::string& version);
+    Optional<StringView> find_ndk_version(StringView content);
+    Optional<NdkVersion> to_version(StringView version);
 }
