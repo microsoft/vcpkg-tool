@@ -261,7 +261,7 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path)
     {
-        static const std::vector<std::string> common_env = {
+        static constexpr StringLiteral common_env[] = {
             "ALLUSERSPROFILE",
             "APPDATA",
             "CommonProgramFiles",
@@ -304,6 +304,8 @@ namespace vcpkg
             // Environment variables to tell git to use custom SSH executable or command
             "GIT_SSH",
             "GIT_SSH_COMMAND",
+            // Needed for private git repos. (#23225)
+            "GIT_ASKPASS",
             // Environment variables needed for ssh-agent based authentication
             "SSH_AUTH_SOCK",
             "SSH_AGENT_PID",
@@ -339,7 +341,7 @@ namespace vcpkg
 
         // This map's keys are uppercase var names and values are actual assignments
         // e.g. { "PROGRAMFILES", "ProgramFiles=C:\\Program Files" }
-        std::map<std::string, std::string> env_map;
+        std::map<std::string, std::string, std::less<>> env_map;
 
         for (const auto& item : extra_env)
         {
@@ -527,7 +529,8 @@ namespace vcpkg
 
     /// <param name="maybe_environment">If non-null, an environment block to use for the new process. If null, the
     /// new process will inherit the current environment.</param>
-    static ExpectedT<ProcessInfo, unsigned long> windows_create_process(StringView cmd_line,
+    static ExpectedT<ProcessInfo, unsigned long> windows_create_process(const wchar_t* appname,
+                                                                        StringView cmd_line,
                                                                         const WorkingDirectory& wd,
                                                                         const Environment& env,
                                                                         DWORD dwCreationFlags,
@@ -537,7 +540,7 @@ namespace vcpkg
         Debug::print("CreateProcessW(", cmd_line, ")\n");
 
         // Flush stdout before launching external process
-        fflush(nullptr);
+        // fflush(nullptr);
 
         std::wstring working_directory;
         if (!wd.working_directory.empty())
@@ -552,17 +555,20 @@ namespace vcpkg
 
         // Leaking process information handle 'process_info.proc_info.hProcess'
         // /analyze can't tell that we transferred ownership here
+        auto timer = ElapsedTimer::create_started();
         VCPKG_MSVC_WARNING(suppress : 6335)
         bool succeeded = TRUE == CreateProcessW(nullptr,
                                                 Strings::to_utf16(cmd_line).data(),
                                                 nullptr,
                                                 nullptr,
-                                                TRUE,
-                                                IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
+                                                FALSE,
+                                                CREATE_SUSPENDED | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
                                                 environment_block.empty() ? nullptr : &environment_block[0],
                                                 working_directory.empty() ? nullptr : working_directory.data(),
                                                 &startup_info,
                                                 &process_info.proc_info);
+
+        print2("### CreateProcessW(",cmd_line,"): ", timer, '\n');
 
         if (succeeded)
             return process_info;
@@ -679,13 +685,14 @@ namespace vcpkg
             windows_create_windowless_process(cmd_line.command_line(),
                                               default_working_directory,
                                               default_environment,
-                                              CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
+                                              NULL);
         if (!process_info.get())
         {
-            Debug::print("cmd_execute_background() failed with error code ", process_info.error(), "\n");
+            print2("cmd_execute_background() failed with error code ", process_info.error(), "\n");
         }
 
-        Debug::print("cmd_execute_background() took ", static_cast<int>(timer.microseconds()), " us\n");
+        print2("cmd_execute_background() took ", static_cast<int>(timer.microseconds()), " us\n");
+        _flushall();
     }
 
     Environment cmd_execute_and_capture_environment(const Command& cmd_line, const Environment& env)

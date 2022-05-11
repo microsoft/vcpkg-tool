@@ -202,13 +202,13 @@ namespace vcpkg
         if (auto v = value.get())
         {
             exit_code = SetEnvironmentVariableW(w_varcstr, Strings::to_utf16(*v).c_str());
+            Checks::check_exit(VCPKG_LINE_INFO, exit_code != 0);
         }
         else
         {
-            exit_code = SetEnvironmentVariableW(w_varcstr, nullptr);
+            SetEnvironmentVariableW(w_varcstr, nullptr);
         }
 
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code != 0);
 #else
         if (auto v = value.get())
         {

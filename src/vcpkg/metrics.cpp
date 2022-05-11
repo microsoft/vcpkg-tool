@@ -3,6 +3,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/commands.h>
@@ -479,17 +480,17 @@ namespace vcpkg
         std::error_code ec;
 #if defined(_WIN32)
         fs.create_directories(temp_folder_path, ec);
-        if (ec) return;
+        if (ec) print2(VCPKG_LINE_INFO, '\n');
         fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
-        if (ec) return;
+        if (ec) print2(VCPKG_LINE_INFO, '\n');
 #else
-        if (!fs.exists("/tmp", IgnoreErrors{})) return;
+        if (!fs.exists("/tmp", IgnoreErrors{})) print2(VCPKG_LINE_INFO, '\n');
         const Path temp_folder_path = "/tmp/vcpkg";
         fs.create_directory(temp_folder_path, IgnoreErrors{});
 #endif
         const Path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
         fs.write_contents(vcpkg_metrics_txt_path, payload, ec);
-        if (ec) return;
+        if (ec) print2(VCPKG_LINE_INFO, '\n');
 
 #if defined(_WIN32)
         Command builder;
