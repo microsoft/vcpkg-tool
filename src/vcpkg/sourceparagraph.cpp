@@ -1544,7 +1544,18 @@ namespace vcpkg
 
     static bool is_dependency_trivial(const Dependency& dep)
     {
-        return dep.features.empty() && dep.platform.is_empty() && dep.extra_info.is_empty() &&
+        if (Util::Vectors::contains(dep.features, "default"))
+        {
+            if (dep.features.size() > 2)
+            {
+                return false;
+            }
+        }
+        else if (dep.features.size() > 1)
+        {
+            return false;
+        }
+        return dep.platform.is_empty() && dep.extra_info.is_empty() &&
                dep.constraint.type == VersionConstraintKind::None && !dep.host && !dep.default_features.has_value();
     }
 
@@ -1607,19 +1618,14 @@ namespace vcpkg
                 dep_obj.insert(DependencyDeserializer::NAME, dep.name);
                 if (dep.host) dep_obj.insert(DependencyDeserializer::HOST, Json::Value::boolean(true));
 
-                auto features_copy = dep.features;
-                auto core_it = std::find(features_copy.begin(), features_copy.end(), "core");
-                auto default_features = dep.default_features;
-                if (core_it != features_copy.end())
-                {
-                    default_features = false;
-                    features_copy.erase(core_it);
-                }
-                if (auto b = default_features.get())
+                if (auto b = dep.default_features.get())
                 {
                     dep_obj.insert(DependencyDeserializer::DEFAULT_FEATURES, Json::Value::boolean(*b));
                 }
 
+                auto features_copy = dep.features;
+                Util::erase_remove(features_copy, "core");
+                Util::erase_remove(features_copy, "default");
                 serialize_optional_array(dep_obj, DependencyDeserializer::FEATURES, features_copy);
                 serialize_optional_string(dep_obj, DependencyDeserializer::PLATFORM, to_string(dep.platform));
                 if (dep.constraint.type == VersionConstraintKind::Minimum)
