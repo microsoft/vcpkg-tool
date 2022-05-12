@@ -553,8 +553,8 @@ namespace vcpkg::Commands::AddVersion
                                        .append_raw("***")
                                        .append(msgAddVersionNoFilesUpdated)
                                        .append_raw("***"));
-                Checks::check_exit(VCPKG_LINE_INFO, !add_all);
-                continue;
+                if (add_all) continue;
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
             const auto& git_tree = git_tree_it->second;
 
