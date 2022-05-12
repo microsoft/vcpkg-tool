@@ -163,7 +163,10 @@ namespace vcpkg::Dependencies
                     {
                         if (dep.platform.is_empty())
                         {
-                            auto fullspec = dep.to_full_spec(m_spec.triplet(), host_triplet, depend_defaults ? ImplicitDefault::YES : ImplicitDefault::NO);
+                            auto fullspec =
+                                dep.to_full_spec(m_spec.triplet(),
+                                                 host_triplet,
+                                                 depend_defaults ? ImplicitDefault::YES : ImplicitDefault::NO);
                             fullspec.expand_fspecs_to(dep_list);
                             if (auto opt = dep.constraint.try_get_minimum_version())
                             {
