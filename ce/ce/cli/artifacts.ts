@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 import { MultiBar, SingleBar } from 'cli-progress';
-import { Activation } from '../artifacts/activation';
 import { Artifact, ArtifactMap } from '../artifacts/artifact';
 import { i } from '../i18n';
 import { trackAcquire } from '../insights';
@@ -26,6 +25,7 @@ export async function showArtifacts(artifacts: Iterable<Artifact>, options?: { f
     table.push(name, artifact.version, options?.force || await artifact.isInstalled ? 'installed' : 'will install', artifact.isPrimary ? ' ' : '*', artifact.metadata.info.summary || '');
   }
   log(table.toString());
+  log();
 
   return !failing;
 }
@@ -40,6 +40,15 @@ export async function selectArtifacts(selections: Selections, registries: Regist
 
     if (!artifact) {
       error(`Unable to resolve artifact: ${artifactReference('', identity, version)}`);
+
+      const results = await registries.search({ keyword: identity, version: version });
+      if (results.length) {
+        log('\nPossible matches:');
+        for (const [reg, key, arts] of results) {
+          log(`  ${artifactReference(registries.getRegistryName(reg), key, '')}`);
+        }
+      }
+
       return false;
     }
 
@@ -50,10 +59,9 @@ export async function selectArtifacts(selections: Selections, registries: Regist
   return artifacts;
 }
 
-export async function installArtifacts(session: Session, artifacts: Iterable<Artifact>, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>, Activation]> {
+export async function installArtifacts(session: Session, artifacts: Iterable<Artifact>, options?: { force?: boolean, allLanguages?: boolean, language?: string }): Promise<[boolean, Map<Artifact, boolean>]> {
   // resolve the full set of artifacts to install.
   const installed = new Map<Artifact, boolean>();
-  const activation = new Activation(session);
 
   const bar = new MultiBar({
     clearOnComplete: true, hideCursor: true, format: '{name} {bar}\u25A0 {percentage}% {action} {current}',
@@ -70,7 +78,7 @@ export async function installArtifacts(session: Session, artifacts: Iterable<Art
     const registryName = artifact.registryId;
 
     try {
-      const actuallyInstalled = await artifact.install(activation, {
+      const actuallyInstalled = await artifact.install({
         verifying: (name, percent) => {
           if (percent >= 100) {
             p?.update(percent);
@@ -134,20 +142,10 @@ export async function installArtifacts(session: Session, artifacts: Iterable<Art
       debug(e);
       debug(e.stack);
       error(i`Error installing ${artifactIdentity(registryName, id)} - ${e} `);
-      return [false, installed, activation];
+      return [false, installed];
     }
 
     bar.stop();
   }
-  return [true, installed, activation];
-}
-
-export async function activateArtifacts(session: Session, artifacts: Iterable<Artifact>) {
-  const activation = new Activation(session);
-  for (const artifact of artifacts) {
-    if (await artifact.isInstalled) {
-      await artifact.loadActivationSettings(activation);
-    }
-  }
-  return activation;
+  return [true, installed];
 }

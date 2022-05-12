@@ -262,6 +262,16 @@ int main(const int argc, const char* const* const argv)
     if (const auto p = args.debug.get()) Debug::g_debugging = *p;
     args.imbue_from_environment();
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
+    if (const auto p = args.debug_env.get(); p && *p)
+    {
+        msg::write_unlocalized_text_to_stdout(Color::none,
+                                              "[DEBUG] The following environment variables are currently set:\n" +
+                                                  get_environment_variables() + '\n');
+    }
+    else if (Debug::g_debugging)
+    {
+        Debug::println("To include the environment variables in debug output, pass --debug-env");
+    }
     args.check_feature_flag_consistency();
 
     bool to_enable_metrics = true;

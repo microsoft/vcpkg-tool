@@ -31,6 +31,7 @@
 namespace
 {
     using namespace vcpkg;
+
     static Path process_input_directory_impl(
         Filesystem& filesystem, const Path& root, std::string* option, StringLiteral name, LineInfo li)
     {
@@ -60,7 +61,7 @@ namespace
 
 namespace vcpkg
 {
-    static std::pair<Json::Object, Json::JsonStyle> load_manifest(const Filesystem& fs, const Path& manifest_dir)
+    static ManifestAndPath load_manifest(const Filesystem& fs, const Path& manifest_dir)
     {
         std::error_code ec;
         auto manifest_path = manifest_dir / "vcpkg.json";
@@ -86,15 +87,15 @@ namespace vcpkg
                    ": Manifest files must have a top-level object\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        return {std::move(manifest_value.first.object()), std::move(manifest_value.second)};
+        return {std::move(manifest_value.first.object()), std::move(manifest_path)};
     }
 
-    static Optional<ManifestConfiguration> config_from_manifest(
-        const Path& manifest_path, const Optional<std::pair<Json::Object, Json::JsonStyle>>& manifest_doc)
+    static Optional<ManifestConfiguration> config_from_manifest(const Path& manifest_path,
+                                                                const Optional<ManifestAndPath>& manifest_doc)
     {
         if (auto manifest = manifest_doc.get())
         {
-            return parse_manifest_configuration(manifest_path, manifest->first).value_or_exit(VCPKG_LINE_INFO);
+            return parse_manifest_configuration(manifest_path, manifest->manifest).value_or_exit(VCPKG_LINE_INFO);
         }
         return nullopt;
     }
@@ -131,13 +132,13 @@ namespace vcpkg
         return parsed_config_opt;
     }
 
-    static Configuration merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
-                                                const Path& manifest_dir,
-                                                Optional<Configuration>&& config_data,
-                                                const Path& config_dir,
-                                                const VcpkgPaths& paths)
+    static ConfigurationAndSource merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
+                                                         const Path& manifest_dir,
+                                                         Optional<Configuration>&& config_data,
+                                                         const Path& config_dir,
+                                                         const VcpkgPaths& paths)
     {
-        Configuration ret;
+        ConfigurationAndSource ret;
 
         if (auto manifest = manifest_data.get())
         {
@@ -169,7 +170,7 @@ namespace vcpkg
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
-                ret = std::move(*config);
+                ret = ConfigurationAndSource{std::move(*config), config_dir, ConfigurationSource::ManifestFile};
             }
         }
 
@@ -177,7 +178,7 @@ namespace vcpkg
         {
             config->validate_as_active();
 
-            ret = std::move(*config);
+            ret = ConfigurationAndSource{std::move(*config), config_dir, ConfigurationSource::VcpkgConfigurationFile};
         }
 
         if (auto manifest = manifest_data.get())
@@ -195,7 +196,7 @@ namespace vcpkg
                                                paths.get_current_git_sha_baseline_message());
                 }
 
-                if (ret.default_reg)
+                if (ret.config.default_reg)
                 {
                     print2(Color::warning,
                            "warning: attempting to set builtin-baseline in vcpkg.json while overriding the "
@@ -204,7 +205,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    auto& default_reg = ret.default_reg.emplace();
+                    auto& default_reg = ret.config.default_reg.emplace();
                     default_reg.kind = "builtin";
                     default_reg.baseline = std::move(*p_baseline);
                 }
@@ -436,6 +437,7 @@ namespace vcpkg
             VcpkgPathsImpl(Filesystem& fs, const VcpkgCmdArguments& args, const Path& root, const Path& original_cwd)
                 : VcpkgPathsImplStage1(fs, args, root, original_cwd)
                 , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
+                , m_has_configuration_file(fs.exists(m_config_dir / "vcpkg-configuration.json", VCPKG_LINE_INFO))
                 , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
                 , m_registries_work_tree_dir(m_cache_root / "git")
                 , m_registries_dot_git_dir(m_cache_root / "git" / ".git")
@@ -501,6 +503,7 @@ namespace vcpkg
             }
 
             const Path m_config_dir;
+            const bool m_has_configuration_file;
             const Path m_manifest_path;
             const Path m_registries_work_tree_dir;
             const Path m_registries_dot_git_dir;
@@ -513,8 +516,8 @@ namespace vcpkg
 
             std::unique_ptr<IExclusiveFileLock> file_lock_handle;
 
-            Optional<std::pair<Json::Object, Json::JsonStyle>> m_manifest_doc;
-            Configuration m_config;
+            Optional<ManifestAndPath> m_manifest_doc;
+            ConfigurationAndSource m_config;
             std::unique_ptr<RegistrySet> m_registry_set;
         };
     }
@@ -662,7 +665,7 @@ namespace vcpkg
                                                        m_pimpl->m_config_dir,
                                                        *this);
 
-            m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this, m_pimpl->m_config_dir);
+            m_pimpl->m_registry_set = m_pimpl->m_config.instantiate_registry_set(*this);
         }
 
         // metrics from configuration
@@ -905,6 +908,15 @@ namespace vcpkg
     const std::string& VcpkgPaths::get_tool_version(StringView tool) const
     {
         return m_pimpl->m_tool_cache->get_tool_version(*this, tool);
+    }
+
+    GitConfig VcpkgPaths::git_builtin_config() const
+    {
+        GitConfig conf;
+        conf.git_exe = get_tool_exe(Tools::GIT);
+        conf.git_dir = this->root / ".git";
+        conf.git_work_tree = this->root;
+        return conf;
     }
 
     Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
@@ -1275,28 +1287,16 @@ namespace vcpkg
         }
     }
 
-    Optional<const Json::Object&> VcpkgPaths::get_manifest() const
+    Optional<const ManifestAndPath&> VcpkgPaths::get_manifest() const
     {
         if (auto p = m_pimpl->m_manifest_doc.get())
         {
-            return p->first;
+            return *p;
         }
-        else
-        {
-            return nullopt;
-        }
+        return nullopt;
     }
-    Optional<const Path&> VcpkgPaths::get_manifest_path() const
-    {
-        if (m_pimpl->m_manifest_doc)
-        {
-            return m_pimpl->m_manifest_path;
-        }
-        else
-        {
-            return nullopt;
-        }
-    }
+
+    const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 
     const RegistrySet& VcpkgPaths::get_registry_set() const
     {

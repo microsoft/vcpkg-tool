@@ -11,6 +11,7 @@
 
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/lazy.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.h>
@@ -57,6 +58,12 @@ namespace vcpkg
     struct Environment;
     struct PackageSpec;
     struct Triplet;
+
+    struct ManifestAndPath
+    {
+        Json::Object manifest;
+        Path path;
+    };
 
     struct VcpkgPaths
     {
@@ -124,6 +131,7 @@ namespace vcpkg
         const Path& get_tool_exe(StringView tool) const;
         const std::string& get_tool_version(StringView tool) const;
 
+        GitConfig git_builtin_config() const;
         Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
 
         // Git manipulation in the vcpkg directory
@@ -147,8 +155,8 @@ namespace vcpkg
                                                                            const Path& relative_path_to_file) const;
         ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 
-        Optional<const Json::Object&> get_manifest() const;
-        Optional<const Path&> get_manifest_path() const;
+        Optional<const ManifestAndPath&> get_manifest() const;
+        const ConfigurationAndSource& get_configuration() const;
         const RegistrySet& get_registry_set() const;
 
         // Retrieve a toolset matching the requirements in prebuildinfo

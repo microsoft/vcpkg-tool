@@ -593,13 +593,19 @@ export class Scanner implements Token {
     return result;
   }
 
+  takeWhitespace() {
+    while (!this.eof && this.kind === Kind.Whitespace) {
+      this.take();
+    }
+  }
+
   /**
-   * When the current token is greaterThan, this will return any tokens with characters
-   * after the greater than character. This has to be scanned separately because greater
-   * thans appear in positions where longer tokens are incorrect, e.g. `model x<y>=y;`.
-   * The solution is to call rescanGreaterThan from the parser in contexts where longer
-   * tokens starting with `>` are allowed (i.e. when parsing binary expressions).
-   */
+ * When the current token is greaterThan, this will return any tokens with characters
+ * after the greater than character. This has to be scanned separately because greater
+ * thans appear in positions where longer tokens are incorrect, e.g. `model x<y>=y;`.
+ * The solution is to call rescanGreaterThan from the parser in contexts where longer
+ * tokens starting with `>` are allowed (i.e. when parsing binary expressions).
+ */
   rescanGreaterThan(): Kind {
     if (this.kind === Kind.GreaterThan) {
       return this.#ch === CharacterCodes.greaterThan ?
@@ -856,10 +862,10 @@ export class Scanner implements Token {
   }
 
   /**
-   * Returns the zero-based line/column from the given offset
-   * (binary search thru the token start locations)
-   * @param offset the character position in the document
-   */
+ * Returns the zero-based line/column from the given offset
+ * (binary search thru the token start locations)
+ * @param offset the character position in the document
+ */
   positionFromOffset(offset: number): Position {
     let position = { line: 0, column: 0, offset: 0 };
 
@@ -888,7 +894,7 @@ export class Scanner implements Token {
     return { line: position.line, column: position.column + (offset - position.offset) };
   }
 
-  static *TokensFrom(text: string): Iterable<Token> {
+  static * TokensFrom(text: string): Iterable<Token> {
     const scanner = new Scanner(text).start();
     while (!scanner.eof) {
       yield scanner.take();
