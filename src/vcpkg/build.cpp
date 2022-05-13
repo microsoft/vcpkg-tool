@@ -759,11 +759,9 @@ namespace vcpkg::Build
                                   {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
                                   {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
                               });
-        if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
-        {
-            const Path& git_exe_path = paths.get_tool_exe(Tools::GIT);
-            out_vars.push_back({"GIT", git_exe_path});
-        }
+        // Make sure GIT could be found
+        const Path& git_exe_path = paths.get_tool_exe(Tools::GIT);
+        out_vars.push_back({"GIT", git_exe_path});
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
