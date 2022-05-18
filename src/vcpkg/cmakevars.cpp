@@ -249,12 +249,11 @@ endfunction()
     }
 
     DECLARE_AND_REGISTER_MESSAGE(CommandFailed,
-                                 (msg::command_line, msg::list),
+                                 (msg::command_line),
                                  "",
                                  "command:\n"
                                  "{command_line}\n"
-                                 "failed with the following results:\n"
-                                 "{list}\n");
+                                 "failed with the following results:\n");
 
     void TripletCMakeVarProvider::launch_and_split(
         const Path& script_path, std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const
@@ -274,11 +273,11 @@ endfunction()
 
         if (exit_code != 0)
         {
-            msg::println(Color::error,
-                         msgCommandFailed,
-                         msg::command_line = cmd_launch_cmake.command_line(),
-                         msg::list = Strings::join(", ", lines));
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO,
+                msg::format(msgCommandFailed, msg::command_line = cmd_launch_cmake.command_line())
+                    .appendnl()
+                    .append_raw(Strings::join(", ", lines)));
         }
 
         const auto end = lines.cend();
