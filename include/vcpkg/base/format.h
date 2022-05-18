@@ -2,10 +2,10 @@
 
 #include <vcpkg/base/fwd/format.h>
 
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/fmt.h>
 
 namespace vcpkg
 {
