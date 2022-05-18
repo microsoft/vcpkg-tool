@@ -5,14 +5,7 @@
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/stringview.h>
-
-VCPKG_MSVC_WARNING(push)
-// note:
-// C6239 is not a useful warning for external code; it is
-//   (<non-zero constant> && <expression>) always evaluates to the result of <expression>.
-VCPKG_MSVC_WARNING(disable : 6239)
-#include <fmt/format.h>
-VCPKG_MSVC_WARNING(pop)
+#include <vcpkg/base/fmt.h>
 
 namespace vcpkg
 {
