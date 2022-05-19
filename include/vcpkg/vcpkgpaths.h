@@ -1,11 +1,13 @@
 #pragma once
 
+#include <vcpkg/base/fwd/downloads.h>
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/registries.h>
+#include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
@@ -39,8 +41,6 @@ namespace vcpkg
         std::string full_version;
         std::vector<ToolsetArchOption> supported_architectures;
     };
-
-    struct DownloadManager;
 
     namespace Build
     {
@@ -114,20 +114,21 @@ namespace vcpkg
         const std::unique_ptr<details::VcpkgPathsImpl> m_pimpl;
 
     public:
+        const Path& scripts;
+        const Path& downloads;
+        const Path& tools;
         const Path builtin_registry_versions;
-        const Path scripts;
         const Path prefab;
         const Path buildsystems;
         const Path buildsystems_msbuild_targets;
         const Path buildsystems_msbuild_props;
-        const Path downloads;
-        const Path tools;
         const Path ports_cmake;
         const Path triplets;
         const Path community_triplets;
 
         std::string get_toolver_diagnostics() const;
 
+        const ToolCache& get_tool_cache() const;
         const Path& get_tool_exe(StringView tool) const;
         const std::string& get_tool_version(StringView tool) const;
 
