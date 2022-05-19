@@ -1260,6 +1260,7 @@ namespace vcpkg::Build
 
         abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE));
 
+        // This #ifdef is mirrored in tools.cpp's PowershellProvider
 #if defined(_WIN32)
         abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core"));
 #endif

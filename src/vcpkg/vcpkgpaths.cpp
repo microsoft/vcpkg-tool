@@ -379,8 +379,8 @@ namespace vcpkg
                 , m_cache_root(default_registries_cache_path().value_or_exit(VCPKG_LINE_INFO))
                 , m_manifest_dir(compute_manifest_dir(fs, args, original_cwd))
                 , m_bundle(load_bundle_file(fs, root))
-                , m_download_manager(
-                      parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO))
+                , m_download_manager(std::make_shared<DownloadManager>(
+                      parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)))
                 , m_builtin_ports(process_output_directory(fs, args.builtin_ports_root_dir.get(), root / "ports"))
                 , m_default_vs_path(args.default_visual_studio_path
                                         ? fs.almost_canonical(*args.default_visual_studio_path, VCPKG_LINE_INFO)
@@ -403,7 +403,7 @@ namespace vcpkg
             const Path m_cache_root;
             const Path m_manifest_dir;
             const BundleSettings m_bundle;
-            const DownloadManager m_download_manager;
+            const std::shared_ptr<const DownloadManager> m_download_manager;
             const Path m_builtin_ports;
             const Path m_default_vs_path;
             const Path scripts;
@@ -1312,7 +1312,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, m_pimpl->m_registry_set != nullptr);
         return *m_pimpl->m_registry_set;
     }
-    const DownloadManager& VcpkgPaths::get_download_manager() const { return m_pimpl->m_download_manager; }
+    const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager.get(); }
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
                                  (msg::triplet),

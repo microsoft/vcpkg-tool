@@ -1,10 +1,10 @@
 #pragma once
 
+#include <vcpkg/base/fwd/downloads.h>
 #include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 
 #include <vcpkg/fwd/tools.h>
-#include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/stringview.h>
 
@@ -46,7 +46,7 @@ namespace vcpkg
     ExpectedL<Path> find_system_tar(const Filesystem& fs);
 
     std::unique_ptr<ToolCache> get_tool_cache(Filesystem& fs,
-                                              const DownloadManager& downloader,
+                                              std::shared_ptr<const DownloadManager> downloader,
                                               Path downloads,
                                               Path xml_config,
                                               Path tools,

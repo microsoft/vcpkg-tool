@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/downloads.h>
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/configuration.h>

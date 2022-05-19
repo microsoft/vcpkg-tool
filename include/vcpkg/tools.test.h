@@ -13,6 +13,8 @@ namespace vcpkg
 {
     struct ToolData
     {
+        std::string name;
+
         std::array<int, 3> version;
         // relative path inside tool_dir_subpath
         Path exe_subpath;

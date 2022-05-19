@@ -138,8 +138,14 @@ namespace vcpkg
             download_subpath = Strings::concat(sha512.substr(0, 8), '-', exe_relative_path);
         }
 
-        return ToolData{
-            *version.get(), exe_relative_path, url, download_subpath, archive_name.has_value(), tool_dir_name, sha512};
+        return ToolData{tool.to_string(),
+                        *version.get(),
+                        exe_relative_path,
+                        url,
+                        download_subpath,
+                        archive_name.has_value(),
+                        tool_dir_name,
+                        sha512};
     }
 
     struct PathAndVersion
@@ -165,6 +171,8 @@ namespace vcpkg
         /// \returns The stem of the executable to search PATH for, or empty string if tool can't be searched
         virtual StringView system_exe_stem() const = 0;
         virtual std::array<int, 3> default_min_version() const = 0;
+        /// \returns \c true if the tool's version is included in package ABI calculations. ABI sensitive tools will be
+        /// pinned to exact versions if \c --x-abi-tools-use-exact-versions is passed.
         virtual bool is_abi_sensitive() const = 0;
 
         virtual void add_system_paths(std::vector<Path>& out_candidate_paths) const { (void)out_candidate_paths; }
@@ -186,7 +194,7 @@ namespace vcpkg
 
         virtual bool is_abi_sensitive() const override { return false; }
         virtual StringView tool_data_name() const override { return m_tool_data_name; }
-        virtual StringView system_exe_stem() const override { return ""; }
+        virtual StringView system_exe_stem() const override { return {}; }
         virtual std::array<int, 3> default_min_version() const override { return {0}; }
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path&) const override
@@ -547,7 +555,7 @@ coscli version v0.11.0-beta
     {
         virtual bool is_abi_sensitive() const override { return false; }
         virtual StringView tool_data_name() const override { return "installerbase"; }
-        virtual StringView system_exe_stem() const override { return ""; }
+        virtual StringView system_exe_stem() const override { return {}; }
         virtual std::array<int, 3> default_min_version() const override { return {0, 0, 0}; }
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
@@ -569,7 +577,15 @@ coscli version v0.11.0-beta
 
     struct PowerShellCoreProvider : ToolProvider
     {
-        virtual bool is_abi_sensitive() const override { return true; }
+        virtual bool is_abi_sensitive() const override
+        {
+            // This #ifdef is mirrored in build.cpp's compute_abi_tag
+#if defined(_WIN32)
+            return true;
+#else
+            return false;
+#endif
+        }
         virtual StringView tool_data_name() const override { return "powershell-core"; }
         virtual StringView system_exe_stem() const override { return "pwsh"; }
         virtual std::array<int, 3> default_min_version() const override { return {7, 0, 3}; }
@@ -599,7 +615,7 @@ coscli version v0.11.0-beta
     struct ToolCacheImpl final : ToolCache
     {
         Filesystem& fs;
-        const DownloadManager& downloader;
+        const std::shared_ptr<const DownloadManager> downloader;
         const Path downloads;
         const Path xml_config;
         const Path tools;
@@ -609,13 +625,13 @@ coscli version v0.11.0-beta
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
 
         ToolCacheImpl(Filesystem& fs,
-                      const DownloadManager& downloader,
+                      std::shared_ptr<const DownloadManager>&& downloader,
                       Path downloads,
                       Path xml_config,
                       Path tools,
                       RequireExactVersions abiToolVersionHandling)
             : fs(fs)
-            , downloader(downloader)
+            , downloader(std::move(downloader))
             , downloads(std::move(downloads))
             , xml_config(std::move(xml_config))
             , tools(std::move(tools))
@@ -645,7 +661,7 @@ coscli version v0.11.0-beta
             return nullopt;
         }
 
-        Path download_tool(StringView tool_name, const ToolData& tool_data) const
+        Path download_tool(const ToolData& tool_data) const
         {
             const std::array<int, 3>& version = tool_data.version;
             const std::string version_as_string = Strings::format("%d.%d.%d", version[0], version[1], version[2]);
@@ -654,20 +670,20 @@ coscli version v0.11.0-beta
                 !tool_data.url.empty(),
                 "A suitable version of %s was not found (required v%s) and unable to automatically "
                 "download a portable one. Please install a newer version of %s.",
-                tool_name,
+                tool_data.name,
                 version_as_string,
-                tool_name);
+                tool_data.name);
             vcpkg::printf("A suitable version of %s was not found (required v%s). Downloading portable %s v%s...\n",
-                          tool_name,
+                          tool_data.name,
                           version_as_string,
-                          tool_name,
+                          tool_data.name,
                           version_as_string);
             const auto download_path = downloads / tool_data.download_subpath;
             if (!fs.exists(download_path, IgnoreErrors{}))
             {
-                print2("Downloading ", tool_name, "...\n");
+                print2("Downloading ", tool_data.name, "...\n");
                 print2("  ", tool_data.url, " -> ", download_path, "\n");
-                downloader.download_file(fs, tool_data.url, download_path, tool_data.sha512);
+                downloader->download_file(fs, tool_data.url, download_path, tool_data.sha512);
             }
             else
             {
@@ -679,9 +695,9 @@ coscli version v0.11.0-beta
 
             if (tool_data.is_archive)
             {
-                print2("Extracting ", tool_name, "...\n");
+                print2("Extracting ", tool_data.name, "...\n");
 #if defined(_WIN32)
-                if (tool_name == "cmake")
+                if (tool_data.name == "cmake")
                 {
                     // We use cmake as the core extractor on Windows, so we need to perform a special dance when
                     // extracting it.
@@ -799,7 +815,7 @@ coscli version v0.11.0-beta
                 // If none of the current entries are acceptable, fall back to downloading if possible
                 if (auto tool_data = maybe_tool_data.get())
                 {
-                    auto downloaded_path = download_tool(tool.tool_data_name(), *tool_data);
+                    auto downloaded_path = download_tool(*tool_data);
                     auto downloaded_version = tool.get_version(*this, downloaded_path).value_or_exit(VCPKG_LINE_INFO);
                     return {std::move(downloaded_path), std::move(downloaded_version)};
                 }
@@ -877,12 +893,13 @@ coscli version v0.11.0-beta
     }
 
     std::unique_ptr<ToolCache> get_tool_cache(Filesystem& fs,
-                                              const DownloadManager& downloader,
+                                              std::shared_ptr<const DownloadManager> downloader,
                                               Path downloads,
                                               Path xml_config,
                                               Path tools,
                                               RequireExactVersions abiToolVersionHandling)
     {
-        return std::make_unique<ToolCacheImpl>(fs, downloader, downloads, xml_config, tools, abiToolVersionHandling);
+        return std::make_unique<ToolCacheImpl>(
+            fs, std::move(downloader), downloads, xml_config, tools, abiToolVersionHandling);
     }
 }

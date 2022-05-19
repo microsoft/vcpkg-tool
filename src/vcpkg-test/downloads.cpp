@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/downloads.h>
+#include <vcpkg/base/expected.h>
 
 using namespace vcpkg;
 

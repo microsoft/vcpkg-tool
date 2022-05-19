@@ -1,6 +1,8 @@
 #pragma once
 
-#include <vcpkg/base/expected.h>
+#include <vcpkg/base/fwd/downloads.h>
+#include <vcpkg/base/fwd/expected.h>
+
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/view.h>
