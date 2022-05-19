@@ -625,13 +625,13 @@ coscli version v0.11.0-beta
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
 
         ToolCacheImpl(Filesystem& fs,
-                      std::shared_ptr<const DownloadManager>&& downloader,
+                      const std::shared_ptr<const DownloadManager>& downloader,
                       Path downloads,
                       Path xml_config,
                       Path tools,
                       RequireExactVersions abiToolVersionHandling)
             : fs(fs)
-            , downloader(std::move(downloader))
+            , downloader(downloader)
             , downloads(std::move(downloads))
             , xml_config(std::move(xml_config))
             , tools(std::move(tools))
