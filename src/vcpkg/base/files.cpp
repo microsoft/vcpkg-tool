@@ -2887,6 +2887,16 @@ namespace vcpkg
                 if (ec) return false;
             }
 
+#if defined(__APPLE__)
+            if (fcopyfile(source_fd.get(), destination_fd.get(), 0, COPYFILE_ALL) == -1)
+            {
+                ec.assign(errno, std::generic_category());
+                return false;
+            }
+
+            // fcopyfile copies the mode so no need to fchmod here
+            return true;
+#else
 #if defined(__linux__)
             // https://man7.org/linux/man-pages/man2/sendfile.2.html#NOTES
             // sendfile() will transfer at most 0x7ffff000 (2,147,479,552)
@@ -2901,24 +2911,28 @@ namespace vcpkg
                 if (this_send_actual == -1)
                 {
                     ec.assign(errno, std::generic_category());
+                    // https://man7.org/linux/man-pages/man2/sendfile.2.html#NOTES
+                    // recommends fallback to read/write if sendfile returns EINVAL or ENOSYS
+                    if (errno == EINVAL || errno == ENOSYS)
+                    {
+                        lseek(source_fd.get(), offset, SEEK_SET);
+                        break;
+                    }
                     return false;
                 }
 
                 remaining_size -= this_send_actual;
             }
 
-            destination_fd.fchmod(source_stat.st_mode, ec);
-            return !ec;
-#elif defined(__APPLE__)
-            if (fcopyfile(source_fd.get(), destination_fd.get(), 0, COPYFILE_ALL) == -1)
+            if (!ec)
             {
-                ec.assign(errno, std::generic_category());
-                return false;
+                destination_fd.fchmod(source_stat.st_mode, ec);
+                return true;
             }
+            // Else fall back to read/write
+            ec.clear();
+#endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
 
-            // fcopyfile copies the mode so no need to fchmod here
-            return true;
-#else  // ^^^ defined(__APPLE__) // !(defined(__APPLE__) || defined(__linux__)) vvv
             constexpr std::size_t buffer_length = 4096;
             unsigned char buffer[buffer_length];
             while (auto read_bytes = source_fd.read(buffer, buffer_length))
@@ -2945,7 +2959,7 @@ namespace vcpkg
 
             destination_fd.fchmod(source_stat.st_mode, ec);
             return !ec;
-#endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
+#endif // ^^^ !(defined(__APPLE__)
 #endif // ^^^ !_WIN32
         }
 
