@@ -1138,7 +1138,8 @@ namespace vcpkg::Install
                                                         std::move(install_plan),
                                                         dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
                                                         pkgsconfig,
-                                                        host_triplet);
+                                                        host_triplet,
+                                                        keep_going);
         }
 
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
