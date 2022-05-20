@@ -2896,7 +2896,8 @@ namespace vcpkg
 
             // fcopyfile copies the mode so no need to fchmod here
             return true;
-#else
+#else // ^^^ (defined(__APPLE__) // !defined(__APPLE__) vvv
+
 #if defined(__linux__)
             // https://man7.org/linux/man-pages/man2/sendfile.2.html#NOTES
             // sendfile() will transfer at most 0x7ffff000 (2,147,479,552)
@@ -2931,7 +2932,7 @@ namespace vcpkg
             }
             // Else fall back to read/write
             ec.clear();
-#endif // ^^^ !(defined(__APPLE__) || defined(__linux__))
+#endif // ^^^ defined(__linux__)
 
             constexpr std::size_t buffer_length = 4096;
             unsigned char buffer[buffer_length];
