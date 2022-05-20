@@ -2899,6 +2899,8 @@ namespace vcpkg
 #else // ^^^ (defined(__APPLE__) // !defined(__APPLE__) vvv
 
             destination_fd.fchmod(source_stat.st_mode, ec);
+            if (ec)
+                return false;
 
 #if defined(__linux__)
             // https://man7.org/linux/man-pages/man2/sendfile.2.html#NOTES
