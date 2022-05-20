@@ -1380,23 +1380,25 @@ namespace vcpkg
         return nullopt;
     }
 
-    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
+    std::string ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>> error_info_list)
     {
         Checks::check_exit(VCPKG_LINE_INFO, error_info_list.size() > 0);
+
+        std::string message;
 
         for (auto&& error_info : error_info_list)
         {
             Checks::check_exit(VCPKG_LINE_INFO, error_info != nullptr);
             if (!error_info->error.empty())
             {
-                print2(Color::error, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
+                Strings::append(message, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
             }
 
             if (!error_info->other_errors.empty())
             {
-                print2(Color::error, "Errors occurred while parsing ", error_info->name, "\n");
+                Strings::append(message, "Errors occurred while parsing ", error_info->name, "\n");
                 for (auto&& msg : error_info->other_errors)
-                    print2("    ", msg, '\n');
+                    Strings::append(message, "    ", msg, '\n');
             }
         }
 
@@ -1405,15 +1407,15 @@ namespace vcpkg
         {
             if (!error_info->extra_fields.empty())
             {
-                print2(Color::error,
-                       "Error: There are invalid fields in the control or manifest file of ",
-                       error_info->name,
-                       '\n');
-                print2("The following fields were not expected:\n");
+                Strings::append(message,
+                                "Error: There are invalid fields in the control or manifest file of ",
+                                error_info->name,
+                                '\n');
+                Strings::append(message, "The following fields were not expected:\n");
 
                 for (const auto& pr : error_info->extra_fields)
                 {
-                    print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
+                    Strings::append(message, "    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
                 }
                 have_remaining_fields = true;
             }
@@ -1421,26 +1423,29 @@ namespace vcpkg
 
         if (have_remaining_fields)
         {
-            print2("This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
-                   Strings::join("\n    ", get_list_of_valid_fields()),
-                   "\n\n");
+            Strings::append(message,
+                            "This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
+                            Strings::join("\n    ", get_list_of_valid_fields()),
+                            "\n\n");
 #if defined(_WIN32)
             auto bootstrap = ".\\bootstrap-vcpkg.bat";
 #else
             auto bootstrap = "./bootstrap-vcpkg.sh";
 #endif
-            vcpkg::printf("You may need to update the vcpkg binary; try running %s to update.\n\n", bootstrap);
+            Strings::append(
+                message, "You may need to update the vcpkg binary; try running ", bootstrap, " to update.\n\n");
         }
 
         for (auto&& error_info : error_info_list)
         {
             if (!error_info->missing_fields.empty())
             {
-                print2(Color::error, "Error: There are missing fields in the control file of ", error_info->name, '\n');
-                print2("The following fields were missing:\n");
+                Strings::append(
+                    message, "Error: There are missing fields in the control file of ", error_info->name, '\n');
+                Strings::append(message, "The following fields were missing:\n");
                 for (const auto& pr : error_info->missing_fields)
                 {
-                    print2("    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
+                    Strings::append(message, "    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
                 }
             }
         }
@@ -1449,18 +1454,52 @@ namespace vcpkg
         {
             if (!error_info->expected_types.empty())
             {
-                print2(Color::error,
-                       "Error: There are invalid field types in the CONTROL or manifest file of ",
-                       error_info->name,
-                       '\n');
-                print2("The following fields had the wrong types:\n\n");
+                Strings::append(message,
+                                "Error: There are invalid field types in the CONTROL or manifest file of ",
+                                error_info->name,
+                                '\n');
+                Strings::append(message, "The following fields had the wrong types:\n\n");
 
                 for (const auto& pr : error_info->expected_types)
                 {
-                    vcpkg::printf("    %s was expected to be %s\n", pr.first, pr.second);
+                    Strings::append(message, "    ", pr.first, " was expected to be ", pr.second, "\n");
                 }
-                print2("\n");
+                Strings::append(message, "\n");
             }
+        }
+
+        return message;
+    }
+
+    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
+    {
+        auto msg = ParseControlErrorInfo::format_errors(error_info_list);
+
+        // To preserve previous behavior, each line starting with "Error" should be error-colored. All other lines
+        // should be neutral color.
+
+        // To minimize the number of print calls on Windows (which is a significant performance bottleneck), this
+        // algorithm chunks groups of similarly-colored lines.
+        auto lines = Strings::split(msg, '\n');
+        const std::string* const data = lines.data();
+        size_t i = 0, j = 0;
+        while (j != lines.size())
+        {
+            while (j != lines.size() && Strings::starts_with(data[j], "Error"))
+                ++j;
+            if (i != j)
+            {
+                print2(Color::error, Strings::join("\n", View<std::string>(data + i, data + j)));
+            }
+            i = j;
+
+            while (j != lines.size() && !Strings::starts_with(data[j], "Error"))
+                ++j;
+            if (i != j)
+            {
+                print2(Strings::join("\n", View<std::string>(data + i, data + j)));
+            }
+            i = j;
         }
     }
 
