@@ -24,6 +24,11 @@ namespace
 
     using Baseline = std::map<std::string, Version, std::less<>>;
 
+    DECLARE_AND_REGISTER_MESSAGE(GitCheckoutRegistryPortFailed,
+                                 (msg::git_ref, msg::path),
+                                 "",
+                                 "while checking out {git_ref} into {path}");
+
     static constexpr StringLiteral registry_versions_dir_name = "versions";
 
     struct GitRegistry;
@@ -78,6 +83,24 @@ namespace
                 [this]() { return m_paths.get_installed_lockfile().get_or_fetch(m_paths, m_repo, m_reference); });
         }
 
+        ExpectedL<Path> git_checkout_registry_port(StringView git_object) const
+        {
+            const auto destination = m_paths.registries_output() / git_object;
+            auto maybe_path = m_paths.get_git_impl().archive_and_extract_object(m_paths.git_registries_config(),
+                                                                                m_paths.get_filesystem(),
+                                                                                m_paths.get_tool_exe(Tools::CMAKE),
+                                                                                m_paths.registries_output(),
+                                                                                git_object);
+            if (auto path = maybe_path.get())
+            {
+                return *path;
+            }
+
+            return msg::format(msgGitCheckoutRegistryPortFailed, msg::git_ref = git_object, msg::path = destination)
+                .appendnl()
+                .append(maybe_path.error());
+        }
+
         Path get_versions_tree_path() const
         {
             return m_versions_tree.get([this]() -> Path {
@@ -97,11 +120,7 @@ namespace
                         e.commit_id(),
                         maybe_tree.error());
                 }
-                auto maybe_path = m_paths.get_git_impl().git_checkout_registry_port(m_paths.git_registries_config(),
-                                                                                    m_paths.get_filesystem(),
-                                                                                    m_paths.get_tool_exe(Tools::CMAKE),
-                                                                                    m_paths.registries_output(),
-                                                                                    *maybe_tree.get());
+                auto maybe_path = git_checkout_registry_port(*maybe_tree.get());
                 if (!maybe_path)
                 {
                     Checks::exit_with_message(VCPKG_LINE_INFO,
@@ -135,11 +154,7 @@ namespace
                     // This could be caused by git gc or otherwise -- fall back to full fetch
                     return {get_versions_tree_path(), false};
                 }
-                auto maybe_path = m_paths.get_git_impl().git_checkout_registry_port(m_paths.git_registries_config(),
-                                                                                    m_paths.get_filesystem(),
-                                                                                    m_paths.get_tool_exe(Tools::CMAKE),
-                                                                                    m_paths.registries_output(),
-                                                                                    *maybe_tree.get());
+                auto maybe_path = git_checkout_registry_port(*maybe_tree.get());
                 if (!maybe_path)
                 {
                     // This could be caused by git gc or otherwise -- fall back to full fetch
@@ -547,11 +562,8 @@ namespace
             auto maybe_path = git_checkout_baseline(m_paths, m_baseline_identifier);
             if (!maybe_path.has_value())
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO,
-                                          "%s\n\n%s",
-                                          maybe_path.error(),
-                                          m_paths.get_git_impl().git_current_sha_message(m_paths.git_builtin_config(),
-                                                                                         m_paths.git_embedded_sha()));
+                Checks::exit_with_message(
+                    VCPKG_LINE_INFO, "%s\n\n%s", maybe_path.error(), RegistrySet::get_baseline_suggestion(m_paths));
             }
             auto b = load_baseline_versions(m_paths.get_filesystem(), *maybe_path.get()).value_or_exit(VCPKG_LINE_INFO);
             if (auto p = b.get())
@@ -769,6 +781,11 @@ namespace
     // { RegistryEntry
 
     // { BuiltinRegistryEntry::RegistryEntry
+    DECLARE_AND_REGISTER_MESSAGE(GitCheckoutPortFailed,
+                                 (msg::package_name, msg::git_ref, msg::path),
+                                 "",
+                                 "while checking out {package_name} with SHA {git_ref} into {path}");
+
     ExpectedS<PathAndLocation> BuiltinGitRegistryEntry::get_version(const Version& version) const
     {
         auto it = std::find(port_versions.begin(), port_versions.end(), version);
@@ -788,12 +805,14 @@ namespace
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
-        auto maybe_path = m_paths.get_git_impl().git_checkout_port(m_paths.git_builtin_config(),
-                                                                   m_paths.get_filesystem(),
-                                                                   m_paths.get_tool_exe(Tools::CMAKE),
-                                                                   m_paths.versions_output(),
-                                                                   port_name,
-                                                                   git_tree);
+
+        const auto destination = m_paths.versions_output() / port_name / git_tree;
+
+        auto maybe_path = m_paths.get_git_impl().archive_and_extract_object(m_paths.git_builtin_config(),
+                                                                            m_paths.get_filesystem(),
+                                                                            m_paths.get_tool_exe(Tools::CMAKE),
+                                                                            destination,
+                                                                            git_tree);
         if (auto path = maybe_path.get())
         {
             return PathAndLocation{
@@ -801,7 +820,13 @@ namespace
                 "git+https://github.com/Microsoft/vcpkg@" + git_tree,
             };
         }
-        return maybe_path.error_to_string();
+        return msg::format(msgGitCheckoutPortFailed,
+                           msg::package_name = port_name,
+                           msg::git_ref = git_tree,
+                           msg::path = destination)
+            .appendnl()
+            .append(maybe_path.error())
+            .extract_data();
     }
     // } BuiltinRegistryEntry::RegistryEntry
 
@@ -855,12 +880,7 @@ namespace
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
-        auto maybe_path =
-            parent.m_paths.get_git_impl().git_checkout_registry_port(parent.m_paths.git_registries_config(),
-                                                                     parent.m_paths.get_filesystem(),
-                                                                     parent.m_paths.get_tool_exe(Tools::CMAKE),
-                                                                     parent.m_paths.registries_output(),
-                                                                     git_tree);
+        auto maybe_path = parent.git_checkout_registry_port(git_tree);
 
         if (auto path = maybe_path.get())
         {
@@ -1230,6 +1250,33 @@ namespace vcpkg
         return default_registry_ && default_registry_->kind() == BuiltinFilesRegistry::s_kind;
     }
     bool RegistrySet::has_modifications() const { return !registries_.empty() || !is_default_builtin_registry(); }
+
+    DECLARE_AND_REGISTER_MESSAGE(GitSuggestCurrentCommitAsBaseline,
+                                 (),
+                                 "",
+                                 "you can use the current commit as a baseline by adding this line to your manifest:");
+    DECLARE_AND_REGISTER_MESSAGE(GitFailedDetectingCurrentCommit, (), "", "failed to determine current commit");
+
+    LocalizedString RegistrySet::get_baseline_suggestion(const VcpkgPaths& paths)
+    {
+        auto maybe_embedded_sha = paths.git_embedded_sha();
+        if (!maybe_embedded_sha)
+        {
+            const IGit& git = paths.get_git_impl();
+            const auto config = paths.git_builtin_config();
+
+            auto maybe_sha = git.rev_parse(config, "HEAD");
+            if (!maybe_sha)
+            {
+                return msg::format(msgGitFailedDetectingCurrentCommit).appendnl().append(maybe_sha.error());
+            }
+            maybe_embedded_sha = std::move(*maybe_sha.get());
+        }
+
+        return msg::format(msgGitSuggestCurrentCommitAsBaseline)
+            .appendnl()
+            .append_fmt_raw(R"("builtin-baseline": "{}")", *maybe_embedded_sha.get());
+    }
 
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name)

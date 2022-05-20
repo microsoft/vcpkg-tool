@@ -116,6 +116,12 @@ namespace vcpkg
         // the directory pointed at by config.work_tree should already exist
         virtual ExpectedL<bool> fetch(const GitConfig& config, StringView uri, StringView ref) const = 0;
 
+        virtual ExpectedL<Path> archive_and_extract_object(const GitConfig& config,
+                                                           Filesystem& fs,
+                                                           const Path& cmake_exe,
+                                                           const Path& destination,
+                                                           StringView git_object) const = 0;
+
         /* ===== Git application business logic =====*/
         // runs 'git fetch {url} {treeish}' and returns the hash of FETCH_HEAD
         // set {treeish} to HEAD for the default branch
@@ -123,27 +129,6 @@ namespace vcpkg
                                                                       Filesystem& fs,
                                                                       StringView uri,
                                                                       StringView ref) const = 0;
-        // returns the current git commit SHA
-        virtual ExpectedL<std::string> git_current_sha(const GitConfig& config,
-                                                       Optional<std::string> maybe_embedded_sha = nullopt) const = 0;
-
-        virtual LocalizedString git_current_sha_message(const GitConfig& config,
-                                                        Optional<std::string> maybe_embedded_sha = nullopt) const = 0;
-
-        // checks out a port version into containing_dir
-        virtual ExpectedL<Path> git_checkout_port(const GitConfig& config,
-                                                  Filesystem& fs,
-                                                  const Path& cmake_exe,
-                                                  const Path& containing_dir,
-                                                  StringView port_name,
-                                                  StringView git_object) const = 0;
-
-        // checks out a registry port into containing dir
-        virtual ExpectedL<Path> git_checkout_registry_port(const GitConfig& config,
-                                                           Filesystem& fs,
-                                                           const Path& cmake_exe,
-                                                           const Path& containing_dir,
-                                                           StringView git_object) const = 0;
 
         virtual ExpectedL<std::unordered_map<std::string, std::string>> git_ports_tree_map(const GitConfig& config,
                                                                                            StringView ref) const = 0;

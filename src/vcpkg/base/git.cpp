@@ -4,6 +4,7 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -34,15 +35,7 @@ namespace
                                  (msg::git_ref, msg::url),
                                  "",
                                  "failed to fetch ref {git_ref} from repository {url}");
-    DECLARE_AND_REGISTER_MESSAGE(GitCheckoutPortFailed,
-                                 (msg::package_name, msg::git_ref, msg::path),
-                                 "",
-                                 "while checking out {package_name} with SHA {git_ref} into {path}");
 
-    DECLARE_AND_REGISTER_MESSAGE(GitCheckoutRegistryPortFailed,
-                                 (msg::git_ref, msg::path),
-                                 "",
-                                 "while checking out {git_ref} into {path}");
     DECLARE_AND_REGISTER_MESSAGE(GitErrorWhileRemovingFiles, (msg::path), "", "failed to remove {path}");
     DECLARE_AND_REGISTER_MESSAGE(GitErrorCreatingDirectory, (msg::path), "", "failed to create {path}");
     DECLARE_AND_REGISTER_MESSAGE(GitCheckoutFailedToCreateArchive, (), "", "failed to create .tar file");
@@ -50,11 +43,6 @@ namespace
                                  (msg::old_value, msg::new_value),
                                  "{old_value} is the original path of a renamed file, {new_value} is the new path",
                                  "failed to rename {old_value} to {new_value}");
-    DECLARE_AND_REGISTER_MESSAGE(GitSuggestCurrentCommitAsBaseline,
-                                 (),
-                                 "",
-                                 "you can use the current commit as a baseline by adding this line to your manifest:");
-    DECLARE_AND_REGISTER_MESSAGE(GitFailedDetectingCurrentCommit, (), "", "failed to determine current commit");
 }
 
 namespace vcpkg
@@ -405,80 +393,6 @@ namespace vcpkg
             return execute_git_cmd(cmd).then(parse_git_ls_tree_output);
         }
 
-        virtual ExpectedL<std::string> git_current_sha(
-            const GitConfig& config, Optional<std::string> maybe_embedded_sha = nullopt) const override
-        {
-            if (auto sha = maybe_embedded_sha.get())
-            {
-                return *sha;
-            }
-
-            auto maybe_sha = rev_parse(config, "HEAD");
-            if (auto sha = maybe_sha.get())
-            {
-                return *sha;
-            }
-
-            return maybe_sha.error();
-        }
-
-        virtual LocalizedString git_current_sha_message(const GitConfig& config,
-                                                        Optional<std::string> maybe_embedded_sha) const override
-        {
-            const auto maybe_cur_sha = git_current_sha(config, maybe_embedded_sha);
-            if (auto p_sha = maybe_cur_sha.get())
-            {
-                return msg::format(msgGitSuggestCurrentCommitAsBaseline)
-                    .appendnl()
-                    .append_fmt_raw(R"("builtin-baseline": "{}")", *p_sha);
-            }
-            else
-            {
-                return msg::format(msgGitFailedDetectingCurrentCommit).appendnl().append(maybe_cur_sha.error());
-            }
-        }
-
-        virtual ExpectedL<Path> git_checkout_port(const GitConfig& config,
-                                                  Filesystem& fs,
-                                                  const Path& cmake_exe,
-                                                  const Path& containing_dir,
-                                                  StringView port_name,
-                                                  StringView git_object) const override
-        {
-            const auto destination = containing_dir / port_name / git_object;
-
-            auto maybe_path = archive_and_extract_object(config, fs, cmake_exe, destination, git_object);
-            if (auto path = maybe_path.get())
-            {
-                return *path;
-            }
-
-            return msg::format(msgGitCheckoutPortFailed,
-                               msg::package_name = port_name,
-                               msg::git_ref = git_object,
-                               msg::path = destination)
-                .appendnl()
-                .append(maybe_path.error());
-        }
-
-        virtual ExpectedL<Path> git_checkout_registry_port(const GitConfig& config,
-                                                           Filesystem& fs,
-                                                           const Path& cmake_exe,
-                                                           const Path& containing_dir,
-                                                           StringView git_object) const override
-        {
-            const auto destination = containing_dir / git_object;
-            auto maybe_path = archive_and_extract_object(config, fs, cmake_exe, destination, git_object);
-            if (auto path = maybe_path.get())
-            {
-                return *path;
-            }
-
-            return msg::format(msgGitCheckoutRegistryPortFailed, msg::git_ref = git_object, msg::path = destination)
-                .appendnl()
-                .append(maybe_path.error());
-        }
-
         virtual ExpectedL<std::unordered_map<std::string, std::string>> git_ports_tree_map(
             const GitConfig& config, StringView ref) const override
         {
@@ -490,15 +404,10 @@ namespace vcpkg
                 return maybe_files.error();
             }
 
-            static constexpr StringLiteral prefix = "ports/";
-            static constexpr size_t prefix_size = prefix.size() - 1;
             std::unordered_map<std::string, std::string> results;
             for (auto&& file : maybe_files.value_or_exit(VCPKG_LINE_INFO))
             {
-                if (Strings::starts_with(file.path, prefix))
-                {
-                    results.emplace(file.path.substr(0, prefix_size), file.git_object);
-                }
+                results.emplace(file.path, file.git_object);
             }
             return results;
         }
@@ -508,36 +417,36 @@ namespace vcpkg
                                                                       StringView uri,
                                                                       StringView ref) const override
         {
-            fs.create_directories(config.git_work_tree, VCPKG_LINE_INFO);
-            const auto lock_file = config.git_work_tree / ".vcpkg-lock";
-            auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
-
-            auto maybe_init = init(config);
-            if (!maybe_init)
+            // If a fetch has occurred or is occurring, we can skip initialization and locking.
+            if (!fs.exists(config.git_dir / "FETCH_HEAD", IgnoreErrors{}))
             {
-                return maybe_init.error();
+                fs.create_directories(config.git_work_tree, VCPKG_LINE_INFO);
+                const auto lock_file = config.git_work_tree / ".vcpkg-lock";
+                auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
+
+                auto maybe_init = init(config);
+                if (!maybe_init)
+                {
+                    return maybe_init.error();
+                }
             }
 
-            auto maybe_fetch = fetch(config, uri, ref);
+            // Fetch to a unique ref owned by us to avoid race conditions.
+            const auto fetch_head_procid = Strings::concat("FETCH_HEAD_", get_process_id());
+            auto maybe_fetch = fetch(config, uri, Strings::concat(ref, ":", fetch_head_procid));
             if (!maybe_fetch)
             {
                 return maybe_fetch.error();
             }
 
-            auto maybe_rev_parse = rev_parse(config, "FETCH_HEAD");
-            if (!maybe_rev_parse)
-            {
-                return maybe_rev_parse.error();
-            }
-
-            return maybe_rev_parse.value_or_exit(VCPKG_LINE_INFO);
+            return rev_parse(config, fetch_head_procid);
         }
 
-        ExpectedL<Path> archive_and_extract_object(const GitConfig& config,
-                                                   Filesystem& fs,
-                                                   const Path& cmake_exe,
-                                                   const Path& destination,
-                                                   StringView git_object) const
+        virtual ExpectedL<Path> archive_and_extract_object(const GitConfig& config,
+                                                           Filesystem& fs,
+                                                           const Path& cmake_exe,
+                                                           const Path& destination,
+                                                           StringView git_object) const override
         {
             if (fs.exists(destination, IgnoreErrors{}))
             {

@@ -127,6 +127,8 @@ namespace vcpkg
 
         bool is_default_builtin_registry() const;
 
+        static LocalizedString get_baseline_suggestion(const VcpkgPaths& paths);
+
         // returns whether the registry set has any modifications to the default
         // (i.e., whether `default_registry` was set, or `registries` had any entries)
         // for checking against the registry feature flag.

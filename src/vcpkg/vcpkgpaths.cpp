@@ -191,11 +191,10 @@ namespace vcpkg
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("versioning-error-baseline", "defined");
                     Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                               "Error: the top-level builtin-baseline%s was not a valid commit sha: "
+                                               "Error: the top-level builtin-baseline (%s) was not a valid commit sha: "
                                                "expected 40 lowercase hexadecimal characters.\n%s\n",
-                                               Strings::concat(" (", *p_baseline, ')'),
-                                               paths.get_git_impl().git_current_sha_message(paths.git_builtin_config(),
-                                                                                            paths.git_embedded_sha()));
+                                               *p_baseline,
+                                               RegistrySet::get_baseline_suggestion(paths));
                 }
 
                 if (ret.config.default_reg)
