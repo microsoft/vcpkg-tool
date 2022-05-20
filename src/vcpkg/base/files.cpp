@@ -2898,6 +2898,8 @@ namespace vcpkg
             return true;
 #else // ^^^ (defined(__APPLE__) // !defined(__APPLE__) vvv
 
+            destination_fd.fchmod(source_stat.st_mode, ec);
+
 #if defined(__linux__)
             // https://man7.org/linux/man-pages/man2/sendfile.2.html#NOTES
             // sendfile() will transfer at most 0x7ffff000 (2,147,479,552)
@@ -2926,10 +2928,7 @@ namespace vcpkg
             }
 
             if (!ec)
-            {
-                destination_fd.fchmod(source_stat.st_mode, ec);
                 return true;
-            }
             // Else fall back to read/write
             ec.clear();
 #endif // ^^^ defined(__linux__)
@@ -2958,7 +2957,6 @@ namespace vcpkg
                 }
             }
 
-            destination_fd.fchmod(source_stat.st_mode, ec);
             return !ec;
 #endif // ^^^ !(defined(__APPLE__)
 #endif // ^^^ !_WIN32
