@@ -1,4 +1,5 @@
 #include <vcpkg/base/delayed_init.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
@@ -82,8 +83,8 @@ namespace
             return m_versions_tree.get([this]() -> Path {
                 auto e = get_lock_entry();
                 e.ensure_up_to_date(m_paths);
-                auto maybe_tree =
-                    git_rev_parse(m_paths.git_registries_config(), e.commit_id(), registry_versions_dir_name);
+                auto maybe_tree = m_paths.get_git_impl().rev_parse(
+                    m_paths.git_registries_config(), Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
 
                 if (!maybe_tree)
                 {
@@ -96,11 +97,11 @@ namespace
                         e.commit_id(),
                         maybe_tree.error());
                 }
-                auto maybe_path = git_checkout_registry_port(m_paths.git_registries_config(),
-                                                             m_paths.get_filesystem(),
-                                                             m_paths.get_tool_exe(Tools::CMAKE),
-                                                             m_paths.registries_output(),
-                                                             *maybe_tree.get());
+                auto maybe_path = m_paths.get_git_impl().git_checkout_registry_port(m_paths.git_registries_config(),
+                                                                                    m_paths.get_filesystem(),
+                                                                                    m_paths.get_tool_exe(Tools::CMAKE),
+                                                                                    m_paths.registries_output(),
+                                                                                    *maybe_tree.get());
                 if (!maybe_path)
                 {
                     Checks::exit_with_message(VCPKG_LINE_INFO,
@@ -127,18 +128,18 @@ namespace
             }
             if (!m_stale_versions_tree.has_value())
             {
-                auto maybe_tree = git_rev_parse(
-                    m_paths.git_registries_config(), e.commit_id(), registry_versions_dir_name.to_string());
+                auto maybe_tree = m_paths.get_git_impl().rev_parse(
+                    m_paths.git_registries_config(), Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
                 if (!maybe_tree)
                 {
                     // This could be caused by git gc or otherwise -- fall back to full fetch
                     return {get_versions_tree_path(), false};
                 }
-                auto maybe_path = git_checkout_registry_port(m_paths.git_registries_config(),
-                                                             m_paths.get_filesystem(),
-                                                             m_paths.get_tool_exe(Tools::CMAKE),
-                                                             m_paths.registries_output(),
-                                                             *maybe_tree.get());
+                auto maybe_path = m_paths.get_git_impl().git_checkout_registry_port(m_paths.git_registries_config(),
+                                                                                    m_paths.get_filesystem(),
+                                                                                    m_paths.get_tool_exe(Tools::CMAKE),
+                                                                                    m_paths.registries_output(),
+                                                                                    *maybe_tree.get());
                 if (!maybe_path)
                 {
                     // This could be caused by git gc or otherwise -- fall back to full fetch
@@ -403,12 +404,10 @@ namespace
 
         if (!fs.exists(destination, IgnoreErrors{}))
         {
-            static constexpr StringLiteral BASELINE_FILE_PATH = "versions/baseline.json";
             const auto destination_tmp = destination_parent / "baseline.json.tmp";
 
-            auto treeish = Strings::concat(commit_sha, ":", BASELINE_FILE_PATH);
-            auto maybe_contents =
-                Git::Show(paths.git_builtin_config()).object(commit_sha).path(BASELINE_FILE_PATH).run();
+            auto maybe_contents = paths.get_git_impl().show(paths.git_builtin_config(),
+                                                            Strings::concat(commit_sha, ":versions/baseline.json"));
             if (auto contents = maybe_contents.get())
             {
                 std::error_code ec;
@@ -548,11 +547,11 @@ namespace
             auto maybe_path = git_checkout_baseline(m_paths, m_baseline_identifier);
             if (!maybe_path.has_value())
             {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO,
-                    "%s\n\n%s",
-                    maybe_path.error(),
-                    git_current_sha_message(m_paths.git_builtin_config(), m_paths.git_embedded_sha()));
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          "%s\n\n%s",
+                                          maybe_path.error(),
+                                          m_paths.get_git_impl().git_current_sha_message(m_paths.git_builtin_config(),
+                                                                                         m_paths.git_embedded_sha()));
             }
             auto b = load_baseline_versions(m_paths.get_filesystem(), *maybe_path.get()).value_or_exit(VCPKG_LINE_INFO);
             if (auto p = b.get())
@@ -678,24 +677,21 @@ namespace
                     e.commit_id());
             }
 
-            auto path_to_baseline = Path(registry_versions_dir_name.to_string()) / "baseline.json";
+            const auto& git = m_paths.get_git_impl();
+            const auto config = m_paths.git_registries_config();
 
-            auto maybe_contents = Git::Show(m_paths.git_registries_config())
-                                      .object(m_baseline_identifier)
-                                      .path(path_to_baseline.generic_u8string())
-                                      .run();
+            const std::string rev = Strings::concat(m_baseline_identifier, ":versions/baseline.json");
+
+            auto maybe_contents = git.show(config, rev);
             if (!maybe_contents.has_value())
             {
                 get_lock_entry().ensure_up_to_date(m_paths);
-                maybe_contents = Git::Show(m_paths.git_registries_config())
-                                     .object(m_baseline_identifier)
-                                     .path(path_to_baseline.generic_u8string())
-                                     .run();
+                maybe_contents = git.show(config, rev);
             }
             if (!maybe_contents.has_value())
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
-                auto maybe_fetch = git_fetch_from_remote_registry(
+                auto maybe_fetch = git.git_fetch_from_remote_registry(
                     m_paths.git_registries_config(), m_paths.get_filesystem(), m_repo, m_baseline_identifier);
                 if (!maybe_fetch.has_value())
                 {
@@ -710,10 +706,7 @@ namespace
                         m_repo,
                         maybe_fetch.error());
                 }
-                maybe_contents = Git::Show(m_paths.git_registries_config())
-                                     .object(m_baseline_identifier)
-                                     .path(path_to_baseline.generic_u8string())
-                                     .run();
+                maybe_contents = git.show(config, rev);
             }
 
             if (!maybe_contents.has_value())
@@ -727,7 +720,7 @@ namespace
             }
 
             auto contents = maybe_contents.get();
-            auto res_baseline = parse_baseline_versions(*contents, "default", path_to_baseline);
+            auto res_baseline = parse_baseline_versions(*contents, "default", rev);
             if (auto opt_baseline = res_baseline.get())
             {
                 if (auto p = opt_baseline->get())
@@ -795,12 +788,12 @@ namespace
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
-        auto maybe_path = git_checkout_port(m_paths.git_builtin_config(),
-                                            m_paths.get_filesystem(),
-                                            m_paths.get_tool_exe(Tools::CMAKE),
-                                            m_paths.versions_output(),
-                                            port_name,
-                                            git_tree);
+        auto maybe_path = m_paths.get_git_impl().git_checkout_port(m_paths.git_builtin_config(),
+                                                                   m_paths.get_filesystem(),
+                                                                   m_paths.get_tool_exe(Tools::CMAKE),
+                                                                   m_paths.versions_output(),
+                                                                   port_name,
+                                                                   git_tree);
         if (auto path = maybe_path.get())
         {
             return PathAndLocation{
@@ -862,11 +855,12 @@ namespace
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
-        auto maybe_path = git_checkout_registry_port(parent.m_paths.git_registries_config(),
-                                                     parent.m_paths.get_filesystem(),
-                                                     parent.m_paths.get_tool_exe(Tools::CMAKE),
-                                                     parent.m_paths.registries_output(),
-                                                     git_tree);
+        auto maybe_path =
+            parent.m_paths.get_git_impl().git_checkout_registry_port(parent.m_paths.git_registries_config(),
+                                                                     parent.m_paths.get_filesystem(),
+                                                                     parent.m_paths.get_tool_exe(Tools::CMAKE),
+                                                                     parent.m_paths.registries_output(),
+                                                                     git_tree);
 
         if (auto path = maybe_path.get())
         {
@@ -1178,8 +1172,8 @@ namespace vcpkg
         if (it == range.second)
         {
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
-            auto x =
-                git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), repo, reference);
+            auto x = paths.get_git_impl().git_fetch_from_remote_registry(
+                paths.git_registries_config(), paths.get_filesystem(), repo, reference);
             it = lockdata.emplace(repo.to_string(),
                                   EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
             modified = true;
@@ -1195,9 +1189,10 @@ namespace vcpkg
             StringView reference(data->second.reference);
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
 
-            data->second.commit_id =
-                git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), repo, reference)
-                    .value_or_exit(VCPKG_LINE_INFO);
+            data->second.commit_id = paths.get_git_impl()
+                                         .git_fetch_from_remote_registry(
+                                             paths.git_registries_config(), paths.get_filesystem(), repo, reference)
+                                         .value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
             lockfile->modified = true;
         }

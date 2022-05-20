@@ -404,6 +404,29 @@ namespace
 
 namespace vcpkg::Commands::AddVersion
 {
+    namespace
+    {
+        ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const IGit& git, const GitConfig& config)
+        {
+            auto maybe_results = git.status(config, "ports");
+            if (auto results = maybe_results.get())
+            {
+                std::set<std::string> ret;
+                for (auto&& result : *results)
+                {
+                    auto&& port_name = try_extract_port_name_from_path(result.path);
+                    if (!port_name.empty())
+                    {
+                        ret.emplace(port_name);
+                    }
+                }
+                return ret;
+            }
+            return maybe_results.error();
+        }
+
+    }
+
     const CommandSwitch COMMAND_SWITCHES[] = {
         {OPTION_ALL, "Process versions for all ports."},
         {OPTION_OVERWRITE_VERSION, "Overwrite `git-tree` of an existing version."},
@@ -471,13 +494,13 @@ namespace vcpkg::Commands::AddVersion
         }();
 
         // Get tree-ish from local repository state.
-        auto maybe_git_tree_map = git_ports_tree_map(paths.git_builtin_config(), "HEAD");
+        auto git_config = paths.git_builtin_config();
+        auto maybe_git_tree_map = paths.get_git_impl().git_ports_tree_map(git_config, "HEAD");
         auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Find ports with uncommited changes
         std::set<std::string> changed_ports;
-        auto git_config = paths.git_builtin_config();
-        auto maybe_changes = git_ports_with_uncommitted_changes(git_config);
+        auto maybe_changes = git_ports_with_uncommitted_changes(paths.get_git_impl(), git_config);
         if (auto changes = maybe_changes.get())
         {
             changed_ports.insert(changes->begin(), changes->end());
@@ -553,8 +576,8 @@ namespace vcpkg::Commands::AddVersion
                                        .append_raw("***")
                                        .append(msgAddVersionNoFilesUpdated)
                                        .append_raw("***"));
-                Checks::check_exit(VCPKG_LINE_INFO, !add_all);
-                continue;
+                if (add_all) continue;
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
             const auto& git_tree = git_tree_it->second;
 

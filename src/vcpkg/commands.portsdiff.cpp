@@ -92,17 +92,12 @@ namespace vcpkg::Commands::PortsDiff
         GitConfig config = paths.git_builtin_config();
         config.git_work_tree = temp_checkout_path;
 
-        auto cmd = git_cmd_builder(config)
-                       .string_arg("checkout")
-                       .string_arg(git_commit_id)
-                       .string_arg("-f")
-                       .string_arg("-q")
-                       .string_arg("--")
-                       .string_arg(checkout_this_dir)
-                       .string_arg(".vcpkg-root");
-        cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
-        cmd_execute_and_capture_output(
-            git_cmd_builder(config).string_arg("reset"), default_working_directory, get_clean_environment());
+        const auto& git = paths.get_git_impl();
+
+        git.checkout(config, git_commit_id, std::vector<StringView>{checkout_this_dir, ".vcpkg-root"})
+            .value_or_exit(VCPKG_LINE_INFO);
+        git.reset(config).value_or_exit(VCPKG_LINE_INFO);
+
         const auto ports_at_commit = Paragraphs::load_overlay_ports(fs, temp_checkout_path / ports_dir_name);
         std::map<std::string, Version> names_and_versions;
         for (auto&& port : ports_at_commit)
@@ -116,15 +111,8 @@ namespace vcpkg::Commands::PortsDiff
 
     static void check_commit_exists(const VcpkgPaths& paths, const std::string& git_commit_id)
     {
-        static const std::string VALID_COMMIT_OUTPUT = "commit\n";
-
-        auto cmd = git_cmd_builder(paths.git_builtin_config())
-                       .string_arg("cat-file")
-                       .string_arg("-t")
-                       .string_arg(git_commit_id);
-        const ExitCodeAndOutput output = cmd_execute_and_capture_output(cmd);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, output.output == VALID_COMMIT_OUTPUT, "Invalid commit id %s", git_commit_id);
+        auto cmd = paths.get_git_impl().is_commit(paths.git_builtin_config(), git_commit_id);
+        Checks::check_exit(VCPKG_LINE_INFO, cmd.value_or_exit(VCPKG_LINE_INFO), "Invalid commit id %s", git_commit_id);
     }
 
     const CommandStructure COMMAND_STRUCTURE = {

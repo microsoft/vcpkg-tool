@@ -55,132 +55,10 @@ namespace
                                  "",
                                  "you can use the current commit as a baseline by adding this line to your manifest:");
     DECLARE_AND_REGISTER_MESSAGE(GitFailedDetectingCurrentCommit, (), "", "failed to determine current commit");
-
-    ExpectedL<Path> archive_and_extract_object(
-        const GitConfig& config, Filesystem& fs, const Path& cmake_exe, const Path& destination, StringView git_object)
-    {
-        if (fs.exists(destination, IgnoreErrors{}))
-        {
-            return destination;
-        }
-
-        const auto pid = get_process_id();
-        const auto destination_tmp = fmt::format("{}.{}.tmp", destination.generic_u8string(), pid);
-        const auto destination_tar = fmt::format("{}.{}.tmp.tar", destination.generic_u8string(), pid);
-
-        std::error_code ec;
-        Path failure_point;
-        fs.remove_all(destination_tmp, ec, failure_point);
-        if (ec)
-        {
-            // failed to remove {failure_point}
-            return msg::format(msgGitErrorWhileRemovingFiles, msg::path = failure_point)
-                .appendnl()
-                .append_raw(ec.message());
-        }
-
-        fs.create_directories(destination_tmp, ec);
-        if (ec)
-        {
-            // failed to create {destination_tmp}
-            return msg::format(msgGitErrorCreatingDirectory, msg::path = destination_tmp)
-                .appendnl()
-                .append_raw(ec.message());
-        }
-
-        const auto tar_cmd = git_cmd_builder(config)
-                                 .string_arg("archive")
-                                 .string_arg(git_object)
-                                 .string_arg("-o")
-                                 .string_arg(destination_tar);
-        const auto tar_output = cmd_execute_and_capture_output(tar_cmd);
-        if (tar_output.exit_code != 0)
-        {
-            // failed to create {destination_tmp}
-            return msg::format(msgGitCheckoutFailedToCreateArchive).appendnl().append_raw(tar_output.output);
-        }
-
-        extract_tar_cmake(cmake_exe, destination_tar, destination_tmp);
-        fs.remove(destination_tar, ec);
-        if (ec)
-        {
-            // failed to remove {failure_point}
-            return msg::format(msgGitErrorWhileRemovingFiles, msg::path = destination_tar)
-                .appendnl()
-                .append_raw(ec.message());
-        }
-
-        fs.rename_with_retry(destination_tmp, destination, ec);
-        if (ec)
-        {
-            // failed to rename {destination_tmp} to {destination}
-            return msg::format(msgGitErrorRenamingFile, msg::old_value = destination_tmp, msg::new_value = destination)
-                .appendnl()
-                .append_raw(ec.message());
-        }
-
-        return destination;
-    }
 }
 
 namespace vcpkg
 {
-    namespace Git
-    {
-        Command Show::build_cmd() const
-        {
-            auto cmd = git_cmd_builder(m_config).string_arg("show");
-
-            if (auto format = m_format.get())
-            {
-                cmd.string_arg(Strings::format("--pretty=format:{}", *format));
-            }
-
-            auto object = m_object.has_value() ? *m_object.get() : "";
-            if (auto path = m_path.get())
-            {
-                cmd.string_arg(Strings::format("{}:{}", object, *path));
-            }
-            else
-            {
-                cmd.string_arg(object);
-            }
-
-            return cmd;
-        }
-
-        std::string Show::cmd() const { return build_cmd().command_line().to_string(); }
-
-        ExpectedL<std::string> Show::run() const
-        {
-            const auto cmd = build_cmd();
-            const auto output = cmd_execute_and_capture_output(cmd);
-            if (output.exit_code != 0)
-            {
-                return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-                    .appendnl()
-                    .append_raw(output.output);
-            }
-
-            return output.output;
-        }
-    }
-
-    Command git_cmd_builder(const GitConfig& config)
-    {
-        auto cmd = Command(config.git_exe);
-        cmd.string_arg("-c").string_arg("core.autocrlf=false");
-        if (!config.git_dir.empty())
-        {
-            cmd.string_arg(Strings::concat("--git-dir=", config.git_dir));
-        }
-        if (!config.git_work_tree.empty())
-        {
-            cmd.string_arg(Strings::concat("--work-tree=", config.git_work_tree));
-        }
-        return cmd;
-    }
-
     std::string try_extract_port_name_from_path(StringView path)
     {
         static constexpr StringLiteral prefix = "ports/";
@@ -295,81 +173,6 @@ namespace vcpkg
 
         return results;
     }
-
-    ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path)
-    {
-        auto cmd = git_cmd_builder(config).string_arg("status").string_arg("--porcelain=v1");
-        if (!path.empty())
-        {
-            cmd.string_arg("--").string_arg(path);
-        }
-        auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code != 0)
-        {
-            return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-                .appendnl()
-                .append_raw(output.output);
-        }
-        return parse_git_status_output(output.output);
-    }
-
-    ExpectedL<bool> git_init(const GitConfig& config)
-    {
-        const auto cmd = git_cmd_builder(config).string_arg("init");
-        const auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code != 0)
-        {
-            // failed to initialize local repository in {work_tree}
-            return msg::format(msgGitFailedToInitializeLocalRepository, msg::path = config.git_work_tree)
-                .appendnl()
-                .append_raw(output.output);
-        }
-        return true;
-    }
-
-    ExpectedL<bool> git_fetch(const GitConfig& config, StringView uri, StringView ref)
-    {
-        const auto cmd = git_cmd_builder(config)
-                             .string_arg("fetch")
-                             .string_arg("--update-shallow")
-                             .string_arg("--")
-                             .string_arg(uri)
-                             .string_arg(ref);
-
-        auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code != 0)
-        {
-            // failed to fetch ref {treeish} from repository {url}
-            return msg::format(msgGitFailedToFetchRefFromRepository, msg::git_ref = ref, msg::url = uri)
-                .appendnl()
-                .append_raw(output.output);
-        }
-
-        return true;
-    }
-
-    ExpectedL<std::string> git_rev_parse(const GitConfig& config, StringView ref, StringView path)
-    {
-        auto cmd = git_cmd_builder(config).string_arg("rev-parse");
-        if (path.empty())
-        {
-            cmd.string_arg(ref);
-        }
-        else
-        {
-            cmd.string_arg(Strings::concat(ref, ":", path));
-        }
-        auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code != 0)
-        {
-            // failed to execute {command_line} for repository
-            return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-                .appendnl()
-                .append_raw(output.output);
-        }
-        return Strings::trim(output.output).to_string();
-    }
-
     ExpectedL<std::vector<GitLsTreeLine>> parse_git_ls_tree_output(StringView output)
     {
         // Output of ls-tree is a list of git objects in the tree, each line is in the format
@@ -438,26 +241,8 @@ namespace vcpkg
         return results;
     }
 
-    ExpectedL<std::vector<GitLsTreeLine>> git_ls_tree(
-        const GitConfig& config, StringView ref, StringView path, Git::Recursive recursive, Git::DirsOnly dirs_only)
+    static ExpectedL<std::string> execute_git_cmd(const Command& cmd)
     {
-        auto cmd = git_cmd_builder(config).string_arg("ls-tree").string_arg(ref);
-
-        if (Util::Enum::to_bool(recursive))
-        {
-            cmd.string_arg("-r");
-        }
-
-        if (Util::Enum::to_bool(dirs_only))
-        {
-            cmd.string_arg("-d");
-        }
-
-        if (!path.empty())
-        {
-            cmd.string_arg("--").string_arg(path);
-        }
-
         auto output = cmd_execute_and_capture_output(cmd);
         if (output.exit_code != 0)
         {
@@ -465,151 +250,369 @@ namespace vcpkg
                 .appendnl()
                 .append_raw(output.output);
         }
-
-        return parse_git_ls_tree_output(output.output);
+        return std::move(output.output);
     }
 
-    ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config)
+    struct GitImpl final : IGit
     {
-        auto maybe_results = git_status(config, "ports");
-        if (auto results = maybe_results.get())
+        explicit GitImpl(StringView sv) : git_exe(sv.to_string()) { }
+
+        virtual ExpectedL<std::string> show_pretty_commit(const GitConfig& config, StringView rev) const override
         {
-            std::set<std::string> ret;
-            for (auto&& result : *results)
+            auto cmd = git_cmd(config).string_arg("show").string_arg("--pretty=format:%h %cs (%cr)").string_arg(rev);
+            return execute_git_cmd(cmd);
+        }
+
+        virtual ExpectedL<std::string> show(const GitConfig& config, StringView rev) const override
+        {
+            auto cmd = git_cmd(config).string_arg("show").string_arg(rev);
+            return execute_git_cmd(cmd);
+        }
+
+        /// \param path An optional subpath to be queried
+        virtual ExpectedL<std::vector<GitStatusLine>> status(const GitConfig& config,
+                                                             StringView path = {}) const override
+        {
+            auto cmd = git_cmd(config).string_arg("status").string_arg("--porcelain=v1");
+            if (!path.empty())
             {
-                auto&& port_name = try_extract_port_name_from_path(result.path);
-                if (!port_name.empty())
+                cmd.string_arg("--").string_arg(path);
+            }
+            return execute_git_cmd(cmd).then(parse_git_status_output);
+        }
+
+        virtual ExpectedL<char> archive(const GitConfig& config, StringView rev, StringView destination) const override
+        {
+            const auto archive_cmd =
+                git_cmd(config).string_arg("archive").string_arg(rev).string_arg("-o").string_arg(destination);
+            const auto tar_output = cmd_execute_and_capture_output(archive_cmd);
+            if (tar_output.exit_code != 0)
+            {
+                // failed to create {destination_tmp}
+                return msg::format(msgGitCheckoutFailedToCreateArchive).appendnl().append_raw(tar_output.output);
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        virtual ExpectedL<bool> init(const GitConfig& config) const override
+        {
+            const auto cmd = git_cmd(config).string_arg("init");
+            const auto output = cmd_execute_and_capture_output(cmd);
+            if (output.exit_code != 0)
+            {
+                // failed to initialize local repository in {work_tree}
+                return msg::format(msgGitFailedToInitializeLocalRepository, msg::path = config.git_work_tree)
+                    .appendnl()
+                    .append_raw(output.output);
+            }
+            return true;
+        }
+
+        virtual ExpectedL<bool> fetch(const GitConfig& config, StringView uri, StringView ref) const override
+        {
+            const auto cmd = git_cmd(config)
+                                 .string_arg("fetch")
+                                 .string_arg("--update-shallow")
+                                 .string_arg("--")
+                                 .string_arg(uri)
+                                 .string_arg(ref);
+
+            auto output = cmd_execute_and_capture_output(cmd);
+            if (output.exit_code != 0)
+            {
+                // failed to fetch ref {treeish} from repository {url}
+                return msg::format(msgGitFailedToFetchRefFromRepository, msg::git_ref = ref, msg::url = uri)
+                    .appendnl()
+                    .append_raw(output.output);
+            }
+
+            return true;
+        }
+
+        virtual ExpectedL<std::string> rev_parse(const GitConfig& config, StringView rev) const override
+        {
+            auto cmd = git_cmd(config).string_arg("rev-parse").string_arg(rev);
+            return execute_git_cmd(cmd).map([](const std::string& s) { return Strings::trim(s).to_string(); });
+        }
+
+        virtual ExpectedL<std::vector<GitLogResult>> log(const GitConfig& config, StringView path) const override
+        {
+            auto cmd = git_cmd(config)
+                           .string_arg("log")
+                           .string_arg("--format=%H %cd")
+                           .string_arg("--date=short")
+                           .string_arg("--left-only")
+                           .string_arg("--")
+                           .string_arg(path);
+            return execute_git_cmd(cmd).map([](const std::string& output) {
+                return Util::fmap(Strings::split(output, '\n'), [](const std::string& line) {
+                    auto pos = line.find(' ');
+                    return GitLogResult{line.substr(0, pos), pos != std::string::npos ? line.substr(pos + 1) : ""};
+                });
+            });
+        }
+
+        virtual ExpectedL<char> checkout(const GitConfig& config, StringView rev, View<StringView> files) const override
+        {
+            auto cmd = git_cmd(config)
+                           .string_arg("checkout")
+                           .string_arg(rev)
+                           .string_arg("-f")
+                           .string_arg("-q")
+                           .string_arg("--");
+            for (auto file : files)
+            {
+                cmd.string_arg(file);
+            }
+            return execute_git_cmd(cmd).map([](const auto&) { return '\0'; });
+        }
+
+        virtual ExpectedL<char> reset(const GitConfig& config) const override
+        {
+            auto cmd = git_cmd(config).string_arg("reset");
+            return execute_git_cmd(cmd).map([](const auto&) { return '\0'; });
+        }
+
+        virtual ExpectedL<bool> is_commit(const GitConfig& config, StringView rev) const override
+        {
+            auto cmd = git_cmd(config).string_arg("cat-file").string_arg("-t").string_arg(rev);
+            return execute_git_cmd(cmd).map([](const std::string& s) { return s == "commit\n"; });
+        }
+
+        virtual ExpectedL<std::vector<GitLsTreeLine>> ls_tree(const GitConfig& config,
+                                                              StringView ref,
+                                                              GitLsTreeOptions opts) const override
+        {
+            auto cmd = git_cmd(config).string_arg("ls-tree").string_arg(ref);
+
+            if (opts.recursive)
+            {
+                cmd.string_arg("-r");
+            }
+
+            if (opts.dirs_only)
+            {
+                cmd.string_arg("-d");
+            }
+
+            if (!opts.path.empty())
+            {
+                cmd.string_arg("--").string_arg(opts.path);
+            }
+            return execute_git_cmd(cmd).then(parse_git_ls_tree_output);
+        }
+
+        virtual ExpectedL<std::string> git_current_sha(
+            const GitConfig& config, Optional<std::string> maybe_embedded_sha = nullopt) const override
+        {
+            if (auto sha = maybe_embedded_sha.get())
+            {
+                return *sha;
+            }
+
+            auto maybe_sha = rev_parse(config, "HEAD");
+            if (auto sha = maybe_sha.get())
+            {
+                return *sha;
+            }
+
+            return maybe_sha.error();
+        }
+
+        virtual LocalizedString git_current_sha_message(const GitConfig& config,
+                                                        Optional<std::string> maybe_embedded_sha) const override
+        {
+            const auto maybe_cur_sha = git_current_sha(config, maybe_embedded_sha);
+            if (auto p_sha = maybe_cur_sha.get())
+            {
+                return msg::format(msgGitSuggestCurrentCommitAsBaseline)
+                    .appendnl()
+                    .append_fmt_raw(R"("builtin-baseline": "{}")", *p_sha);
+            }
+            else
+            {
+                return msg::format(msgGitFailedDetectingCurrentCommit).appendnl().append(maybe_cur_sha.error());
+            }
+        }
+
+        virtual ExpectedL<Path> git_checkout_port(const GitConfig& config,
+                                                  Filesystem& fs,
+                                                  const Path& cmake_exe,
+                                                  const Path& containing_dir,
+                                                  StringView port_name,
+                                                  StringView git_object) const override
+        {
+            const auto destination = containing_dir / port_name / git_object;
+
+            auto maybe_path = archive_and_extract_object(config, fs, cmake_exe, destination, git_object);
+            if (auto path = maybe_path.get())
+            {
+                return *path;
+            }
+
+            return msg::format(msgGitCheckoutPortFailed,
+                               msg::package_name = port_name,
+                               msg::git_ref = git_object,
+                               msg::path = destination)
+                .appendnl()
+                .append(maybe_path.error());
+        }
+
+        virtual ExpectedL<Path> git_checkout_registry_port(const GitConfig& config,
+                                                           Filesystem& fs,
+                                                           const Path& cmake_exe,
+                                                           const Path& containing_dir,
+                                                           StringView git_object) const override
+        {
+            const auto destination = containing_dir / git_object;
+            auto maybe_path = archive_and_extract_object(config, fs, cmake_exe, destination, git_object);
+            if (auto path = maybe_path.get())
+            {
+                return *path;
+            }
+
+            return msg::format(msgGitCheckoutRegistryPortFailed, msg::git_ref = git_object, msg::path = destination)
+                .appendnl()
+                .append(maybe_path.error());
+        }
+
+        virtual ExpectedL<std::unordered_map<std::string, std::string>> git_ports_tree_map(
+            const GitConfig& config, StringView ref) const override
+        {
+            GitLsTreeOptions opts = {};
+            opts.dirs_only = true;
+            auto maybe_files = ls_tree(config, Strings::concat(ref, ":ports/"), opts);
+            if (!maybe_files)
+            {
+                return maybe_files.error();
+            }
+
+            static constexpr StringLiteral prefix = "ports/";
+            static constexpr size_t prefix_size = prefix.size() - 1;
+            std::unordered_map<std::string, std::string> results;
+            for (auto&& file : maybe_files.value_or_exit(VCPKG_LINE_INFO))
+            {
+                if (Strings::starts_with(file.path, prefix))
                 {
-                    ret.emplace(port_name);
+                    results.emplace(file.path.substr(0, prefix_size), file.git_object);
                 }
             }
-            return ret;
-        }
-        return maybe_results.error();
-    }
-
-    ExpectedL<std::string> git_fetch_from_remote_registry(const GitConfig& config,
-                                                          Filesystem& fs,
-                                                          StringView uri,
-                                                          StringView ref)
-    {
-        fs.create_directories(config.git_work_tree, VCPKG_LINE_INFO);
-        const auto lock_file = config.git_work_tree / ".vcpkg-lock";
-        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
-
-        auto maybe_init = git_init(config);
-        if (!maybe_init)
-        {
-            return maybe_init.error();
+            return results;
         }
 
-        auto maybe_fetch = git_fetch(config, uri, ref);
-        if (!maybe_fetch)
+        virtual ExpectedL<std::string> git_fetch_from_remote_registry(const GitConfig& config,
+                                                                      Filesystem& fs,
+                                                                      StringView uri,
+                                                                      StringView ref) const override
         {
-            return maybe_fetch.error();
-        }
+            fs.create_directories(config.git_work_tree, VCPKG_LINE_INFO);
+            const auto lock_file = config.git_work_tree / ".vcpkg-lock";
+            auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
 
-        auto maybe_rev_parse = git_rev_parse(config, "FETCH_HEAD");
-        if (!maybe_rev_parse)
-        {
-            return maybe_rev_parse.error();
-        }
-
-        return maybe_rev_parse.value_or_exit(VCPKG_LINE_INFO);
-    }
-
-    ExpectedL<std::string> git_current_sha(const GitConfig& config, Optional<std::string> maybe_embedded_sha)
-    {
-        if (auto sha = maybe_embedded_sha.get())
-        {
-            return *sha;
-        }
-
-        auto maybe_sha = git_rev_parse(config, "HEAD");
-        if (auto sha = maybe_sha.get())
-        {
-            return *sha;
-        }
-
-        return maybe_sha.error();
-    }
-
-    LocalizedString git_current_sha_message(const GitConfig& config, Optional<std::string> maybe_embedded_sha)
-    {
-        const auto maybe_cur_sha = git_current_sha(config, maybe_embedded_sha);
-        if (auto p_sha = maybe_cur_sha.get())
-        {
-            return msg::format(msgGitSuggestCurrentCommitAsBaseline)
-                .appendnl()
-                .append_fmt_raw(R"("builtin-baseline": "{}")", *p_sha);
-        }
-        else
-        {
-            return msg::format(msgGitFailedDetectingCurrentCommit).appendnl().append(maybe_cur_sha.error());
-        }
-    }
-
-    ExpectedL<Path> git_checkout_port(const GitConfig& config,
-                                      Filesystem& fs,
-                                      const Path& cmake_exe,
-                                      const Path& containing_dir,
-                                      StringView port_name,
-                                      StringView git_object)
-    {
-        const auto destination = containing_dir / port_name / git_object;
-
-        // while checking out {port_name} with SHA {git_object}
-        auto error_prelude = msg::format(msgGitCheckoutPortFailed,
-                                         msg::package_name = port_name,
-                                         msg::git_ref = git_object,
-                                         msg::path = destination)
-                                 .appendnl();
-        auto maybe_path = archive_and_extract_object(config, fs, cmake_exe, destination, git_object);
-        if (auto path = maybe_path.get())
-        {
-            return *path;
-        }
-
-        return error_prelude.append(maybe_path.error());
-    }
-
-    ExpectedL<Path> git_checkout_registry_port(const GitConfig& config,
-                                               Filesystem& fs,
-                                               const Path& cmake_exe,
-                                               const Path& containing_dir,
-                                               StringView git_object)
-    {
-        const auto destination = containing_dir / git_object;
-        auto error_prelude =
-            msg::format(msgGitCheckoutRegistryPortFailed, msg::git_ref = git_object, msg::path = destination)
-                .appendnl();
-        auto maybe_path = archive_and_extract_object(config, fs, cmake_exe, destination, git_object);
-        if (auto path = maybe_path.get())
-        {
-            return *path;
-        }
-
-        return error_prelude.append(maybe_path.error());
-    }
-
-    ExpectedL<std::unordered_map<std::string, std::string>> git_ports_tree_map(const GitConfig& config, StringView ref)
-    {
-        auto maybe_files = git_ls_tree(config, ref, "ports/", Git::Recursive::NO, Git::DirsOnly::YES);
-        if (!maybe_files)
-        {
-            return maybe_files.error();
-        }
-
-        static constexpr StringLiteral prefix = "ports/";
-        static constexpr size_t prefix_size = prefix.size() - 1;
-        std::unordered_map<std::string, std::string> results;
-        for (auto&& file : maybe_files.value_or_exit(VCPKG_LINE_INFO))
-        {
-            if (Strings::starts_with(file.path, prefix))
+            auto maybe_init = init(config);
+            if (!maybe_init)
             {
-                results.emplace(file.path.substr(0, prefix_size), file.git_object);
+                return maybe_init.error();
             }
+
+            auto maybe_fetch = fetch(config, uri, ref);
+            if (!maybe_fetch)
+            {
+                return maybe_fetch.error();
+            }
+
+            auto maybe_rev_parse = rev_parse(config, "FETCH_HEAD");
+            if (!maybe_rev_parse)
+            {
+                return maybe_rev_parse.error();
+            }
+
+            return maybe_rev_parse.value_or_exit(VCPKG_LINE_INFO);
         }
-        return results;
-    }
+
+        ExpectedL<Path> archive_and_extract_object(const GitConfig& config,
+                                                   Filesystem& fs,
+                                                   const Path& cmake_exe,
+                                                   const Path& destination,
+                                                   StringView git_object) const
+        {
+            if (fs.exists(destination, IgnoreErrors{}))
+            {
+                return destination;
+            }
+
+            const auto pid = get_process_id();
+            const auto destination_tmp = fmt::format("{}.{}.tmp", destination.generic_u8string(), pid);
+            const auto destination_tar = fmt::format("{}.{}.tmp.tar", destination.generic_u8string(), pid);
+
+            std::error_code ec;
+            Path failure_point;
+            fs.remove_all(destination_tmp, ec, failure_point);
+            if (ec)
+            {
+                // failed to remove {failure_point}
+                return msg::format(msgGitErrorWhileRemovingFiles, msg::path = failure_point)
+                    .appendnl()
+                    .append_raw(ec.message());
+            }
+
+            fs.create_directories(destination_tmp, ec);
+            if (ec)
+            {
+                // failed to create {destination_tmp}
+                return msg::format(msgGitErrorCreatingDirectory, msg::path = destination_tmp)
+                    .appendnl()
+                    .append_raw(ec.message());
+            }
+
+            auto maybe_tar = archive(config, git_object, destination_tar);
+            if (!maybe_tar)
+            {
+                return std::move(maybe_tar).error();
+            }
+
+            extract_tar_cmake(cmake_exe, destination_tar, destination_tmp);
+            fs.remove(destination_tar, ec);
+            if (ec)
+            {
+                // failed to remove {failure_point}
+                return msg::format(msgGitErrorWhileRemovingFiles, msg::path = destination_tar)
+                    .appendnl()
+                    .append_raw(ec.message());
+            }
+
+            fs.rename_with_retry(destination_tmp, destination, ec);
+            if (ec)
+            {
+                // failed to rename {destination_tmp} to {destination}
+                return msg::format(
+                           msgGitErrorRenamingFile, msg::old_value = destination_tmp, msg::new_value = destination)
+                    .appendnl()
+                    .append_raw(ec.message());
+            }
+
+            return destination;
+        }
+
+        Command git_cmd(const GitConfig& config) const
+        {
+            auto cmd = Command(git_exe);
+            cmd.string_arg("-c").string_arg("core.autocrlf=false");
+            if (!config.git_dir.empty())
+            {
+                cmd.string_arg(Strings::concat("--git-dir=", config.git_dir));
+            }
+            if (!config.git_work_tree.empty())
+            {
+                cmd.string_arg(Strings::concat("--work-tree=", config.git_work_tree));
+            }
+            return cmd;
+        }
+
+        const std::string git_exe;
+    };
+    std::unique_ptr<IGit> make_git_from_exe(StringView git_exe) { return std::make_unique<GitImpl>(git_exe); }
 }

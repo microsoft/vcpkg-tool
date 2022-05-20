@@ -268,7 +268,7 @@ namespace vcpkg::Paragraphs
                fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
     }
 
-    static ParseExpected<SourceControlFile> try_load_manifest_text(const std::string& text, StringView origin)
+    static ParseExpected<SourceControlFile> try_load_manifest_text(StringView text, StringView origin)
     {
         auto res = Json::parse(text);
 
@@ -292,7 +292,7 @@ namespace vcpkg::Paragraphs
         return error_info;
     }
 
-    ParseExpected<SourceControlFile> try_load_port_text(const std::string& text, StringView origin, bool is_manifest)
+    ParseExpected<SourceControlFile> try_load_port_text(StringView text, StringView origin, bool is_manifest)
     {
         StatsTimer timer(g_load_ports_stats);
 

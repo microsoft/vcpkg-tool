@@ -1,5 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
@@ -93,8 +94,8 @@ namespace vcpkg::Commands::CIVerifyVersions
                 for (const std::string& control_file : {"CONTROL", "vcpkg.json"})
                 {
                     auto treeish = Strings::concat(version_entry.second, ':', control_file);
-                    auto maybe_file =
-                        Git::Show(paths.git_builtin_config()).object(version_entry.second).path(control_file).run();
+                    auto maybe_file = paths.get_git_impl().show(
+                        paths.git_builtin_config(), Strings::concat(version_entry.second, ':', control_file));
                     if (!maybe_file.has_value()) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
@@ -294,7 +295,7 @@ namespace vcpkg::Commands::CIVerifyVersions
             exclusion_set.insert(exclusions.begin(), exclusions.end());
         }
 
-        auto maybe_port_git_tree_map = git_ports_tree_map(paths.git_builtin_config(), "HEAD");
+        auto maybe_port_git_tree_map = paths.get_git_impl().git_ports_tree_map(paths.git_builtin_config(), "HEAD");
         Checks::check_exit(VCPKG_LINE_INFO,
                            maybe_port_git_tree_map.has_value(),
                            "Fatal error: Failed to obtain git SHAs for local ports.\n%s",

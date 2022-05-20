@@ -1,3 +1,4 @@
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/system.print.h>
 
@@ -9,15 +10,6 @@
 namespace
 {
     using namespace vcpkg;
-
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineRemoteGitError,
-                                 (msg::url),
-                                 "",
-                                 "git failed to fetch remote repository '{url}'");
-    DECLARE_AND_REGISTER_MESSAGE(UpdateBaselineLocalGitError,
-                                 (msg::path),
-                                 "",
-                                 "git failed to parse HEAD for the local vcpkg registry at '{path}'");
 
     struct RegistryConfigDeserializer : Json::IDeserializer<RegistryConfig>
     {
@@ -546,12 +538,9 @@ namespace vcpkg
 {
     static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths, StringView url)
     {
-        auto res = git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), url, "HEAD");
-        if (auto p = res.get())
-        {
-            return Optional<std::string>(std::move(*p));
-        }
-        return msg::format(msgUpdateBaselineRemoteGitError, msg::url = url).appendnl().append(res.error());
+        return paths.get_git_impl()
+            .git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), url, "HEAD")
+            .map([](std::string&& s) { return Optional<std::string>(std::move(s)); });
     }
 
     ExpectedL<Optional<std::string>> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths) const
@@ -569,17 +558,15 @@ namespace vcpkg
             else
             {
                 // use the vcpkg git repository sha from the user's machine
-                auto res = git_current_sha(paths.git_builtin_config(), paths.git_embedded_sha());
-                if (auto p = res.get())
+                auto maybe_sha = paths.git_embedded_sha();
+                if (auto sha = maybe_sha.get())
                 {
-                    return Optional<std::string>(std::move(*p));
+                    return Optional<std::string>(std::move(*sha));
                 }
-                else
-                {
-                    return msg::format(msgUpdateBaselineLocalGitError, msg::path = paths.root)
-                        .appendnl()
-                        .append(res.error());
-                }
+                return paths.get_git_impl().rev_parse(paths.git_builtin_config(), "HEAD").map([](std::string&& s) {
+                    return Optional<std::string>(std::move(s));
+                });
+                ;
             }
         }
         else

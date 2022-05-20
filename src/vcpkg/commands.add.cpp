@@ -64,10 +64,12 @@ namespace vcpkg::Commands
                                    msg::command_line = "vcpkg add artifact");
 
             auto artifact_name = args.command_arguments[1];
-
-            auto metrics = LockGuardPtr<Metrics>(g_metrics);
-            metrics->track_property("command_context", "artifact");
-            metrics->track_property("command_args", Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256));
+            auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
+            {
+                auto metrics = LockGuardPtr<Metrics>(g_metrics);
+                metrics->track_property("command_context", "artifact");
+                metrics->track_property("command_args", artifact_hash);
+            } // unlock g_metrics
 
             std::string ce_args[] = {"add", artifact_name};
             Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
@@ -135,12 +137,14 @@ namespace vcpkg::Commands
                 manifest->path, Json::stringify(serialize_manifest(manifest_scf), {}), VCPKG_LINE_INFO);
             msg::println(msgAddPortSucceded);
 
-            auto metrics = LockGuardPtr<Metrics>(g_metrics);
-            metrics->track_property("command_context", "port");
-            metrics->track_property("command_args",
-                                    Strings::join(" ", Util::fmap(specs, [](auto&& spec) -> std::string {
-                                                      return Hash::get_string_hash(spec.name, Hash::Algorithm::Sha256);
-                                                  })));
+            auto command_args_hash = Strings::join(" ", Util::fmap(specs, [](auto&& spec) -> std::string {
+                                                       return Hash::get_string_hash(spec.name, Hash::Algorithm::Sha256);
+                                                   }));
+            {
+                auto metrics = LockGuardPtr<Metrics>(g_metrics);
+                metrics->track_property("command_context", "port");
+                metrics->track_property("command_args", command_args_hash);
+            } // unlock metrics
 
             Checks::exit_success(VCPKG_LINE_INFO);
         }

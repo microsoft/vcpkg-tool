@@ -354,7 +354,8 @@ namespace vcpkg::Export::IFW
 
         void do_repository(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
-            const Path& repogen_exe = paths.get_tool_exe(Tools::IFW_REPOGEN);
+            Path repogen_exe = paths.get_tool_exe(Tools::IFW_INSTALLER_BASE);
+            repogen_exe.replace_filename("repogen.exe");
             const auto packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
             const auto repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
 
@@ -375,7 +376,8 @@ namespace vcpkg::Export::IFW
 
         void do_installer(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
-            const Path& binarycreator_exe = paths.get_tool_exe(Tools::IFW_BINARYCREATOR);
+            Path binarycreator_exe = paths.get_tool_exe(Tools::IFW_INSTALLER_BASE);
+            binarycreator_exe.replace_filename("binarycreator.exe");
             const auto config_file = get_config_file_path(export_id, ifw_options, paths);
             const auto packages_dir = get_packages_dir_path(export_id, ifw_options, paths);
             const auto repository_dir = get_repository_dir_path(export_id, ifw_options, paths);

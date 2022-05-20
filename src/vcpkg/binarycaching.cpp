@@ -331,7 +331,7 @@ namespace
                 {
                     auto pkg_path = paths.package_dir(spec);
                     clean_prepare_dir(fs, pkg_path);
-                    jobs.push_back(decompress_zip_archive_cmd(paths, pkg_path, archive_path));
+                    jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(), pkg_path, archive_path));
                     action_idxs.push_back(i);
                     archive_paths.push_back(std::move(archive_path));
                 }
@@ -393,7 +393,7 @@ namespace
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            int code = compress_directory_to_zip(fs, paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (code != 0)
             {
                 vcpkg::print2(
@@ -547,8 +547,9 @@ namespace
                     if (codes[i] == 200)
                     {
                         action_idxs.push_back(i);
-                        jobs.push_back(decompress_zip_archive_cmd(
-                            paths, paths.package_dir(actions[url_indices[i]].spec), url_paths[i].second));
+                        jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
+                                                                  paths.package_dir(actions[url_indices[i]].spec),
+                                                                  url_paths[i].second));
                     }
                 }
                 auto job_results = decompress_in_parallel(jobs);
@@ -1040,7 +1041,8 @@ namespace
                     auto&& action = actions[url_indices[idx]];
                     auto&& url_path = url_paths[idx];
                     if (!download_file(url_path.first, url_path.second)) continue;
-                    jobs.push_back(decompress_zip_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
+                    jobs.push_back(decompress_zip_archive_cmd(
+                        paths.get_tool_cache(), paths.package_dir(action.spec), url_path.second));
                     idxs.push_back(idx);
                 }
 
@@ -1081,7 +1083,8 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            int code = compress_directory_to_zip(
+                paths.get_filesystem(), paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (code != 0)
             {
                 vcpkg::print2(
