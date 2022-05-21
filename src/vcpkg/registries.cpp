@@ -215,7 +215,7 @@ namespace
                                  "",
                                  "Error: this vcpkg instance requires a manifest with a specified baseline in order to "
                                  "interact with ports. Please add 'builtin-baseline' to the manifest or add a "
-                                 "'vcpkg-configuration.json' that redefines the default registry.\n");
+                                 "'vcpkg-configuration.json' that redefines the default registry.");
 
     // This registry implementation is the builtin registry without a baseline
     // that will only consult files in ports

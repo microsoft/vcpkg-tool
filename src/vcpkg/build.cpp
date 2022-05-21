@@ -143,7 +143,7 @@ namespace
                                  (),
                                  "",
                                  "The build command requires all dependencies to be already installed.\nThe following "
-                                 "dependencies are missing:\n\n");
+                                 "dependencies are missing:");
 
     DECLARE_AND_REGISTER_MESSAGE(
         BuildTroubleshootingMessage1,
@@ -268,7 +268,7 @@ namespace vcpkg::Build
             LocalizedString errorMsg = msg::format(msg::msgErrorMessage).append(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
-                errorMsg.append_indent().append_raw(p.to_string()).append_raw('\n');
+                errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
             }
 
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);

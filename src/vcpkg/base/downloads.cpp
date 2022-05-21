@@ -24,7 +24,7 @@ namespace
                                  "cmd: {command_line}\n"
                                  "=== curl output ===\n"
                                  "{actual}\n"
-                                 "=== end curl output ===\n");
+                                 "=== end curl output ===");
     DECLARE_AND_REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload,
                                  (),
                                  "",

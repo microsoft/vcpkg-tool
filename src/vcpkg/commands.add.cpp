@@ -35,7 +35,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(AddFirstArgument,
                                  (msg::command_line),
                                  "",
-                                 "The first argument to '{command_line}' must be 'artifact' or 'port'.\n");
+                                 "The first argument to '{command_line}' must be 'artifact' or 'port'.");
 
     DECLARE_AND_REGISTER_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
     DECLARE_AND_REGISTER_MESSAGE(AddPortRequiresManifest,
