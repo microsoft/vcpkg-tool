@@ -66,7 +66,7 @@ namespace vcpkg
         }
         res.append(message);
 
-        res.appendnl();
+        res.append_raw('\n');
 
         auto line_end = Util::find_if(location.it, ParserBase::is_lineend);
         StringView line = StringView{
@@ -74,7 +74,7 @@ namespace vcpkg
             line_end.pointer_to_current(),
         };
         res.append(msg::format(msgFormattedParseMessageExpression, msg::value = line));
-        res.appendnl();
+        res.append_raw('\n');
 
         auto caret_point = StringView{location.start_of_line.pointer_to_current(), location.it.pointer_to_current()};
         auto formatted_caret_point = msg::format(msgFormattedParseMessageExpression, msg::value = caret_point);

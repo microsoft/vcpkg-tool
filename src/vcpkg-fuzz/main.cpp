@@ -81,7 +81,7 @@ namespace
                     else
                     {
                         msg::print_error(msg::format(msgFuzzInvalidKind, msg::value = value)
-                                             .appendnl()
+                                             .append_raw('\n')
                                              .append_indent()
                                              .append(msgFuzzExpectedOneOf));
                         print_help_and_exit(true);
@@ -115,9 +115,9 @@ namespace
         {
             auto color = invalid ? Color::error : Color::none;
 
-            auto message = msg::format(msgFuzzHelpUsage).appendnl().appendnl();
-            message.append(msgFuzzHelpInput).appendnl().appendnl();
-            message.append(msgFuzzHelpOptions).appendnl();
+            auto message = msg::format(msgFuzzHelpUsage).append_raw("\n\n");
+            message.append(msgFuzzHelpInput).append_raw("\n\n");
+            message.append(msgFuzzHelpOptions).append_raw('\n');
 
             struct
             {
@@ -133,7 +133,7 @@ namespace
                 message.append_raw(start_option)
                     .append_raw(std::string(30 - start_option.size(), ' '))
                     .append(option.help)
-                    .appendnl();
+                    .append_raw('\n');
             }
 
             msg::print(color, message);
