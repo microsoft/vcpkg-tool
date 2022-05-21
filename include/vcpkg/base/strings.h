@@ -156,7 +156,7 @@ namespace vcpkg::Strings
     bool starts_with(StringView s, StringView pattern);
 
     template<class InputIterator, class Transformer>
-    std::string join(const char* delimiter, InputIterator begin, InputIterator end, Transformer transformer)
+    std::string join(StringLiteral delimiter, InputIterator begin, InputIterator end, Transformer transformer)
     {
         if (begin == end)
         {
@@ -167,7 +167,7 @@ namespace vcpkg::Strings
         append(output, transformer(*begin));
         for (auto it = std::next(begin); it != end; ++it)
         {
-            output.append(delimiter);
+            output.append(delimiter.data(), delimiter.size());
             append(output, transformer(*it));
         }
 
@@ -175,7 +175,7 @@ namespace vcpkg::Strings
     }
 
     template<class Container, class Transformer>
-    std::string join(const char* delimiter, const Container& v, Transformer transformer)
+    std::string join(StringLiteral delimiter, const Container& v, Transformer transformer)
     {
         const auto begin = std::begin(v);
         const auto end = std::end(v);
@@ -184,14 +184,14 @@ namespace vcpkg::Strings
     }
 
     template<class InputIterator>
-    std::string join(const char* delimiter, InputIterator begin, InputIterator end)
+    std::string join(StringLiteral delimiter, InputIterator begin, InputIterator end)
     {
         using Element = decltype(*begin);
         return join(delimiter, begin, end, [](const Element& x) -> const Element& { return x; });
     }
 
     template<class Container>
-    std::string join(const char* delimiter, const Container& v)
+    std::string join(StringLiteral delimiter, const Container& v)
     {
         using Element = decltype(*std::begin(v));
         return join(delimiter, v, [](const Element& x) -> const Element& { return x; });
