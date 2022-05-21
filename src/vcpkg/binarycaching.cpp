@@ -105,6 +105,14 @@ namespace
                                  (msg::binary_source),
                                  "",
                                  "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed,
+                                 (msg::path, msg::exit_code),
+                                 "",
+                                 "Failed to compress folder '{path}', exit code: {exit_code}");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoAbiDuringCI,
+                                 (msg::package_name),
+                                 "",
+                                 "package {package_name} did not have an abi during ci.");
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -1087,8 +1095,8 @@ namespace
                 paths.get_filesystem(), paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (code != 0)
             {
-                vcpkg::print2(
-                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                vcpkg::msg::print_warning(msgCompressFolderFailed,
+                    msg::path = paths.package_dir(spec), msg::exit_code = code);
                 return;
             }
 
@@ -1463,10 +1471,14 @@ namespace vcpkg
         {
             auto& action = actions[idx];
             const auto abi = action.package_abi().get();
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               abi,
-                               "Error: package %s did not have an abi during ci. This is an internal error.\n",
-                               action.spec);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   abi,
+                                   msg::format(msg::msgInternalErrorMessage)
+                                       .append(msgErrorNoAbiDuringCI,
+                                           msg::package_name = action.spec
+                                       ).appendnl());
+
+
             cache_status[idx] = &m_status[*abi];
         }
 
