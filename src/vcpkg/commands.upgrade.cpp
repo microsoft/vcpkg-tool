@@ -21,20 +21,6 @@
 using namespace vcpkg;
 using Install::KeepGoing;
 
-namespace
-{
-    using namespace vcpkg;
-    DECLARE_AND_REGISTER_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS");
-    DECLARE_AND_REGISTER_MESSAGE(CmakeTargetsExcluded,
-                                 (msg::count),
-                                 "",
-                                 "note: {count} additional targets are not displayed.");
-    DECLARE_AND_REGISTER_MESSAGE(AlreadyInstalledNotHead,
-                                 (msg::spec),
-                                 "'HEAD' means the most recent version of source code",
-                                 "{spec} is already installed -- not building from HEAD");
-}
-
 namespace vcpkg::Commands::Upgrade
 {
     static constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
