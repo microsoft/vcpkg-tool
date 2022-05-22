@@ -40,7 +40,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
                                  (),
                                  "",
-                                 "Warning: passed --sendmetrics, but metrics are disabled.");
+                                 "passed --sendmetrics, but metrics are disabled.");
     DECLARE_AND_REGISTER_MESSAGE(
         VcpkgHasCrashed,
         (),
@@ -308,7 +308,7 @@ int main(const int argc, const char* const* const argv)
 
     if (args.send_metrics.value_or(false) && !to_enable_metrics)
     {
-        msg::println(Color::warning, msgVcpkgSendMetricsButDisabled);
+        msg::print_warning(msgVcpkgSendMetricsButDisabled);
     }
 
     args.debug_print_feature_flags();

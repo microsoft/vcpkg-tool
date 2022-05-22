@@ -61,7 +61,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(BuildResultSummaryLine,
                                  (msg::build_result, msg::count),
                                  "Displayed to show a count of results of a build_result in a summary.",
-                                 "    {build_result}: {count}");
+                                 "{build_result}: {count}");
 
     DECLARE_AND_REGISTER_MESSAGE(
         BuildResultSucceeded,
@@ -1481,8 +1481,8 @@ namespace vcpkg::Build
     {
         if (count != 0)
         {
-            msg::println(
-                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count);
+            msg::println(LocalizedString().append_indent().append(
+                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count));
         }
     }
 
