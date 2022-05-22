@@ -99,7 +99,7 @@ namespace
                     msg::format(msg::msgErrorMessage)
                     .append(msgEnvStrFailedToExtract)
                     .appendnl()
-                    .append(input));
+                    .append(LocalizedString::from_raw(input)));
                 vcpkg::Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
