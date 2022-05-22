@@ -267,7 +267,6 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(command_name, "install");
     DECLARE_MSG_ARG(count, "42");
     DECLARE_MSG_ARG(elapsed, "3.532 min");
-    DECLARE_MSG_ARG(email, "vcpkg@microsoft.com");
     DECLARE_MSG_ARG(error_msg, "File Not Found");
     DECLARE_MSG_ARG(exit_code, "127");
     DECLARE_MSG_ARG(expected_version, "1.3.8");

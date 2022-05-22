@@ -41,13 +41,12 @@ namespace
                                  (),
                                  "",
                                  "Warning: passed --sendmetrics, but metrics are disabled.");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed,
-                                 (msg::email),
-                                 "",
-                                 R"(vcpkg.exe has crashed.
-Please send an email to:
-    {email}
-containing a brief summary of what you were trying to do and the following data blob:)");
+    DECLARE_AND_REGISTER_MESSAGE(
+        VcpkgHasCrashed,
+        (),
+        "Printed at the start of a crash report.",
+        "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
+        "what you were trying to do and the following information.");
     DECLARE_AND_REGISTER_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
         (),
@@ -339,7 +338,7 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashed, msg::email = Commands::Contact::email());
+    msg::println(msgVcpkgHasCrashed);
     fflush(stdout);
     msg::println();
     LocalizedString data_blob;
