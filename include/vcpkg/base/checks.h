@@ -26,6 +26,11 @@ namespace vcpkg::Checks
         msg_exit_with_message(line_info, msg::format(m, args...));
     }
 
+    [[noreturn]] inline void msg_exit_with_error(const LineInfo& line_info, const LocalizedString& message)
+    {
+        msg_exit_with_message(line_info, msg::format(msg::msgErrorMessage).append(message));
+    }
+
     template<class Message, class... Args>
     [[noreturn]] typename Message::is_message_type msg_exit_with_error(const LineInfo& line_info,
                                                                        Message m,

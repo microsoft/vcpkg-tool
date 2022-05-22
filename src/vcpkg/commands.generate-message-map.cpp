@@ -19,7 +19,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs,
                                  (msg::value),
                                  "example of {value} 'GenerateMsgNoComment'",
-                                 "error: parsing format string for {value}:");
+                                 "parsing format string for {value}:");
 
     DECLARE_AND_REGISTER_MESSAGE(GenerateMsgIncorrectComment,
                                  (msg::value),
@@ -177,7 +177,7 @@ namespace vcpkg::Commands
         {
             if (Util::Sets::contains(parsed_args.switches, OPTION_ALLOW_BAD_COMMENTS))
             {
-                Checks::msg_exit_with_message(
+                Checks::msg_exit_with_error(
                     VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_ALLOW_BAD_COMMENTS);
             }
             comments_msg_type = msg::format(msg::msgErrorMessage);
@@ -188,7 +188,7 @@ namespace vcpkg::Commands
 
         if (!output_comments && Util::Sets::contains(parsed_args.switches, OPTION_OUTPUT_COMMENTS))
         {
-            Checks::msg_exit_with_message(
+            Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_OUTPUT_COMMENTS);
         }
 
@@ -223,8 +223,9 @@ namespace vcpkg::Commands
             auto mismatches = get_format_arg_mismatches(msg.value, msg.comment, format_string_parsing_error);
             if (!format_string_parsing_error.data().empty())
             {
-                msg::println(msgGenerateMsgErrorParsingFormatArgs, msg::value = msg.name);
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, format_string_parsing_error);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msg::format(msgGenerateMsgErrorParsingFormatArgs, msg::value = msg.name)
+                                                .append(format_string_parsing_error));
             }
 
             if (!mismatches.arguments_without_comment.empty() || !mismatches.comments_without_argument.empty())

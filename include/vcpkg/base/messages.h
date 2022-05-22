@@ -321,7 +321,7 @@ namespace vcpkg::msg
     DECLARE_MESSAGE(BothYesAndNoOptionSpecifiedError,
                     (msg::option),
                     "",
-                    "error: cannot specify both --no-{option} and --{option}.");
+                    "cannot specify both --no-{option} and --{option}.");
 
     void print_warning(const LocalizedString& s);
     template<class Message, class... Ts>

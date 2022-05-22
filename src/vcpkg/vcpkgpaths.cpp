@@ -557,7 +557,7 @@ namespace vcpkg
     DECLARE_AND_REGISTER_MESSAGE(VcpkgDisallowedClassicMode,
                                  (),
                                  "",
-                                 "Error: Could not locate a manifest (vcpkg.json) above the current working "
+                                 "Could not locate a manifest (vcpkg.json) above the current working "
                                  "directory.\nThis vcpkg distribution does not have a classic mode instance.");
 
     const InstalledPaths& VcpkgPaths::installed() const
@@ -566,8 +566,8 @@ namespace vcpkg
         {
             return *i;
         }
-        msg::println(Color::error, msgVcpkgDisallowedClassicMode);
-        Checks::exit_fail(VCPKG_LINE_INFO);
+
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
     }
 
     const Path& VcpkgPaths::buildtrees() const
@@ -597,10 +597,10 @@ namespace vcpkg
 
     DECLARE_AND_REGISTER_MESSAGE(
         ErrorMissingVcpkgRoot,
-        (msg::url),
+        (),
         "",
-        "Error: Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
-        "define the VCPKG_ROOT environment variable to point to a cloned copy of {url}.");
+        "Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
+        "define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.");
 
     // Guaranteed to return non-empty
     static Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
@@ -624,8 +624,7 @@ namespace vcpkg
 
         if (ret.empty())
         {
-            msg::println(Color::error, msgErrorMissingVcpkgRoot, msg::url = "https://github.com/Microsoft/vcpkg");
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorMissingVcpkgRoot);
         }
 
         return ret;
@@ -1317,23 +1316,23 @@ namespace vcpkg
     DECLARE_AND_REGISTER_MESSAGE(ErrorVcvarsUnsupported,
                                  (msg::triplet),
                                  "",
-                                 "Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
+                                 "in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported "
                                  "on non-Windows hosts.\nDefine 'VCPKG_CMAKE_SYSTEM_NAME' or "
                                  "'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstance,
                                  (msg::triplet),
                                  "",
-                                 "Error: in triplet {triplet}: Unable to find a valid Visual Studio instance");
+                                 "in triplet {triplet}: Unable to find a valid Visual Studio instance");
 
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "    with toolset version {version}");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceVersion, (msg::version), "", "with toolset version {version}");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceFullVersion,
                                  (msg::version),
                                  "",
-                                 "    with toolset version prefix {version}");
+                                 "with toolset version prefix {version}");
 
-    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "     at \"{path}\"");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorNoVSInstanceAt, (msg::path), "", "at \"{path}\"");
 
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(details::VcpkgPathsImpl& impl, const Filesystem& fs)
@@ -1372,8 +1371,7 @@ namespace vcpkg
         }
 
 #if !defined(WIN32)
-        msg::println(Color::error, msgErrorVcvarsUnsupported, msg::triplet = prebuildinfo.triplet);
-        Checks::exit_fail(VCPKG_LINE_INFO);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorVcvarsUnsupported, msg::triplet = prebuildinfo.triplet);
 #else
         const auto& toolsets_info = get_all_toolsets(*m_pimpl, get_filesystem());
         View<Toolset> vs_toolsets = toolsets_info.toolsets;
@@ -1392,22 +1390,23 @@ namespace vcpkg
         });
         if (candidate == vs_toolsets.end())
         {
-            msg::println(Color::error, msgErrorNoVSInstance, msg::triplet = prebuildinfo.triplet);
+            auto error_message = msg::format(msgErrorNoVSInstance, msg::triplet = prebuildinfo.triplet);
             if (vsp)
             {
-                msg::println(Color::error, msgErrorNoVSInstanceAt, msg::path = *vsp);
+                error_message.append_raw('\n').append_indent().append(msgErrorNoVSInstanceAt, msg::path = *vsp);
             }
             if (tsv)
             {
-                msg::println(Color::error, msgErrorNoVSInstanceVersion, msg::version = *tsv);
+                error_message.append_raw('\n').append_indent().append(msgErrorNoVSInstanceVersion, msg::version = *tsv);
             }
             if (tsvf)
             {
-                msg::println(Color::error, msgErrorNoVSInstanceFullVersion, msg::version = *tsvf);
+                error_message.append_raw('\n').append_indent().append(msgErrorNoVSInstanceFullVersion,
+                                                                      msg::version = *tsvf);
             }
 
-            msg::print(Color::error, toolsets_info.get_localized_debug_info());
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            error_message.append_raw('\n').append(toolsets_info.get_localized_debug_info());
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, error_message);
         }
         return *candidate;
 #endif

@@ -419,16 +419,15 @@ namespace vcpkg::Build
         UnsupportedToolchain,
         (msg::triplet, msg::arch, msg::path, msg::list),
         "example for {list} is 'x86, arm64'",
-        "Error: in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\n"
+        "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\n"
         "The selected Visual Studio instance is at: {path}\n"
         "The available toolchain combinations are: {list}\n");
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        UnsupportedSystemName,
-        (msg::system_name),
-        "",
-        "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
-        "Supported system names are '', 'Windows' and 'WindowsStore'.");
+    DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
+                                 (msg::system_name),
+                                 "",
+                                 "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
+                                 "Supported system names are '', 'Windows' and 'WindowsStore'.");
 
 #if defined(_WIN32)
     static ZStringView to_vcvarsall_target(const std::string& cmake_system_name)
@@ -437,9 +436,7 @@ namespace vcpkg::Build
         if (cmake_system_name == "Windows") return "";
         if (cmake_system_name == "WindowsStore") return "store";
 
-        msg::println(Color::error, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
-
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
     }
 
     static ZStringView to_vcvarsall_toolchain(const std::string& target_architecture,
@@ -469,11 +466,11 @@ namespace vcpkg::Build
         const auto toolset_list = Strings::join(
             ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); });
 
-        msg::println(msgUnsupportedToolchain,
-                     msg::triplet = triplet,
-                     msg::arch = target_architecture,
-                     msg::path = toolset.visual_studio_root_path,
-                     msg::list = toolset_list);
+        msg::print_error(msgUnsupportedToolchain,
+                         msg::triplet = triplet,
+                         msg::arch = target_architecture,
+                         msg::path = toolset.visual_studio_root_path,
+                         msg::list = toolset_list);
         msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
