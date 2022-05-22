@@ -170,7 +170,7 @@
   "UnknownBinaryProviderType": "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files'",
   "UnknownTool": "vcpkg does not have a definition of this tool for this platform.",
   "UnsupportedSystemName": "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
-  "UnsupportedToolchain": "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target architecture was {arch}\n    The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n",
+  "UnsupportedToolchain": "Error: in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\nThe selected Visual Studio instance is at: {path}\nThe available toolchain combinations are: {list}\n",
   "UpdateBaselineAddBaselineNoManifest": "the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.",
   "UpdateBaselineLocalGitError": "git failed to parse HEAD for the local vcpkg registry at '{path}'",
   "UpdateBaselineNoConfiguration": "neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.",
