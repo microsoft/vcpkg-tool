@@ -32,6 +32,11 @@ namespace
                                  "The 'LocalizedString::append_indent' part is locale-invariant.",
                                  "The message named {value} contains what appears to be indenting which must be "
                                  "changed to use LocalizedString::append_indent instead.");
+    DECLARE_AND_REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline,
+                                 (msg::value),
+                                 "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
+                                 "The message named {value} ends with a newline which should be added by formatting "
+                                 "rather than by localization.");
     DECLARE_AND_REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs,
                                  (msg::value),
                                  "example of {value} 'GenerateMsgNoComment'",
@@ -228,6 +233,12 @@ namespace vcpkg::Commands
             {
                 has_errors = true;
                 msg::print_error(msgLocalizedMessageMustNotContainIndents, msg::value = msg.name);
+            }
+
+            if (!msg.value.empty() && msg.value.back() == '\n')
+            {
+                has_errors = true;
+                msg::print_error(msgLocalizedMessageMustNotEndWithNewline, msg::value = msg.name);
             }
 
             auto mismatches = get_format_arg_mismatches(msg.value, msg.comment, format_string_parsing_error);

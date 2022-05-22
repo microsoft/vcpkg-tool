@@ -421,7 +421,7 @@ namespace vcpkg::Build
         "example for {list} is 'x86, arm64'",
         "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\n"
         "The selected Visual Studio instance is at: {path}\n"
-        "The available toolchain combinations are: {list}\n");
+        "The available toolchain combinations are: {list}");
 
     DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
                                  (msg::system_name),
