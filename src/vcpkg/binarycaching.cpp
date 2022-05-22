@@ -1091,8 +1091,8 @@ namespace
                 paths.get_filesystem(), paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (code != 0)
             {
-                vcpkg::msg::print_warning(msgCompressFolderFailed,
-                    msg::path = paths.package_dir(spec), msg::exit_code = code);
+                vcpkg::msg::print_warning(
+                    msgCompressFolderFailed, msg::path = paths.package_dir(spec), msg::exit_code = code);
                 return;
             }
 

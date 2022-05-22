@@ -15,29 +15,20 @@ namespace
 {
     using namespace vcpkg;
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        EnvStrFailedToExtract,
-        (),
-        "",
-        "could not expand the environment string:");
-    
+    DECLARE_AND_REGISTER_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:");
+
     DECLARE_AND_REGISTER_MESSAGE(
         ErrorVsCodeNotFound,
         (msg::env_var),
         "",
         "Visual Studio Code was not found and the environment variable '{env_var}' is not set or invalid.");
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorVsCodeNotFoundPathExamined,
-        (),
-        "",
-        "The following paths were examined:");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorVsCodeNotFoundPathExamined, (), "", "The following paths were examined:");
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        InfoSetEnvVar,
-        (msg::env_var),
-        "In this context 'editor' means IDE",
-        "You can also set the environment variable '{env_var}' to your editor of choice.");
+    DECLARE_AND_REGISTER_MESSAGE(InfoSetEnvVar,
+                                 (msg::env_var),
+                                 "In this context 'editor' means IDE",
+                                 "You can also set the environment variable '{env_var}' to your editor of choice.");
 }
 
 #if defined(_WIN32)
@@ -95,11 +86,10 @@ namespace
                 ExpandEnvironmentStringsW(widened.c_str(), &result[0], static_cast<unsigned long>(result.size() + 1));
             if (required_size == 0)
             {
-                msg::print_error(
-                    msg::format(msg::msgErrorMessage)
-                    .append(msgEnvStrFailedToExtract)
-                    .appendnl()
-                    .append(LocalizedString::from_raw(input)));
+                msg::print_error(msg::format(msg::msgErrorMessage)
+                                     .append(msgEnvStrFailedToExtract)
+                                     .appendnl()
+                                     .append(LocalizedString::from_raw(input)));
                 vcpkg::Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
