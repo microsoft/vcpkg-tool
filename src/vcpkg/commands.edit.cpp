@@ -11,6 +11,35 @@
 
 #include <limits.h>
 
+namespace
+{
+    using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        EnvStrFailedToExtract,
+        (),
+        "",
+        "could not expand the environment string:");
+    
+    DECLARE_AND_REGISTER_MESSAGE(
+        ErrorVsCodeNotFound,
+        (msg::env_var),
+        "",
+        "Visual Studio Code was not found and the environment variable '{env_var}' is not set or invalid.");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        ErrorVsCodeNotFoundPathExamined,
+        (),
+        "",
+        "The following paths were examined:");
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        InfoSetEnvVar,
+        (msg::env_var),
+        "In this context 'editor' means IDE",
+        "You can also set the environment variable '{env_var}' to your editor of choice.");
+}
+
 #if defined(_WIN32)
 namespace
 {
@@ -66,8 +95,11 @@ namespace
                 ExpandEnvironmentStringsW(widened.c_str(), &result[0], static_cast<unsigned long>(result.size() + 1));
             if (required_size == 0)
             {
-                vcpkg::print2(vcpkg::Color::error, "Error: could not expand the environment string:\n");
-                vcpkg::print2(vcpkg::Color::error, input);
+                msg::print_error(
+                    msg::format(msg::msgErrorMessage)
+                    .append(msgEnvStrFailedToExtract)
+                    .appendnl()
+                    .append(input));
                 vcpkg::Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -240,12 +272,12 @@ namespace vcpkg::Commands::Edit
         const auto it = Util::find_if(candidate_paths, [&](const Path& p) { return fs.exists(p, IgnoreErrors{}); });
         if (it == candidate_paths.cend())
         {
-            print2(
-                Color::error,
-                "Error: Visual Studio Code was not found and the environment variable EDITOR is not set or invalid.\n");
-            print2("The following paths were examined:\n");
+            msg::print_error(msg::format(msg::msgErrorMessage)
+                                 .append(msgErrorVsCodeNotFound, msg::env_var = "EDITOR")
+                                 .appendnl()
+                                 .append(msgErrorVsCodeNotFoundPathExamined));
             print_paths(candidate_paths);
-            print2("You can also set the environmental variable EDITOR to your editor of choice.\n");
+            msg::println(msgInfoSetEnvVar, msg::env_var = "EDITOR");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
