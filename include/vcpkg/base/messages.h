@@ -340,14 +340,4 @@ namespace vcpkg::msg
     {
         print(Color::error, format(msgErrorMessage).append(format(m, args...).appendnl()));
     }
-    
-    inline void print_success(const LocalizedString& s)
-    {
-        print(Color::success, format(s).appendnl());
-    }
-    template<class Message, class... Ts>
-    typename Message::is_message_type print_success(Message m, Ts... args)
-    {
-        print(Color::success, format(format(m, args...).appendnl()));
-    }
 }
