@@ -19,6 +19,7 @@
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/commands.find.h>
 #include <vcpkg/commands.format-manifest.h>
+#include <vcpkg/commands.format-port.h>
 #include <vcpkg/commands.generate-message-map.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.hash.h>
@@ -93,6 +94,7 @@ namespace vcpkg::Commands
         static const Fetch::FetchCommand fetch{};
         static const FindCommand find_{};
         static const FormatManifest::FormatManifestCommand format_manifest{};
+        static const FormatPort::FormatPortCommand format_port{};
         static const Help::HelpCommand help{};
         static const Info::InfoCommand info{};
         static const Integrate::IntegrateCommand integrate{};
@@ -121,6 +123,7 @@ namespace vcpkg::Commands
             {"fetch", &fetch},
             {"find", &find_},
             {"format-manifest", &format_manifest},
+            {"format-port", &format_port},
             {"integrate", &integrate},
             {"list", &list},
             {"new", &new_},

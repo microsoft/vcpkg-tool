@@ -9,6 +9,7 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
+#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versiondeserializers.h>
@@ -1194,30 +1195,12 @@ namespace vcpkg
     ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name)
     {
-        auto maybe_versions =
-            load_versions_file(paths.get_filesystem(), VersionDbType::Git, paths.builtin_registry_versions, port_name);
-        if (auto pversions = maybe_versions.get())
-        {
-            return Util::fmap(
-                *pversions, [](auto&& entry) -> auto {
-                    return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
-                });
-        }
-
-        return maybe_versions.error();
+        return get_registry_versions(paths, CommandRegistryPaths{{}, {}, paths.builtin_registry_versions}, port_name);
     }
 
     ExpectedS<Baseline> get_builtin_baseline(const VcpkgPaths& paths)
     {
-        return load_baseline_versions(paths.get_filesystem(), paths.builtin_registry_versions / "baseline.json")
-            .then([&](Optional<Baseline>&& b) -> ExpectedS<Baseline> {
-                if (auto p = b.get())
-                {
-                    return std::move(*p);
-                }
-                return Strings::concat(
-                    "Error: The baseline file at versions/baseline.json was invalid (no \"default\" field)");
-            });
+        return get_registry_baseline(paths, CommandRegistryPaths{{}, {}, paths.builtin_registry_versions});
     }
 
     bool is_git_commit_sha(StringView sv)
@@ -1265,5 +1248,82 @@ namespace vcpkg
                                                                      std::string baseline)
     {
         return std::make_unique<FilesystemRegistry>(fs, std::move(path), std::move(baseline));
+    }
+
+    CommandRegistryPaths resolve_command_registry_paths(const Filesystem& fs,
+                                                        const VcpkgPaths& paths,
+                                                        const VcpkgCmdArguments& /*args*/,
+                                                        Build::Editable /*is_editable*/)
+    {
+        if (fs.exists(paths.original_cwd / "versions" / "baseline.json", VCPKG_LINE_INFO))
+        {
+            // TODO: Instantiate a registry to know whether it is editable or not
+            return CommandRegistryPaths{paths.original_cwd,
+                                        paths.original_cwd / ".git",
+                                        paths.original_cwd / "ports",
+                                        paths.original_cwd / "versions"};
+        }
+        else if (fs.exists(paths.original_cwd / "vcpkg.json", VCPKG_LINE_INFO))
+        {
+            vcpkg::printf(
+                Color::error, "Error: Manifest mode not supported (registry path: %s)\n.", paths.original_cwd);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+        // NOTE According to registries.cpp:make_builtin_registry this is how we end up with a builtin filesystem
+        // registry
+        else if (!paths.use_git_default_registry())
+        {
+            // TODO: Instantiate a registry to know whether it is editable or not
+            return CommandRegistryPaths{
+                paths.builtin_ports_directory().parent_path(), // TODO: Reuse vcpkgpaths.cpp:determine_root
+                Path(paths.builtin_ports_directory().parent_path()) /
+                    ".git", // TODO: Reuse vcpkgpaths.cpp:determine_root
+                paths.builtin_ports_directory(),
+                paths.builtin_registry_versions};
+        }
+        else
+        {
+            vcpkg::printf(
+                Color::error, "Error: Registry paths could not be resolved (registry path: %s)\n.", paths.original_cwd);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+    }
+
+    ExpectedS<Baseline> get_registry_baseline(const VcpkgPaths& paths, const CommandRegistryPaths& registry_paths)
+    {
+        return load_baseline_versions(paths.get_filesystem(), registry_paths.version_directory_path / "baseline.json")
+            .then([&](Optional<Baseline>&& b) -> ExpectedS<Baseline> {
+                if (auto p = b.get())
+                {
+                    return std::move(*p);
+                }
+                return Strings::concat(
+                    "Error: The baseline file at versions/baseline.json was invalid (no \"default\" field)");
+            });
+    }
+
+    ExpectedS<std::vector<std::pair<SchemedVersion, std::string>>> get_registry_versions(
+        const VcpkgPaths& paths, const CommandRegistryPaths& registry_paths, StringView port_name)
+    {
+        auto maybe_versions = load_versions_file(
+            paths.get_filesystem(), VersionDbType::Git, registry_paths.version_directory_path, port_name);
+        if (auto pversions = maybe_versions.get())
+        {
+            return Util::fmap(
+                *pversions, [](auto&& entry) -> auto {
+                    return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
+                });
+        }
+
+        return maybe_versions.error();
+    }
+
+    GitConfig get_registry_git_config(const VcpkgPaths& paths, const CommandRegistryPaths& registry_paths)
+    {
+        GitConfig conf;
+        conf.git_exe = paths.get_tool_exe(Tools::GIT);
+        conf.git_dir = registry_paths.root_path / ".git";
+        conf.git_work_tree = registry_paths.root_path;
+        return conf;
     }
 }

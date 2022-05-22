@@ -4,7 +4,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 
-#include <vcpkg/commands.format-manifest.h>
+#include <vcpkg/commands.format-port.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
@@ -62,6 +62,7 @@ namespace
 
     Optional<ToWrite> read_control_file(Filesystem& fs, Path&& control_path)
     {
+        std::error_code ec;
         Debug::print("Reading ", control_path, "\n");
 
         auto manifest_path = Path(control_path.parent_path()) / "vcpkg.json";
@@ -167,7 +168,7 @@ Please open an issue at https://github.com/microsoft/vcpkg, with the following o
     }
 }
 
-namespace vcpkg::Commands::FormatManifest
+namespace vcpkg::Commands::FormatPort
 {
     static constexpr StringLiteral OPTION_ALL = "all";
     static constexpr StringLiteral OPTION_CONVERT_CONTROL = "convert-control";
@@ -178,7 +179,7 @@ namespace vcpkg::Commands::FormatManifest
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"###(format-manifest --all)###"),
+        create_example_string(R"###(format-port --all)###"),
         0,
         SIZE_MAX,
         {FORMAT_SWITCHES, {}, {}},
@@ -190,6 +191,8 @@ namespace vcpkg::Commands::FormatManifest
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
         auto& fs = paths.get_filesystem();
+        CommandRegistryPaths registry_paths = resolve_command_registry_paths(fs, paths, args, Build::Editable::YES);
+
         bool has_error = false;
 
         const bool format_all = Util::Sets::contains(parsed_args.switches, OPTION_ALL);
@@ -197,7 +200,7 @@ namespace vcpkg::Commands::FormatManifest
 
         if (!format_all && convert_control)
         {
-            print2(Color::warning, R"(format-manifest was passed '--convert-control' without '--all'.
+            print2(Color::warning, R"(format-port was passed '--convert-control' without '--all'.
     This doesn't do anything:
     we will automatically convert all control files passed explicitly.)");
         }
@@ -218,28 +221,34 @@ namespace vcpkg::Commands::FormatManifest
                 has_error = true;
         };
 
-        for (Path path : args.command_arguments)
+        for (auto&& port_name : args.command_arguments)
         {
-            if (path.is_relative())
+            auto port_path = registry_paths.ports_directory_path / port_name;
+
+            if (!fs.exists(port_path, VCPKG_LINE_INFO))
             {
-                // TODO: Handle consistent port access 
-                path = paths.original_cwd / path;
+                vcpkg::printf(Color::error, "Error: Couldn't find required port `%s`\n.", port_name);
+                has_error = true;
+                continue;
             }
 
-            if (path.filename() == "CONTROL")
+            auto port_control_path = port_path / "CONTROL";
+            auto port_manifest_path = port_path / "vcpkg.json";
+
+            if (fs.exists(port_control_path, VCPKG_LINE_INFO))
             {
-                add_file(read_control_file(fs, std::move(path)));
+                add_file(read_control_file(fs, std::move(port_control_path)));
             }
             else
             {
-                add_file(read_manifest(fs, std::move(path)));
+                add_file(read_manifest(fs, std::move(port_manifest_path)));
             }
         }
 
         if (format_all)
         {
-            // TODO: Handle consistent port access 
-            for (const auto& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
+            for (const auto& dir :
+                 fs.get_directories_non_recursive(registry_paths.ports_directory_path, VCPKG_LINE_INFO))
             {
                 auto control_path = dir / "CONTROL";
                 auto manifest_path = dir / "vcpkg.json";
@@ -278,8 +287,8 @@ namespace vcpkg::Commands::FormatManifest
         }
     }
 
-    void FormatManifestCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void FormatPortCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
     {
-        FormatManifest::perform_and_exit(args, paths);
+        FormatPort::perform_and_exit(args, paths);
     }
 }
