@@ -343,15 +343,17 @@ int main(const int argc, const char* const* const argv)
     fflush(stdout);
     msg::println();
     LocalizedString data_blob;
-    data_blob.append_raw("Version=").append_raw(Commands::Version::version).appendnl();
-    data_blob.append_raw("EXCEPTION=").append_raw(exc_msg).appendnl();
-    data_blob.append_raw("CMD=").appendnl();
+    data_blob.append_raw("Version=")
+        .append_raw(Commands::Version::version)
+        .append_raw("\nEXCEPTION=")
+        .append_raw(exc_msg)
+        .append_raw("\nCMD=\n");
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
-        data_blob.append_raw(Strings::to_utf8(argv[x])).append_raw("|").appendnl();
+        data_blob.append_raw(Strings::to_utf8(argv[x])).append_raw("|\n");
 #else
-        data_blob.append_raw(argv[x]).append_raw("|").appendnl();
+        data_blob.append_raw(argv[x]).append_raw("|\n");
 #endif
     }
 

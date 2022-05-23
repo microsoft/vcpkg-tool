@@ -164,7 +164,7 @@ namespace vcpkg
         if (output.exit_code != 0)
         {
             return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-                .appendnl()
+                .append_raw('\n')
                 .append_raw(output.output);
         }
         return parse_git_status_output(output.output);

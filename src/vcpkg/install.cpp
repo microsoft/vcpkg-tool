@@ -397,7 +397,7 @@ namespace vcpkg::Install
                     LocalizedString warnings;
                     for (auto&& msg : action.build_failure_messages)
                     {
-                        warnings.append(msg).appendnl();
+                        warnings.append(msg).append_raw('\n');
                     }
                     if (!warnings.data().empty())
                     {
@@ -823,8 +823,8 @@ namespace vcpkg::Install
             }
             else
             {
-                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).appendnl();
-                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).appendnl();
+                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw('\n');
+                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
 
                 for (auto&& library_target_pair : library_targets)
                 {
@@ -832,7 +832,7 @@ namespace vcpkg::Install
                     msg.append_indent();
                     msg.append_fmt_raw("find_package({} CONFIG REQUIRED)",
                                        config_it == config_files.end() ? library_target_pair.first : config_it->second);
-                    msg.appendnl();
+                    msg.append_raw('\n');
 
                     auto& targets = library_target_pair.second;
                     Util::sort_unique_erase(targets, [](const std::string& l, const std::string& r) {
@@ -850,8 +850,7 @@ namespace vcpkg::Install
 
                     msg.append_indent()
                         .append_fmt_raw("target_link_libraries(main PRIVATE {})", Strings::join(" ", targets))
-                        .appendnl()
-                        .appendnl();
+                        .append_raw("\n\n");
                 }
 
                 ret.message = msg.extract_data();

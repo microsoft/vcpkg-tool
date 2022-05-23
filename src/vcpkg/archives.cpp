@@ -109,7 +109,7 @@ namespace
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
                 msg::format(msgMsiexecFailedToExtract, msg::path = archive, msg::exit_code = code_and_output.exit_code)
-                    .appendnl()
+                    .append_raw('\n')
                     .append_raw(code_and_output.output));
         }
     }

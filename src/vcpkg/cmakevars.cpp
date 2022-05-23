@@ -276,7 +276,7 @@ endfunction()
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
                 msg::format(msgCommandFailed, msg::command_line = cmd_launch_cmake.command_line())
-                    .appendnl()
+                    .append_raw('\n')
                     .append_raw(Strings::join(", ", lines)));
         }
 
