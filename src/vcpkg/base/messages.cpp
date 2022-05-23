@@ -343,12 +343,12 @@ namespace vcpkg::msg
         }
     }
 
-    void print_warning(const LocalizedString& s)
+    void println_warning(const LocalizedString& s)
     {
         print(Color::warning, format(msgWarningMessage).append(s).append_raw('\n'));
     }
 
-    void print_error(const LocalizedString& s)
+    void println_error(const LocalizedString& s)
     {
         print(Color::error, format(msgErrorMessage).append(s).append_raw('\n'));
     }

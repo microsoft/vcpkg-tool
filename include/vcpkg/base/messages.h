@@ -323,17 +323,17 @@ namespace vcpkg::msg
                     "",
                     "cannot specify both --no-{option} and --{option}.");
 
-    void print_warning(const LocalizedString& s);
+    void println_warning(const LocalizedString& s);
     template<class Message, class... Ts>
-    typename Message::is_message_type print_warning(Message m, Ts... args)
+    typename Message::is_message_type println_warning(Message m, Ts... args)
     {
-        print_warning(format(m, args...));
+        println_warning(format(m, args...));
     }
 
-    void print_error(const LocalizedString& s);
+    void println_error(const LocalizedString& s);
     template<class Message, class... Ts>
-    typename Message::is_message_type print_error(Message m, Ts... args)
+    typename Message::is_message_type println_error(Message m, Ts... args)
     {
-        print_error(format(m, args...));
+        println_error(format(m, args...));
     }
 }

@@ -466,11 +466,11 @@ namespace vcpkg::Build
         const auto toolset_list = Strings::join(
             ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); });
 
-        msg::print_error(msgUnsupportedToolchain,
-                         msg::triplet = triplet,
-                         msg::arch = target_architecture,
-                         msg::path = toolset.visual_studio_root_path,
-                         msg::list = toolset_list);
+        msg::println_error(msgUnsupportedToolchain,
+                           msg::triplet = triplet,
+                           msg::arch = target_architecture,
+                           msg::path = toolset.visual_studio_root_path,
+                           msg::list = toolset_list);
         msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }

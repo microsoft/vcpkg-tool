@@ -308,7 +308,7 @@ int main(const int argc, const char* const* const argv)
 
     if (args.send_metrics.value_or(false) && !to_enable_metrics)
     {
-        msg::print_warning(msgVcpkgSendMetricsButDisabled);
+        msg::println_warning(msgVcpkgSendMetricsButDisabled);
     }
 
     args.debug_print_feature_flags();

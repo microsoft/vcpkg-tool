@@ -220,39 +220,39 @@ namespace vcpkg::Commands
             if (msg.name != "ErrorMessage" && Strings::case_insensitive_ascii_starts_with(msg.value, "error:"))
             {
                 has_errors = true;
-                msg::print_error(msgErrorMessageMustUsePrintError, msg::value = msg.name);
+                msg::println_error(msgErrorMessageMustUsePrintError, msg::value = msg.name);
             }
 
             if (msg.name != "WarningMessage" && Strings::case_insensitive_ascii_starts_with(msg.value, "warning:"))
             {
                 has_errors = true;
-                msg::print_error(msgWarningMessageMustUsePrintWarning, msg::value = msg.name);
+                msg::println_error(msgWarningMessageMustUsePrintWarning, msg::value = msg.name);
             }
 
             if (Strings::contains(msg.value, "   "))
             {
                 has_errors = true;
-                msg::print_error(msgLocalizedMessageMustNotContainIndents, msg::value = msg.name);
+                msg::println_error(msgLocalizedMessageMustNotContainIndents, msg::value = msg.name);
             }
 
             if (!msg.value.empty() && msg.value.back() == '\n')
             {
                 has_errors = true;
-                msg::print_error(msgLocalizedMessageMustNotEndWithNewline, msg::value = msg.name);
+                msg::println_error(msgLocalizedMessageMustNotEndWithNewline, msg::value = msg.name);
             }
 
             auto mismatches = get_format_arg_mismatches(msg.value, msg.comment, format_string_parsing_error);
             if (!format_string_parsing_error.data().empty())
             {
                 has_errors = true;
-                msg::print_error(msg::format(msgGenerateMsgErrorParsingFormatArgs, msg::value = msg.name)
-                                     .append(format_string_parsing_error));
+                msg::println_error(msg::format(msgGenerateMsgErrorParsingFormatArgs, msg::value = msg.name)
+                                       .append(format_string_parsing_error));
             }
 
             if (!mismatches.arguments_without_comment.empty() || !mismatches.comments_without_argument.empty())
             {
                 has_errors = true;
-                msg::print_error(msgGenerateMsgIncorrectComment, msg::value = msg.name);
+                msg::println_error(msgGenerateMsgIncorrectComment, msg::value = msg.name);
 
                 for (const auto& arg : mismatches.arguments_without_comment)
                 {

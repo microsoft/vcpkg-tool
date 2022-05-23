@@ -925,18 +925,18 @@ namespace vcpkg::Install
             bool failure = false;
             if (!args.command_arguments.empty())
             {
-                msg::print_error(msgErrorIndividualPackagesUnsupported);
+                msg::println_error(msgErrorIndividualPackagesUnsupported);
                 msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
                 failure = true;
             }
             if (use_head_version)
             {
-                msg::print_error(msgErrorInvalidManifestModeOption, msg::option = OPTION_USE_HEAD_VERSION);
+                msg::println_error(msgErrorInvalidManifestModeOption, msg::option = OPTION_USE_HEAD_VERSION);
                 failure = true;
             }
             if (is_editable)
             {
-                msg::print_error(msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
+                msg::println_error(msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
                 failure = true;
             }
             if (failure)
@@ -952,17 +952,17 @@ namespace vcpkg::Install
             bool failure = false;
             if (args.command_arguments.empty())
             {
-                msg::print_error(msgErrorRequirePackagesList);
+                msg::println_error(msgErrorRequirePackagesList);
                 failure = true;
             }
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
-                msg::print_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
                 failure = true;
             }
             if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
             {
-                msg::print_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
                 failure = true;
             }
             if (failure)
