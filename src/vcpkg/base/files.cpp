@@ -2899,8 +2899,7 @@ namespace vcpkg
 #else // ^^^ (defined(__APPLE__) // !defined(__APPLE__) vvv
 
             destination_fd.fchmod(source_stat.st_mode, ec);
-            if (ec)
-                return false;
+            if (ec) return false;
 
 #if defined(__linux__)
             // https://man7.org/linux/man-pages/man2/sendfile.2.html#NOTES
@@ -2929,8 +2928,7 @@ namespace vcpkg
                 remaining_size -= this_send_actual;
             }
 
-            if (!ec)
-                return true;
+            if (!ec) return true;
             // Else fall back to read/write
             ec.clear();
 #endif // ^^^ defined(__linux__)
