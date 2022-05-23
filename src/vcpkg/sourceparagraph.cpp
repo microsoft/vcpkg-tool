@@ -1488,7 +1488,7 @@ namespace vcpkg
         // algorithm chunks groups of similarly-colored lines.
         const char* start_of_chunk = msg.data();
         const char* end_of_chunk = msg.data();
-        const char* const last = msg.data();
+        const char* const last = msg.data() + msg.size();
         while (end_of_chunk != last)
         {
             while (end_of_chunk != last && Strings::starts_with({end_of_chunk, last}, "Error"))
