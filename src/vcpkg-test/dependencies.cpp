@@ -26,10 +26,10 @@ struct MockBaselineProvider : PortFileProvider::IBaselineProvider
 {
     mutable std::map<std::string, Version, std::less<>> v;
 
-    Optional<Version> get_baseline_version(StringView name) const override
+    ExpectedL<Version> get_baseline_version(StringView name) const override
     {
         auto it = v.find(name);
-        if (it == v.end()) return nullopt;
+        if (it == v.end()) return LocalizedString::from_raw("error");
         return it->second;
     }
 };

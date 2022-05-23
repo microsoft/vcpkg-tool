@@ -76,7 +76,7 @@ namespace vcpkg::PortFileProvider
         }
         else
         {
-            return Strings::concat("Error: unable to get baseline for port ", spec);
+            return std::move(maybe_baseline).error().extract_data();
         }
     }
 
@@ -102,7 +102,7 @@ namespace vcpkg::PortFileProvider
             BaselineProviderImpl(const BaselineProviderImpl&) = delete;
             BaselineProviderImpl& operator=(const BaselineProviderImpl&) = delete;
 
-            virtual Optional<Version> get_baseline_version(StringView port_name) const override
+            virtual ExpectedL<Version> get_baseline_version(StringView port_name) const override
             {
                 auto it = m_baseline_cache.find(port_name);
                 if (it != m_baseline_cache.end())
@@ -119,7 +119,7 @@ namespace vcpkg::PortFileProvider
 
         private:
             const VcpkgPaths& paths;
-            mutable std::map<std::string, Optional<Version>, std::less<>> m_baseline_cache;
+            mutable std::map<std::string, ExpectedL<Version>, std::less<>> m_baseline_cache;
         };
 
         struct VersionedPortfileProviderImpl : IVersionedPortfileProvider
