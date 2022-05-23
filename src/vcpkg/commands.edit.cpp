@@ -87,7 +87,7 @@ namespace
             if (required_size == 0)
             {
                 msg::print_error(
-                    msg::format(msgEnvStrFailedToExtract).appendnl().append(LocalizedString::from_raw(input)));
+                    msg::format(msgEnvStrFailedToExtract).append_raw('\n').append(LocalizedString::from_raw(input)));
                 vcpkg::Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -261,7 +261,7 @@ namespace vcpkg::Commands::Edit
         if (it == candidate_paths.cend())
         {
             msg::print_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = "EDITOR")
-                                 .appendnl()
+                                 .append_raw('\n')
                                  .append(msgErrorVsCodeNotFoundPathExamined));
             print_paths(candidate_paths);
             msg::println(msgInfoSetEnvVar, msg::env_var = "EDITOR");
