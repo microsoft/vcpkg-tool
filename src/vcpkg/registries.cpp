@@ -86,11 +86,11 @@ namespace
         ExpectedL<Path> git_checkout_registry_port(StringView git_object) const
         {
             const auto destination = m_paths.registries_output() / git_object;
-            auto maybe_path = m_paths.get_git_impl().archive_and_extract_object(m_paths.git_registries_config(),
-                                                                                m_paths.get_filesystem(),
-                                                                                m_paths.get_tool_exe(Tools::CMAKE),
-                                                                                m_paths.registries_output(),
-                                                                                git_object);
+            auto maybe_path = m_paths.get_git_impl().splat_object(m_paths.git_registries_config(),
+                                                                  m_paths.get_filesystem(),
+                                                                  m_paths.get_tool_exe(Tools::CMAKE),
+                                                                  m_paths.registries_output(),
+                                                                  git_object);
             if (auto path = maybe_path.get())
             {
                 return *path;
@@ -703,7 +703,7 @@ namespace
             if (!maybe_contents.has_value())
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
-                auto maybe_fetch = git.git_fetch_from_remote_registry(
+                auto maybe_fetch = git.init_fetch(
                     m_paths.git_registries_config(), m_paths.get_filesystem(), m_repo, m_baseline_identifier);
                 if (!maybe_fetch.has_value())
                 {
@@ -808,11 +808,11 @@ namespace
 
         const auto destination = m_paths.versions_output() / port_name / git_tree;
 
-        auto maybe_path = m_paths.get_git_impl().archive_and_extract_object(m_paths.git_builtin_config(),
-                                                                            m_paths.get_filesystem(),
-                                                                            m_paths.get_tool_exe(Tools::CMAKE),
-                                                                            destination,
-                                                                            git_tree);
+        auto maybe_path = m_paths.get_git_impl().splat_object(m_paths.git_builtin_config(),
+                                                              m_paths.get_filesystem(),
+                                                              m_paths.get_tool_exe(Tools::CMAKE),
+                                                              destination,
+                                                              git_tree);
         if (auto path = maybe_path.get())
         {
             return PathAndLocation{
@@ -1192,8 +1192,8 @@ namespace vcpkg
         if (it == range.second)
         {
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
-            auto x = paths.get_git_impl().git_fetch_from_remote_registry(
-                paths.git_registries_config(), paths.get_filesystem(), repo, reference);
+            auto x =
+                paths.get_git_impl().init_fetch(paths.git_registries_config(), paths.get_filesystem(), repo, reference);
             it = lockdata.emplace(repo.to_string(),
                                   EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
             modified = true;
@@ -1209,10 +1209,10 @@ namespace vcpkg
             StringView reference(data->second.reference);
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
 
-            data->second.commit_id = paths.get_git_impl()
-                                         .git_fetch_from_remote_registry(
-                                             paths.git_registries_config(), paths.get_filesystem(), repo, reference)
-                                         .value_or_exit(VCPKG_LINE_INFO);
+            data->second.commit_id =
+                paths.get_git_impl()
+                    .init_fetch(paths.git_registries_config(), paths.get_filesystem(), repo, reference)
+                    .value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
             lockfile->modified = true;
         }
@@ -1305,6 +1305,25 @@ namespace vcpkg
                 return Strings::concat(
                     "Error: The baseline file at versions/baseline.json was invalid (no \"default\" field)");
             });
+    }
+
+    ExpectedL<std::map<std::string, std::string>> get_builtin_port_git_objects(const VcpkgPaths& paths)
+    {
+        const auto& git = paths.get_git_impl();
+        GitLsTreeOptions opts = {};
+        opts.dirs_only = true;
+        auto maybe_files = git.ls_tree(paths.git_builtin_config(), "HEAD:ports/", opts);
+        if (!maybe_files)
+        {
+            return maybe_files.error();
+        }
+
+        std::map<std::string, std::string> results;
+        for (auto&& file : maybe_files.value_or_exit(VCPKG_LINE_INFO))
+        {
+            results.emplace(file.path, file.git_object);
+        }
+        return results;
     }
 
     bool is_git_commit_sha(StringView sv)

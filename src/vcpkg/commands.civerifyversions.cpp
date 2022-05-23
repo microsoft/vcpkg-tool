@@ -295,7 +295,7 @@ namespace vcpkg::Commands::CIVerifyVersions
             exclusion_set.insert(exclusions.begin(), exclusions.end());
         }
 
-        auto maybe_port_git_tree_map = paths.get_git_impl().git_ports_tree_map(paths.git_builtin_config(), "HEAD");
+        auto maybe_port_git_tree_map = get_builtin_port_git_objects(paths);
         Checks::check_exit(VCPKG_LINE_INFO,
                            maybe_port_git_tree_map.has_value(),
                            "Fatal error: Failed to obtain git SHAs for local ports.\n%s",

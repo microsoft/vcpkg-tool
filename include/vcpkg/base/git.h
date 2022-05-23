@@ -50,19 +50,6 @@ namespace vcpkg
         std::string path;
     };
 
-    /* ===== Git command abstractions  =====*/
-
-    /* ==== Testable helpers =====*/
-    // Try to extract a port name from a path.
-    // The path should start with the "ports/" prefix
-    std::string try_extract_port_name_from_path(StringView path);
-
-    // attempts to parse git status output
-    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView git_status_output);
-
-    // attempts to parse git ls-tree output
-    ExpectedL<std::vector<GitLsTreeLine>> parse_git_ls_tree_output(StringView git_ls_tree_output);
-
     struct GitLsTreeOptions
     {
         StringView path;
@@ -86,10 +73,6 @@ namespace vcpkg
         /// \param rev Uses git revision syntax (e.g. <commit>[:<subpath>])
         virtual ExpectedL<std::string> rev_parse(const GitConfig& config, StringView rev) const = 0;
 
-        /// If destination exists, immediately returns.
-        /// \param rev Uses git revision syntax (e.g. <commit>[:<subpath>])
-        virtual ExpectedL<char> archive(const GitConfig& config, StringView rev, StringView destination) const = 0;
-
         /// \param rev Uses git revision syntax (e.g. <commit>[:<subpath>])
         virtual ExpectedL<std::string> show(const GitConfig& repo, StringView rev) const = 0;
 
@@ -100,39 +83,51 @@ namespace vcpkg
                                                               StringView rev,
                                                               GitLsTreeOptions options = {}) const = 0;
 
-        /// log "--format=%H %cd" --date=short --left-only -- <path>
+        /// Equivalent to 'git log "--format=%H %cd" --date=short --left-only -- <path>'
         virtual ExpectedL<std::vector<GitLogResult>> log(const GitConfig& config, StringView path) const = 0;
 
+        /// \param rev Commit to checkout files from
+        /// \param files Required list of files to checkout
         virtual ExpectedL<char> checkout(const GitConfig& config, StringView rev, View<StringView> files) const = 0;
 
         virtual ExpectedL<char> reset(const GitConfig& config) const = 0;
 
+        /// Determine if \c rev is in the git repo and points at a commit object
+        /// \returns The boolean value of  "is \c rev a commit object" on success.
         virtual ExpectedL<bool> is_commit(const GitConfig& config, StringView rev) const = 0;
 
-        // initializes a git repository
-        virtual ExpectedL<bool> init(const GitConfig& config) const = 0;
+        /// Atomically creates destination with contents of git tree object. If destination exists, assumes it has
+        /// correct contents
+        /// \param cmake_exe CMake executable to use for unpacking intermediate archive files
+        /// \param destination Directory to create with contents of tree
+        /// \param rev Uses git revision syntax (e.g. <commit>[:<subpath>] or <sha>)
+        /// \returns \c destination on success
+        virtual ExpectedL<Path> splat_object(const GitConfig& config,
+                                             Filesystem& fs,
+                                             const Path& cmake_exe,
+                                             const Path& destination,
+                                             StringView rev) const = 0;
 
-        // fetch a repository into the specified work tree
-        // the directory pointed at by config.work_tree should already exist
-        virtual ExpectedL<bool> fetch(const GitConfig& config, StringView uri, StringView ref) const = 0;
-
-        virtual ExpectedL<Path> archive_and_extract_object(const GitConfig& config,
-                                                           Filesystem& fs,
-                                                           const Path& cmake_exe,
-                                                           const Path& destination,
-                                                           StringView git_object) const = 0;
-
-        /* ===== Git application business logic =====*/
-        // runs 'git fetch {url} {treeish}' and returns the hash of FETCH_HEAD
-        // set {treeish} to HEAD for the default branch
-        virtual ExpectedL<std::string> git_fetch_from_remote_registry(const GitConfig& config,
-                                                                      Filesystem& fs,
-                                                                      StringView uri,
-                                                                      StringView ref) const = 0;
-
-        virtual ExpectedL<std::unordered_map<std::string, std::string>> git_ports_tree_map(const GitConfig& config,
-                                                                                           StringView ref) const = 0;
+        /// Runs 'git init && git fetch {uri} {rev}:<temporary>'.
+        /// \param uri URI to fetch.
+        /// \param rev Revision to fetch. Set to HEAD for the default branch.
+        /// \returns \c rev_parse of the fetched revision on success.
+        virtual ExpectedL<std::string> init_fetch(const GitConfig& config,
+                                                  Filesystem& fs,
+                                                  StringView uri,
+                                                  StringView rev) const = 0;
     };
 
     std::unique_ptr<IGit> make_git_from_exe(StringView git_exe);
+
+    /* ==== Testable helpers =====*/
+    // Try to extract a port name from a path.
+    // The path should start with the "ports/" prefix
+    std::string try_extract_port_name_from_path(StringView path);
+
+    // attempts to parse git status output
+    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView git_status_output);
+
+    // attempts to parse git ls-tree output
+    ExpectedL<std::vector<GitLsTreeLine>> parse_git_ls_tree_output(StringView git_ls_tree_output);
 }

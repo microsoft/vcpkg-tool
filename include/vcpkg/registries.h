@@ -154,6 +154,8 @@ namespace vcpkg
 
     ExpectedS<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
+    ExpectedL<std::map<std::string, std::string>> get_builtin_port_git_objects(const VcpkgPaths& paths);
+
     bool is_git_commit_sha(StringView sv);
 
     struct VersionDbEntry

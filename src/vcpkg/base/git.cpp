@@ -269,7 +269,9 @@ namespace vcpkg
             return execute_git_cmd(cmd).then(parse_git_status_output);
         }
 
-        virtual ExpectedL<char> archive(const GitConfig& config, StringView rev, StringView destination) const override
+        /// If destination exists, immediately returns.
+        /// \param rev Uses git revision syntax (e.g. <commit>[:<subpath>])
+        ExpectedL<char> archive(const GitConfig& config, StringView rev, StringView destination) const
         {
             const auto archive_cmd =
                 git_cmd(config).string_arg("archive").string_arg(rev).string_arg("-o").string_arg(destination);
@@ -285,7 +287,7 @@ namespace vcpkg
             }
         }
 
-        virtual ExpectedL<bool> init(const GitConfig& config) const override
+        ExpectedL<bool> init(const GitConfig& config) const
         {
             const auto cmd = git_cmd(config).string_arg("init");
             const auto output = cmd_execute_and_capture_output(cmd);
@@ -299,7 +301,9 @@ namespace vcpkg
             return true;
         }
 
-        virtual ExpectedL<bool> fetch(const GitConfig& config, StringView uri, StringView ref) const override
+        // fetch a repository into the specified work tree
+        // the directory pointed at by config.work_tree should already exist
+        ExpectedL<bool> fetch(const GitConfig& config, StringView uri, StringView ref) const
         {
             const auto cmd = git_cmd(config)
                                  .string_arg("fetch")
@@ -393,29 +397,10 @@ namespace vcpkg
             return execute_git_cmd(cmd).then(parse_git_ls_tree_output);
         }
 
-        virtual ExpectedL<std::unordered_map<std::string, std::string>> git_ports_tree_map(
-            const GitConfig& config, StringView ref) const override
-        {
-            GitLsTreeOptions opts = {};
-            opts.dirs_only = true;
-            auto maybe_files = ls_tree(config, Strings::concat(ref, ":ports/"), opts);
-            if (!maybe_files)
-            {
-                return maybe_files.error();
-            }
-
-            std::unordered_map<std::string, std::string> results;
-            for (auto&& file : maybe_files.value_or_exit(VCPKG_LINE_INFO))
-            {
-                results.emplace(file.path, file.git_object);
-            }
-            return results;
-        }
-
-        virtual ExpectedL<std::string> git_fetch_from_remote_registry(const GitConfig& config,
-                                                                      Filesystem& fs,
-                                                                      StringView uri,
-                                                                      StringView ref) const override
+        virtual ExpectedL<std::string> init_fetch(const GitConfig& config,
+                                                  Filesystem& fs,
+                                                  StringView uri,
+                                                  StringView ref) const override
         {
             // If a fetch has occurred or is occurring, we can skip initialization and locking.
             if (!fs.exists(config.git_dir / "FETCH_HEAD", IgnoreErrors{}))
@@ -442,11 +427,11 @@ namespace vcpkg
             return rev_parse(config, fetch_head_procid);
         }
 
-        virtual ExpectedL<Path> archive_and_extract_object(const GitConfig& config,
-                                                           Filesystem& fs,
-                                                           const Path& cmake_exe,
-                                                           const Path& destination,
-                                                           StringView git_object) const override
+        virtual ExpectedL<Path> splat_object(const GitConfig& config,
+                                             Filesystem& fs,
+                                             const Path& cmake_exe,
+                                             const Path& destination,
+                                             StringView git_object) const override
         {
             if (fs.exists(destination, IgnoreErrors{}))
             {

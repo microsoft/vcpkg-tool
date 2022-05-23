@@ -539,7 +539,7 @@ namespace vcpkg
     static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths, StringView url)
     {
         return paths.get_git_impl()
-            .git_fetch_from_remote_registry(paths.git_registries_config(), paths.get_filesystem(), url, "HEAD")
+            .init_fetch(paths.git_registries_config(), paths.get_filesystem(), url, "HEAD")
             .map([](std::string&& s) { return Optional<std::string>(std::move(s)); });
     }
 
