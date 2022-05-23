@@ -328,14 +328,11 @@ namespace
                 msg::print_warning(msg::format(msgAddVersionPortFilesShaUnchanged,
                                                msg::package_name = port_name,
                                                msg::version = found_same_sha->first.version)
-                                       .appendnl()
-                                       .append_raw("-- SHA: ")
+                                       .append_raw("\n-- SHA: ")
                                        .append_raw(git_tree)
-                                       .appendnl()
-                                       .append_raw("-- ")
+                                       .append_raw("\n-- ")
                                        .append(msgAddVersionCommitChangesReminder)
-                                       .appendnl()
-                                       .append_raw("***")
+                                       .append_raw("\n***")
                                        .append(msgAddVersionNoFilesUpdated)
                                        .append_raw("***"));
                 if (keep_going) return UpdateResult::NotUpdated;
@@ -353,18 +350,17 @@ namespace
                 {
                     msg::print_error(
                         msg::format(msgAddVersionPortFilesShaChanged, msg::package_name = port_name)
-                            .appendnl()
+                            .append_raw('\n')
                             .append(msgAddVersionVersionIs, msg::version = port_version.version)
-                            .appendnl()
+                            .append_raw('\n')
                             .append(msgAddVersionOldShaIs, msg::value = it->second)
-                            .appendnl()
+                            .append_raw('\n')
                             .append(msgAddVersionNewShaIs, msg::value = git_tree)
-                            .appendnl()
+                            .append_raw('\n')
                             .append(msgAddVersionUpdateVersionReminder)
-                            .appendnl()
+                            .append_raw('\n')
                             .append(msgAddVersionOverwriteOptionSuggestion, msg::option = OPTION_OVERWRITE_VERSION)
-                            .appendnl()
-                            .append_raw("***")
+                            .append_raw("\n***")
                             .append(msgAddVersionNoFilesUpdated)
                             .append_raw("***"));
                     if (keep_going) return UpdateResult::NotUpdated;
@@ -396,7 +392,7 @@ namespace
         }
 
         msg::print_error(msg::format(msgAddVersionUnableToParseVersionsFile, msg::path = version_db_file_path)
-                             .appendnl()
+                             .append_raw('\n')
                              .append_raw(maybe_versions.error()));
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
@@ -523,11 +519,11 @@ namespace vcpkg::Commands::AddVersion
                         auto command_line = fmt::format("vcpkg format-manifest ports/{}/vcpkg.json", port_name);
                         msg::print_error(
                             msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
-                                .appendnl()
+                                .append_raw('\n')
                                 .append(msgAddVersionFormatPortSuggestion, msg::command_line = command_line)
-                                .appendnl()
+                                .append_raw('\n')
                                 .append(msgAddVersionCommitResultReminder)
-                                .appendnl());
+                                .append_raw('\n'));
                         Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                         continue;
                     }
@@ -546,11 +542,9 @@ namespace vcpkg::Commands::AddVersion
             if (git_tree_it == git_tree_map.end())
             {
                 msg::print_warning(msg::format(msgAddVersionNoGitSha, msg::package_name = port_name)
-                                       .appendnl()
-                                       .append_raw("-- ")
+                                       .append_raw("\n-- ")
                                        .append(msgAddVersionCommitChangesReminder)
-                                       .appendnl()
-                                       .append_raw("***")
+                                       .append_raw("\n***")
                                        .append(msgAddVersionNoFilesUpdated)
                                        .append_raw("***"));
                 if (add_all) continue;

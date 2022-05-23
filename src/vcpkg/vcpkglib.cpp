@@ -221,7 +221,7 @@ namespace vcpkg
         return installed_files;
     }
 
-    std::string shorten_text(const std::string& desc, const size_t length)
+    std::string shorten_text(StringView desc, const size_t length)
     {
         Checks::check_exit(VCPKG_LINE_INFO, length >= 3);
         std::string simple_desc;

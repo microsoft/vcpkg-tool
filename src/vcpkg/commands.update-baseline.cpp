@@ -80,7 +80,7 @@ namespace vcpkg::Commands
         // this isn't an error, since we want to continue attempting to update baselines
         msg::print_warning(
             msg::format(msgUpdateBaselineNoUpdate, msg::url = url, msg::value = reg.baseline.value_or(""))
-                .appendnl()
+                .append_raw('\n')
                 .append(new_baseline_res.error()));
     }
 

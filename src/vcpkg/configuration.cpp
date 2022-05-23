@@ -554,7 +554,7 @@ namespace vcpkg
         else
         {
             return msg::format(msgUpdateBaselineRemoteGitError, msg::url = url)
-                .appendnl()
+                .append_raw('\n')
                 .append_raw(Strings::trim(res.error()));
         }
     }
@@ -582,7 +582,7 @@ namespace vcpkg
                 else
                 {
                     return msg::format(msgUpdateBaselineLocalGitError, msg::path = paths.root)
-                        .appendnl()
+                        .append_raw('\n')
                         .append_raw(Strings::trim(res.error()));
                 }
             }
