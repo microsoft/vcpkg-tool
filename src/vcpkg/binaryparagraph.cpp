@@ -210,7 +210,7 @@ namespace vcpkg
     static void serialize_array(StringView name,
                                 const std::vector<std::string>& array,
                                 std::string& out_str,
-                                const char* joiner = ", ")
+                                StringLiteral joiner = ", ")
     {
         if (array.empty())
         {
