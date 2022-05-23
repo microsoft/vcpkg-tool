@@ -82,7 +82,7 @@ namespace vcpkg
 
         Path package_dir(const PackageSpec& spec) const;
         Path build_dir(const PackageSpec& spec) const;
-        Path build_dir(const std::string& package_name) const;
+        Path build_dir(StringView package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
         Path spdx_resource_dir(const PackageSpec& spec) const;
 
@@ -139,7 +139,7 @@ namespace vcpkg
         ExpectedS<std::string> get_current_git_sha() const;
         std::string get_current_git_sha_baseline_message() const;
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
-        ExpectedS<std::string> git_show(const std::string& treeish, const Path& dot_git_dir) const;
+        ExpectedS<std::string> git_show(StringView treeish, const Path& dot_git_dir) const;
 
         const DownloadManager& get_download_manager() const;
 

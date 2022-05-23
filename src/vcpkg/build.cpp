@@ -402,7 +402,7 @@ namespace vcpkg::Build
         }
     }
 
-    Optional<LinkageType> to_linkage_type(const std::string& str)
+    Optional<LinkageType> to_linkage_type(StringView str)
     {
         if (str == "dynamic") return LinkageType::DYNAMIC;
         if (str == "static") return LinkageType::STATIC;
