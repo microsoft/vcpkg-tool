@@ -25,7 +25,7 @@ namespace vcpkg
 
     void serialize_schemed_version(Json::Object& out_obj,
                                    VersionScheme scheme,
-                                   const std::string& version,
+                                   StringView version,
                                    int port_version,
                                    bool always_emit_port_version = false);
 }

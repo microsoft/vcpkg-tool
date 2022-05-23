@@ -40,7 +40,11 @@ namespace vcpkg
         {
             return LocalizedString(StringView(s));
         }
-
+        LocalizedString& append_raw(char c)
+        {
+            m_data.push_back(c);
+            return *this;
+        }
         LocalizedString& append_raw(StringView s)
         {
             m_data.append(s.begin(), s.size());
@@ -63,11 +67,6 @@ namespace vcpkg
             return append(msg::format(m, args...));
         }
 
-        LocalizedString& appendnl()
-        {
-            m_data.push_back('\n');
-            return *this;
-        }
         LocalizedString& append_indent(size_t indent = 1)
         {
             m_data.append(indent * 4, ' ');
@@ -210,7 +209,7 @@ namespace vcpkg::msg
     template<class Message, class... Ts>
     void println(Message m, Ts... args)
     {
-        print(format(m, args...).appendnl());
+        print(format(m, args...).append_raw('\n'));
     }
 
     template<class Message, class... Ts>
@@ -221,7 +220,7 @@ namespace vcpkg::msg
     template<class Message, class... Ts>
     void println(Color c, Message m, Ts... args)
     {
-        print(c, format(m, args...).appendnl());
+        print(c, format(m, args...).append_raw('\n'));
     }
 
 // these use `constexpr static` instead of `inline` in order to work with GCC 6;
@@ -323,21 +322,21 @@ namespace vcpkg::msg
 
     inline void print_warning(const LocalizedString& s)
     {
-        print(Color::warning, format(msgWarningMessage).append(s).appendnl());
+        print(Color::warning, format(msgWarningMessage).append(s).append_raw('\n'));
     }
     template<class Message, class... Ts>
     typename Message::is_message_type print_warning(Message m, Ts... args)
     {
-        print(Color::warning, format(msgWarningMessage).append(format(m, args...).appendnl()));
+        print(Color::warning, format(msgWarningMessage).append(format(m, args...).append_raw('\n')));
     }
 
     inline void print_error(const LocalizedString& s)
     {
-        print(Color::error, format(msgErrorMessage).append(s).appendnl());
+        print(Color::error, format(msgErrorMessage).append(s).append_raw('\n'));
     }
     template<class Message, class... Ts>
     typename Message::is_message_type print_error(Message m, Ts... args)
     {
-        print(Color::error, format(msgErrorMessage).append(format(m, args...).appendnl()));
+        print(Color::error, format(msgErrorMessage).append(format(m, args...).append_raw('\n')));
     }
 }

@@ -268,7 +268,7 @@ namespace vcpkg::Build
             LocalizedString errorMsg = msg::format(msg::msgErrorMessage).append(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
-                errorMsg.append_indent().append_raw(p.to_string()).appendnl();
+                errorMsg.append_indent().append_raw(p.to_string()).append_raw('\n');
             }
 
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);
@@ -281,7 +281,7 @@ namespace vcpkg::Build
             LocalizedString warnings;
             for (auto&& msg : action->build_failure_messages)
             {
-                warnings.append(msg).appendnl();
+                warnings.append(msg).append_raw('\n');
             }
             if (!warnings.data().empty())
             {
@@ -402,7 +402,7 @@ namespace vcpkg::Build
         }
     }
 
-    Optional<LinkageType> to_linkage_type(const std::string& str)
+    Optional<LinkageType> to_linkage_type(StringView str)
     {
         if (str == "dynamic") return LinkageType::DYNAMIC;
         if (str == "static") return LinkageType::STATIC;
@@ -1548,34 +1548,34 @@ namespace vcpkg::Build
 
         if (build_result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            res.appendnl().append_indent().append(msgBuildingPackageFailedDueToMissingDeps);
+            res.append_raw('\n').append_indent().append(msgBuildingPackageFailedDueToMissingDeps);
 
             for (const auto& missing_spec : build_result.unmet_dependencies)
             {
-                res.appendnl().append_indent(2).append_raw(missing_spec.to_string());
+                res.append_raw('\n').append_indent(2).append_raw(missing_spec.to_string());
             }
         }
 
-        res.appendnl();
+        res.append_raw('\n');
         return res;
     }
 
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
     {
         const auto& spec_name = action.spec.name();
-        LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).appendnl();
+        LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
         result.append_indent()
             .append_raw("https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+")
             .append_raw(spec_name)
-            .appendnl();
-        result.append(msgBuildTroubleshootingMessage2).appendnl();
+            .append_raw('\n');
+        result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
         result.append_indent()
             .append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
                             "new?template=report-package-build-failure.md&title=[{}]+Build+error",
                             spec_name)
-            .appendnl();
-        result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).appendnl();
-        result.append_raw(paths.get_toolver_diagnostics()).appendnl();
+            .append_raw('\n');
+        result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
+        result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
         return result;
     }
 

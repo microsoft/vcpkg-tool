@@ -252,9 +252,9 @@ namespace vcpkg
     }
 
     void verify_downloaded_file_hash(const Filesystem& fs,
-                                     const std::string& url,
+                                     StringView url,
                                      const Path& downloaded_path,
-                                     const std::string& sha512)
+                                     StringView sha512)
     {
         auto maybe_error = try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512);
         if (auto err = maybe_error.get())

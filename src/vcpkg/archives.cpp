@@ -109,7 +109,7 @@ namespace
             Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
                 msg::format(msgMsiexecFailedToExtract, msg::path = archive, msg::exit_code = code_and_output.exit_code)
-                    .appendnl()
+                    .append_raw('\n')
                     .append_raw(code_and_output.output));
         }
     }
@@ -259,7 +259,7 @@ namespace vcpkg
         const auto code =
             cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive),
                         WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "tar failed while extracting %s", archive);
+        Checks::check_exit(VCPKG_LINE_INFO, code == 0, "CMake failed while extracting %s", archive);
     }
 
     void extract_archive(Filesystem& fs, const ToolCache& tools, const Path& archive, const Path& to_path)

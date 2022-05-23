@@ -708,7 +708,7 @@ namespace vcpkg
 
     Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
     Path VcpkgPaths::build_dir(const PackageSpec& spec) const { return this->buildtrees() / spec.name(); }
-    Path VcpkgPaths::build_dir(const std::string& package_name) const { return this->buildtrees() / package_name; }
+    Path VcpkgPaths::build_dir(StringView package_name) const { return this->buildtrees() / package_name.data(); }
 
     Path VcpkgPaths::build_info_file_path(const PackageSpec& spec) const
     {
@@ -1007,7 +1007,7 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<std::string> VcpkgPaths::git_show(const std::string& treeish, const Path& dot_git_dir) const
+    ExpectedS<std::string> VcpkgPaths::git_show(StringView treeish, const Path& dot_git_dir) const
     {
         // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
         // git clone --no-checkout --local {vcpkg_root} {dot_git_dir}

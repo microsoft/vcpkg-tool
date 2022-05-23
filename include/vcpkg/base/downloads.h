@@ -26,9 +26,9 @@ namespace vcpkg
     }
 
     void verify_downloaded_file_hash(const Filesystem& fs,
-                                     const std::string& sanitized_url,
+                                     StringView sanitized_url,
                                      const Path& downloaded_path,
-                                     const std::string& sha512);
+                                     StringView sha512);
 
     View<std::string> azure_blob_headers();
 
