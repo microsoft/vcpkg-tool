@@ -1471,6 +1471,12 @@ namespace vcpkg
         return message;
     }
 
+    static const char* after_nl(const char* first, const char* last)
+    {
+        const auto it = std::find(first, last, '\n');
+        return it == last ? last : it + 1;
+    }
+
     void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
     {
         auto msg = ParseControlErrorInfo::format_errors(error_info_list);
@@ -1480,26 +1486,30 @@ namespace vcpkg
 
         // To minimize the number of print calls on Windows (which is a significant performance bottleneck), this
         // algorithm chunks groups of similarly-colored lines.
-        auto lines = Strings::split(msg, '\n');
-        const std::string* const data = lines.data();
-        size_t i = 0, j = 0;
-        while (j != lines.size())
+        const char* start_of_chunk = msg.data();
+        const char* end_of_chunk = msg.data();
+        const char* const last = msg.data();
+        while (end_of_chunk != last)
         {
-            while (j != lines.size() && Strings::starts_with(data[j], "Error"))
-                ++j;
-            if (i != j)
+            while (end_of_chunk != last && Strings::starts_with({end_of_chunk, last}, "Error"))
             {
-                print2(Color::error, Strings::join("\n", View<std::string>(data + i, data + j)));
+                end_of_chunk = after_nl(end_of_chunk, last);
             }
-            i = j;
+            if (start_of_chunk != end_of_chunk)
+            {
+                print2(Color::error, StringView{start_of_chunk, end_of_chunk});
+                start_of_chunk = end_of_chunk;
+            }
 
-            while (j != lines.size() && !Strings::starts_with(data[j], "Error"))
-                ++j;
-            if (i != j)
+            while (end_of_chunk != last && !Strings::starts_with({end_of_chunk, last}, "Error"))
             {
-                print2(Strings::join("\n", View<std::string>(data + i, data + j)));
+                end_of_chunk = after_nl(end_of_chunk, last);
             }
-            i = j;
+            if (start_of_chunk != end_of_chunk)
+            {
+                print2(StringView{start_of_chunk, end_of_chunk});
+                start_of_chunk = end_of_chunk;
+            }
         }
     }
 
