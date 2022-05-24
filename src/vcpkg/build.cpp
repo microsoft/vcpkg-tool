@@ -406,7 +406,7 @@ namespace vcpkg::Build
 
     decltype(ALL_POLICIES) ALL_POLICIES = generate_all_policies();
 
-    static constexpr StringLiteral to_string(BuildPolicy policy)
+    constexpr StringLiteral to_string(BuildPolicy policy)
     {
         switch (policy)
         {
@@ -449,7 +449,7 @@ namespace vcpkg::Build
     static constexpr StringLiteral NAME_BUILD_IN_DOWNLOAD = "BUILT_IN";
     static constexpr StringLiteral NAME_ARIA2_DOWNLOAD = "ARIA2";
 
-    static constexpr StringLiteral to_string(DownloadTool tool)
+    constexpr StringLiteral to_string(DownloadTool tool)
     {
         switch (tool)
         {
