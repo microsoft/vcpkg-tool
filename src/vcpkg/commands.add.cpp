@@ -30,12 +30,12 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(AddTripletExpressionNotAllowed,
                                  (msg::package_name, msg::triplet),
                                  "",
-                                 "Error: triplet expressions are not allowed here. You may want to change "
+                                 "triplet expressions are not allowed here. You may want to change "
                                  "`{package_name}:{triplet}` to `{package_name}` instead.");
     DECLARE_AND_REGISTER_MESSAGE(AddFirstArgument,
                                  (msg::command_line),
                                  "",
-                                 "The first argument to '{command_line}' must be 'artifact' or 'port'.\n");
+                                 "The first argument to '{command_line}' must be 'artifact' or 'port'.");
 
     DECLARE_AND_REGISTER_MESSAGE(AddPortSucceded, (), "", "Succeeded in adding ports to vcpkg.json file.");
     DECLARE_AND_REGISTER_MESSAGE(AddPortRequiresManifest,
@@ -92,10 +92,10 @@ namespace vcpkg::Commands
                     parse_qualified_specifier(args.command_arguments[idx]).value_or_exit(VCPKG_LINE_INFO);
                 if (const auto t = value.triplet.get())
                 {
-                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                                  msgAddTripletExpressionNotAllowed,
-                                                  msg::package_name = value.name,
-                                                  msg::triplet = *t);
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                msgAddTripletExpressionNotAllowed,
+                                                msg::package_name = value.name,
+                                                msg::triplet = *t);
                 }
 
                 specs.push_back(std::move(value));

@@ -218,9 +218,9 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(ErrorRequireBaseline,
                                  (),
                                  "",
-                                 "Error: this vcpkg instance requires a manifest with a specified baseline in order to "
+                                 "this vcpkg instance requires a manifest with a specified baseline in order to "
                                  "interact with ports. Please add 'builtin-baseline' to the manifest or add a "
-                                 "'vcpkg-configuration.json' that redefines the default registry.\n");
+                                 "'vcpkg-configuration.json' that redefines the default registry.");
 
     // This registry implementation is the builtin registry without a baseline
     // that will only consult files in ports
@@ -246,12 +246,6 @@ namespace
         DelayedInit<Baseline> m_baseline;
 
     private:
-        [[noreturn]] static void fail_require_baseline(LineInfo li)
-        {
-            msg::println(Color::error, msgErrorRequireBaseline);
-            Checks::exit_fail(li);
-        }
-
         const ParseExpected<SourceControlFile>& get_scf(const Path& path) const
         {
             return m_scfs.get_lazy(path, [this, &path]() { return Paragraphs::try_load_port(m_fs, path); });
@@ -306,21 +300,20 @@ namespace
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override
         {
-            fail_require_baseline(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
         }
 
-        void get_all_port_names(std::vector<std::string>&) const override { fail_require_baseline(VCPKG_LINE_INFO); }
+        void get_all_port_names(std::vector<std::string>&) const override
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
+        }
 
-        ExpectedL<Version> get_baseline_version(StringView) const override { fail_require_baseline(VCPKG_LINE_INFO); }
+        ExpectedL<Version> get_baseline_version(StringView) const override
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
+        }
 
         ~BuiltinErrorRegistry() = default;
-
-    private:
-        [[noreturn]] static void fail_require_baseline(LineInfo li)
-        {
-            msg::println(Color::error, msgErrorRequireBaseline);
-            Checks::exit_fail(li);
-        }
     };
     constexpr StringLiteral BuiltinErrorRegistry::s_kind;
 

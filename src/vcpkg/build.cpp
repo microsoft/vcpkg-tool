@@ -61,7 +61,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(BuildResultSummaryLine,
                                  (msg::build_result, msg::count),
                                  "Displayed to show a count of results of a build_result in a summary.",
-                                 "    {build_result}: {count}");
+                                 "{build_result}: {count}");
 
     DECLARE_AND_REGISTER_MESSAGE(
         BuildResultSucceeded,
@@ -143,7 +143,7 @@ namespace
                                  (),
                                  "",
                                  "The build command requires all dependencies to be already installed.\nThe following "
-                                 "dependencies are missing:\n\n");
+                                 "dependencies are missing:");
 
     DECLARE_AND_REGISTER_MESSAGE(
         BuildTroubleshootingMessage1,
@@ -268,7 +268,7 @@ namespace vcpkg::Build
             LocalizedString errorMsg = msg::format(msg::msgErrorMessage).append(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
-                errorMsg.append_indent().append_raw(p.to_string()).append_raw('\n');
+                errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
             }
 
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);
@@ -419,16 +419,15 @@ namespace vcpkg::Build
         UnsupportedToolchain,
         (msg::triplet, msg::arch, msg::path, msg::list),
         "example for {list} is 'x86, arm64'",
-        "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
-        "architecture was {arch}\n    "
-        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
+        "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\n"
+        "The selected Visual Studio instance is at: {path}\n"
+        "The available toolchain combinations are: {list}");
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        UnsupportedSystemName,
-        (msg::system_name),
-        "",
-        "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
-        "Supported system names are '', 'Windows' and 'WindowsStore'.");
+    DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
+                                 (msg::system_name),
+                                 "",
+                                 "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
+                                 "Supported system names are '', 'Windows' and 'WindowsStore'.");
 
 #if defined(_WIN32)
     static ZStringView to_vcvarsall_target(const std::string& cmake_system_name)
@@ -437,9 +436,7 @@ namespace vcpkg::Build
         if (cmake_system_name == "Windows") return "";
         if (cmake_system_name == "WindowsStore") return "store";
 
-        msg::println(Color::error, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
-
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
     }
 
     static ZStringView to_vcvarsall_toolchain(const std::string& target_architecture,
@@ -469,11 +466,11 @@ namespace vcpkg::Build
         const auto toolset_list = Strings::join(
             ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); });
 
-        msg::println(msgUnsupportedToolchain,
-                     msg::triplet = triplet,
-                     msg::arch = target_architecture,
-                     msg::path = toolset.visual_studio_root_path,
-                     msg::list = toolset_list);
+        msg::println_error(msgUnsupportedToolchain,
+                           msg::triplet = triplet,
+                           msg::arch = target_architecture,
+                           msg::path = toolset.visual_studio_root_path,
+                           msg::list = toolset_list);
         msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
@@ -1484,8 +1481,8 @@ namespace vcpkg::Build
     {
         if (count != 0)
         {
-            msg::println(
-                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count);
+            msg::println(LocalizedString().append_indent().append(
+                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count));
         }
     }
 

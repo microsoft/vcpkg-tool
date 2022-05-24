@@ -860,36 +860,30 @@ namespace vcpkg::Install
         return ret;
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(ErrorRequirePackagesToInstall,
-                                 (),
-                                 "",
-                                 "Error: No packages were listed for installation and no manifest was found.");
-
     DECLARE_AND_REGISTER_MESSAGE(
         ErrorIndividualPackagesUnsupported,
         (),
         "",
-        "Error: In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
+        "In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
         "additional "
         "packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorRequirePackagesList,
                                  (),
                                  "",
-                                 "Error: `vcpkg install` requires a list of packages to install in classic mode.");
+                                 "`vcpkg install` requires a list of packages to install in classic mode.");
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorInvalidClassicModeOption,
-        (msg::option),
-        "",
-        "Error: The option --{option} is not supported in classic mode and no manifest was found.");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidClassicModeOption,
+                                 (msg::option),
+                                 "",
+                                 "The option --{option} is not supported in classic mode and no manifest was found.");
 
     DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
                                  (msg::option),
                                  "",
-                                 "Error: The option --{option} is not supported in manifest mode.");
+                                 "The option --{option} is not supported in manifest mode.");
 
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
@@ -931,18 +925,18 @@ namespace vcpkg::Install
             bool failure = false;
             if (!args.command_arguments.empty())
             {
-                msg::println(Color::error, msgErrorIndividualPackagesUnsupported);
+                msg::println_error(msgErrorIndividualPackagesUnsupported);
                 msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
                 failure = true;
             }
             if (use_head_version)
             {
-                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_USE_HEAD_VERSION);
+                msg::println_error(msgErrorInvalidManifestModeOption, msg::option = OPTION_USE_HEAD_VERSION);
                 failure = true;
             }
             if (is_editable)
             {
-                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
+                msg::println_error(msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
                 failure = true;
             }
             if (failure)
@@ -958,18 +952,17 @@ namespace vcpkg::Install
             bool failure = false;
             if (args.command_arguments.empty())
             {
-                msg::println(Color::error, msgErrorRequirePackagesList);
+                msg::println_error(msgErrorRequirePackagesList);
                 failure = true;
             }
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
-                msg::println(
-                    Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
                 failure = true;
             }
             if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
             {
-                msg::println(Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
                 failure = true;
             }
             if (failure)
