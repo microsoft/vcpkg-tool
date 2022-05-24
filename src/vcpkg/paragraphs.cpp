@@ -270,7 +270,7 @@ namespace vcpkg::Paragraphs
 
     static ParseExpected<SourceControlFile> try_load_manifest_text(StringView text, StringView origin)
     {
-        auto res = Json::parse(text);
+        auto res = Json::parse(text, origin);
 
         std::string error;
         if (auto val = res.get())

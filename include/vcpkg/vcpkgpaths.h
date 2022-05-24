@@ -82,7 +82,7 @@ namespace vcpkg
 
         Path package_dir(const PackageSpec& spec) const;
         Path build_dir(const PackageSpec& spec) const;
-        Path build_dir(const std::string& package_name) const;
+        Path build_dir(StringView package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
         Path spdx_resource_dir(const PackageSpec& spec) const;
 

@@ -40,14 +40,13 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(VcpkgSendMetricsButDisabled,
                                  (),
                                  "",
-                                 "Warning: passed --sendmetrics, but metrics are disabled.");
-    DECLARE_AND_REGISTER_MESSAGE(VcpkgHasCrashed,
-                                 (msg::email),
-                                 "",
-                                 R"(vcpkg.exe has crashed.
-Please send an email to:
-    {email}
-containing a brief summary of what you were trying to do and the following data blob:)");
+                                 "passed --sendmetrics, but metrics are disabled.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        VcpkgHasCrashed,
+        (),
+        "Printed at the start of a crash report.",
+        "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
+        "what you were trying to do and the following information.");
     DECLARE_AND_REGISTER_MESSAGE(
         ForceSystemBinariesOnWeirdPlatforms,
         (),
@@ -309,7 +308,7 @@ int main(const int argc, const char* const* const argv)
 
     if (args.send_metrics.value_or(false) && !to_enable_metrics)
     {
-        msg::println(Color::warning, msgVcpkgSendMetricsButDisabled);
+        msg::println_warning(msgVcpkgSendMetricsButDisabled);
     }
 
     args.debug_print_feature_flags();
@@ -339,19 +338,21 @@ int main(const int argc, const char* const* const argv)
     LockGuardPtr<Metrics>(g_metrics)->track_property("error", exc_msg);
 
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashed, msg::email = Commands::Contact::email());
+    msg::println(msgVcpkgHasCrashed);
     fflush(stdout);
     msg::println();
     LocalizedString data_blob;
-    data_blob.append_raw("Version=").append_raw(Commands::Version::version).appendnl();
-    data_blob.append_raw("EXCEPTION=").append_raw(exc_msg).appendnl();
-    data_blob.append_raw("CMD=").appendnl();
+    data_blob.append_raw("Version=")
+        .append_raw(Commands::Version::version)
+        .append_raw("\nEXCEPTION=")
+        .append_raw(exc_msg)
+        .append_raw("\nCMD=\n");
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
-        data_blob.append_raw(Strings::to_utf8(argv[x])).append_raw("|").appendnl();
+        data_blob.append_raw(Strings::to_utf8(argv[x])).append_raw("|\n");
 #else
-        data_blob.append_raw(argv[x]).append_raw("|").appendnl();
+        data_blob.append_raw(argv[x]).append_raw("|\n");
 #endif
     }
 

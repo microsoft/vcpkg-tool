@@ -69,7 +69,7 @@ namespace vcpkg
 {
     int run_configure_environment_command(const VcpkgPaths& paths, View<std::string> args)
     {
-        msg::print_warning(msgVcpkgCeIsExperimental);
+        msg::println_warning(msgVcpkgCeIsExperimental);
         auto& fs = paths.get_filesystem();
         auto& download_manager = paths.get_download_manager();
         auto node_path = paths.get_tool_exe(Tools::NODE);

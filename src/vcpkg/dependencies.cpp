@@ -241,7 +241,7 @@ namespace vcpkg::Dependencies
                 {
                     Checks::exit_maybe_upgrade(
                         VCPKG_LINE_INFO,
-                        "Error: while loading control file for %s: %s.\nPlease run \"%s remove %s\" and re-attempt.",
+                        "Error: while loading control file for %s:\n%s\nPlease run \"%s remove %s\" and re-attempt.",
                         m_spec,
                         m_scfl.error(),
                         vcpkg_remove_cmd,
@@ -1377,7 +1377,7 @@ namespace vcpkg::Dependencies
                                 VersionSchemeInfo& vsi,
                                 const std::string& feature);
 
-            Optional<Version> dep_to_version(const std::string& name, const DependencyConstraint& dc);
+            ExpectedL<Version> dep_to_version(const std::string& name, const DependencyConstraint& dc);
 
             static std::string format_incomparable_versions_message(const PackageSpec& on,
                                                                     StringView from,
@@ -1667,7 +1667,8 @@ namespace vcpkg::Dependencies
             return *m_graph.emplace(spec, PackageNode{}).first;
         }
 
-        Optional<Version> VersionedPackageGraph::dep_to_version(const std::string& name, const DependencyConstraint& dc)
+        ExpectedL<Version> VersionedPackageGraph::dep_to_version(const std::string& name,
+                                                                 const DependencyConstraint& dc)
         {
             auto maybe_overlay = m_o_provider.get_control_file(name);
             if (auto p_overlay = maybe_overlay.get())
@@ -1681,10 +1682,10 @@ namespace vcpkg::Dependencies
                 return over_it->second;
             }
 
-            const auto maybe_cons = dc.try_get_minimum_version();
-            if (maybe_cons)
+            auto maybe_cons = dc.try_get_minimum_version();
+            if (auto p = maybe_cons.get())
             {
-                return maybe_cons;
+                return std::move(*p);
             }
 
             return m_base_provider.get_baseline_version(name);

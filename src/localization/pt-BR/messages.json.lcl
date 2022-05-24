@@ -616,6 +616,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CommandFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[command:]A;{command_line}]A;failed with the following results:]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[comando:]A;{command_line}]A;falhou com os seguintes resultados:]A;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
@@ -630,6 +639,15 @@
           <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[curl relatou resultados inesperados para vcpkg e vcpkg não pode continuar.]A;Verifique o seguinte texto para obter informações confidenciais e abra um problema no GitHub Microsoft Corporations/vcpkg para ajudar a corrigir esse problema!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadAvailable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A downloadable copy of this tool is available and can be used by unsetting {env_var}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Uma cópia para download desta ferramenta está disponível e pode ser usada desativando {env_var}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1014,6 +1032,33 @@
           <Val><![CDATA[error: Platform qualifier is not allowed in this context]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[erro: qualificador de plataforma não é permitido nesse contexto]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallWithSystemManager" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You may be able to install this tool via your system package manager.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Você pode instalar esta ferramenta através do gerenciador de pacotes do sistema.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallWithSystemManagerMono" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Ubuntu 18.04 users may need a newer version of mono, available at {url}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Os usuários do Ubuntu 18.04 podem precisar de uma versão mais recente do mono, disponível em {url}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallWithSystemManagerPkg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You may be able to install this tool via your system package manager ({command_line}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Você pode instalar esta ferramenta através do gerenciador de pacotes do sistema ({command_line}).]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1456,6 +1501,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ToolFetchFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not fetch {tool_name}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Não foi possível buscar {tool_name}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ToolInWin10" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[This utility is bundled with Windows 10 or later.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Este utilitário é fornecido com o Windows 10 ou posterior.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedErrorDuringBulkDownload" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[an unexpected error occurred during bulk download.]]></Val>
@@ -1479,6 +1542,15 @@
           <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[tipo de provedor binário desconhecido: provedores válidos são 'clear', 'default', 'nuget', 'nugetconfig', 'interactive' e 'files']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownTool" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg does not have a definition of this tool for this platform.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg não possui uma definição desta ferramenta para esta plataforma.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

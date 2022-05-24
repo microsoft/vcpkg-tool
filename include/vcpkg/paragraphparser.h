@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/messages.h>
+
 #include <vcpkg/fwd/paragraphparser.h>
 
 #include <vcpkg/base/expected.h>
@@ -30,6 +32,8 @@ namespace vcpkg
             return !missing_fields.empty() || !extra_fields.empty() || !expected_types.empty() ||
                    !other_errors.empty() || !error.empty();
         }
+
+        static std::string format_errors(View<std::unique_ptr<ParseControlErrorInfo>> errors);
     };
 
     template<class P>

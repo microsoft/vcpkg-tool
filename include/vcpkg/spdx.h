@@ -24,5 +24,5 @@ namespace vcpkg
                                  std::string document_namespace,
                                  std::vector<Json::Value>&& resource_docs);
 
-    Json::Value run_resource_heuristics(const std::string& contents);
+    Json::Value run_resource_heuristics(StringView contents);
 }
