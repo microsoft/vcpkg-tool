@@ -403,7 +403,7 @@ namespace vcpkg::Install
                     {
                         msg::print(Color::warning, warnings);
                     }
-                    msg::print(Color::error, Build::create_error_message(result, action.spec));
+                    msg::print_error(Build::create_error_message(result, action.spec));
                     return result;
                 }
 

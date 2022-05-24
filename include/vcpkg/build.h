@@ -128,7 +128,7 @@ namespace vcpkg::Build
         BUILT_IN,
         ARIA2,
     };
-    const std::string& to_string(DownloadTool tool);
+    static constexpr StringLiteral to_string(DownloadTool tool);
     enum class PurgeDecompressFailure
     {
         NO = 0,
@@ -294,13 +294,13 @@ namespace vcpkg::Build
     // could be constexpr, but we want to generate this and that's not constexpr in C++14
     extern const std::array<BuildPolicy, size_t(BuildPolicy::COUNT)> ALL_POLICIES;
 
-    const std::string& to_string(BuildPolicy policy);
+    static constexpr StringLiteral to_string(BuildPolicy policy);
     ZStringView to_cmake_variable(BuildPolicy policy);
 
     struct BuildPolicies
     {
         BuildPolicies() = default;
-        BuildPolicies(std::map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
+        BuildPolicies(std::unordered_map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
 
         bool is_enabled(BuildPolicy policy) const
         {
@@ -310,7 +310,7 @@ namespace vcpkg::Build
         }
 
     private:
-        std::map<BuildPolicy, bool> m_policies;
+        std::unordered_map<BuildPolicy, bool> m_policies;
     };
 
     enum class LinkageType : char
