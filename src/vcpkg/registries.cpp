@@ -102,7 +102,7 @@ namespace
             }
 
             return msg::format(msgGitCheckoutRegistryPortFailed, msg::git_ref = git_object, msg::path = destination)
-                .appendnl()
+                .append_raw('\n')
                 .append(maybe_path.error());
         }
 
@@ -821,7 +821,7 @@ namespace
                            msg::package_name = port_name,
                            msg::git_ref = git_tree,
                            msg::path = destination)
-            .appendnl()
+            .append_raw('\n')
             .append(maybe_path.error())
             .extract_data();
     }
@@ -1270,13 +1270,16 @@ namespace vcpkg
             auto maybe_sha = git.rev_parse(config, "HEAD");
             if (!maybe_sha)
             {
-                return msg::format(msgGitFailedDetectingCurrentCommit).appendnl().append(maybe_sha.error());
+                return msg::format(msg::msgErrorMessage)
+                    .append(msgGitFailedDetectingCurrentCommit)
+                    .append_raw('\n')
+                    .append(maybe_sha.error());
             }
             maybe_embedded_sha = std::move(*maybe_sha.get());
         }
 
         return msg::format(msgGitSuggestCurrentCommitAsBaseline)
-            .appendnl()
+            .append_raw('\n')
             .append_fmt_raw(R"("builtin-baseline": "{}")", *maybe_embedded_sha.get());
     }
 

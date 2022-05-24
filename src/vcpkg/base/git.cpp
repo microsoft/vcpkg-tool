@@ -279,7 +279,10 @@ namespace vcpkg
             if (tar_output.exit_code != 0)
             {
                 // failed to create {destination_tmp}
-                return msg::format(msgGitCheckoutFailedToCreateArchive).appendnl().append_raw(tar_output.output);
+                return msg::format(msg::msgErrorMessage)
+                    .append(msgGitCheckoutFailedToCreateArchive)
+                    .append_raw('\n')
+                    .append_raw(tar_output.output);
             }
             else
             {
@@ -294,8 +297,9 @@ namespace vcpkg
             if (output.exit_code != 0)
             {
                 // failed to initialize local repository in {work_tree}
-                return msg::format(msgGitFailedToInitializeLocalRepository, msg::path = config.git_work_tree)
-                    .appendnl()
+                return msg::format(msg::msgErrorMessage)
+                    .append(msgGitFailedToInitializeLocalRepository, msg::path = config.git_work_tree)
+                    .append_raw('\n')
                     .append_raw(output.output);
             }
             return true;
@@ -317,7 +321,7 @@ namespace vcpkg
             {
                 // failed to fetch ref {treeish} from repository {url}
                 return msg::format(msgGitFailedToFetchRefFromRepository, msg::git_ref = ref, msg::url = uri)
-                    .appendnl()
+                    .append_raw('\n')
                     .append_raw(output.output);
             }
 
@@ -449,7 +453,7 @@ namespace vcpkg
             {
                 // failed to remove {failure_point}
                 return msg::format(msgGitErrorWhileRemovingFiles, msg::path = failure_point)
-                    .appendnl()
+                    .append_raw('\n')
                     .append_raw(ec.message());
             }
 
@@ -458,7 +462,7 @@ namespace vcpkg
             {
                 // failed to create {destination_tmp}
                 return msg::format(msgGitErrorCreatingDirectory, msg::path = destination_tmp)
-                    .appendnl()
+                    .append_raw('\n')
                     .append_raw(ec.message());
             }
 
@@ -474,7 +478,7 @@ namespace vcpkg
             {
                 // failed to remove {failure_point}
                 return msg::format(msgGitErrorWhileRemovingFiles, msg::path = destination_tar)
-                    .appendnl()
+                    .append_raw('\n')
                     .append_raw(ec.message());
             }
 
@@ -484,7 +488,7 @@ namespace vcpkg
                 // failed to rename {destination_tmp} to {destination}
                 return msg::format(
                            msgGitErrorRenamingFile, msg::old_value = destination_tmp, msg::new_value = destination)
-                    .appendnl()
+                    .append_raw('\n')
                     .append_raw(ec.message());
             }
 
