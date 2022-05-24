@@ -31,7 +31,7 @@ namespace
         auto parsed_json_opt = Json::parse(contents, manifest_path);
         if (!parsed_json_opt.has_value())
         {
-            vcpkg::printf(Color::error, "Failed to parse %s: %s\n", path_string, parsed_json_opt.error()->format());
+            vcpkg::printf(Color::error, "Failed to parse %s: %s\n", path_string, parsed_json_opt.error()->to_string());
             return nullopt;
         }
 

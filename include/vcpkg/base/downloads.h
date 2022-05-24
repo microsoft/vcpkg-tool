@@ -1,6 +1,8 @@
 #pragma once
 
-#include <vcpkg/base/expected.h>
+#include <vcpkg/base/fwd/downloads.h>
+#include <vcpkg/base/fwd/expected.h>
+
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/view.h>
@@ -24,9 +26,9 @@ namespace vcpkg
     }
 
     void verify_downloaded_file_hash(const Filesystem& fs,
-                                     const std::string& sanitized_url,
+                                     StringView sanitized_url,
                                      const Path& downloaded_path,
-                                     const std::string& sha512);
+                                     StringView sha512);
 
     View<std::string> azure_blob_headers();
 

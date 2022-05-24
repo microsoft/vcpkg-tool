@@ -10,12 +10,6 @@
 
 namespace vcpkg::Commands::Contact
 {
-    const std::string& email()
-    {
-        static const std::string S_EMAIL = R"(vcpkg@microsoft.com)";
-        return S_EMAIL;
-    }
-
     static constexpr StringLiteral OPTION_SURVEY = "survey";
 
     static constexpr std::array<CommandSwitch, 1> SWITCHES = {{
@@ -54,7 +48,7 @@ namespace vcpkg::Commands::Contact
         }
         else
         {
-            print2("Send an email to ", email(), " with any feedback.\n");
+            print2("Send an email to vcpkg@microsoft.com with any feedback.\n");
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }

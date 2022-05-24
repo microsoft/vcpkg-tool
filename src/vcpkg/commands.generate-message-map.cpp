@@ -16,10 +16,31 @@ namespace
                                  "example of {value} is 'foo {} bar'",
                                  "format string \"{value}\" contains a raw format argument");
 
+    DECLARE_AND_REGISTER_MESSAGE(
+        ErrorMessageMustUsePrintError,
+        (msg::value),
+        "{value} is is a localized message name like ErrorMessageMustUsePrintError",
+        "The message named {value} starts with error:, it must be changed to prepend ErrorMessage in code instead.");
+    DECLARE_AND_REGISTER_MESSAGE(WarningMessageMustUsePrintWarning,
+                                 (msg::value),
+                                 "{value} is is a localized message name like WarningMessageMustUsePrintWarning",
+                                 "The message named {value} starts with warning:, it must be changed to prepend "
+                                 "WarningMessage in code instead.");
+    DECLARE_AND_REGISTER_MESSAGE(LocalizedMessageMustNotContainIndents,
+                                 (msg::value),
+                                 "{value} is is a localized message name like LocalizedMessageMustNotContainIndents. "
+                                 "The 'LocalizedString::append_indent' part is locale-invariant.",
+                                 "The message named {value} contains what appears to be indenting which must be "
+                                 "changed to use LocalizedString::append_indent instead.");
+    DECLARE_AND_REGISTER_MESSAGE(LocalizedMessageMustNotEndWithNewline,
+                                 (msg::value),
+                                 "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
+                                 "The message named {value} ends with a newline which should be added by formatting "
+                                 "rather than by localization.");
     DECLARE_AND_REGISTER_MESSAGE(GenerateMsgErrorParsingFormatArgs,
                                  (msg::value),
                                  "example of {value} 'GenerateMsgNoComment'",
-                                 "error: parsing format string for {value}:");
+                                 "parsing format string for {value}:");
 
     DECLARE_AND_REGISTER_MESSAGE(GenerateMsgIncorrectComment,
                                  (msg::value),
@@ -28,23 +49,19 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoCommentValue,
                                  (msg::value),
                                  "example of {value} is 'arch'",
-                                 R"(    {{{value}}} was used in the message, but not commented.)");
+                                 R"({{{value}}} was used in the message, but not commented.)");
     DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNoArgumentValue,
                                  (msg::value),
                                  "example of {value} is 'arch'",
-                                 R"(    {{{value}}} was specified in a comment, but was not used in the message.)");
+                                 R"({{{value}}} was specified in a comment, but was not used in the message.)");
 }
 
 namespace vcpkg::Commands
 {
-    static constexpr StringLiteral OPTION_ALLOW_BAD_COMMENTS = "allow-incorrect-comments";
-    static constexpr StringLiteral OPTION_NO_ALLOW_BAD_COMMENTS = "no-allow-incorrect-comments";
     static constexpr StringLiteral OPTION_OUTPUT_COMMENTS = "output-comments";
     static constexpr StringLiteral OPTION_NO_OUTPUT_COMMENTS = "no-output-comments";
 
     static constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
-        {OPTION_ALLOW_BAD_COMMENTS, "Do not require message comments be correct (the default)."},
-        {OPTION_NO_ALLOW_BAD_COMMENTS, "Require message comments to be correct; error if they are not."},
         {OPTION_OUTPUT_COMMENTS, "When generating the message map, include comments (the default)"},
         {OPTION_NO_OUTPUT_COMMENTS,
          "When generating the message map, exclude comments (useful for generating the english localization file)"},
@@ -164,31 +181,11 @@ namespace vcpkg::Commands
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
-        bool allow_bad_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_ALLOW_BAD_COMMENTS);
-
-        LocalizedString comments_msg_type;
-        Color comments_msg_color;
-        if (allow_bad_comments)
-        {
-            comments_msg_type = msg::format(msg::msgWarningMessage);
-            comments_msg_color = Color::warning;
-        }
-        else
-        {
-            if (Util::Sets::contains(parsed_args.switches, OPTION_ALLOW_BAD_COMMENTS))
-            {
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_ALLOW_BAD_COMMENTS);
-            }
-            comments_msg_type = msg::format(msg::msgErrorMessage);
-            comments_msg_color = Color::error;
-        }
-
         const bool output_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);
 
         if (!output_comments && Util::Sets::contains(parsed_args.switches, OPTION_OUTPUT_COMMENTS))
         {
-            Checks::msg_exit_with_message(
+            Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO, msg::msgBothYesAndNoOptionSpecifiedError, msg::option = OPTION_OUTPUT_COMMENTS);
         }
 
@@ -215,31 +212,55 @@ namespace vcpkg::Commands
         }
         std::sort(messages.begin(), messages.end(), MessageSorter{});
 
-        bool has_incorrect_comment = false;
+        bool has_errors = false;
         LocalizedString format_string_parsing_error;
         Json::Object obj;
         for (Message& msg : messages)
         {
+            if (msg.name != "ErrorMessage" && Strings::case_insensitive_ascii_starts_with(msg.value, "error:"))
+            {
+                has_errors = true;
+                msg::println_error(msgErrorMessageMustUsePrintError, msg::value = msg.name);
+            }
+
+            if (msg.name != "WarningMessage" && Strings::case_insensitive_ascii_starts_with(msg.value, "warning:"))
+            {
+                has_errors = true;
+                msg::println_error(msgWarningMessageMustUsePrintWarning, msg::value = msg.name);
+            }
+
+            if (Strings::contains(msg.value, "   "))
+            {
+                has_errors = true;
+                msg::println_error(msgLocalizedMessageMustNotContainIndents, msg::value = msg.name);
+            }
+
+            if (!msg.value.empty() && msg.value.back() == '\n')
+            {
+                has_errors = true;
+                msg::println_error(msgLocalizedMessageMustNotEndWithNewline, msg::value = msg.name);
+            }
+
             auto mismatches = get_format_arg_mismatches(msg.value, msg.comment, format_string_parsing_error);
             if (!format_string_parsing_error.data().empty())
             {
-                msg::println(msgGenerateMsgErrorParsingFormatArgs, msg::value = msg.name);
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, format_string_parsing_error);
+                has_errors = true;
+                msg::println_error(msg::format(msgGenerateMsgErrorParsingFormatArgs, msg::value = msg.name)
+                                       .append(format_string_parsing_error));
             }
 
             if (!mismatches.arguments_without_comment.empty() || !mismatches.comments_without_argument.empty())
             {
-                has_incorrect_comment = true;
-                msg::print(comments_msg_color, comments_msg_type);
-                msg::println(comments_msg_color, msgGenerateMsgIncorrectComment, msg::value = msg.name);
+                has_errors = true;
+                msg::println_error(msgGenerateMsgIncorrectComment, msg::value = msg.name);
 
                 for (const auto& arg : mismatches.arguments_without_comment)
                 {
-                    msg::println(comments_msg_color, msgGenerateMsgNoCommentValue, msg::value = arg);
+                    msg::println(Color::error, msgGenerateMsgNoCommentValue, msg::value = arg);
                 }
                 for (const auto& comment : mismatches.comments_without_argument)
                 {
-                    msg::println(comments_msg_color, msgGenerateMsgNoArgumentValue, msg::value = comment);
+                    msg::println(Color::error, msgGenerateMsgNoArgumentValue, msg::value = comment);
                 }
             }
 
@@ -250,7 +271,7 @@ namespace vcpkg::Commands
             }
         }
 
-        if (has_incorrect_comment && !allow_bad_comments)
+        if (has_errors)
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
