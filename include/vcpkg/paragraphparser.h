@@ -45,12 +45,12 @@ namespace vcpkg
     {
         ParagraphParser(Paragraph&& fields) : fields(std::move(fields)) { }
 
-        std::string required_field(const std::string& fieldname);
-        void required_field(const std::string& fieldname, std::string& out);
-        void required_field(const std::string& fieldname, std::pair<std::string&, TextRowCol&> out);
+        std::string required_field(StringView fieldname);
+        void required_field(StringView fieldname, std::string& out);
+        void required_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out);
 
-        std::string optional_field(const std::string& fieldname);
-        void optional_field(const std::string& fieldname, std::pair<std::string&, TextRowCol&> out);
+        std::string optional_field(StringView fieldname);
+        void optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out);
 
         void add_type_error(const std::string& fieldname, const char* type) { expected_types[fieldname] = type; }
 

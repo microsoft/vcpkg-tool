@@ -14,9 +14,9 @@ static std::atomic<uint64_t> g_load_ports_stats(0);
 
 namespace vcpkg
 {
-    static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, const std::string& fieldname)
+    static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, StringView fieldname)
     {
-        auto it = fields->find(fieldname);
+        auto it = fields->find(fieldname.data());
         if (it == fields->end())
         {
             return nullopt;
@@ -27,32 +27,32 @@ namespace vcpkg
         return value;
     }
 
-    void ParagraphParser::required_field(const std::string& fieldname, std::pair<std::string&, TextRowCol&> out)
+    void ParagraphParser::required_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out)
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (const auto field = maybe_field.get())
             out = std::move(*field);
         else
-            missing_fields.push_back(fieldname);
+            missing_fields.push_back(fieldname.data());
     }
-    void ParagraphParser::optional_field(const std::string& fieldname, std::pair<std::string&, TextRowCol&> out)
+    void ParagraphParser::optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out)
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (auto field = maybe_field.get()) out = std::move(*field);
     }
-    void ParagraphParser::required_field(const std::string& fieldname, std::string& out)
+    void ParagraphParser::required_field(StringView fieldname, std::string& out)
     {
         TextRowCol ignore;
         required_field(fieldname, {out, ignore});
     }
-    std::string ParagraphParser::optional_field(const std::string& fieldname)
+    std::string ParagraphParser::optional_field(StringView fieldname)
     {
         std::string out;
         TextRowCol ignore;
         optional_field(fieldname, {out, ignore});
         return out;
     }
-    std::string ParagraphParser::required_field(const std::string& fieldname)
+    std::string ParagraphParser::required_field(StringView fieldname)
     {
         std::string out;
         TextRowCol ignore;
