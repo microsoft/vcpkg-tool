@@ -186,14 +186,16 @@ namespace
                                  (msg::path),
                                  "",
                                  "while detecting compiler information:\nThe log file content at \"{path}\" is:");
-    DECLARE_AND_REGISTER_MESSAGE(ErrorUnableToDetectCompilerInfo,
-                                 (),
-                                 "failure output will be displayed at the top of this",
-                                 "vcpkg was unable to detect the active compiler's information. See above for the CMake failure output.");
-    DECLARE_AND_REGISTER_MESSAGE(UsingCommunityTriplet,
-                                 (msg::triplet),
-                                 "'--' at the beginning must be preserved",
-                                 "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        ErrorUnableToDetectCompilerInfo,
+        (),
+        "failure output will be displayed at the top of this",
+        "vcpkg was unable to detect the active compiler's information. See above for the CMake failure output.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        UsingCommunityTriplet,
+        (msg::triplet),
+        "'--' at the beginning must be preserved",
+        "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
     DECLARE_AND_REGISTER_MESSAGE(LoadingCommunityTriplet,
                                  (msg::path),
                                  "'-- [COMMUNITY]' at the beginning must be preserved",
@@ -202,7 +204,7 @@ namespace
                                  (msg::path),
                                  "'-- [OVERLAY]' at the beginning must be preserved",
                                  "-- [OVERLAY] Loading triplet configuration from: {path}");
-     DECLARE_AND_REGISTER_MESSAGE(InstallingFromLocation,
+    DECLARE_AND_REGISTER_MESSAGE(InstallingFromLocation,
                                  (msg::path),
                                  "'--' at the beginning must be preserved",
                                  "-- Installing port from location: {path}");
@@ -214,12 +216,11 @@ namespace
         "architecture was {arch}\n    "
         "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        UnsupportedSystemName,
-        (msg::system_name),
-        "",
-        "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
-        "Supported system names are '', 'Windows' and 'WindowsStore'.");
+    DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
+                                 (msg::system_name),
+                                 "",
+                                 "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
+                                 "Supported system names are '', 'Windows' and 'WindowsStore'.");
 }
 
 namespace vcpkg
@@ -484,9 +485,7 @@ namespace vcpkg::Build
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
 
-    static ZStringView to_vcvarsall_toolchain(StringView target_architecture,
-                                              const Toolset& toolset,
-                                              Triplet triplet)
+    static ZStringView to_vcvarsall_toolchain(StringView target_architecture, const Toolset& toolset, Triplet triplet)
     {
         auto maybe_target_arch = to_cpu_architecture(target_architecture);
         Checks::check_maybe_upgrade(
