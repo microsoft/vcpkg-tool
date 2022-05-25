@@ -447,15 +447,15 @@ namespace vcpkg::Build
         }
     }
 
-    static constexpr StringLiteral NAME_BUILD_IN_DOWNLOAD = "BUILT_IN";
-    static constexpr StringLiteral NAME_ARIA2_DOWNLOAD = "ARIA2";
+    static const std::string NAME_BUILD_IN_DOWNLOAD = "BUILT_IN";
+    static const std::string NAME_ARIA2_DOWNLOAD = "ARIA2";
 
     const std::string& to_string(DownloadTool tool)
     {
         switch (tool)
         {
-            case DownloadTool::BUILT_IN: return NAME_BUILD_IN_DOWNLOAD.to_string();
-            case DownloadTool::ARIA2: return NAME_ARIA2_DOWNLOAD.to_string();
+            case DownloadTool::BUILT_IN: return NAME_BUILD_IN_DOWNLOAD;
+            case DownloadTool::ARIA2: return NAME_ARIA2_DOWNLOAD;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
