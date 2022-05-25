@@ -1584,8 +1584,8 @@ namespace vcpkg::Dependencies
                 }
             }
 
-            auto& versioned_graph_entry = graph_entry.second.emplace_node(
-                p_scfl->source_control_file->core_paragraph->version_scheme, version);
+            auto& versioned_graph_entry =
+                graph_entry.second.emplace_node(p_scfl->source_control_file->core_paragraph->version_scheme, version);
             versioned_graph_entry.origins.push_back(origin);
             // Use the new source control file if we currently don't have one or the new one is newer
             bool replace;
