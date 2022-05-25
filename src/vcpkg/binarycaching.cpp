@@ -105,6 +105,10 @@ namespace
                                  (msg::binary_source),
                                  "",
                                  "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed,
+                                 (msg::path, msg::exit_code),
+                                 "",
+                                 "Failed to compress folder '{path}', exit code: {exit_code}");
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -1087,8 +1091,8 @@ namespace
                 paths.get_filesystem(), paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (code != 0)
             {
-                vcpkg::print2(
-                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                vcpkg::msg::println_warning(
+                    msgCompressFolderFailed, msg::path = paths.package_dir(spec), msg::exit_code = code);
                 return;
             }
 

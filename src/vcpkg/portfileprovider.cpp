@@ -88,11 +88,12 @@ namespace vcpkg::PortFileProvider
         return Util::fmap(m, [](const auto& p) { return p.second; });
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(VersionSpecMismatch,
-                                 (msg::path, msg::expected_version, msg::actual_version),
-                                 "",
-                                 "error: Failed to load port because version specs did not match\n    Path: "
-                                 "{path}\n    Expected: {expected_version}\n    Actual: {actual_version}");
+    DECLARE_AND_REGISTER_MESSAGE(
+        VersionSpecMismatch,
+        (msg::path, msg::expected_version, msg::actual_version),
+        "",
+        "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
+        "{actual_version}, but the version database indicates that it should be {expected_version}.");
 
     namespace
     {
@@ -190,10 +191,11 @@ namespace vcpkg::PortFileProvider
                             }
                             else
                             {
-                                return msg::format(msgVersionSpecMismatch,
-                                                   msg::path = path->path,
-                                                   msg::expected_version = version_spec,
-                                                   msg::actual_version = scf_vspec)
+                                return msg::format(msg::msgErrorMessage)
+                                    .append(msgVersionSpecMismatch,
+                                            msg::path = path->path,
+                                            msg::expected_version = version_spec,
+                                            msg::actual_version = scf_vspec)
                                     .extract_data();
                             }
                         }
