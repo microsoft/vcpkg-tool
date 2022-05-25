@@ -16,7 +16,7 @@ namespace vcpkg
 {
     static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, StringView fieldname)
     {
-        auto it = fields->find(fieldname.data());
+        auto it = fields->find(fieldname.to_string());
         if (it == fields->end())
         {
             return nullopt;

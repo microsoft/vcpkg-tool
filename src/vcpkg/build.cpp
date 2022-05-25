@@ -407,22 +407,22 @@ namespace vcpkg::Build
 
     decltype(ALL_POLICIES) ALL_POLICIES = generate_all_policies();
 
-    constexpr StringLiteral to_string(BuildPolicy policy)
+    const std::string& to_string(BuildPolicy policy)
     {
         switch (policy)
         {
-            case BuildPolicy::EMPTY_PACKAGE: return NAME_EMPTY_PACKAGE;
-            case BuildPolicy::DLLS_WITHOUT_LIBS: return NAME_DLLS_WITHOUT_LIBS;
-            case BuildPolicy::DLLS_WITHOUT_EXPORTS: return NAME_DLLS_WITHOUT_EXPORTS;
-            case BuildPolicy::DLLS_IN_STATIC_LIBRARY: return NAME_DLLS_IN_STATIC_LIBRARY;
-            case BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES: return NAME_MISMATCHED_NUMBER_OF_BINARIES;
-            case BuildPolicy::ONLY_RELEASE_CRT: return NAME_ONLY_RELEASE_CRT;
-            case BuildPolicy::EMPTY_INCLUDE_FOLDER: return NAME_EMPTY_INCLUDE_FOLDER;
-            case BuildPolicy::ALLOW_OBSOLETE_MSVCRT: return NAME_ALLOW_OBSOLETE_MSVCRT;
-            case BuildPolicy::ALLOW_RESTRICTED_HEADERS: return NAME_ALLOW_RESTRICTED_HEADERS;
-            case BuildPolicy::SKIP_DUMPBIN_CHECKS: return NAME_SKIP_DUMPBIN_CHECKS;
-            case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return NAME_SKIP_ARCHITECTURE_CHECK;
-            case BuildPolicy::CMAKE_HELPER_PORT: return NAME_CMAKE_HELPER_PORT;
+            case BuildPolicy::EMPTY_PACKAGE: return NAME_EMPTY_PACKAGE.to_string();
+            case BuildPolicy::DLLS_WITHOUT_LIBS: return NAME_DLLS_WITHOUT_LIBS.to_string();
+            case BuildPolicy::DLLS_WITHOUT_EXPORTS: return NAME_DLLS_WITHOUT_EXPORTS.to_string();
+            case BuildPolicy::DLLS_IN_STATIC_LIBRARY: return NAME_DLLS_IN_STATIC_LIBRARY.to_string();
+            case BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES: return NAME_MISMATCHED_NUMBER_OF_BINARIES.to_string();
+            case BuildPolicy::ONLY_RELEASE_CRT: return NAME_ONLY_RELEASE_CRT.to_string();
+            case BuildPolicy::EMPTY_INCLUDE_FOLDER: return NAME_EMPTY_INCLUDE_FOLDER.to_string();
+            case BuildPolicy::ALLOW_OBSOLETE_MSVCRT: return NAME_ALLOW_OBSOLETE_MSVCRT.to_string();
+            case BuildPolicy::ALLOW_RESTRICTED_HEADERS: return NAME_ALLOW_RESTRICTED_HEADERS.to_string();
+            case BuildPolicy::SKIP_DUMPBIN_CHECKS: return NAME_SKIP_DUMPBIN_CHECKS.to_string();
+            case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return NAME_SKIP_ARCHITECTURE_CHECK.to_string();
+            case BuildPolicy::CMAKE_HELPER_PORT: return NAME_CMAKE_HELPER_PORT.to_string();
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -450,12 +450,12 @@ namespace vcpkg::Build
     static constexpr StringLiteral NAME_BUILD_IN_DOWNLOAD = "BUILT_IN";
     static constexpr StringLiteral NAME_ARIA2_DOWNLOAD = "ARIA2";
 
-    constexpr StringLiteral to_string(DownloadTool tool)
+    const std::string& to_string(DownloadTool tool)
     {
         switch (tool)
         {
-            case DownloadTool::BUILT_IN: return NAME_BUILD_IN_DOWNLOAD;
-            case DownloadTool::ARIA2: return NAME_ARIA2_DOWNLOAD;
+            case DownloadTool::BUILT_IN: return NAME_BUILD_IN_DOWNLOAD.to_string();
+            case DownloadTool::ARIA2: return NAME_ARIA2_DOWNLOAD.to_string();
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
