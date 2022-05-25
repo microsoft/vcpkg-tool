@@ -1031,7 +1031,7 @@ namespace vcpkg
             }
             if (auto err = parser.get_error())
             {
-                r.add_generic_error(type_name(), err->format());
+                r.add_generic_error(type_name(), err->to_string());
                 return std::string();
             }
 
@@ -1380,35 +1380,84 @@ namespace vcpkg
         return nullopt;
     }
 
-    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
+    std::string ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>> error_info_list)
     {
-        Checks::check_exit(VCPKG_LINE_INFO, error_info_list.size() > 0);
+        std::string message;
 
-        LocalizedString error_message;
-        for (auto&& error_info : error_info_list)
+        if (!error_info_list.empty())
         {
-            error_info->format_to(error_message);
-            error_message.appendnl();
+            error_info_list[0]->to_string(message);
+            for (std::size_t idx = 1; idx < error_info_list.size(); ++idx)
+            {
+                message.push_back('\n');
+                error_info_list[1]->to_string(message);
+            }
+
+            if (std::any_of(
+                    error_info_list.begin(),
+                    error_info_list.end(),
+                    [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
+            {
+                Strings::append(message,
+                                "This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
+                                Strings::join("\n    ", get_list_of_valid_fields()),
+                                "\n\n");
+#if defined(_WIN32)
+                auto bootstrap = ".\\bootstrap-vcpkg.bat";
+#else
+                auto bootstrap = "./bootstrap-vcpkg.sh";
+#endif
+                Strings::append(
+                    message, "You may need to update the vcpkg binary; try running ", bootstrap, " to update.\n\n");
+            }
         }
 
-        if (std::any_of(
-                error_info_list.begin(),
-                error_info_list.end(),
-                [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
+        return message;
+    }
+
+    static const char* after_nl(const char* first, const char* last)
+    {
+        const auto it = std::find(first, last, '\n');
+        return it == last ? last : it + 1;
+    }
+
+    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
+    {
+        auto msg = ParseControlErrorInfo::format_errors(error_info_list);
+
+        // To preserve previous behavior, each line starting with "Error" should be error-colored. All other lines
+        // should be neutral color.
+
+        // To minimize the number of print calls on Windows (which is a significant performance bottleneck), this
+        // algorithm chunks groups of similarly-colored lines.
+        const char* start_of_chunk = msg.data();
+        const char* end_of_chunk = msg.data();
+        const char* const last = msg.data() + msg.size();
+        while (end_of_chunk != last)
         {
-            print2("This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
-                   Strings::join("\n    ", get_list_of_valid_fields()),
-                   "\n\n");
-#if defined(_WIN32)
-            auto bootstrap = ".\\bootstrap-vcpkg.bat";
-#else
-            auto bootstrap = "./bootstrap-vcpkg.sh";
-#endif
-            vcpkg::printf("You may need to update the vcpkg binary; try running %s to update.\n\n", bootstrap);
+            while (end_of_chunk != last && Strings::starts_with({end_of_chunk, last}, "Error"))
+            {
+                end_of_chunk = after_nl(end_of_chunk, last);
+            }
+            if (start_of_chunk != end_of_chunk)
+            {
+                print2(Color::error, StringView{start_of_chunk, end_of_chunk});
+                start_of_chunk = end_of_chunk;
+            }
+
+            while (end_of_chunk != last && !Strings::starts_with({end_of_chunk, last}, "Error"))
+            {
+                end_of_chunk = after_nl(end_of_chunk, last);
+            }
+            if (start_of_chunk != end_of_chunk)
+            {
+                print2(StringView{start_of_chunk, end_of_chunk});
+                start_of_chunk = end_of_chunk;
+            }
         }
     }
 
-    Optional<const FeatureParagraph&> SourceControlFile::find_feature(const std::string& featurename) const
+    Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const
     {
         auto it = Util::find_if(feature_paragraphs,
                                 [&](const std::unique_ptr<FeatureParagraph>& p) { return p->name == featurename; });

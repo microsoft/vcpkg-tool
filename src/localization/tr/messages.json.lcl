@@ -58,150 +58,234 @@
       <Item ItemId=";AddVersionAddedVersionToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[added version {version} to {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version} sürümü {path} yoluna eklendi]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionCommitChangesReminder" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Did you remember to commit your changes?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Değişikliklerinizi işlediniz mi?]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionCommitResultReminder" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Don't forget to commit the result!]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sonucu işlemeyi unutmayın!]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionDetectLocalChangesError" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[skipping detection of local changes due to unexpected format in git status output]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[GIT durum çıkışındaki beklenmeyen biçim nedeniyle yerel değişiklikleri algılama işlemi atlanıyor]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionFileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[couldn't find required file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[gerekli {path} dosyası bulunamadı]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionFormatPortSuggestion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Run `{command_line}` to format the file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dosyayı biçimlendirmek için '{command_line}' komutunu çalıştırın]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionIgnoringOptionAll" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[ignoring --{option} since a port name argument was provided]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bağlantı noktası adı bağımsız değişkeni sağlandığı için --{option} yok sayılıyor]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionLoadPortFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[can't load port {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} bağlantı noktası yüklenemiyor]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionNewFile" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[(new file)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[(yeni dosya)]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionNewShaIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[new SHA: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[yeni SHA: {value}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionNoFilesUpdated" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No files were updated]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Güncelleştirilen dosya yok]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionNoFilesUpdatedForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No files were updated for {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} için hiçbir dosya güncelleştirilmedi]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionNoGitSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[can't obtain SHA for port {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} bağlantı noktası için SHA alınamıyor]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionOldShaIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[old SHA: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[eski SHA: {value}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionOverwriteOptionSuggestion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use --{option} to bypass this check]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bu denetimi atlamak için --{option} seçeneğini kullanın]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionPortDoesNotExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} does not exist]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} yok]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionPortFilesShaChanged" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[checked-in files for {package_name} have changed but the version was not updated]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} için iade dosyaları değiştirildi ancak sürüm güncelleştirilmedi]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionPortFilesShaUnchanged" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[checked-in files for {package_name} are unchanged from version {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} için iade dosyaları {version} sürümündekiyle aynı]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionPortHasImproperFormat" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} is not properly formatted]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} doğru şekilde biçimlendirilmemiş.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionSuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["{package_name}" bağlantı noktasında "{old_scheme}" yerine "{new_scheme}" sürüm düzenini kullanın.]A;Bu denetimi devre dışı bırakmak için --{option} seçeneğini kullanın.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionUnableToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unable to parse versions file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} sürüm dosyası ayrıştırılamıyor]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionUncommittedChanges" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[there are uncommitted changes for {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} için kaydedilmemiş değişiklikler var]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionUpdateVersionReminder" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Did you remember to update the version or port version?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sürümü veya bağlantı noktası sürümünü güncelleştirdiniz mi?]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionUseOptionAll" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{command_name} with no arguments requires passing --{option} to update all port versions at once]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bağımsız değişken bulunmayan {command_name} komutunda, tüm bağlantı noktası sürümlerinin tek seferde güncelleştirilmesi için --{option} seçeneğinin tamamlanması gerekli]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionVersionAlreadyInFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[version {version} is already in {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version} sürümü {path} yolunda zaten var]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionVersionIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[version: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sürüm: {{version}}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -448,7 +532,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CMakeTargetsUsageHueristicMessage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CMakeTargetsUsageHeuristicMessage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[# this is heuristically generated, and may not be correct]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -532,6 +616,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CommandFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[command:]A;{command_line}]A;failed with the following results:]A;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[]A;{command_line}]A; komutu aşağıdaki sonuçlarla başarısız oldu:]A;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
@@ -546,6 +639,15 @@
           <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[curl, vcpkg'ye beklenmeyen sonuçlar bildirdi ve vcpkg devam edemiyor.]A;Lütfen hassas bilgiler için aşağıdaki metni gözden geçirin ve bu sorunu gidermeye yardımcı olmak için Microsoft/vcpkg GitHub'da bir sorun açın!]A;cmd: {command_line}]A;=== curl çıkışı ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadAvailable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A downloadable copy of this tool is available and can be used by unsetting {env_var}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bu aracın indirilebilir bir kopyası var ve {env_var} ayarı kaldırılarak kullanılabilir.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -832,6 +934,54 @@
       <Item ItemId=";GitCommandFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed to execute: {command_line}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Şu komut yürütülemedi: {command_line}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitStatusOutputExpectedFileName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected a file name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bir dosya adı bekleniyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitStatusOutputExpectedNewLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected new line]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beklenen yeni satır]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitStatusOutputExpectedRenameOrNewline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected renamed file or new lines]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beklenen yeniden adlandırılmış dosya veya yeni satırlar]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitStatusUnknownFileStatus" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown file status: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bilinmeyen dosya durumu: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitUnexpectedCommandOutput" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected git output]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beklenmeyen GIT çıkışı]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -867,10 +1017,13 @@
       </Item>
       <Item ItemId=";IllegalFeatures" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[error: List of features is not allowed in this contect]]></Val>
+          <Val><![CDATA[error: List of features is not allowed in this context]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[hata: Bu bağlamda özellik listesine izin verilmiyor]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[error: List of features is not allowed in this contect]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -879,6 +1032,33 @@
           <Val><![CDATA[error: Platform qualifier is not allowed in this context]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[hata: Platform niteleyicisine bu bağlamda izin verilmiyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallWithSystemManager" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You may be able to install this tool via your system package manager.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bu aracı sistem paket yöneticiniz aracılığıyla yükleyebilirsiniz.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallWithSystemManagerMono" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Ubuntu 18.04 users may need a newer version of mono, available at {url}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ubuntu 18.04 kullanıcıları daha yeni bir Mono sürümüne gerek duyabilir, şuradan edinebilirsiniz: {url}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallWithSystemManagerPkg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You may be able to install this tool via your system package manager ({command_line}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bu aracı sistem paket yöneticiniz aracılığıyla yükleyebilirsiniz ({command_line}).]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1321,6 +1501,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ToolFetchFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not fetch {tool_name}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{tool_name} getirilemedi.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ToolInWin10" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[This utility is bundled with Windows 10 or later.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bu yardımcı program Windows 10 veya üstü ile birlikte gelir.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedErrorDuringBulkDownload" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[an unexpected error occurred during bulk download.]]></Val>
@@ -1344,6 +1542,15 @@
           <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[bilinmeyen ikili sağlayıcı türü: geçerli sağlayıcılar “clear”, “varsayılan”, “nuget”, “nugetconfig”, “interactive” ve “files”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownTool" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg does not have a definition of this tool for this platform.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg, bu platform için bu araçla ilgili bir tanım içermiyor.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

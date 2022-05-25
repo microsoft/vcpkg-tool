@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/messages.h>
+
 #include <vcpkg/fwd/paragraphparser.h>
 
 #include <vcpkg/base/expected.h>
@@ -31,22 +33,13 @@ namespace vcpkg
                    !other_errors.empty() || !error.empty();
         }
 
-        void format_to(LocalizedString& target) const;
-        LocalizedString format() const;
+        static std::string format_errors(View<std::unique_ptr<ParseControlErrorInfo>> errors);
+        void to_string(std::string& target) const;
+        std::string to_string() const;
     };
 } // namespace vcpkg
 
-template<typename Char>
-struct fmt::formatter<std::unique_ptr<vcpkg::ParseControlErrorInfo>, Char, void>
-    : fmt::formatter<std::string, Char, void>
-{
-    template<typename FormatContext>
-    auto format(std::unique_ptr<vcpkg::ParseControlErrorInfo> const& val, FormatContext& ctx) const
-        -> decltype(ctx.out())
-    {
-        return fmt::formatter<std::string, Char, void>::format(val->format().data(), ctx);
-    }
-};
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ParseControlErrorInfo);
 
 namespace vcpkg
 {

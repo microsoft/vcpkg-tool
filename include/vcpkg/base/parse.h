@@ -33,20 +33,11 @@ namespace vcpkg
         const std::string line;
         const std::string message;
 
-        std::string format() const;
-        const std::string& get_message() const;
+        std::string to_string() const;
     };
 } // namespace vcpkg
 
-template<typename Char>
-struct fmt::formatter<std::unique_ptr<vcpkg::ParseError>, Char, void> : fmt::formatter<std::string, Char, void>
-{
-    template<typename FormatContext>
-    auto format(std::unique_ptr<vcpkg::ParseError> const& val, FormatContext& ctx) const -> decltype(ctx.out())
-    {
-        return fmt::formatter<std::string, Char, void>::format(val->format(), ctx);
-    }
-};
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ParseError);
 
 namespace vcpkg
 {

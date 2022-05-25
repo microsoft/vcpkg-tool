@@ -27,31 +27,22 @@ namespace
                                  "Errors are printed on lines after this message",
                                  "while parsing {path}:");
 
-    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields,
-                                 (msg::path),
-                                 "",
-                                 "there are invalid fields in the control or manifest file of {path}.");
-    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields2,
-                                 (),
-                                 "",
-                                 "The following fields were not expected:");
+    DECLARE_AND_REGISTER_MESSAGE(
+        ParseControlErrorInfoInvalidFields,
+        (msg::path),
+        "",
+        "there are invalid fields in the control or manifest file of {path}.\nThe following fields were not expected:");
     DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoEntry, (msg::path, msg::error_msg), "", "In {path}: {error_msg}");
-    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoMissingFields,
-                                 (msg::path),
-                                 "",
-                                 "there are missing fields in the control file of {path}");
-    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoMissingFields2,
-                                 (),
-                                 "Errors are printed on lines after this message",
-                                 "The following fields were missing:");
+    DECLARE_AND_REGISTER_MESSAGE(
+        ParseControlErrorInfoMissingFields,
+        (msg::path),
+        "",
+        "there are missing fields in the control file of {path}.\nThe following fields were missing:");
     DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields,
                                  (msg::path),
                                  "",
-                                 "there are fields with invalid types in the CONTROL or manifest file of {path}");
-    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields2,
-                                 (),
-                                 "Errors are printed on lines after this message",
-                                 "The following fields had the wrong types:");
+                                 "there are fields with invalid types in the CONTROL or manifest file of {path}.\nThe "
+                                 "following fields had the wrong types:");
     DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry,
                                  (msg::value, msg::expected),
                                  "{value} is the name of a field in an on-disk file, {expected} is a short description "
@@ -61,77 +52,84 @@ namespace
 
 namespace vcpkg
 {
-    void ParseControlErrorInfo::format_to(LocalizedString& target) const
+    void ParseControlErrorInfo::to_string(std::string& target) const
     {
+        std::vector<LocalizedString> components;
         if (!error.empty())
         {
-            target.append(msg::msgErrorMessage)
-                .append(msgParseControlErrorInfoWhileLoading, msg::path = name, msg::error_msg = error)
-                .appendnl();
+            components.push_back(
+                msg::format_error(msgParseControlErrorInfoWhileLoading, msg::path = name, msg::error_msg = error));
         }
 
         if (!other_errors.empty())
         {
-            target.append(msg::msgErrorMessage)
-                .append(msgParseControlErrorInfoWhileParsing, msg::path = name)
-                .appendnl();
+            auto other_errors_component = msg::format_error(msgParseControlErrorInfoWhileParsing, msg::path = name);
             for (auto&& msg : other_errors)
             {
-                target.append_indent().append_raw(msg).appendnl();
+                other_errors_component.append_raw('\n').append_indent().append_raw(msg);
             }
+
+            components.push_back(std::move(other_errors_component));
         }
 
         if (!extra_fields.empty())
         {
-            target.append(msg::msgErrorMessage)
-                .append(msgParseControlErrorInfoInvalidFields, msg::path = name)
-                .appendnl();
-            target.append(msgParseControlErrorInfoInvalidFields2).appendnl();
+            auto extra_fields_component = msg::format_error(msgParseControlErrorInfoInvalidFields, msg::path = name);
             for (auto&& pr : extra_fields)
             {
-                target.append_indent()
-                    .append(msgParseControlErrorInfoEntry,
-                            msg::path = pr.first,
-                            msg::error_msg = Strings::join(", ", pr.second))
-                    .appendnl();
+                extra_fields_component.append_raw('\n').append_indent().append(msgParseControlErrorInfoEntry,
+                                                                               msg::path = pr.first,
+                                                                               msg::error_msg =
+                                                                                   Strings::join(", ", pr.second));
             }
+
+            components.push_back(std::move(extra_fields_component));
         }
 
         if (!missing_fields.empty())
         {
-            target.append(msg::msgErrorMessage)
-                .append(msgParseControlErrorInfoMissingFields, msg::path = name)
-                .appendnl();
-            target.append(msgParseControlErrorInfoMissingFields2).appendnl();
+            auto missing_fields_component = msg::format_error(msgParseControlErrorInfoMissingFields, msg::path = name);
             for (auto&& pr : missing_fields)
             {
-                target.append_indent()
-                    .append(msgParseControlErrorInfoEntry,
-                            msg::path = pr.first,
-                            msg::error_msg = Strings::join(", ", pr.second))
-                    .appendnl();
+                missing_fields_component.append_raw('\n').append_indent().append(msgParseControlErrorInfoEntry,
+                                                                                 msg::path = pr.first,
+                                                                                 msg::error_msg =
+                                                                                     Strings::join(", ", pr.second));
             }
+
+            components.push_back(std::move(missing_fields_component));
         }
 
         if (!expected_types.empty())
         {
-            target.append(msg::msgErrorMessage)
-                .append(msgParseControlErrorInfoWrongTypeFields, msg::path = name)
-                .appendnl();
-            target.append(msgParseControlErrorInfoWrongTypeFields2).appendnl();
+            auto expected_types_component =
+                msg::format_error(msgParseControlErrorInfoWrongTypeFields, msg::path = name);
             for (auto&& pr : expected_types)
             {
-                target.append_indent()
-                    .append(msgParseControlErrorInfoTypesEntry, msg::value = pr.first, msg::expected = pr.second)
-                    .appendnl();
+                expected_types_component.append_raw('\n').append_indent().append(
+                    msgParseControlErrorInfoTypesEntry, msg::value = pr.first, msg::expected = pr.second);
             }
+
+            components.push_back(std::move(expected_types_component));
+        }
+
+        if (components.empty())
+        {
+            return;
+        }
+
+        target.append(components.front().data());
+        for (std::size_t idx = 1; idx < components.size(); ++idx)
+        {
+            target.push_back('\n');
+            target.append(components[idx].data());
         }
     }
 
-    LocalizedString ParseControlErrorInfo::format() const
+    std::string ParseControlErrorInfo::to_string() const
     {
-        LocalizedString result;
-        format_to(result);
+        std::string result;
+        to_string(result);
         return result;
     }
 
@@ -224,7 +222,7 @@ namespace vcpkg
     {
         auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<std::string>("default features", parser, &parse_feature_name);
-        if (!opt) return {parser.get_error()->format(), expected_right_tag};
+        if (!opt) return {parser.get_error()->to_string(), expected_right_tag};
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
     ExpectedS<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
@@ -234,7 +232,7 @@ namespace vcpkg
         auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<ParsedQualifiedSpecifier>(
             "dependencies", parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
-        if (!opt) return {parser.get_error()->format(), expected_right_tag};
+        if (!opt) return {parser.get_error()->to_string(), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
@@ -254,7 +252,7 @@ namespace vcpkg
                 return Dependency{pqs.name, pqs.features.value_or({}), pqs.platform.value_or({})};
             });
         });
-        if (!opt) return {parser.get_error()->format(), expected_right_tag};
+        if (!opt) return {parser.get_error()->to_string(), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
@@ -328,7 +326,7 @@ namespace vcpkg::Paragraphs
                 get_paragraph(paragraphs.back());
                 match_while(is_lineend);
             }
-            if (get_error()) return get_error()->format();
+            if (get_error()) return get_error()->to_string();
 
             return paragraphs;
         }
@@ -391,7 +389,7 @@ namespace vcpkg::Paragraphs
 
     static ParseExpected<SourceControlFile> try_load_manifest_text(const std::string& text, StringView origin)
     {
-        auto res = Json::parse(text);
+        auto res = Json::parse(text, origin);
 
         std::string error;
         if (auto val = res.get())
@@ -405,7 +403,7 @@ namespace vcpkg::Paragraphs
         }
         else
         {
-            error = res.error()->format();
+            error = res.error()->to_string();
         }
         auto error_info = std::make_unique<ParseControlErrorInfo>();
         error_info->name = origin.to_string();
