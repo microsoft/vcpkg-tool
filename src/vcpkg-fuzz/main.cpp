@@ -162,7 +162,7 @@ namespace
         auto res = Json::parse(text);
         if (!res)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, res.error()->format());
+            Checks::exit_with_message(VCPKG_LINE_INFO, res.error()->to_string());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
