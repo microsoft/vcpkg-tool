@@ -1551,20 +1551,19 @@ namespace vcpkg::Dependencies
                                                          const Version& version,
                                                          const std::string& origin)
         {
-            ExpectedS<const vcpkg::SourceControlFileAndLocation&> maybe_scfl;
-
             // if this port is an overlay port, ignore the given version and use the version from the overlay
             auto maybe_overlay = m_o_provider.get_control_file(graph_entry.first.name());
-            if (auto p_overlay = maybe_overlay.get())
+            const vcpkg::SourceControlFileAndLocation* p_scfl = maybe_overlay.get();
+            if (p_scfl)
             {
-                const auto overlay_version = p_overlay->source_control_file->to_version();
+                const auto overlay_version = p_scfl->source_control_file->to_version();
                 // If the original request did not match the overlay version, restart this function to operate on the
                 // overlay version
                 if (version != overlay_version)
                 {
-                    return require_port_version(graph_entry, overlay_version, origin);
+                    require_port_version(graph_entry, overlay_version, origin);
+                    return;
                 }
-                maybe_scfl = *p_overlay;
             }
             else
             {
@@ -1572,57 +1571,58 @@ namespace vcpkg::Dependencies
                 auto over_it = m_overrides.find(graph_entry.first.name());
                 if (over_it != m_overrides.end() && over_it->second != version)
                 {
-                    return require_port_version(graph_entry, over_it->second, origin);
+                    require_port_version(graph_entry, over_it->second, origin);
+                    return;
                 }
-                maybe_scfl = m_ver_provider.get_control_file({graph_entry.first.name(), version});
+
+                auto maybe_scfl = m_ver_provider.get_control_file({graph_entry.first.name(), version});
+                p_scfl = maybe_scfl.get();
+                if (!p_scfl)
+                {
+                    m_errors.push_back(std::move(maybe_scfl).error());
+                    return;
+                }
             }
 
-            if (auto p_scfl = maybe_scfl.get())
+            auto& versioned_graph_entry =
+                graph_entry.second.emplace_node(p_scfl->source_control_file->core_paragraph->version_scheme, version);
+            versioned_graph_entry.origins.push_back(origin);
+            // Use the new source control file if we currently don't have one or the new one is newer
+            bool replace;
+            if (versioned_graph_entry.scfl == nullptr)
             {
-                auto& versioned_graph_entry = graph_entry.second.emplace_node(
-                    p_scfl->source_control_file->core_paragraph->version_scheme, version);
-                versioned_graph_entry.origins.push_back(origin);
-                // Use the new source control file if we currently don't have one or the new one is newer
-                bool replace;
-                if (versioned_graph_entry.scfl == nullptr)
-                {
-                    replace = true;
-                }
-                else if (versioned_graph_entry.scfl == p_scfl)
-                {
-                    replace = false;
-                }
-                else
-                {
-                    replace = versioned_graph_entry.is_less_than(version);
-                }
-
-                if (replace)
-                {
-                    versioned_graph_entry.scfl = p_scfl;
-                    versioned_graph_entry.version = p_scfl->source_control_file->to_version();
-                    versioned_graph_entry.deps.clear();
-
-                    // add all dependencies to the graph
-                    add_feature_to(graph_entry, versioned_graph_entry, "core");
-
-                    for (auto&& f : graph_entry.second.requested_features)
-                    {
-                        add_feature_to(graph_entry, versioned_graph_entry, f);
-                    }
-
-                    if (graph_entry.second.default_features)
-                    {
-                        for (auto&& f : p_scfl->source_control_file->core_paragraph->default_features)
-                        {
-                            add_feature_to(graph_entry, versioned_graph_entry, f);
-                        }
-                    }
-                }
+                replace = true;
+            }
+            else if (versioned_graph_entry.scfl == p_scfl)
+            {
+                replace = false;
             }
             else
             {
-                m_errors.push_back(maybe_scfl.error());
+                replace = versioned_graph_entry.is_less_than(version);
+            }
+
+            if (replace)
+            {
+                versioned_graph_entry.scfl = p_scfl;
+                versioned_graph_entry.version = p_scfl->source_control_file->to_version();
+                versioned_graph_entry.deps.clear();
+
+                // add all dependencies to the graph
+                add_feature_to(graph_entry, versioned_graph_entry, "core");
+
+                for (auto&& f : graph_entry.second.requested_features)
+                {
+                    add_feature_to(graph_entry, versioned_graph_entry, f);
+                }
+
+                if (graph_entry.second.default_features)
+                {
+                    for (auto&& f : p_scfl->source_control_file->core_paragraph->default_features)
+                    {
+                        add_feature_to(graph_entry, versioned_graph_entry, f);
+                    }
+                }
             }
         }
 
