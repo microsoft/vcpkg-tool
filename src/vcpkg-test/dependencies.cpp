@@ -2114,35 +2114,23 @@ TEST_CASE ("respect supports expression", "[versionplan]")
     vp.emplace("a", {"1", 1});
     MockCMakeVarProvider var_provider;
     var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "";
-
-    {
-        auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}}, var_provider);
-        CHECK(install_plan.has_value());
-        var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
-    }
-
-    {
-        auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}}, var_provider);
-        CHECK_FALSE(install_plan.has_value());
-    }
-
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}}, var_provider);
+    CHECK(install_plan.has_value());
+    var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
+    install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}}, var_provider);
+    CHECK_FALSE(install_plan.has_value());
     SECTION ("override")
     {
         // override from non supported to supported version
         MockOverlayProvider oprovider;
-        {
-            auto install_plan = create_versioned_install_plan(
-                vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 1}}, toplevel_spec());
-            CHECK(install_plan.has_value());
-        }
-
+        install_plan = create_versioned_install_plan(
+            vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 1}}, toplevel_spec());
+        CHECK(install_plan.has_value());
         // override from supported to non supported version
         bp.v["a"] = {"1", 1};
-        {
-            auto install_plan = create_versioned_install_plan(
-                vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 0}}, toplevel_spec());
-            CHECK_FALSE(install_plan.has_value());
-        }
+        install_plan = create_versioned_install_plan(
+            vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 0}}, toplevel_spec());
+        CHECK_FALSE(install_plan.has_value());
     }
 }
 
@@ -2164,44 +2152,32 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
     var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "";
-    {
-        auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {"x"}}}, var_provider);
-        CHECK(install_plan.has_value());
-    }
-
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {"x"}}}, var_provider);
+    CHECK(install_plan.has_value());
     var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
-
-    {
-        auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {"x"}}}, var_provider);
-        CHECK_FALSE(install_plan.has_value());
-    }
-
+    install_plan = create_versioned_install_plan(vp, bp, {{"a", {"x"}}}, var_provider);
+    CHECK_FALSE(install_plan.has_value());
     SECTION ("override")
     {
         // override from non supported to supported version
         MockOverlayProvider oprovider;
-        {
-            auto install_plan = create_versioned_install_plan(vp,
-                                                              bp,
-                                                              oprovider,
-                                                              var_provider,
-                                                              {Dependency{"a", {"x"}}},
-                                                              {DependencyOverride{"a", "1", 1}},
-                                                              toplevel_spec());
-            CHECK(install_plan.has_value());
-        }
-
+        install_plan = create_versioned_install_plan(vp,
+                                                     bp,
+                                                     oprovider,
+                                                     var_provider,
+                                                     {Dependency{"a", {"x"}}},
+                                                     {DependencyOverride{"a", "1", 1}},
+                                                     toplevel_spec());
+        CHECK(install_plan.has_value());
         // override from supported to non supported version
         bp.v["a"] = {"1", 1};
-        {
-            auto install_plan = create_versioned_install_plan(vp,
-                                                              bp,
-                                                              oprovider,
-                                                              var_provider,
-                                                              {Dependency{"a", {"x"}}},
-                                                              {DependencyOverride{"a", "1", 0}},
-                                                              toplevel_spec());
-            CHECK_FALSE(install_plan.has_value());
-        }
+        install_plan = create_versioned_install_plan(vp,
+                                                     bp,
+                                                     oprovider,
+                                                     var_provider,
+                                                     {Dependency{"a", {"x"}}},
+                                                     {DependencyOverride{"a", "1", 0}},
+                                                     toplevel_spec());
+        CHECK_FALSE(install_plan.has_value());
     }
 }

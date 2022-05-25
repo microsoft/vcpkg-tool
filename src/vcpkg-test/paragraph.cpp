@@ -53,54 +53,46 @@ TEST_CASE ("SourceParagraph construct minimum", "[paragraph]")
 
 TEST_CASE ("SourceParagraph construct invalid", "[paragraph]")
 {
-    {
-        auto m_pgh = test_parse_control_file({{
+    auto m_pgh = test_parse_control_file({{
+        {"Source", "zlib"},
+        {"Version", "1.2.8"},
+        {"Build-Depends", "1.2.8"},
+    }});
+
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->has_error());
+
+    m_pgh = test_parse_control_file({{
+        {"Source", "zlib"},
+        {"Version", "1.2.8"},
+        {"Default-Features", "1.2.8"},
+    }});
+
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->has_error());
+
+    m_pgh = test_parse_control_file({
+        {
             {"Source", "zlib"},
             {"Version", "1.2.8"},
+        },
+        {
+            {"Feature", "a"},
             {"Build-Depends", "1.2.8"},
-        }});
+        },
+    });
 
-        REQUIRE(!m_pgh.has_value());
-        REQUIRE(m_pgh.error()->has_error());
-    }
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->has_error());
 
-    {
-        auto m_pgh = test_parse_control_file({{
-            {"Source", "zlib"},
-            {"Version", "1.2.8"},
-            {"Default-Features", "1.2.8"},
-        }});
+    // invalid field`s name
+    m_pgh = test_parse_control_file({{
+        {"Surce", "zlib"},
+        {"Vursion", "1.2.8"},
+    }});
 
-        REQUIRE(!m_pgh.has_value());
-        REQUIRE(m_pgh.error()->has_error());
-    }
-
-    {
-        auto m_pgh = test_parse_control_file({
-            {
-                {"Source", "zlib"},
-                {"Version", "1.2.8"},
-            },
-            {
-                {"Feature", "a"},
-                {"Build-Depends", "1.2.8"},
-            },
-        });
-
-        REQUIRE(!m_pgh.has_value());
-        REQUIRE(m_pgh.error()->has_error());
-    }
-
-    {
-        // invalid field`s name
-        auto m_pgh = test_parse_control_file({{
-            {"Surce", "zlib"},
-            {"Vursion", "1.2.8"},
-        }});
-
-        REQUIRE(!m_pgh.has_value());
-        REQUIRE(m_pgh.error()->has_error());
-    }
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->has_error());
 }
 
 TEST_CASE ("SourceParagraph construct maximum", "[paragraph]")
