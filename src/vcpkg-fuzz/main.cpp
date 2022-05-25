@@ -80,16 +80,16 @@ namespace
                     }
                     else
                     {
-                        msg::print_error(msg::format(msgFuzzInvalidKind, msg::value = value)
-                                             .append_raw('\n')
-                                             .append_indent()
-                                             .append(msgFuzzExpectedOneOf));
+                        msg::println_error(msg::format(msgFuzzInvalidKind, msg::value = value)
+                                               .append_raw('\n')
+                                               .append_indent()
+                                               .append(msgFuzzExpectedOneOf));
                         print_help_and_exit(true);
                     }
                 }
                 else
                 {
-                    msg::print_error(msgFuzzUnknownOption, msg::option = key);
+                    msg::println_error(msgFuzzUnknownOption, msg::option = key);
                     print_help_and_exit(true);
                 }
             }

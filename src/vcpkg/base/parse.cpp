@@ -14,7 +14,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(FormattedParseMessageExpression,
                                  (msg::value),
                                  "Example of {value} is 'x64 & windows'",
-                                 "    on expression: {value}");
+                                 "on expression: {value}");
 
     DECLARE_AND_REGISTER_MESSAGE(
         ExpectedCharacterHere,
@@ -58,11 +58,11 @@ namespace vcpkg
             LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
         if (kind == MessageKind::Warning)
         {
-            res.append(msg::format(msg::msgWarningMessage));
+            res.append(msg::msgWarningMessage);
         }
         else
         {
-            res.append(msg::format(msg::msgErrorMessage));
+            res.append(msg::msgErrorMessage);
         }
         res.append(message);
 
@@ -73,7 +73,7 @@ namespace vcpkg
             location.start_of_line.pointer_to_current(),
             line_end.pointer_to_current(),
         };
-        res.append(msg::format(msgFormattedParseMessageExpression, msg::value = line));
+        res.append_indent().append(msgFormattedParseMessageExpression, msg::value = line);
         res.append_raw('\n');
 
         auto caret_point = StringView{location.start_of_line.pointer_to_current(), location.it.pointer_to_current()};
@@ -92,7 +92,7 @@ namespace vcpkg
         }
         caret_string.push_back('^');
 
-        res.append_raw(std::move(caret_string));
+        res.append_indent().append_raw(std::move(caret_string));
 
         return res;
     }

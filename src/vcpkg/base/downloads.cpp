@@ -24,7 +24,7 @@ namespace
                                  "cmd: {command_line}\n"
                                  "=== curl output ===\n"
                                  "{actual}\n"
-                                 "=== end curl output ===\n");
+                                 "=== end curl output ===");
     DECLARE_AND_REGISTER_MESSAGE(UnexpectedErrorDuringBulkDownload,
                                  (),
                                  "",
@@ -381,7 +381,7 @@ namespace vcpkg
             if (start_size + url_pairs.size() > out->size())
             {
                 // curl stopped before finishing all downloads; retry after some time
-                msg::print_warning(msgUnexpectedErrorDuringBulkDownload);
+                msg::println_warning(msgUnexpectedErrorDuringBulkDownload);
                 std::this_thread::sleep_for(std::chrono::milliseconds(i));
                 url_pairs =
                     View<std::pair<std::string, Path>>{url_pairs.begin() + out->size() - start_size, url_pairs.end()};
@@ -740,7 +740,7 @@ namespace vcpkg
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push.has_value())
                         {
-                            msg::print_warning(msgFailedToStoreBackToMirror);
+                            msg::println_warning(msgFailedToStoreBackToMirror);
                             msg::write_unlocalized_text_to_stdout(Color::warning, maybe_push.error());
                         }
                     }
