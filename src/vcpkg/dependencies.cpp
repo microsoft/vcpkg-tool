@@ -1575,11 +1575,11 @@ namespace vcpkg::Dependencies
                     return;
                 }
 
-                const auto maybe_scfl = m_ver_provider.get_control_file({graph_entry.first.name(), version});
+                auto maybe_scfl = m_ver_provider.get_control_file({graph_entry.first.name(), version});
                 p_scfl = maybe_scfl.get();
                 if (!p_scfl)
                 {
-                    m_errors.push_back(maybe_scfl.error());
+                    m_errors.push_back(std::move(maybe_scfl).error());
                     return;
                 }
             }
