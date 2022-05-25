@@ -1551,13 +1551,12 @@ namespace vcpkg::Dependencies
                                                          const Version& version,
                                                          const std::string& origin)
         {
-            const vcpkg::SourceControlFileAndLocation* p_scfl;
-
             // if this port is an overlay port, ignore the given version and use the version from the overlay
             auto maybe_overlay = m_o_provider.get_control_file(graph_entry.first.name());
-            if (auto p_overlay = maybe_overlay.get())
+            const vcpkg::SourceControlFileAndLocation* p_scfl = maybe_overlay.get();
+            if (p_scfl)
             {
-                const auto overlay_version = p_overlay->source_control_file->to_version();
+                const auto overlay_version = p_scfl->source_control_file->to_version();
                 // If the original request did not match the overlay version, restart this function to operate on the
                 // overlay version
                 if (version != overlay_version)
@@ -1565,7 +1564,6 @@ namespace vcpkg::Dependencies
                     require_port_version(graph_entry, overlay_version, origin);
                     return;
                 }
-                p_scfl = p_overlay;
             }
             else
             {
@@ -1577,14 +1575,11 @@ namespace vcpkg::Dependencies
                     return;
                 }
 
-                auto maybe_control = m_ver_provider.get_control_file({graph_entry.first.name(), version});
-                if (auto p_maybe_control = maybe_control.get())
+                auto maybe_scfl = m_ver_provider.get_control_file({graph_entry.first.name(), version});
+                p_scfl = maybe_scfl.get();
+                if (!p_scfl)
                 {
-                    p_scfl = p_maybe_control;
-                }
-                else
-                {
-                    m_errors.push_back(std::move(maybe_control.error()));
+                    m_errors.push_back(std::move(maybe_scfl).error());
                     return;
                 }
             }

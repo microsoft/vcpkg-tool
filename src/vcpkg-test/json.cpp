@@ -323,7 +323,7 @@ TEST_CASE ("JSON support unicode characters in errors", "[json]")
         // unicode characters w/ bytes >1
         auto res = Json::parse(R"json("Δx/Δt" "")json", "filename");
         REQUIRE(!res);
-    CHECK(res.error()->to_string() ==
+        CHECK(res.error()->to_string() ==
               R"(filename:1:9: error: Unexpected character; expected EOF
     on expression: "Δx/Δt" ""
                            ^)");
@@ -334,7 +334,7 @@ TEST_CASE ("JSON support unicode characters in errors", "[json]")
         // note that the A is full width
         auto res = Json::parse(R"json("姐姐aＡ" "")json", "filename");
         REQUIRE(!res);
-    CHECK(res.error()->to_string() ==
+        CHECK(res.error()->to_string() ==
               R"(filename:1:8: error: Unexpected character; expected EOF
     on expression: "姐姐aＡ" ""
                              ^)");
@@ -345,7 +345,7 @@ TEST_CASE ("JSON support unicode characters in errors", "[json]")
         // (this test should be fixed once the underlying bug is fixed)
         auto res = Json::parse(R"json("é" "")json", "filename");
         REQUIRE(!res);
-    CHECK(res.error()->to_string() ==
+        CHECK(res.error()->to_string() ==
               R"(filename:1:6: error: Unexpected character; expected EOF
     on expression: "é" ""
                         ^)");
