@@ -381,18 +381,18 @@ namespace vcpkg::Build
 
 namespace vcpkg::Build
 {
-    static constexpr StringLiteral NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
-    static constexpr StringLiteral NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
-    static constexpr StringLiteral NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
-    static constexpr StringLiteral NAME_DLLS_IN_STATIC_LIBRARY = "PolicyDLLsInStaticLibrary";
-    static constexpr StringLiteral NAME_MISMATCHED_NUMBER_OF_BINARIES = "PolicyMismatchedNumberOfBinaries";
-    static constexpr StringLiteral NAME_ONLY_RELEASE_CRT = "PolicyOnlyReleaseCRT";
-    static constexpr StringLiteral NAME_EMPTY_INCLUDE_FOLDER = "PolicyEmptyIncludeFolder";
-    static constexpr StringLiteral NAME_ALLOW_OBSOLETE_MSVCRT = "PolicyAllowObsoleteMsvcrt";
-    static constexpr StringLiteral NAME_ALLOW_RESTRICTED_HEADERS = "PolicyAllowRestrictedHeaders";
-    static constexpr StringLiteral NAME_SKIP_DUMPBIN_CHECKS = "PolicySkipDumpbinChecks";
-    static constexpr StringLiteral NAME_SKIP_ARCHITECTURE_CHECK = "PolicySkipArchitectureCheck";
-    static constexpr StringLiteral NAME_CMAKE_HELPER_PORT = "PolicyCmakeHelperPort";
+    static const std::string NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
+    static const std::string NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
+    static const std::string NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
+    static const std::string NAME_DLLS_IN_STATIC_LIBRARY = "PolicyDLLsInStaticLibrary";
+    static const std::string NAME_MISMATCHED_NUMBER_OF_BINARIES = "PolicyMismatchedNumberOfBinaries";
+    static const std::string NAME_ONLY_RELEASE_CRT = "PolicyOnlyReleaseCRT";
+    static const std::string NAME_EMPTY_INCLUDE_FOLDER = "PolicyEmptyIncludeFolder";
+    static const std::string NAME_ALLOW_OBSOLETE_MSVCRT = "PolicyAllowObsoleteMsvcrt";
+    static const std::string NAME_ALLOW_RESTRICTED_HEADERS = "PolicyAllowRestrictedHeaders";
+    static const std::string NAME_SKIP_DUMPBIN_CHECKS = "PolicySkipDumpbinChecks";
+    static const std::string NAME_SKIP_ARCHITECTURE_CHECK = "PolicySkipArchitectureCheck";
+    static const std::string NAME_CMAKE_HELPER_PORT = "PolicyCmakeHelperPort";
 
     static std::remove_const_t<decltype(ALL_POLICIES)> generate_all_policies()
     {
@@ -411,18 +411,18 @@ namespace vcpkg::Build
     {
         switch (policy)
         {
-            case BuildPolicy::EMPTY_PACKAGE: return NAME_EMPTY_PACKAGE.to_string();
-            case BuildPolicy::DLLS_WITHOUT_LIBS: return NAME_DLLS_WITHOUT_LIBS.to_string();
-            case BuildPolicy::DLLS_WITHOUT_EXPORTS: return NAME_DLLS_WITHOUT_EXPORTS.to_string();
-            case BuildPolicy::DLLS_IN_STATIC_LIBRARY: return NAME_DLLS_IN_STATIC_LIBRARY.to_string();
-            case BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES: return NAME_MISMATCHED_NUMBER_OF_BINARIES.to_string();
-            case BuildPolicy::ONLY_RELEASE_CRT: return NAME_ONLY_RELEASE_CRT.to_string();
-            case BuildPolicy::EMPTY_INCLUDE_FOLDER: return NAME_EMPTY_INCLUDE_FOLDER.to_string();
-            case BuildPolicy::ALLOW_OBSOLETE_MSVCRT: return NAME_ALLOW_OBSOLETE_MSVCRT.to_string();
-            case BuildPolicy::ALLOW_RESTRICTED_HEADERS: return NAME_ALLOW_RESTRICTED_HEADERS.to_string();
-            case BuildPolicy::SKIP_DUMPBIN_CHECKS: return NAME_SKIP_DUMPBIN_CHECKS.to_string();
-            case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return NAME_SKIP_ARCHITECTURE_CHECK.to_string();
-            case BuildPolicy::CMAKE_HELPER_PORT: return NAME_CMAKE_HELPER_PORT.to_string();
+            case BuildPolicy::EMPTY_PACKAGE: return NAME_EMPTY_PACKAGE;
+            case BuildPolicy::DLLS_WITHOUT_LIBS: return NAME_DLLS_WITHOUT_LIBS;
+            case BuildPolicy::DLLS_WITHOUT_EXPORTS: return NAME_DLLS_WITHOUT_EXPORTS;
+            case BuildPolicy::DLLS_IN_STATIC_LIBRARY: return NAME_DLLS_IN_STATIC_LIBRARY;
+            case BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES: return NAME_MISMATCHED_NUMBER_OF_BINARIES;
+            case BuildPolicy::ONLY_RELEASE_CRT: return NAME_ONLY_RELEASE_CRT;
+            case BuildPolicy::EMPTY_INCLUDE_FOLDER: return NAME_EMPTY_INCLUDE_FOLDER;
+            case BuildPolicy::ALLOW_OBSOLETE_MSVCRT: return NAME_ALLOW_OBSOLETE_MSVCRT;
+            case BuildPolicy::ALLOW_RESTRICTED_HEADERS: return NAME_ALLOW_RESTRICTED_HEADERS;
+            case BuildPolicy::SKIP_DUMPBIN_CHECKS: return NAME_SKIP_DUMPBIN_CHECKS;
+            case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return NAME_SKIP_ARCHITECTURE_CHECK;
+            case BuildPolicy::CMAKE_HELPER_PORT: return NAME_CMAKE_HELPER_PORT;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
