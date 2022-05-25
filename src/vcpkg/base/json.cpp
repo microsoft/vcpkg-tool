@@ -1103,7 +1103,7 @@ namespace vcpkg::Json
         else if (!ret)
         {
             msg::println_error(msgJsonErrorFailedToParse, msg::path = json_file);
-            msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->format());
+            msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->to_string());
             msg::println();
             Checks::exit_fail(li);
         }

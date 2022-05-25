@@ -40,16 +40,13 @@ namespace vcpkg
         }
     }
 
-    std::string ParseError::format() const
+    std::string ParseError::to_string() const
     {
         auto decoder = Unicode::Utf8Decoder(line.data(), line.data() + line.size());
         ParseMessage as_message;
         as_message.location = SourceLoc{std::next(decoder, caret_col), decoder, row, column};
         as_message.message = LocalizedString::from_raw(std::string(message));
-
-        auto res = as_message.format(origin, MessageKind::Error).extract_data();
-        res.push_back('\n');
-        return res;
+        return as_message.format(origin, MessageKind::Error).extract_data();
     }
 
     LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
@@ -97,8 +94,6 @@ namespace vcpkg
         return res;
     }
 
-    const std::string& ParseError::get_message() const { return this->message; }
-
     void ParseMessages::exit_if_errors_or_warnings(StringView origin) const
     {
         for (const auto& warning : warnings)
@@ -108,7 +103,7 @@ namespace vcpkg
 
         if (error)
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, LocalizedString::from_raw(error->format()));
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, LocalizedString::from_raw(error->to_string()));
         }
 
         if (!warnings.empty())

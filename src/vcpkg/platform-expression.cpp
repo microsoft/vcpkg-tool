@@ -632,7 +632,7 @@ namespace vcpkg::PlatformExpression
 
         if (auto p = parser.extract_error())
         {
-            return p->format();
+            return p->to_string();
         }
         else
         {

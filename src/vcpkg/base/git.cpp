@@ -147,7 +147,7 @@ namespace vcpkg
 
         if (auto error = parser.get_error())
         {
-            return msg::format(msgGitUnexpectedCommandOutput).append_raw(error->format());
+            return msg::format(msgGitUnexpectedCommandOutput).append_raw('\n').append_raw(error->to_string());
         }
 
         return results;
