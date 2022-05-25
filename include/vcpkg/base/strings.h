@@ -3,6 +3,7 @@
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/to_string.h>
 
 #include <errno.h>
 #include <inttypes.h>
@@ -13,12 +14,6 @@
 
 namespace vcpkg::Strings::details
 {
-    template<class T>
-    auto to_string(const T& t) -> decltype(t.to_string())
-    {
-        return t.to_string();
-    }
-
     // first looks up to_string on `T` using ADL; then, if that isn't found,
     // uses the above definition which returns t.to_string()
     template<class T, class = std::enable_if_t<!std::is_arithmetic<T>::value>>

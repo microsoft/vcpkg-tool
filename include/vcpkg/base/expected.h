@@ -6,6 +6,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/to_string.h>
 
 #include <functional>
 #include <system_error>
@@ -326,7 +327,7 @@ namespace vcpkg
         {
             if (value_is_error)
             {
-                Checks::exit_with_message(line_info, fmt::format("{}", error()));
+                Checks::exit_with_message(line_info, to_string(error()));
             }
         }
 

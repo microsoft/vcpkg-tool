@@ -76,26 +76,13 @@ namespace
             ++cr->move_assigns;
             return *this;
         }
+        std::string to_string() const { return "a construct tracker"; }
         ~ConstructTracker() { --cr->alive; }
     };
 }
 
-namespace fmt
-{
-    template<int kind>
-    struct formatter<ConstructTracker<kind>, char>
-    {
-        constexpr auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
-        {
-            return vcpkg::basic_format_parse_impl(ctx);
-        }
-        template<class FormatContext>
-        auto format(const ConstructTracker<kind>&, FormatContext& ctx) const -> decltype(ctx.out())
-        {
-            return format_to(ctx.out(), "a construct tracker");
-        }
-    };
-}
+VCPKG_FORMAT_WITH_TO_STRING(ConstructTracker<0>);
+VCPKG_FORMAT_WITH_TO_STRING(ConstructTracker<1>);
 
 TEST_CASE ("construct and destroy matching type", "[expected]")
 {
