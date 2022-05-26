@@ -816,14 +816,21 @@ namespace vcpkg
             cmd_line, [&](const StringView sv) { lines.on_data(sv, per_line_cb); }, wd, env, encoding);
 
         lines.on_end(per_line_cb);
-        return rc;
+        if (auto pr = rc.get())
+        {
+            return *pr;
+        }
+        else
+        {
+            return rc.error().error_value;
+        }
     }
 
-    int cmd_execute_and_stream_data(const Command& cmd_line,
-                                    std::function<void(StringView)> data_cb,
-                                    const WorkingDirectory& wd,
-                                    const Environment& env,
-                                    Encoding encoding)
+    ExpectedApi<int> cmd_execute_and_stream_data(const Command& cmd_line,
+                                                 std::function<void(StringView)> data_cb,
+                                                 const WorkingDirectory& wd,
+                                                 const Environment& env,
+                                                 Encoding encoding)
     {
         const auto timer = ElapsedTimer::create_started();
 #if defined(_WIN32)
@@ -831,13 +838,10 @@ namespace vcpkg
         using vcpkg::g_ctrl_c_state;
 
         g_ctrl_c_state.transition_to_spawn_process();
-        auto maybe_proc_info = windows_create_process_redirect(cmd_line.command_line(), wd, env, 0);
-        auto exit_code = [&]() -> unsigned long {
-            if (auto p = maybe_proc_info.get())
-                return p->wait_and_stream_output(data_cb, encoding);
-            else
-                return maybe_proc_info.error().error_value;
-        }();
+        ExpectedApi<int> exit_code =
+            windows_create_process_redirect(cmd_line.command_line(), wd, env, 0).map([&](ProcessInfoAndPipes&& output) {
+                return output.wait_and_stream_output(data_cb, encoding);
+            });
         g_ctrl_c_state.transition_from_spawn_process();
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
@@ -865,8 +869,9 @@ namespace vcpkg
         const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
-            return 1;
+            return SystemApiError{"popen", errno};
         }
+
         char buf[1024];
         // Use fgets because fread will block until the entire buffer is filled.
         while (fgets(buf, 1024, pipe))
@@ -876,32 +881,37 @@ namespace vcpkg
 
         if (!feof(pipe))
         {
-            return 1;
+            return SystemApiError{"feof", errno};
         }
 
-        auto exit_code = pclose(pipe);
-        if (WIFEXITED(exit_code))
+        int ec = pclose(pipe);
+        if (WIFEXITED(ec))
         {
-            exit_code = WEXITSTATUS(exit_code);
+            ec = WEXITSTATUS(ec);
         }
-        else if (WIFSIGNALED(exit_code))
+        else if (WIFSIGNALED(ec))
         {
-            exit_code = WTERMSIG(exit_code);
+            ec = WTERMSIG(ec);
         }
-        else if (WIFSTOPPED(exit_code))
+        else if (WIFSTOPPED(ec))
         {
-            exit_code = WSTOPSIG(exit_code);
+            ec = WSTOPSIG(ec);
         }
+
+        ExpectedApi<int> exit_code = ec;
 #endif /// ^^^ !_WIN32
 
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
-        Debug::print(proc_id,
-                     ": cmd_execute_and_stream_data() returned ",
-                     exit_code,
-                     " after ",
-                     Strings::format("%8llu", static_cast<unsigned long long>(elapsed)),
-                     " us\n");
+        if (const auto pec = exit_code.get())
+        {
+            Debug::print(proc_id,
+                         ": cmd_execute_and_stream_data() returned ",
+                         *pec,
+                         " after ",
+                         Strings::format("%8llu", static_cast<unsigned long long>(elapsed)),
+                         " us\n");
+        }
 
         return exit_code;
     }
@@ -925,7 +935,13 @@ namespace vcpkg
             wd,
             env,
             encoding);
-        return {rc, std::move(output)};
+
+        if (auto prc = rc.get())
+        {
+            return {*prc, std::move(output)};
+        }
+
+        return {static_cast<int>(rc.error().error_value)};
     }
 
     uint64_t get_subproccess_stats() { return g_subprocess_stats.load(); }

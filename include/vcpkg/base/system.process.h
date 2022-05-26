@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/system.process.h>
 
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/view.h>
@@ -136,11 +137,11 @@ namespace vcpkg
                                      const Environment& env = default_environment,
                                      Encoding encoding = Encoding::Utf8);
 
-    int cmd_execute_and_stream_data(const Command& cmd_line,
-                                    std::function<void(StringView)> data_cb,
-                                    const WorkingDirectory& wd = default_working_directory,
-                                    const Environment& env = default_environment,
-                                    Encoding encoding = Encoding::Utf8);
+    ExpectedApi<int> cmd_execute_and_stream_data(const Command& cmd_line,
+                                                 std::function<void(StringView)> data_cb,
+                                                 const WorkingDirectory& wd = default_working_directory,
+                                                 const Environment& env = default_environment,
+                                                 Encoding encoding = Encoding::Utf8);
 
     uint64_t get_subproccess_stats();
 

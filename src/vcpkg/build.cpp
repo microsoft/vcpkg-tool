@@ -1045,7 +1045,7 @@ namespace vcpkg::Build
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
-        int return_code;
+        ExpectedApi<int> return_code = SystemApiError::empty;
         {
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(
@@ -1083,7 +1083,7 @@ namespace vcpkg::Build
                                                        }) +
                                          "]",
                                      buildtimeus);
-            if (return_code != 0)
+            if (!return_code.has_value() || return_code.value_or_exit(VCPKG_LINE_INFO) != 0)
             {
                 metrics->track_property("error", "build failed");
                 metrics->track_property("build_error", spec_string);
