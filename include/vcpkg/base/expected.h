@@ -56,34 +56,38 @@ namespace vcpkg
         T* t;
     };
 
-    template<class T, class S>
+    template<class T, class Error>
     struct ExpectedT
     {
         // Constructors are intentionally implicit
-        template<class ConvToS,
-                 std::enable_if_t<std::is_convertible_v<ConvToS, S> && !std::is_same_v<T, S> &&
-                                      !std::is_same_v<std::remove_reference_t<ConvToS>, T>,
-                                  int> = 0>
-        ExpectedT(ConvToS&& s) : m_s(std::forward<ConvToS>(s)), value_is_error(true)
-        {
-        }
 
-        template<class ConvToS, std::enable_if_t<std::is_convertible_v<ConvToS, S>, int> = 0>
-        ExpectedT(ConvToS&& s, ExpectedRightTag) : m_s(std::forward<ConvToS>(s)), value_is_error(true)
-        {
-        }
-
+        // Each single argument ctor exists if we can convert to T or Error, and it isn't exactly the other type.
+        // Note that this means both are effectively disabled when T == Error.
         template<class ConvToT,
-                 std::enable_if_t<std::is_convertible_v<ConvToT, T> && !std::is_same_v<T, S> &&
-                                      !std::is_same_v<std::remove_reference_t<ConvToT>, S>,
-                                  int> = 0,
-                 int = 1>
+                 std::enable_if_t<std::is_convertible_v<ConvToT, T> &&
+                                      !std::is_same_v<std::remove_reference_t<ConvToT>, Error>,
+                                  int> = 0>
         ExpectedT(ConvToT&& t) : m_t(std::forward<ConvToT>(t)), value_is_error(false)
         {
         }
 
+        template<class ConvToError,
+                 std::enable_if_t<std::is_convertible_v<ConvToError, Error> &&
+                                      !std::is_same_v<std::remove_reference_t<ConvToError>, T>,
+                                  int> = 0,
+                 int = 1>
+        ExpectedT(ConvToError&& e) : m_error(std::forward<ConvToError>(e)), value_is_error(true)
+        {
+        }
+
+        // Constructors that explicitly specify left or right exist if the parameter is convertable to T or Error
         template<class ConvToT, std::enable_if_t<std::is_convertible_v<ConvToT, T>, int> = 0>
         ExpectedT(ConvToT&& t, ExpectedLeftTag) : m_t(std::forward<ConvToT>(t)), value_is_error(false)
+        {
+        }
+
+        template<class ConvToError, std::enable_if_t<std::is_convertible_v<ConvToError, Error>, int> = 0>
+        ExpectedT(ConvToError&& e, ExpectedRightTag) : m_error(std::forward<ConvToError>(e)), value_is_error(true)
         {
         }
 
@@ -91,7 +95,7 @@ namespace vcpkg
         {
             if (value_is_error)
             {
-                ::new (&m_s) S(other.m_s);
+                ::new (&m_error) Error(other.m_error);
             }
             else
             {
@@ -103,7 +107,7 @@ namespace vcpkg
         {
             if (value_is_error)
             {
-                ::new (&m_s) S(std::move(other.m_s));
+                ::new (&m_error) Error(std::move(other.m_error));
             }
             else
             {
@@ -120,11 +124,11 @@ namespace vcpkg
             {
                 if (other.value_is_error)
                 {
-                    m_s = std::move(other.m_s);
+                    m_error = std::move(other.m_error);
                 }
                 else
                 {
-                    m_s.~S();
+                    m_error.~Error();
                     ::new (&m_t) ExpectedHolder<T>(std::move(other.m_t));
                     value_is_error = false;
                 }
@@ -134,7 +138,7 @@ namespace vcpkg
                 if (other.value_is_error)
                 {
                     m_t.~ExpectedHolder<T>();
-                    ::new (&m_s) S(std::move(other.m_s));
+                    ::new (&m_error) Error(std::move(other.m_error));
                     value_is_error = true;
                 }
                 else
@@ -150,7 +154,7 @@ namespace vcpkg
         {
             if (value_is_error)
             {
-                m_s.~S();
+                m_error.~Error();
             }
             else
             {
@@ -185,16 +189,16 @@ namespace vcpkg
             return *m_t.get();
         }
 
-        const S& error() const&
+        const Error& error() const&
         {
             exit_if_not_error();
-            return m_s;
+            return m_error;
         }
 
-        S&& error() &&
+        Error&& error() &&
         {
             exit_if_not_error();
-            return std::move(m_s);
+            return std::move(m_error);
         }
 
         typename ExpectedHolder<T>::const_pointer get() const
@@ -217,16 +221,16 @@ namespace vcpkg
             return m_t.get();
         }
 
-        // map(F): returns an Expected<result_of_calling_F, S>
+        // map(F): returns an Expected<result_of_calling_F, Error>
         //
         // If *this holds a value, returns an expected holding the value F(*get())
         // Otherwise, returns an expected containing a copy of error()
         template<class F>
-        ExpectedT<decltype(std::declval<F&>()(std::declval<const T&>())), S> map(F f) const&
+        ExpectedT<decltype(std::declval<F&>()(std::declval<const T&>())), Error> map(F f) const&
         {
             if (value_is_error)
             {
-                return {m_s, expected_right_tag};
+                return {m_error, expected_right_tag};
             }
             else
             {
@@ -235,11 +239,11 @@ namespace vcpkg
         }
 
         template<class F>
-        ExpectedT<decltype(std::declval<F&>()(std::declval<T>())), S> map(F f) &&
+        ExpectedT<decltype(std::declval<F&>()(std::declval<T>())), Error> map(F f) &&
         {
             if (value_is_error)
             {
-                return {std::move(m_s), expected_right_tag};
+                return {std::move(m_error), expected_right_tag};
             }
             else
             {
@@ -252,11 +256,11 @@ namespace vcpkg
         // If *this holds a value, returns an expected holding the same value.
         // Otherwise, returns an expected containing f(error())
         template<class F>
-        ExpectedT<T, decltype(std::declval<F&>()(std::declval<const S&>()))> map_error(F f) const&
+        ExpectedT<T, decltype(std::declval<F&>()(std::declval<const Error&>()))> map_error(F f) const&
         {
             if (value_is_error)
             {
-                return {f(m_s), expected_right_tag};
+                return {f(m_error), expected_right_tag};
             }
             else
             {
@@ -265,11 +269,11 @@ namespace vcpkg
         }
 
         template<class F>
-        ExpectedT<T, decltype(std::declval<F&>()(std::declval<S>()))> map_error(F f) &&
+        ExpectedT<T, decltype(std::declval<F&>()(std::declval<Error>()))> map_error(F f) &&
         {
             if (value_is_error)
             {
-                return {f(std::move(m_s)), expected_right_tag};
+                return {f(std::move(m_error)), expected_right_tag};
             }
             else
             {
@@ -287,7 +291,7 @@ namespace vcpkg
         };
 
         template<class OtherTy>
-        struct IsThenCompatibleExpected<ExpectedT<OtherTy, S>> : std::true_type
+        struct IsThenCompatibleExpected<ExpectedT<OtherTy, Error>> : std::true_type
         {
         };
 
@@ -299,7 +303,7 @@ namespace vcpkg
                           "then expects f to return an expected with the same error type");
             if (value_is_error)
             {
-                return {m_s, expected_right_tag};
+                return {m_error, expected_right_tag};
             }
             else
             {
@@ -314,7 +318,7 @@ namespace vcpkg
                           "then expects f to return an expected with the same error type");
             if (value_is_error)
             {
-                return {m_s, expected_right_tag};
+                return {m_error, expected_right_tag};
             }
             else
             {
@@ -341,7 +345,7 @@ namespace vcpkg
 
         union
         {
-            S m_s;
+            Error m_error;
             ExpectedHolder<T> m_t;
         };
 
