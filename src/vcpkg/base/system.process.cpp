@@ -575,7 +575,7 @@ namespace vcpkg
         return SystemApiError{"CreateProcessW", GetLastError()};
     }
 
-    static ExpectedT<ProcessInfo, unsigned long> windows_create_windowless_process(StringView cmd_line,
+    static ExpectedApi<ProcessInfo> windows_create_windowless_process(StringView cmd_line,
                                                                                    const WorkingDirectory& wd,
                                                                                    const Environment& env,
                                                                                    DWORD dwCreationFlags) noexcept
@@ -586,8 +586,7 @@ namespace vcpkg
         startup_info.dwFlags = STARTF_USESHOWWINDOW;
         startup_info.wShowWindow = SW_HIDE;
 
-        return windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info)
-            .map_error([](const SystemApiError& sae) { return sae.error_value; });
+        return windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info);
     }
 
     struct ProcessInfoAndPipes
@@ -687,9 +686,9 @@ namespace vcpkg
                                               default_working_directory,
                                               default_environment,
                                               CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
-        if (!process_info.get())
+        if (!process_info.has_value())
         {
-            Debug::print("cmd_execute_background() failed with error code ", process_info.error(), "\n");
+            Debug::print("cmd_execute_background() failed: ", process_info.error(), "\n");
         }
 
         Debug::print("cmd_execute_background() took ", static_cast<int>(timer.microseconds()), " us\n");
@@ -754,7 +753,7 @@ namespace vcpkg
             }
             else
             {
-                return proc_info.error();
+                return proc_info.error().error_value;
             }
         }();
         if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
