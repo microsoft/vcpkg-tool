@@ -28,8 +28,8 @@ namespace vcpkg
     struct LocalizedString
     {
         LocalizedString() = default;
-        operator StringView() const { return m_data; }
-        const std::string& data() const { return m_data; }
+        operator StringView() const noexcept { return m_data; }
+        const std::string& data() const noexcept { return m_data; }
         std::string extract_data() { return std::exchange(m_data, ""); }
 
         static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
@@ -335,5 +335,17 @@ namespace vcpkg::msg
     typename Message::is_message_type println_error(Message m, Ts... args)
     {
         println_error(format(m, args...));
+    }
+
+    template<class Message, class... Ts, class = typename Message::is_message_type>
+    LocalizedString format_warning(Message m, Ts... args)
+    {
+        return format(msgWarningMessage).append(m, args...);
+    }
+
+    template<class Message, class... Ts, class = typename Message::is_message_type>
+    LocalizedString format_error(Message m, Ts... args)
+    {
+        return format(msgErrorMessage).append(m, args...);
     }
 }

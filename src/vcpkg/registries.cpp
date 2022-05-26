@@ -915,8 +915,9 @@ namespace
         auto maybe_versions_json = Json::parse(std::move(contents));
         if (!maybe_versions_json.has_value())
         {
-            return Strings::format(
-                "Error: failed to parse versions file for `%s`: %s", port_name, maybe_versions_json.error()->format());
+            return Strings::format("Error: failed to parse versions file for `%s`: %s",
+                                   port_name,
+                                   maybe_versions_json.error()->to_string());
         }
         if (!maybe_versions_json.get()->first.is_object())
         {
@@ -952,7 +953,7 @@ namespace
         if (!maybe_value.has_value())
         {
             return Strings::format(
-                "Error: failed to parse baseline file: %s\n%s", origin, maybe_value.error()->format());
+                "Error: failed to parse baseline file: %s\n%s", origin, maybe_value.error()->to_string());
         }
 
         auto& value = *maybe_value.get();

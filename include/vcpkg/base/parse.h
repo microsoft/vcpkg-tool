@@ -33,10 +33,14 @@ namespace vcpkg
         const std::string line;
         const std::string message;
 
-        std::string format() const;
-        const std::string& get_message() const;
+        std::string to_string() const;
     };
+} // namespace vcpkg
 
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ParseError);
+
+namespace vcpkg
+{
     struct SourceLoc
     {
         Unicode::Utf8Decoder it;
