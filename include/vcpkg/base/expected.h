@@ -31,7 +31,9 @@ namespace vcpkg
         ExpectedHolder(ExpectedHolder&&) = default;
         ExpectedHolder& operator=(const ExpectedHolder&) = default;
         ExpectedHolder& operator=(ExpectedHolder&&) = default;
-        template<class Fwd, std::enable_if_t<!std::is_same_v<ExpectedHolder, std::remove_reference_t<Fwd>>, int> = 0>
+        template<
+            class Fwd,
+            std::enable_if_t<!std::is_same_v<ExpectedHolder, std::remove_cv_t<std::remove_reference_t<Fwd>>>, int> = 0>
         ExpectedHolder(Fwd&& t) : t(std::forward<Fwd>(t))
         {
         }
@@ -80,7 +82,7 @@ namespace vcpkg
         {
         }
 
-        // Constructors that explicitly specify left or right exist if the parameter is convertable to T or Error
+        // Constructors that explicitly specify left or right exist if the parameter is convertible to T or Error
         template<class ConvToT, std::enable_if_t<std::is_convertible_v<ConvToT, T>, int> = 0>
         ExpectedT(ConvToT&& t, ExpectedLeftTag) : m_t(std::forward<ConvToT>(t)), value_is_error(false)
         {
