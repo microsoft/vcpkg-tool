@@ -296,10 +296,13 @@ namespace vcpkg::Commands::CIVerifyVersions
         }
 
         auto maybe_port_git_tree_map = get_builtin_port_git_objects(paths);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           maybe_port_git_tree_map.has_value(),
-                           "Fatal error: Failed to obtain git SHAs for local ports.\n%s",
-                           maybe_port_git_tree_map.error());
+        if (!maybe_port_git_tree_map.has_value())
+        {
+            Checks::exit_with_message(VCPKG_LINE_INFO,
+                                      "Fatal error: Failed to obtain git SHAs for local ports.\n%s",
+                                      maybe_port_git_tree_map.error());
+        }
+
         auto port_git_tree_map = maybe_port_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Baseline is required.

@@ -26,7 +26,7 @@ static Json::Object parse_json_object(StringView sv)
     {
         INFO("Error found while parsing JSON document:");
         INFO(sv.to_string());
-        FAIL(json.error()->format());
+        FAIL(json.error()->to_string());
         return Json::Object{};
     }
 }
@@ -1050,35 +1050,31 @@ TEST_CASE ("license error messages", "[manifests][license]")
     ParseMessages messages;
     parse_spdx_license_expression("", messages);
     REQUIRE(messages.error);
-    CHECK(messages.error->format() == R"(<license string>:1:1: error: SPDX license expression was empty.
+    CHECK(messages.error->to_string() == R"(<license string>:1:1: error: SPDX license expression was empty.
     on expression: 
-                   ^
-)");
+                   ^)");
 
     parse_spdx_license_expression("MIT ()", messages);
     REQUIRE(messages.error);
-    CHECK(messages.error->format() ==
+    CHECK(messages.error->to_string() ==
           R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
     on expression: MIT ()
-                       ^
-)");
+                       ^)");
 
     parse_spdx_license_expression("MIT +", messages);
     REQUIRE(messages.error);
     CHECK(
-        messages.error->format() ==
+        messages.error->to_string() ==
         R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
     on expression: MIT +
-                       ^
-)");
+                       ^)");
 
     parse_spdx_license_expression("MIT AND", messages);
     REQUIRE(messages.error);
-    CHECK(messages.error->format() ==
+    CHECK(messages.error->to_string() ==
           R"(<license string>:1:8: error: Expected a license name, found the end of the string.
     on expression: MIT AND
-                         ^
-)");
+                         ^)");
 
     parse_spdx_license_expression("MIT AND unknownlicense", messages);
     CHECK(!messages.error);

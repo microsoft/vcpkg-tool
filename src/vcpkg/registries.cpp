@@ -536,10 +536,12 @@ namespace
         {
             auto maybe_version_entries =
                 load_versions_file(fs, VersionDbType::Git, m_paths.builtin_registry_versions, port_name);
-            Checks::check_maybe_upgrade(
-                VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: " + maybe_version_entries.error());
-            auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
+            if (!maybe_version_entries.has_value())
+            {
+                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: " + maybe_version_entries.error());
+            }
 
+            auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
             auto res = std::make_unique<BuiltinGitRegistryEntry>(m_paths);
             res->port_name = port_name.to_string();
             for (auto&& version_entry : version_entries)
@@ -636,8 +638,11 @@ namespace
     {
         auto maybe_version_entries =
             load_versions_file(m_fs, VersionDbType::Filesystem, m_path / registry_versions_dir_name, port_name, m_path);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: %s", maybe_version_entries.error());
+        if (!maybe_version_entries.has_value())
+        {
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: %s", maybe_version_entries.error());
+        }
+
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
         auto res = std::make_unique<FilesystemRegistryEntry>(port_name.to_string());
@@ -886,14 +891,17 @@ namespace
             };
         }
 
-        return maybe_path.error_to_string();
+        return std::move(maybe_path).error().extract_data();
     }
 
     void GitRegistryEntry::fill_data_from_path(const Filesystem& fs, const Path& port_versions_path) const
     {
         auto maybe_version_entries = load_versions_file(fs, VersionDbType::Git, port_versions_path, port_name);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: " + maybe_version_entries.error());
+        if (!maybe_version_entries.has_value())
+        {
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: " + maybe_version_entries.error());
+        }
+
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
         for (auto&& version_entry : version_entries)
@@ -971,8 +979,9 @@ namespace
         auto maybe_versions_json = Json::parse(std::move(contents));
         if (!maybe_versions_json.has_value())
         {
-            return Strings::format(
-                "Error: failed to parse versions file for `%s`: %s", port_name, maybe_versions_json.error()->format());
+            return Strings::format("Error: failed to parse versions file for `%s`: %s",
+                                   port_name,
+                                   maybe_versions_json.error()->to_string());
         }
         if (!maybe_versions_json.get()->first.is_object())
         {
@@ -1008,7 +1017,7 @@ namespace
         if (!maybe_value.has_value())
         {
             return Strings::format(
-                "Error: failed to parse baseline file: %s\n%s", origin, maybe_value.error()->format());
+                "Error: failed to parse baseline file: %s\n%s", origin, maybe_value.error()->to_string());
         }
 
         auto& value = *maybe_value.get();

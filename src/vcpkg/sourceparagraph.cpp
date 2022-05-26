@@ -1031,7 +1031,7 @@ namespace vcpkg
             }
             if (auto err = parser.get_error())
             {
-                r.add_generic_error(type_name(), err->format());
+                r.add_generic_error(type_name(), err->to_string());
                 return std::string();
             }
 
@@ -1382,89 +1382,33 @@ namespace vcpkg
 
     std::string ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>> error_info_list)
     {
-        Checks::check_exit(VCPKG_LINE_INFO, error_info_list.size() > 0);
-
         std::string message;
 
-        for (auto&& error_info : error_info_list)
+        if (!error_info_list.empty())
         {
-            Checks::check_exit(VCPKG_LINE_INFO, error_info != nullptr);
-            if (!error_info->error.empty())
+            error_info_list[0]->to_string(message);
+            for (std::size_t idx = 1; idx < error_info_list.size(); ++idx)
             {
-                Strings::append(message, "Error: while loading ", error_info->name, ":\n", error_info->error, '\n');
+                message.push_back('\n');
+                error_info_list[1]->to_string(message);
             }
 
-            if (!error_info->other_errors.empty())
-            {
-                Strings::append(message, "Errors occurred while parsing ", error_info->name, "\n");
-                for (auto&& msg : error_info->other_errors)
-                    Strings::append(message, "    ", msg, '\n');
-            }
-        }
-
-        bool have_remaining_fields = false;
-        for (auto&& error_info : error_info_list)
-        {
-            if (!error_info->extra_fields.empty())
+            if (std::any_of(
+                    error_info_list.begin(),
+                    error_info_list.end(),
+                    [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
             {
                 Strings::append(message,
-                                "Error: There are invalid fields in the control or manifest file of ",
-                                error_info->name,
-                                '\n');
-                Strings::append(message, "The following fields were not expected:\n");
-
-                for (const auto& pr : error_info->extra_fields)
-                {
-                    Strings::append(message, "    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
-                }
-                have_remaining_fields = true;
-            }
-        }
-
-        if (have_remaining_fields)
-        {
-            Strings::append(message,
-                            "This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
-                            Strings::join("\n    ", get_list_of_valid_fields()),
-                            "\n\n");
+                                "This is the list of valid fields for CONTROL files (case-sensitive): \n\n    ",
+                                Strings::join("\n    ", get_list_of_valid_fields()),
+                                "\n\n");
 #if defined(_WIN32)
-            auto bootstrap = ".\\bootstrap-vcpkg.bat";
+                auto bootstrap = ".\\bootstrap-vcpkg.bat";
 #else
-            auto bootstrap = "./bootstrap-vcpkg.sh";
+                auto bootstrap = "./bootstrap-vcpkg.sh";
 #endif
-            Strings::append(
-                message, "You may need to update the vcpkg binary; try running ", bootstrap, " to update.\n\n");
-        }
-
-        for (auto&& error_info : error_info_list)
-        {
-            if (!error_info->missing_fields.empty())
-            {
                 Strings::append(
-                    message, "Error: There are missing fields in the control file of ", error_info->name, '\n');
-                Strings::append(message, "The following fields were missing:\n");
-                for (const auto& pr : error_info->missing_fields)
-                {
-                    Strings::append(message, "    In ", pr.first, ": ", Strings::join(", ", pr.second), "\n");
-                }
-            }
-        }
-
-        for (auto&& error_info : error_info_list)
-        {
-            if (!error_info->expected_types.empty())
-            {
-                Strings::append(message,
-                                "Error: There are invalid field types in the CONTROL or manifest file of ",
-                                error_info->name,
-                                '\n');
-                Strings::append(message, "The following fields had the wrong types:\n\n");
-
-                for (const auto& pr : error_info->expected_types)
-                {
-                    Strings::append(message, "    ", pr.first, " was expected to be ", pr.second, "\n");
-                }
-                Strings::append(message, "\n");
+                    message, "You may need to update the vcpkg binary; try running ", bootstrap, " to update.\n\n");
             }
         }
 

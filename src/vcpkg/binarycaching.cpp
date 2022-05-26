@@ -2105,7 +2105,7 @@ ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     parser.parse();
     if (auto err = parser.get_error())
     {
-        return Strings::concat(err->format(), "For more information, see ", docs::assetcaching_url, "\n");
+        return Strings::concat(err->to_string(), "\nFor more information, see ", docs::assetcaching_url, "\n");
     }
 
     if (s.azblob_templates_to_put.size() > 1)
@@ -2168,14 +2168,14 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
     default_parser.parse();
     if (auto err = default_parser.get_error())
     {
-        return err->get_message();
+        return err->message;
     }
 
     BinaryConfigParser env_parser(env_string, "VCPKG_BINARY_SOURCES", &s);
     env_parser.parse();
     if (auto err = env_parser.get_error())
     {
-        return err->format();
+        return err->to_string();
     }
 
     for (auto&& arg : args)
@@ -2184,7 +2184,7 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
         arg_parser.parse();
         if (auto err = arg_parser.get_error())
         {
-            return err->format();
+            return err->to_string();
         }
     }
 

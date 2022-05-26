@@ -130,7 +130,7 @@ namespace vcpkg
                     parser.skip_tabs_spaces();
                     if (ParserBase::is_lineend(parser.cur()))
                     {
-                        parser.add_error(msg::format(msgGitParseExpectedPath), parser.cur_loc());
+                        parser.add_error(msg::format(msgGitParseExpectedPath));
                         break;
                     }
                     auto path = parser.match_until(ParserBase::is_whitespace).to_string();
@@ -139,14 +139,14 @@ namespace vcpkg
                 }
                 else
                 {
-                    parser.add_error(msg::format(msgGitParseExpectedNewLineOrPath), parser.cur_loc());
+                    parser.add_error(msg::format(msgGitParseExpectedNewLineOrPath));
                     break;
                 }
             }
 
             if (!ParserBase::is_lineend(parser.cur()))
             {
-                parser.add_error(msg::format(msgGitParseExpectedNewLine), parser.cur_loc());
+                parser.add_error(msg::format(msgGitParseExpectedNewLine));
                 break;
             }
 
@@ -156,11 +156,12 @@ namespace vcpkg
 
         if (auto error = parser.get_error())
         {
-            return msg::format(msgGitUnexpectedCommandOutput).append_raw(error->format());
+            return msg::format(msgGitUnexpectedCommandOutput).append_raw('\n').append_raw(error->to_string());
         }
 
         return results;
     }
+
     ExpectedL<std::vector<GitLsTreeLine>> parse_git_ls_tree_output(StringView output)
     {
         // Output of ls-tree is a list of git objects in the tree, each line is in the format
@@ -177,7 +178,7 @@ namespace vcpkg
         const auto extract_value = [](ParserBase& parser, std::string& into) -> bool {
             if (parser.is_whitespace(parser.cur()))
             {
-                parser.add_error(msg::format(msgGitParseExpectedValue), parser.cur_loc());
+                parser.add_error(msg::format(msgGitParseExpectedValue));
                 return false;
             }
 
@@ -188,7 +189,7 @@ namespace vcpkg
 
         std::vector<GitLsTreeLine> results;
 
-        ParserBase parser(output, "git ls-tree");
+        ParserBase parser(output, "git-ls-tree");
         while (!parser.at_eof())
         {
             GitLsTreeLine result;
@@ -201,19 +202,19 @@ namespace vcpkg
 
             if (std::find(std::begin(valid_types), std::end(valid_types), result.type) == std::end(valid_types))
             {
-                parser.add_error(msg::format(msgGitParseExpectedGitObjectType), parser.cur_loc());
+                parser.add_error(msg::format(msgGitParseExpectedGitObjectType));
                 break;
             }
 
             if (result.git_object.size() != 40)
             {
-                parser.add_error(msg::format(msgGitParseExpectedGitObject), parser.cur_loc());
+                parser.add_error(msg::format(msgGitParseExpectedGitObject));
                 break;
             }
 
             if (!parser.is_lineend(parser.cur()))
             {
-                parser.add_error(msg::format(msgGitParseExpectedNewLine), parser.cur_loc());
+                parser.add_error(msg::format(msgGitParseExpectedNewLine));
                 break;
             }
 
@@ -223,7 +224,7 @@ namespace vcpkg
 
         if (auto error = parser.get_error())
         {
-            return msg::format(msgGitUnexpectedCommandOutput).append_raw(error->format());
+            return msg::format_error(msgGitUnexpectedCommandOutput).append_raw("\n").append_raw(error->to_string());
         }
 
         return results;
