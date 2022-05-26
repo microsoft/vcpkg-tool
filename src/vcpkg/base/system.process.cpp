@@ -533,11 +533,11 @@ namespace vcpkg
 
     /// <param name="maybe_environment">If non-null, an environment block to use for the new process. If null, the
     /// new process will inherit the current environment.</param>
-    static ExpectedT<ProcessInfo, unsigned long> windows_create_process(StringView cmd_line,
-                                                                        const WorkingDirectory& wd,
-                                                                        const Environment& env,
-                                                                        DWORD dwCreationFlags,
-                                                                        STARTUPINFOW& startup_info) noexcept
+    static ExpectedApi<ProcessInfo> windows_create_process(StringView cmd_line,
+                                                           const WorkingDirectory& wd,
+                                                           const Environment& env,
+                                                           DWORD dwCreationFlags,
+                                                           STARTUPINFOW& startup_info) noexcept
     {
         ProcessInfo process_info;
         Debug::print("CreateProcessW(", cmd_line, ")\n");
@@ -555,25 +555,24 @@ namespace vcpkg
         }
 
         auto environment_block = env.m_env_data;
-
         // Leaking process information handle 'process_info.proc_info.hProcess'
         // /analyze can't tell that we transferred ownership here
         VCPKG_MSVC_WARNING(suppress : 6335)
-        bool succeeded = TRUE == CreateProcessW(nullptr,
-                                                Strings::to_utf16(cmd_line).data(),
-                                                nullptr,
-                                                nullptr,
-                                                TRUE,
-                                                IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
-                                                environment_block.empty() ? nullptr : &environment_block[0],
-                                                working_directory.empty() ? nullptr : working_directory.data(),
-                                                &startup_info,
-                                                &process_info.proc_info);
-
-        if (succeeded)
+        if (CreateProcessW(nullptr,
+                           Strings::to_utf16(cmd_line).data(),
+                           nullptr,
+                           nullptr,
+                           TRUE,
+                           IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | dwCreationFlags,
+                           environment_block.empty() ? nullptr : &environment_block[0],
+                           working_directory.empty() ? nullptr : working_directory.data(),
+                           &startup_info,
+                           &process_info.proc_info))
+        {
             return process_info;
-        else
-            return GetLastError();
+        }
+
+        return SystemApiError{"CreateProcessW", GetLastError()};
     }
 
     static ExpectedT<ProcessInfo, unsigned long> windows_create_windowless_process(StringView cmd_line,
@@ -587,7 +586,8 @@ namespace vcpkg
         startup_info.dwFlags = STARTF_USESHOWWINDOW;
         startup_info.wShowWindow = SW_HIDE;
 
-        return windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info);
+        return windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info)
+            .map_error([](const SystemApiError& sae) { return sae.error_value; });
     }
 
     struct ProcessInfoAndPipes
@@ -673,7 +673,7 @@ namespace vcpkg
             return ret;
         }
 
-        return maybe_proc_info.error();
+        return maybe_proc_info.error().error_value;
     }
 #endif
 
