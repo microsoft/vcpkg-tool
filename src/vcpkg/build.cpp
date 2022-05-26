@@ -785,7 +785,7 @@ namespace vcpkg::Build
         CompilerInfo compiler_info;
         std::string buf;
 
-        int rc;
+        ExpectedApi<int> rc = SystemApiError::empty;
         {
             const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             rc = cmd_execute_and_stream_lines(
@@ -819,7 +819,7 @@ namespace vcpkg::Build
                 env);
         } // close out_file
 
-        if (compiler_info.hash.empty() || rc != 0)
+        if (compiler_info.hash.empty() || !rc.has_value() || rc.value_or_exit(VCPKG_LINE_INFO) != 0)
         {
             Debug::print("Compiler information tracking can be disabled by passing --",
                          VcpkgCmdArguments::FEATURE_FLAGS_ARG,

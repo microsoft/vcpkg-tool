@@ -804,26 +804,18 @@ namespace vcpkg
         return exit_code;
     }
 
-    int cmd_execute_and_stream_lines(const Command& cmd_line,
-                                     std::function<void(StringView)> per_line_cb,
-                                     const WorkingDirectory& wd,
-                                     const Environment& env,
-                                     Encoding encoding)
+    ExpectedApi<int> cmd_execute_and_stream_lines(const Command& cmd_line,
+                                                  std::function<void(StringView)> per_line_cb,
+                                                  const WorkingDirectory& wd,
+                                                  const Environment& env,
+                                                  Encoding encoding)
     {
         Strings::LinesStream lines;
 
         auto rc = cmd_execute_and_stream_data(
             cmd_line, [&](const StringView sv) { lines.on_data(sv, per_line_cb); }, wd, env, encoding);
-
         lines.on_end(per_line_cb);
-        if (auto pr = rc.get())
-        {
-            return *pr;
-        }
-        else
-        {
-            return rc.error().error_value;
-        }
+        return rc;
     }
 
     ExpectedApi<int> cmd_execute_and_stream_data(const Command& cmd_line,

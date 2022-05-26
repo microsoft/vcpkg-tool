@@ -308,12 +308,12 @@ namespace vcpkg
         std::vector<std::string> lines;
 
         auto res = cmd_execute_and_stream_lines(cmd, [out, &lines](StringView line) {
-            lines.push_back(line.to_string());
-            if (Strings::starts_with(line, guid_marker))
-            {
-                out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
-            }
-        });
+                       lines.push_back(line.to_string());
+                       if (Strings::starts_with(line, guid_marker))
+                       {
+                           out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
+                       }
+                   }).value_or_exit(VCPKG_LINE_INFO);
         Checks::check_exit(VCPKG_LINE_INFO, res == 0, "curl failed to execute with exit code: %d", res);
 
         if (out->size() != start_size + urls.size())
@@ -371,11 +371,11 @@ namespace vcpkg
                 cmd.string_arg(url.first).string_arg("-o").string_arg(url.second);
             }
             auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
-                if (Strings::starts_with(line, guid_marker))
-                {
-                    out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
-                }
-            });
+                           if (Strings::starts_with(line, guid_marker))
+                           {
+                               out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
+                           }
+                       }).value_or_exit(VCPKG_LINE_INFO);
             Checks::check_exit(VCPKG_LINE_INFO, res == 0, "Error: curl failed to execute with exit code: %d", res);
 
             if (start_size + url_pairs.size() > out->size())
@@ -447,17 +447,26 @@ namespace vcpkg
         cmd.string_arg("-T").string_arg(file);
         int code = 0;
         auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
-            if (Strings::starts_with(line, guid_marker))
-            {
-                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
-            }
-        });
-        if (res != 0 || (code >= 100 && code < 200) || code >= 300)
+                       if (Strings::starts_with(line, guid_marker))
+                       {
+                           code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+                       }
+                   }).map_error([](const SystemApiError& sae) { return sae.to_string(); });
+        if (auto pres = res.get())
         {
-            return Strings::concat(
-                "Error: curl failed to put file to ", url, " with exit code '", res, "' and http code '", code, "'\n");
+            if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
+            {
+                res = Strings::concat("Error: curl failed to put file to ",
+                                      url,
+                                      " with exit code '",
+                                      *pres,
+                                      "' and http code '",
+                                      code,
+                                      "'\n");
+            }
         }
-        return code;
+
+        return res;
     }
 
 #if defined(_WIN32)
