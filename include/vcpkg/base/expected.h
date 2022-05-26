@@ -335,7 +335,7 @@ namespace vcpkg
             }
         }
 
-        void exit_if_not_error() const
+        void exit_if_not_error() const noexcept
         {
             if (!value_is_error)
             {
