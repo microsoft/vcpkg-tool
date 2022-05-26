@@ -4,6 +4,7 @@
 
 namespace vcpkg
 {
+    struct SystemApiError;
     struct ExpectedLeftTag;
     struct ExpectedRightTag;
 

@@ -14,6 +14,20 @@
 
 namespace vcpkg
 {
+    struct SystemApiError
+    {
+        StringLiteral api_name;
+#if defined(_WIN32)
+        unsigned long error_value;
+#else
+        int error_value;
+#endif
+
+        static const SystemApiError empty;
+
+        std::string to_string() const;
+        void to_string(std::string&) const;
+    };
     struct ExpectedLeftTag
     {
     };
@@ -570,4 +584,6 @@ namespace vcpkg
 
     template<class T>
     using ExpectedS = ExpectedT<T, std::string>;
+    template<class T>
+    using ExpectedApi = ExpectedT<T, SystemApiError>;
 }
