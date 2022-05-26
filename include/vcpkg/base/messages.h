@@ -30,6 +30,7 @@ namespace vcpkg
         LocalizedString() = default;
         operator StringView() const noexcept { return m_data; }
         const std::string& data() const noexcept { return m_data; }
+        const std::string& to_string() const noexcept { return m_data; }
         std::string extract_data() { return std::exchange(m_data, ""); }
 
         static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
@@ -116,16 +117,7 @@ namespace vcpkg
     };
 }
 
-template<>
-struct fmt::formatter<vcpkg::LocalizedString> : fmt::formatter<vcpkg::StringView>
-{
-    // parse is inherited from formatter<StringView>
-    template<class FormatContext>
-    auto format(const vcpkg::LocalizedString& s, FormatContext& ctx)
-    {
-        return formatter<vcpkg::StringView>::format(s.data(), ctx);
-    }
-};
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::LocalizedString);
 
 namespace vcpkg::msg
 {

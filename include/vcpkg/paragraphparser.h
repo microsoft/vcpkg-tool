@@ -42,6 +42,7 @@ VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ParseControlErrorInfo);
 
 namespace vcpkg
 {
+    inline std::string to_string(const std::unique_ptr<ParseControlErrorInfo>& up) { return up->to_string(); }
     template<class P>
     using ParseExpected = vcpkg::ExpectedT<std::unique_ptr<P>, std::unique_ptr<ParseControlErrorInfo>>;
 

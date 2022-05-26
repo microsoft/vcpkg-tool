@@ -509,10 +509,12 @@ namespace
         {
             auto maybe_version_entries =
                 load_versions_file(fs, VersionDbType::Git, m_paths.builtin_registry_versions, port_name);
-            Checks::check_maybe_upgrade(
-                VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: " + maybe_version_entries.error());
-            auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
+            if (!maybe_version_entries.has_value())
+            {
+                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: " + maybe_version_entries.error());
+            }
 
+            auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
             auto res = std::make_unique<BuiltinGitRegistryEntry>(m_paths);
             res->port_name = port_name.to_string();
             for (auto&& version_entry : version_entries)
@@ -609,8 +611,11 @@ namespace
     {
         auto maybe_version_entries =
             load_versions_file(m_fs, VersionDbType::Filesystem, m_path / registry_versions_dir_name, port_name, m_path);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: %s", maybe_version_entries.error());
+        if (!maybe_version_entries.has_value())
+        {
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: %s", maybe_version_entries.error());
+        }
+
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
         auto res = std::make_unique<FilesystemRegistryEntry>(port_name.to_string());
@@ -836,8 +841,11 @@ namespace
     void GitRegistryEntry::fill_data_from_path(const Filesystem& fs, const Path& port_versions_path) const
     {
         auto maybe_version_entries = load_versions_file(fs, VersionDbType::Git, port_versions_path, port_name);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: " + maybe_version_entries.error());
+        if (!maybe_version_entries.has_value())
+        {
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: " + maybe_version_entries.error());
+        }
+
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
         for (auto&& version_entry : version_entries)
