@@ -515,10 +515,7 @@ TEST_CASE ("invalid logic expression, use '|' instead of 'or'", "[platform-expre
 
 TEST_CASE ("unexpected character or identifier in logic expression", "[platform-expression]")
 {
-    {
-        auto m_expr = parse_expr("windows aND arm");
-        CHECK_FALSE(m_expr);
-    }
+    CHECK_FALSE(parse_expr("windows aND arm"));
 
     {
         auto m_expr = parse_expr("windows a&d arm");
