@@ -94,7 +94,7 @@ namespace
             auto maybe_path = m_paths.get_git_impl().splat_object(m_paths.git_registries_config(),
                                                                   m_paths.get_filesystem(),
                                                                   m_paths.get_tool_exe(Tools::CMAKE),
-                                                                  m_paths.registries_output(),
+                                                                  destination,
                                                                   git_object);
             if (auto path = maybe_path.get())
             {
@@ -700,8 +700,7 @@ namespace
             if (!maybe_contents.has_value())
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
-                auto maybe_fetch = git.init_fetch(
-                    m_paths.git_registries_config(), m_paths.get_filesystem(), m_repo, m_baseline_identifier);
+                auto maybe_fetch = git.init_fetch(config, m_paths.get_filesystem(), m_repo, m_baseline_identifier);
                 if (!maybe_fetch.has_value())
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",

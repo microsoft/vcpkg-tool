@@ -116,6 +116,8 @@ namespace vcpkg
                                                   Filesystem& fs,
                                                   StringView uri,
                                                   StringView rev) const = 0;
+
+        virtual ~IGit() = default;
     };
 
     std::unique_ptr<IGit> make_git_from_exe(StringView git_exe);
