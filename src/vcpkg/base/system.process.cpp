@@ -576,9 +576,9 @@ namespace vcpkg
     }
 
     static ExpectedApi<ProcessInfo> windows_create_windowless_process(StringView cmd_line,
-                                                                                   const WorkingDirectory& wd,
-                                                                                   const Environment& env,
-                                                                                   DWORD dwCreationFlags) noexcept
+                                                                      const WorkingDirectory& wd,
+                                                                      const Environment& env,
+                                                                      DWORD dwCreationFlags) noexcept
     {
         STARTUPINFOW startup_info;
         memset(&startup_info, 0, sizeof(STARTUPINFOW));
@@ -633,10 +633,10 @@ namespace vcpkg
         }
     };
 
-    static ExpectedT<ProcessInfoAndPipes, unsigned long> windows_create_process_redirect(StringView cmd_line,
-                                                                                         const WorkingDirectory& wd,
-                                                                                         const Environment& env,
-                                                                                         DWORD dwCreationFlags) noexcept
+    static ExpectedApi<ProcessInfoAndPipes> windows_create_process_redirect(StringView cmd_line,
+                                                                            const WorkingDirectory& wd,
+                                                                            const Environment& env,
+                                                                            DWORD dwCreationFlags) noexcept
     {
         ProcessInfoAndPipes ret;
 
@@ -652,13 +652,29 @@ namespace vcpkg
         saAttr.lpSecurityDescriptor = NULL;
 
         // Create a pipe for the child process's STDOUT.
-        if (!CreatePipe(&ret.child_stdout, &startup_info.hStdOutput, &saAttr, 0)) Checks::exit_fail(VCPKG_LINE_INFO);
+        if (!CreatePipe(&ret.child_stdout, &startup_info.hStdOutput, &saAttr, 0))
+        {
+            return SystemApiError{"CreatePipe stdout", GetLastError()};
+        }
+
         // Ensure the read handle to the pipe for STDOUT is not inherited.
-        if (!SetHandleInformation(ret.child_stdout, HANDLE_FLAG_INHERIT, 0)) Checks::exit_fail(VCPKG_LINE_INFO);
+        if (!SetHandleInformation(ret.child_stdout, HANDLE_FLAG_INHERIT, 0))
+        {
+            return SystemApiError{"SetHandleInformation stdout", GetLastError()};
+        }
+
         // Create a pipe for the child process's STDIN.
-        if (!CreatePipe(&startup_info.hStdInput, &ret.child_stdin, &saAttr, 0)) Checks::exit_fail(VCPKG_LINE_INFO);
+        if (!CreatePipe(&startup_info.hStdInput, &ret.child_stdin, &saAttr, 0))
+        {
+            return SystemApiError{"CreatePipe stdin", GetLastError()};
+        }
+
         // Ensure the write handle to the pipe for STDIN is not inherited.
-        if (!SetHandleInformation(ret.child_stdin, HANDLE_FLAG_INHERIT, 0)) Checks::exit_fail(VCPKG_LINE_INFO);
+        if (!SetHandleInformation(ret.child_stdin, HANDLE_FLAG_INHERIT, 0))
+        {
+            return SystemApiError{"SetHandleInformation stdin", GetLastError()};
+        }
+
         startup_info.hStdError = startup_info.hStdOutput;
 
         auto maybe_proc_info = windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info);
@@ -672,7 +688,7 @@ namespace vcpkg
             return ret;
         }
 
-        return maybe_proc_info.error().error_value;
+        return maybe_proc_info.error();
     }
 #endif
 
@@ -820,7 +836,7 @@ namespace vcpkg
             if (auto p = maybe_proc_info.get())
                 return p->wait_and_stream_output(data_cb, encoding);
             else
-                return maybe_proc_info.error();
+                return maybe_proc_info.error().error_value;
         }();
         g_ctrl_c_state.transition_from_spawn_process();
 #else  // ^^^ _WIN32 // !_WIN32 vvv
