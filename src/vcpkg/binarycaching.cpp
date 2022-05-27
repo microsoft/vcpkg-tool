@@ -654,12 +654,16 @@ namespace
         {
             if (m_interactive)
             {
-                if (cmd_execute(cmdline) == 0)
-                {
-                    return {};
-                }
+                return cmd_execute(cmdline)
+                    .map_error([](SystemApiError&& sae) { return sae.to_string(); })
+                    .then([](int exit_code) -> ExpectedS<void> {
+                        if (exit_code == 0)
+                        {
+                            return {};
+                        }
 
-                return "NuGet command failed and output was not captured because --interactive was specified";
+                        return "NuGet command failed and output was not captured because --interactive was specified";
+                    });
             }
 
             return cmd_execute_and_capture_output(cmdline)
@@ -1189,7 +1193,8 @@ namespace
         bool stat(StringView url) const override
         {
             auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
-            return cmd_execute(cmd) == 0;
+            auto execute_result = cmd_execute(cmd);
+            return execute_result.has_value() && execute_result.value_or_exit(VCPKG_LINE_INFO) == 0;
         }
 
         bool upload_file(StringView object, const Path& archive) const override
@@ -1241,7 +1246,9 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
-            return cmd_execute(cmd) == 0;
+
+            auto execute_result = cmd_execute(cmd);
+            return execute_result.has_value() && execute_result.value_or_exit(VCPKG_LINE_INFO) == 0;
         }
 
         bool upload_file(StringView object, const Path& archive) const override
@@ -1304,7 +1311,8 @@ namespace
         bool stat(StringView url) const override
         {
             auto cmd = command().string_arg("ls").string_arg(url);
-            return cmd_execute(cmd) == 0;
+            auto execute_result = cmd_execute(cmd);
+            return execute_result.has_value() && execute_result.value_or_exit(VCPKG_LINE_INFO) == 0;
         }
 
         bool upload_file(StringView object, const Path& archive) const override

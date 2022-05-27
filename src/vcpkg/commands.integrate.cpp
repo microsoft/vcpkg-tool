@@ -482,7 +482,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
                        .string_arg("Bypass")
                        .string_arg("-Command")
                        .string_arg(Strings::format("& {& '%s' }", script_path));
-        const int rc = cmd_execute(cmd);
+        const int rc = cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
             vcpkg::printf(Color::error,

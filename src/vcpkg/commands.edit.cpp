@@ -283,7 +283,7 @@ namespace vcpkg::Commands::Edit
         }
 #endif // ^^^ _WIN32
 
-        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line));
+        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line).value_or_exit(VCPKG_LINE_INFO));
     }
 
     void EditCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const

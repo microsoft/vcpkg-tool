@@ -108,9 +108,9 @@ namespace vcpkg
     extern const WorkingDirectory default_working_directory;
     extern const Environment default_environment;
 
-    int cmd_execute(const Command& cmd_line,
-                    const WorkingDirectory& wd = default_working_directory,
-                    const Environment& env = default_environment);
+    ExpectedApi<int> cmd_execute(const Command& cmd_line,
+                                 const WorkingDirectory& wd = default_working_directory,
+                                 const Environment& env = default_environment);
     int cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
 
 #if defined(_WIN32)

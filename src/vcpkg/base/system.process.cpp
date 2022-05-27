@@ -493,7 +493,7 @@ namespace vcpkg
 
     int cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
     {
-        return cmd_execute(cmd_line, wd, get_clean_environment());
+        return cmd_execute(cmd_line, wd, get_clean_environment()).value_or_exit(VCPKG_LINE_INFO);
     }
 
 #if defined(_WIN32)
@@ -774,26 +774,21 @@ namespace vcpkg
     }
 #endif
 
-    int cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
+    static ExpectedApi<int> cmd_execute_impl(const Command& cmd_line,
+                                             const WorkingDirectory& wd,
+                                             const Environment& env)
     {
-        auto timer = ElapsedTimer::create_started();
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
         g_ctrl_c_state.transition_to_spawn_process();
-        auto proc_info = windows_create_windowless_process(cmd_line.command_line(), wd, env, 0);
-        auto long_exit_code = [&]() -> unsigned long {
-            if (auto p = proc_info.get())
-            {
-                return p->wait();
-            }
-            else
-            {
-                return proc_info.error().error_value;
-            }
-        }();
-        if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
-        int exit_code = static_cast<int>(long_exit_code);
+        auto result =
+            windows_create_windowless_process(cmd_line.command_line(), wd, env, 0).map([](ProcessInfo&& proc_info) {
+                auto long_exit_code = proc_info.wait();
+                if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
+                return static_cast<int>(long_exit_code);
+            });
         g_ctrl_c_state.transition_from_spawn_process();
+        return result;
 #else
         (void)env;
         Command real_command_line_builder;
@@ -815,12 +810,26 @@ namespace vcpkg
         Debug::print("system(", real_command_line, ")\n");
         fflush(nullptr);
 
-        int exit_code = system(real_command_line.c_str());
+        return system(real_command_line.c_str());
 #endif
+    }
+
+    ExpectedApi<int> cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
+    {
+        auto timer = ElapsedTimer::create_started();
+        auto maybe_result = cmd_execute_impl(cmd_line, wd, env);
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
-        Debug::print("cmd_execute() returned ", exit_code, " after ", elapsed, " us\n");
-        return exit_code;
+        if (auto result = maybe_result.get())
+        {
+            Debug::print("cmd_execute() returned ", *result, " after ", elapsed, " us\n");
+        }
+        else
+        {
+            Debug::print("cmd_execute() returned (", maybe_result.error(), ") after ", elapsed, " us\n");
+        }
+
+        return maybe_result;
     }
 
     ExpectedApi<int> cmd_execute_and_stream_lines(const Command& cmd_line,
