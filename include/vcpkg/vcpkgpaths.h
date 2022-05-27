@@ -106,7 +106,6 @@ namespace vcpkg
 
         Path baselines_output() const;
         Path versions_output() const;
-        Path registries_output() const;
 
         const Path original_cwd;
         const Path root;
@@ -138,8 +137,8 @@ namespace vcpkg
         // gets git configuration for the built-in registry
         GitConfig git_builtin_config() const;
 
-        // gets git configuration for remote registries
-        GitConfig git_registries_config() const;
+        // location of the user's registry cache
+        const Path& reg_cache_dir() const;
 
         // gets the embedded git sha of the vcpkg instance
         Optional<std::string> git_embedded_sha() const;

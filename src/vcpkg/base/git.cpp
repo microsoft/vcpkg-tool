@@ -403,6 +403,25 @@ namespace vcpkg
             return execute_git_cmd(cmd).then(parse_git_ls_tree_output);
         }
 
+        virtual ExpectedL<std::string> ls_remote(const GitConfig& config, StringView uri, StringView ref) const override
+        {
+            auto cmd = git_cmd(config).string_arg("ls-remote").string_arg(uri).string_arg(ref);
+
+            return execute_git_cmd(cmd).then([&cmd](StringView output) -> ExpectedL<std::string> {
+                auto it = std::find(output.begin(), output.end(), ' ');
+                if (it == output.end())
+                {
+                    return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
+                        .append_raw('\n')
+                        .append_raw(output);
+                }
+                else
+                {
+                    return StringView{output.begin(), it}.to_string();
+                }
+            });
+        }
+
         virtual ExpectedL<std::string> init_fetch(const GitConfig& config,
                                                   Filesystem& fs,
                                                   StringView uri,

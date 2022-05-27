@@ -79,6 +79,8 @@ namespace vcpkg
         /// \param path An optional subpath to be queried
         virtual ExpectedL<std::vector<GitStatusLine>> status(const GitConfig& config, StringView path = {}) const = 0;
 
+        virtual ExpectedL<std::string> ls_remote(const GitConfig& config, StringView uri, StringView ref) const = 0;
+
         virtual ExpectedL<std::vector<GitLsTreeLine>> ls_tree(const GitConfig& config,
                                                               StringView rev,
                                                               GitLsTreeOptions options = {}) const = 0;

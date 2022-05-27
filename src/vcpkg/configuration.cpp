@@ -536,18 +536,20 @@ namespace
 
 namespace vcpkg
 {
-    static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths, StringView url)
+    static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths,
+                                                                       StringView url,
+                                                                       StringView ref = "HEAD")
     {
-        return paths.get_git_impl()
-            .init_fetch(paths.git_registries_config(), paths.get_filesystem(), url, "HEAD")
-            .map([](std::string&& s) { return Optional<std::string>(std::move(s)); });
+        return paths.get_git_impl().ls_remote(paths.git_builtin_config(), url, ref).map([](std::string&& s) {
+            return Optional<std::string>(std::move(s));
+        });
     }
 
     ExpectedL<Optional<std::string>> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths) const
     {
         if (kind == RegistryConfigDeserializer::KIND_GIT)
         {
-            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO));
+            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO), reference.value_or("HEAD"));
         }
         else if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
         {

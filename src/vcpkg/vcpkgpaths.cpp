@@ -381,7 +381,7 @@ namespace vcpkg
                                  const Path& original_cwd)
                 : m_fs(fs)
                 , m_ff_settings(args.feature_flag_settings())
-                , m_cache_root(default_registries_cache_path().value_or_exit(VCPKG_LINE_INFO))
+                , m_reg_cache_root(default_registries_cache_path().value_or_exit(VCPKG_LINE_INFO))
                 , m_manifest_dir(compute_manifest_dir(fs, args, original_cwd))
                 , m_bundle(load_bundle_file(fs, root))
                 , m_download_manager(std::make_shared<DownloadManager>(
@@ -405,7 +405,7 @@ namespace vcpkg
 
             Filesystem& m_fs;
             const FeatureFlagSettings m_ff_settings;
-            const Path m_cache_root;
+            const Path m_reg_cache_root;
             const Path m_manifest_dir;
             const BundleSettings m_bundle;
             const std::shared_ptr<const DownloadManager> m_download_manager;
@@ -464,9 +464,6 @@ namespace vcpkg
                 , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
                 , m_has_configuration_file(fs.exists(m_config_dir / "vcpkg-configuration.json", VCPKG_LINE_INFO))
                 , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
-                , m_registries_work_tree_dir(m_cache_root / "git")
-                , m_registries_dot_git_dir(m_cache_root / "git" / ".git")
-                , m_registries_git_trees(m_cache_root / "git-trees")
                 , downloads(compute_downloads_root(fs, args, root, m_bundle))
                 , tools(downloads / "tools")
                 , m_installed(compute_installed(fs, args, root, m_manifest_dir, m_bundle))
@@ -539,9 +536,6 @@ namespace vcpkg
             const Path m_config_dir;
             const bool m_has_configuration_file;
             const Path m_manifest_path;
-            const Path m_registries_work_tree_dir;
-            const Path m_registries_dot_git_dir;
-            const Path m_registries_git_trees;
             const Path downloads;
             const Path tools;
             const Optional<InstalledPaths> m_installed;
@@ -721,7 +715,6 @@ namespace vcpkg
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
     Path VcpkgPaths::versions_output() const { return buildtrees() / "versioning_" / "versions"; }
-    Path VcpkgPaths::registries_output() const { return m_pimpl->m_registries_work_tree_dir; }
 
     Path InstalledPaths::listfile_path(const BinaryParagraph& pgh) const
     {
@@ -937,13 +930,7 @@ namespace vcpkg
         return conf;
     }
 
-    GitConfig VcpkgPaths::git_registries_config() const
-    {
-        GitConfig conf;
-        conf.git_dir = m_pimpl->m_registries_dot_git_dir;
-        conf.git_work_tree = m_pimpl->m_registries_work_tree_dir;
-        return conf;
-    }
+    const Path& VcpkgPaths::reg_cache_dir() const { return m_pimpl->m_reg_cache_root; }
 
     Optional<std::string> VcpkgPaths::git_embedded_sha() const { return m_pimpl->m_bundle.m_embedded_git_sha; }
 

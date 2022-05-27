@@ -36,6 +36,14 @@ namespace
                                  "",
                                  "the baseline does not contain an entry for port {package_name}");
 
+    GitConfig git_registries_config(const VcpkgPaths& paths)
+    {
+        GitConfig conf;
+        conf.git_work_tree = paths.reg_cache_dir() / "git";
+        conf.git_dir = conf.git_work_tree / ".git";
+        return conf;
+    }
+
     struct GitRegistry;
 
     struct GitRegistryEntry final : RegistryEntry
@@ -65,6 +73,7 @@ namespace
     {
         GitRegistry(const VcpkgPaths& paths, std::string&& repo, std::string&& reference, std::string&& baseline)
             : m_paths(paths)
+            , m_gitconfig(git_registries_config(paths))
             , m_repo(std::move(repo))
             , m_reference(std::move(reference))
             , m_baseline_identifier(std::move(baseline))
@@ -90,12 +99,9 @@ namespace
 
         ExpectedL<Path> git_checkout_registry_port(StringView git_object) const
         {
-            const auto destination = m_paths.registries_output() / git_object;
-            auto maybe_path = m_paths.get_git_impl().splat_object(m_paths.git_registries_config(),
-                                                                  m_paths.get_filesystem(),
-                                                                  m_paths.get_tool_exe(Tools::CMAKE),
-                                                                  destination,
-                                                                  git_object);
+            const auto destination = m_paths.reg_cache_dir() / "git-trees" / git_object;
+            auto maybe_path = m_paths.get_git_impl().splat_object(
+                m_gitconfig, m_paths.get_filesystem(), m_paths.get_tool_exe(Tools::CMAKE), destination, git_object);
             if (auto path = maybe_path.get())
             {
                 return *path;
@@ -112,7 +118,7 @@ namespace
                 auto e = get_lock_entry();
                 e.ensure_up_to_date(m_paths);
                 auto maybe_tree = m_paths.get_git_impl().rev_parse(
-                    m_paths.git_registries_config(), Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
+                    m_gitconfig, Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
 
                 if (!maybe_tree)
                 {
@@ -153,7 +159,7 @@ namespace
             if (!m_stale_versions_tree.has_value())
             {
                 auto maybe_tree = m_paths.get_git_impl().rev_parse(
-                    m_paths.git_registries_config(), Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
+                    m_gitconfig, Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
                 if (!maybe_tree)
                 {
                     // This could be caused by git gc or otherwise -- fall back to full fetch
@@ -171,6 +177,7 @@ namespace
         }
 
         const VcpkgPaths& m_paths;
+        const GitConfig m_gitconfig;
 
         std::string m_repo;
         std::string m_reference;
@@ -692,20 +699,19 @@ namespace
             }
 
             const auto& git = m_paths.get_git_impl();
-            const auto config = m_paths.git_registries_config();
 
             const std::string rev = Strings::concat(m_baseline_identifier, ":versions/baseline.json");
 
-            auto maybe_contents = git.show(config, rev);
+            auto maybe_contents = git.show(m_gitconfig, rev);
             if (!maybe_contents.has_value())
             {
                 get_lock_entry().ensure_up_to_date(m_paths);
-                maybe_contents = git.show(config, rev);
+                maybe_contents = git.show(m_gitconfig, rev);
             }
             if (!maybe_contents.has_value())
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
-                auto maybe_fetch = git.init_fetch(config, m_paths.get_filesystem(), m_repo, m_baseline_identifier);
+                auto maybe_fetch = git.init_fetch(m_gitconfig, m_paths.get_filesystem(), m_repo, m_baseline_identifier);
                 if (!maybe_fetch.has_value())
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
@@ -719,7 +725,7 @@ namespace
                         m_repo,
                         maybe_fetch.error());
                 }
-                maybe_contents = git.show(config, rev);
+                maybe_contents = git.show(m_gitconfig, rev);
             }
 
             if (!maybe_contents.has_value())
@@ -1198,7 +1204,7 @@ namespace vcpkg
         {
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
             auto x =
-                paths.get_git_impl().init_fetch(paths.git_registries_config(), paths.get_filesystem(), repo, reference);
+                paths.get_git_impl().init_fetch(git_registries_config(paths), paths.get_filesystem(), repo, reference);
             it = lockdata.emplace(repo.to_string(),
                                   EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
             modified = true;
@@ -1216,7 +1222,7 @@ namespace vcpkg
 
             data->second.commit_id =
                 paths.get_git_impl()
-                    .init_fetch(paths.git_registries_config(), paths.get_filesystem(), repo, reference)
+                    .init_fetch(git_registries_config(paths), paths.get_filesystem(), repo, reference)
                     .value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
             lockfile->modified = true;
