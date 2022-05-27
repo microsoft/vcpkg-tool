@@ -103,7 +103,7 @@ namespace vcpkg
                            "Expected %s version: [%s], but was [%s]. Please re-run bootstrap-vcpkg.",
                            XML_PATH,
                            XML_VERSION,
-                           match_xml_version[1]);
+                           match_xml_version[1].str());
 
         const std::regex tool_regex{Strings::format(R"###(<tool[\s]+name="%s"[\s]+os="%s">)###", tool, os)};
         std::cmatch match_tool_entry;
