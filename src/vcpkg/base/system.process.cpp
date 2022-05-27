@@ -491,9 +491,9 @@ namespace vcpkg
         return res;
     }
 
-    int cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
+    ExpectedApi<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
     {
-        return cmd_execute(cmd_line, wd, get_clean_environment()).value_or_exit(VCPKG_LINE_INFO);
+        return cmd_execute(cmd_line, wd, get_clean_environment());
     }
 
 #if defined(_WIN32)

@@ -111,7 +111,7 @@ namespace vcpkg
     ExpectedApi<int> cmd_execute(const Command& cmd_line,
                                  const WorkingDirectory& wd = default_working_directory,
                                  const Environment& env = default_environment);
-    int cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
+    ExpectedApi<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
 
 #if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd_line,
