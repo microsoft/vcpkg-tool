@@ -674,7 +674,8 @@ namespace
             if (!maybe_contents.has_value())
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
-                if (auto err = m_paths.git_fetch(m_repo, m_baseline_identifier))
+                auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
+                if (!maybe_err.has_value())
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
                                                                      "defined");
@@ -685,8 +686,9 @@ namespace
                         m_repo,
                         maybe_contents.error(),
                         m_repo,
-                        *err.get());
+                        maybe_err.error());
                 }
+
                 maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             }
 

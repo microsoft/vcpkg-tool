@@ -14,6 +14,8 @@ namespace vcpkg
 
     template<class T, class Error>
     struct ExpectedT;
+    template<class Error>
+    struct ExpectedT<void, Error>;
 
     template<class T>
     using ExpectedL = ExpectedT<T, LocalizedString>;

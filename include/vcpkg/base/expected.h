@@ -354,6 +354,220 @@ namespace vcpkg
         bool value_is_error;
     };
 
+    template<class Error>
+    struct ExpectedT<void, Error>
+    {
+        ExpectedT() : value_is_error(false) { }
+        ExpectedT(ExpectedLeftTag) : value_is_error(false) { }
+        template<class ConvToError, std::enable_if_t<std::is_convertible_v<ConvToError, Error>, int> = 0>
+        ExpectedT(ConvToError&& e) : m_error(std::forward<ConvToError>(e)), value_is_error(true)
+        {
+        }
+        template<class ConvToError, std::enable_if_t<std::is_convertible_v<ConvToError, Error>, int> = 0>
+        ExpectedT(ConvToError&& e, ExpectedRightTag) : m_error(std::forward<ConvToError>(e)), value_is_error(true)
+        {
+        }
+
+        ExpectedT(const ExpectedT& other) : value_is_error(other.value_is_error)
+        {
+            if (value_is_error)
+            {
+                ::new (&m_error) Error(other.m_error);
+            }
+        }
+
+        ExpectedT(ExpectedT&& other) : value_is_error(other.value_is_error)
+        {
+            if (value_is_error)
+            {
+                ::new (&m_error) Error(std::move(other.m_error));
+            }
+        }
+
+        // copy assign is deleted to avoid creating "valueless by exception" states
+        ExpectedT& operator=(const ExpectedT& other) = delete;
+
+        ExpectedT& operator=(ExpectedT&& other) noexcept // enforces termination
+        {
+            if (value_is_error)
+            {
+                if (other.value_is_error)
+                {
+                    m_error = std::move(other.m_error);
+                }
+                else
+                {
+                    m_error.~Error();
+                    value_is_error = false;
+                }
+            }
+            else
+            {
+                if (other.value_is_error)
+                {
+                    ::new (&m_error) Error(std::move(other.m_error));
+                    value_is_error = true;
+                }
+                else
+                {
+                    // assigning void over void is a no-op :)
+                }
+            }
+
+            return *this;
+        }
+
+        ~ExpectedT()
+        {
+            if (value_is_error)
+            {
+                m_error.~Error();
+            }
+        }
+
+        explicit constexpr operator bool() const noexcept { return !value_is_error; }
+        constexpr bool has_value() const noexcept { return !value_is_error; }
+
+        void value_or_exit(const LineInfo& line_info) const { exit_if_error(line_info); }
+
+        const Error& error() const&
+        {
+            exit_if_not_error();
+            return m_error;
+        }
+
+        Error&& error() &&
+        {
+            exit_if_not_error();
+            return std::move(m_error);
+        }
+
+        template<class F>
+        ExpectedT<decltype(std::declval<F&>()()), Error> map(F f) const&
+        {
+            if (value_is_error)
+            {
+                return {m_error, expected_right_tag};
+            }
+            else
+            {
+                return {f(), expected_left_tag};
+            }
+        }
+
+        template<class F>
+        ExpectedT<decltype(std::declval<F&>()()), Error> map(F f) &&
+        {
+            if (value_is_error)
+            {
+                return {std::move(m_error), expected_right_tag};
+            }
+            else
+            {
+                return {f(), expected_left_tag};
+            }
+        }
+
+        // map_error(F): returns an Expected<T, result_of_calling_F>
+        //
+        // If *this holds a value, returns an expected holding the same value.
+        // Otherwise, returns an expected containing f(error())
+        template<class F>
+        ExpectedT<void, decltype(std::declval<F&>()(std::declval<const Error&>()))> map_error(F f) const&
+        {
+            if (value_is_error)
+            {
+                return {f(m_error), expected_right_tag};
+            }
+            else
+            {
+                return {};
+            }
+        }
+
+        template<class F>
+        ExpectedT<void, decltype(std::declval<F&>()(std::declval<Error>()))> map_error(F f) &&
+        {
+            if (value_is_error)
+            {
+                return {f(std::move(m_error)), expected_right_tag};
+            }
+            else
+            {
+                return {};
+            }
+        }
+
+        // then: f(T, Args...)
+        // If *this contains a value, returns INVOKE(f, *get(), forward(args)...)
+        // Otherwise, returns error() put into the same type.
+    private:
+        template<class Test>
+        struct IsThenCompatibleExpected : std::false_type
+        {
+        };
+
+        template<class OtherTy>
+        struct IsThenCompatibleExpected<ExpectedT<OtherTy, Error>> : std::true_type
+        {
+        };
+
+    public:
+        template<class F, class... Args>
+        std::invoke_result_t<F, Args...> then(F f, Args&&... args) const&
+        {
+            static_assert(IsThenCompatibleExpected<std::invoke_result_t<F, Args...>>::value,
+                          "then expects f to return an expected with the same error type");
+            if (value_is_error)
+            {
+                return {m_error, expected_right_tag};
+            }
+            else
+            {
+                return std::invoke(f, static_cast<Args&&>(args)...);
+            }
+        }
+
+        template<class F, class... Args>
+        std::invoke_result_t<F, Args...> then(F f, Args&&... args) &&
+        {
+            static_assert(IsThenCompatibleExpected<std::invoke_result_t<F, Args...>>::value,
+                          "then expects f to return an expected with the same error type");
+            if (value_is_error)
+            {
+                return {m_error, expected_right_tag};
+            }
+            else
+            {
+                return std::invoke(f, static_cast<Args&&>(args)...);
+            }
+        }
+
+    private:
+        void exit_if_error(const LineInfo& line_info) const
+        {
+            if (value_is_error)
+            {
+                Checks::exit_with_message(line_info, to_string(error()));
+            }
+        }
+
+        void exit_if_not_error() const noexcept
+        {
+            if (!value_is_error)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+
+        union
+        {
+            Error m_error;
+        };
+
+        bool value_is_error;
+    };
+
     template<class T>
     using ExpectedS = ExpectedT<T, std::string>;
 }
