@@ -287,7 +287,7 @@ namespace vcpkg
             }
             else
             {
-                return 0;
+                return '\0';
             }
         }
 
@@ -313,6 +313,7 @@ namespace vcpkg
             const auto cmd = git_cmd(config)
                                  .string_arg("fetch")
                                  .string_arg("--update-shallow")
+                                 .string_arg("--force")
                                  .string_arg("--")
                                  .string_arg(uri)
                                  .string_arg(ref);
@@ -422,7 +423,7 @@ namespace vcpkg
             }
 
             // Fetch to a unique ref owned by us to avoid race conditions.
-            const auto fetch_head_procid = Strings::concat("FETCH_HEAD_", get_process_id());
+            const auto fetch_head_procid = Strings::concat("refs/heads/FETCH_HEAD_", get_process_id());
             auto maybe_fetch = fetch(config, uri, Strings::concat(ref, ":", fetch_head_procid));
             if (!maybe_fetch)
             {
