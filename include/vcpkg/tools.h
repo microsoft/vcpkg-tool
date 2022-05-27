@@ -43,10 +43,10 @@ namespace vcpkg
         virtual const std::string& get_tool_version(StringView tool) const = 0;
     };
 
-    ExpectedS<std::string> extract_enclosed_version(StringLiteral prefix,
-                                                    StringLiteral tool_name,
-                                                    std::string&& output,
-                                                    const Path& exe_path);
+    ExpectedS<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
+                                                          StringLiteral tool_name,
+                                                          std::string&& output,
+                                                          const Path& exe_path);
 
     ExpectedL<Path> find_system_tar(const Filesystem& fs);
 

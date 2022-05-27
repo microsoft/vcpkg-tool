@@ -192,10 +192,10 @@ namespace vcpkg
         "The actual command line output will be appended after this message.",
         "{tool_name} ({path}) produced unexpected output when attempting to determine the version:");
 
-    ExpectedS<std::string> extract_enclosed_version(StringLiteral prefix,
-                                                    StringLiteral tool_name,
-                                                    std::string&& output,
-                                                    const Path& exe_path)
+    ExpectedS<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
+                                                          StringLiteral tool_name,
+                                                          std::string&& output,
+                                                          const Path& exe_path)
     {
         auto idx = output.find(prefix.data(), 0, prefix.size());
         if (idx != std::string::npos)
@@ -283,7 +283,7 @@ namespace vcpkg
 
                     // There are two expected output formats to handle: "cmake3 version x.x.x" and "cmake version x.x.x"
                     Strings::inplace_replace_all(output, "cmake3", "cmake");
-                    return extract_enclosed_version("cmake version ", Tools::CMAKE, std::move(output), exe_path);
+                    return extract_prefixed_nonwhitespace("cmake version ", Tools::CMAKE, std::move(output), exe_path);
                 });
         }
     };
@@ -338,7 +338,7 @@ namespace vcpkg
                     // NuGet Version: 4.6.2.5055
                     // usage: NuGet <command> [args] [options]
                     // Type 'NuGet help <command>' for help on a specific command.
-                    return extract_enclosed_version("NuGet Version: ", Tools::NUGET, std::move(output), exe_path);
+                    return extract_prefixed_nonwhitespace("NuGet Version: ", Tools::NUGET, std::move(output), exe_path);
                 });
         }
     };
@@ -356,7 +356,7 @@ namespace vcpkg
                     // Sample output:
                     // aria2 version 1.35.0
                     // Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa
-                    return extract_enclosed_version("aria2 version ", Tools::ARIA2, std::move(output), exe_path);
+                    return extract_prefixed_nonwhitespace("aria2 version ", Tools::ARIA2, std::move(output), exe_path);
                 });
         }
     };
@@ -383,7 +383,7 @@ namespace vcpkg
             return run_to_extract_version(Tools::NODE, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
                     // Sample output: v16.12.0
-                    return extract_enclosed_version("v", Tools::NODE, std::move(output), exe_path);
+                    return extract_prefixed_nonwhitespace("v", Tools::NODE, std::move(output), exe_path);
                 });
         }
     };
@@ -413,7 +413,7 @@ namespace vcpkg
             return run_to_extract_version(Tools::GIT, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
                     // Sample output: git version 2.17.1.windows.2
-                    return extract_enclosed_version("git version ", Tools::GIT, std::move(output), exe_path);
+                    return extract_prefixed_nonwhitespace("git version ", Tools::GIT, std::move(output), exe_path);
                 });
         }
     };
@@ -436,7 +436,7 @@ namespace vcpkg
                 .then([&](std::string&& output) {
                     // Sample output:
                     // Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50 UTC 2020)
-                    return extract_enclosed_version(
+                    return extract_prefixed_nonwhitespace(
                         "Mono JIT compiler version ", Tools::MONO, std::move(output), exe_path);
                 });
         }
@@ -466,7 +466,8 @@ namespace vcpkg
             return run_to_extract_version(Tools::GSUTIL, exe_path, Command(exe_path).string_arg("version"))
                 .then([&](std::string&& output) {
                     // Sample output: gsutil version: 4.58
-                    return extract_enclosed_version("gsutil version: ", Tools::GSUTIL, std::move(output), exe_path);
+                    return extract_prefixed_nonwhitespace(
+                        "gsutil version: ", Tools::GSUTIL, std::move(output), exe_path);
                 });
         }
     };
@@ -483,7 +484,7 @@ namespace vcpkg
             return run_to_extract_version(Tools::AWSCLI, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
                     // Sample output: aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
-                    return extract_enclosed_version("aws-cli/", Tools::AWSCLI, std::move(output), exe_path);
+                    return extract_prefixed_nonwhitespace("aws-cli/", Tools::AWSCLI, std::move(output), exe_path);
                 });
         }
     };
@@ -500,7 +501,8 @@ namespace vcpkg
             return run_to_extract_version(Tools::COSCLI, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
                     // Sample output: coscli version v0.11.0-beta
-                    return extract_enclosed_version("coscli version v", Tools::COSCLI, std::move(output), exe_path);
+                    return extract_prefixed_nonwhitespace(
+                        "coscli version v", Tools::COSCLI, std::move(output), exe_path);
                 });
         }
     };
@@ -540,7 +542,8 @@ namespace vcpkg
             return run_to_extract_version(Tools::POWERSHELL_CORE, exe_path, Command(exe_path).string_arg("--version"))
                 .then([&](std::string&& output) {
                     // Sample output: PowerShell 7.0.3\r\n
-                    return extract_enclosed_version("PowerShell ", Tools::POWERSHELL_CORE, std::move(output), exe_path);
+                    return extract_prefixed_nonwhitespace(
+                        "PowerShell ", Tools::POWERSHELL_CORE, std::move(output), exe_path);
                 });
         }
     };
