@@ -67,7 +67,7 @@
   "CiBaselineUnexpectedPass": "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).",
   "CmakeTargetsExcluded": "note: {count} additional targets are not displayed.",
   "CommandFailed": "command:\n{command_line}\nfailed with the following results:",
-  "CompressFolderFailed": "Failed to compress folder '{path}', exit code: {exit_code}",
+  "CompressFolderFailed": "Failed to compress folder '{path}':",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "CurlReportedUnexpectedResults": "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\nPlease review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===",
   "DownloadAvailable": "A downloadable copy of this tool is available and can be used by unsetting {env_var}.",
