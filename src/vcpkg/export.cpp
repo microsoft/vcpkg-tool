@@ -177,16 +177,14 @@ namespace vcpkg::Export
             .string_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        const auto output = cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
-        const auto exit_code = output.exit_code;
-        if (exit_code != 0)
+        const auto maybe_output = flatten(
+            cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment()), Tools::NUGET);
+        if (maybe_output.has_value())
         {
-            print2(output.output, '\n');
+            return output_dir / (nuget_id + "." + nuget_version + ".nupkg");
         }
-        Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
 
-        const auto output_path = output_dir / (nuget_id + "." + nuget_version + ".nupkg");
-        return output_path;
+        Checks::exit_with_message(VCPKG_LINE_INFO, "error: NuGet package creation failed:\n%s\n", maybe_output.error());
     }
 
     struct ArchiveFormat final

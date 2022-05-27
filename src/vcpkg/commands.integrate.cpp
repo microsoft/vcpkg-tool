@@ -440,12 +440,15 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
                             .string_arg(buildsystems_dir)
                             .string_arg(nuspec_file_path);
 
-        const int exit_code =
-            cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
+        const auto maybe_nuget_output = flatten(
+            cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()), Tools::NUGET);
+        if (!maybe_nuget_output.has_value())
+        {
+            Checks::exit_with_message(
+                VCPKG_LINE_INFO, "Error: NuGet package creation failed: %s\n", maybe_nuget_output.error());
+        }
 
         const auto nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed with exit code: %d", exit_code);
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(nuget_package, IgnoreErrors{}),
                            "Error: NuGet package creation \"succeeded\", but no .nupkg was produced. Expected %s",

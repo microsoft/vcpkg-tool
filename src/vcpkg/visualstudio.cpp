@@ -106,44 +106,47 @@ namespace vcpkg::VisualStudio
         const Path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
         if (fs.exists(vswhere_exe, IgnoreErrors{}))
         {
-            const auto code_and_output = cmd_execute_and_capture_output(Command(vswhere_exe)
-                                                                            .string_arg("-all")
-                                                                            .string_arg("-prerelease")
-                                                                            .string_arg("-legacy")
-                                                                            .string_arg("-products")
-                                                                            .string_arg("*")
-                                                                            .string_arg("-format")
-                                                                            .string_arg("xml"));
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               code_and_output.exit_code == 0,
-                               "Running vswhere.exe failed with message:\n%s",
-                               code_and_output.output);
-
-            const auto instance_entries =
-                Strings::find_all_enclosed(code_and_output.output, "<instance>", "</instance>");
-            for (const StringView& instance : instance_entries)
+            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(Command(vswhere_exe)
+                                                                                     .string_arg("-all")
+                                                                                     .string_arg("-prerelease")
+                                                                                     .string_arg("-legacy")
+                                                                                     .string_arg("-products")
+                                                                                     .string_arg("*")
+                                                                                     .string_arg("-format")
+                                                                                     .string_arg("xml")),
+                                                  "vswhere");
+            if (auto output = maybe_output.get())
             {
-                auto maybe_is_prerelease =
-                    Strings::find_at_most_one_enclosed(instance, "<isPrerelease>", "</isPrerelease>");
-
-                VisualStudioInstance::ReleaseType release_type = VisualStudioInstance::ReleaseType::LEGACY;
-                if (const auto p = maybe_is_prerelease.get())
+                const auto instance_entries = Strings::find_all_enclosed(*output, "<instance>", "</instance>");
+                for (const StringView& instance : instance_entries)
                 {
-                    const auto s = p->to_string();
-                    if (s == "0")
-                        release_type = VisualStudioInstance::ReleaseType::STABLE;
-                    else if (s == "1")
-                        release_type = VisualStudioInstance::ReleaseType::PRERELEASE;
-                    else
-                        Checks::unreachable(VCPKG_LINE_INFO);
-                }
+                    auto maybe_is_prerelease =
+                        Strings::find_at_most_one_enclosed(instance, "<isPrerelease>", "</isPrerelease>");
 
-                instances.emplace_back(
-                    Strings::find_exactly_one_enclosed(instance, "<installationPath>", "</installationPath>")
-                        .to_string(),
-                    Strings::find_exactly_one_enclosed(instance, "<installationVersion>", "</installationVersion>")
-                        .to_string(),
-                    release_type);
+                    VisualStudioInstance::ReleaseType release_type = VisualStudioInstance::ReleaseType::LEGACY;
+                    if (const auto p = maybe_is_prerelease.get())
+                    {
+                        const auto s = p->to_string();
+                        if (s == "0")
+                            release_type = VisualStudioInstance::ReleaseType::STABLE;
+                        else if (s == "1")
+                            release_type = VisualStudioInstance::ReleaseType::PRERELEASE;
+                        else
+                            Checks::unreachable(VCPKG_LINE_INFO);
+                    }
+
+                    instances.emplace_back(
+                        Strings::find_exactly_one_enclosed(instance, "<installationPath>", "</installationPath>")
+                            .to_string(),
+                        Strings::find_exactly_one_enclosed(instance, "<installationVersion>", "</installationVersion>")
+                            .to_string(),
+                        release_type);
+                }
+            }
+            else
+            {
+                Checks::exit_with_message(
+                    VCPKG_LINE_INFO, "Running vswhere.exe failed with message:\n%s", maybe_output.error());
             }
         }
 

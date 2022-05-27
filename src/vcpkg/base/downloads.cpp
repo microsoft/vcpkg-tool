@@ -427,15 +427,22 @@ namespace vcpkg
             cmd.string_arg("curl");
             cmd.string_arg(url);
             cmd.string_arg("-T").string_arg(file);
-            auto res = cmd_execute_and_capture_output(cmd);
-            if (res.exit_code != 0)
+            auto maybe_res = cmd_execute_and_capture_output(cmd);
+            if (auto res = maybe_res.get())
             {
-                Debug::print(res.output, '\n');
+                if (res->exit_code == 0)
+                {
+                    return 0;
+                }
+
+                Debug::print(res->output, '\n');
                 return Strings::concat(
-                    "Error: curl failed to put file to ", url, " with exit code: ", res.exit_code, '\n');
+                    "Error: curl failed to put file to ", url, " with exit code: ", res->exit_code, '\n');
             }
-            return 0;
+
+            return Strings::concat("Error: launching curl failed: ", maybe_res.error());
         }
+
         Command cmd;
         cmd.string_arg("curl").string_arg("-X").string_arg("PUT");
         for (auto&& header : headers)
@@ -610,19 +617,27 @@ namespace vcpkg
         {
             cmd.string_arg("-H").string_arg(header);
         }
-        const auto out = cmd_execute_and_capture_output(cmd);
+        const auto maybe_out = cmd_execute_and_capture_output(cmd);
         const auto sanitized_url = replace_secrets(url, secrets);
-        if (out.exit_code != 0)
+        if (const auto out = maybe_out.get())
         {
-            Strings::append(errors, sanitized_url, ": ", out.output, '\n');
-            return false;
+            if (out->exit_code != 0)
+            {
+                Strings::append(errors, sanitized_url, ": ", out->output, '\n');
+                return false;
+            }
+
+            if (check_downloaded_file_hash(fs, sha512, sanitized_url, download_path_part_path, errors))
+            {
+                fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                return true;
+            }
+        }
+        else
+        {
+            Strings::append(errors, sanitized_url, ": ", maybe_out.error(), '\n');
         }
 
-        if (check_downloaded_file_hash(fs, sha512, sanitized_url, download_path_part_path, errors))
-        {
-            fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
-            return true;
-        }
         return false;
     }
 
@@ -681,7 +696,9 @@ namespace vcpkg
                 auto read_url = Strings::replace_all(*read_template, "<SHA>", *hash);
                 if (try_download_file(
                         fs, read_url, m_config.m_read_headers, download_path, sha512, m_config.m_secrets, errors))
+                {
                     return read_url;
+                }
             }
             else if (auto script = m_config.m_script.get())
             {
@@ -709,28 +726,36 @@ namespace vcpkg
                                    }
                                }).value_or_exit(VCPKG_LINE_INFO);
 
-                    auto res = cmd_execute_and_capture_output(Command{}.raw_arg(cmd),
-                                                              default_working_directory,
-                                                              get_clean_environment(),
-                                                              Encoding::Utf8,
-                                                              EchoInDebug::Show);
-                    if (res.exit_code == 0)
+                    auto maybe_res = cmd_execute_and_capture_output(Command{}.raw_arg(cmd),
+                                                                    default_working_directory,
+                                                                    get_clean_environment(),
+                                                                    Encoding::Utf8,
+                                                                    EchoInDebug::Show);
+
+                    if (const auto res = maybe_res.get())
                     {
-                        auto maybe_error =
-                            try_verify_downloaded_file_hash(fs, "<mirror-script>", download_path_part_path, *hash);
-                        if (auto err = maybe_error.get())
+                        if (res->exit_code == 0)
                         {
-                            Strings::append(errors, *err);
+                            auto maybe_error =
+                                try_verify_downloaded_file_hash(fs, "<mirror-script>", download_path_part_path, *hash);
+                            if (auto err = maybe_error.get())
+                            {
+                                Strings::append(errors, *err);
+                            }
+                            else
+                            {
+                                fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                                return urls[0];
+                            }
                         }
                         else
                         {
-                            fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
-                            return urls[0];
+                            Strings::append(errors, res->output);
                         }
                     }
                     else
                     {
-                        Strings::append(errors, res.output);
+                        Strings::append(errors, maybe_res.error(), '\n');
                     }
                 }
             }

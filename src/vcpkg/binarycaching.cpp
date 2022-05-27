@@ -25,10 +25,6 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(ObjectStorageToolFailed,
-                                 (msg::exit_code, msg::tool_name),
-                                 "",
-                                 "{tool_name} failed with exit code: {exit_code}");
     DECLARE_AND_REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor,
                                  (msg::count, msg::vendor),
                                  "",
@@ -347,7 +343,7 @@ namespace
             {
                 const auto i = action_idxs[j];
                 const auto& archive_result = job_results[j];
-                if (archive_result.exit_code == 0)
+                if (archive_result.has_value())
                 {
                     results[i] = RestoreResult::restored;
                     Debug::print("Restored ", archive_paths[j].native(), '\n');
@@ -560,7 +556,7 @@ namespace
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
                     const auto i = action_idxs[j];
-                    if (job_results[j].exit_code == 0)
+                    if (job_results[j].has_value())
                     {
                         ++this_restore_count;
                         fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
@@ -654,48 +650,69 @@ namespace
                 Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
-        int run_nuget_commandline(const Command& cmdline) const
+        ExpectedS<void> run_nuget_commandline(const Command& cmdline) const
         {
             if (m_interactive)
             {
-                return cmd_execute(cmdline);
-            }
-
-            auto res = cmd_execute_and_capture_output(cmdline);
-            if (Debug::g_debugging)
-            {
-                print2(res.output);
-            }
-
-            if (res.output.find("Authentication may require manual action.") != std::string::npos)
-            {
-                print2(Color::warning,
-                       "One or more NuGet credential providers requested manual action. Add the binary "
-                       "source 'interactive' to allow interactivity.\n");
-            }
-            else if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
-                         std::string::npos &&
-                     res.exit_code != 0)
-            {
-                print2(Color::warning,
-                       "One or more NuGet credential providers failed to authenticate. See ",
-                       docs::binarycaching_url,
-                       " for more details on how to provide credentials.\n");
-            }
-            else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
-            {
-                auto real_cmdline = cmdline;
-                real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
-                auto res2 = cmd_execute_and_capture_output(real_cmdline);
-                if (Debug::g_debugging)
+                if (cmd_execute(cmdline) == 0)
                 {
-                    print2(res2.output);
+                    return {};
                 }
 
-                return res2.exit_code;
+                return "NuGet command failed and output was not captured because --interactive was specified";
             }
 
-            return res.exit_code;
+            return cmd_execute_and_capture_output(cmdline)
+                .map_error([](SystemApiError&& sae) { return sae.to_string(); })
+                .then([&](ExitCodeAndOutput&& res) -> ExpectedS<void> {
+                    if (Debug::g_debugging)
+                    {
+                        print2(res.output);
+                    }
+
+                    if (res.output.find("Authentication may require manual action.") != std::string::npos)
+                    {
+                        print2(Color::warning,
+                               "One or more NuGet credential providers requested manual action. Add the binary "
+                               "source 'interactive' to allow interactivity.\n");
+                    }
+
+                    if (res.exit_code == 0)
+                    {
+                        return {};
+                    }
+
+                    if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
+                        std::string::npos)
+                    {
+                        print2(Color::warning,
+                               "One or more NuGet credential providers failed to authenticate. See ",
+                               docs::binarycaching_url,
+                               " for more details on how to provide credentials.\n");
+                    }
+                    else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
+                    {
+                        auto real_cmdline = cmdline;
+                        real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
+                        return cmd_execute_and_capture_output(real_cmdline)
+                            .map_error([](SystemApiError&& sae) { return sae.to_string(); })
+                            .then([](ExitCodeAndOutput&& res) -> ExpectedS<void> {
+                                if (Debug::g_debugging)
+                                {
+                                    print2(res.output);
+                                }
+
+                                if (res.exit_code == 0)
+                                {
+                                    return {};
+                                }
+
+                                return {std::move(res.output), expected_right_tag};
+                            });
+                    }
+
+                    return {std::move(res.output), expected_right_tag};
+                });
         }
 
         struct NuGetPrefetchAttempt
@@ -910,7 +927,7 @@ namespace
                 cmdline.string_arg("-NonInteractive");
             }
 
-            if (run_nuget_commandline(cmdline) != 0)
+            if (!run_nuget_commandline(cmdline).has_value())
             {
                 print2(Color::error, "Packing NuGet failed. Use --debug for more information.\n");
                 return;
@@ -938,7 +955,7 @@ namespace
                 }
 
                 print2("Uploading binaries for ", spec, " to NuGet source ", write_src, ".\n");
-                if (run_nuget_commandline(cmd) != 0)
+                if (!run_nuget_commandline(cmd).has_value())
                 {
                     print2(
                         Color::error, "Pushing NuGet to ", write_src, " failed. Use --debug for more information.\n");
@@ -965,7 +982,7 @@ namespace
 
                 print2("Uploading binaries for ", spec, " using NuGet config ", write_cfg, ".\n");
 
-                if (run_nuget_commandline(cmd) != 0)
+                if (!run_nuget_commandline(cmd).has_value())
                 {
                     print2(
                         Color::error, "Pushing NuGet with ", write_cfg, " failed. Use --debug for more information.\n");
@@ -1056,7 +1073,7 @@ namespace
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
                     const auto idx = idxs[j];
-                    if (job_results[j].exit_code != 0)
+                    if (!job_results[j].has_value())
                     {
                         Debug::print("Failed to decompress ", url_paths[idx].second, '\n');
                         continue;
@@ -1178,34 +1195,26 @@ namespace
         bool upload_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
+            if (out.has_value())
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::GSUTIL);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
 
         bool download_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
+            if (out.has_value())
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::GSUTIL);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
     };
@@ -1242,17 +1251,13 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
+            if (out.has_value())
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::AWSCLI);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
 
@@ -1268,17 +1273,14 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
+            if (out.has_value())
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::AWSCLI);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
 
@@ -1308,34 +1310,26 @@ namespace
         bool upload_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("cp").string_arg(archive).string_arg(object);
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
+            if (out.has_value())
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::COSCLI);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
 
         bool download_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("cp").string_arg(object).string_arg(archive);
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
+            if (out.has_value())
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::COSCLI);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
     };

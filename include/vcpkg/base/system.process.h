@@ -120,13 +120,14 @@ namespace vcpkg
     void cmd_execute_background(const Command& cmd_line);
 #endif
 
-    ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
-                                                     const WorkingDirectory& wd = default_working_directory,
-                                                     const Environment& env = default_environment,
-                                                     Encoding encoding = Encoding::Utf8,
-                                                     EchoInDebug echo_in_debug = EchoInDebug::Hide);
+    ExpectedApi<ExitCodeAndOutput> cmd_execute_and_capture_output(
+        const Command& cmd_line,
+        const WorkingDirectory& wd = default_working_directory,
+        const Environment& env = default_environment,
+        Encoding encoding = Encoding::Utf8,
+        EchoInDebug echo_in_debug = EchoInDebug::Hide);
 
-    std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(
+    std::vector<ExpectedApi<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
         View<Command> cmd_lines,
         const WorkingDirectory& wd = default_working_directory,
         const Environment& env = default_environment);
@@ -151,4 +152,12 @@ namespace vcpkg
     void enter_interactive_subprocess();
     void exit_interactive_subprocess();
 #endif
+
+    // If exit code is 0, returns a 'success' ExpectedS.
+    // Otherwise, returns an ExpectedS containing error text
+    ExpectedS<void> flatten(const ExpectedApi<ExitCodeAndOutput>&, StringView tool_name);
+
+    // If exit code is 0, returns a 'success' ExpectedS containing the output
+    // Otherwise, returns an ExpectedS containing error text
+    ExpectedS<std::string> flatten_out(const ExpectedApi<ExitCodeAndOutput>&, StringView tool_name);
 }

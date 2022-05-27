@@ -57,13 +57,13 @@ namespace
             .string_arg("-ForceEnglishOutput")
             .string_arg("-PackageSaveMode")
             .string_arg("nuspec");
-        const auto code_and_output = cmd_execute_and_capture_output(nuget_command);
 
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           code_and_output.exit_code == 0,
-                           "Failed to extract '%s' with message:\n%s",
-                           archive,
-                           code_and_output.output);
+        const auto result = flatten(cmd_execute_and_capture_output(nuget_command), Tools::NUGET);
+        if (!result.has_value())
+        {
+            Checks::exit_with_message(
+                VCPKG_LINE_INFO, "Failed to extract '%s' with message:\n%s", archive, result.error());
+        }
     }
 
     void win32_extract_msi(const Path& archive, const Path& to_path)
@@ -74,7 +74,7 @@ namespace
         {
             // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
             // until it finishes (wrap in cmd /c).
-            const auto code_and_output = cmd_execute_and_capture_output(
+            const auto maybe_code_and_output = cmd_execute_and_capture_output(
                 Command{"cmd"}
                     .string_arg("/c")
                     .string_arg("msiexec")
@@ -89,16 +89,15 @@ namespace
                 default_environment,
                 Encoding::Utf16);
 
-            if (code_and_output.exit_code == 0)
+            if (auto code_and_output = maybe_code_and_output.get())
             {
-                // Success
-                break;
-            }
+                if (code_and_output->exit_code == 0)
+                {
+                    // Success
+                    break;
+                }
 
-            // Retry up to 20 times
-            if (i < 19)
-            {
-                if (code_and_output.exit_code == 1618)
+                if (i < 19 && code_and_output->exit_code == 1618)
                 {
                     // ERROR_INSTALL_ALREADY_RUNNING
                     print2("Another installation is in progress on the machine, sleeping 6s before retrying.\n");
@@ -106,11 +105,8 @@ namespace
                     continue;
                 }
             }
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO,
-                msg::format(msgMsiexecFailedToExtract, msg::path = archive, msg::exit_code = code_and_output.exit_code)
-                    .append_raw('\n')
-                    .append_raw(code_and_output.output));
+
+            Checks::exit_with_message(VCPKG_LINE_INFO, flatten(maybe_code_and_output, "msiexec").error());
         }
     }
 
@@ -119,16 +115,23 @@ namespace
         static bool recursion_limiter_sevenzip = false;
         Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
         recursion_limiter_sevenzip = true;
-        const auto code_and_output = cmd_execute_and_capture_output(Command{seven_zip}
-                                                                        .string_arg("x")
-                                                                        .string_arg(archive)
-                                                                        .string_arg(Strings::format("-o%s", to_path))
-                                                                        .string_arg("-y"));
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           code_and_output.exit_code == 0,
-                           "7zip failed while extracting '%s' with message:\n%s",
-                           archive,
-                           code_and_output.output);
+        const auto maybe_output =
+            flatten(cmd_execute_and_capture_output(Command{seven_zip}
+                                                       .string_arg("x")
+                                                       .string_arg(archive)
+                                                       .string_arg(Strings::format("-o%s", to_path))
+                                                       .string_arg("-y")),
+                    Tools::SEVEN_ZIP);
+
+        if (!maybe_output.has_value())
+        {
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               maybe_output.has_value(),
+                               "7zip failed while extracting '%s' with message:\n%s",
+                               archive,
+                               maybe_output.error());
+        }
+
         recursion_limiter_sevenzip = false;
     }
 #endif // ^^^ _WIN32
@@ -275,12 +278,16 @@ namespace vcpkg
 #if defined(_WIN32)
         auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP);
 
-        return cmd_execute_and_capture_output(
-                   Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
-                   default_working_directory,
-                   get_clean_environment())
-            .exit_code;
+        auto maybe_seven_zip_output = cmd_execute_and_capture_output(
+            Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
+            default_working_directory,
+            get_clean_environment());
+        if (const auto seven_zip_output = maybe_seven_zip_output.get())
+        {
+            return seven_zip_output->exit_code;
+        }
 
+        return maybe_seven_zip_output.error().error_value; // FIXME
 #else
         (void)tools;
         return cmd_execute_clean(Command{"zip"}
@@ -312,7 +319,7 @@ namespace vcpkg
         return cmd;
     }
 
-    std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs)
+    std::vector<ExpectedS<void>> decompress_in_parallel(View<Command> jobs)
     {
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
@@ -328,6 +335,14 @@ namespace vcpkg
             ++i;
         }
 #endif
-        return results;
+
+        std::vector<ExpectedS<void>> filtered_results;
+        filtered_results.reserve(jobs.size());
+        for (std::size_t idx = 0; idx < jobs.size(); ++idx)
+        {
+            filtered_results.push_back(flatten(results[idx], jobs[idx].command_line()));
+        }
+
+        return filtered_results;
     }
 }

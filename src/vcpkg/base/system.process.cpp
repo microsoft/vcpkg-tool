@@ -26,7 +26,16 @@
 
 namespace
 {
+    using namespace vcpkg;
     DECLARE_AND_REGISTER_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...");
+    DECLARE_AND_REGISTER_MESSAGE(LaunchingProgramFailed,
+                                 (msg::tool_name),
+                                 "A platform API call failure message is appended after this",
+                                 "Launching {tool_name}:");
+    DECLARE_AND_REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode,
+                                 (msg::tool_name, msg::exit_code),
+                                 "The program's console output is appended after this.",
+                                 "{tool_name} failed with exit code: ({exit_code}).");
 }
 
 namespace vcpkg
@@ -437,26 +446,29 @@ namespace vcpkg
     const WorkingDirectory default_working_directory;
     const Environment default_environment;
 
-    std::vector<ExitCodeAndOutput> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
-                                                                           const WorkingDirectory& wd,
-                                                                           const Environment& env)
+    std::vector<ExpectedApi<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
+                                                                                        const WorkingDirectory& wd,
+                                                                                        const Environment& env)
     {
+        std::vector<ExpectedApi<ExitCodeAndOutput>> res(cmd_lines.size(), SystemApiError::empty);
         if (cmd_lines.size() == 0)
         {
-            return {};
+            return res;
         }
+
         if (cmd_lines.size() == 1)
         {
-            return {cmd_execute_and_capture_output(cmd_lines[0], wd, env)};
+            res[0] = cmd_execute_and_capture_output(cmd_lines[0], wd, env);
+            return res;
         }
-        std::vector<ExitCodeAndOutput> res(cmd_lines.size());
-        std::atomic<size_t> work_item{0};
 
+        std::atomic<size_t> work_item{0};
         const auto num_threads =
             static_cast<size_t>(std::max(1, std::min(get_concurrency(), static_cast<int>(cmd_lines.size()))));
 
-        auto work = [&cmd_lines, &res, &work_item, &wd, &env]() {
-            for (size_t item = work_item.fetch_add(1); item < cmd_lines.size(); item = work_item.fetch_add(1))
+        auto work = [&]() {
+            std::size_t item;
+            while (item = work_item.fetch_add(1), item < cmd_lines.size())
             {
                 res[item] = cmd_execute_and_capture_output(cmd_lines[item], wd, env);
             }
@@ -717,12 +729,19 @@ namespace vcpkg
         auto actual_cmd_line = cmd_line;
         actual_cmd_line.raw_arg(Strings::concat(" & echo ", magic_string, " & set"));
 
-        auto rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
+        Debug::print("command line: ", actual_cmd_line.command_line(), "\n");
+        auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
+        if (!maybe_rc_output.has_value())
+        {
+            Checks::exit_with_message(
+                VCPKG_LINE_INFO, "Failed to run vcvarsall.bat to get Visual Studio env: ", maybe_rc_output.error());
+        }
+
+        auto& rc_output = maybe_rc_output.value_or_exit(VCPKG_LINE_INFO);
         Checks::check_exit(VCPKG_LINE_INFO,
                            rc_output.exit_code == 0,
                            "Run vcvarsall.bat to get Visual Studio env failed with exit code %d",
                            rc_output.exit_code);
-        Debug::print("command line: ", actual_cmd_line.command_line(), "\n");
         Debug::print(rc_output.output, "\n");
 
         auto it = Strings::search(rc_output.output, magic_string);
@@ -908,32 +927,28 @@ namespace vcpkg
         return exit_code;
     }
 
-    ExitCodeAndOutput cmd_execute_and_capture_output(const Command& cmd_line,
-                                                     const WorkingDirectory& wd,
-                                                     const Environment& env,
-                                                     Encoding encoding,
-                                                     EchoInDebug echo_in_debug)
+    ExpectedApi<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
+                                                                  const WorkingDirectory& wd,
+                                                                  const Environment& env,
+                                                                  Encoding encoding,
+                                                                  EchoInDebug echo_in_debug)
     {
         std::string output;
-        auto rc = cmd_execute_and_stream_data(
-            cmd_line,
-            [&](StringView sv) {
-                Strings::append(output, sv);
-                if (echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
-                {
-                    msg::write_unlocalized_text_to_stdout(Color::none, sv);
-                }
-            },
-            wd,
-            env,
-            encoding);
-
-        if (auto prc = rc.get())
-        {
-            return {*prc, std::move(output)};
-        }
-
-        return {static_cast<int>(rc.error().error_value)};
+        return cmd_execute_and_stream_data(
+                   cmd_line,
+                   [&](StringView sv) {
+                       Strings::append(output, sv);
+                       if (echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
+                       {
+                           msg::write_unlocalized_text_to_stdout(Color::none, sv);
+                       }
+                   },
+                   wd,
+                   env,
+                   encoding)
+            .map([&](int exit_code) {
+                return ExitCodeAndOutput{exit_code, std::move(output)};
+            });
     }
 
     uint64_t get_subproccess_stats() { return g_subprocess_stats.load(); }
@@ -955,4 +970,50 @@ namespace vcpkg
 #else
     void register_console_ctrl_handler() { }
 #endif
+
+    ExpectedS<void> flatten(const ExpectedApi<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
+    {
+        if (auto exit = maybe_exit.get())
+        {
+            if (exit->exit_code == 0)
+            {
+                return {};
+            }
+
+            return {msg::format_error(
+                        msgProgramReturnedNonzeroExitCode, msg::tool_name = tool_name, msg::exit_code = exit->exit_code)
+                        .append_raw('\n')
+                        .append_raw(exit->output)
+                        .extract_data()};
+        }
+
+        return {msg::format_error(msgLaunchingProgramFailed, msg::tool_name = tool_name)
+                    .append_raw(' ')
+                    .append_raw(maybe_exit.error().to_string())
+                    .extract_data()};
+    }
+
+    ExpectedS<std::string> flatten_out(const ExpectedApi<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
+    {
+        if (auto exit = maybe_exit.get())
+        {
+            if (exit->exit_code == 0)
+            {
+                return {exit->output, expected_left_tag};
+            }
+
+            return {msg::format_error(
+                        msgProgramReturnedNonzeroExitCode, msg::tool_name = tool_name, msg::exit_code = exit->exit_code)
+                        .append_raw('\n')
+                        .append_raw(exit->output)
+                        .extract_data(),
+                    expected_right_tag};
+        }
+
+        return {msg::format_error(msgLaunchingProgramFailed, msg::tool_name = tool_name)
+                    .append_raw(' ')
+                    .append_raw(maybe_exit.error().to_string())
+                    .extract_data(),
+                expected_right_tag};
+    }
 }

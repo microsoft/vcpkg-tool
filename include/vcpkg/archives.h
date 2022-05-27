@@ -31,5 +31,5 @@ namespace vcpkg
 
     Command decompress_zip_archive_cmd(const ToolCache& tools, const Path& dst, const Path& archive_path);
 
-    std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs);
+    std::vector<ExpectedS<void>> decompress_in_parallel(View<Command> jobs);
 }
