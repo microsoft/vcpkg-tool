@@ -165,6 +165,58 @@ namespace vcpkg
         "",
         "You may be able to install this tool via your system package manager ({command_line}).");
 
+    DECLARE_AND_REGISTER_MESSAGE(FailedToRunToolToDetermineVersion,
+                                 (msg::tool_name, msg::path),
+                                 "Additional information, such as the command line output, if any, will be appended on "
+                                 "the line after this message",
+                                 "Failed to run {path} to determine the {tool_name} version.");
+
+    static ExpectedS<std::string> run_to_extract_version(StringLiteral tool_name, const Path& exe_path, Command&& cmd)
+    {
+        auto rc = cmd_execute_and_capture_output(cmd);
+        if (rc.exit_code == 0)
+        {
+            return {std::move(rc.output), expected_left_tag};
+        }
+
+        auto error_prefix =
+            msg::format_error(msgFailedToRunToolToDetermineVersion, msg::tool_name = tool_name, msg::path = exe_path)
+                .extract_data();
+        error_prefix.push_back('\n');
+        return {std::move(error_prefix) + std::move(rc.output), expected_right_tag};
+    }
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        UnexpectedToolOutput,
+        (msg::tool_name, msg::path),
+        "The actual command line output will be appended after this message.",
+        "{tool_name} ({path}) produced unexpected output when attempting to determine the version:");
+
+    ExpectedS<std::string> extract_enclosed_version(StringLiteral prefix,
+                                                    StringLiteral tool_name,
+                                                    std::string&& output,
+                                                    const Path& exe_path)
+    {
+        auto idx = output.find(prefix.data(), 0, prefix.size());
+        if (idx != std::string::npos)
+        {
+            idx += prefix.size();
+            const auto end_idx = output.find_first_of(" \r\n", idx, 3);
+            if (end_idx != std::string::npos)
+            {
+                output.resize(end_idx);
+            }
+
+            output.erase(0, idx);
+            return {std::move(output), expected_left_tag};
+        }
+
+        auto error_prefix =
+            msg::format_error(msgUnexpectedToolOutput, msg::tool_name = tool_name, msg::path = exe_path).extract_data();
+        error_prefix.push_back('\n');
+        return {std::move(error_prefix) + std::move(output), expected_right_tag};
+    }
+
     struct ToolProvider
     {
         virtual StringView tool_data_name() const = 0;
@@ -222,24 +274,17 @@ namespace vcpkg
 #endif
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto cmd = Command(exe_path).string_arg("--version");
-            auto rc = cmd_execute_and_capture_output(cmd);
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
-            }
+            return run_to_extract_version(Tools::CMAKE, exe_path, Command(exe_path).string_arg("--version"))
+                .then([&](std::string&& output) {
+                    // Sample output:
+                    // cmake version 3.10.2
+                    //
+                    // CMake suite maintained and supported by Kitware (kitware.com/cmake).
 
-            /* Sample output:
-cmake version 3.10.2
-
-CMake suite maintained and supported by Kitware (kitware.com/cmake).
-                */
-
-            // There are two expected output formats to handle: "cmake3 version x.x.x" and "cmake version x.x.x"
-            auto simplifiedOutput = Strings::replace_all(rc.output, "cmake3", "cmake");
-            return {Strings::find_exactly_one_enclosed(simplifiedOutput, "cmake version ", "\n").to_string(),
-                    expected_left_tag};
+                    // There are two expected output formats to handle: "cmake3 version x.x.x" and "cmake version x.x.x"
+                    Strings::inplace_replace_all(output, "cmake3", "cmake");
+                    return extract_enclosed_version("cmake version ", Tools::CMAKE, std::move(output), exe_path);
+                });
         }
     };
 
@@ -252,20 +297,18 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto cmd = Command(exe_path).string_arg("--version");
-            auto rc = cmd_execute_and_capture_output(cmd);
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
-            }
-
-            /* Sample output:
-1.8.2
-                */
-            return {std::move(rc.output), expected_left_tag};
+            // Sample output: 1.8.2
+            return run_to_extract_version(Tools::NINJA, exe_path, Command(exe_path).string_arg("--version"));
         }
     };
+
+    DECLARE_AND_REGISTER_MESSAGE(
+        MonoInstructions,
+        (),
+        "",
+        "This may be caused by an incomplete mono installation. Full mono is "
+        "available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may "
+        "need a newer version of mono, available at https://www.mono-project.com/download/stable/");
 
     struct NuGetProvider : ToolProvider
     {
@@ -276,71 +319,45 @@ CMake suite maintained and supported by Kitware (kitware.com/cmake).
 
         virtual ExpectedS<std::string> get_version(const ToolCache& cache, const Path& exe_path) const override
         {
+            (void)cache;
             Command cmd;
 #ifndef _WIN32
             cmd.string_arg(cache.get_tool_path(Tools::MONO));
-#else
-            (void)cache;
 #endif
             cmd.string_arg(exe_path);
-            auto rc = cmd_execute_and_capture_output(cmd);
-            if (rc.exit_code != 0)
-            {
+            return run_to_extract_version(Tools::NUGET, exe_path, std::move(cmd))
 #ifndef _WIN32
-                return {Strings::concat(
-                            std::move(rc.output),
-                            "\n\nFailed to get version of ",
-                            exe_path,
-                            "\nThis may be caused by an incomplete mono installation. Full mono is "
-                            "available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may "
-                            "need a newer version of mono, available at https://www.mono-project.com/download/stable/"),
-                        expected_right_tag};
-#else
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
+                .map_error([](std::string&& error) {
+                    error.push_back('\n');
+                    error.append(msg::format(msgMonoInstructions).extract_data());
+                    return std::move(error);
+                })
 #endif
-            }
-
-            /* Sample output:
-NuGet Version: 4.6.2.5055
-usage: NuGet <command> [args] [options]
-Type 'NuGet help <command>' for help on a specific command.
-
-[[[List of available commands follows]]]
-                */
-            return {Strings::find_exactly_one_enclosed(rc.output, "NuGet Version: ", "\n").to_string(),
-                    expected_left_tag};
+                .then([&](std::string&& output) {
+                    // Sample output:
+                    // NuGet Version: 4.6.2.5055
+                    // usage: NuGet <command> [args] [options]
+                    // Type 'NuGet help <command>' for help on a specific command.
+                    return extract_enclosed_version("NuGet Version: ", Tools::NUGET, std::move(output), exe_path);
+                });
         }
     };
 
     struct Aria2Provider : ToolProvider
     {
         virtual bool is_abi_sensitive() const override { return false; }
-        virtual StringView tool_data_name() const override { return "aria2"; }
+        virtual StringView tool_data_name() const override { return Tools::ARIA2; }
         virtual StringView system_exe_stem() const override { return "aria2c"; }
         virtual std::array<int, 3> default_min_version() const override { return {1, 33, 1}; }
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto cmd = Command(exe_path).string_arg("--version");
-            auto rc = cmd_execute_and_capture_output(cmd);
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
-            }
-
-            /* Sample output:
-aria2 version 1.35.0
-Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa
-[...]
-                */
-            const auto idx = rc.output.find("aria2 version ");
-            Checks::check_exit(
-                VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of aria2 version string: %s", rc.output);
-            auto start = rc.output.begin() + idx;
-            char newlines[] = "\r\n";
-            auto end = std::find_first_of(start, rc.output.end(), &newlines[0], &newlines[2]);
-            return {std::string(start, end), expected_left_tag};
+            return run_to_extract_version(Tools::ARIA2, exe_path, Command(exe_path).string_arg("--version"))
+                .then([&](std::string&& output) {
+                    // Sample output:
+                    // aria2 version 1.35.0
+                    // Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa
+                    return extract_enclosed_version("aria2 version ", Tools::ARIA2, std::move(output), exe_path);
+                });
         }
     };
 
@@ -363,26 +380,11 @@ Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto cmd = Command(exe_path).string_arg("--version");
-            auto rc = cmd_execute_and_capture_output(cmd);
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", Tools::NODE, "\n"),
-                        expected_right_tag};
-            }
-
-            // Sample output: v16.12.0
-            auto start = rc.output.begin();
-            if (start == rc.output.end() || *start != 'v')
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nUnexpected output of ", Tools::NODE, " --version\n"),
-                        expected_right_tag};
-            }
-
-            ++start;
-            char newlines[] = "\r\n";
-            auto end = std::find_first_of(start, rc.output.end(), &newlines[0], &newlines[2]);
-            return {std::string(start, end), expected_left_tag};
+            return run_to_extract_version(Tools::NODE, exe_path, Command(exe_path).string_arg("--version"))
+                .then([&](std::string&& output) {
+                    // Sample output: v16.12.0
+                    return extract_enclosed_version("v", Tools::NODE, std::move(output), exe_path);
+                });
         }
     };
 
@@ -400,27 +402,19 @@ Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa
             if (const auto pf = program_files.get()) out_candidate_paths.push_back(*pf / "git" / "cmd" / "git.exe");
             const auto& program_files_32_bit = get_program_files_32_bit();
             if (const auto pf = program_files_32_bit.get())
+            {
                 out_candidate_paths.push_back(*pf / "git" / "cmd" / "git.exe");
+            }
         }
 #endif
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto cmd = Command(exe_path).string_arg("--version");
-            auto rc = cmd_execute_and_capture_output(cmd);
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
-            }
-
-            /* Sample output:
-git version 2.17.1.windows.2
-                */
-            const auto idx = rc.output.find("git version ");
-            Checks::check_exit(
-                VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of git version string: %s", rc.output);
-            return {rc.output.substr(idx), expected_left_tag};
+            return run_to_extract_version(Tools::GIT, exe_path, Command(exe_path).string_arg("--version"))
+                .then([&](std::string&& output) {
+                    // Sample output: git version 2.17.1.windows.2
+                    return extract_enclosed_version("git version ", Tools::GIT, std::move(output), exe_path);
+                });
         }
     };
 
@@ -438,20 +432,13 @@ git version 2.17.1.windows.2
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto rc = cmd_execute_and_capture_output(Command(exe_path).string_arg("--version"));
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
-            }
-
-            /* Sample output:
-Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50 UTC 2020)
-                */
-            const auto idx = rc.output.find("Mono JIT compiler version ");
-            Checks::check_exit(
-                VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of mono version string: %s", rc.output);
-            return {rc.output.substr(idx), expected_left_tag};
+            return run_to_extract_version(Tools::MONO, exe_path, Command(exe_path).string_arg("--version"))
+                .then([&](std::string&& output) {
+                    // Sample output:
+                    // Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50 UTC 2020)
+                    return extract_enclosed_version(
+                        "Mono JIT compiler version ", Tools::MONO, std::move(output), exe_path);
+                });
         }
 
         virtual void add_system_package_info(LocalizedString& out) const override
@@ -476,22 +463,11 @@ Mono JIT compiler version 6.8.0.105 (Debian 6.8.0.105+dfsg-2 Wed Feb 26 23:23:50
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto cmd = Command(exe_path).string_arg("version");
-            auto rc = cmd_execute_and_capture_output(cmd);
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
-            }
-
-            /* Sample output:
-gsutil version: 4.58
-                */
-
-            const auto idx = rc.output.find("gsutil version: ");
-            Checks::check_exit(
-                VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of gsutil version string: %s", rc.output);
-            return {rc.output.substr(idx), expected_left_tag};
+            return run_to_extract_version(Tools::GSUTIL, exe_path, Command(exe_path).string_arg("version"))
+                .then([&](std::string&& output) {
+                    // Sample output: gsutil version: 4.58
+                    return extract_enclosed_version("gsutil version: ", Tools::GSUTIL, std::move(output), exe_path);
+                });
         }
     };
 
@@ -504,22 +480,11 @@ gsutil version: 4.58
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto cmd = Command(exe_path).string_arg("--version");
-            auto rc = cmd_execute_and_capture_output(cmd);
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
-            }
-
-            /* Sample output:
-aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
-                */
-
-            const auto idx = rc.output.find("aws-cli/");
-            Checks::check_exit(
-                VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of awscli version string: %s", rc.output);
-            return {rc.output.substr(idx), expected_left_tag};
+            return run_to_extract_version(Tools::AWSCLI, exe_path, Command(exe_path).string_arg("--version"))
+                .then([&](std::string&& output) {
+                    // Sample output: aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
+                    return extract_enclosed_version("aws-cli/", Tools::AWSCLI, std::move(output), exe_path);
+                });
         }
     };
 
@@ -532,22 +497,11 @@ aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto cmd = Command(exe_path).string_arg("--version");
-            auto rc = cmd_execute_and_capture_output(cmd);
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
-            }
-
-            /* Sample output:
-coscli version v0.11.0-beta
-                */
-
-            const auto idx = rc.output.find("coscli version v");
-            Checks::check_exit(
-                VCPKG_LINE_INFO, idx != std::string::npos, "Unexpected format of coscli version string: %s", rc.output);
-            return {rc.output.substr(idx), expected_left_tag};
+            return run_to_extract_version(Tools::COSCLI, exe_path, Command(exe_path).string_arg("--version"))
+                .then([&](std::string&& output) {
+                    // Sample output: coscli version v0.11.0-beta
+                    return extract_enclosed_version("coscli version v", Tools::COSCLI, std::move(output), exe_path);
+                });
         }
     };
 
@@ -560,18 +514,9 @@ coscli version v0.11.0-beta
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto cmd = Command(exe_path).string_arg("--framework-version");
-            auto rc = cmd_execute_and_capture_output(cmd);
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
-            }
-
-            /* Sample output:
-3.1.81
-                */
-            return {std::move(rc.output), expected_left_tag};
+            // Sample output: 3.1.81
+            return run_to_extract_version(
+                Tools::IFW_INSTALLER_BASE, exe_path, Command(exe_path).string_arg("--framework-version"));
         }
     };
 
@@ -586,29 +531,17 @@ coscli version v0.11.0-beta
             return false;
 #endif
         }
-        virtual StringView tool_data_name() const override { return "powershell-core"; }
+        virtual StringView tool_data_name() const override { return Tools::POWERSHELL_CORE; }
         virtual StringView system_exe_stem() const override { return "pwsh"; }
         virtual std::array<int, 3> default_min_version() const override { return {7, 0, 3}; }
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, const Path& exe_path) const override
         {
-            auto rc = cmd_execute_and_capture_output(Command(exe_path).string_arg("--version"));
-            if (rc.exit_code != 0)
-            {
-                return {Strings::concat(std::move(rc.output), "\n\nFailed to get version of ", exe_path, "\n"),
-                        expected_right_tag};
-            }
-
-            // Sample output: PowerShell 7.0.3\r\n
-            auto output = std::move(rc.output);
-            if (!Strings::starts_with(output, "PowerShell "))
-            {
-                return {Strings::concat("Unexpected format of powershell-core version string: ", output),
-                        expected_right_tag};
-            }
-
-            output.erase(0, 11);
-            return {Strings::trim(std::move(output)), expected_left_tag};
+            return run_to_extract_version(Tools::POWERSHELL_CORE, exe_path, Command(exe_path).string_arg("--version"))
+                .then([&](std::string&& output) {
+                    // Sample output: PowerShell 7.0.3\r\n
+                    return extract_enclosed_version("PowerShell ", Tools::POWERSHELL_CORE, std::move(output), exe_path);
+                });
         }
     };
 

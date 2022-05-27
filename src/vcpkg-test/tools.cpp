@@ -121,3 +121,15 @@ TEST_CASE ("parse_tool_data_from_xml", "[tools]")
         CHECK(p.url == "");
     }
 }
+
+TEST_CASE ("extract_enclosed_version", "[tools]")
+{
+    CHECK(extract_enclosed_version("fooutil version ", "fooutil", "fooutil version 1.2", "fooutil.exe")
+              .value_or_exit(VCPKG_LINE_INFO) == "1.2");
+    CHECK(extract_enclosed_version("fooutil version ", "fooutil", "fooutil version 1.2   ", "fooutil.exe")
+              .value_or_exit(VCPKG_LINE_INFO) == "1.2");
+    auto error_result = extract_enclosed_version("fooutil version ", "fooutil", "malformed output", "fooutil.exe");
+    CHECK(!error_result.has_value());
+    CHECK(error_result.error() == "error: fooutil (fooutil.exe) produced unexpected output when attempting to "
+                                  "determine the version:\nmalformed output");
+}
