@@ -27,7 +27,10 @@ namespace vcpkg
 #endif
 
     // Compress the source directory into the destination file.
-    int compress_directory_to_zip(Filesystem& fs, const ToolCache& tools, const Path& source, const Path& destination);
+    ExpectedS<void> compress_directory_to_zip(Filesystem& fs,
+                                              const ToolCache& tools,
+                                              const Path& source,
+                                              const Path& destination);
 
     Command decompress_zip_archive_cmd(const ToolCache& tools, const Path& dst, const Path& archive_path);
 

@@ -636,11 +636,16 @@ namespace vcpkg::Export::Prefab
                     "[DEBUG] Exporting AAR And POM\n\tAAR Path %s\n\tPOM Path %s\n", exported_archive_path, pom_path));
             }
 
-            Checks::check_exit(
-                VCPKG_LINE_INFO,
-                compress_directory_to_zip(
-                    paths.get_filesystem(), paths.get_tool_cache(), package_directory, exported_archive_path) != 0,
-                Strings::concat("Failed to compress folder ", package_directory));
+            auto compress_result = compress_directory_to_zip(
+                paths.get_filesystem(), paths.get_tool_cache(), package_directory, exported_archive_path);
+            if (!compress_result.has_value())
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          std::move(compress_result)
+                                              .error()
+                                              .append("\nFailed to compress folder ")
+                                              .append(package_directory.native()));
+            }
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"

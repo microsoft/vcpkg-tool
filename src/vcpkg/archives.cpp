@@ -166,7 +166,8 @@ namespace
         if (ext == ".zip")
         {
             const auto code =
-                cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path});
+                cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
+                    .value_or_exit(VCPKG_LINE_INFO);
             Checks::check_exit(VCPKG_LINE_INFO, code == 0, "unzip failed while extracting %s", archive);
         }
 #endif
@@ -278,33 +279,32 @@ namespace vcpkg
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
-    int compress_directory_to_zip(Filesystem& fs, const ToolCache& tools, const Path& source, const Path& destination)
+    ExpectedS<void> compress_directory_to_zip(Filesystem& fs,
+                                              const ToolCache& tools,
+                                              const Path& source,
+                                              const Path& destination)
     {
         fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
         auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP);
 
-        auto maybe_seven_zip_output = cmd_execute_and_capture_output(
-            Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
-            default_working_directory,
-            get_clean_environment());
-        if (const auto seven_zip_output = maybe_seven_zip_output.get())
-        {
-            return seven_zip_output->exit_code;
-        }
-
-        return maybe_seven_zip_output.error().error_value; // FIXME
+        return flatten(cmd_execute_and_capture_output(
+                           Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
+                           default_working_directory,
+                           get_clean_environment()),
+                       Tools::SEVEN_ZIP);
 #else
         (void)tools;
-        return cmd_execute_clean(Command{"zip"}
-                                     .string_arg("--quiet")
-                                     .string_arg("-y")
-                                     .string_arg("-r")
-                                     .string_arg(destination)
-                                     .string_arg("*")
-                                     .string_arg("--exclude")
-                                     .string_arg(".DS_Store"),
-                                 WorkingDirectory{source});
+        return flatten(cmd_execute_and_capture_output(Command{"zip"}
+                                                          .string_arg("--quiet")
+                                                          .string_arg("-y")
+                                                          .string_arg("-r")
+                                                          .string_arg(destination)
+                                                          .string_arg("*")
+                                                          .string_arg("--exclude")
+                                                          .string_arg(".DS_Store"),
+                                                      WorkingDirectory{source}),
+                       "zip");
 #endif
     }
 
@@ -331,12 +331,16 @@ namespace vcpkg
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
 #ifdef __APPLE__
         int i = 0;
-        for (auto& result : results)
+        for (auto& maybe_result : results)
         {
-            if (result.exit_code == 127 && result.output.empty())
+            if (const auto result = maybe_result.get())
             {
-                Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
-                result = cmd_execute_and_capture_output(jobs[i], default_working_directory, get_clean_environment());
+                if (result->exit_code == 127 && result->output.empty())
+                {
+                    Debug::print(jobs[i].command_line(), ": pclose returned 127, try again \n");
+                    maybe_result =
+                        cmd_execute_and_capture_output(jobs[i], default_working_directory, get_clean_environment());
+                }
             }
             ++i;
         }

@@ -101,10 +101,7 @@ namespace
                                  (msg::binary_source),
                                  "",
                                  "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments");
-    DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed,
-                                 (msg::path, msg::exit_code),
-                                 "",
-                                 "Failed to compress folder '{path}', exit code: {exit_code}");
+    DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder '{path}':");
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -393,11 +390,15 @@ namespace
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(fs, paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
-            if (code != 0)
+            ExpectedS<void> compress_result =
+                compress_directory_to_zip(fs, paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
+            if (!compress_result.has_value())
             {
-                vcpkg::print2(
-                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                vcpkg::print2(Color::warning,
+                              "Failed to compress folder '",
+                              paths.package_dir(spec),
+                              "': ",
+                              compress_result.error());
                 return;
             }
 
@@ -1108,12 +1109,14 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(
+            ExpectedS<void> compression_result = compress_directory_to_zip(
                 paths.get_filesystem(), paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
-            if (code != 0)
+            if (!compression_result.has_value())
             {
-                vcpkg::msg::println_warning(
-                    msgCompressFolderFailed, msg::path = paths.package_dir(spec), msg::exit_code = code);
+                vcpkg::msg::println(Color::warning,
+                                    msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
+                                        .append_raw(' ')
+                                        .append_raw(compression_result.error()));
                 return;
             }
 
