@@ -1258,6 +1258,11 @@ namespace
 
         bool download_file(StringView object, const Path& archive) const override
         {
+            if (!stat(object))
+            {
+                return false;
+            }
+
             auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
             if (m_no_sign_request)
             {
