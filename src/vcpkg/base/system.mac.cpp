@@ -55,7 +55,7 @@ namespace
             non_zero_mac |= c;
         }
 
-        return non_zero_mac ? std::string(mac_address, MAC_STRING_LENGTH) : "";
+        return std::string(mac_address, non_zero_mac ? MAC_STRING_LENGTH : 0);
     }
 
     std::string preferred_interface_or_default(const std::map<StringView, std::string>& ifname_mac_map)
