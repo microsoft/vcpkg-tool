@@ -1,11 +1,11 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
-#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 
 #include <vcpkg/fwd/tools.h>
 
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/stringview.h>
 
 #include <string>
@@ -42,6 +42,11 @@ namespace vcpkg
         virtual const Path& get_tool_path(StringView tool) const = 0;
         virtual const std::string& get_tool_version(StringView tool) const = 0;
     };
+
+    ExpectedS<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
+                                                          StringLiteral tool_name,
+                                                          std::string&& output,
+                                                          const Path& exe_path);
 
     ExpectedL<Path> find_system_tar(const Filesystem& fs);
 
