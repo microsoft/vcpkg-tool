@@ -415,7 +415,7 @@ namespace
             size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
-                auto url = put_url_template.instanciate_variables(action);
+                auto url = put_url_template.instantiate_variables(action);
                 auto maybe_success = put_file(fs, url, put_url_template.headers, tmp_archive_path);
                 if (maybe_success.has_value())
                 {
@@ -540,7 +540,7 @@ namespace
 
                     auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    auto uri = url_template.instanciate_variables(action);
+                    auto uri = url_template.instantiate_variables(action);
                     url_paths.emplace_back(
                         std::move(uri), url_template.headers, make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
@@ -603,7 +603,7 @@ namespace
                         continue;
                     }
 
-                    urls.push_back(url_template.instanciate_variables(actions[idx]));
+                    urls.push_back(url_template.instantiate_variables(actions[idx]));
                     url_indices.push_back(idx);
                 }
 
@@ -1368,7 +1368,7 @@ namespace vcpkg
         return {};
     }
 
-    std::string UrlTemplate::instanciate_variables(const Dependencies::InstallPlanAction& action) const
+    std::string UrlTemplate::instantiate_variables(const Dependencies::InstallPlanAction& action) const
     {
         return api_stable_format(url_template,
                                  [&](std::string& out, StringView key) {

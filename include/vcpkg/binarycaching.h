@@ -75,7 +75,7 @@ namespace vcpkg
         std::vector<std::string> headers;
 
         LocalizedString valid();
-        std::string instanciate_variables(const Dependencies::InstallPlanAction& action) const;
+        std::string instantiate_variables(const Dependencies::InstallPlanAction& action) const;
     };
 
     struct BinaryConfigParserState
