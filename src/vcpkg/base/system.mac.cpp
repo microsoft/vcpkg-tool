@@ -27,16 +27,50 @@
 #endif
 #endif
 
-#if !defined(_WIN32)
-namespace
+namespace vcpkg
 {
-    using namespace vcpkg;
-
     constexpr size_t MAC_BYTES_LENGTH = 6;
+
+    bool validate_mac_address_format(StringView mac)
+    {
+        // 6 hex-bytes (12 digits) + five separators
+        static constexpr size_t MAC_STRING_LENGTH = 17;
+
+        if (mac.size() != MAC_STRING_LENGTH) return false;
+        for (size_t i = 0; i < MAC_STRING_LENGTH; ++i)
+        {
+            // every third character is a ':' separator
+            if (((i + 1) % 3) == 0)
+            {
+                if (mac[i] != ':') return false;
+                continue;
+            }
+
+            if (!ParserBase::is_hex_digit(mac[i])) return false;
+        }
+        return true;
+    }
+
+    bool is_valid_mac_for_telemetry(StringView mac)
+    {
+        // this exclusion list is the taken from VS Code's source code
+        // https://github.com/microsoft/vscode/blob/main/src/vs/base/node/macAddress.ts
+        static constexpr std::array<StringLiteral, 3> invalid_macs{
+            "00:00:00:00:00:00",
+            "ff:ff:ff:ff:ff:ff",
+            // iBridge MAC address used on some Apple devices
+            "ac:de:48:00:11:22",
+        };
+
+        if (!validate_mac_address_format(mac)) return false;
+        auto begin = std::begin(invalid_macs);
+        auto end = std::end(invalid_macs);
+        return std::find(begin, end, mac) == end;
+    }
 
     std::string mac_bytes_to_string(const Span<unsigned char>& bytes)
     {
-        static constexpr char capital_hexits[] = "0123456789ABCDEF";
+        static constexpr char capital_hexits[] = "0123456789abcdef";
         // 6 hex bytes, 5 dashes
         static constexpr size_t MAC_STRING_LENGTH = MAC_BYTES_LENGTH * 2 + 5;
 
@@ -49,7 +83,7 @@ namespace
         for (size_t i = 1; i < MAC_BYTES_LENGTH; ++i)
         {
             c = static_cast<unsigned char>(bytes[i]);
-            *mac++ = '-';
+            *mac++ = ':';
             *mac++ = capital_hexits[(c & 0xf0) >> 4];
             *mac++ = capital_hexits[(c & 0x0f)];
             non_zero_mac |= c;
@@ -58,78 +92,65 @@ namespace
         return std::string(mac_address, non_zero_mac ? MAC_STRING_LENGTH : 0);
     }
 
-    std::string preferred_interface_or_default(const std::map<StringView, std::string>& ifname_mac_map)
+    bool extract_mac_from_getmac_output_line(StringView line, std::string& out)
     {
-        // search for preferred interfaces
-        for (auto&& interface_name : {"eth0", "wlan0", "en0", "hn0"})
-        {
-            auto maybe_preferred = ifname_mac_map.find(interface_name);
-            if (maybe_preferred != ifname_mac_map.end())
-            {
-                return maybe_preferred->second;
-            }
-        }
+        // getmac /V /NH /FO CSV
+        // outputs each interface on its own comma-separated line
+        // "connection name","network adapter","physical address","transport name"
+        auto is_quote = [](auto ch) -> bool { return ch == '"'; };
 
-        // default to first mac address we find
-        auto first = ifname_mac_map.begin();
-        if (first != ifname_mac_map.end())
-        {
-            return first->second;
-        }
+        auto parser = ParserBase(line, "getmac ouptut");
 
-        return "0";
+        out.clear();
+
+        // ignore "connection name"
+        if (parser.require_character('"')) return false;
+        parser.match_until(is_quote);
+        if (parser.require_character('"')) return false;
+        if (parser.require_character(',')) return false;
+
+        // ignore "network adapter"
+        if (parser.require_character('"')) return false;
+        parser.match_until(is_quote);
+        if (parser.require_character('"')) return false;
+        if (parser.require_character(',')) return false;
+
+        // get "physical address"
+        if (parser.require_character('"')) return false;
+        auto mac_address = parser.match_until(is_quote).to_string();
+        if (parser.require_character('"')) return false;
+        if (parser.require_character(',')) return false;
+
+        // ignore "transport name"
+        if (parser.require_character('"')) return false;
+        parser.match_until(is_quote);
+        if (parser.require_character('"')) return false;
+
+        if (!parser.at_eof()) return false;
+
+        // output line was properly formatted
+        out = Strings::ascii_to_lowercase(Strings::replace_all(mac_address, "-", ":"));
+        return true;
     }
-}
-#endif
 
-namespace vcpkg
-{
     std::string get_user_mac_hash()
     {
 #if defined(_WIN32)
         // getmac /V /NH /FO CSV
         // outputs each interface on its own comma-separated line
         // "connection name","network adapter","physical address","transport name"
-        static constexpr StringLiteral ZERO_MAC = "00-00-00-00-00-00";
-        static constexpr size_t CONNECTION_NAME = 0;
-        static constexpr size_t PHYSICAL_ADDRESS = 2;
         auto getmac = cmd_execute_and_capture_output(
             Command("getmac").string_arg("/V").string_arg("/NH").string_arg("/FO").string_arg("CSV"));
-        if (getmac.exit_code != 0)
+        if (getmac.exit_code == 0)
         {
-            return "0";
-        }
-
-        std::map<std::string, std::string> ifname_mac_map;
-        for (auto&& line : Strings::split(getmac.output, '\n'))
-        {
-            auto values = Strings::split(line, ',');
-            if (values.size() != 4)
+            for (auto&& line : Strings::split(getmac.output, '\n'))
             {
-                return "0";
+                std::string mac;
+                if (extract_mac_from_getmac_output_line(line, mac) && is_valid_mac_for_telemetry(mac))
+                {
+                    return mac;
+                }
             }
-
-            auto&& name = Strings::replace_all(values[CONNECTION_NAME], "\"", "");
-            auto&& mac = Strings::replace_all(values[PHYSICAL_ADDRESS], "\"", "");
-            if (mac == ZERO_MAC) continue;
-            ifname_mac_map.emplace(name, Hash::get_string_hash(mac, Hash::Algorithm::Sha256));
-        }
-
-        // search for preferred interfaces
-        for (auto&& interface_name : {"Local Area Connection", "Ethernet", "Wi-Fi"})
-        {
-            auto maybe_preferred = ifname_mac_map.find(interface_name);
-            if (maybe_preferred != ifname_mac_map.end())
-            {
-                return maybe_preferred->second;
-            }
-        }
-
-        // default to first mac address we find
-        auto first = ifname_mac_map.begin();
-        if (first != ifname_mac_map.end())
-        {
-            return first->second;
         }
 #elif defined(__linux__) || defined(__APPLE__)
         // The getifaddrs(ifaddrs** ifap) function creates a linked list of structures
@@ -180,12 +201,12 @@ namespace vcpkg
                 std::memcpy(bytes, LLADDR(address), MAC_BYTES_LENGTH);
 #endif
                 auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
-                if (maybe_mac.empty()) continue;
-                ifname_mac_map.emplace(StringView{interface->ifa_name, strlen(interface->ifa_name)},
-                                       Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256));
+                if (is_valid_mac_address(maybe_mac))
+                {
+                    return Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256);
+                }
             }
         }
-        return preferred_interface_or_default(ifname_mac_map);
 #else
         // fallback when getifaddrs() is not available
         struct socket_guard
@@ -233,11 +254,13 @@ namespace vcpkg
             {
                 std::memset(bytes, 0, MAC_BYTES_LENGTH);
                 std::memcpy(bytes, interface.ifr_hwaddr.sa_data, MAC_BYTES_LENGTH);
-                auto&& mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
-                ifname_mac_map.emplace(name, Hash::get_string_hash(mac, Hash::Algorithm::Sha256));
+                auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
+                if (is_valid_mac_address(maybe_mac))
+                {
+                    return Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256);
+                }
             }
         }
-        return preferred_interface_or_default(ifname_mac_map);
 #endif
         return "0";
     }
