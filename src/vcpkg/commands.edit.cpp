@@ -237,21 +237,21 @@ namespace vcpkg::Commands::Edit
         candidate_paths.emplace_back("/usr/share/code/bin/code");
         candidate_paths.emplace_back("/usr/bin/code");
 
-        if (cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime")) == 0)
+        const auto maybe_command_v_result = cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime"));
+        if (maybe_command_v_result.has_value() && maybe_command_v_result.value_or_exit(VCPKG_LINE_INFO) == 0)
         {
             auto mime_qry = Command("xdg-mime").string_arg("query").string_arg("default").string_arg("text/plain");
-            auto execute_result = cmd_execute_and_capture_output(mime_qry);
-            if (execute_result.exit_code == 0 && !execute_result.output.empty())
+            auto maybe_output = flatten_out(cmd_execute_and_capture_output(mime_qry), "xdg-mime");
+            const auto output = maybe_output.get();
+            if (output && !output->empty())
             {
-                mime_qry = Command("command").string_arg("-v").string_arg(
-                    execute_result.output.substr(0, execute_result.output.find('.')));
-                execute_result = cmd_execute_and_capture_output(mime_qry);
-                if (execute_result.exit_code == 0 && !execute_result.output.empty())
+                mime_qry = Command("command").string_arg("-v").string_arg(output->substr(0, output->find('.')));
+                auto maybe_output2 = flatten_out(cmd_execute_and_capture_output(mime_qry), "xdg-mime");
+                const auto output2 = maybe_output2.get();
+                if (output2 && !output2->empty())
                 {
-                    execute_result.output.erase(
-                        std::remove(std::begin(execute_result.output), std::end(execute_result.output), '\n'),
-                        std::end(execute_result.output));
-                    candidate_paths.emplace_back(execute_result.output);
+                    output2->erase(std::remove(output2->begin(), output2->end(), '\n'), output2->end());
+                    candidate_paths.emplace_back(std::move(*output2));
                 }
             }
         }
