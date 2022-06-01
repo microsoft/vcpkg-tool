@@ -29,13 +29,12 @@
 
 namespace vcpkg
 {
-    constexpr size_t MAC_BYTES_LENGTH = 6;
+    static constexpr size_t MAC_BYTES_LENGTH = 6;
+    // 6 hex-bytes (12 hex-digits) + five separators
+    static constexpr size_t MAC_STRING_LENGTH = MAC_BYTES_LENGTH * 2 + 5;
 
     bool validate_mac_address_format(StringView mac)
     {
-        // 6 hex-bytes (12 digits) + five separators
-        static constexpr size_t MAC_STRING_LENGTH = 17;
-
         if (mac.size() != MAC_STRING_LENGTH) return false;
         for (size_t i = 0; i < MAC_STRING_LENGTH; ++i)
         {
@@ -70,22 +69,20 @@ namespace vcpkg
 
     std::string mac_bytes_to_string(const Span<unsigned char>& bytes)
     {
-        static constexpr char capital_hexits[] = "0123456789abcdef";
-        // 6 hex bytes, 5 dashes
-        static constexpr size_t MAC_STRING_LENGTH = MAC_BYTES_LENGTH * 2 + 5;
+        static constexpr char hexits[] = "0123456789abcdef";
 
         char mac_address[MAC_STRING_LENGTH];
         char* mac = mac_address;
         unsigned char c = static_cast<unsigned char>(bytes[0]);
-        *mac++ = capital_hexits[(c & 0xf0) >> 4];
-        *mac++ = capital_hexits[(c & 0x0f)];
+        *mac++ = hexits[(c & 0xf0) >> 4];
+        *mac++ = hexits[(c & 0x0f)];
         unsigned char non_zero_mac = c;
         for (size_t i = 1; i < MAC_BYTES_LENGTH; ++i)
         {
             c = static_cast<unsigned char>(bytes[i]);
             *mac++ = ':';
-            *mac++ = capital_hexits[(c & 0xf0) >> 4];
-            *mac++ = capital_hexits[(c & 0x0f)];
+            *mac++ = hexits[(c & 0xf0) >> 4];
+            *mac++ = hexits[(c & 0x0f)];
             non_zero_mac |= c;
         }
 
@@ -148,7 +145,7 @@ namespace vcpkg
                 std::string mac;
                 if (extract_mac_from_getmac_output_line(line, mac) && is_valid_mac_for_telemetry(mac))
                 {
-                    return mac;
+                    return Hash::get_string_hash(mac, Hash::Algorithm::Sha256);
                 }
             }
         }
@@ -201,7 +198,7 @@ namespace vcpkg
                 std::memcpy(bytes, LLADDR(address), MAC_BYTES_LENGTH);
 #endif
                 auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
-                if (is_valid_mac_address(maybe_mac))
+                if (is_valid_mac_for_telemetry(maybe_mac))
                 {
                     return Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256);
                 }
@@ -255,7 +252,7 @@ namespace vcpkg
                 std::memset(bytes, 0, MAC_BYTES_LENGTH);
                 std::memcpy(bytes, interface.ifr_hwaddr.sa_data, MAC_BYTES_LENGTH);
                 auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
-                if (is_valid_mac_address(maybe_mac))
+                if (is_valid_mac_for_telemetry(maybe_mac))
                 {
                     return Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256);
                 }
