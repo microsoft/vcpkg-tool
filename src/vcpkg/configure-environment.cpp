@@ -116,7 +116,6 @@ namespace vcpkg
         cmd_run.string_arg("--harmony");
         cmd_run.string_arg(ce_path);
         cmd_run.forwarded_args(args);
-        cmd_run.string_arg("--from-vcpkg");
         if (Debug::g_debugging)
         {
             cmd_run.string_arg("--debug");

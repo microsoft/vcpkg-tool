@@ -39,7 +39,7 @@ const commandline = new CommandLine(argv.slice(2));
 setLocale(commandline.language, `${__dirname}/i18n/`);
 
 function header() {
-  if (!commandline.fromVCPKG) {
+  if (!commandline.vcpkgCommand) {
     if (commandline.debug) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       log(`${green.bold(`${product} command line utility`)} ${white.bold(cliVersion)} [node: ${white.bold(process.version)}; max-memory: ${white.bold(Math.round((require('v8').getHeapStatistics().heap_size_limit) / (1024 * 1024)) & 0xffffffff00)} gb]`);

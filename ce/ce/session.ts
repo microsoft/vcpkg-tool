@@ -71,6 +71,7 @@ export class Session {
   readonly tmpFolder: Uri;
   readonly installFolder: Uri;
   readonly registryFolder: Uri;
+  readonly vcpkgCommand?: string;
   readonly activation: Activation = new Activation(this);
 
   readonly globalConfig: Uri;
@@ -105,6 +106,8 @@ export class Session {
     this.homeFolder = this.fileSystem.file(settings['homeFolder']!);
     this.cache = this.environment[vcpkgDownloadFolder] ? this.parseUri(this.environment[vcpkgDownloadFolder]!) : this.homeFolder.join('downloads');
     this.globalConfig = this.homeFolder.join(globalConfigurationFile);
+
+    this.vcpkgCommand = settings['vcpkgCommand'];
 
     this.tmpFolder = this.homeFolder.join('tmp');
     this.installFolder = this.homeFolder.join('artifacts');
