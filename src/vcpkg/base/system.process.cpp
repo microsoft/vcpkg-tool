@@ -980,13 +980,13 @@ namespace vcpkg
     void register_console_ctrl_handler() { }
 #endif
 
-    ExpectedS<void> flatten(const ExpectedApi<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
+    ExpectedS<Unit> flatten(const ExpectedApi<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
     {
         if (auto exit = maybe_exit.get())
         {
             if (exit->exit_code == 0)
             {
-                return {};
+                return {Unit{}};
             }
 
             return {msg::format_error(

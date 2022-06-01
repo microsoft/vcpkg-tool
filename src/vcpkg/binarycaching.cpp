@@ -390,7 +390,7 @@ namespace
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            ExpectedS<void> compress_result =
+            ExpectedS<Unit> compress_result =
                 compress_directory_to_zip(fs, paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (!compress_result.has_value())
             {
@@ -651,16 +651,16 @@ namespace
                 Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
-        ExpectedS<void> run_nuget_commandline(const Command& cmdline) const
+        ExpectedS<Unit> run_nuget_commandline(const Command& cmdline) const
         {
             if (m_interactive)
             {
                 return cmd_execute(cmdline)
                     .map_error([](SystemApiError&& sae) { return sae.to_string(); })
-                    .then([](int exit_code) -> ExpectedS<void> {
+                    .then([](int exit_code) -> ExpectedS<Unit> {
                         if (exit_code == 0)
                         {
-                            return {};
+                            return {Unit{}};
                         }
 
                         return "NuGet command failed and output was not captured because --interactive was specified";
@@ -669,7 +669,7 @@ namespace
 
             return cmd_execute_and_capture_output(cmdline)
                 .map_error([](SystemApiError&& sae) { return sae.to_string(); })
-                .then([&](ExitCodeAndOutput&& res) -> ExpectedS<void> {
+                .then([&](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
                     if (Debug::g_debugging)
                     {
                         print2(res.output);
@@ -684,7 +684,7 @@ namespace
 
                     if (res.exit_code == 0)
                     {
-                        return {};
+                        return {Unit{}};
                     }
 
                     if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
@@ -701,7 +701,7 @@ namespace
                         real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
                         return cmd_execute_and_capture_output(real_cmdline)
                             .map_error([](SystemApiError&& sae) { return sae.to_string(); })
-                            .then([](ExitCodeAndOutput&& res) -> ExpectedS<void> {
+                            .then([](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
                                 if (Debug::g_debugging)
                                 {
                                     print2(res.output);
@@ -709,7 +709,7 @@ namespace
 
                                 if (res.exit_code == 0)
                                 {
-                                    return {};
+                                    return {Unit{}};
                                 }
 
                                 return {std::move(res.output), expected_right_tag};
@@ -1109,7 +1109,7 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            ExpectedS<void> compression_result = compress_directory_to_zip(
+            ExpectedS<Unit> compression_result = compress_directory_to_zip(
                 paths.get_filesystem(), paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (!compression_result.has_value())
             {

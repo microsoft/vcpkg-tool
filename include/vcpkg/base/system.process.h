@@ -155,7 +155,7 @@ namespace vcpkg
 
     // If exit code is 0, returns a 'success' ExpectedS.
     // Otherwise, returns an ExpectedS containing error text
-    ExpectedS<void> flatten(const ExpectedApi<ExitCodeAndOutput>&, StringView tool_name);
+    ExpectedS<Unit> flatten(const ExpectedApi<ExitCodeAndOutput>&, StringView tool_name);
 
     // If exit code is 0, returns a 'success' ExpectedS containing the output
     // Otherwise, returns an ExpectedS containing error text

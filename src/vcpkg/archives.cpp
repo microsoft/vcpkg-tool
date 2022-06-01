@@ -279,7 +279,7 @@ namespace vcpkg
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
-    ExpectedS<void> compress_directory_to_zip(Filesystem& fs,
+    ExpectedS<Unit> compress_directory_to_zip(Filesystem& fs,
                                               const ToolCache& tools,
                                               const Path& source,
                                               const Path& destination)
@@ -325,7 +325,7 @@ namespace vcpkg
         return cmd;
     }
 
-    std::vector<ExpectedS<void>> decompress_in_parallel(View<Command> jobs)
+    std::vector<ExpectedS<Unit>> decompress_in_parallel(View<Command> jobs)
     {
         auto results =
             cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
@@ -346,7 +346,7 @@ namespace vcpkg
         }
 #endif
 
-        std::vector<ExpectedS<void>> filtered_results;
+        std::vector<ExpectedS<Unit>> filtered_results;
         filtered_results.reserve(jobs.size());
         for (std::size_t idx = 0; idx < jobs.size(); ++idx)
         {

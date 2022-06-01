@@ -1169,7 +1169,7 @@ namespace vcpkg
             });
     }
 
-    ExpectedS<void> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
+    ExpectedS<Unit> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
     {
         auto& fs = get_filesystem();
 
@@ -1207,7 +1207,7 @@ namespace vcpkg
                                    std::move(maybe_fetch_output).error());
         }
 
-        return {};
+        return {Unit{}};
     }
 
     // returns an error if there was an unexpected error; returns nullopt if the file doesn't exist at the specified

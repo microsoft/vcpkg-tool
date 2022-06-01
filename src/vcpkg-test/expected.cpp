@@ -126,33 +126,7 @@ TEST_CASE ("construct and destroy different type", "[expected]")
     error.check_nothing();
 
     {
-        ExpectedT<void, ConstructTracker<1>> uut{};
-        error.check_nothing();
-    }
-
-    value.check_nothing();
-    error.check_nothing();
-
-    {
-        ExpectedT<void, ConstructTracker<1>> uut{expected_left_tag};
-        error.check_nothing();
-    }
-
-    value.check_nothing();
-    error.check_nothing();
-
-    {
         ExpectedT<ConstructTracker<0>, ConstructTracker<1>> uut{error};
-        value.check_nothing();
-        CHECK(error.alive == 1);
-        error.check_no_ops();
-    }
-
-    value.check_nothing();
-    error.check_nothing();
-
-    {
-        ExpectedT<void, ConstructTracker<1>> uut{error};
         value.check_nothing();
         CHECK(error.alive == 1);
         error.check_no_ops();
@@ -180,14 +154,6 @@ TEST_CASE ("construct and destroy different type", "[expected]")
 
     value.check_nothing();
     error.check_nothing();
-
-    {
-        ExpectedT<void, ConstructTracker<1>> uut{error, expected_right_tag};
-        CHECK(error.alive == 1);
-        error.check_no_ops();
-    }
-
-    error.check_nothing();
 }
 
 TEST_CASE ("copy and move construction value", "[expected]")
@@ -212,25 +178,6 @@ TEST_CASE ("copy and move construction value", "[expected]")
     CHECK(value.moves == 1);
     CHECK(value.move_assigns == 0);
     error.check_nothing();
-}
-
-TEST_CASE ("copy and move construction void", "[expected]")
-{
-    ConstructRoot<1> error;
-    ExpectedT<void, ConstructTracker<1>> uut{error};
-    CHECK(error.alive == 1);
-    auto cp = uut;
-    CHECK(error.alive == 2);
-    CHECK(error.copies == 1);
-    CHECK(error.copy_assigns == 0);
-    CHECK(error.moves == 0);
-    CHECK(error.move_assigns == 0);
-    auto moved = std::move(uut);
-    CHECK(error.alive == 3);
-    CHECK(error.copies == 1);
-    CHECK(error.copy_assigns == 0);
-    CHECK(error.moves == 1);
-    CHECK(error.move_assigns == 0);
 }
 
 TEST_CASE ("copy and move construction error", "[expected]")
@@ -365,84 +312,6 @@ TEST_CASE ("move assignment error error", "[expected]")
     value.check_nothing();
 }
 
-TEST_CASE ("move assignment void void", "[expected]")
-{
-    ConstructRoot<1> error;
-
-    {
-        ExpectedT<void, ConstructTracker<1>> originally_value{};
-        ExpectedT<void, ConstructTracker<1>> originally_value2{};
-        originally_value = std::move(originally_value2);
-        error.check_nothing();
-    }
-
-    error.check_nothing();
-}
-
-TEST_CASE ("move assignment void error", "[expected]")
-{
-    ConstructRoot<1> error;
-
-    {
-        ExpectedT<void, ConstructTracker<1>> originally_value{};
-        ExpectedT<void, ConstructTracker<1>> originally_error{error};
-        originally_value = std::move(originally_error);
-        CHECK(!originally_value.error().moved_from);
-        CHECK(originally_error.error().moved_from);
-        CHECK(error.alive == 2);
-        CHECK(error.copies == 0);
-        CHECK(error.copy_assigns == 0);
-        CHECK(error.moves == 1);
-        CHECK(error.move_assigns == 0);
-    }
-
-    CHECK(error.alive == 0);
-    CHECK(error.copies == 0);
-    CHECK(error.copy_assigns == 0);
-    CHECK(error.moves == 1);
-    CHECK(error.move_assigns == 0);
-}
-
-TEST_CASE ("move assignment error void", "[expected]")
-{
-    ConstructRoot<1> error;
-
-    {
-        ExpectedT<void, ConstructTracker<1>> originally_value{};
-        ExpectedT<void, ConstructTracker<1>> originally_error{error};
-        originally_error = std::move(originally_value);
-        originally_value.value_or_exit(VCPKG_LINE_INFO);
-        originally_error.value_or_exit(VCPKG_LINE_INFO);
-        error.check_nothing();
-    }
-
-    error.check_nothing();
-}
-
-TEST_CASE ("move assignment error error void", "[expected]")
-{
-    ConstructRoot<1> error;
-
-    {
-        ExpectedT<void, ConstructTracker<1>> originally_error{error};
-        ExpectedT<void, ConstructTracker<1>> originally_error2{error};
-        originally_error = std::move(originally_error2);
-        CHECK(!originally_error.error().moved_from);
-        CHECK(originally_error2.error().moved_from);
-        CHECK(error.alive == 2);
-        CHECK(error.copies == 0);
-        CHECK(error.copy_assigns == 0);
-        CHECK(error.moves == 0);
-        CHECK(error.move_assigns == 1);
-    }
-
-    CHECK(error.alive == 0);
-    CHECK(error.copies == 0);
-    CHECK(error.copy_assigns == 0);
-    CHECK(error.moves == 0);
-    CHECK(error.move_assigns == 1);
-}
-
 TEST_CASE ("map", "[expected]")
 {
     ConstructRoot<0> value;
@@ -506,56 +375,6 @@ TEST_CASE ("map", "[expected]")
     }
 
     value.check_nothing();
-    CHECK(error.moves == 1);
-    error.moves = 0;
-    error.check_nothing();
-}
-
-TEST_CASE ("map void", "[expected]")
-{
-    ConstructRoot<1> error;
-    using TestType = ExpectedT<void, ConstructTracker<1>>;
-    {
-        TestType originally_value;
-        auto result = originally_value.map([]() { return 42; });
-        static_assert(std::is_same_v<decltype(result), ExpectedT<int, ConstructTracker<1>>>,
-                      "Bad void map(const&) type");
-        CHECK(result.value_or_exit(VCPKG_LINE_INFO) == 42);
-    }
-
-    error.check_nothing();
-
-    {
-        TestType originally_value;
-        auto result = std::move(originally_value).map([]() { return 42; });
-        static_assert(std::is_same_v<decltype(result), ExpectedT<int, ConstructTracker<1>>>, "Bad void map(&&) type");
-        CHECK(result.value_or_exit(VCPKG_LINE_INFO) == 42);
-    }
-
-    error.check_nothing();
-
-    {
-        TestType originally_error(error);
-        auto result = originally_error.map([]() {
-            FAIL();
-            return 42;
-        });
-        CHECK(result.error().cr == &error);
-    }
-
-    CHECK(error.copies == 1);
-    error.copies = 0;
-    error.check_nothing();
-
-    {
-        TestType originally_error(error);
-        auto result = std::move(originally_error).map([]() {
-            FAIL();
-            return 42;
-        });
-        CHECK(result.error().cr == &error);
-    }
-
     CHECK(error.moves == 1);
     error.moves = 0;
     error.check_nothing();
