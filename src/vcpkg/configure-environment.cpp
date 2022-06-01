@@ -1,5 +1,6 @@
 #include <vcpkg/base/basic_checks.h>
 #include <vcpkg/base/downloads.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 
@@ -116,6 +117,11 @@ namespace vcpkg
         cmd_run.string_arg(ce_path);
         cmd_run.forwarded_args(args);
         cmd_run.string_arg("--from-vcpkg");
+        if (Debug::g_debugging)
+        {
+            cmd_run.string_arg("--debug");
+        }
+
         return cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd});
     }
 
