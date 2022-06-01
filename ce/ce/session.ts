@@ -7,7 +7,7 @@ import { MetadataFile } from './amf/metadata-file';
 import { Activation, deactivate } from './artifacts/activation';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
 import { Registry } from './artifacts/registry';
-import { defaultConfig, globalConfigurationFile, postscriptVarible, profileNames, registryIndexFile, undo, vcpkgDownloadFolder } from './constants';
+import { defaultConfig, globalConfigurationFile, postscriptVariable, profileNames, registryIndexFile, undo, vcpkgDownloadFolder } from './constants';
 import { FileSystem, FileType } from './fs/filesystem';
 import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
@@ -250,7 +250,7 @@ export class Session {
 
   #postscriptFile?: Uri;
   get postscriptFile() {
-    return this.#postscriptFile || (this.#postscriptFile = this.environment[postscriptVarible] ? this.fileSystem.file(this.environment[postscriptVarible]!) : undefined);
+    return this.#postscriptFile || (this.#postscriptFile = this.environment[postscriptVariable] ? this.fileSystem.file(this.environment[postscriptVariable]!) : undefined);
   }
 
   async init() {
