@@ -225,14 +225,9 @@ if (Test-Path $installedDir)
                                 .string_arg(nuspec_file_path)
                                 .string_arg("-NoDefaultExcludes");
 
-            const auto maybe_output =
-                flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
-                        Tools::NUGET);
-            if (!maybe_output.has_value())
-            {
-                Checks::exit_with_message(
-                    VCPKG_LINE_INFO, "error: NuGet package creation failed: %s\n", maybe_output.error());
-            }
+            flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
+                    Tools::NUGET)
+                .value_or_exit(VCPKG_LINE_INFO);
         }
     }
 }

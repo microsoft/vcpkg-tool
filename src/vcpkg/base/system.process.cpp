@@ -36,6 +36,24 @@ namespace
                                  (msg::tool_name, msg::exit_code),
                                  "The program's console output is appended after this.",
                                  "{tool_name} failed with exit code: ({exit_code}).");
+    DECLARE_AND_REGISTER_MESSAGE(SystemApiErrorMessage,
+                                 (msg::system_api, msg::exit_code, msg::error_msg),
+                                 "",
+                                 "calling {system_api} failed with {exit_code} ({error_msg})");
+
+#if defined(_WIN32)
+    using error_value_type = unsigned long;
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+    using error_value_type = int;
+#endif // ^^^ !_WIN32
+
+    LocalizedString format_system_error_message(StringLiteral api_name, error_value_type error_value)
+    {
+        return msg::format_error(msgSystemApiErrorMessage,
+                                 msg::system_api = api_name,
+                                 msg::exit_code = error_value,
+                                 msg::error_msg = std::system_category().message(static_cast<int>(error_value)));
+    }
 }
 
 namespace vcpkg
@@ -446,11 +464,11 @@ namespace vcpkg
     const WorkingDirectory default_working_directory;
     const Environment default_environment;
 
-    std::vector<ExpectedApi<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
-                                                                                        const WorkingDirectory& wd,
-                                                                                        const Environment& env)
+    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
+                                                                                      const WorkingDirectory& wd,
+                                                                                      const Environment& env)
     {
-        std::vector<ExpectedApi<ExitCodeAndOutput>> res(cmd_lines.size(), SystemApiError::empty);
+        std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString());
         if (cmd_lines.size() == 0)
         {
             return res;
@@ -491,7 +509,7 @@ namespace vcpkg
         return res;
     }
 
-    ExpectedApi<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
+    ExpectedL<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
     {
         return cmd_execute(cmd_line, wd, get_clean_environment());
     }
@@ -545,11 +563,11 @@ namespace vcpkg
 
     /// <param name="maybe_environment">If non-null, an environment block to use for the new process. If null, the
     /// new process will inherit the current environment.</param>
-    static ExpectedApi<ProcessInfo> windows_create_process(StringView cmd_line,
-                                                           const WorkingDirectory& wd,
-                                                           const Environment& env,
-                                                           DWORD dwCreationFlags,
-                                                           STARTUPINFOW& startup_info) noexcept
+    static ExpectedL<ProcessInfo> windows_create_process(StringView cmd_line,
+                                                         const WorkingDirectory& wd,
+                                                         const Environment& env,
+                                                         DWORD dwCreationFlags,
+                                                         STARTUPINFOW& startup_info) noexcept
     {
         ProcessInfo process_info;
         Debug::print("CreateProcessW(", cmd_line, ")\n");
@@ -584,13 +602,13 @@ namespace vcpkg
             return process_info;
         }
 
-        return SystemApiError{"CreateProcessW", GetLastError()};
+        return format_system_error_message("CreateProcessW", GetLastError());
     }
 
-    static ExpectedApi<ProcessInfo> windows_create_windowless_process(StringView cmd_line,
-                                                                      const WorkingDirectory& wd,
-                                                                      const Environment& env,
-                                                                      DWORD dwCreationFlags) noexcept
+    static ExpectedL<ProcessInfo> windows_create_windowless_process(StringView cmd_line,
+                                                                    const WorkingDirectory& wd,
+                                                                    const Environment& env,
+                                                                    DWORD dwCreationFlags) noexcept
     {
         STARTUPINFOW startup_info;
         memset(&startup_info, 0, sizeof(STARTUPINFOW));
@@ -645,10 +663,10 @@ namespace vcpkg
         }
     };
 
-    static ExpectedApi<ProcessInfoAndPipes> windows_create_process_redirect(StringView cmd_line,
-                                                                            const WorkingDirectory& wd,
-                                                                            const Environment& env,
-                                                                            DWORD dwCreationFlags) noexcept
+    static ExpectedL<ProcessInfoAndPipes> windows_create_process_redirect(StringView cmd_line,
+                                                                          const WorkingDirectory& wd,
+                                                                          const Environment& env,
+                                                                          DWORD dwCreationFlags) noexcept
     {
         ProcessInfoAndPipes ret;
 
@@ -666,25 +684,25 @@ namespace vcpkg
         // Create a pipe for the child process's STDOUT.
         if (!CreatePipe(&ret.child_stdout, &startup_info.hStdOutput, &saAttr, 0))
         {
-            return SystemApiError{"CreatePipe stdout", GetLastError()};
+            return format_system_error_message("CreatePipe stdout", GetLastError());
         }
 
         // Ensure the read handle to the pipe for STDOUT is not inherited.
         if (!SetHandleInformation(ret.child_stdout, HANDLE_FLAG_INHERIT, 0))
         {
-            return SystemApiError{"SetHandleInformation stdout", GetLastError()};
+            return format_system_error_message("SetHandleInformation stdout", GetLastError());
         }
 
         // Create a pipe for the child process's STDIN.
         if (!CreatePipe(&startup_info.hStdInput, &ret.child_stdin, &saAttr, 0))
         {
-            return SystemApiError{"CreatePipe stdin", GetLastError()};
+            return format_system_error_message("CreatePipe stdin", GetLastError());
         }
 
         // Ensure the write handle to the pipe for STDIN is not inherited.
         if (!SetHandleInformation(ret.child_stdin, HANDLE_FLAG_INHERIT, 0))
         {
-            return SystemApiError{"SetHandleInformation stdin", GetLastError()};
+            return format_system_error_message("SetHandleInformation stdin", GetLastError());
         }
 
         startup_info.hStdError = startup_info.hStdOutput;
@@ -774,9 +792,7 @@ namespace vcpkg
     }
 #endif
 
-    static ExpectedApi<int> cmd_execute_impl(const Command& cmd_line,
-                                             const WorkingDirectory& wd,
-                                             const Environment& env)
+    static ExpectedL<int> cmd_execute_impl(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
     {
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
@@ -814,7 +830,7 @@ namespace vcpkg
 #endif
     }
 
-    ExpectedApi<int> cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
+    ExpectedL<int> cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
     {
         auto timer = ElapsedTimer::create_started();
         auto maybe_result = cmd_execute_impl(cmd_line, wd, env);
@@ -832,11 +848,11 @@ namespace vcpkg
         return maybe_result;
     }
 
-    ExpectedApi<int> cmd_execute_and_stream_lines(const Command& cmd_line,
-                                                  std::function<void(StringView)> per_line_cb,
-                                                  const WorkingDirectory& wd,
-                                                  const Environment& env,
-                                                  Encoding encoding)
+    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
+                                                std::function<void(StringView)> per_line_cb,
+                                                const WorkingDirectory& wd,
+                                                const Environment& env,
+                                                Encoding encoding)
     {
         Strings::LinesStream lines;
 
@@ -846,11 +862,11 @@ namespace vcpkg
         return rc;
     }
 
-    ExpectedApi<int> cmd_execute_and_stream_data(const Command& cmd_line,
-                                                 std::function<void(StringView)> data_cb,
-                                                 const WorkingDirectory& wd,
-                                                 const Environment& env,
-                                                 Encoding encoding)
+    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd_line,
+                                               std::function<void(StringView)> data_cb,
+                                               const WorkingDirectory& wd,
+                                               const Environment& env,
+                                               Encoding encoding)
     {
         const auto timer = ElapsedTimer::create_started();
 #if defined(_WIN32)
@@ -858,7 +874,7 @@ namespace vcpkg
         using vcpkg::g_ctrl_c_state;
 
         g_ctrl_c_state.transition_to_spawn_process();
-        ExpectedApi<int> exit_code =
+        ExpectedL<int> exit_code =
             windows_create_process_redirect(cmd_line.command_line(), wd, env, 0).map([&](ProcessInfoAndPipes&& output) {
                 return output.wait_and_stream_output(data_cb, encoding);
             });
@@ -936,11 +952,11 @@ namespace vcpkg
         return exit_code;
     }
 
-    ExpectedApi<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
-                                                                  const WorkingDirectory& wd,
-                                                                  const Environment& env,
-                                                                  Encoding encoding,
-                                                                  EchoInDebug echo_in_debug)
+    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
+                                                                const WorkingDirectory& wd,
+                                                                const Environment& env,
+                                                                Encoding encoding,
+                                                                EchoInDebug echo_in_debug)
     {
         std::string output;
         return cmd_execute_and_stream_data(
@@ -980,7 +996,7 @@ namespace vcpkg
     void register_console_ctrl_handler() { }
 #endif
 
-    ExpectedS<Unit> flatten(const ExpectedApi<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
+    ExpectedL<Unit> flatten(const ExpectedL<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
     {
         if (auto exit = maybe_exit.get())
         {
@@ -992,17 +1008,15 @@ namespace vcpkg
             return {msg::format_error(
                         msgProgramReturnedNonzeroExitCode, msg::tool_name = tool_name, msg::exit_code = exit->exit_code)
                         .append_raw('\n')
-                        .append_raw(exit->output)
-                        .extract_data()};
+                        .append_raw(exit->output)};
         }
 
         return {msg::format_error(msgLaunchingProgramFailed, msg::tool_name = tool_name)
                     .append_raw(' ')
-                    .append_raw(maybe_exit.error().to_string())
-                    .extract_data()};
+                    .append_raw(maybe_exit.error().to_string())};
     }
 
-    ExpectedS<std::string> flatten_out(const ExpectedApi<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
+    ExpectedL<std::string> flatten_out(const ExpectedL<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
     {
         if (auto exit = maybe_exit.get())
         {
@@ -1014,15 +1028,13 @@ namespace vcpkg
             return {msg::format_error(
                         msgProgramReturnedNonzeroExitCode, msg::tool_name = tool_name, msg::exit_code = exit->exit_code)
                         .append_raw('\n')
-                        .append_raw(exit->output)
-                        .extract_data(),
+                        .append_raw(exit->output),
                     expected_right_tag};
         }
 
         return {msg::format_error(msgLaunchingProgramFailed, msg::tool_name = tool_name)
                     .append_raw(' ')
-                    .append_raw(maybe_exit.error().to_string())
-                    .extract_data(),
+                    .append_raw(maybe_exit.error().to_string()),
                 expected_right_tag};
     }
 }

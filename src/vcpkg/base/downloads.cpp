@@ -458,7 +458,7 @@ namespace vcpkg
                        {
                            code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
                        }
-                   }).map_error([](const SystemApiError& sae) { return sae.to_string(); });
+                   }).map_error([](LocalizedString&& ls) { return ls.extract_data(); });
         if (auto pres = res.get())
         {
             if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
@@ -726,31 +726,25 @@ namespace vcpkg
                                    }
                                }).value_or_exit(VCPKG_LINE_INFO);
 
-                    auto maybe_res = cmd_execute_and_capture_output(Command{}.raw_arg(cmd),
-                                                                    default_working_directory,
-                                                                    get_clean_environment(),
-                                                                    Encoding::Utf8,
-                                                                    EchoInDebug::Show);
+                    auto maybe_res = flatten(cmd_execute_and_capture_output(Command{}.raw_arg(cmd),
+                                                                            default_working_directory,
+                                                                            get_clean_environment(),
+                                                                            Encoding::Utf8,
+                                                                            EchoInDebug::Show),
+                                             "<mirror-script>");
 
-                    if (const auto res = maybe_res.get())
+                    if (const auto res = maybe_res.has_value())
                     {
-                        if (res->exit_code == 0)
+                        auto maybe_error =
+                            try_verify_downloaded_file_hash(fs, "<mirror-script>", download_path_part_path, *hash);
+                        if (auto err = maybe_error.get())
                         {
-                            auto maybe_error =
-                                try_verify_downloaded_file_hash(fs, "<mirror-script>", download_path_part_path, *hash);
-                            if (auto err = maybe_error.get())
-                            {
-                                Strings::append(errors, *err);
-                            }
-                            else
-                            {
-                                fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
-                                return urls[0];
-                            }
+                            Strings::append(errors, *err);
                         }
                         else
                         {
-                            Strings::append(errors, res->output);
+                            fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                            return urls[0];
                         }
                     }
                     else

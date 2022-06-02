@@ -643,8 +643,9 @@ namespace vcpkg::Export::Prefab
                 Checks::exit_with_message(VCPKG_LINE_INFO,
                                           std::move(compress_result)
                                               .error()
-                                              .append("\nFailed to compress folder ")
-                                              .append(package_directory.native()));
+                                              .append_raw("\nFailed to compress folder ")
+                                              .append_raw(package_directory.native())
+                                              .extract_data());
             }
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>

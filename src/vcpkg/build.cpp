@@ -785,7 +785,7 @@ namespace vcpkg::Build
         CompilerInfo compiler_info;
         std::string buf;
 
-        ExpectedApi<int> rc = SystemApiError::empty;
+        ExpectedL<int> rc = LocalizedString();
         {
             const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             rc = cmd_execute_and_stream_lines(
@@ -1045,7 +1045,7 @@ namespace vcpkg::Build
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
-        ExpectedApi<int> return_code = SystemApiError::empty;
+        ExpectedL<int> return_code = LocalizedString();
         {
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(

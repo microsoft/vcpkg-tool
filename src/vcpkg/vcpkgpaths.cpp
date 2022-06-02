@@ -945,7 +945,7 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedS<std::string> VcpkgPaths::get_current_git_sha() const
+    ExpectedL<std::string> VcpkgPaths::get_current_git_sha() const
     {
         if (auto sha = m_pimpl->m_bundle.m_embedded_git_sha.get())
         {
@@ -1003,7 +1003,7 @@ namespace vcpkg
         }
     }
 
-    ExpectedS<std::string> VcpkgPaths::git_show(StringView treeish, const Path& dot_git_dir) const
+    ExpectedL<std::string> VcpkgPaths::git_show(StringView treeish, const Path& dot_git_dir) const
     {
         // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
         // git clone --no-checkout --local {vcpkg_root} {dot_git_dir}
@@ -1164,8 +1164,8 @@ namespace vcpkg
             git_cmd_builder(dot_git_dir, work_tree).string_arg("rev-parse").string_arg("FETCH_HEAD");
         return flatten_out(cmd_execute_and_capture_output(get_fetch_head), Tools::GIT)
             .map([](std::string&& output) { return Strings::trim(output).to_string(); })
-            .map_error([](std::string&& output) {
-                return Strings::concat("Error: Failed to rev-parse FETCH_HEAD.\n", std::move(output), "\n");
+            .map_error([](LocalizedString&& err) {
+                return Strings::concat("Error: Failed to rev-parse FETCH_HEAD.\n", err.extract_data(), "\n");
             });
     }
 
@@ -1212,7 +1212,7 @@ namespace vcpkg
 
     // returns an error if there was an unexpected error; returns nullopt if the file doesn't exist at the specified
     // hash
-    ExpectedS<std::string> VcpkgPaths::git_show_from_remote_registry(StringView hash, const Path& relative_path) const
+    ExpectedL<std::string> VcpkgPaths::git_show_from_remote_registry(StringView hash, const Path& relative_path) const
     {
         auto revision = Strings::format("%s:%s", hash, relative_path.generic_u8string());
         Command git_show = git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
@@ -1221,7 +1221,7 @@ namespace vcpkg
 
         return flatten_out(cmd_execute_and_capture_output(git_show), Tools::GIT);
     }
-    ExpectedS<std::string> VcpkgPaths::git_find_object_id_for_remote_registry_path(StringView hash,
+    ExpectedL<std::string> VcpkgPaths::git_find_object_id_for_remote_registry_path(StringView hash,
                                                                                    const Path& relative_path) const
     {
         auto revision = Strings::format("%s:%s", hash, relative_path.generic_u8string());

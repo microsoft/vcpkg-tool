@@ -181,7 +181,6 @@
   "SeeURL": "See {url} for more information.",
   "SourceFieldPortNameMismatch": "The 'Source' field inside the CONTROL file, or \"name\" field inside the vcpkg.json file has the name {package_name} and does not match the port directory {path}.",
   "SystemApiErrorMessage": "calling {system_api} failed with {exit_code} ({error_msg})",
-  "SystemApiNotAnErrorMessage": "not an error",
   "ToolFetchFailed": "Could not fetch {tool_name}.",
   "ToolInWin10": "This utility is bundled with Windows 10 or later.",
   "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",

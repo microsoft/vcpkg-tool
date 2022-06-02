@@ -108,10 +108,10 @@ namespace vcpkg
     extern const WorkingDirectory default_working_directory;
     extern const Environment default_environment;
 
-    ExpectedApi<int> cmd_execute(const Command& cmd_line,
-                                 const WorkingDirectory& wd = default_working_directory,
-                                 const Environment& env = default_environment);
-    ExpectedApi<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
+    ExpectedL<int> cmd_execute(const Command& cmd_line,
+                               const WorkingDirectory& wd = default_working_directory,
+                               const Environment& env = default_environment);
+    ExpectedL<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
 
 #if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd_line,
@@ -120,29 +120,28 @@ namespace vcpkg
     void cmd_execute_background(const Command& cmd_line);
 #endif
 
-    ExpectedApi<ExitCodeAndOutput> cmd_execute_and_capture_output(
-        const Command& cmd_line,
-        const WorkingDirectory& wd = default_working_directory,
-        const Environment& env = default_environment,
-        Encoding encoding = Encoding::Utf8,
-        EchoInDebug echo_in_debug = EchoInDebug::Hide);
+    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
+                                                                const WorkingDirectory& wd = default_working_directory,
+                                                                const Environment& env = default_environment,
+                                                                Encoding encoding = Encoding::Utf8,
+                                                                EchoInDebug echo_in_debug = EchoInDebug::Hide);
 
-    std::vector<ExpectedApi<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
+    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
         View<Command> cmd_lines,
         const WorkingDirectory& wd = default_working_directory,
         const Environment& env = default_environment);
 
-    ExpectedApi<int> cmd_execute_and_stream_lines(const Command& cmd_line,
-                                                  std::function<void(StringView)> per_line_cb,
-                                                  const WorkingDirectory& wd = default_working_directory,
-                                                  const Environment& env = default_environment,
-                                                  Encoding encoding = Encoding::Utf8);
+    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
+                                                std::function<void(StringView)> per_line_cb,
+                                                const WorkingDirectory& wd = default_working_directory,
+                                                const Environment& env = default_environment,
+                                                Encoding encoding = Encoding::Utf8);
 
-    ExpectedApi<int> cmd_execute_and_stream_data(const Command& cmd_line,
-                                                 std::function<void(StringView)> data_cb,
-                                                 const WorkingDirectory& wd = default_working_directory,
-                                                 const Environment& env = default_environment,
-                                                 Encoding encoding = Encoding::Utf8);
+    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd_line,
+                                               std::function<void(StringView)> data_cb,
+                                               const WorkingDirectory& wd = default_working_directory,
+                                               const Environment& env = default_environment,
+                                               Encoding encoding = Encoding::Utf8);
 
     uint64_t get_subproccess_stats();
 
@@ -153,11 +152,11 @@ namespace vcpkg
     void exit_interactive_subprocess();
 #endif
 
-    // If exit code is 0, returns a 'success' ExpectedS.
-    // Otherwise, returns an ExpectedS containing error text
-    ExpectedS<Unit> flatten(const ExpectedApi<ExitCodeAndOutput>&, StringView tool_name);
+    // If exit code is 0, returns a 'success' ExpectedL.
+    // Otherwise, returns an ExpectedL containing error text
+    ExpectedL<Unit> flatten(const ExpectedL<ExitCodeAndOutput>&, StringView tool_name);
 
-    // If exit code is 0, returns a 'success' ExpectedS containing the output
-    // Otherwise, returns an ExpectedS containing error text
-    ExpectedS<std::string> flatten_out(const ExpectedApi<ExitCodeAndOutput>&, StringView tool_name);
+    // If exit code is 0, returns a 'success' ExpectedL containing the output
+    // Otherwise, returns an ExpectedL containing error text
+    ExpectedL<std::string> flatten_out(const ExpectedL<ExitCodeAndOutput>&, StringView tool_name);
 }

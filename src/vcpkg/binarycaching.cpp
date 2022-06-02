@@ -390,7 +390,7 @@ namespace
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            ExpectedS<Unit> compress_result =
+            auto compress_result =
                 compress_directory_to_zip(fs, paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (!compress_result.has_value())
             {
@@ -656,7 +656,7 @@ namespace
             if (m_interactive)
             {
                 return cmd_execute(cmdline)
-                    .map_error([](SystemApiError&& sae) { return sae.to_string(); })
+                    .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
                     .then([](int exit_code) -> ExpectedS<Unit> {
                         if (exit_code == 0)
                         {
@@ -668,7 +668,7 @@ namespace
             }
 
             return cmd_execute_and_capture_output(cmdline)
-                .map_error([](SystemApiError&& sae) { return sae.to_string(); })
+                .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
                 .then([&](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
                     if (Debug::g_debugging)
                     {
@@ -700,7 +700,7 @@ namespace
                         auto real_cmdline = cmdline;
                         real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
                         return cmd_execute_and_capture_output(real_cmdline)
-                            .map_error([](SystemApiError&& sae) { return sae.to_string(); })
+                            .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
                             .then([](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
                                 if (Debug::g_debugging)
                                 {
@@ -1109,7 +1109,7 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            ExpectedS<Unit> compression_result = compress_directory_to_zip(
+            auto compression_result = compress_directory_to_zip(
                 paths.get_filesystem(), paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (!compression_result.has_value())
             {

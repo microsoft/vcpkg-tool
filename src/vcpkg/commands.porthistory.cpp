@@ -28,7 +28,7 @@ namespace vcpkg::Commands::PortHistory
             VersionScheme scheme;
         };
 
-        ExpectedS<std::string> run_git_command(const VcpkgPaths& paths, const Command& cmd)
+        ExpectedL<std::string> run_git_command(const VcpkgPaths& paths, const Command& cmd)
         {
             auto full_cmd = paths.git_cmd_builder(paths.root / ".git", paths.root).raw_arg(cmd.command_line());
             return flatten_out(cmd_execute_and_capture_output(full_cmd), Tools::GIT);
