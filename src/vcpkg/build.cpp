@@ -61,7 +61,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(BuildResultSummaryLine,
                                  (msg::build_result, msg::count),
                                  "Displayed to show a count of results of a build_result in a summary.",
-                                 "    {build_result}: {count}");
+                                 "{build_result}: {count}");
 
     DECLARE_AND_REGISTER_MESSAGE(
         BuildResultSucceeded,
@@ -143,7 +143,7 @@ namespace
                                  (),
                                  "",
                                  "The build command requires all dependencies to be already installed.\nThe following "
-                                 "dependencies are missing:\n\n");
+                                 "dependencies are missing:");
 
     DECLARE_AND_REGISTER_MESSAGE(
         BuildTroubleshootingMessage1,
@@ -268,7 +268,7 @@ namespace vcpkg::Build
             LocalizedString errorMsg = msg::format(msg::msgErrorMessage).append(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
-                errorMsg.append_indent().append_raw(p.to_string()).appendnl();
+                errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
             }
 
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);
@@ -281,7 +281,7 @@ namespace vcpkg::Build
             LocalizedString warnings;
             for (auto&& msg : action->build_failure_messages)
             {
-                warnings.append(msg).appendnl();
+                warnings.append(msg).append_raw('\n');
             }
             if (!warnings.data().empty())
             {
@@ -402,7 +402,7 @@ namespace vcpkg::Build
         }
     }
 
-    Optional<LinkageType> to_linkage_type(const std::string& str)
+    Optional<LinkageType> to_linkage_type(StringView str)
     {
         if (str == "dynamic") return LinkageType::DYNAMIC;
         if (str == "static") return LinkageType::STATIC;
@@ -419,16 +419,15 @@ namespace vcpkg::Build
         UnsupportedToolchain,
         (msg::triplet, msg::arch, msg::path, msg::list),
         "example for {list} is 'x86, arm64'",
-        "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
-        "architecture was {arch}\n    "
-        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
+        "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\n"
+        "The selected Visual Studio instance is at: {path}\n"
+        "The available toolchain combinations are: {list}");
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        UnsupportedSystemName,
-        (msg::system_name),
-        "",
-        "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
-        "Supported system names are '', 'Windows' and 'WindowsStore'.");
+    DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
+                                 (msg::system_name),
+                                 "",
+                                 "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
+                                 "Supported system names are '', 'Windows' and 'WindowsStore'.");
 
 #if defined(_WIN32)
     static ZStringView to_vcvarsall_target(const std::string& cmake_system_name)
@@ -437,9 +436,7 @@ namespace vcpkg::Build
         if (cmake_system_name == "Windows") return "";
         if (cmake_system_name == "WindowsStore") return "store";
 
-        msg::println(Color::error, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
-
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
     }
 
     static ZStringView to_vcvarsall_toolchain(const std::string& target_architecture,
@@ -469,11 +466,11 @@ namespace vcpkg::Build
         const auto toolset_list = Strings::join(
             ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); });
 
-        msg::println(msgUnsupportedToolchain,
-                     msg::triplet = triplet,
-                     msg::arch = target_architecture,
-                     msg::path = toolset.visual_studio_root_path,
-                     msg::list = toolset_list);
+        msg::println_error(msgUnsupportedToolchain,
+                           msg::triplet = triplet,
+                           msg::arch = target_architecture,
+                           msg::path = toolset.visual_studio_root_path,
+                           msg::list = toolset_list);
         msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
@@ -759,11 +756,9 @@ namespace vcpkg::Build
                                   {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
                                   {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
                               });
-        if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
-        {
-            const Path& git_exe_path = paths.get_tool_exe(Tools::GIT);
-            out_vars.push_back({"GIT", git_exe_path});
-        }
+        // Make sure GIT could be found
+        const Path& git_exe_path = paths.get_tool_exe(Tools::GIT);
+        out_vars.push_back({"GIT", git_exe_path});
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
@@ -1262,6 +1257,7 @@ namespace vcpkg::Build
 
         abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE));
 
+        // This #ifdef is mirrored in tools.cpp's PowershellProvider
 #if defined(_WIN32)
         abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core"));
 #endif
@@ -1485,8 +1481,8 @@ namespace vcpkg::Build
     {
         if (count != 0)
         {
-            msg::println(
-                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count);
+            msg::println(LocalizedString().append_indent().append(
+                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count));
         }
     }
 
@@ -1549,34 +1545,34 @@ namespace vcpkg::Build
 
         if (build_result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            res.appendnl().append_indent().append(msgBuildingPackageFailedDueToMissingDeps);
+            res.append_raw('\n').append_indent().append(msgBuildingPackageFailedDueToMissingDeps);
 
             for (const auto& missing_spec : build_result.unmet_dependencies)
             {
-                res.appendnl().append_indent(2).append_raw(missing_spec.to_string());
+                res.append_raw('\n').append_indent(2).append_raw(missing_spec.to_string());
             }
         }
 
-        res.appendnl();
+        res.append_raw('\n');
         return res;
     }
 
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
     {
         const auto& spec_name = action.spec.name();
-        LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).appendnl();
+        LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
         result.append_indent()
             .append_raw("https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+")
             .append_raw(spec_name)
-            .appendnl();
-        result.append(msgBuildTroubleshootingMessage2).appendnl();
+            .append_raw('\n');
+        result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
         result.append_indent()
             .append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
                             "new?template=report-package-build-failure.md&title=[{}]+Build+error",
                             spec_name)
-            .appendnl();
-        result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).appendnl();
-        result.append_raw(paths.get_toolver_diagnostics()).appendnl();
+            .append_raw('\n');
+        result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
+        result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
         return result;
     }
 
@@ -1647,8 +1643,11 @@ namespace vcpkg::Build
     BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
     {
         const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, pghs.get() != nullptr, "Invalid BUILD_INFO file for package: %s", pghs.error());
+        if (!pghs.has_value())
+        {
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Invalid BUILD_INFO file for package: %s", pghs.error());
+        }
+
         return inner_create_buildinfo(*pghs.get());
     }
 

@@ -225,7 +225,7 @@ TEST_CASE ("JSON parse full file", "[json]")
     auto res = Json::parse(json);
     if (!res)
     {
-        std::cerr << res.error()->format() << '\n';
+        std::cerr << res.error()->to_string() << '\n';
     }
     REQUIRE(res);
 }
@@ -234,22 +234,20 @@ TEST_CASE ("JSON track newlines", "[json]")
 {
     auto res = Json::parse("{\n,", "filename");
     REQUIRE(!res);
-    REQUIRE(res.error()->format() ==
+    REQUIRE(res.error()->to_string() ==
             R"(filename:2:1: error: Unexpected character; expected property name
     on expression: ,
-                   ^
-)");
+                   ^)");
 }
 
 TEST_CASE ("JSON duplicated object keys", "[json]")
 {
     auto res = Json::parse("{\"name\": 1, \"name\": 2}", "filename");
     REQUIRE(!res);
-    REQUIRE(res.error()->format() ==
+    REQUIRE(res.error()->to_string() ==
             R"(filename:1:13: error: Duplicated key "name" in an object
     on expression: {"name": 1, "name": 2}
-                               ^
-)");
+                               ^)");
 }
 
 TEST_CASE ("JSON support unicode characters in errors", "[json]")
@@ -257,29 +255,26 @@ TEST_CASE ("JSON support unicode characters in errors", "[json]")
     // unicode characters w/ bytes >1
     auto res = Json::parse(R"json("Δx/Δt" "")json", "filename");
     REQUIRE(!res);
-    CHECK(res.error()->format() ==
+    CHECK(res.error()->to_string() ==
           R"(filename:1:9: error: Unexpected character; expected EOF
     on expression: "Δx/Δt" ""
-                           ^
-)");
+                           ^)");
 
     // full width unicode characters
     // note that the A is full width
     res = Json::parse(R"json("姐姐aＡ" "")json", "filename");
     REQUIRE(!res);
-    CHECK(res.error()->format() ==
+    CHECK(res.error()->to_string() ==
           R"(filename:1:8: error: Unexpected character; expected EOF
     on expression: "姐姐aＡ" ""
-                             ^
-)");
+                             ^)");
 
     // incorrect errors in the face of combining characters
     // (this test should be fixed once the underlying bug is fixed)
     res = Json::parse(R"json("é" "")json", "filename");
     REQUIRE(!res);
-    CHECK(res.error()->format() ==
+    CHECK(res.error()->to_string() ==
           R"(filename:1:6: error: Unexpected character; expected EOF
     on expression: "é" ""
-                        ^
-)");
+                        ^)");
 }

@@ -319,7 +319,7 @@ namespace vcpkg::Build
         STATIC,
     };
 
-    Optional<LinkageType> to_linkage_type(const std::string& str);
+    Optional<LinkageType> to_linkage_type(StringView str);
 
     struct BuildInfo
     {

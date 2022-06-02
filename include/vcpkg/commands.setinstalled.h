@@ -2,6 +2,7 @@
 
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.interface.h>
+#include <vcpkg/install.h>
 #include <vcpkg/portfileprovider.h>
 
 namespace vcpkg::Commands::SetInstalled
@@ -15,7 +16,8 @@ namespace vcpkg::Commands::SetInstalled
                     Dependencies::ActionPlan action_plan,
                     DryRun dry_run,
                     const Optional<Path>& pkgsconfig_path,
-                    Triplet host_triplet);
+                    Triplet host_triplet,
+                    const Install::KeepGoing keep_going);
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
                           Triplet default_triplet,

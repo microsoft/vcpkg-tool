@@ -102,7 +102,7 @@ namespace vcpkg
                          msg::format(msg::msgInternalErrorMessage)
                              .append(locale_invariant_lineinfo(line_info))
                              .append(msgChecksFailedCheck)
-                             .appendnl()
+                             .append_raw('\n')
                              .append(msg::msgInternalErrorMessageContact));
             exit_fail(line_info);
         }

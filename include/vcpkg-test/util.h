@@ -63,6 +63,12 @@ namespace Catch
     {
         static const std::string convert(const vcpkg::PackageSpec& value) { return value.to_string(); }
     };
+
+    template<>
+    struct StringMaker<vcpkg::Path>
+    {
+        static const std::string convert(const vcpkg::Path& value) { return "\"" + value.native() + "\""; }
+    };
 }
 
 namespace vcpkg
@@ -128,15 +134,10 @@ namespace vcpkg::Test
         PackageSpec emplace(vcpkg::SourceControlFileAndLocation&& scfl);
     };
 
-    template<class T, class S>
-    T&& unwrap(vcpkg::ExpectedT<T, S>&& p)
+    template<class T, class Error>
+    T&& unwrap(vcpkg::ExpectedT<T, Error>&& p)
     {
-        if (!p.has_value())
-        {
-            INFO(p.error_to_string());
-            REQUIRE(p.has_value());
-        }
-        return std::move(*p.get());
+        return std::move(p).value_or_exit(VCPKG_LINE_INFO);
     }
 
     template<class T>

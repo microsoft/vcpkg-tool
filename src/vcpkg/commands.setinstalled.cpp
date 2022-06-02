@@ -16,6 +16,8 @@
 namespace vcpkg::Commands::SetInstalled
 {
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
+    static constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
+    static constexpr StringLiteral OPTION_ONLY_DOWNLOADS = "only-downloads";
     static constexpr StringLiteral OPTION_WRITE_PACKAGES_CONFIG = "x-write-nuget-packages-config";
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
@@ -43,7 +45,8 @@ namespace vcpkg::Commands::SetInstalled
                     Dependencies::ActionPlan action_plan,
                     DryRun dry_run,
                     const Optional<Path>& maybe_pkgsconfig,
-                    Triplet host_triplet)
+                    Triplet host_triplet,
+                    const Install::KeepGoing keep_going)
     {
         auto& fs = paths.get_filesystem();
 
@@ -118,7 +121,7 @@ namespace vcpkg::Commands::SetInstalled
 
         const auto summary = Install::perform(args,
                                               action_plan,
-                                              Install::KeepGoing::NO,
+                                              keep_going,
                                               paths,
                                               status_db,
                                               binary_cache,
@@ -154,6 +157,10 @@ namespace vcpkg::Commands::SetInstalled
         BinaryCache binary_cache{args, paths};
 
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
+        const bool only_downloads = Util::Sets::contains(options.switches, OPTION_ONLY_DOWNLOADS);
+        const Install::KeepGoing keep_going =
+            Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads ? Install::KeepGoing::YES
+                                                                                        : Install::KeepGoing::NO;
 
         PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -184,8 +191,8 @@ namespace vcpkg::Commands::SetInstalled
                    std::move(action_plan),
                    dry_run ? DryRun::Yes : DryRun::No,
                    pkgsconfig,
-                   host_triplet);
-        Checks::exit_success(VCPKG_LINE_INFO);
+                   host_triplet,
+                   keep_going);
     }
 
     void SetInstalledCommand::perform_and_exit(const VcpkgCmdArguments& args,

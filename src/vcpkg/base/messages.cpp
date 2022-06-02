@@ -250,6 +250,28 @@ namespace vcpkg::msg
 
     ::size_t detail::number_of_messages() { return messages().names.size(); }
 
+    std::string detail::format_examples_for_args(StringView extra_comment,
+                                                 const detail::FormatArgAbi* args,
+                                                 std::size_t arg_count)
+    {
+        std::vector<std::string> blocks;
+        if (!extra_comment.empty())
+        {
+            blocks.emplace_back(extra_comment.data(), extra_comment.size());
+        }
+
+        for (std::size_t idx = 0; idx < arg_count; ++idx)
+        {
+            auto& arg = args[idx];
+            if (arg.example[0] != '\0')
+            {
+                blocks.emplace_back(fmt::format("An example of {{{}}} is {}.", arg.name, arg.example));
+            }
+        }
+
+        return Strings::join(" ", blocks);
+    }
+
     ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment)
     {
         Messages& m = messages();
@@ -297,6 +319,37 @@ namespace vcpkg::msg
     LocalizedString detail::internal_vformat(::size_t index, fmt::format_args args)
     {
         auto fmt_string = get_format_string(index);
-        return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
+        try
+        {
+            return LocalizedString::from_raw(fmt::vformat({fmt_string.data(), fmt_string.size()}, args));
+        }
+        catch (...)
+        {
+            auto default_format_string = get_default_format_string(index);
+            try
+            {
+                return LocalizedString::from_raw(
+                    fmt::vformat({default_format_string.data(), default_format_string.size()}, args));
+            }
+            catch (...)
+            {
+                ::fprintf(stderr,
+                          "INTERNAL ERROR: failed to format default format string for index %zu\nformat string: %.*s\n",
+                          index,
+                          (int)default_format_string.size(),
+                          default_format_string.data());
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+    }
+
+    void println_warning(const LocalizedString& s)
+    {
+        print(Color::warning, format(msgWarningMessage).append(s).append_raw('\n'));
+    }
+
+    void println_error(const LocalizedString& s)
+    {
+        print(Color::error, format(msgErrorMessage).append(s).append_raw('\n'));
     }
 }

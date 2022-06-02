@@ -55,7 +55,7 @@ namespace
                                  "'header' refers to C/C++ .h files",
                                  "{package_name} is header-only and can be used from CMake via:");
     DECLARE_AND_REGISTER_MESSAGE(
-        CMakeTargetsUsageHueristicMessage,
+        CMakeTargetsUsageHeuristicMessage,
         (),
         "Displayed after CMakeTargetsUsage; the # must be kept at the beginning so that the message remains a comment.",
         "# this is heuristically generated, and may not be correct");
@@ -397,7 +397,7 @@ namespace vcpkg::Install
                     LocalizedString warnings;
                     for (auto&& msg : action.build_failure_messages)
                     {
-                        warnings.append(msg).appendnl();
+                        warnings.append(msg).append_raw('\n');
                     }
                     if (!warnings.data().empty())
                     {
@@ -827,8 +827,8 @@ namespace vcpkg::Install
             }
             else
             {
-                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).appendnl();
-                msg.append_indent().append(msgCMakeTargetsUsageHueristicMessage).appendnl();
+                auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw('\n');
+                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
 
                 for (auto&& library_target_pair : library_targets)
                 {
@@ -836,7 +836,7 @@ namespace vcpkg::Install
                     msg.append_indent();
                     msg.append_fmt_raw("find_package({} CONFIG REQUIRED)",
                                        config_it == config_files.end() ? library_target_pair.first : config_it->second);
-                    msg.appendnl();
+                    msg.append_raw('\n');
 
                     auto& targets = library_target_pair.second;
                     Util::sort_unique_erase(targets, [](const std::string& l, const std::string& r) {
@@ -854,8 +854,7 @@ namespace vcpkg::Install
 
                     msg.append_indent()
                         .append_fmt_raw("target_link_libraries(main PRIVATE {})", Strings::join(" ", targets))
-                        .appendnl()
-                        .appendnl();
+                        .append_raw("\n\n");
                 }
 
                 ret.message = msg.extract_data();
@@ -865,36 +864,30 @@ namespace vcpkg::Install
         return ret;
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(ErrorRequirePackagesToInstall,
-                                 (),
-                                 "",
-                                 "Error: No packages were listed for installation and no manifest was found.");
-
     DECLARE_AND_REGISTER_MESSAGE(
         ErrorIndividualPackagesUnsupported,
         (),
         "",
-        "Error: In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
+        "In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
         "additional "
         "packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorRequirePackagesList,
                                  (),
                                  "",
-                                 "Error: `vcpkg install` requires a list of packages to install in classic mode.");
+                                 "`vcpkg install` requires a list of packages to install in classic mode.");
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        ErrorInvalidClassicModeOption,
-        (msg::option),
-        "",
-        "Error: The option --{option} is not supported in classic mode and no manifest was found.");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidClassicModeOption,
+                                 (msg::option),
+                                 "",
+                                 "The option --{option} is not supported in classic mode and no manifest was found.");
 
     DECLARE_AND_REGISTER_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.");
 
     DECLARE_AND_REGISTER_MESSAGE(ErrorInvalidManifestModeOption,
                                  (msg::option),
                                  "",
-                                 "Error: The option --{option} is not supported in manifest mode.");
+                                 "The option --{option} is not supported in manifest mode.");
 
     DECLARE_AND_REGISTER_MESSAGE(StampNotChanged,
                                  (msg::option),
@@ -943,18 +936,18 @@ namespace vcpkg::Install
             bool failure = false;
             if (!args.command_arguments.empty())
             {
-                msg::println(Color::error, msgErrorIndividualPackagesUnsupported);
+                msg::println_error(msgErrorIndividualPackagesUnsupported);
                 msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
                 failure = true;
             }
             if (use_head_version)
             {
-                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_USE_HEAD_VERSION);
+                msg::println_error(msgErrorInvalidManifestModeOption, msg::option = OPTION_USE_HEAD_VERSION);
                 failure = true;
             }
             if (is_editable)
             {
-                msg::println(Color::error, msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
+                msg::println_error(msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
                 failure = true;
             }
             if (failure)
@@ -970,13 +963,12 @@ namespace vcpkg::Install
             bool failure = false;
             if (args.command_arguments.empty())
             {
-                msg::println(Color::error, msgErrorRequirePackagesList);
+                msg::println_error(msgErrorRequirePackagesList);
                 failure = true;
             }
             if (Util::Sets::contains(options.switches, OPTION_MANIFEST_NO_DEFAULT_FEATURES))
             {
-                msg::println(
-                    Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_NO_DEFAULT_FEATURES);
                 failure = true;
             }
             if (Util::Sets::contains(options.switches, OPTION_CHECK_STAMP))
@@ -986,7 +978,7 @@ namespace vcpkg::Install
             }
             if (Util::Sets::contains(options.multisettings, OPTION_MANIFEST_FEATURE))
             {
-                msg::println(Color::error, msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
                 failure = true;
             }
             if (failure)
@@ -1229,8 +1221,8 @@ namespace vcpkg::Install
                                                std::move(install_plan),
                                                dry_run ? Commands::DryRun::Yes : Commands::DryRun::No,
                                                pkgsconfig,
-                                               host_triplet);
-
+                                               host_triplet,
+                                               keep_going);
             fs.write_contents_and_dirs(paths.installed().stampfile_path(), hash, VCPKG_LINE_INFO);
             Checks::exit_success(VCPKG_LINE_INFO);
         }

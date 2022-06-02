@@ -11,6 +11,13 @@
 #include <sys/sysctl.h>
 #endif
 
+#if defined(_WIN32)
+// needed for mingw
+#include <processenv.h>
+#else
+extern char** environ;
+#endif
+
 namespace
 {
     namespace msg = vcpkg::msg;
@@ -219,6 +226,32 @@ namespace vcpkg
             Checks::check_exit(VCPKG_LINE_INFO, unsetenv(varname.c_str()) == 0);
         }
 #endif
+    }
+
+    std::string get_environment_variables()
+    {
+        std::string result;
+#if defined(_WIN32)
+        const struct EnvironmentStringsW
+        {
+            LPWCH strings;
+            EnvironmentStringsW() : strings(GetEnvironmentStringsW()) { Checks::check_exit(VCPKG_LINE_INFO, strings); }
+            ~EnvironmentStringsW() { FreeEnvironmentStringsW(strings); }
+        } env_block;
+
+        size_t len;
+        for (LPWCH i = env_block.strings; *i; i += len + 1)
+        {
+            len = wcslen(i);
+            result.append(Strings::to_utf8(i, len)).push_back('\n');
+        }
+#else
+        for (char** s = environ; *s; s++)
+        {
+            result.append(*s).push_back('\n');
+        }
+#endif
+        return result;
     }
 
     const ExpectedS<Path>& get_home_dir() noexcept
