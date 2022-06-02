@@ -2027,27 +2027,28 @@ namespace
 
                 handle_readwrite(state->cos_read_prefixes, state->cos_write_prefixes, std::move(p), segments, 2);
             }
-            else if (segments[0].second == "https")
+            else if (segments[0].second == "http")
             {
                 // Scheme: http,<url_template>[,<readwrite>[,<header>]]
                 if (segments.size() < 2)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "https"),
+                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "http"),
                                      segments[0].first);
                 }
 
-                if (!Strings::starts_with(segments[1].second, "https://"))
+                if (!Strings::starts_with(segments[1].second, "http://") &&
+                    !Strings::starts_with(segments[1].second, "https://"))
                 {
                     return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
                                                  msg::base_url = "https://",
-                                                 msg::binary_source = "https"),
+                                                 msg::binary_source = "http"),
                                      segments[1].first);
                 }
 
                 if (segments.size() > 4)
                 {
                     return add_error(
-                        msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "https"),
+                        msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "http"),
                         segments[3].first);
                 }
 
@@ -2560,8 +2561,8 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
     tbl.format("clear", "Removes all previous sources");
     tbl.format("default[,<rw>]", "Adds the default file-based location.");
     tbl.format("files,<path>[,<rw>]", "Adds a custom file-based location.");
-    tbl.format("https,<url_template>[,<rw>[,<header>]]",
-               "Adds a custom https-based location. GET, HEAD and PUT request are done to download, check and upload "
+    tbl.format("http,<url_template>[,<rw>[,<header>]]",
+               "Adds a custom http-based location. GET, HEAD and PUT request are done to download, check and upload "
                "the binaries. You can use the variables 'name', 'version', 'sha' and 'triplet'. An example url would "
                "be 'https://cache.example.com/{triplet}/{name}/{version}/{sha}'. Via the header field you can set a "
                "custom header to pass an authorization token.");
