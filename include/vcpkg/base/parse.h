@@ -41,6 +41,8 @@ VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ParseError);
 
 namespace vcpkg
 {
+    inline std::string to_string(const std::unique_ptr<ParseError>& up) { return up->to_string(); }
+
     struct SourceLoc
     {
         Unicode::Utf8Decoder it;

@@ -121,3 +121,16 @@ TEST_CASE ("parse_tool_data_from_xml", "[tools]")
         CHECK(p.url == "");
     }
 }
+
+TEST_CASE ("extract_prefixed_nonwhitespace", "[tools]")
+{
+    CHECK(extract_prefixed_nonwhitespace("fooutil version ", "fooutil", "fooutil version 1.2", "fooutil.exe")
+              .value_or_exit(VCPKG_LINE_INFO) == "1.2");
+    CHECK(extract_prefixed_nonwhitespace("fooutil version ", "fooutil", "fooutil version 1.2   ", "fooutil.exe")
+              .value_or_exit(VCPKG_LINE_INFO) == "1.2");
+    auto error_result =
+        extract_prefixed_nonwhitespace("fooutil version ", "fooutil", "malformed output", "fooutil.exe");
+    CHECK(!error_result.has_value());
+    CHECK(error_result.error() == "error: fooutil (fooutil.exe) produced unexpected output when attempting to "
+                                  "determine the version:\nmalformed output");
+}
