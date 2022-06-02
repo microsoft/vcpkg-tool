@@ -165,7 +165,7 @@ namespace
         "bug description, and attach any relevant failure logs from above.");
     DECLARE_AND_REGISTER_MESSAGE(BuildTroubleshootingMessage4,
                                  (msg::path),
-                                 "Forth optinal part of build troubleshooting message, printed after the version "
+                                 "Fourth optional part of build troubleshooting message, printed after the version"
                                  "information about vcpkg itself.",
                                  "You can also use the prefilled template from {path}.");
 }
