@@ -90,7 +90,7 @@ namespace vcpkg::Commands::CIVerifyVersions
             for (auto&& version_entry : versions)
             {
                 bool version_ok = false;
-                for (const std::string& control_file : {"CONTROL", "vcpkg.json"})
+                for (StringView control_file : {"CONTROL", "vcpkg.json"})
                 {
                     auto treeish = Strings::concat(version_entry.second, ':', control_file);
                     auto maybe_file = paths.git_show(Strings::concat(treeish), paths.root / ".git");
