@@ -21,10 +21,13 @@
       </Item>
       <Item ItemId=";AddFirstArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
+          <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[O primeiro argumento para '{command_line}' deve ser 'artifact' ou 'port'.]A;]]></Val>
+            <Val><![CDATA[O primeiro argumento para '{command_line}' deve ser 'artifact' ou 'port'.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -48,9 +51,246 @@
       </Item>
       <Item ItemId=";AddTripletExpressionNotAllowed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: triplet expressions are not allowed here. You may want to change `{package_name}:{triplet}` to `{package_name}` instead.]]></Val>
+          <Val><![CDATA[triplet expressions are not allowed here. You may want to change `{package_name}:{triplet}` to `{package_name}` instead.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: expressões triplas não são permitidas aqui. Você pode querer alterar `{package_name}:{triplet}` para `{package_name}`.]]></Val>
+            <Val><![CDATA[expressões triplas não são permitidas aqui. Convém alterar `{package_name}:{triplet}` para `{package_name}`.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: triplet expressions are not allowed here. You may want to change `{package_name}:{triplet}` to `{package_name}` instead.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionAddedVersionToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[added version {version} to {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[versão adicionada {version} para {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionCommitChangesReminder" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Did you remember to commit your changes?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Você se lembrou de confirmar suas alterações?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionCommitResultReminder" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Don't forget to commit the result!]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Não se esqueça de confirmar o resultado!]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionDetectLocalChangesError" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[skipping detection of local changes due to unexpected format in git status output]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ignorando a detecção de alterações locais devido a um formato inesperado na saída de status do git]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionFileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[couldn't find required file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[não foi possível encontrar o arquivo necessário {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionFormatPortSuggestion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Run `{command_line}` to format the file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Execute `{command_line}` para formatar o arquivo]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionIgnoringOptionAll" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[ignoring --{option} since a port name argument was provided]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ignorando --{option} desde que um argumento de nome de porta foi fornecido]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionLoadPortFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[can't load port {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[não é possível carregar a porta {package_name}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionNewFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[(new file)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[(novo arquivo)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionNewShaIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[new SHA: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[novo SHA: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionNoFilesUpdated" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[No files were updated]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nenhum arquivo foi atualizado]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionNoFilesUpdatedForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[No files were updated for {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nenhum arquivo foi atualizado para {package_name}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionNoGitSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[can't obtain SHA for port {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[não é possível obter SHA para porta {package_name}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionOldShaIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[old SHA: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[SHA antigo: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionOverwriteOptionSuggestion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Use --{option} to bypass this check]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Use --{option} para ignorar esta verificação]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionPortDoesNotExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} does not exist]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} não existe]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionPortFilesShaChanged" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[checked-in files for {package_name} have changed but the version was not updated]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[os arquivos de check-in de {package_name} foram alterados, mas a versão não foi atualizada]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionPortFilesShaUnchanged" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[checked-in files for {package_name} are unchanged from version {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[os arquivos de check-in para {package_name} não foram alterados da versão {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionPortHasImproperFormat" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is not properly formatted]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} não está formatado corretamente]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionSuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Use o esquema de versão "{new_scheme}" em vez de "{old_scheme}" na porta "{package_name}".]A;Use --{option} para desabilitar esta verificação.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionUnableToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unable to parse versions file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[não foi possível de analisar o arquivo de versões {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionUncommittedChanges" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[there are uncommitted changes for {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[há alterações não confirmadas para {package_name}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionUpdateVersionReminder" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Did you remember to update the version or port version?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Você se lembrou de atualizar a versão ou a versão da porta?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionUseOptionAll" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{command_name} with no arguments requires passing --{option} to update all port versions at once]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{command_name} sem argumentos requer passar --{option} para atualizar todas as versões da porta de uma só vez]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionVersionAlreadyInFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[version {version} is already in {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[versão {version} já está em {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionVersionIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[version: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[versão: {version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -102,10 +342,13 @@
       </Item>
       <Item ItemId=";BothYesAndNoOptionSpecifiedError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[error: cannot specify both --no-{option} and --{option}.]]></Val>
+          <Val><![CDATA[cannot specify both --no-{option} and --{option}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[erro: não é possível especificar --no-{option} e --{option}.]]></Val>
+            <Val><![CDATA[não é possível especificar --no-{option} e --{option}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[error: cannot specify both --no-{option} and --{option}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -120,10 +363,13 @@
       </Item>
       <Item ItemId=";BuildDependenciesMissing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The build command requires all dependencies to be already installed.]A;The following dependencies are missing:]A;]A;]]></Val>
+          <Val><![CDATA[The build command requires all dependencies to be already installed.]A;The following dependencies are missing:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[O comando de compilação exige que todas as dependências já estejam instaladas.]A;Faltam as seguintes dependências:]A;]A;]]></Val>
+            <Val><![CDATA[O comando build exige que todas as dependências já estejam instaladas.]A;As seguintes dependências estão ausentes:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The build command requires all dependencies to be already installed.]A;The following dependencies are missing:]A;]A;]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -219,10 +465,13 @@
       </Item>
       <Item ItemId=";BuildResultSummaryLine" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[    {build_result}: {count}]]></Val>
+          <Val><![CDATA[{build_result}: {count}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[    {build_result}: {count}]]></Val>
+            <Val><![CDATA[{build_result}: {count}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[    {build_result}: {count}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -298,7 +547,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CMakeTargetsUsageHueristicMessage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CMakeTargetsUsageHeuristicMessage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[# this is heuristically generated, and may not be correct]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -382,6 +631,27 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CommandFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[command:]A;{command_line}]A;failed with the following results:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[o comando:]A;{command_line}]A;falhou com os seguintes resultados:]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[command:]A;{command_line}]A;failed with the following results:]A;]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to compress folder '{path}', exit code: {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Falha ao compactar a pasta '{path}', código de saída: {exit_code}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
@@ -393,9 +663,21 @@
       </Item>
       <Item ItemId=";CurlReportedUnexpectedResults" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl relatou resultados inesperados para vcpkg e vcpkg não pode continuar.]A;Verifique o seguinte texto para obter informações confidenciais e abra um problema no GitHub Microsoft Corporations/vcpkg para ajudar a corrigir esse problema!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+            <Val><![CDATA[O cURL relatou resultados inesperados para vcpkg e vcpkg não pode continuar.]A;Examine o seguinte texto para obter informações confidenciais e abra um problema no GitHub Microsoft/vcpkg para ajudar a corrigir esse problema!]A;cmd: {command_line}]A;=== saída do curl ===]A;{actual}]A;=== final da saída do curl ===]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadAvailable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A downloadable copy of this tool is available and can be used by unsetting {env_var}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Uma cópia para download desta ferramenta está disponível e pode ser usada desativando {env_var}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -445,30 +727,48 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";EnvStrFailedToExtract" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[could not expand the environment string:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[não foi possível expandir a cadeia de caracteres do ambiente:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ErrorIndividualPackagesUnsupported" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: In manifest mode, `vcpkg install` does not support individual package arguments.]A;To install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.]]></Val>
+          <Val><![CDATA[In manifest mode, `vcpkg install` does not support individual package arguments.]A;To install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: No modo manifesto, `vcpkg install` não suporta argumentos de pacotes individuais.]A;Para instalar pacotes adicionais, edite o vcpkg.json e execute `vcpkg install` sem nenhum argumento de pacote.]]></Val>
+            <Val><![CDATA[No modo de manifesto, `vcpkg install` não dá suporte a argumentos de pacotes individuais.]A;Para instalar pacotes adicionais, edite o vcpkg.json e execute `vcpkg install` sem nenhum argumento de pacote.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: In manifest mode, `vcpkg install` does not support individual package arguments.]A;To install additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorInvalidClassicModeOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: The option --{option} is not supported in classic mode and no manifest was found.]]></Val>
+          <Val><![CDATA[The option --{option} is not supported in classic mode and no manifest was found.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: a opção --{option} não é suportada no modo clássico e nenhum manifesto foi encontrado.]]></Val>
+            <Val><![CDATA[A opção --{option} não é suportada no modo clássico e nenhum manifesto foi encontrado.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: The option --{option} is not supported in classic mode and no manifest was found.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorInvalidManifestModeOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: The option --{option} is not supported in manifest mode.]]></Val>
+          <Val><![CDATA[The option --{option} is not supported in manifest mode.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: A opção --{option} não é suportada no modo de manifesto.]]></Val>
+            <Val><![CDATA[Não há suporte para a opção --{option} no modo de manifesto.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: The option --{option} is not supported in manifest mode.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -481,83 +781,125 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ErrorMissingVcpkgRoot" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ErrorMessageMustUsePrintError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of {url}.]]></Val>
+          <Val><![CDATA[The message named {value} starts with error:, it must be changed to prepend ErrorMessage in code instead.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: não foi possível detectar o vcpkg-root. Se você estiver tentando usar uma cópia do vcpkg que criou, você deve definir a variável de ambiente VCPKG_ROOT para apontar para uma cópia clonada de {url}.]]></Val>
+            <Val><![CDATA[A mensagem chamada {value} começa com o erro:, ela deve ser alterada para preceder ErrorMessage no código.]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ErrorMissingVcpkgRoot" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Não foi possível detectar vcpkg-root. Se você estiver tentando usar uma cópia do vcpkg criada, defina a variável de ambiente VCPKG_ROOT para apontar para uma cópia clonada do https://github.com/Microsoft/vcpkg.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of {url}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorNoVSInstance" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: in triplet {triplet}: Unable to find a valid Visual Studio instance]]></Val>
+          <Val><![CDATA[in triplet {triplet}: Unable to find a valid Visual Studio instance]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: no triplo {triplet}: não é possível encontrar uma instância válida do Visual Studio]]></Val>
+            <Val><![CDATA[no triplo {triplet}: Não é possível encontrar uma instância válida do Visual Studio]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: in triplet {triplet}: Unable to find a valid Visual Studio instance]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorNoVSInstanceAt" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[     at "{path}"]]></Val>
+          <Val><![CDATA[at "{path}"]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[     em "{path}"]]></Val>
+            <Val><![CDATA[em "{path}"]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[     at "{path}"]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorNoVSInstanceFullVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[    with toolset version prefix {version}]]></Val>
+          <Val><![CDATA[with toolset version prefix {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[    com o prefixo da versão do conjunto de ferramentas {versão}]]></Val>
+            <Val><![CDATA[com o prefixo de versão do conjunto de ferramentas {version}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[    with toolset version prefix {version}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorNoVSInstanceVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[    with toolset version {version}]]></Val>
+          <Val><![CDATA[with toolset version {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[    com a versão do conjunto de ferramentas {version}]]></Val>
+            <Val><![CDATA[com a versão do conjunto de ferramentas {version}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[    with toolset version {version}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorRequireBaseline" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: this vcpkg instance requires a manifest with a specified baseline in order to interact with ports. Please add 'builtin-baseline' to the manifest or add a 'vcpkg-configuration.json' that redefines the default registry.]A;]]></Val>
+          <Val><![CDATA[this vcpkg instance requires a manifest with a specified baseline in order to interact with ports. Please add 'builtin-baseline' to the manifest or add a 'vcpkg-configuration.json' that redefines the default registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: esta instância vcpkg exige um manifesto com uma linha de base especificada para interagir com as portas. Adicione 'builtin-baseline' ao manifesto ou adicione um 'vcpkg-configuration.json' que redefine o registro padrão.]A;]]></Val>
+            <Val><![CDATA[esta instância do vcpkg exige um manifesto com uma linha de base especificada para interagir com as portas. Adicione 'builtin-baseline' ao manifesto ou adicione um 'vcpkg-configuration.json' que redefina o registro padrão.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: this vcpkg instance requires a manifest with a specified baseline in order to interact with ports. Please add 'builtin-baseline' to the manifest or add a 'vcpkg-configuration.json' that redefines the default registry.]A;]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorRequirePackagesList" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: `vcpkg install` requires a list of packages to install in classic mode.]]></Val>
+          <Val><![CDATA[`vcpkg install` requires a list of packages to install in classic mode.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: `vcpkg install` exige uma lista de pacotes para ser instalado no modo clássico.]]></Val>
+            <Val><![CDATA[`vcpkg install` exige uma lista de pacotes para instalar no modo clássico.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ErrorRequirePackagesToInstall" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Error: No packages were listed for installation and no manifest was found.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: Nenhum pacote foi listado para instalação e nenhum manifesto foi encontrado.]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: `vcpkg install` requires a list of packages to install in classic mode.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ErrorVcvarsUnsupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.]A;Define 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.]]></Val>
+          <Val><![CDATA[in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.]A;Define 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: no triplo {triplet}: o uso do prompt do desenvolvedor do Visual Studio não suportado em hosts que não são do Windows.]A;Defina ''VCPKG_CMAKE_SYSTEM_NAME' ou 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' no arquivo triplo.]]></Val>
+            <Val><![CDATA[no triplo {triplet}: O uso do Prompt de Desenvolvedor do Visual Studio não é suportado em hosts que não sejam do Windows.]A;Defina 'VCPKG_CMAKE_SYSTEM_NAME' ou 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' no arquivo triplo.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: in triplet {triplet}: Use of Visual Studio's Developer Prompt is unsupported on non-Windows hosts.]A;Define 'VCPKG_CMAKE_SYSTEM_NAME' or 'VCPKG_CHAINLOAD_TOOLCHAIN_FILE' in the triplet file.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ErrorVsCodeNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Visual Studio Code was not found and the environment variable '{env_var}' is not set or invalid.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[O Visual Studio Code não foi encontrado e a variável de ambiente '{env_var}' não foi definida ou é inválida.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ErrorVsCodeNotFoundPathExamined" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following paths were examined:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Os seguintes caminhos foram examinados:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -636,19 +978,25 @@
       </Item>
       <Item ItemId=";FormattedParseMessageExpression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[    on expression: {value}]]></Val>
+          <Val><![CDATA[on expression: {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[    na expressão: {value}]]></Val>
+            <Val><![CDATA[na expressão: {value}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[    on expression: {value}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";GenerateMsgErrorParsingFormatArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[error: parsing format string for {value}:]]></Val>
+          <Val><![CDATA[parsing format string for {value}:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[erro: analisando a cadeia de caracteres de formato para {value}:]]></Val>
+            <Val><![CDATA[analisando a cadeia de caracteres de formato para {value}:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[error: parsing format string for {value}:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -663,18 +1011,78 @@
       </Item>
       <Item ItemId=";GenerateMsgNoArgumentValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[    {{{value}}} was specified in a comment, but was not used in the message.]]></Val>
+          <Val><![CDATA[{{{value}}} was specified in a comment, but was not used in the message.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[    {{{value}}} foi especificado em um comentário, mas não foi usado na mensagem.]]></Val>
+            <Val><![CDATA[{{{value}}} foi especificado em um comentário, mas não foi usado na mensagem.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[    {{{value}}} was specified in a comment, but was not used in the message.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";GenerateMsgNoCommentValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[    {{{value}}} was used in the message, but not commented.]]></Val>
+          <Val><![CDATA[{{{value}}} was used in the message, but not commented.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[    {{{value}}} foi usado na mensagem, mas não comentado.]]></Val>
+            <Val><![CDATA[{{{value}}} foi usado na mensagem, mas não foi comentado.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[    {{{value}}} was used in the message, but not commented.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitCommandFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to execute: {command_line}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[falhou ao executar: {command_line}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitStatusOutputExpectedFileName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected a file name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[esperado nome de arquivo]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitStatusOutputExpectedNewLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected new line]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nova linha esperada]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitStatusOutputExpectedRenameOrNewline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected renamed file or new lines]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[arquivo renomeado esperado ou novas linhas]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitStatusUnknownFileStatus" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown file status: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[status de arquivo desconhecido: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitUnexpectedCommandOutput" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected git output]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[saída git inesperada]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -711,18 +1119,60 @@
       </Item>
       <Item ItemId=";IllegalFeatures" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[error: List of features is not allowed in this contect]]></Val>
+          <Val><![CDATA[List of features is not allowed in this context]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[erro: Lista de funcionalidades não é permitida nesse contexto]]></Val>
+            <Val><![CDATA[A lista de recursos não permitida neste contexto]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[error: List of features is not allowed in this context]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";IllegalPlatformSpec" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[error: Platform qualifier is not allowed in this context]]></Val>
+          <Val><![CDATA[Platform qualifier is not allowed in this context]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[erro: qualificador de plataforma não é permitido nesse contexto]]></Val>
+            <Val><![CDATA[O qualificador de plataforma não é permitido neste contexto]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[error: Platform qualifier is not allowed in this context]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InfoSetEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can also set the environment variable '{env_var}' to your editor of choice.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Você também pode definir a variável de ambiente '{env_var}' para um editor de sua escolha.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallWithSystemManager" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You may be able to install this tool via your system package manager.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Você pode instalar esta ferramenta através do gerenciador de pacotes do sistema.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallWithSystemManagerMono" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Ubuntu 18.04 users may need a newer version of mono, available at {url}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Os usuários do Ubuntu 18.04 podem precisar de uma versão mais recente do mono, disponível em {url}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallWithSystemManagerPkg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You may be able to install this tool via your system package manager ({command_line}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Você pode instalar esta ferramenta através do gerenciador de pacotes do sistema ({command_line}).]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1054,6 +1504,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";LocalizedMessageMustNotContainIndents" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The message named {value} contains what appears to be indenting which must be changed to use LocalizedString::append_indent instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[A mensagem chamada {value} contém o que parece ser um recuo que deve ser alterado para usar LocalizedString::append_indent em vez disso.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";LocalizedMessageMustNotEndWithNewline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The message named {value} ends with a newline which should be added by formatting rather than by localization.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[A mensagem chamada {value} termina com uma nova linha que deve ser adicionada por formatação e não por localização.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MsiexecFailedToExtract" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:]]></Val>
@@ -1072,6 +1540,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoRegistryForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no registry configured for port {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nenhum registro configurado para porta {package_name}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoteMessage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[note: ]]></Val>
@@ -1086,6 +1563,60 @@
           <Val><![CDATA[{tool_name} failed with exit code: {exit_code}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{tool_name} falhou com o código de saída: {exit_code}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseControlErrorInfoInvalidFields" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following fields were not expected:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Os seguintes campos não eram esperados:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseControlErrorInfoMissingFields" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following fields were missing:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Os seguintes campos estavam ausentes:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseControlErrorInfoTypesEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{value} was expected to be {expected}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Esperava-se que {value} fosse {expected}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseControlErrorInfoWhileLoading" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while loading {path}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ao carregar {path}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseControlErrorInfoWrongTypeFields" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following fields had the wrong types:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Os campos a seguir tinham os tipos errados:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortNotInBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the baseline does not contain an entry for port {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[a linha de base não contém uma entrada para porta {package_name}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1165,11 +1696,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";SuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ToolFetchFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use `--{option}` to disable this check.]]></Val>
+          <Val><![CDATA[Could not fetch {tool_name}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Use o esquema de versão "{new_scheme}" em vez de "{old_scheme}" na porta "{package_name}".]A;Use `--{option}` para desativar esta verificação.]]></Val>
+            <Val><![CDATA[Não foi possível buscar {tool_name}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ToolInWin10" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[This utility is bundled with Windows 10 or later.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Este utilitário é fornecido com o Windows 10 ou posterior.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1201,20 +1741,98 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnknownTool" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg does not have a definition of this tool for this platform.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg não possui uma definição desta ferramenta para esta plataforma.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnsupportedSystemName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.]]></Val>
+          <Val><![CDATA[Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: não foi possível mapear VCPKG_CMAKE_SYSTEM_NAME '{system_name}' para uma plataforma vcvarsall. Os nomes de sistema suportados “, 'Windows' e 'WindowsStore'.]]></Val>
+            <Val><![CDATA[Não foi possível mapear VCPKG_CMAKE_SYSTEM_NAME '{system_name}' para uma plataforma vcvarsall. Os nomes de sistema suportados são '', 'Windows' e 'WindowsStore'.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";UnsupportedToolchain" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: in triplet {triplet}: Unable to find a valid toolchain combination.]A;    The requested target architecture was {arch}]A;    The selected Visual Studio instance is at {path}]A;    The available toolchain combinations are {list}]A;]]></Val>
+          <Val><![CDATA[in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.]A;The selected Visual Studio instance is at: {path}]A;The available toolchain combinations are: {list}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: no triplo {triplet}: não foi possível encontrar uma combinação válida de cadeia de ferramentas.]A;    A arquitetura de destino solicitada foi {arch}]A;    A instância selecionada do Visual Studio está em {path}]A;    As combinações de cadeia de ferramentas disponíveis são {list}]A;]]></Val>
+            <Val><![CDATA[no triplo {triplet}: não é possível encontrar uma cadeia de ferramentas válida para a arquitetura de destino solicitada {arch}.]A;A instância do Visual Studio selecionada está em: {path}]A;As combinações da cadeia de ferramentas disponíveis são: {list}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: in triplet {triplet}: Unable to find a valid toolchain combination.]A;    The requested target architecture was {arch}]A;    The selected Visual Studio instance is at {path}]A;    The available toolchain combinations are {list}]A;]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineAddBaselineNoManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[a opção --{option} foi passada, mas não há nenhum arquivo de manifesto ao qual adicionar um campo 'builtin-baseline'.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineLocalGitError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[git failed to parse HEAD for the local vcpkg registry at '{path}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[falha do git ao analisar HEAD para o registro vcpkg local em '{path}']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineNoConfiguration" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nem 'vcpkg.json' nem 'vcpkg-configuration.json' existem para atualizar.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineNoExistingBuiltinBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the manifest file currently does not contain a `builtin-baseline` field; in order to add one, pass the --{option} switch.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[o arquivo de manifesto atualmente não contém um campo 'builtin-baseline'; para adicionar um, passe a opção --{option}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineNoUpdate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[registro '{url}' não atualizado: '{value}']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineRemoteGitError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[git failed to fetch remote repository '{url}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[falha do git ao buscar o repositório remoto '{url}']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineUpdatedBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[registro atualizado '{url}': linha de base '{old_value}' -> '{new_value}']]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1284,19 +1902,25 @@
       </Item>
       <Item ItemId=";VcpkgDisallowedClassicMode" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error: Could not locate a manifest (vcpkg.json) above the current working directory.]A;This vcpkg distribution does not have a classic mode instance.]]></Val>
+          <Val><![CDATA[Could not locate a manifest (vcpkg.json) above the current working directory.]A;This vcpkg distribution does not have a classic mode instance.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Erro: não foi possível localizar um manifesto (vcpkg.json) acima do diretório de trabalho atual.]A;Esta distribuição vcpkg não tem uma instância de modo clássico.]]></Val>
+            <Val><![CDATA[Não foi possível localizar um manifesto (vcpkg.json) acima do diretório de trabalho atual.]A;Esta distribuição vcpkg não tem uma instância de modo clássico.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error: Could not locate a manifest (vcpkg.json) above the current working directory.]A;This vcpkg distribution does not have a classic mode instance.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VcpkgHasCrashed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg.exe has crashed.]A;Please send an email to:]A;    {email}]A;containing a brief summary of what you were trying to do and the following data blob:]]></Val>
+          <Val><![CDATA[vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of what you were trying to do and the following information.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[O vcpkg.exe travou.]A;Envie um email para:]A; {email}]A;contendo um breve resumo do que você estava tentando fazer e o seguinte blob de dados:]]></Val>
+            <Val><![CDATA[o vcpkg falhou. Crie um problema em https://github.com/microsoft/vcpkg contendo um breve resumo do que você estava tentando fazer e as informações a seguir.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg.exe has crashed.]A;Please send an email to:]A;    {email}]A;containing a brief summary of what you were trying to do and the following data blob:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1311,10 +1935,13 @@
       </Item>
       <Item ItemId=";VcpkgSendMetricsButDisabled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Warning: passed --sendmetrics, but metrics are disabled.]]></Val>
+          <Val><![CDATA[passed --sendmetrics, but metrics are disabled.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aviso: --sendmetrics aprovados, mas as métricas estão desabilitadas.]]></Val>
+            <Val><![CDATA[--sendmetrics passou, mas as métricas estão desabilitadas.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Warning: passed --sendmetrics, but metrics are disabled.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1365,10 +1992,13 @@
       </Item>
       <Item ItemId=";VersionSpecMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[error: Failed to load port because version specs did not match]A;    Path: {path}]A;    Expected: {expected_version}]A;    Actual: {actual_version}]]></Val>
+          <Val><![CDATA[Failed to load port because versions are inconsistent. The file "{path}" contains the version {actual_version}, but the version database indicates that it should be {expected_version}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[erro: Falha ao carregar a porta porque as especificações da versão não correspondem]A;    Caminho: {path}]A;    Esperado: {expected_version}]A;    Real: {actual_version}]]></Val>
+            <Val><![CDATA[Falha ao carregar a porta porque as versões são inconsistentes. O arquivo "{path}" contém a versão {actual_version}, mas o banco de dados de versões indica que deve ser {expected_version}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[error: Failed to load port because version specs did not match]A;    Path: {path}]A;    Expected: {expected_version}]A;    Actual: {actual_version}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1395,6 +2025,15 @@
           <Val><![CDATA[warning: ]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[aviso: ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WarningMessageMustUsePrintWarning" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The message named {value} starts with warning:, it must be changed to prepend WarningMessage in code instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[A mensagem chamada {value} começa com o aviso:, ela deve ser alterada para preceder WarningMessage no código.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

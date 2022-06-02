@@ -71,7 +71,7 @@ static Json::Object make_resource(
     return obj;
 }
 
-Json::Value vcpkg::run_resource_heuristics(const std::string& contents)
+Json::Value vcpkg::run_resource_heuristics(StringView contents)
 {
     // These are a sequence of heuristics to enable proof-of-concept extraction of remote resources for SPDX SBOM
     // inclusion

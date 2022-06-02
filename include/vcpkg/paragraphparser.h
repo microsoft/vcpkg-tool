@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/messages.h>
+
 #include <vcpkg/fwd/paragraphparser.h>
 
 #include <vcpkg/base/expected.h>
@@ -18,10 +20,9 @@ namespace vcpkg
     struct ParseControlErrorInfo
     {
         std::string name;
-        std::map<std::string, std::vector<std::string>> missing_fields;
-        std::map<std::string, std::vector<std::string>> extra_fields;
+        std::vector<std::string> missing_fields;
+        std::vector<std::string> extra_fields;
         std::map<std::string, std::string> expected_types;
-        std::map<std::string, std::vector<std::string>> mutually_exclusive_fields;
         std::vector<std::string> other_errors;
         std::string error;
 
@@ -30,8 +31,18 @@ namespace vcpkg
             return !missing_fields.empty() || !extra_fields.empty() || !expected_types.empty() ||
                    !other_errors.empty() || !error.empty();
         }
-    };
 
+        static std::string format_errors(View<std::unique_ptr<ParseControlErrorInfo>> errors);
+        void to_string(std::string& target) const;
+        std::string to_string() const;
+    };
+} // namespace vcpkg
+
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ParseControlErrorInfo);
+
+namespace vcpkg
+{
+    inline std::string to_string(const std::unique_ptr<ParseControlErrorInfo>& up) { return up->to_string(); }
     template<class P>
     using ParseExpected = vcpkg::ExpectedT<std::unique_ptr<P>, std::unique_ptr<ParseControlErrorInfo>>;
 

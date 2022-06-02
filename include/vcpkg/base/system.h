@@ -11,6 +11,8 @@ namespace vcpkg
     Optional<std::string> get_environment_variable(ZStringView varname) noexcept;
     void set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept;
 
+    std::string get_environment_variables();
+
     const ExpectedS<Path>& get_home_dir() noexcept;
 
     const ExpectedS<Path>& get_platform_cache_home() noexcept;

@@ -298,6 +298,7 @@ namespace vcpkg
 
             constexpr static std::pair<StringView, Optional<bool> VcpkgCmdArguments::*> switches[] = {
                 {DEBUG_SWITCH, &VcpkgCmdArguments::debug},
+                {DEBUG_ENV_SWITCH, &VcpkgCmdArguments::debug_env},
                 {DISABLE_METRICS_SWITCH, &VcpkgCmdArguments::disable_metrics},
                 {SEND_METRICS_SWITCH, &VcpkgCmdArguments::send_metrics},
                 {PRINT_METRICS_SWITCH, &VcpkgCmdArguments::print_metrics},
@@ -375,6 +376,9 @@ namespace vcpkg
         }
 
         parse_feature_flags(feature_flags, args);
+
+        // --debug-env implies --debug
+        if (const auto p = args.debug_env.get()) args.debug_env = *p;
 
         return args;
     }
@@ -1015,6 +1019,7 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::BINARY_SOURCES_ARG;
 
     constexpr StringLiteral VcpkgCmdArguments::DEBUG_SWITCH;
+    constexpr StringLiteral VcpkgCmdArguments::DEBUG_ENV_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::SEND_METRICS_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::DISABLE_METRICS_ENV;
     constexpr StringLiteral VcpkgCmdArguments::DISABLE_METRICS_SWITCH;

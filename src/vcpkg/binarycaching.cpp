@@ -105,6 +105,10 @@ namespace
                                  (msg::binary_source),
                                  "",
                                  "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments");
+    DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed,
+                                 (msg::path, msg::exit_code),
+                                 "",
+                                 "Failed to compress folder '{path}', exit code: {exit_code}");
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -331,7 +335,7 @@ namespace
                 {
                     auto pkg_path = paths.package_dir(spec);
                     clean_prepare_dir(fs, pkg_path);
-                    jobs.push_back(decompress_zip_archive_cmd(paths, pkg_path, archive_path));
+                    jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(), pkg_path, archive_path));
                     action_idxs.push_back(i);
                     archive_paths.push_back(std::move(archive_path));
                 }
@@ -393,7 +397,7 @@ namespace
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            int code = compress_directory_to_zip(fs, paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (code != 0)
             {
                 vcpkg::print2(
@@ -547,8 +551,9 @@ namespace
                     if (codes[i] == 200)
                     {
                         action_idxs.push_back(i);
-                        jobs.push_back(decompress_zip_archive_cmd(
-                            paths, paths.package_dir(actions[url_indices[i]].spec), url_paths[i].second));
+                        jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
+                                                                  paths.package_dir(actions[url_indices[i]].spec),
+                                                                  url_paths[i].second));
                     }
                 }
                 auto job_results = decompress_in_parallel(jobs);
@@ -1040,7 +1045,8 @@ namespace
                     auto&& action = actions[url_indices[idx]];
                     auto&& url_path = url_paths[idx];
                     if (!download_file(url_path.first, url_path.second)) continue;
-                    jobs.push_back(decompress_zip_archive_cmd(paths, paths.package_dir(action.spec), url_path.second));
+                    jobs.push_back(decompress_zip_archive_cmd(
+                        paths.get_tool_cache(), paths.package_dir(action.spec), url_path.second));
                     idxs.push_back(idx);
                 }
 
@@ -1081,11 +1087,12 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(paths, paths.package_dir(spec), tmp_archive_path);
+            int code = compress_directory_to_zip(
+                paths.get_filesystem(), paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
             if (code != 0)
             {
-                vcpkg::print2(
-                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                vcpkg::msg::println_warning(
+                    msgCompressFolderFailed, msg::path = paths.package_dir(spec), msg::exit_code = code);
                 return;
             }
 
@@ -1251,6 +1258,11 @@ namespace
 
         bool download_file(StringView object, const Path& archive) const override
         {
+            if (!stat(object))
+            {
+                return false;
+            }
+
             auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
             if (m_no_sign_request)
             {
@@ -2098,7 +2110,7 @@ ExpectedS<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     parser.parse();
     if (auto err = parser.get_error())
     {
-        return Strings::concat(err->format(), "For more information, see ", docs::assetcaching_url, "\n");
+        return Strings::concat(err->to_string(), "\nFor more information, see ", docs::assetcaching_url, "\n");
     }
 
     if (s.azblob_templates_to_put.size() > 1)
@@ -2161,14 +2173,14 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
     default_parser.parse();
     if (auto err = default_parser.get_error())
     {
-        return err->get_message();
+        return err->message;
     }
 
     BinaryConfigParser env_parser(env_string, "VCPKG_BINARY_SOURCES", &s);
     env_parser.parse();
     if (auto err = env_parser.get_error())
     {
-        return err->format();
+        return err->to_string();
     }
 
     for (auto&& arg : args)
@@ -2177,7 +2189,7 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
         arg_parser.parse();
         if (auto err = arg_parser.get_error())
         {
-            return err->format();
+            return err->to_string();
         }
     }
 

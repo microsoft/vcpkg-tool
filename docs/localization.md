@@ -67,7 +67,6 @@ Messages in vcpkg are written in American English. They should not contain:
 * formatting:
   - indentation should be added with the `append_indent()` function;
     if you need to add more than one indentation, you can use `append_indent(N)`
-  - newlines should be added with the `appendnl()` function
   - Any other interesting characters (like `- ` for lists, for example) should use `append_raw(...)`
 * or for the prefixes:
   - `"warning: "`, instead use `msg::format(msg::msgWarningMessage).append(msgMyWarning)`

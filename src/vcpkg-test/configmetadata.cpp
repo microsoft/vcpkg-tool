@@ -47,7 +47,7 @@ static Json::Object parse_json_object(StringView sv)
     }
     else
     {
-        Checks::exit_with_message(VCPKG_LINE_INFO, json.error()->format());
+        Checks::exit_with_message(VCPKG_LINE_INFO, json.error()->to_string());
     }
 }
 
