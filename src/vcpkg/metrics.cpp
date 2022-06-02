@@ -214,7 +214,6 @@ namespace vcpkg
             write_config = true;
         }
 
-        auto mac = get_user_mac_hash();
         if (config.user_mac.empty())
         {
             config.user_mac = get_user_mac_hash();
