@@ -915,16 +915,19 @@ namespace vcpkg
     }
 
     const ToolCache& VcpkgPaths::get_tool_cache() const { return *m_pimpl->m_tool_cache; }
-    const Path& VcpkgPaths::get_tool_exe(StringView tool) const { return m_pimpl->m_tool_cache->get_tool_path(tool); }
-    const std::string& VcpkgPaths::get_tool_version(StringView tool) const
+    const Path& VcpkgPaths::get_tool_exe(StringView tool, MessageSink& status_messages) const
     {
-        return m_pimpl->m_tool_cache->get_tool_version(tool);
+        return m_pimpl->m_tool_cache->get_tool_path(tool, status_messages);
+    }
+    const std::string& VcpkgPaths::get_tool_version(StringView tool, MessageSink& status_messages) const
+    {
+        return m_pimpl->m_tool_cache->get_tool_version(tool, status_messages);
     }
 
     GitConfig VcpkgPaths::git_builtin_config() const
     {
         GitConfig conf;
-        conf.git_exe = get_tool_exe(Tools::GIT);
+        conf.git_exe = get_tool_exe(Tools::GIT, stdout_sink);
         conf.git_dir = this->root / ".git";
         conf.git_work_tree = this->root;
         return conf;
@@ -932,7 +935,7 @@ namespace vcpkg
 
     Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
     {
-        Command ret(get_tool_exe(Tools::GIT));
+        Command ret(get_tool_exe(Tools::GIT, stdout_sink));
         if (!dot_git_dir.empty())
         {
             ret.string_arg(Strings::concat("--git-dir=", dot_git_dir));
@@ -1111,7 +1114,7 @@ namespace vcpkg
                     expected_right_tag};
         }
 
-        extract_tar_cmake(this->get_tool_exe(Tools::CMAKE), destination_tar, destination_tmp);
+        extract_tar_cmake(this->get_tool_exe(Tools::CMAKE, stdout_sink), destination_tar, destination_tmp);
         fs.remove(destination_tar, ec);
         if (ec)
         {
@@ -1277,7 +1280,7 @@ namespace vcpkg
                     expected_right_tag};
         }
 
-        extract_tar_cmake(get_tool_exe(Tools::CMAKE), git_tree_temp_tar, git_tree_temp);
+        extract_tar_cmake(get_tool_exe(Tools::CMAKE, stdout_sink), git_tree_temp_tar, git_tree_temp);
         // Attempt to remove temporary files, though non-critical.
         fs.remove(git_tree_temp_tar, IgnoreErrors{});
 

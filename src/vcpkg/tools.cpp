@@ -8,7 +8,6 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -597,7 +596,7 @@ namespace vcpkg
             return nullopt;
         }
 
-        Path download_tool(const ToolData& tool_data) const
+        Path download_tool(const ToolData& tool_data, MessageSink& status_sink) const
         {
             const std::array<int, 3>& version = tool_data.version;
             const std::string version_as_string = Strings::format("%d.%d.%d", version[0], version[1], version[2]);
@@ -609,16 +608,25 @@ namespace vcpkg
                 tool_data.name,
                 version_as_string,
                 tool_data.name);
-            vcpkg::printf("A suitable version of %s was not found (required v%s). Downloading portable %s v%s...\n",
-                          tool_data.name,
-                          version_as_string,
-                          tool_data.name,
-                          version_as_string);
+
+            status_sink.print(Color::none,
+                              Strings::concat("A suitable version of ",
+                                              tool_data.name,
+                                              " was not found (required v",
+                                              version_as_string,
+                                              "). Downloading portable ",
+                                              tool_data.name,
+                                              " v",
+                                              version_as_string,
+                                              "...\n"));
+
             const auto download_path = downloads / tool_data.download_subpath;
             if (!fs.exists(download_path, IgnoreErrors{}))
             {
-                print2("Downloading ", tool_data.name, "...\n");
-                print2("  ", tool_data.url, " -> ", download_path, "\n");
+                status_sink.print(
+                    Color::none,
+                    Strings::concat(
+                        "Downloading ", tool_data.name, "...\n  ", tool_data.url, " -> ", download_path, "\n"));
                 downloader->download_file(fs, tool_data.url, download_path, tool_data.sha512);
             }
             else
@@ -631,18 +639,18 @@ namespace vcpkg
 
             if (tool_data.is_archive)
             {
-                print2("Extracting ", tool_data.name, "...\n");
+                status_sink.print(Color::none, Strings::concat("Extracting ", tool_data.name, "...\n"));
 #if defined(_WIN32)
                 if (tool_data.name == "cmake")
                 {
                     // We use cmake as the core extractor on Windows, so we need to perform a special dance when
                     // extracting it.
-                    win32_extract_bootstrap_zip(fs, *this, download_path, tool_dir_path);
+                    win32_extract_bootstrap_zip(fs, *this, status_sink, download_path, tool_dir_path);
                 }
                 else
 #endif // ^^^ _WIN32
                 {
-                    extract_archive(fs, *this, download_path, tool_dir_path);
+                    extract_archive(fs, *this, status_sink, download_path, tool_dir_path);
                 }
             }
             else
@@ -663,11 +671,14 @@ namespace vcpkg
                 [this]() { return this->fs.read_contents(this->xml_config, VCPKG_LINE_INFO); });
         }
 
-        virtual const Path& get_tool_path(StringView tool) const override { return get_tool_pathversion(tool).p; }
+        virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const override
+        {
+            return get_tool_pathversion(tool, status_sink).p;
+        }
 
         static constexpr StringLiteral s_env_vcpkg_force_system_binaries = "VCPKG_FORCE_SYSTEM_BINARIES";
 
-        PathAndVersion get_path(const ToolProvider& tool) const
+        PathAndVersion get_path(const ToolProvider& tool, MessageSink& status_sink) const
         {
             const bool env_force_system_binaries =
                 get_environment_variable(s_env_vcpkg_force_system_binaries).has_value();
@@ -751,7 +762,7 @@ namespace vcpkg
                 // If none of the current entries are acceptable, fall back to downloading if possible
                 if (auto tool_data = maybe_tool_data.get())
                 {
-                    auto downloaded_path = download_tool(*tool_data);
+                    auto downloaded_path = download_tool(*tool_data, status_sink);
                     auto downloaded_version = tool.get_version(*this, downloaded_path).value_or_exit(VCPKG_LINE_INFO);
                     return {std::move(downloaded_path), std::move(downloaded_version)};
                 }
@@ -775,36 +786,36 @@ namespace vcpkg
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, s);
         }
 
-        const PathAndVersion& get_tool_pathversion(StringView tool) const
+        const PathAndVersion& get_tool_pathversion(StringView tool, MessageSink& status_sink) const
         {
             return path_version_cache.get_lazy(tool, [&]() -> PathAndVersion {
                 // First deal with specially handled tools.
                 // For these we may look in locations like Program Files, the PATH etc as well as the auto-downloaded
                 // location.
-                if (tool == Tools::CMAKE) return get_path(CMakeProvider());
-                if (tool == Tools::GIT) return get_path(GitProvider());
-                if (tool == Tools::NINJA) return get_path(NinjaProvider());
-                if (tool == Tools::POWERSHELL_CORE) return get_path(PowerShellCoreProvider());
-                if (tool == Tools::NUGET) return get_path(NuGetProvider());
-                if (tool == Tools::ARIA2) return get_path(Aria2Provider());
-                if (tool == Tools::NODE) return get_path(NodeProvider());
-                if (tool == Tools::IFW_INSTALLER_BASE) return get_path(IfwInstallerBaseProvider());
-                if (tool == Tools::MONO) return get_path(MonoProvider());
-                if (tool == Tools::GSUTIL) return get_path(GsutilProvider());
-                if (tool == Tools::AWSCLI) return get_path(AwsCliProvider());
-                if (tool == Tools::COSCLI) return get_path(CosCliProvider());
+                if (tool == Tools::CMAKE) return get_path(CMakeProvider(), status_sink);
+                if (tool == Tools::GIT) return get_path(GitProvider(), status_sink);
+                if (tool == Tools::NINJA) return get_path(NinjaProvider(), status_sink);
+                if (tool == Tools::POWERSHELL_CORE) return get_path(PowerShellCoreProvider(), status_sink);
+                if (tool == Tools::NUGET) return get_path(NuGetProvider(), status_sink);
+                if (tool == Tools::ARIA2) return get_path(Aria2Provider(), status_sink);
+                if (tool == Tools::NODE) return get_path(NodeProvider(), status_sink);
+                if (tool == Tools::IFW_INSTALLER_BASE) return get_path(IfwInstallerBaseProvider(), status_sink);
+                if (tool == Tools::MONO) return get_path(MonoProvider(), status_sink);
+                if (tool == Tools::GSUTIL) return get_path(GsutilProvider(), status_sink);
+                if (tool == Tools::AWSCLI) return get_path(AwsCliProvider(), status_sink);
+                if (tool == Tools::COSCLI) return get_path(CosCliProvider(), status_sink);
                 if (tool == Tools::TAR)
                 {
                     return {find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), {}};
                 }
                 GenericToolProvider provider{tool};
-                return get_path(provider);
+                return get_path(provider, status_sink);
             });
         }
 
-        virtual const std::string& get_tool_version(StringView tool) const override
+        virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const override
         {
-            return get_tool_pathversion(tool).version;
+            return get_tool_pathversion(tool, status_sink).version;
         }
     };
 
