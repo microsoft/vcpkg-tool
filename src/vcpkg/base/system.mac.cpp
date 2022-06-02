@@ -168,7 +168,6 @@ namespace vcpkg
             return "0";
         }
 
-        std::map<StringView, std::string> ifname_mac_map;
         unsigned char bytes[MAC_BYTES_LENGTH];
         for (auto interface = interfaces.ptr; interface; interface = interface->ifa_next)
         {
@@ -231,7 +230,6 @@ namespace vcpkg
         interfaces.ifc_buf = data.data();
         if (ioctl(fd, SIOCGIFCONF, &interfaces) < 0) return "0";
 
-        std::map<StringView, std::string> ifname_mac_map;
         // On a successful call, ifc_req contains a pointer to an array
         // of ifreq structures filled with all currently active interface addresses.
         // Within each structure ifr_name will receive the interface name, and
