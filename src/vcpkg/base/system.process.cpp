@@ -905,7 +905,7 @@ namespace vcpkg
         const auto pipe = popen(actual_cmd_line.c_str(), "r");
         if (pipe == nullptr)
         {
-            return SystemApiError{"popen", errno};
+            return format_system_error_message("popen", errno);
         }
 
         char buf[1024];
@@ -917,7 +917,7 @@ namespace vcpkg
 
         if (!feof(pipe))
         {
-            return SystemApiError{"feof", errno};
+            return format_system_error_message("feof", errno);
         }
 
         int ec = pclose(pipe);
@@ -934,7 +934,7 @@ namespace vcpkg
             ec = WSTOPSIG(ec);
         }
 
-        ExpectedApi<int> exit_code = ec;
+        ExpectedL<int> exit_code = ec;
 #endif /// ^^^ !_WIN32
 
         const auto elapsed = timer.us_64();
