@@ -62,9 +62,7 @@ namespace vcpkg
         };
 
         if (!validate_mac_address_format(mac)) return false;
-        auto begin = std::begin(invalid_macs);
-        auto end = std::end(invalid_macs);
-        return std::find(begin, end, mac) == end;
+        return !Util::Vectors::contains(invalid_macs, mac);
     }
 
     std::string mac_bytes_to_string(const Span<unsigned char>& bytes)
@@ -177,7 +175,7 @@ namespace vcpkg
             // contain a null pointer.
             if (interface->ifa_addr && interface->ifa_addr->sa_family == AF_TYPE)
             {
-                auto name = std::string(interface->ifa_name, strlen(interface->ifa_name));
+                auto name = std::string(interface->ifa_name);
                 if (interface->ifa_flags & IFF_LOOPBACK) continue;
 
                 // Convert the generic sockaddr into a specified representation
@@ -185,7 +183,6 @@ namespace vcpkg
                 // family is not available so we fall back to AF_LINK.
                 // AF_PACKET and sockaddr_ll: https://man7.org/linux/man-pages/man7/packet.7.html
                 // AF_LINK and sockaddr_dl: https://illumos.org/man/3SOCKET/sockaddr_dl
-                std::memset(bytes, 0, MAC_BYTES_LENGTH);
 #if defined(__linux__)
                 auto address = reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
                 if (address->sll_halen != MAC_BYTES_LENGTH) continue;
@@ -238,16 +235,12 @@ namespace vcpkg
         unsigned char bytes[MAC_BYTES_LENGTH];
         for (auto it = interfaces.ifc_req; it != end; ++it)
         {
-            ifreq interface;
-            std::memset(&interface, 0, sizeof(ifreq));
-            auto&& name = StringView(it->ifr_name, strlen(it->ifr_name));
-            std::memcpy(interface.ifr_name, name.data(), name.size());
+            ifreq& interface = *it;
 
             // Retrieve interface hardware addresses (ignore loopback)
             if ((ioctl(fd, SIOCGIFFLAGS, &interface) >= 0) && !(interface.ifr_flags & IFF_LOOPBACK) &&
                 (ioctl(fd, SIOCGIFHWADDR, &interface) >= 0))
             {
-                std::memset(bytes, 0, MAC_BYTES_LENGTH);
                 std::memcpy(bytes, interface.ifr_hwaddr.sa_data, MAC_BYTES_LENGTH);
                 auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
                 if (is_valid_mac_for_telemetry(maybe_mac))
