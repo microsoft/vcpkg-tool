@@ -14,7 +14,7 @@ static constexpr StringLiteral BAD_ZERO_MAC = "00-00-00-00-00-00";
 static constexpr StringLiteral NOT_A_MAC = "00:00:no:jk:00:00";
 static constexpr StringLiteral EMPTY_MAC = "";
 
-TEST_CASE ("validate MAC address format", "[metrics.map]")
+TEST_CASE ("validate MAC address format", "[metrics.mac]")
 {
     CHECK(validate_mac_address_format(GOOD_ZERO_MAC));
     CHECK(validate_mac_address_format(NON_ZERO_MAC));
@@ -26,7 +26,7 @@ TEST_CASE ("validate MAC address format", "[metrics.map]")
     CHECK(!validate_mac_address_format(EMPTY_MAC));
 }
 
-TEST_CASE ("validate MAC address for telemetry", "[metrics.map]")
+TEST_CASE ("validate MAC address for telemetry", "[metrics.mac]")
 {
     CHECK(is_valid_mac_for_telemetry(NON_ZERO_MAC));
 
@@ -38,21 +38,21 @@ TEST_CASE ("validate MAC address for telemetry", "[metrics.map]")
     CHECK(!is_valid_mac_for_telemetry(EMPTY_MAC));
 }
 
-TEST_CASE ("MAC bytes to string", "[metrics.map]")
+TEST_CASE ("MAC bytes to string", "[metrics.mac]")
 {
-    static unsigned char bytes[]{0x00, 0x11, 0x22, 0xdd, 0xee, 0xff, 0x00};
+    static char bytes[] = "\x00\x11\x22\xdd\xee\xff\x00";
 
-    auto mac_str = mac_bytes_to_string(Span<unsigned char>(bytes, 6));
+    auto mac_str = mac_bytes_to_string({bytes, 6});
     CHECK(mac_str == "00:11:22:dd:ee:ff");
 
-    auto short_mac_str = mac_bytes_to_string(Span<unsigned char>(bytes, 5));
+    auto short_mac_str = mac_bytes_to_string({bytes, 5});
     CHECK(short_mac_str.empty());
 
-    auto long_mac_str = mac_bytes_to_string(Span<unsigned char>(bytes, 7));
+    auto long_mac_str = mac_bytes_to_string({bytes, 7});
     CHECK(long_mac_str.empty());
 }
 
-TEST_CASE ("test getmac ouptut parse", "[metrics.map]")
+TEST_CASE ("test getmac ouptut parse", "[metrics.mac]")
 {
     std::string mac_str;
 

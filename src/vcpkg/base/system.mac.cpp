@@ -61,20 +61,20 @@ namespace vcpkg
         return !Util::Vectors::contains(invalid_macs, mac);
     }
 
-    std::string mac_bytes_to_string(const Span<unsigned char>& bytes)
+    std::string mac_bytes_to_string(const Span<char>& bytes)
     {
         if (bytes.size() != MAC_BYTES_LENGTH) return "";
 
         static constexpr char hexits[] = "0123456789abcdef";
         char mac_address[MAC_STRING_LENGTH];
         char* mac = mac_address;
-        unsigned char c = static_cast<unsigned char>(bytes[0]);
+        char c = bytes[0];
         *mac++ = hexits[(c & 0xf0) >> 4];
         *mac++ = hexits[(c & 0x0f)];
-        unsigned char non_zero_mac = c;
+        char non_zero_mac = c;
         for (size_t i = 1; i < MAC_BYTES_LENGTH; ++i)
         {
-            c = static_cast<unsigned char>(bytes[i]);
+            c = bytes[i];
             *mac++ = ':';
             *mac++ = hexits[(c & 0xf0) >> 4];
             *mac++ = hexits[(c & 0x0f)];
@@ -162,15 +162,16 @@ namespace vcpkg
             return "0";
         }
 
-        unsigned char bytes[MAC_BYTES_LENGTH];
+        char bytes[MAC_BYTES_LENGTH];
         for (auto interface = interfaces.ptr; interface; interface = interface->ifa_next)
         {
             // The ifa_addr field points to a structure containing the interface
-            // address.  (The sa_family subfield should be consulted to
-            // determine the format of the address structure.)  This field may
+            // address (the sa_family subfield should be consulted to
+            // determine the format of the address structure).  This field may
             // contain a null pointer.
             if (!interface->ifa_addr || interface->ifa_addr->sa_family != AF_TYPE ||
-                (interface->ifa_flags & IFF_LOOPBACK))
+                (interface->ifa_flags & IFF_LOOPBACK) || !(interface->ifa_flags & IFF_UP) ||
+                !(interface->ifa_flags & IFF_RUNNING))
             {
                 continue;
             }
@@ -190,14 +191,14 @@ namespace vcpkg
             // The macro LLADDR() returns the start of the link-layer network address.
             std::memcpy(bytes, LLADDR(address), MAC_BYTES_LENGTH);
 #endif
-            auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
-            if (is_valid_mac_for_telemetry(maybe_mac))
+            auto mac = mac_bytes_to_string(Span<char>(bytes, MAC_BYTES_LENGTH));
+            if (is_valid_mac_for_telemetry(mac))
             {
-                return Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256);
+                return Hash::get_string_hash(mac, Hash::Algorithm::Sha256);
             }
         }
 #else
-        // fallback when getifaddrs() is not available
+        // fallback for other platforms
         struct socket_guard
         {
             int fd = -1;
@@ -212,36 +213,35 @@ namespace vcpkg
 
         ifconf interfaces;
         std::memset(&interfaces, 0, sizeof(ifconf));
-        // Calling ioctil with ifconf.ifc_req set to null returns
+        // Calling ioctl with ifconf.ifc_req set to null returns
         // the size of buffer needed to contain all interfaces
         // in ifconf.ifc_len.
         // https://www.man7.org/linux/man-pages/man7/netdevice.7.html
         if (ioctl(fd, SIOCGIFCONF, &interfaces) < 0) return "0";
 
-        auto data = std::vector<char>(interfaces.ifc_len);
-        interfaces.ifc_len = data.size();
-        interfaces.ifc_buf = data.data();
+        // add one to ensure that even if remainder > 0, we reserve enough space
+        auto data = std::vector<ifreq>(interfaces.ifc_len / sizeof(ifreq) + 1);
+        interfaces.ifc_req = data.data();
         if (ioctl(fd, SIOCGIFCONF, &interfaces) < 0) return "0";
 
         // On a successful call, ifc_req contains a pointer to an array
         // of ifreq structures filled with all currently active interface addresses.
         // Within each structure ifr_name will receive the interface name, and
-        // ifr_addr the addres.
+        // ifr_addr the address.
         const ifreq* const end = interfaces.ifc_req + (interfaces.ifc_len / sizeof(ifreq));
-        unsigned char bytes[MAC_BYTES_LENGTH];
         for (auto it = interfaces.ifc_req; it != end; ++it)
         {
             ifreq& interface = *it;
 
             // Retrieve interface hardware addresses (ignore loopback)
             if ((ioctl(fd, SIOCGIFFLAGS, &interface) >= 0) && !(interface.ifr_flags & IFF_LOOPBACK) &&
+                (interface.ifr_flags & IFF_UP) && (interface.ifr_flags & IFF_RUNNING) &&
                 (ioctl(fd, SIOCGIFHWADDR, &interface) >= 0))
             {
-                std::memcpy(bytes, interface.ifr_hwaddr.sa_data, MAC_BYTES_LENGTH);
-                auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
-                if (is_valid_mac_for_telemetry(maybe_mac))
+                auto mac = mac_bytes_to_string(Span<char>(interface.ifr_hwaddr.sa_data, MAC_BYTES_LENGTH));
+                if (is_valid_mac_for_telemetry(mac))
                 {
-                    return Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256);
+                    return Hash::get_string_hash(mac, Hash::Algorithm::Sha256);
                 }
             }
         }
