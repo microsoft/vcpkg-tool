@@ -286,6 +286,7 @@ namespace vcpkg
 
 #else
         (void)tools;
+        (void)status_sink;
         return cmd_execute_clean(Command{"zip"}
                                      .string_arg("--quiet")
                                      .string_arg("-y")
@@ -313,6 +314,7 @@ namespace vcpkg
             .string_arg("-y");
 #else
         (void)tools;
+        (void)status_sink;
         cmd.string_arg("unzip").string_arg("-qq").string_arg(archive_path).string_arg("-d" + dst.native());
 #endif
         return cmd;
