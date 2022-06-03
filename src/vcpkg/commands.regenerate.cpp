@@ -16,8 +16,6 @@ namespace
 
     constexpr StringLiteral DRY_RUN = "dry-run";
     constexpr StringLiteral FORCE = "force";
-    constexpr StringLiteral PROJECT = "project";
-    constexpr StringLiteral REGISTRY = "registry";
 
     constexpr std::array<CommandSwitch, 2> command_switches = {{
         {FORCE, "proceeds with the (potentially dangerous) action without confirmation"},
