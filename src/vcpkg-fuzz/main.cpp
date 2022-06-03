@@ -147,7 +147,7 @@ namespace
             }
         }
 
-        FuzzKind kind;
+        FuzzKind kind = FuzzKind::None;
     };
 
     std::string read_all_of_stdin()
