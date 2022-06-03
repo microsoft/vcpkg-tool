@@ -241,8 +241,7 @@ namespace vcpkg::PortFileProvider
                                   .emplace(VersionSpec{std::move(port_name), std::move(version)},
                                            std::make_unique<SourceControlFileAndLocation>(std::move(scfl)))
                                   .first;
-                    Checks::check_exit(VCPKG_LINE_INFO, it->second.has_value());
-                    out.emplace(it->first.port_name, it->second.get()->get());
+                    out.emplace(it->first.port_name, it->second.value_or_exit(VCPKG_LINE_INFO).get());
                 }
             }
 

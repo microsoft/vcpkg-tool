@@ -152,6 +152,8 @@ namespace vcpkg
     void exit_interactive_subprocess();
 #endif
 
+    bool succeeded(const ExpectedL<int>& maybe_exit) noexcept;
+
     // If exit code is 0, returns a 'success' ExpectedL.
     // Otherwise, returns an ExpectedL containing error text
     ExpectedL<Unit> flatten(const ExpectedL<ExitCodeAndOutput>&, StringView tool_name);

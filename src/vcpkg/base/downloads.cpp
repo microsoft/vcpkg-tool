@@ -733,7 +733,7 @@ namespace vcpkg
                                                                             EchoInDebug::Show),
                                              "<mirror-script>");
 
-                    if (const auto res = maybe_res.has_value())
+                    if (maybe_res)
                     {
                         auto maybe_error =
                             try_verify_downloaded_file_hash(fs, "<mirror-script>", download_path_part_path, *hash);
@@ -766,7 +766,7 @@ namespace vcpkg
                     if (auto hash = sha512.get())
                     {
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
-                        if (!maybe_push.has_value())
+                        if (!maybe_push)
                         {
                             msg::println_warning(msgFailedToStoreBackToMirror);
                             msg::write_unlocalized_text_to_stdout(Color::warning, maybe_push.error());

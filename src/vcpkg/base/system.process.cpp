@@ -732,7 +732,7 @@ namespace vcpkg
                                               default_working_directory,
                                               default_environment,
                                               CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
-        if (!process_info.has_value())
+        if (!process_info)
         {
             Debug::print("cmd_execute_background() failed: ", process_info.error(), "\n");
         }
@@ -749,7 +749,7 @@ namespace vcpkg
 
         Debug::print("command line: ", actual_cmd_line.command_line(), "\n");
         auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
-        if (!maybe_rc_output.has_value())
+        if (!maybe_rc_output)
         {
             Checks::exit_with_message(
                 VCPKG_LINE_INFO, "Failed to run vcvarsall.bat to get Visual Studio env: ", maybe_rc_output.error());
@@ -995,6 +995,16 @@ namespace vcpkg
 #else
     void register_console_ctrl_handler() { }
 #endif
+
+    bool succeeded(const ExpectedL<int>& maybe_exit) noexcept
+    {
+        if (const auto exit = maybe_exit.get())
+        {
+            return *exit == 0;
+        }
+
+        return false;
+    }
 
     ExpectedL<Unit> flatten(const ExpectedL<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
     {

@@ -340,7 +340,7 @@ namespace
             {
                 const auto i = action_idxs[j];
                 const auto& archive_result = job_results[j];
-                if (archive_result.has_value())
+                if (archive_result)
                 {
                     results[i] = RestoreResult::restored;
                     Debug::print("Restored ", archive_paths[j].native(), '\n');
@@ -392,7 +392,7 @@ namespace
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             auto compress_result =
                 compress_directory_to_zip(fs, paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
-            if (!compress_result.has_value())
+            if (!compress_result)
             {
                 vcpkg::print2(Color::warning,
                               "Failed to compress folder '",
@@ -407,7 +407,7 @@ namespace
             {
                 auto url = Strings::replace_all(std::string(put_url_template), "<SHA>", abi_tag);
                 auto maybe_success = put_file(fs, url, azure_blob_headers(), tmp_archive_path);
-                if (maybe_success.has_value())
+                if (maybe_success)
                 {
                     http_remotes_pushed++;
                     continue;
@@ -557,7 +557,7 @@ namespace
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
                     const auto i = action_idxs[j];
-                    if (job_results[j].has_value())
+                    if (job_results[j])
                     {
                         ++this_restore_count;
                         fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
@@ -932,7 +932,7 @@ namespace
                 cmdline.string_arg("-NonInteractive");
             }
 
-            if (!run_nuget_commandline(cmdline).has_value())
+            if (!run_nuget_commandline(cmdline))
             {
                 print2(Color::error, "Packing NuGet failed. Use --debug for more information.\n");
                 return;
@@ -960,7 +960,7 @@ namespace
                 }
 
                 print2("Uploading binaries for ", spec, " to NuGet source ", write_src, ".\n");
-                if (!run_nuget_commandline(cmd).has_value())
+                if (!run_nuget_commandline(cmd))
                 {
                     print2(
                         Color::error, "Pushing NuGet to ", write_src, " failed. Use --debug for more information.\n");
@@ -987,7 +987,7 @@ namespace
 
                 print2("Uploading binaries for ", spec, " using NuGet config ", write_cfg, ".\n");
 
-                if (!run_nuget_commandline(cmd).has_value())
+                if (!run_nuget_commandline(cmd))
                 {
                     print2(
                         Color::error, "Pushing NuGet with ", write_cfg, " failed. Use --debug for more information.\n");
@@ -1078,7 +1078,7 @@ namespace
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
                     const auto idx = idxs[j];
-                    if (!job_results[j].has_value())
+                    if (!job_results[j])
                     {
                         Debug::print("Failed to decompress ", url_paths[idx].second, '\n');
                         continue;
@@ -1111,7 +1111,7 @@ namespace
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             auto compression_result = compress_directory_to_zip(
                 paths.get_filesystem(), paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
-            if (!compression_result.has_value())
+            if (!compression_result)
             {
                 vcpkg::msg::println(Color::warning,
                                     msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
@@ -1196,15 +1196,14 @@ namespace
         bool stat(StringView url) const override
         {
             auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
-            auto execute_result = cmd_execute(cmd);
-            return execute_result.has_value() && execute_result.value_or_exit(VCPKG_LINE_INFO) == 0;
+            return succeeded(cmd_execute(cmd));
         }
 
         bool upload_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
-            if (out.has_value())
+            if (out)
             {
                 return true;
             }
@@ -1217,7 +1216,7 @@ namespace
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
-            if (out.has_value())
+            if (out)
             {
                 return true;
             }
@@ -1250,8 +1249,7 @@ namespace
                 cmd.string_arg("--no-sign-request");
             }
 
-            auto execute_result = cmd_execute(cmd);
-            return execute_result.has_value() && execute_result.value_or_exit(VCPKG_LINE_INFO) == 0;
+            return succeeded(cmd_execute(cmd));
         }
 
         bool upload_file(StringView object, const Path& archive) const override
@@ -1262,7 +1260,7 @@ namespace
                 cmd.string_arg("--no-sign-request");
             }
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
-            if (out.has_value())
+            if (out)
             {
                 return true;
             }
@@ -1285,7 +1283,7 @@ namespace
             }
 
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
-            if (out.has_value())
+            if (out)
             {
                 return true;
             }
@@ -1314,15 +1312,14 @@ namespace
         bool stat(StringView url) const override
         {
             auto cmd = command().string_arg("ls").string_arg(url);
-            auto execute_result = cmd_execute(cmd);
-            return execute_result.has_value() && execute_result.value_or_exit(VCPKG_LINE_INFO) == 0;
+            return succeeded(cmd_execute(cmd));
         }
 
         bool upload_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("cp").string_arg(archive).string_arg(object);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
-            if (out.has_value())
+            if (out)
             {
                 return true;
             }
@@ -1335,7 +1332,7 @@ namespace
         {
             auto cmd = command().string_arg("cp").string_arg(object).string_arg(archive);
             const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
-            if (out.has_value())
+            if (out)
             {
                 return true;
             }
@@ -1801,7 +1798,7 @@ namespace
                 }
 
                 const auto& maybe_home = default_cache_path();
-                if (!maybe_home.has_value())
+                if (!maybe_home)
                 {
                     return add_error(maybe_home.error(), segments[0].first);
                 }
@@ -2212,19 +2209,19 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     std::string env_string = get_environment_variable("VCPKG_BINARY_SOURCES").value_or("");
     if (Debug::g_debugging)
     {
-        const auto& cachepath = default_cache_path();
-        if (cachepath.has_value())
+        const auto& maybe_cachepath = default_cache_path();
+        if (const auto cachepath = maybe_cachepath.get())
         {
-            Debug::print("Default binary cache path is: ", cachepath.value_or_exit(VCPKG_LINE_INFO), '\n');
+            Debug::print("Default binary cache path is: ", *cachepath, '\n');
         }
         else
         {
-            Debug::print("No binary cache path. Reason: ", cachepath.error(), '\n');
+            Debug::print("No binary cache path. Reason: ", maybe_cachepath.error(), '\n');
         }
     }
 
     auto sRawHolder = create_binary_providers_from_configs_pure(env_string, args);
-    if (!sRawHolder.has_value())
+    if (!sRawHolder)
     {
         return sRawHolder.error();
     }

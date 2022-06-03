@@ -59,7 +59,7 @@ namespace
             .string_arg("nuspec");
 
         const auto result = flatten(cmd_execute_and_capture_output(nuget_command), Tools::NUGET);
-        if (!result.has_value())
+        if (!result)
         {
             Checks::exit_with_message(
                 VCPKG_LINE_INFO, "Failed to extract '%s' with message:\n%s", archive, result.error());
@@ -123,13 +123,10 @@ namespace
                                                        .string_arg("-y")),
                     Tools::SEVEN_ZIP);
 
-        if (!maybe_output.has_value())
+        if (!maybe_output)
         {
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               maybe_output.has_value(),
-                               "7zip failed while extracting '%s' with message:\n%s",
-                               archive,
-                               maybe_output.error());
+            Checks::exit_with_message(
+                VCPKG_LINE_INFO, "7zip failed while extracting '%s' with message:\n%s", archive, maybe_output.error());
         }
 
         recursion_limiter_sevenzip = false;
@@ -254,10 +251,7 @@ namespace vcpkg
     {
         const auto code =
             cmd_execute(Command{tar_tool}.string_arg("xzf").string_arg(archive), WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           code.has_value() && code.value_or_exit(VCPKG_LINE_INFO) == 0,
-                           "tar failed while extracting %s",
-                           archive);
+        Checks::check_exit(VCPKG_LINE_INFO, succeeded(code), "tar failed while extracting %s", archive);
     }
 
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
@@ -266,10 +260,7 @@ namespace vcpkg
         const auto code =
             cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive),
                         WorkingDirectory{to_path});
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           code.has_value() && code.value_or_exit(VCPKG_LINE_INFO) == 0,
-                           "CMake failed while extracting %s",
-                           archive);
+        Checks::check_exit(VCPKG_LINE_INFO, succeeded(code), "CMake failed while extracting %s", archive);
     }
 
     void extract_archive(Filesystem& fs, const ToolCache& tools, const Path& archive, const Path& to_path)

@@ -442,7 +442,7 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
 
         const auto maybe_nuget_output = flatten(
             cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()), Tools::NUGET);
-        if (!maybe_nuget_output.has_value())
+        if (!maybe_nuget_output)
         {
             Checks::exit_with_message(
                 VCPKG_LINE_INFO, "Error: NuGet package creation failed: %s\n", maybe_nuget_output.error());

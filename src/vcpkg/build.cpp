@@ -819,7 +819,7 @@ namespace vcpkg::Build
                 env);
         } // close out_file
 
-        if (compiler_info.hash.empty() || !rc.has_value() || rc.value_or_exit(VCPKG_LINE_INFO) != 0)
+        if (compiler_info.hash.empty() || !succeeded(rc))
         {
             Debug::print("Compiler information tracking can be disabled by passing --",
                          VcpkgCmdArguments::FEATURE_FLAGS_ARG,
@@ -1083,7 +1083,7 @@ namespace vcpkg::Build
                                                        }) +
                                          "]",
                                      buildtimeus);
-            if (!return_code.has_value() || return_code.value_or_exit(VCPKG_LINE_INFO) != 0)
+            if (!succeeded(return_code))
             {
                 metrics->track_property("error", "build failed");
                 metrics->track_property("build_error", spec_string);
@@ -1643,7 +1643,7 @@ namespace vcpkg::Build
     BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
     {
         const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
-        if (!pghs.has_value())
+        if (!pghs)
         {
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Invalid BUILD_INFO file for package: %s", pghs.error());
         }

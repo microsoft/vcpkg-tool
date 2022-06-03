@@ -72,7 +72,7 @@ namespace vcpkg
                 VCPKG_LINE_INFO, "Failed to load manifest from directory %s: %s", manifest_dir, ec.message());
         }
 
-        if (!manifest_opt.has_value())
+        if (!manifest_opt)
         {
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                        "Failed to parse manifest at %s:\n%s",
@@ -1096,7 +1096,7 @@ namespace vcpkg
                                    .string_arg("-o")
                                    .string_arg(destination_tar);
         auto maybe_tar_output = flatten(cmd_execute_and_capture_output(tar_cmd_builder), Tools::TAR);
-        if (!maybe_tar_output.has_value())
+        if (!maybe_tar_output)
         {
             return {
                 Strings::concat(PRELUDE, "Error: Failed to tar port directory\n", std::move(maybe_tar_output).error()),
@@ -1132,7 +1132,7 @@ namespace vcpkg
 
         Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
         auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
-        if (!maybe_init_output.has_value())
+        if (!maybe_init_output)
         {
             return {Strings::format("Error: Failed to initialize local repository %s.\n%s\n",
                                     work_tree,
@@ -1151,7 +1151,7 @@ namespace vcpkg
                                     .string_arg(treeish);
 
         auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
-        if (!maybe_fetch_output.has_value())
+        if (!maybe_fetch_output)
         {
             return {Strings::format("Error: Failed to fetch ref %s from repository %s.\n%s\n",
                                     treeish,
@@ -1184,7 +1184,7 @@ namespace vcpkg
 
         Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
         auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
-        if (!maybe_init_output.has_value())
+        if (!maybe_init_output)
         {
             return Strings::format("Error: Failed to initialize local repository %s.\n%s\n",
                                    work_tree,
@@ -1199,7 +1199,7 @@ namespace vcpkg
                                     .string_arg(treeish);
 
         auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
-        if (!maybe_fetch_output.has_value())
+        if (!maybe_fetch_output)
         {
             return Strings::format("Error: Failed to fetch ref %s from repository %s.\n%s\n",
                                    treeish,
@@ -1260,7 +1260,7 @@ namespace vcpkg
                                   .string_arg("--output")
                                   .string_arg(git_tree_temp_tar);
         auto maybe_git_archive_output = flatten(cmd_execute_and_capture_output(git_archive), Tools::GIT);
-        if (!maybe_git_archive_output.has_value())
+        if (!maybe_git_archive_output)
         {
             return {
                 Strings::format("git archive failed with message:\n%s", std::move(maybe_git_archive_output).error()),

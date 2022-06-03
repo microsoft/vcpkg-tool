@@ -237,8 +237,7 @@ namespace vcpkg::Commands::Edit
         candidate_paths.emplace_back("/usr/share/code/bin/code");
         candidate_paths.emplace_back("/usr/bin/code");
 
-        const auto maybe_command_v_result = cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime"));
-        if (maybe_command_v_result.has_value() && maybe_command_v_result.value_or_exit(VCPKG_LINE_INFO) == 0)
+        if (succeeded(cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime"))))
         {
             auto mime_qry = Command("xdg-mime").string_arg("query").string_arg("default").string_arg("text/plain");
             auto maybe_output = flatten_out(cmd_execute_and_capture_output(mime_qry), "xdg-mime");

@@ -57,7 +57,7 @@ namespace
         auto env = get_modified_clean_environment({}, node_root);
         const auto provision_status = cmd_execute(cmd_provision, WorkingDirectory{paths.root}, env);
         fs.remove(ce_tarball, VCPKG_LINE_INFO);
-        if (!provision_status.has_value() || provision_status.value_or_exit(VCPKG_LINE_INFO) != 0)
+        if (!succeeded(provision_status))
         {
             fs.remove_all(node_modules, VCPKG_LINE_INFO);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
