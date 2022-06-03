@@ -44,6 +44,9 @@ TEST_CASE ("MAC bytes to string", "[metrics.map]")
 
     auto mac_str = mac_bytes_to_string(Span<unsigned char>(bytes, 6));
     CHECK(mac_str == "00:11:22:dd:ee:ff");
+
+    auto empty_mac_str = mac_bytes_to_string(Span<unsigned char>(bytes, 5));
+    CHECK(mac_str.empty());
 }
 
 TEST_CASE ("test getmac ouptut parse", "[metrics.map]")

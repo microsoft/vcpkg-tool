@@ -2,6 +2,7 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <map>
 
@@ -173,31 +174,31 @@ namespace vcpkg
             // address.  (The sa_family subfield should be consulted to
             // determine the format of the address structure.)  This field may
             // contain a null pointer.
-            if (interface->ifa_addr && interface->ifa_addr->sa_family == AF_TYPE)
+            if (!interface->ifa_addr || interface->ifa_addr->sa_family != AF_TYPE ||
+                (interface->ifa_flags & IFF_LOOPBACK))
             {
-                auto name = std::string(interface->ifa_name);
-                if (interface->ifa_flags & IFF_LOOPBACK) continue;
+                continue;
+            }
 
-                // Convert the generic sockaddr into a specified representation
-                // based on the value of sa_family, on macOS the AF_PACKET
-                // family is not available so we fall back to AF_LINK.
-                // AF_PACKET and sockaddr_ll: https://man7.org/linux/man-pages/man7/packet.7.html
-                // AF_LINK and sockaddr_dl: https://illumos.org/man/3SOCKET/sockaddr_dl
+            // Convert the generic sockaddr into a specified representation
+            // based on the value of sa_family, on macOS the AF_PACKET
+            // family is not available so we fall back to AF_LINK.
+            // AF_PACKET and sockaddr_ll: https://man7.org/linux/man-pages/man7/packet.7.html
+            // AF_LINK and sockaddr_dl: https://illumos.org/man/3SOCKET/sockaddr_dl
 #if defined(__linux__)
-                auto address = reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
-                if (address->sll_halen != MAC_BYTES_LENGTH) continue;
-                std::memcpy(bytes, address->sll_addr, MAC_BYTES_LENGTH);
+            auto address = reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
+            if (address->sll_halen != MAC_BYTES_LENGTH) continue;
+            std::memcpy(bytes, address->sll_addr, MAC_BYTES_LENGTH);
 #elif defined(__APPLE__)
-                auto address = reinterpret_cast<sockaddr_dl*>(interface->ifa_addr);
-                if (address->sdl_alen != MAC_BYTES_LENGTH) continue;
-                // The macro LLADDR() returns the start of the link-layer network address.
-                std::memcpy(bytes, LLADDR(address), MAC_BYTES_LENGTH);
+            auto address = reinterpret_cast<sockaddr_dl*>(interface->ifa_addr);
+            if (address->sdl_alen != MAC_BYTES_LENGTH) continue;
+            // The macro LLADDR() returns the start of the link-layer network address.
+            std::memcpy(bytes, LLADDR(address), MAC_BYTES_LENGTH);
 #endif
-                auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
-                if (is_valid_mac_for_telemetry(maybe_mac))
-                {
-                    return Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256);
-                }
+            auto maybe_mac = mac_bytes_to_string(Span<unsigned char>(bytes, MAC_BYTES_LENGTH));
+            if (is_valid_mac_for_telemetry(maybe_mac))
+            {
+                return Hash::get_string_hash(maybe_mac, Hash::Algorithm::Sha256);
             }
         }
 #else
