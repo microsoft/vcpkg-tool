@@ -428,40 +428,46 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(empty.m_read_headers.empty());
     }
     {
-        DownloadManagerConfig dm = Test::unwrap(parse_download_configuration("x-azurl,https://abc/123,foo"));
+        DownloadManagerConfig dm =
+            parse_download_configuration("x-azurl,https://abc/123,foo").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
     }
     {
-        DownloadManagerConfig dm = Test::unwrap(parse_download_configuration("x-azurl,https://abc/123/,foo"));
+        DownloadManagerConfig dm =
+            parse_download_configuration("x-azurl,https://abc/123/,foo").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
         CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
     }
     {
-        DownloadManagerConfig dm = Test::unwrap(parse_download_configuration("x-azurl,https://abc/123,?foo"));
+        DownloadManagerConfig dm =
+            parse_download_configuration("x-azurl,https://abc/123,?foo").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
         CHECK(dm.m_secrets == std::vector<std::string>{"?foo"});
     }
     {
-        DownloadManagerConfig dm = Test::unwrap(parse_download_configuration("x-azurl,https://abc/123"));
+        DownloadManagerConfig dm =
+            parse_download_configuration("x-azurl,https://abc/123").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
     }
     {
-        DownloadManagerConfig dm = Test::unwrap(parse_download_configuration("x-azurl,https://abc/123,,readwrite"));
+        DownloadManagerConfig dm =
+            parse_download_configuration("x-azurl,https://abc/123,,readwrite").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == "https://abc/123/<SHA>");
         Test::check_ranges(dm.m_write_headers, azure_blob_headers());
     }
     {
-        DownloadManagerConfig dm = Test::unwrap(parse_download_configuration("x-azurl,https://abc/123,foo,readwrite"));
+        DownloadManagerConfig dm =
+            parse_download_configuration("x-azurl,https://abc/123,foo,readwrite").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == "https://abc/123/<SHA>?foo");

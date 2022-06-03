@@ -6,6 +6,7 @@
 #include <vcpkg/base/unicode.h>
 #include <vcpkg/base/util.h>
 
+#include <ctype.h>
 #include <locale.h>
 #include <stdarg.h>
 #include <stdio.h>

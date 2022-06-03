@@ -1176,7 +1176,7 @@ namespace vcpkg
         return {Strings::trim(fetch_head_output.output).to_string(), expected_left_tag};
     }
 
-    Optional<std::string> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
+    ExpectedS<Unit> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
     {
         auto& fs = get_filesystem();
 
@@ -1209,7 +1209,8 @@ namespace vcpkg
             return Strings::format(
                 "Error: Failed to fetch ref %s from repository %s.\n%s\n", treeish, repo, fetch_output.output);
         }
-        return nullopt;
+
+        return {Unit{}};
     }
 
     // returns an error if there was an unexpected error; returns nullopt if the file doesn't exist at the specified
