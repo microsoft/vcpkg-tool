@@ -36,17 +36,12 @@ namespace vcpkg
 
     bool validate_mac_address_format(StringView mac)
     {
+        static constexpr char format[] = "xx:xx:xx:xx:xx:xx";
         if (mac.size() != MAC_STRING_LENGTH) return false;
         for (size_t i = 0; i < MAC_STRING_LENGTH; ++i)
         {
-            // every third character is a ':' separator
-            if (((i + 1) % 3) == 0)
-            {
-                if (mac[i] != ':') return false;
-                continue;
-            }
-
-            if (!ParserBase::is_hex_digit(mac[i])) return false;
+            if (format[i] == ':' && mac[i] != ':') return false;
+            if (format[i] == 'x' && !ParserBase::is_hex_digit(mac[i])) return false;
         }
         return true;
     }
@@ -68,8 +63,9 @@ namespace vcpkg
 
     std::string mac_bytes_to_string(const Span<unsigned char>& bytes)
     {
-        static constexpr char hexits[] = "0123456789abcdef";
+        if (bytes.size() != MAC_BYTES_LENGTH) return "";
 
+        static constexpr char hexits[] = "0123456789abcdef";
         char mac_address[MAC_STRING_LENGTH];
         char* mac = mac_address;
         unsigned char c = static_cast<unsigned char>(bytes[0]);
@@ -84,7 +80,6 @@ namespace vcpkg
             *mac++ = hexits[(c & 0x0f)];
             non_zero_mac |= c;
         }
-
         return std::string(mac_address, non_zero_mac ? MAC_STRING_LENGTH : 0);
     }
 
