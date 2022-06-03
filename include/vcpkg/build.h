@@ -309,7 +309,7 @@ namespace vcpkg::Build
     struct BuildPolicies
     {
         BuildPolicies() = default;
-        BuildPolicies(std::map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
+        BuildPolicies(std::unordered_map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
 
         bool is_enabled(BuildPolicy policy) const
         {
@@ -319,7 +319,7 @@ namespace vcpkg::Build
         }
 
     private:
-        std::map<BuildPolicy, bool> m_policies;
+        std::unordered_map<BuildPolicy, bool> m_policies;
     };
 
     enum class LinkageType : char

@@ -399,11 +399,13 @@ namespace vcpkg::Install
                     {
                         warnings.append(msg).append_raw('\n');
                     }
+
                     if (!warnings.data().empty())
                     {
                         msg::print(Color::warning, warnings);
                     }
-                    msg::print(Color::error, Build::create_error_message(result, action.spec));
+
+                    msg::println_error(Build::create_error_message(result, action.spec));
                     return result;
                 }
 
