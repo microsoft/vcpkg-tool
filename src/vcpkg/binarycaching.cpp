@@ -273,7 +273,7 @@ namespace
         {
         }
 
-        static Path make_archive_subpath(StringView abi) { return Path(abi.substr(0, 2)) / (abi + ".zip"); }
+        static Path make_archive_subpath(StringView abi) { return Path(abi.substr(0, 2)) / abi.to_string() + ".zip"; }
 
         void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
