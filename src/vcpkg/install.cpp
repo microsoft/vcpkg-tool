@@ -128,7 +128,7 @@ namespace vcpkg::Install
                 continue;
             }
 
-            const auto suffix = file.generic_u8string().substr(prefix_length + 1);
+            const auto suffix = StringView{file.generic_u8string()}.substr(prefix_length + 1);
             const auto target = destination / suffix;
 
             auto this_output = Strings::concat(destination_subdirectory, "/", suffix);
@@ -757,7 +757,7 @@ namespace vcpkg::Install
             std::map<std::string, std::string> config_files;
             std::map<std::string, std::vector<std::string>> library_targets;
             bool is_header_only = true;
-            std::string header_path;
+            StringView header_path;
 
             for (auto&& suffix : files)
             {

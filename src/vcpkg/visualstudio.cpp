@@ -93,7 +93,7 @@ namespace vcpkg::VisualStudio
             return Strings::format("%s, %s, %s", root_path, version, release_type_to_string(release_type));
         }
 
-        std::string major_version() const { return version.substr(0, 2); }
+        StringView major_version() const { return StringView{version}.substr(0, 2); }
     };
 
     static std::vector<VisualStudioInstance> get_visual_studio_instances_internal(const Filesystem& fs)
@@ -219,7 +219,7 @@ namespace vcpkg::VisualStudio
 
         for (const VisualStudioInstance& vs_instance : sorted)
         {
-            const std::string major_version = vs_instance.major_version();
+            const auto major_version = vs_instance.major_version();
             if (major_version >= "15")
             {
                 const auto vc_dir = vs_instance.root_path / "VC";
@@ -351,7 +351,7 @@ namespace vcpkg::VisualStudio
                                                  vcvarsall_bat,
                                                  {},
                                                  major_version == "14" ? V_140 : V_120,
-                                                 major_version,
+                                                 major_version.to_string(),
                                                  supported_architectures};
 
                         found_toolsets.push_back(toolset);
