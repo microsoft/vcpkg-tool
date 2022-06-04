@@ -44,6 +44,7 @@ namespace vcpkg
 
         constexpr char operator[](size_t pos) const noexcept { return m_ptr[pos]; }
         friend std::string operator+(std::string&& l, const StringView& r);
+        friend std::string operator+(StringView l, StringView r) { return std::string(l + r); }
 
     private:
         const char* m_ptr = 0;
