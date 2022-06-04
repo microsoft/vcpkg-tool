@@ -130,6 +130,8 @@ namespace vcpkg::msg
     {
         struct Messages
         {
+            //Messages() : localization_comments(300), localized_strings(300) { };
+
             // this is basically a SoA - each index is:
             // {
             //   name
@@ -140,7 +142,7 @@ namespace vcpkg::msg
             // requires: names.size() == default_strings.size() == localized_strings.size()
             std::vector<StringLiteral> names;
             std::vector<StringLiteral> default_strings;     // const after startup
-            std::vector<std::string> localization_comments; // const after startup
+            std::vector<StringLiteral> localization_comments; // const after startup
 
             bool initialized = false;
             std::vector<std::string> localized_strings;
@@ -272,13 +274,13 @@ namespace vcpkg::msg
         return Strings::join(" ", blocks);
     }
 
-    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment)
+    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment)
     {
         Messages& m = messages();
         const auto res = m.names.size();
-        m.names.push_back(name);
-        m.default_strings.push_back(format_string);
-        m.localization_comments.push_back(std::move(comment));
+        m.names.emplace_back(name);
+        m.default_strings.emplace_back(format_string);
+        m.localization_comments.emplace_back(std::move(comment));
         return res;
     }
 
