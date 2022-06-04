@@ -40,7 +40,7 @@ namespace vcpkg::PlatformExpression
 
     static Identifier string2identifier(StringView name)
     {
-        static const std::unordered_map<StringView, Identifier> id_map = {
+        static const std::map<StringView, Identifier> id_map = {
             {"x86", Identifier::x86},
             {"x64", Identifier::x64},
             {"arm", Identifier::arm},
