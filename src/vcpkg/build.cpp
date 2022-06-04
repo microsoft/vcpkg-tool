@@ -914,7 +914,7 @@ namespace vcpkg::Build
             variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2)});
         }
 
-        for (auto cmake_arg : args.cmake_args)
+        for (const auto& cmake_arg : args.cmake_args)
         {
             variables.push_back(CMakeVariable{cmake_arg});
         }
