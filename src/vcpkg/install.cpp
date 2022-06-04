@@ -757,7 +757,7 @@ namespace vcpkg::Install
             std::unordered_map<std::string, std::string> config_files;
             std::map<std::string, std::vector<std::string>> library_targets;
             bool is_header_only = true;
-            StringView header_path;
+            std::string header_path;
 
             for (auto&& suffix : files)
             {
