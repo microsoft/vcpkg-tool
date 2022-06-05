@@ -130,7 +130,7 @@ namespace vcpkg::msg
     {
         struct Messages
         {
-            //Messages() : localization_comments(300), localized_strings(300) { };
+            // Messages() : localization_comments(300), localized_strings(300) { };
 
             // this is basically a SoA - each index is:
             // {

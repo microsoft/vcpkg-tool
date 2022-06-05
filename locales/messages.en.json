@@ -111,6 +111,7 @@
   "GenerateMsgIncorrectComment": "message {value} has an incorrect comment:",
   "GenerateMsgNoArgumentValue": "{{{value}}} was specified in a comment, but was not used in the message.",
   "GenerateMsgNoCommentValue": "{{{value}}} was used in the message, but not commented.",
+  "GenerateMsgNotAvailable": "Unable to generate messages because vcpkg was compiled without `{value}`. Please re-compile with preprocessor directive `{value}` enabled",
   "GitCommandFailed": "failed to execute: {command_line}",
   "GitStatusOutputExpectedFileName": "expected a file name",
   "GitStatusOutputExpectedNewLine": "expected new line",

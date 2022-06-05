@@ -197,6 +197,8 @@
   "_GenerateMsgNoArgumentValue.comment": "example of {value} is 'arch'",
   "GenerateMsgNoCommentValue": "{{{value}}} was used in the message, but not commented.",
   "_GenerateMsgNoCommentValue.comment": "example of {value} is 'arch'",
+  "GenerateMsgNotAvailable": "Unable to generate messages because vcpkg was compiled without `{value}`. Please re-compile with preprocessor directive `{value}` enabled",
+  "_GenerateMsgNotAvailable.comment": "example of {value} is VCPKG_GENERATE_LOCALIZATION",
   "GitCommandFailed": "failed to execute: {command_line}",
   "_GitCommandFailed.comment": "An example of {command_line} is vcpkg install zlib.",
   "GitStatusOutputExpectedFileName": "expected a file name",

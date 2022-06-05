@@ -57,7 +57,8 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(GenerateMsgNotAvailable,
                                  (msg::value),
                                  "example of {value} is VCPKG_GENERATE_LOCALIZATION",
-                                 "Unable to generate messages because vcpkg was compiled without `{value}`. Please re-compile with preprocessor directive `{value}` enabled");
+                                 "Unable to generate messages because vcpkg was compiled without `{value}`. Please "
+                                 "re-compile with preprocessor directive `{value}` enabled");
 }
 
 namespace vcpkg::Commands
@@ -204,7 +205,6 @@ namespace vcpkg::Commands
             Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO, msgGenerateMsgNotAvailable, msg::value = "VCPKG_GENERATE_LOCALIZATION");
         }
-        
 
         // in order to implement sorting, we create a vector of messages before converting into a JSON object
         struct Message
