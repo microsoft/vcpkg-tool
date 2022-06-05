@@ -160,7 +160,7 @@ namespace vcpkg::msg
             return format_examples_for_args(extra_comment, abi, 1 + sizeof...(Args));
         }
 
-        ::size_t startup_register_message(StringLiteral name);
+        ::size_t startup_register_message(StringLiteral name, StringLiteral format_string);
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string comment);
 
         ::size_t number_of_messages();
@@ -298,12 +298,14 @@ namespace vcpkg::msg
         using is_message_type = void;                                                                                  \
         static constexpr ::vcpkg::StringLiteral name = #NAME;                                                          \
         static const ::size_t index;                                                                                   \
+        static constexpr ::vcpkg::StringLiteral default_format_string = __VA_ARGS__; \
     } msg##NAME VCPKG_UNUSED = {}
 #endif
 
 #ifndef VCPKG_GENERATE_LOCALIZATION
 #define REGISTER_MESSAGE(NAME)                                                                                         \
-    const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(NAME##_msg_t::name)
+    const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(NAME##_msg_t::name, \
+    NAME##_msg_t::default_format_string)
 #else
 #define REGISTER_MESSAGE(NAME)                                                                                         \
     const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(                               \
