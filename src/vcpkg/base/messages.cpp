@@ -142,7 +142,7 @@ namespace vcpkg::msg
             // requires: names.size() == default_strings.size() == localized_strings.size()
             std::vector<StringLiteral> names;
             std::vector<StringLiteral> default_strings;     // const after startup
-            std::vector<StringLiteral> localization_comments; // const after startup
+            std::vector<std::string> localization_comments; // const after startup
 
             bool initialized = false;
             std::vector<std::string> localized_strings;
@@ -282,7 +282,7 @@ namespace vcpkg::msg
         return res;
     }
 
-    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment)
+    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, std::string comment)
     {
         Messages& m = messages();
         m.default_strings.emplace_back(format_string);
