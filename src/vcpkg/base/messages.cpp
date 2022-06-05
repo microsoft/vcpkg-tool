@@ -274,14 +274,20 @@ namespace vcpkg::msg
         return Strings::join(" ", blocks);
     }
 
-    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment)
+    ::size_t detail::startup_register_message(StringLiteral name)
     {
         Messages& m = messages();
         const auto res = m.names.size();
         m.names.emplace_back(name);
+        return res;
+    }
+
+    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral comment)
+    {
+        Messages& m = messages();
         m.default_strings.emplace_back(format_string);
         m.localization_comments.emplace_back(std::move(comment));
-        return res;
+        return startup_register_message(name);
     }
 
     StringView detail::get_format_string(::size_t index)

@@ -160,6 +160,7 @@ namespace vcpkg::msg
             return format_examples_for_args(extra_comment, abi, 1 + sizeof...(Args));
         }
 
+        ::size_t startup_register_message(StringLiteral name);
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, StringLiteral);
 
         ::size_t number_of_messages();
@@ -289,11 +290,17 @@ namespace vcpkg::msg
         static constexpr ::vcpkg::StringLiteral default_format_string = __VA_ARGS__;                                   \
         static const ::size_t index;                                                                                   \
     } msg##NAME VCPKG_UNUSED = {}
+
+#ifndef VCPKG_GENERATE_LOCALIZATION
+#define REGISTER_MESSAGE(NAME)                                                                                         \
+    const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(NAME##_msg_t::name)
+#else
 #define REGISTER_MESSAGE(NAME)                                                                                         \
     const ::size_t NAME##_msg_t::index = ::vcpkg::msg::detail::startup_register_message(                               \
         NAME##_msg_t::name,                                                                                            \
         NAME##_msg_t::default_format_string,                                                                           \
-        NAME##_msg_t::extra_comment)
+        ::vcpkg::msg::detail::get_examples_for_args(NAME##_msg_t::extra_comment, NAME##_msg_t{}))
+#endif
 #define DECLARE_AND_REGISTER_MESSAGE(NAME, ARGS, COMMENT, ...)                                                         \
     DECLARE_MESSAGE(NAME, ARGS, COMMENT, __VA_ARGS__);                                                                 \
     REGISTER_MESSAGE(NAME)

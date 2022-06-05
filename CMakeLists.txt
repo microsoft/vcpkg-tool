@@ -20,6 +20,7 @@ option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
 option(VCPKG_OFFICIAL_BUILD "Option to cause immediate failure if variables required for official builds are unset." OFF)
+option(VCPKG_GENERATE_LOCALIZATION "Option to generate the localization files; off by default to avoid allocating comments & examples" OFF)
 set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
 
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
@@ -149,6 +150,10 @@ add_library(vcpkglib OBJECT
     ${VCPKGLIB_INCLUDES}
 )
 target_include_directories(vcpkglib PUBLIC include)
+
+if(VCPKG_GENERATE_LOCALIZATION)
+    target_compile_definitions(vcpkglib PUBLIC VCPKG_GENERATE_LOCALIZATION=1)
+endif()
 
 vcpkg_target_add_warning_options(vcpkglib)
 target_compile_definitions(vcpkglib PUBLIC
