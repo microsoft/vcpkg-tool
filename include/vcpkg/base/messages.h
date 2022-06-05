@@ -161,7 +161,7 @@ namespace vcpkg::msg
         }
 
         ::size_t startup_register_message(StringLiteral name, StringLiteral format_string);
-        ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string comment);
+        ::size_t startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment);
 
         ::size_t number_of_messages();
 

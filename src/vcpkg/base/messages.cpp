@@ -283,7 +283,7 @@ namespace vcpkg::msg
         return res;
     }
 
-    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, std::string comment)
+    ::size_t detail::startup_register_message(StringLiteral name, StringLiteral format_string, std::string&& comment)
     {
         Messages& m = messages();
         m.localization_comments.emplace_back(std::move(comment));
