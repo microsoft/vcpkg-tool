@@ -281,6 +281,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(env_var, "VCPKG_DEFAULT_TRIPLET");
 #undef DECLARE_MSG_ARG
 
+#ifdef VCPKG_GENERATE_LOCALIZATION
 #define DECLARE_MESSAGE(NAME, ARGS, COMMENT, ...)                                                                      \
     constexpr struct NAME##_msg_t : decltype(::vcpkg::msg::detail::make_message_check_format_args ARGS)                \
     {                                                                                                                  \
@@ -290,6 +291,15 @@ namespace vcpkg::msg
         static constexpr ::vcpkg::StringLiteral default_format_string = __VA_ARGS__;                                   \
         static const ::size_t index;                                                                                   \
     } msg##NAME VCPKG_UNUSED = {}
+#else
+#define DECLARE_MESSAGE(NAME, ARGS, COMMENT, ...)                                                                      \
+    constexpr struct NAME##_msg_t : decltype(::vcpkg::msg::detail::make_message_check_format_args ARGS)                \
+    {                                                                                                                  \
+        using is_message_type = void;                                                                                  \
+        static constexpr ::vcpkg::StringLiteral name = #NAME;                                                          \
+        static const ::size_t index;                                                                                   \
+    } msg##NAME VCPKG_UNUSED = {}
+#endif
 
 #ifndef VCPKG_GENERATE_LOCALIZATION
 #define REGISTER_MESSAGE(NAME)                                                                                         \
