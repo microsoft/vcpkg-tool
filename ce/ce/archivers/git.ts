@@ -32,7 +32,7 @@ export class Git {
    * @param events The events that may need to be updated in order to track progress.
    * @param options The options that will modify how the clone will be called.
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
-   *  a gaurantee that the clone did what we expected.
+   *  a guarantee that the clone did what we expected.
    */
   async clone(repo: Uri, events: Partial<InstallEvents>, options: { recursive?: boolean, depth?: number } = {}) {
     const remote = await isFilePath(repo) ? repo.fsPath : repo.toString();
@@ -72,7 +72,7 @@ export class Git {
    * @param events Events that may be called in order to present progress.
    * @param options Options to modify how fetch is called.
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
-   *  a gaurantee that the fetch did what we expected.
+   *  a guarantee that the fetch did what we expected.
    */
   async fetch(remoteName: string, events: Partial<InstallEvents>, options: { commit?: string, recursive?: boolean, depth?: number } = {}) {
     const result = await execute(this.#toolPath, [
@@ -100,7 +100,7 @@ export class Git {
    * @param events Events to possibly track progress.
    * @param options Passing along a commit or branch to checkout, optionally.
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
-   *  a gaurantee that the checkout did what we expected.
+   *  a guarantee that the checkout did what we expected.
    */
   async checkout(events: Partial<InstallEvents>, options: { commit?: string } = {}) {
     const result = await execute(this.#toolPath, [
@@ -124,7 +124,7 @@ export class Git {
    * @param events Events to possibly track progress.
    * @param options Options to control how the reset is called.
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
-   *  a gaurantee that the reset did what we expected.
+   *  a guarantee that the reset did what we expected.
    */
   async reset(events: Partial<InstallEvents>, options: { commit?: string, recurse?: boolean, hard?: boolean } = {}) {
     const result = await execute(this.#toolPath, [

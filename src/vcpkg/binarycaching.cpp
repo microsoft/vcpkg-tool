@@ -335,7 +335,8 @@ namespace
                 {
                     auto pkg_path = paths.package_dir(spec);
                     clean_prepare_dir(fs, pkg_path);
-                    jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(), pkg_path, archive_path));
+                    jobs.push_back(
+                        decompress_zip_archive_cmd(paths.get_tool_cache(), stdout_sink, pkg_path, archive_path));
                     action_idxs.push_back(i);
                     archive_paths.push_back(std::move(archive_path));
                 }
@@ -397,7 +398,8 @@ namespace
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(fs, paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
+            int code = compress_directory_to_zip(
+                fs, paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
             if (code != 0)
             {
                 vcpkg::print2(
@@ -552,6 +554,7 @@ namespace
                     {
                         action_idxs.push_back(i);
                         jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
+                                                                  stdout_sink,
                                                                   paths.package_dir(actions[url_indices[i]].spec),
                                                                   url_paths[i].second));
                     }
@@ -759,7 +762,7 @@ namespace
             print2("Attempting to fetch ", attempts.size(), " packages from nuget.\n");
 
             auto packages_config = paths.buildtrees() / "packages.config";
-            const auto& nuget_exe = paths.get_tool_exe("nuget");
+            const auto& nuget_exe = paths.get_tool_exe("nuget", stdout_sink);
             std::vector<Command> cmdlines;
 
             if (!m_read_sources.empty())
@@ -767,7 +770,7 @@ namespace
                 // First check using all sources
                 Command cmdline;
 #ifndef _WIN32
-                cmdline.string_arg(paths.get_tool_exe(Tools::MONO));
+                cmdline.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
 #endif
                 cmdline.string_arg(nuget_exe)
                     .string_arg("install")
@@ -800,7 +803,7 @@ namespace
                 // Then check using each config
                 Command cmdline;
 #ifndef _WIN32
-                cmdline.string_arg(paths.get_tool_exe(Tools::MONO));
+                cmdline.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
 #endif
                 cmdline.string_arg(nuget_exe)
                     .string_arg("install")
@@ -892,10 +895,10 @@ namespace
             fs.write_contents(
                 nuspec_path, generate_nuspec(paths.package_dir(spec), action, nuget_ref), VCPKG_LINE_INFO);
 
-            const auto& nuget_exe = paths.get_tool_exe("nuget");
+            const auto& nuget_exe = paths.get_tool_exe("nuget", stdout_sink);
             Command cmdline;
 #ifndef _WIN32
-            cmdline.string_arg(paths.get_tool_exe(Tools::MONO));
+            cmdline.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
 #endif
             cmdline.string_arg(nuget_exe)
                 .string_arg("pack")
@@ -921,7 +924,7 @@ namespace
             {
                 Command cmd;
 #ifndef _WIN32
-                cmd.string_arg(paths.get_tool_exe(Tools::MONO));
+                cmd.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
 #endif
                 cmd.string_arg(nuget_exe)
                     .string_arg("push")
@@ -948,7 +951,7 @@ namespace
             {
                 Command cmd;
 #ifndef _WIN32
-                cmd.string_arg(paths.get_tool_exe(Tools::MONO));
+                cmd.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
 #endif
                 cmd.string_arg(nuget_exe)
                     .string_arg("push")
@@ -1046,7 +1049,7 @@ namespace
                     auto&& url_path = url_paths[idx];
                     if (!download_file(url_path.first, url_path.second)) continue;
                     jobs.push_back(decompress_zip_archive_cmd(
-                        paths.get_tool_cache(), paths.package_dir(action.spec), url_path.second));
+                        paths.get_tool_cache(), stdout_sink, paths.package_dir(action.spec), url_path.second));
                     idxs.push_back(idx);
                 }
 
@@ -1088,7 +1091,7 @@ namespace
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             int code = compress_directory_to_zip(
-                paths.get_filesystem(), paths.get_tool_cache(), paths.package_dir(spec), tmp_archive_path);
+                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
             if (code != 0)
             {
                 vcpkg::msg::println_warning(
@@ -1167,7 +1170,7 @@ namespace
 
         StringLiteral vendor() const override { return "GCS"; }
 
-        Command command() const { return Command{paths.get_tool_exe(Tools::GSUTIL)}; }
+        Command command() const { return Command{paths.get_tool_exe(Tools::GSUTIL, stdout_sink)}; }
 
         bool stat(StringView url) const override
         {
@@ -1223,7 +1226,7 @@ namespace
 
         StringLiteral vendor() const override { return "AWS"; }
 
-        Command command() const { return Command{paths.get_tool_exe(Tools::AWSCLI)}; }
+        Command command() const { return Command{paths.get_tool_exe(Tools::AWSCLI, stdout_sink)}; }
 
         bool stat(StringView url) const override
         {
@@ -1297,7 +1300,7 @@ namespace
 
         StringLiteral vendor() const override { return "COS"; }
 
-        Command command() const { return Command{paths.get_tool_exe(Tools::COSCLI)}; }
+        Command command() const { return Command{paths.get_tool_exe(Tools::COSCLI, stdout_sink)}; }
 
         bool stat(StringView url) const override
         {

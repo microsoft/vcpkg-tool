@@ -23,9 +23,9 @@ namespace
                                  "Could not deduce nuget id and version from filename: {path}");
 
 #if defined(_WIN32)
-    void win32_extract_nupkg(const ToolCache& tools, const Path& archive, const Path& to_path)
+    void win32_extract_nupkg(const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
-        const auto nuget_exe = tools.get_tool_path(Tools::NUGET);
+        const auto nuget_exe = tools.get_tool_path(Tools::NUGET, status_sink);
 
         const auto stem = archive.stem();
 
@@ -133,13 +133,14 @@ namespace
     }
 #endif // ^^^ _WIN32
 
-    void extract_archive_to_empty(Filesystem& fs, const ToolCache& tools, const Path& archive, const Path& to_path)
+    void extract_archive_to_empty(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         const auto ext = archive.extension();
 #if defined(_WIN32)
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
-            win32_extract_nupkg(tools, archive, to_path);
+            win32_extract_nupkg(tools, status_sink, archive, to_path);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".msi"))
         {
@@ -148,7 +149,7 @@ namespace
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
                  Strings::case_insensitive_ascii_equals(ext, ".7z"))
         {
-            extract_tar_cmake(tools.get_tool_path(Tools::CMAKE), archive, to_path);
+            extract_tar_cmake(tools.get_tool_path(Tools::CMAKE, status_sink), archive, to_path);
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
@@ -156,7 +157,7 @@ namespace
             const Path stem = filename.stem();
             const Path to_archive = Path(archive.parent_path()) / stem;
             win32_extract_self_extracting_7z(fs, archive, to_archive);
-            extract_archive_to_empty(fs, tools, to_archive, to_path);
+            extract_archive_to_empty(fs, tools, status_sink, to_archive, to_path);
         }
 #else
         (void)fs;
@@ -169,7 +170,7 @@ namespace
 #endif
         else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz")
         {
-            vcpkg::extract_tar(tools.get_tool_path(Tools::TAR), archive, to_path);
+            vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
         }
         else
         {
@@ -177,10 +178,8 @@ namespace
         }
     }
 
-    Path extract_archive_to_temp_subdirectory(Filesystem& fs,
-                                              const ToolCache& tools,
-                                              const Path& archive,
-                                              const Path& to_path)
+    Path extract_archive_to_temp_subdirectory(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         Path to_path_partial = to_path + ".partial";
 #if defined(_WIN32)
@@ -189,7 +188,7 @@ namespace
 
         fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
-        extract_archive_to_empty(fs, tools, archive, to_path_partial);
+        extract_archive_to_empty(fs, tools, status_sink, archive, to_path_partial);
         return to_path_partial;
     }
 }
@@ -218,7 +217,8 @@ namespace vcpkg
         fs.write_contents(to_path, std::move(contents), VCPKG_LINE_INFO);
     }
 
-    void win32_extract_bootstrap_zip(Filesystem& fs, const ToolCache& tools, const Path& archive, const Path& to_path)
+    void win32_extract_bootstrap_zip(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
         Path to_path_partial = to_path + ".partial." + std::to_string(GetCurrentProcessId());
@@ -240,7 +240,8 @@ namespace vcpkg
 
             // Example:
             // msiexec unpacks 7zip_msi unpacks cmake unpacks 7zip unpacks git
-            win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP_MSI), archive, to_path_partial);
+            win32_extract_with_seven_zip(
+                tools.get_tool_path(Tools::SEVEN_ZIP_MSI, status_sink), archive, to_path_partial);
         }
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
@@ -262,18 +263,20 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, code == 0, "CMake failed while extracting %s", archive);
     }
 
-    void extract_archive(Filesystem& fs, const ToolCache& tools, const Path& archive, const Path& to_path)
+    void extract_archive(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
-        Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, archive, to_path);
+        Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path);
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
-    int compress_directory_to_zip(Filesystem& fs, const ToolCache& tools, const Path& source, const Path& destination)
+    int compress_directory_to_zip(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& source, const Path& destination)
     {
         fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
-        auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP);
+        auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP, status_sink);
 
         return cmd_execute_and_capture_output(
                    Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
@@ -283,6 +286,7 @@ namespace vcpkg
 
 #else
         (void)tools;
+        (void)status_sink;
         return cmd_execute_clean(Command{"zip"}
                                      .string_arg("--quiet")
                                      .string_arg("-y")
@@ -295,11 +299,14 @@ namespace vcpkg
 #endif
     }
 
-    Command decompress_zip_archive_cmd(const ToolCache& tools, const Path& dst, const Path& archive_path)
+    Command decompress_zip_archive_cmd(const ToolCache& tools,
+                                       MessageSink& status_sink,
+                                       const Path& dst,
+                                       const Path& archive_path)
     {
         Command cmd;
 #if defined(_WIN32)
-        auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP);
+        auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP, status_sink);
         cmd.string_arg(seven_zip_exe)
             .string_arg("x")
             .string_arg(archive_path)
@@ -307,6 +314,7 @@ namespace vcpkg
             .string_arg("-y");
 #else
         (void)tools;
+        (void)status_sink;
         cmd.string_arg("unzip").string_arg("-qq").string_arg(archive_path).string_arg("-d" + dst.native());
 #endif
         return cmd;
