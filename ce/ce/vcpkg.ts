@@ -27,9 +27,10 @@ export class Vcpkg {
                 return;
             }
 
-            const subproc = spawn(this.session.vcpkgCommand, args, {stdio: ['ignore', 'pipe', 'inherit']});
+            const subproc = spawn(this.session.vcpkgCommand, args, {stdio: ['ignore', 'pipe', 'pipe']});
             let result = '';
             subproc.stdout.on('data', (chunk) => { result += chunk; });
+            subproc.stderr.pipe(process.stdout);
             subproc.on('error', (err) => { reject(err); });
             subproc.on('close', (code, signal) => {
                 if (code === 0) { accept(result); }
