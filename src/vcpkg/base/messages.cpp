@@ -2,6 +2,8 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 
+using namespace vcpkg;
+
 namespace vcpkg::msg
 {
     DECLARE_AND_REGISTER_MESSAGE(NoLocalizationForMessages, (), "", "No localization for the following messages:");
@@ -375,7 +377,7 @@ namespace vcpkg::msg
     }
 }
 
-namespace vcpkg
+namespace
 {
     struct StdOutMessageSink : MessageSink
     {
@@ -383,7 +385,6 @@ namespace vcpkg
     };
 
     StdOutMessageSink stdout_sink_instance;
-    MessageSink& stdout_sink = stdout_sink_instance;
 
     struct StdErrMessageSink : MessageSink
     {
@@ -391,5 +392,10 @@ namespace vcpkg
     };
 
     StdErrMessageSink stderr_sink_instance;
+}
+
+namespace vcpkg
+{
+    MessageSink& stdout_sink = stdout_sink_instance;
     MessageSink& stderr_sink = stderr_sink_instance;
 }
