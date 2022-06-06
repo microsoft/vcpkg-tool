@@ -637,7 +637,7 @@ namespace vcpkg::Export::Prefab
             }
 
             auto compress_result = compress_directory_to_zip(
-                paths.get_filesystem(), paths.get_tool_cache(), package_directory, exported_archive_path);
+                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, package_directory, exported_archive_path);
             if (!compress_result)
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO,

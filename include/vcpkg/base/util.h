@@ -141,6 +141,12 @@ namespace vcpkg::Util
         cont.erase(std::remove_if(cont.begin(), cont.end(), pred), cont.end());
     }
 
+    template<class Range, class F>
+    void transform(Range& r, F f)
+    {
+        std::transform(r.begin(), r.end(), r.begin(), f);
+    }
+
     template<class ForwardIt1, class ForwardIt2>
     ForwardIt1 search_and_skip(ForwardIt1 first, ForwardIt1 last, ForwardIt2 s_first, ForwardIt2 s_last)
     {

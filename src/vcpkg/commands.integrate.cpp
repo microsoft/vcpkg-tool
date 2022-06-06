@@ -414,7 +414,7 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
     {
         auto& fs = paths.get_filesystem();
 
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
 
         const Path& buildsystems_dir = paths.buildsystems;
         const auto tmp_dir = buildsystems_dir / "tmp";
@@ -475,7 +475,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         static constexpr StringLiteral TITLE = "PowerShell Tab-Completion";
         const auto script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
 
-        const auto& ps = paths.get_tool_exe("powershell-core");
+        const auto& ps = paths.get_tool_exe("powershell-core", stdout_sink);
         auto cmd = Command(ps)
                        .string_arg("-NoProfile")
                        .string_arg("-ExecutionPolicy")

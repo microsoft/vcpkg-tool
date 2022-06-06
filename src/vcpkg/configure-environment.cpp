@@ -1,5 +1,6 @@
 #include <vcpkg/base/basic_checks.h>
 #include <vcpkg/base/downloads.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 
@@ -72,7 +73,7 @@ namespace vcpkg
         msg::println_warning(msgVcpkgCeIsExperimental);
         auto& fs = paths.get_filesystem();
         auto& download_manager = paths.get_download_manager();
-        auto node_path = paths.get_tool_exe(Tools::NODE);
+        auto node_path = paths.get_tool_exe(Tools::NODE, stdout_sink);
         auto node_modules = paths.root / "node_modules";
         auto ce_path = node_modules / "vcpkg-ce";
         auto ce_sha_path = node_modules / "ce-sha.txt";
@@ -115,7 +116,11 @@ namespace vcpkg
         cmd_run.string_arg("--harmony");
         cmd_run.string_arg(ce_path);
         cmd_run.forwarded_args(args);
-        cmd_run.string_arg("--from-vcpkg");
+        if (Debug::g_debugging)
+        {
+            cmd_run.string_arg("--debug");
+        }
+
         return cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd}).value_or_exit(VCPKG_LINE_INFO);
     }
 
