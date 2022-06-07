@@ -225,6 +225,9 @@ namespace vcpkg
         /// \returns \c true if the tool's version is included in package ABI calculations. ABI sensitive tools will be
         /// pinned to exact versions if \c --x-abi-tools-use-exact-versions is passed.
         virtual bool is_abi_sensitive() const = 0;
+        /// \returns \c true if and only if it is impossible to retrieve the tool's version, and thus it should not be
+        // considered.
+        virtual bool ignore_version() const { return false; }
 
         virtual void add_system_paths(std::vector<Path>& out_candidate_paths) const { (void)out_candidate_paths; }
         virtual ExpectedS<std::string> get_version(const ToolCache& cache,
@@ -249,6 +252,7 @@ namespace vcpkg
         virtual StringView tool_data_name() const override { return m_tool_data_name; }
         virtual StringView system_exe_stem() const override { return {}; }
         virtual std::array<int, 3> default_min_version() const override { return {0}; }
+        virtual bool ignore_version() const override { return true; }
 
         virtual ExpectedS<std::string> get_version(const ToolCache&, MessageSink&, const Path&) const override
         {
@@ -703,7 +707,7 @@ namespace vcpkg
 
             const bool exact_version = tool.is_abi_sensitive() && abiToolVersionHandling == RequireExactVersions::YES;
             // forcing system search also disables version detection
-            const bool ignore_version = env_force_system_binaries;
+            const bool ignore_version = env_force_system_binaries || tool.ignore_version();
 
             std::vector<Path> candidate_paths;
             std::array<int, 3> min_version = tool.default_min_version();
