@@ -420,7 +420,7 @@ namespace vcpkg::Paragraphs
         else
         {
             vcpkg::Checks::check_exit(VCPKG_LINE_INFO,
-                                      !(fs.exists(control_path, IgnoreErrors{}) && fs.is_regular_file(control_path)),
+                                      !fs.is_regular_file(control_path),
                                       "Found both manifest and CONTROL file in port %s; please rename one or the other",
                                       port_directory);
 
