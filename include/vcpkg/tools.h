@@ -34,6 +34,7 @@ namespace vcpkg
         // This duplicate of 7zip uses msiexec to unpack, which is a fallback for Windows 7.
         static constexpr StringLiteral SEVEN_ZIP_MSI = "7zip_msi";
         static constexpr StringLiteral PYTHON3 = "python3";
+        static constexpr StringLiteral PYTHON3_WITH_VENV = "python3_with_venv";
     }
 
     struct ToolCache
