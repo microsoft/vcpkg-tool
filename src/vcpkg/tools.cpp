@@ -565,7 +565,7 @@ namespace vcpkg
         virtual bool is_abi_sensitive() const override { return false; }
         virtual StringView tool_data_name() const override { return Tools::PYTHON3; }
         virtual std::vector<StringView> system_exe_stems() const override { return {"python3", "py3", "python", "py"}; }
-        virtual std::array<int, 3> default_min_version() const override { return {3, 10, 2}; }
+        virtual std::array<int, 3> default_min_version() const override { return {3, 5, 0}; } // 3.5 added -m venv
 
 #if defined(_WIN32)
         void add_system_paths_impl(Filesystem& fs,
