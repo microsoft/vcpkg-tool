@@ -269,6 +269,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(path, "/foo/bar");
     DECLARE_MSG_ARG(row, "42");
     DECLARE_MSG_ARG(spec, "zlib:x64-windows");
+    DECLARE_MSG_ARG(system_api, "CreateProcessW");
     DECLARE_MSG_ARG(system_name, "Darwin");
     DECLARE_MSG_ARG(tool_name, "aria2");
     DECLARE_MSG_ARG(triplet, "x64-windows");

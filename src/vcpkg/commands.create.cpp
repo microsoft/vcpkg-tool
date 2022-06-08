@@ -55,7 +55,7 @@ namespace vcpkg::Commands::Create
         }
 
         auto cmd_launch_cmake = make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
-        return cmd_execute_clean(cmd_launch_cmake);
+        return cmd_execute_clean(cmd_launch_cmake).value_or_exit(VCPKG_LINE_INFO);
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
