@@ -25,10 +25,6 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(ObjectStorageToolFailed,
-                                 (msg::exit_code, msg::tool_name),
-                                 "",
-                                 "{tool_name} failed with exit code: {exit_code}");
     DECLARE_AND_REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor,
                                  (msg::count, msg::vendor),
                                  "",
@@ -105,10 +101,7 @@ namespace
                                  (msg::binary_source),
                                  "",
                                  "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments");
-    DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed,
-                                 (msg::path, msg::exit_code),
-                                 "",
-                                 "Failed to compress folder '{path}', exit code: {exit_code}");
+    DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder '{path}':");
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -348,7 +341,7 @@ namespace
             {
                 const auto i = action_idxs[j];
                 const auto& archive_result = job_results[j];
-                if (archive_result.exit_code == 0)
+                if (archive_result)
                 {
                     results[i] = RestoreResult::restored;
                     Debug::print("Restored ", archive_paths[j].native(), '\n');
@@ -398,12 +391,15 @@ namespace
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(
+            auto compress_result = compress_directory_to_zip(
                 fs, paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
-            if (code != 0)
+            if (!compress_result)
             {
-                vcpkg::print2(
-                    Color::warning, "Failed to compress folder '", paths.package_dir(spec), "', exit code: ", code);
+                vcpkg::print2(Color::warning,
+                              "Failed to compress folder '",
+                              paths.package_dir(spec),
+                              "': ",
+                              compress_result.error());
                 return;
             }
 
@@ -412,7 +408,7 @@ namespace
             {
                 auto url = Strings::replace_all(std::string(put_url_template), "<SHA>", abi_tag);
                 auto maybe_success = put_file(fs, url, azure_blob_headers(), tmp_archive_path);
-                if (maybe_success.has_value())
+                if (maybe_success)
                 {
                     http_remotes_pushed++;
                     continue;
@@ -563,7 +559,7 @@ namespace
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
                     const auto i = action_idxs[j];
-                    if (job_results[j].exit_code == 0)
+                    if (job_results[j])
                     {
                         ++this_restore_count;
                         fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
@@ -657,48 +653,73 @@ namespace
                 Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
-        int run_nuget_commandline(const Command& cmdline) const
+        ExpectedS<Unit> run_nuget_commandline(const Command& cmdline) const
         {
             if (m_interactive)
             {
-                return cmd_execute(cmdline);
+                return cmd_execute(cmdline)
+                    .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
+                    .then([](int exit_code) -> ExpectedS<Unit> {
+                        if (exit_code == 0)
+                        {
+                            return {Unit{}};
+                        }
+
+                        return "NuGet command failed and output was not captured because --interactive was specified";
+                    });
             }
 
-            auto res = cmd_execute_and_capture_output(cmdline);
-            if (Debug::g_debugging)
-            {
-                print2(res.output);
-            }
+            return cmd_execute_and_capture_output(cmdline)
+                .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
+                .then([&](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
+                    if (Debug::g_debugging)
+                    {
+                        print2(res.output);
+                    }
 
-            if (res.output.find("Authentication may require manual action.") != std::string::npos)
-            {
-                print2(Color::warning,
-                       "One or more NuGet credential providers requested manual action. Add the binary "
-                       "source 'interactive' to allow interactivity.\n");
-            }
-            else if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
-                         std::string::npos &&
-                     res.exit_code != 0)
-            {
-                print2(Color::warning,
-                       "One or more NuGet credential providers failed to authenticate. See ",
-                       docs::binarycaching_url,
-                       " for more details on how to provide credentials.\n");
-            }
-            else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
-            {
-                auto real_cmdline = cmdline;
-                real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
-                auto res2 = cmd_execute_and_capture_output(real_cmdline);
-                if (Debug::g_debugging)
-                {
-                    print2(res2.output);
-                }
+                    if (res.output.find("Authentication may require manual action.") != std::string::npos)
+                    {
+                        print2(Color::warning,
+                               "One or more NuGet credential providers requested manual action. Add the binary "
+                               "source 'interactive' to allow interactivity.\n");
+                    }
 
-                return res2.exit_code;
-            }
+                    if (res.exit_code == 0)
+                    {
+                        return {Unit{}};
+                    }
 
-            return res.exit_code;
+                    if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
+                        std::string::npos)
+                    {
+                        print2(Color::warning,
+                               "One or more NuGet credential providers failed to authenticate. See ",
+                               docs::binarycaching_url,
+                               " for more details on how to provide credentials.\n");
+                    }
+                    else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
+                    {
+                        auto real_cmdline = cmdline;
+                        real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
+                        return cmd_execute_and_capture_output(real_cmdline)
+                            .map_error([](LocalizedString&& ls) { return ls.extract_data(); })
+                            .then([](ExitCodeAndOutput&& res) -> ExpectedS<Unit> {
+                                if (Debug::g_debugging)
+                                {
+                                    print2(res.output);
+                                }
+
+                                if (res.exit_code == 0)
+                                {
+                                    return {Unit{}};
+                                }
+
+                                return {std::move(res.output), expected_right_tag};
+                            });
+                    }
+
+                    return {std::move(res.output), expected_right_tag};
+                });
         }
 
         struct NuGetPrefetchAttempt
@@ -913,7 +934,7 @@ namespace
                 cmdline.string_arg("-NonInteractive");
             }
 
-            if (run_nuget_commandline(cmdline) != 0)
+            if (!run_nuget_commandline(cmdline))
             {
                 print2(Color::error, "Packing NuGet failed. Use --debug for more information.\n");
                 return;
@@ -941,7 +962,7 @@ namespace
                 }
 
                 print2("Uploading binaries for ", spec, " to NuGet source ", write_src, ".\n");
-                if (run_nuget_commandline(cmd) != 0)
+                if (!run_nuget_commandline(cmd))
                 {
                     print2(
                         Color::error, "Pushing NuGet to ", write_src, " failed. Use --debug for more information.\n");
@@ -968,7 +989,7 @@ namespace
 
                 print2("Uploading binaries for ", spec, " using NuGet config ", write_cfg, ".\n");
 
-                if (run_nuget_commandline(cmd) != 0)
+                if (!run_nuget_commandline(cmd))
                 {
                     print2(
                         Color::error, "Pushing NuGet with ", write_cfg, " failed. Use --debug for more information.\n");
@@ -1059,7 +1080,7 @@ namespace
                 for (size_t j = 0; j < jobs.size(); ++j)
                 {
                     const auto idx = idxs[j];
-                    if (job_results[j].exit_code != 0)
+                    if (!job_results[j])
                     {
                         Debug::print("Failed to decompress ", url_paths[idx].second, '\n');
                         continue;
@@ -1090,12 +1111,14 @@ namespace
             const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
             auto& spec = action.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            int code = compress_directory_to_zip(
+            auto compression_result = compress_directory_to_zip(
                 paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
-            if (code != 0)
+            if (!compression_result)
             {
-                vcpkg::msg::println_warning(
-                    msgCompressFolderFailed, msg::path = paths.package_dir(spec), msg::exit_code = code);
+                vcpkg::msg::println(Color::warning,
+                                    msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
+                                        .append_raw(' ')
+                                        .append_raw(compression_result.error()));
                 return;
             }
 
@@ -1175,40 +1198,32 @@ namespace
         bool stat(StringView url) const override
         {
             auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
-            return cmd_execute(cmd) == 0;
+            return succeeded(cmd_execute(cmd));
         }
 
         bool upload_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
+            if (out)
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::GSUTIL);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
 
         bool download_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
+            if (out)
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::GSUTIL);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
     };
@@ -1235,7 +1250,8 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
-            return cmd_execute(cmd) == 0;
+
+            return succeeded(cmd_execute(cmd));
         }
 
         bool upload_file(StringView object, const Path& archive) const override
@@ -1245,17 +1261,13 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
+            if (out)
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::AWSCLI);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
 
@@ -1271,17 +1283,14 @@ namespace
             {
                 cmd.string_arg("--no-sign-request");
             }
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
+            if (out)
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::AWSCLI);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
 
@@ -1305,40 +1314,32 @@ namespace
         bool stat(StringView url) const override
         {
             auto cmd = command().string_arg("ls").string_arg(url);
-            return cmd_execute(cmd) == 0;
+            return succeeded(cmd_execute(cmd));
         }
 
         bool upload_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("cp").string_arg(archive).string_arg(object);
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
+            if (out)
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::COSCLI);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
 
         bool download_file(StringView object, const Path& archive) const override
         {
             auto cmd = command().string_arg("cp").string_arg(object).string_arg(archive);
-            const auto out = cmd_execute_and_capture_output(cmd);
-            if (out.exit_code == 0)
+            const auto out = flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
+            if (out)
             {
                 return true;
             }
 
-            msg::println(Color::warning,
-                         msgObjectStorageToolFailed,
-                         msg::exit_code = out.exit_code,
-                         msg::tool_name = Tools::COSCLI);
-            msg::write_unlocalized_text_to_stdout(Color::warning, out.output);
+            msg::write_unlocalized_text_to_stdout(Color::warning, out.error());
             return false;
         }
     };
@@ -1799,7 +1800,7 @@ namespace
                 }
 
                 const auto& maybe_home = default_cache_path();
-                if (!maybe_home.has_value())
+                if (!maybe_home)
                 {
                     return add_error(maybe_home.error(), segments[0].first);
                 }
@@ -2210,19 +2211,19 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     std::string env_string = get_environment_variable("VCPKG_BINARY_SOURCES").value_or("");
     if (Debug::g_debugging)
     {
-        const auto& cachepath = default_cache_path();
-        if (cachepath.has_value())
+        const auto& maybe_cachepath = default_cache_path();
+        if (const auto cachepath = maybe_cachepath.get())
         {
-            Debug::print("Default binary cache path is: ", cachepath.value_or_exit(VCPKG_LINE_INFO), '\n');
+            Debug::print("Default binary cache path is: ", *cachepath, '\n');
         }
         else
         {
-            Debug::print("No binary cache path. Reason: ", cachepath.error(), '\n');
+            Debug::print("No binary cache path. Reason: ", maybe_cachepath.error(), '\n');
         }
     }
 
     auto sRawHolder = create_binary_providers_from_configs_pure(env_string, args);
-    if (!sRawHolder.has_value())
+    if (!sRawHolder)
     {
         return sRawHolder.error();
     }

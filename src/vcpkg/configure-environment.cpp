@@ -58,7 +58,7 @@ namespace
         auto env = get_modified_clean_environment({}, node_root);
         const auto provision_status = cmd_execute(cmd_provision, WorkingDirectory{paths.root}, env);
         fs.remove(ce_tarball, VCPKG_LINE_INFO);
-        if (provision_status != 0)
+        if (!succeeded(provision_status))
         {
             fs.remove_all(node_modules, VCPKG_LINE_INFO);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
@@ -121,7 +121,7 @@ namespace vcpkg
             cmd_run.string_arg("--debug");
         }
 
-        return cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd});
+        return cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd}).value_or_exit(VCPKG_LINE_INFO);
     }
 
     int run_configure_environment_command(const VcpkgPaths& paths, StringView arg0, View<std::string> args)

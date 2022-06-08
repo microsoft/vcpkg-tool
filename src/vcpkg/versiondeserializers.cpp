@@ -137,7 +137,7 @@ namespace vcpkg
             {
                 version_scheme = VersionScheme::Relaxed;
                 auto v = DotVersion::try_parse_relaxed(version.first);
-                if (!v.has_value())
+                if (!v)
                 {
                     r.add_generic_error(parent_type, "'version' text was not a relaxed version:\n", v.error());
                 }
@@ -146,7 +146,7 @@ namespace vcpkg
             {
                 version_scheme = VersionScheme::Semver;
                 auto v = DotVersion::try_parse_semver(version.first);
-                if (!v.has_value())
+                if (!v)
                 {
                     r.add_generic_error(parent_type, "'version-semver' text was not a semantic version:\n", v.error());
                 }
@@ -155,7 +155,7 @@ namespace vcpkg
             {
                 version_scheme = VersionScheme::Date;
                 auto v = DateVersion::try_parse(version.first);
-                if (!v.has_value())
+                if (!v)
                 {
                     r.add_generic_error(parent_type, "'version-date' text was not a date version:\n", v.error());
                 }

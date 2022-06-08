@@ -172,17 +172,13 @@ namespace vcpkg
 
     static ExpectedS<std::string> run_to_extract_version(StringLiteral tool_name, const Path& exe_path, Command&& cmd)
     {
-        auto rc = cmd_execute_and_capture_output(cmd);
-        if (rc.exit_code == 0)
-        {
-            return {std::move(rc.output), expected_left_tag};
-        }
-
-        auto error_prefix =
-            msg::format_error(msgFailedToRunToolToDetermineVersion, msg::tool_name = tool_name, msg::path = exe_path)
+        return flatten_out(cmd_execute_and_capture_output(cmd), exe_path).map_error([&](LocalizedString&& output) {
+            return msg::format_error(
+                       msgFailedToRunToolToDetermineVersion, msg::tool_name = tool_name, msg::path = exe_path)
+                .append_raw("\n")
+                .append(std::move(output))
                 .extract_data();
-        error_prefix.push_back('\n');
-        return {std::move(error_prefix) + std::move(rc.output), expected_right_tag};
+        });
     }
 
     DECLARE_AND_REGISTER_MESSAGE(

@@ -832,7 +832,7 @@ namespace vcpkg::Build
         CompilerInfo compiler_info;
         std::string buf;
 
-        int rc;
+        ExpectedL<int> rc = LocalizedString();
         {
             const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             rc = cmd_execute_and_stream_lines(
@@ -866,7 +866,7 @@ namespace vcpkg::Build
                 env);
         } // close out_file
 
-        if (compiler_info.hash.empty() || rc != 0)
+        if (compiler_info.hash.empty() || !succeeded(rc))
         {
             Debug::print("Compiler information tracking can be disabled by passing --",
                          VcpkgCmdArguments::FEATURE_FLAGS_ARG,
@@ -1089,7 +1089,7 @@ namespace vcpkg::Build
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
-        int return_code;
+        ExpectedL<int> return_code = LocalizedString();
         {
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(
@@ -1127,7 +1127,7 @@ namespace vcpkg::Build
                                                        }) +
                                          "]",
                                      buildtimeus);
-            if (return_code != 0)
+            if (!succeeded(return_code))
             {
                 metrics->track_property("error", "build failed");
                 metrics->track_property("build_error", spec_string);
@@ -1774,7 +1774,7 @@ namespace vcpkg::Build
     BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
     {
         const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
-        if (!pghs.has_value())
+        if (!pghs)
         {
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Invalid BUILD_INFO file for package: %s", pghs.error());
         }

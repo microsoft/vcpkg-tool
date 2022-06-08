@@ -364,9 +364,9 @@ namespace vcpkg
         parser.optional_field(SourceParagraphFields::BUILD_DEPENDS, {buf, textrowcol});
 
         auto maybe_dependencies = parse_dependencies_list(buf, origin, textrowcol);
-        if (maybe_dependencies.has_value())
+        if (const auto dependencies = maybe_dependencies.get())
         {
-            spgh->dependencies = maybe_dependencies.value_or_exit(VCPKG_LINE_INFO);
+            spgh->dependencies = *dependencies;
         }
         else
         {
@@ -380,9 +380,9 @@ namespace vcpkg
         parser.optional_field(SourceParagraphFields::DEFAULT_FEATURES, {buf, textrowcol});
 
         auto maybe_default_features = parse_default_features_list(buf, origin, textrowcol);
-        if (maybe_default_features.has_value())
+        if (const auto default_features = maybe_default_features.get())
         {
-            spgh->default_features = maybe_default_features.value_or_exit(VCPKG_LINE_INFO);
+            spgh->default_features = *default_features;
         }
         else
         {

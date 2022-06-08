@@ -29,7 +29,7 @@ namespace vcpkg
 #endif
 
     // Compress the source directory into the destination file.
-    int compress_directory_to_zip(
+    ExpectedL<Unit> compress_directory_to_zip(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& source, const Path& destination);
 
     Command decompress_zip_archive_cmd(const ToolCache& tools,
@@ -37,5 +37,5 @@ namespace vcpkg
                                        const Path& dst,
                                        const Path& archive_path);
 
-    std::vector<ExitCodeAndOutput> decompress_in_parallel(View<Command> jobs);
+    std::vector<ExpectedL<Unit>> decompress_in_parallel(View<Command> jobs);
 }
