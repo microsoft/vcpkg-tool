@@ -160,5 +160,5 @@ namespace vcpkg
 
     // If exit code is 0, returns a 'success' ExpectedL containing the output
     // Otherwise, returns an ExpectedL containing error text
-    ExpectedL<std::string> flatten_out(const ExpectedL<ExitCodeAndOutput>&, StringView tool_name);
+    ExpectedL<std::string> flatten_out(ExpectedL<ExitCodeAndOutput>&&, StringView tool_name);
 }

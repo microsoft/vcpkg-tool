@@ -1026,13 +1026,13 @@ namespace vcpkg
                     .append_raw(maybe_exit.error().to_string())};
     }
 
-    ExpectedL<std::string> flatten_out(const ExpectedL<ExitCodeAndOutput>& maybe_exit, StringView tool_name)
+    ExpectedL<std::string> flatten_out(ExpectedL<ExitCodeAndOutput>&& maybe_exit, StringView tool_name)
     {
         if (auto exit = maybe_exit.get())
         {
             if (exit->exit_code == 0)
             {
-                return {exit->output, expected_left_tag};
+                return {std::move(exit->output), expected_left_tag};
             }
 
             return {msg::format_error(
