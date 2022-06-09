@@ -111,11 +111,17 @@ namespace vcpkg::Test
                                                                     const char* depends = "",
                                                                     const char* triplet = "x86-windows");
 
-    extern const Triplet X86_WINDOWS;
+    extern const Triplet ARM64_WINDOWS;
     extern const Triplet X64_WINDOWS;
-    extern const Triplet X86_UWP;
+    extern const Triplet X64_WINDOWS_STATIC;
+    extern const Triplet X64_WINDOWS_STATIC_MD;
+    extern const Triplet X86_WINDOWS;
     extern const Triplet ARM_UWP;
+    extern const Triplet X64_UWP;
+    extern const Triplet X86_UWP;
     extern const Triplet X64_ANDROID;
+    extern const Triplet X64_OSX;
+    extern const Triplet X64_LINUX;
 
     /// <summary>
     /// Map of source control files by their package name.
