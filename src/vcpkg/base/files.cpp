@@ -26,9 +26,11 @@
 #endif // ^^^ defined(__APPLE__)
 
 #include <algorithm>
+#include <iterator>
 #include <list>
 #include <string>
 #include <thread>
+#include <vector>
 
 #if defined(_WIN32)
 #include <share.h>
@@ -358,14 +360,8 @@ namespace
     std::vector<Path> calculate_path_bases()
     {
         auto path_base_strings = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
-        std::vector<Path> result;
-        result.reserve(path_base_strings.size());
-        for (std::string& path_base_string : path_base_strings)
-        {
-            result.emplace_back(std::move(path_base_string));
-        }
-
-        return result;
+        return std::vector<Path>{std::make_move_iterator(path_base_strings.begin()),
+                                 std::make_move_iterator(path_base_strings.end())};
     }
 
 #if defined(_WIN32)
