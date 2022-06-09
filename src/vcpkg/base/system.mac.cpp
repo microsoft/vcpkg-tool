@@ -130,11 +130,11 @@ namespace vcpkg
         // getmac /V /NH /FO CSV
         // outputs each interface on its own comma-separated line
         // "connection name","network adapter","physical address","transport name"
-        auto getmac = cmd_execute_and_capture_output(
+        auto maybe_getmac = cmd_execute_and_capture_output(
             Command("getmac").string_arg("/V").string_arg("/NH").string_arg("/FO").string_arg("CSV"));
-        if (getmac.exit_code == 0)
+        if (auto getmac = maybe_getmac.get())
         {
-            for (auto&& line : Strings::split(getmac.output, '\n'))
+            for (auto&& line : Strings::split(getmac->output, '\n'))
             {
                 std::string mac;
                 if (extract_mac_from_getmac_output_line(line, mac) && is_valid_mac_for_telemetry(mac))
