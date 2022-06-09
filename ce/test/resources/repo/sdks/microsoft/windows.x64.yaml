@@ -17,11 +17,11 @@ install:
   sha256: fluffyKittenBunnies
   
 x64: 
-  settings:
+  exports:
     paths: 
       - ./**/bin/x64
 
 not x64: 
-  settings:
+  exports:
     paths: 
       - ./**/bin/x64

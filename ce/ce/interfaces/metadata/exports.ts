@@ -6,7 +6,7 @@ import { Validation } from '../validation';
 
 /** settings that should be applied to the context */
 
-export interface Settings extends Validation {
+export interface Exports extends Validation {
   /** a map of path categories to one or more values */
   paths: Dictionary<Strings>;
 
@@ -18,7 +18,7 @@ export interface Settings extends Validation {
    *
    * arrays mean that the values should be joined with spaces
    */
-  variables: Dictionary<Strings>;
+  environment: Dictionary<Strings>;
 
   /** a map of properties that are activation-type specific (ie, msbuild) */
   properties: Dictionary<Strings>;
@@ -36,4 +36,10 @@ export interface Settings extends Validation {
    * it's significant enough that we need them separately
    */
   defines: Dictionary<string>;
+
+  /** allows contents of the artifact to be exported in categories. */
+  contents: Dictionary<Strings>;
+
+  /** shell aliases (aka functions/etc) for exposing specific commands  */
+  aliases: Dictionary<string>;
 }

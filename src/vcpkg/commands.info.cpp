@@ -77,8 +77,7 @@ namespace vcpkg::Commands::Info
                 }
                 if (auto err = parser.get_error())
                 {
-                    print2(err->format(), "\n");
-                    Checks::exit_fail(VCPKG_LINE_INFO);
+                    Checks::exit_with_message(VCPKG_LINE_INFO, err->to_string());
                 }
 
                 auto& qpkg = *maybe_qpkg.get();
@@ -125,8 +124,7 @@ namespace vcpkg::Commands::Info
                 }
                 if (auto err = parser.get_error())
                 {
-                    print2(err->format(), "\n");
-                    Checks::exit_fail(VCPKG_LINE_INFO);
+                    Checks::exit_with_message(VCPKG_LINE_INFO, err->to_string());
                 }
 
                 auto& pkg = *maybe_pkg.get();

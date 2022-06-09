@@ -335,7 +335,6 @@ namespace vcpkg::Commands::Integrate
 
 #if defined(_WIN32)
         {
-            std::error_code ec;
             const auto tmp_dir = paths.buildsystems / "tmp";
             fs.create_directory(paths.buildsystems, VCPKG_LINE_INFO);
             fs.create_directory(tmp_dir, VCPKG_LINE_INFO);
@@ -350,30 +349,18 @@ namespace vcpkg::Commands::Integrate
             const auto vcpkg_appdata_local = get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg";
             fs.create_directory(vcpkg_appdata_local, VCPKG_LINE_INFO);
 
-            fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, ec);
-            if (ec)
-            {
-                print2(Color::error, "Error: Failed to copy file: ", appdata_src_path, " -> ", appdata_dst_path, "\n");
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
+            fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
 
             const Path appdata_src_path2 = tmp_dir / "vcpkg.user.props";
             fs.write_contents(
                 appdata_src_path2, create_appdata_shortcut(paths.buildsystems_msbuild_props), VCPKG_LINE_INFO);
             auto appdata_dst_path2 = get_appdata_props_path();
 
-            fs.copy_file(appdata_src_path2, appdata_dst_path2, CopyOptions::overwrite_existing, ec);
-            if (ec)
-            {
-                print2(
-                    Color::error, "Error: Failed to copy file: ", appdata_src_path2, " -> ", appdata_dst_path2, "\n");
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
+            fs.copy_file(appdata_src_path2, appdata_dst_path2, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
         }
 #endif
 
         const auto pathtxt = get_path_txt_path();
-        std::error_code ec;
         fs.write_contents(pathtxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
 
         print2(Color::success, "Applied user-wide integration for this vcpkg root.\n");
@@ -401,19 +388,14 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
 
     static void integrate_remove(Filesystem& fs)
     {
-        std::error_code ec;
         bool was_deleted = false;
 
 #if defined(_WIN32)
-        was_deleted |= fs.remove(get_appdata_targets_path(), ec);
-        Checks::check_exit(VCPKG_LINE_INFO, !ec, "Error: Unable to remove user-wide integration: %s", ec.message());
-
-        was_deleted |= fs.remove(get_appdata_props_path(), ec);
-        Checks::check_exit(VCPKG_LINE_INFO, !ec, "Error: Unable to remove user-wide integration: %s", ec.message());
+        was_deleted |= fs.remove(get_appdata_targets_path(), VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(get_appdata_props_path(), VCPKG_LINE_INFO);
 #endif
 
-        was_deleted |= fs.remove(get_path_txt_path(), ec);
-        Checks::check_exit(VCPKG_LINE_INFO, !ec, "Error: Unable to remove user-wide integration: %s", ec.message());
+        was_deleted |= fs.remove(get_path_txt_path(), VCPKG_LINE_INFO);
 
         if (was_deleted)
         {
@@ -432,13 +414,12 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
     {
         auto& fs = paths.get_filesystem();
 
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
 
         const Path& buildsystems_dir = paths.buildsystems;
         const auto tmp_dir = buildsystems_dir / "tmp";
-        std::error_code ec;
-        fs.create_directory(buildsystems_dir, ec);
-        fs.create_directory(tmp_dir, ec);
+        fs.create_directory(buildsystems_dir, IgnoreErrors{});
+        fs.create_directory(tmp_dir, IgnoreErrors{});
 
         const auto targets_file_path = tmp_dir / "vcpkg.nuget.targets";
         const auto props_file_path = tmp_dir / "vcpkg.nuget.props";
@@ -459,12 +440,15 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
                             .string_arg(buildsystems_dir)
                             .string_arg(nuspec_file_path);
 
-        const int exit_code =
-            cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
+        const auto maybe_nuget_output = flatten(
+            cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()), Tools::NUGET);
+        if (!maybe_nuget_output)
+        {
+            Checks::exit_with_message(
+                VCPKG_LINE_INFO, "Error: NuGet package creation failed: %s\n", maybe_nuget_output.error());
+        }
 
         const auto nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed with exit code: %d", exit_code);
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(nuget_package, IgnoreErrors{}),
                            "Error: NuGet package creation \"succeeded\", but no .nupkg was produced. Expected %s",
@@ -491,14 +475,14 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         static constexpr StringLiteral TITLE = "PowerShell Tab-Completion";
         const auto script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
 
-        const auto& ps = paths.get_tool_exe("powershell-core");
+        const auto& ps = paths.get_tool_exe("powershell-core", stdout_sink);
         auto cmd = Command(ps)
                        .string_arg("-NoProfile")
                        .string_arg("-ExecutionPolicy")
                        .string_arg("Bypass")
                        .string_arg("-Command")
                        .string_arg(Strings::format("& {& '%s' }", script_path));
-        const int rc = cmd_execute(cmd);
+        const int rc = cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
             vcpkg::printf(Color::error,

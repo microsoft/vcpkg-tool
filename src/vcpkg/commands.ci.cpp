@@ -510,7 +510,7 @@ namespace vcpkg::Commands::CI
                                                   msg::build_result =
                                                       Build::to_string_locale_invariant(build_result.code).to_string(),
                                                   msg::path = ci_baseline_file_name));
-                        output.appendnl();
+                        output.append_raw('\n');
                     }
                     break;
                 case Build::BuildResult::SUCCEEDED:
@@ -519,7 +519,7 @@ namespace vcpkg::Commands::CI
                         output.append(msg::format(msgCiBaselineUnexpectedPass,
                                                   msg::spec = port_result.get_spec().to_string(),
                                                   msg::path = ci_baseline_file_name));
-                        output.appendnl();
+                        output.append_raw('\n');
                     }
                     break;
                 default: break;
@@ -533,7 +533,7 @@ namespace vcpkg::Commands::CI
         }
 
         LocalizedString header = msg::format(msgCiBaselineRegressionHeader);
-        header.appendnl();
+        header.append_raw('\n');
         output_data.insert(0, header.extract_data());
         fwrite(output_data.data(), 1, output_data.size(), stderr);
     }

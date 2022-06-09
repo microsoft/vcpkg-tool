@@ -30,6 +30,11 @@ variables:
   - group: vcpkg-dependency-source-blobs
   - name: FMT_TARBALL_URL
     value: "$(fmt-tarball-url)"
+  - group: vcpkgdockercontainers-secrets
+  - name: AZURE_CONTAINER_REGISTRY_USERNAME
+    value: "$(vcpkgdockercontainers-pull-username)"
+  - name: AZURE_CONTAINER_REGISTRY_PASSWORD
+    value: "$(vcpkgdockercontainers-pull-password)"
   # If the user didn't override the signing type, then only real-sign on main.
   - ${{ if ne(parameters.SignTypeOverride, 'default') }}:
     - name: SignType
@@ -241,13 +246,14 @@ jobs:
     - task: CmdLine@2
       displayName: "Build vcpkg in Alpine"
       inputs:
-        failOnStderr: true
+        failOnStderr: false
         script: |
-          docker build --build-arg "VCPKG_FMT_URL=$FMT_TARBALL_URL" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile .
-          docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh
-          docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
-          docker container rm vcpkg-muslc-container
-          docker image rm vcpkg-muslc-image
+          docker login vcpkgdockercontainers.azurecr.io -u $(AZURE_CONTAINER_REGISTRY_USERNAME) -p $(AZURE_CONTAINER_REGISTRY_PASSWORD) || exit 1
+          docker build --build-arg "VCPKG_FMT_URL=$FMT_TARBALL_URL" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile . || exit 1
+          docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh || exit 1
+          docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc" || exit 1
+          docker container rm vcpkg-muslc-container || exit 1
+          docker image rm vcpkg-muslc-image || exit 1
     - task: PublishBuildArtifacts@1
       displayName: "Publish Unsigned muslc Binary"
       inputs:
@@ -493,7 +499,7 @@ jobs:
           tagSource: manual
           tag: $(VCPKG_BASE_VERSION)
           assets: "$(Build.ArtifactStagingDirectory)\\drop\\*"
-          addChangeLog: true
+          addChangeLog: false
           compareWith: 'lastFullRelease'
     - task: MicroBuildCleanup@1
       condition: succeededOrFailed()

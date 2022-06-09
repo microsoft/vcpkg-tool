@@ -133,8 +133,8 @@ export class Queue {
     return action().catch(async (e) => { this.rejections.push(e); throw e; }).finally(() => this.next());
   }
 
-  enqueueMany<S, T>(array: Array<S>, fn: (v: S) => Promise<T>) {
-    for (const each of array) {
+  enqueueMany<S, T>(iterable: Iterable<S>, fn: (v: S) => Promise<T>) {
+    for (const each of iterable) {
       void this.enqueue(() => fn(each));
     }
     return this;

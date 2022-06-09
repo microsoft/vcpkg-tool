@@ -96,6 +96,13 @@ export class CommandLine {
       join(process.env['HOME'] || process.env['USERPROFILE'] || tmpdir(), '.vcpkg')));
   }
 
+  #vcpkgCommand?: string;
+  get vcpkgCommand() {
+    return this.#vcpkgCommand || (this.#vcpkgCommand = resolvePath(
+      this.switches['vcpkg-command']?.[0] ||
+      process.env['VCPKG_COMMAND']));
+  }
+
   get force() {
     return !!this.switches['force'];
   }
@@ -104,8 +111,8 @@ export class CommandLine {
     return !!this.switches['debug'];
   }
 
-  get fromVCPKG() {
-    return !!this.switches['from-vcpkg'];
+  get verbose() {
+    return !!this.switches['verbose'];
   }
 
   get language() {

@@ -227,7 +227,7 @@ namespace vcpkg::Export::Prefab
         cmd_line.string_arg("install:install-file")
             .string_arg(Strings::concat("-Dfile=", aar))
             .string_arg(Strings::concat("-DpomFile=", pom));
-        const int exit_code = cmd_execute_clean(cmd_line);
+        const int exit_code = cmd_execute_clean(cmd_line).value_or_exit(VCPKG_LINE_INFO);
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s installing maven file", aar);
     }
 
@@ -363,8 +363,6 @@ namespace vcpkg::Export::Prefab
 
         std::unordered_map<std::string, std::string> version_map;
 
-        std::error_code error_code;
-
         std::unordered_map<std::string, std::set<PackageSpec>> empty_package_dependencies;
 
         //
@@ -409,7 +407,7 @@ namespace vcpkg::Export::Prefab
             auto prefab_directory = package_directory / "prefab";
             auto modules_directory = prefab_directory / "modules";
 
-            utils.create_directories(modules_directory, error_code);
+            utils.create_directories(modules_directory, IgnoreErrors{});
 
             std::string artifact_id = prefab_options.maybe_artifact_id.value_or(name);
             std::string group_id = prefab_options.maybe_group_id.value_or("com.vcpkg.ndk.support");
@@ -430,14 +428,14 @@ namespace vcpkg::Export::Prefab
 
             auto meta_dir = package_directory / "META-INF";
 
-            utils.create_directories(meta_dir, error_code);
+            utils.create_directories(meta_dir, IgnoreErrors{});
 
             const auto share_root = paths.packages() / Strings::format("%s_%s", name, action.spec.triplet());
 
             utils.copy_file(share_root / "share" / name / "copyright",
                             meta_dir / "LICENSE",
                             CopyOptions::overwrite_existing,
-                            error_code);
+                            IgnoreErrors{});
 
             PackageMetadata pm;
             pm.name = artifact_id;
@@ -545,7 +543,7 @@ namespace vcpkg::Export::Prefab
                 {
                     auto module_dir = modules_directory / name;
                     auto module_libs_dir = module_dir / "libs";
-                    utils.create_directories(module_libs_dir, error_code);
+                    utils.create_directories(module_libs_dir, IgnoreErrors{});
                     auto installed_headers_dir = installed_dir / "include";
                     auto exported_headers_dir = module_dir / "include";
 
@@ -583,7 +581,7 @@ namespace vcpkg::Export::Prefab
                         }
                         auto module_dir = modules_directory / module_name;
                         auto module_libs_dir = module_dir / "libs" / Strings::format("android.%s", ab.abi);
-                        utils.create_directories(module_libs_dir, error_code);
+                        utils.create_directories(module_libs_dir, IgnoreErrors{});
 
                         auto abi_path = module_libs_dir / "abi.json";
 
@@ -596,8 +594,10 @@ namespace vcpkg::Export::Prefab
                         auto installed_module_path = libs / module.filename();
                         auto exported_module_path = module_libs_dir / module.filename();
 
-                        utils.copy_file(
-                            installed_module_path, exported_module_path, CopyOptions::overwrite_existing, error_code);
+                        utils.copy_file(installed_module_path,
+                                        exported_module_path,
+                                        CopyOptions::overwrite_existing,
+                                        IgnoreErrors{});
                         if (prefab_options.enable_debug)
                         {
                             print2(Strings::format(
@@ -636,9 +636,17 @@ namespace vcpkg::Export::Prefab
                     "[DEBUG] Exporting AAR And POM\n\tAAR Path %s\n\tPOM Path %s\n", exported_archive_path, pom_path));
             }
 
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               compress_directory_to_zip(paths, package_directory, exported_archive_path) != 0,
-                               Strings::concat("Failed to compress folder ", package_directory));
+            auto compress_result = compress_directory_to_zip(
+                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, package_directory, exported_archive_path);
+            if (!compress_result)
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          std::move(compress_result)
+                                              .error()
+                                              .append_raw("\nFailed to compress folder ")
+                                              .append_raw(package_directory.native())
+                                              .extract_data());
+            }
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"

@@ -39,7 +39,7 @@ const commandline = new CommandLine(argv.slice(2));
 setLocale(commandline.language, `${__dirname}/i18n/`);
 
 function header() {
-  if (!commandline.fromVCPKG) {
+  if (!commandline.vcpkgCommand) {
     if (commandline.debug) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       log(`${green.bold(`${product} command line utility`)} ${white.bold(cliVersion)} [node: ${white.bold(process.version)}; max-memory: ${white.bold(Math.round((require('v8').getHeapStatistics().heap_size_limit) / (1024 * 1024)) & 0xffffffff00)} gb]`);
@@ -134,8 +134,6 @@ async function main() {
   try {
     result = await command.run();
     log(blank);
-
-    await session.writePostscript();
   } catch (e) {
     // in --debug mode we want to see the stack trace(s).
     if (commandline.debug && e instanceof Error) {
@@ -146,11 +144,18 @@ async function main() {
     }
 
     error(e);
-    return process.exitCode = 1;
+
+    if (session.telemetryEnabled) {
+      flushTelemetry();
+    }
+    return process.exit(result ? 0 : 1);
   } finally {
-    flushTelemetry();
+    if (session.telemetryEnabled) {
+      flushTelemetry();
+    }
   }
-  return process.exitCode = (result ? 0 : 1);
+
+  return process.exit(result ? 0 : 1);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises

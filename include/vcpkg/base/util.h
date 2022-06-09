@@ -141,6 +141,12 @@ namespace vcpkg::Util
         cont.erase(std::remove_if(cont.begin(), cont.end(), pred), cont.end());
     }
 
+    template<class Range, class F>
+    void transform(Range& r, F f)
+    {
+        std::transform(r.begin(), r.end(), r.begin(), f);
+    }
+
     template<class ForwardIt1, class ForwardIt2>
     ForwardIt1 search_and_skip(ForwardIt1 first, ForwardIt1 last, ForwardIt2 s_first, ForwardIt2 s_last)
     {
@@ -252,7 +258,7 @@ namespace vcpkg::Util
         }
     }
 
-    template<class Range, class Comp = std::less<typename Range::value_type>>
+    template<class Range, class Comp = std::less<>>
     void sort(Range& cont, Comp comp = Comp())
     {
         using std::begin;
@@ -266,12 +272,12 @@ namespace vcpkg::Util
         return std::any_of(rng.begin(), rng.end(), std::move(pred));
     }
 
-    template<class Range>
-    Range&& sort_unique_erase(Range&& cont)
+    template<class Range, class Comp = std::less<>>
+    Range&& sort_unique_erase(Range&& cont, Comp comp = Comp())
     {
         using std::begin;
         using std::end;
-        std::sort(begin(cont), end(cont));
+        std::sort(begin(cont), end(cont), comp);
         cont.erase(std::unique(begin(cont), end(cont)), end(cont));
 
         return std::forward<Range>(cont);

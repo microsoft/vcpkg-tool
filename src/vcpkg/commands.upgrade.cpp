@@ -135,7 +135,7 @@ namespace vcpkg::Commands::Upgrade
                 }
 
                 auto maybe_control_file = provider.get_control_file(spec.name());
-                if (!maybe_control_file.has_value())
+                if (!maybe_control_file)
                 {
                     no_control_file.push_back(spec);
                     skip_version_check = true;

@@ -109,7 +109,7 @@ namespace vcpkg::Commands::X_Download
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: path was not a regular file: %s", file);
             }
-            auto actual_hash = Hash::get_file_hash(VCPKG_LINE_INFO, fs, file, Hash::Algorithm::Sha512);
+            auto actual_hash = Hash::get_file_hash(fs, file, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
             if (!Strings::case_insensitive_ascii_equals(*hash, actual_hash))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, "Error: file to store does not match hash");

@@ -1071,18 +1071,18 @@ TEST_CASE ("remove all -- benchmarks", "[files][!benchmark]")
 
         void operator()(Catch::Benchmark::Chronometer& meter, std::uint32_t max_depth) const
         {
-            std::vector<path> temp_dirs;
+            std::vector<Path> temp_dirs;
             temp_dirs.resize(meter.runs());
 
             std::generate(begin(temp_dirs), end(temp_dirs), [&] {
-                path temp_dir = base_temporary_directory() / get_random_filename(urbg);
+                Path temp_dir = base_temporary_directory() / get_random_filename(urbg);
                 create_directory_tree(urbg, fs, temp_dir, max_depth);
                 return temp_dir;
             });
 
             meter.measure([&](int run) {
                 std::error_code ec;
-                path fp;
+                Path fp;
                 const auto& temp_dir = temp_dirs[run];
 
                 fs.remove_all(temp_dir, ec, fp);

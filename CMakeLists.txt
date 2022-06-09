@@ -241,7 +241,7 @@ endif()
 
 # === Target: vcpkg ===
 
-add_executable(vcpkg ${VCPKG_SOURCES})
+add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 target_link_libraries(vcpkg PRIVATE vcpkglib)
 vcpkg_target_add_warning_options(vcpkg)
 if(VCPKG_ADD_SOURCELINK)
@@ -260,7 +260,7 @@ endif()
 # === Target: generate-message-map ===
 
 add_custom_target(generate-message-map
-   COMMAND vcpkg x-generate-default-message-map --no-allow-incorrect-comments locales/messages.json
+   COMMAND vcpkg x-generate-default-message-map locales/messages.json
    COMMAND vcpkg x-generate-default-message-map --no-output-comments locales/messages.en.json
    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
    COMMENT "Update locales/messages.json"
@@ -275,6 +275,7 @@ if (BUILD_TESTING)
     add_executable(vcpkg-test
         ${VCPKG_TEST_SOURCES}
         ${VCPKG_TEST_INCLUDES}
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest"
     )
     target_link_libraries(vcpkg-test PRIVATE vcpkglib)
     if(ANDROID)
@@ -292,7 +293,7 @@ endif()
 # === Target: vcpkg-fuzz ===
 
 if(VCPKG_BUILD_FUZZING)
-    add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES})
+    add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     target_link_libraries(vcpkg-fuzz PRIVATE vcpkglib)
     vcpkg_target_add_warning_options(vcpkg-fuzz)
 endif()
@@ -301,7 +302,7 @@ endif()
 # === Target: tls12-download ===
 
 if(VCPKG_BUILD_TLS12_DOWNLOADER)
-    add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES})
+    add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
     target_link_libraries(tls12-download winhttp wintrust shell32)

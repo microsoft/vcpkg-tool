@@ -3,7 +3,7 @@
 
 import { Strings } from '../collections';
 import { Demands } from './demands';
-import { Settings } from './Settings';
+import { Exports } from './exports';
 
 
 export interface AlternativeFulfillment extends Demands {
@@ -23,5 +23,5 @@ export interface AlternativeFulfillment extends Demands {
   matches: string | undefined;
 
   /** settings that should be applied to the context when activated if this is a match */
-  settings: Settings;
+  exports: Exports;
 }

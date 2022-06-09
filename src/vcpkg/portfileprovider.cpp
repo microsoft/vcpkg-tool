@@ -76,7 +76,7 @@ namespace vcpkg::PortFileProvider
         }
         else
         {
-            return Strings::concat("Error: unable to get baseline for port ", spec);
+            return std::move(maybe_baseline).error().extract_data();
         }
     }
 
@@ -88,11 +88,12 @@ namespace vcpkg::PortFileProvider
         return Util::fmap(m, [](const auto& p) { return p.second; });
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(VersionSpecMismatch,
-                                 (msg::path, msg::expected_version, msg::actual_version),
-                                 "",
-                                 "error: Failed to load port because version specs did not match\n    Path: "
-                                 "{path}\n    Expected: {expected_version}\n    Actual: {actual_version}");
+    DECLARE_AND_REGISTER_MESSAGE(
+        VersionSpecMismatch,
+        (msg::path, msg::expected_version, msg::actual_version),
+        "",
+        "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
+        "{actual_version}, but the version database indicates that it should be {expected_version}.");
 
     namespace
     {
@@ -102,7 +103,7 @@ namespace vcpkg::PortFileProvider
             BaselineProviderImpl(const BaselineProviderImpl&) = delete;
             BaselineProviderImpl& operator=(const BaselineProviderImpl&) = delete;
 
-            virtual Optional<Version> get_baseline_version(StringView port_name) const override
+            virtual ExpectedL<Version> get_baseline_version(StringView port_name) const override
             {
                 auto it = m_baseline_cache.find(port_name);
                 if (it != m_baseline_cache.end())
@@ -119,7 +120,7 @@ namespace vcpkg::PortFileProvider
 
         private:
             const VcpkgPaths& paths;
-            mutable std::map<std::string, Optional<Version>, std::less<>> m_baseline_cache;
+            mutable std::map<std::string, ExpectedL<Version>, std::less<>> m_baseline_cache;
         };
 
         struct VersionedPortfileProviderImpl : IVersionedPortfileProvider
@@ -190,10 +191,11 @@ namespace vcpkg::PortFileProvider
                             }
                             else
                             {
-                                return msg::format(msgVersionSpecMismatch,
-                                                   msg::path = path->path,
-                                                   msg::expected_version = version_spec,
-                                                   msg::actual_version = scf_vspec)
+                                return msg::format(msg::msgErrorMessage)
+                                    .append(msgVersionSpecMismatch,
+                                            msg::path = path->path,
+                                            msg::expected_version = version_spec,
+                                            msg::actual_version = scf_vspec)
                                     .extract_data();
                             }
                         }
@@ -239,8 +241,7 @@ namespace vcpkg::PortFileProvider
                                   .emplace(VersionSpec{std::move(port_name), std::move(version)},
                                            std::make_unique<SourceControlFileAndLocation>(std::move(scfl)))
                                   .first;
-                    Checks::check_exit(VCPKG_LINE_INFO, it->second.has_value());
-                    out.emplace(it->first.port_name, it->second.get()->get());
+                    out.emplace(it->first.port_name, it->second.value_or_exit(VCPKG_LINE_INFO).get());
                 }
             }
 

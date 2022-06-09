@@ -5,9 +5,9 @@ import { i } from '../../i18n';
 import { session } from '../../main';
 import { selectArtifacts } from '../artifacts';
 import { Command } from '../command';
-import { cmdSwitch, projectFile } from '../format';
+import { cmdSwitch } from '../format';
 import { activateProject } from '../project';
-import { debug, error } from '../styling';
+import { error } from '../styling';
 import { Project } from '../switches/project';
 import { Registry } from '../switches/registry';
 import { Version } from '../switches/version';
@@ -81,9 +81,6 @@ export class AddCommand extends Command {
 
     // write the file out.
     await projectManifest.metadata.save();
-
-    debug(i`Deactivating project ${projectFile(projectManifest.metadata.context.file)}`);
-    await session.deactivate();
 
     return await activateProject(projectManifest, this.commandLine);
   }
