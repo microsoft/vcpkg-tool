@@ -355,6 +355,19 @@ namespace
         }
     }
 
+    std::vector<Path> calculate_path_bases()
+    {
+        auto path_base_strings = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
+        std::vector<Path> result;
+        result.reserve(path_base_strings.size());
+        for (std::string& path_base_string : path_base_strings)
+        {
+            result.emplace_back(std::move(path_base_string));
+        }
+
+        return result;
+    }
+
 #if defined(_WIN32)
     struct FileHandle
     {
@@ -916,7 +929,7 @@ namespace
         }
     }
 #endif // ^^^ !_WIN32
-}
+} // unnamed namespace
 
 #if defined(_WIN32)
 namespace
@@ -3298,7 +3311,7 @@ namespace vcpkg
                 static constexpr StringLiteral extensions[] = {""};
 #endif // ^^^!_WIN32
 
-                static const std::vector<Path> path_bases = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
+                static const std::vector<Path> path_bases = calculate_path_bases();
                 for (Path path_base : path_bases)
                 {
                     for (auto&& stem : stems)
