@@ -4,6 +4,7 @@
 
 namespace vcpkg
 {
+    struct Unit;
     struct ExpectedLeftTag;
     struct ExpectedRightTag;
 

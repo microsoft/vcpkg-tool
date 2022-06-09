@@ -361,10 +361,10 @@ namespace vcpkg::Dependencies
                 ExpectedS<const SourceControlFileAndLocation&> maybe_scfl =
                     m_port_provider.get_control_file(ipv.spec().name());
 
-                if (maybe_scfl.has_value())
+                if (const auto scfl = maybe_scfl.get())
                 {
                     Checks::check_exit(VCPKG_LINE_INFO,
-                                       maybe_scfl.get()->source_control_file->core_paragraph->type.type ==
+                                       scfl->source_control_file->core_paragraph->type.type ==
                                            ipv.core->package.type.type,
                                        "Error: the port type of '%s' differs between the installed and available "
                                        "portfile.\nPlease manually remove '%s' and re-run this command.",

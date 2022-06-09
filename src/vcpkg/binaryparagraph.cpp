@@ -278,7 +278,7 @@ namespace vcpkg
         const auto my_paragraph = out_str.substr(initial_end);
         auto parsed_paragraph = Paragraphs::parse_single_paragraph(
             out_str.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
-        if (!parsed_paragraph.has_value())
+        if (!parsed_paragraph)
         {
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                        R"([sanity check] Failed to parse a serialized binary paragraph.

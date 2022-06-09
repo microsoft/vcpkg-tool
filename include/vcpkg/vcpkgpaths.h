@@ -129,17 +129,17 @@ namespace vcpkg
         std::string get_toolver_diagnostics() const;
 
         const ToolCache& get_tool_cache() const;
-        const Path& get_tool_exe(StringView tool) const;
-        const std::string& get_tool_version(StringView tool) const;
+        const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;
+        const std::string& get_tool_version(StringView tool, MessageSink& status_messages) const;
 
         GitConfig git_builtin_config() const;
         Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
 
         // Git manipulation in the vcpkg directory
-        ExpectedS<std::string> get_current_git_sha() const;
+        ExpectedL<std::string> get_current_git_sha() const;
         std::string get_current_git_sha_baseline_message() const;
         ExpectedS<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
-        ExpectedS<std::string> git_show(StringView treeish, const Path& dot_git_dir) const;
+        ExpectedL<std::string> git_show(StringView treeish, const Path& dot_git_dir) const;
 
         const DownloadManager& get_download_manager() const;
 
@@ -150,9 +150,9 @@ namespace vcpkg
         // Use {treeish} of "HEAD" for the default branch
         ExpectedS<std::string> git_fetch_from_remote_registry(StringView uri, StringView treeish) const;
         // runs `git fetch {uri} {treeish}`
-        Optional<std::string> git_fetch(StringView uri, StringView treeish) const;
-        ExpectedS<std::string> git_show_from_remote_registry(StringView hash, const Path& relative_path_to_file) const;
-        ExpectedS<std::string> git_find_object_id_for_remote_registry_path(StringView hash,
+        ExpectedS<Unit> git_fetch(StringView uri, StringView treeish) const;
+        ExpectedL<std::string> git_show_from_remote_registry(StringView hash, const Path& relative_path_to_file) const;
+        ExpectedL<std::string> git_find_object_id_for_remote_registry_path(StringView hash,
                                                                            const Path& relative_path_to_file) const;
         ExpectedS<Path> git_checkout_object_from_remote_registry(StringView tree) const;
 

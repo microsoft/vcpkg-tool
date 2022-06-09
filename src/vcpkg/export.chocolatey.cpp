@@ -160,7 +160,7 @@ if (Test-Path $installedDir)
         const auto vcpkg_root_path = paths.root;
         const auto raw_exported_dir_path = vcpkg_root_path / "chocolatey";
         const auto exported_dir_path = vcpkg_root_path / "chocolatey_exports";
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
 
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
         fs.create_directory(raw_exported_dir_path, VCPKG_LINE_INFO);
@@ -225,9 +225,9 @@ if (Test-Path $installedDir)
                                 .string_arg(nuspec_file_path)
                                 .string_arg("-NoDefaultExcludes");
 
-            const int exit_code =
-                cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
-            Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed");
+            flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
+                    Tools::NUGET)
+                .value_or_exit(VCPKG_LINE_INFO);
         }
     }
 }

@@ -215,7 +215,8 @@ namespace vcpkg::Build
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
     LocalizedString create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
-                                                        const VcpkgPaths& paths);
+                                                        const VcpkgPaths& paths,
+                                                        Optional<Path>&& issue_body = nullopt);
 
     /// <summary>
     /// Settings from the triplet file which impact the build environment and post-build checks
@@ -256,15 +257,23 @@ namespace vcpkg::Build
     struct ExtendedBuildResult
     {
         explicit ExtendedBuildResult(BuildResult code);
+        explicit ExtendedBuildResult(BuildResult code, vcpkg::Path stdoutlog, std::vector<std::string>&& error_logs);
         ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps);
         ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 
         BuildResult code;
         std::vector<FeatureSpec> unmet_dependencies;
         std::unique_ptr<BinaryControlFile> binary_control_file;
+        Optional<vcpkg::Path> stdoutlog;
+        std::vector<std::string> error_logs;
     };
 
     LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec);
+
+    std::string create_github_issue(const VcpkgCmdArguments& args,
+                                    const ExtendedBuildResult& build_result,
+                                    const VcpkgPaths& paths,
+                                    const Dependencies::InstallPlanAction& action);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
@@ -300,7 +309,7 @@ namespace vcpkg::Build
     struct BuildPolicies
     {
         BuildPolicies() = default;
-        BuildPolicies(std::map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
+        BuildPolicies(std::unordered_map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
 
         bool is_enabled(BuildPolicy policy) const
         {
@@ -310,7 +319,7 @@ namespace vcpkg::Build
         }
 
     private:
-        std::map<BuildPolicy, bool> m_policies;
+        std::unordered_map<BuildPolicy, bool> m_policies;
     };
 
     enum class LinkageType : char

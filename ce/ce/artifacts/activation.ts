@@ -422,7 +422,7 @@ export class Activation {
         return `$${obj}.${member}`;
     }
 
-    this.#session.channels.debug(i`Unresolved varible reference found ($${obj}.${member}) during variable substitution.`);
+    this.#session.channels.debug(i`Unresolved variable reference found ($${obj}.${member}) during variable substitution.`);
     return `$${obj}.${member}`;
   }
 
