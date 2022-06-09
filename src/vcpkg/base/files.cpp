@@ -3298,8 +3298,8 @@ namespace vcpkg
                 static constexpr StringLiteral extensions[] = {""};
 #endif // ^^^!_WIN32
 
-                for (Path path_base :
-                     Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO)))
+                static const std::vector<Path> path_bases = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
+                for (Path path_base : path_bases)
                 {
                     for (auto&& stem : stems)
                     {
