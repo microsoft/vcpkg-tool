@@ -42,7 +42,7 @@ namespace vcpkg::Commands::SetInstalled
                              const PathsPortFileProvider& provider,
                              BinaryCache& binary_cache,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
-                             Dependencies::ActionPlan action_plan,
+                             ActionPlan action_plan,
                              DryRun dry_run,
                              const Optional<Path>& maybe_pkgsconfig,
                              Triplet host_triplet,
@@ -59,7 +59,7 @@ namespace vcpkg::Commands::SetInstalled
         for (const auto& action : action_plan.install_actions)
         {
             all_abis.insert(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
-            if (action.request_type == Dependencies::RequestType::USER_REQUESTED)
+            if (action.request_type == RequestType::USER_REQUESTED)
             {
                 // save for reporting usage later
                 user_requested_specs.push_back(action.spec);
@@ -86,7 +86,7 @@ namespace vcpkg::Commands::SetInstalled
             }
         }
 
-        action_plan.remove_actions = Dependencies::create_remove_plan(specs_to_remove, status_db);
+        action_plan.remove_actions = create_remove_plan(specs_to_remove, status_db);
 
         for (const auto& action : action_plan.remove_actions)
         {
@@ -95,11 +95,11 @@ namespace vcpkg::Commands::SetInstalled
             specs_installed.erase(action.spec);
         }
 
-        Util::erase_remove_if(action_plan.install_actions, [&](const Dependencies::InstallPlanAction& ipa) {
+        Util::erase_remove_if(action_plan.install_actions, [&](const InstallPlanAction& ipa) {
             return Util::Sets::contains(specs_installed, ipa.spec);
         });
 
-        Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+        print_plan(action_plan, true, paths.builtin_ports_directory());
 
         if (auto p_pkgsconfig = maybe_pkgsconfig.get())
         {
@@ -172,7 +172,7 @@ namespace vcpkg::Commands::SetInstalled
         // We have a set of user-requested specs.
         // We need to know all the specs which are required to fulfill dependencies for those specs.
         // Therefore, we see what we would install into an empty installed tree, so we can use the existing code.
-        auto action_plan = Dependencies::create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet});
+        auto action_plan = create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet});
 
         for (auto&& action : action_plan.install_actions)
         {

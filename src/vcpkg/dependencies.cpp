@@ -14,9 +14,7 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-using namespace vcpkg;
-
-namespace vcpkg::Dependencies
+namespace vcpkg
 {
     namespace
     {

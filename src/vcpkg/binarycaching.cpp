@@ -268,10 +268,10 @@ namespace
 
         static Path make_archive_subpath(const std::string& abi) { return Path(abi.substr(0, 2)) / (abi + ".zip"); }
 
-        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<size_t> to_try_restore_idxs;
-            std::vector<const Dependencies::InstallPlanAction*> to_try_restore;
+            std::vector<const InstallPlanAction*> to_try_restore;
 
             for (const auto& archives_root_dir : m_read_dirs)
             {
@@ -309,7 +309,7 @@ namespace
             }
         }
 
-        std::vector<RestoreResult> try_restore_n(View<const Dependencies::InstallPlanAction*> actions,
+        std::vector<RestoreResult> try_restore_n(View<const InstallPlanAction*> actions,
                                                  const Path& archives_root_dir) const
         {
             auto& fs = paths.get_filesystem();
@@ -363,7 +363,7 @@ namespace
             return results;
         }
 
-        RestoreResult try_restore(const Dependencies::InstallPlanAction& action) const override
+        RestoreResult try_restore(const InstallPlanAction& action) const override
         {
             // Note: this method is almost never called -- it will only be called if another provider promised to
             // restore a package but then failed at runtime
@@ -379,7 +379,7 @@ namespace
             return RestoreResult::unavailable;
         }
 
-        void push_success(const Dependencies::InstallPlanAction& action) const override
+        void push_success(const InstallPlanAction& action) const override
         {
             if (m_write_dirs.empty() && m_put_url_templates.empty())
             {
@@ -453,7 +453,7 @@ namespace
             }
         }
 
-        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
             for (size_t idx = 0; idx < actions.size(); ++idx)
@@ -503,14 +503,11 @@ namespace
         {
         }
 
-        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
-        {
-            return RestoreResult::unavailable;
-        }
+        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const Dependencies::InstallPlanAction&) const override { }
+        void push_success(const InstallPlanAction&) const override { }
 
-        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             const auto timer = ElapsedTimer::create_started();
             auto& fs = paths.get_filesystem();
@@ -579,7 +576,7 @@ namespace
                    ". Use --debug for more information.\n");
         }
 
-        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<CacheAvailability> actions_present{actions.size()};
             std::vector<std::string> urls;
@@ -750,7 +747,7 @@ namespace
             fs.write_contents(packages_config, xml.buf, VCPKG_LINE_INFO);
         }
 
-        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             if (m_read_sources.empty() && m_read_configs.empty())
             {
@@ -896,12 +893,9 @@ namespace
                    ". Use --debug for more information.\n");
         }
 
-        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
-        {
-            return RestoreResult::unavailable;
-        }
+        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const Dependencies::InstallPlanAction& action) const override
+        void push_success(const InstallPlanAction& action) const override
         {
             if (m_write_sources.empty() && m_write_configs.empty())
             {
@@ -999,7 +993,7 @@ namespace
             fs.remove(nupkg_path, IgnoreErrors{});
         }
 
-        void precheck(View<Dependencies::InstallPlanAction>, View<CacheStatus*>) const override { }
+        void precheck(View<InstallPlanAction>, View<CacheStatus*>) const override { }
 
     private:
         const VcpkgPaths& paths;
@@ -1029,7 +1023,7 @@ namespace
             return Strings::concat(prefix, abi, ".zip");
         }
 
-        void prefetch(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             auto& fs = paths.get_filesystem();
 
@@ -1099,12 +1093,9 @@ namespace
                          msg::vendor = vendor());
         }
 
-        RestoreResult try_restore(const Dependencies::InstallPlanAction&) const override
-        {
-            return RestoreResult::unavailable;
-        }
+        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const Dependencies::InstallPlanAction& action) const override
+        void push_success(const InstallPlanAction& action) const override
         {
             if (m_write_prefixes.empty()) return;
             const auto timer = ElapsedTimer::create_started();
@@ -1137,7 +1128,7 @@ namespace
                          msg::vendor = vendor());
         }
 
-        void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
+        void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
             std::vector<CacheAvailability> actions_availability{actions.size()};
             for (const auto& prefix : m_read_prefixes)
@@ -1377,7 +1368,7 @@ namespace vcpkg
         }
     }
 
-    RestoreResult BinaryCache::try_restore(const Dependencies::InstallPlanAction& action)
+    RestoreResult BinaryCache::try_restore(const InstallPlanAction& action)
     {
         const auto abi = action.package_abi().get();
         if (!abi)
@@ -1430,7 +1421,7 @@ namespace vcpkg
         return RestoreResult::unavailable;
     }
 
-    void BinaryCache::push_success(const Dependencies::InstallPlanAction& action)
+    void BinaryCache::push_success(const InstallPlanAction& action)
     {
         const auto abi = action.package_abi().get();
         if (abi)
@@ -1444,7 +1435,7 @@ namespace vcpkg
         }
     }
 
-    void BinaryCache::prefetch(View<Dependencies::InstallPlanAction> actions)
+    void BinaryCache::prefetch(View<InstallPlanAction> actions)
     {
         std::vector<CacheStatus*> cache_status{actions.size()};
         for (size_t idx = 0; idx < actions.size(); ++idx)
@@ -1469,7 +1460,7 @@ namespace vcpkg
         }
     }
 
-    std::vector<CacheAvailability> BinaryCache::precheck(View<Dependencies::InstallPlanAction> actions)
+    std::vector<CacheAvailability> BinaryCache::precheck(View<InstallPlanAction> actions)
     {
         std::vector<CacheStatus*> cache_status{actions.size()};
         for (size_t idx = 0; idx < actions.size(); ++idx)
@@ -2336,7 +2327,7 @@ details::NuGetRepoInfo details::get_nuget_repo_info_from_env()
 }
 
 std::string vcpkg::generate_nuspec(const Path& package_dir,
-                                   const Dependencies::InstallPlanAction& action,
+                                   const InstallPlanAction& action,
                                    const vcpkg::NugetReference& ref,
                                    details::NuGetRepoInfo rinfo)
 {
@@ -2531,11 +2522,10 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
     print2("\nExtended documentation is available at ", docs::binarycaching_url, "\n");
 }
 
-std::string vcpkg::generate_nuget_packages_config(const Dependencies::ActionPlan& action)
+std::string vcpkg::generate_nuget_packages_config(const ActionPlan& action)
 {
-    auto refs = Util::fmap(action.install_actions, [&](const Dependencies::InstallPlanAction& ipa) {
-        return make_nugetref(ipa, get_nuget_prefix());
-    });
+    auto refs = Util::fmap(action.install_actions,
+                           [&](const InstallPlanAction& ipa) { return make_nugetref(ipa, get_nuget_prefix()); });
     XmlSerializer xml;
     xml.emit_declaration().line_break();
     xml.open_tag("packages").line_break();

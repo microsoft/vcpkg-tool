@@ -14,9 +14,6 @@
 
 #include <vector>
 
-using vcpkg::Dependencies::ActionPlan;
-using vcpkg::Dependencies::InstallPlanAction;
-
 namespace vcpkg::Commands::DependInfo
 {
     namespace
@@ -319,8 +316,8 @@ namespace vcpkg::Commands::DependInfo
         // By passing an empty status_db, we should get a plan containing all dependencies.
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
-        auto action_plan = Dependencies::create_feature_install_plan(
-            provider, var_provider, specs, status_db, {host_triplet, Dependencies::UnsupportedPortAction::Warn});
+        auto action_plan = create_feature_install_plan(
+            provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
         for (const auto& warning : action_plan.warnings)
         {
             print2(Color::warning, warning, '\n');

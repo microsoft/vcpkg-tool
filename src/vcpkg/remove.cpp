@@ -15,9 +15,6 @@
 
 namespace vcpkg::Remove
 {
-    using Dependencies::RemovePlanAction;
-    using Dependencies::RemovePlanType;
-    using Dependencies::RequestType;
     using Update::OutdatedPackage;
 
     REGISTER_MESSAGE(RemovingPackage);
@@ -122,7 +119,7 @@ namespace vcpkg::Remove
             std::vector<const RemovePlanAction*> cont = it->second;
             std::sort(cont.begin(), cont.end(), &RemovePlanAction::compare_by_name);
             const std::string as_string = Strings::join("\n", cont, [](const RemovePlanAction* p) {
-                return Dependencies::to_output_string(p->request_type, p->spec.to_string());
+                return to_output_string(p->request_type, p->spec.to_string());
             });
 
             switch (plan_type)
@@ -248,7 +245,7 @@ namespace vcpkg::Remove
         const bool is_recursive = Util::Sets::contains(options.switches, OPTION_RECURSE);
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
-        const std::vector<RemovePlanAction> remove_plan = Dependencies::create_remove_plan(specs, status_db);
+        const std::vector<RemovePlanAction> remove_plan = create_remove_plan(specs, status_db);
         Checks::check_exit(VCPKG_LINE_INFO, !remove_plan.empty(), "Remove plan cannot be empty");
 
         std::map<RemovePlanType, std::vector<const RemovePlanAction*>> group_by_plan_type;

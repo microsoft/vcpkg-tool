@@ -105,9 +105,6 @@ namespace
 
 namespace vcpkg::Commands::CI
 {
-    using Dependencies::InstallPlanAction;
-    using Dependencies::InstallPlanType;
-
     struct TripletAndSummary
     {
         Triplet triplet;
@@ -338,11 +335,11 @@ namespace vcpkg::Commands::CI
         return supports_expression.evaluate(context);
     }
 
-    static Dependencies::ActionPlan compute_full_plan(const VcpkgPaths& paths,
-                                                      const PortFileProvider& provider,
-                                                      const CMakeVars::CMakeVarProvider& var_provider,
-                                                      const std::vector<FullPackageSpec>& specs,
-                                                      const Dependencies::CreateInstallPlanOptions& serialize_options)
+    static ActionPlan compute_full_plan(const VcpkgPaths& paths,
+                                        const PortFileProvider& provider,
+                                        const CMakeVars::CMakeVarProvider& var_provider,
+                                        const std::vector<FullPackageSpec>& specs,
+                                        const CreateInstallPlanOptions& serialize_options)
     {
         std::vector<PackageSpec> packages_with_qualified_deps;
         for (auto&& spec : specs)
@@ -355,8 +352,7 @@ namespace vcpkg::Commands::CI
         }
 
         var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
-        auto action_plan =
-            Dependencies::create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
+        auto action_plan = create_feature_install_plan(provider, var_provider, specs, {}, serialize_options);
 
         var_provider.load_tag_vars(action_plan, provider, serialize_options.host_triplet);
 
@@ -371,7 +367,7 @@ namespace vcpkg::Commands::CI
         ExclusionPredicate is_excluded,
         const CMakeVars::CMakeVarProvider& var_provider,
         const std::vector<CacheAvailability>& precheck_results,
-        const Dependencies::ActionPlan& action_plan)
+        const ActionPlan& action_plan)
     {
         auto ret = std::make_unique<UnknownCIPortsResults>();
 
@@ -423,7 +419,7 @@ namespace vcpkg::Commands::CI
     }
 
     // This algorithm reduces an action plan to only unknown actions and their dependencies
-    static void reduce_action_plan(Dependencies::ActionPlan& action_plan,
+    static void reduce_action_plan(ActionPlan& action_plan,
                                    const std::map<PackageSpec, BuildResult>& known,
                                    View<std::string> parent_hashes)
     {
@@ -615,8 +611,7 @@ namespace vcpkg::Commands::CI
                                                 InternalFeatureSet{"core", "default"});
         }
 
-        Dependencies::CreateInstallPlanOptions serialize_options(host_triplet,
-                                                                 Dependencies::UnsupportedPortAction::Warn);
+        CreateInstallPlanOptions serialize_options(host_triplet, UnsupportedPortAction::Warn);
 
         struct RandomizerInstance : Graphs::Randomizer
         {
@@ -703,7 +698,7 @@ namespace vcpkg::Commands::CI
 
         if (is_dry_run)
         {
-            Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+            print_plan(action_plan, true, paths.builtin_ports_directory());
         }
         else
         {

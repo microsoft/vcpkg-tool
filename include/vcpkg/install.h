@@ -27,8 +27,8 @@ namespace vcpkg::Install
 
     struct SpecSummary
     {
-        explicit SpecSummary(const Dependencies::InstallPlanAction& action);
-        explicit SpecSummary(const Dependencies::RemovePlanAction& action);
+        explicit SpecSummary(const InstallPlanAction& action);
+        explicit SpecSummary(const RemovePlanAction& action);
 
         const BinaryParagraph* get_binary_paragraph() const;
         const PackageSpec& get_spec() const { return m_spec; }
@@ -38,7 +38,7 @@ namespace vcpkg::Install
         std::chrono::system_clock::time_point start_time;
 
     private:
-        const Dependencies::InstallPlanAction* m_install_action;
+        const InstallPlanAction* m_install_action;
         PackageSpec m_spec;
     };
 
@@ -65,7 +65,7 @@ namespace vcpkg::Install
 
     ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
                                                     const VcpkgPaths& paths,
-                                                    Dependencies::InstallPlanAction& action,
+                                                    InstallPlanAction& action,
                                                     StatusParagraphs& status_db,
                                                     const CMakeVars::CMakeVarProvider& var_provider);
 
@@ -87,7 +87,7 @@ namespace vcpkg::Install
                                   StatusParagraphs* status_db);
 
     InstallSummary perform(const VcpkgCmdArguments& args,
-                           Dependencies::ActionPlan& action_plan,
+                           ActionPlan& action_plan,
                            const KeepGoing keep_going,
                            const VcpkgPaths& paths,
                            StatusParagraphs& status_db,
@@ -125,5 +125,5 @@ namespace vcpkg::Install
                                       Triplet host_triplet) const override;
     };
 
-    void track_install_plan(Dependencies::ActionPlan& plan);
+    void track_install_plan(ActionPlan& plan);
 }

@@ -22,9 +22,6 @@
 
 namespace vcpkg::Export
 {
-    using Dependencies::ExportPlanAction;
-    using Dependencies::ExportPlanType;
-    using Dependencies::RequestType;
     using Install::InstallDir;
 
     static std::string create_nuspec_file_contents(const Path& raw_exported_dir,
@@ -105,8 +102,7 @@ namespace vcpkg::Export
             std::vector<const ExportPlanAction*> cont = it->second;
             std::sort(cont.begin(), cont.end(), &ExportPlanAction::compare_by_name);
             const std::string as_string = Strings::join("\n", cont, [](const ExportPlanAction* p) {
-                return Dependencies::to_output_string(
-                    p->request_type, p->spec.to_string(), default_build_package_options);
+                return to_output_string(p->request_type, p->spec.to_string(), default_build_package_options);
             });
 
             switch (plan_type)
@@ -617,7 +613,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         PathsPortFileProvider provider(paths, args.overlay_ports);
 
         // create the plan
-        std::vector<ExportPlanAction> export_plan = Dependencies::create_export_plan(opts.specs, status_db);
+        std::vector<ExportPlanAction> export_plan = create_export_plan(opts.specs, status_db);
         Checks::check_exit(VCPKG_LINE_INFO, !export_plan.empty(), "Export plan cannot be empty");
 
         std::map<ExportPlanType, std::vector<const ExportPlanAction*>> group_by_plan_type;

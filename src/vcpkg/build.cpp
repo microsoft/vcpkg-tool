@@ -232,9 +232,6 @@ namespace vcpkg
 
 namespace vcpkg::Build
 {
-    using Dependencies::InstallPlanAction;
-    using Dependencies::InstallPlanType;
-
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const FullPackageSpec& full_spec,
                              Triplet host_triplet,
@@ -278,8 +275,8 @@ namespace vcpkg::Build
         var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-        auto action_plan = Dependencies::create_feature_install_plan(
-            provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
+        auto action_plan =
+            create_feature_install_plan(provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
@@ -879,7 +876,7 @@ namespace vcpkg
 
     static std::vector<CMakeVariable> get_cmake_build_args(const VcpkgCmdArguments& args,
                                                            const VcpkgPaths& paths,
-                                                           const Dependencies::InstallPlanAction& action)
+                                                           const InstallPlanAction& action)
     {
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto& scf = *scfl.source_control_file;
@@ -1019,7 +1016,7 @@ namespace vcpkg
     }
 
     static void write_sbom(const VcpkgPaths& paths,
-                           const Dependencies::InstallPlanAction& action,
+                           const InstallPlanAction& action,
                            std::vector<Json::Value> heuristic_resources)
     {
         auto& fs = paths.get_filesystem();
@@ -1048,7 +1045,7 @@ namespace vcpkg
 
     static ExtendedBuildResult do_build_package(const VcpkgCmdArguments& args,
                                                 const VcpkgPaths& paths,
-                                                const Dependencies::InstallPlanAction& action)
+                                                const InstallPlanAction& action)
     {
         const auto& pre_build_info = action.pre_build_info(VCPKG_LINE_INFO);
 
@@ -1173,7 +1170,7 @@ namespace vcpkg
 
     static ExtendedBuildResult do_build_package_and_clean_buildtrees(const VcpkgCmdArguments& args,
                                                                      const VcpkgPaths& paths,
-                                                                     const Dependencies::InstallPlanAction& action)
+                                                                     const InstallPlanAction& action)
     {
         auto result = do_build_package(args, paths, action);
 
@@ -1224,7 +1221,7 @@ namespace vcpkg
     };
 
     static Optional<AbiTagAndFiles> compute_abi_tag(const VcpkgPaths& paths,
-                                                    const Dependencies::InstallPlanAction& action,
+                                                    const InstallPlanAction& action,
                                                     Span<const AbiEntry> dependency_abis)
     {
         auto& fs = paths.get_filesystem();
@@ -1378,11 +1375,10 @@ namespace vcpkg
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
-                          Dependencies::ActionPlan& action_plan,
+                          ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db)
     {
-        using Dependencies::InstallPlanAction;
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
             auto& action = *it;
@@ -1439,7 +1435,7 @@ namespace vcpkg
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
-                                      const Dependencies::InstallPlanAction& action,
+                                      const InstallPlanAction& action,
                                       BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db)
@@ -1603,7 +1599,7 @@ namespace vcpkg
     std::string create_github_issue(const VcpkgCmdArguments& args,
                                     const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
-                                    const Dependencies::InstallPlanAction& action)
+                                    const InstallPlanAction& action)
     {
         const auto& fs = paths.get_filesystem();
         const auto create_log_details = [&fs](vcpkg::Path&& path) {
@@ -1670,7 +1666,7 @@ namespace vcpkg
             manifest);
     }
 
-    LocalizedString create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
                                                         const VcpkgPaths& paths,
                                                         Optional<Path>&& issue_body)
     {

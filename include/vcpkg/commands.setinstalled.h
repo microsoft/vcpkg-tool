@@ -13,7 +13,7 @@ namespace vcpkg::Commands::SetInstalled
                              const PathsPortFileProvider& provider,
                              BinaryCache& binary_cache,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
-                             Dependencies::ActionPlan action_plan,
+                             ActionPlan action_plan,
                              DryRun dry_run,
                              const Optional<Path>& pkgsconfig_path,
                              Triplet host_triplet,

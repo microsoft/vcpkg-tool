@@ -81,8 +81,8 @@ namespace vcpkg::Commands::Upgrade
         const KeepGoing keep_going = determine_keep_going(Util::Sets::contains(options.switches, OPTION_KEEP_GOING),
                                                           Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING));
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
-                                                 ? Dependencies::UnsupportedPortAction::Warn
-                                                 : Dependencies::UnsupportedPortAction::Error;
+                                                 ? UnsupportedPortAction::Warn
+                                                 : UnsupportedPortAction::Error;
 
         BinaryCache binary_cache{args, paths};
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
@@ -97,7 +97,7 @@ namespace vcpkg::Commands::Upgrade
             return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        Dependencies::ActionPlan action_plan;
+        ActionPlan action_plan;
         if (specs.empty())
         {
             // If no packages specified, upgrade all outdated packages.
@@ -109,7 +109,7 @@ namespace vcpkg::Commands::Upgrade
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
 
-            action_plan = Dependencies::create_upgrade_plan(
+            action_plan = create_upgrade_plan(
                 provider,
                 var_provider,
                 Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
@@ -191,7 +191,7 @@ namespace vcpkg::Commands::Upgrade
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
-            action_plan = Dependencies::create_upgrade_plan(
+            action_plan = create_upgrade_plan(
                 provider, var_provider, to_upgrade, status_db, {host_triplet, unsupported_port_action});
         }
 
@@ -206,7 +206,7 @@ namespace vcpkg::Commands::Upgrade
             action.build_options = default_build_package_options;
         }
 
-        Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
+        print_plan(action_plan, true, paths.builtin_ports_directory());
 
         if (!no_dry_run)
         {

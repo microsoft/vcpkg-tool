@@ -25,7 +25,7 @@ using Test::PackageSpecMap;
 /// <summary>
 /// Assert that the given action an install of given features from given package.
 /// </summary>
-static void features_check(Dependencies::InstallPlanAction& plan,
+static void features_check(InstallPlanAction& plan,
                            std::string pkg_name,
                            std::vector<std::string> expected_features,
                            Triplet triplet = Test::X86_WINDOWS)
@@ -52,9 +52,7 @@ static void features_check(Dependencies::InstallPlanAction& plan,
 /// <summary>
 /// Assert that the given action is a remove of given package.
 /// </summary>
-static void remove_plan_check(Dependencies::RemovePlanAction& plan,
-                              std::string pkg_name,
-                              Triplet triplet = Test::X86_WINDOWS)
+static void remove_plan_check(RemovePlanAction& plan, std::string pkg_name, Triplet triplet = Test::X86_WINDOWS)
 {
     REQUIRE(plan.spec.triplet().to_string() == triplet.to_string());
     REQUIRE(pkg_name == plan.spec.name());
@@ -72,7 +70,7 @@ TEST_CASE ("basic install scheme", "[plan]")
     MapPortFileProvider map_port(spec_map.map);
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(
+    auto install_plan = create_feature_install_plan(
         map_port, var_provider, Test::parse_test_fspecs("a[core]"), StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 3);
@@ -99,7 +97,7 @@ TEST_CASE ("multiple install scheme", "[plan]")
     MockCMakeVarProvider var_provider;
 
     const auto full_package_specs = Test::parse_test_fspecs("a b c");
-    auto install_plan = Dependencies::create_feature_install_plan(
+    auto install_plan = create_feature_install_plan(
         map_port, var_provider, full_package_specs, StatusParagraphs(std::move(status_paragraphs)));
 
     auto iterator_pos = [&](const PackageSpec& spec) {
@@ -141,14 +139,14 @@ TEST_CASE ("existing package scheme", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(
+    auto install_plan = create_feature_install_plan(
         map_port, var_provider, Test::parse_test_fspecs("a"), StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 1);
     const auto p = &install_plan.already_installed.at(0);
     REQUIRE(p->spec.name() == "a");
-    REQUIRE(p->plan_type == Dependencies::InstallPlanType::ALREADY_INSTALLED);
-    REQUIRE(p->request_type == Dependencies::RequestType::USER_REQUESTED);
+    REQUIRE(p->plan_type == InstallPlanType::ALREADY_INSTALLED);
+    REQUIRE(p->request_type == RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("user requested package scheme", "[plan]")
@@ -162,19 +160,19 @@ TEST_CASE ("user requested package scheme", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    const auto install_plan = Dependencies::create_feature_install_plan(
+    const auto install_plan = create_feature_install_plan(
         map_port, var_provider, Test::parse_test_fspecs("a"), StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 2);
     const auto p = &install_plan.install_actions.at(0);
     REQUIRE(p->spec.name() == "b");
-    REQUIRE(p->plan_type == Dependencies::InstallPlanType::BUILD_AND_INSTALL);
-    REQUIRE(p->request_type == Dependencies::RequestType::AUTO_SELECTED);
+    REQUIRE(p->plan_type == InstallPlanType::BUILD_AND_INSTALL);
+    REQUIRE(p->request_type == RequestType::AUTO_SELECTED);
 
     const auto p2 = &install_plan.install_actions.at(1);
     REQUIRE(p2->spec.name() == "a");
-    REQUIRE(p2->plan_type == Dependencies::InstallPlanType::BUILD_AND_INSTALL);
-    REQUIRE(p2->request_type == Dependencies::RequestType::USER_REQUESTED);
+    REQUIRE(p2->plan_type == InstallPlanType::BUILD_AND_INSTALL);
+    REQUIRE(p2->request_type == RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("long install scheme", "[plan]")
@@ -199,7 +197,7 @@ TEST_CASE ("long install scheme", "[plan]")
     MapPortFileProvider map_port(spec_map.map);
     MockCMakeVarProvider var_provider;
 
-    auto plan = Dependencies::create_feature_install_plan(
+    auto plan = create_feature_install_plan(
         map_port, var_provider, Test::parse_test_fspecs("a"), StatusParagraphs(std::move(status_paragraphs)));
 
     auto& install_plan = plan.install_actions;
@@ -232,8 +230,8 @@ TEST_CASE ("basic feature test 1", "[plan]")
         status_paragraphs.push_back(make_status_pgh("b"));
         status_paragraphs.push_back(make_status_feature_pgh("b", "b1"));
 
-        auto plan = Dependencies::create_feature_install_plan(
-            map_port, var_provider, fspecs, StatusParagraphs(std::move(status_paragraphs)));
+        auto plan =
+            create_feature_install_plan(map_port, var_provider, fspecs, StatusParagraphs(std::move(status_paragraphs)));
 
         REQUIRE(plan.size() == 4);
         remove_plan_check(plan.remove_actions.at(0), "a");
@@ -244,7 +242,7 @@ TEST_CASE ("basic feature test 1", "[plan]")
 
     SECTION ("2")
     {
-        auto plan = Dependencies::create_feature_install_plan(map_port, var_provider, fspecs, StatusParagraphs());
+        auto plan = create_feature_install_plan(map_port, var_provider, fspecs, StatusParagraphs());
 
         auto& install_plan = plan.install_actions;
         REQUIRE(install_plan.size() == 2);
@@ -267,10 +265,10 @@ TEST_CASE ("basic feature test 3", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto plan = Dependencies::create_feature_install_plan(map_port,
-                                                          var_provider,
-                                                          Test::parse_test_fspecs("c[core] a[core]"),
-                                                          StatusParagraphs(std::move(status_paragraphs)));
+    auto plan = create_feature_install_plan(map_port,
+                                            var_provider,
+                                            Test::parse_test_fspecs("c[core] a[core]"),
+                                            StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(plan.size() == 4);
     remove_plan_check(plan.remove_actions.at(0), "a");
@@ -295,7 +293,7 @@ TEST_CASE ("basic feature test 4", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(
+    auto install_plan = create_feature_install_plan(
         map_port, var_provider, Test::parse_test_fspecs("c[core]"), StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 1);
@@ -314,7 +312,7 @@ TEST_CASE ("basic feature test 5", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(
+    auto install_plan = create_feature_install_plan(
         map_port, var_provider, Test::parse_test_fspecs("a[a3]"), StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 2);
@@ -334,10 +332,10 @@ TEST_CASE ("basic feature test 6", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto plan = Dependencies::create_feature_install_plan(map_port,
-                                                          var_provider,
-                                                          Test::parse_test_fspecs("a[core] b[b1]"),
-                                                          StatusParagraphs(std::move(status_paragraphs)));
+    auto plan = create_feature_install_plan(map_port,
+                                            var_provider,
+                                            Test::parse_test_fspecs("a[core] b[b1]"),
+                                            StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(plan.size() == 3);
     remove_plan_check(plan.remove_actions.at(0), "b");
@@ -360,7 +358,7 @@ TEST_CASE ("basic feature test 7", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto plan = Dependencies::create_feature_install_plan(
+    auto plan = create_feature_install_plan(
         map_port, var_provider, Test::parse_test_fspecs("b[b1]"), StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(plan.size() == 5);
@@ -387,11 +385,10 @@ TEST_CASE ("basic feature test 8", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto plan = Dependencies::create_feature_install_plan(
-        map_port,
-        var_provider,
-        Test::parse_test_fspecs("c[core]:x64-windows a a[core]:x64-windows c"),
-        StatusParagraphs(std::move(status_paragraphs)));
+    auto plan = create_feature_install_plan(map_port,
+                                            var_provider,
+                                            Test::parse_test_fspecs("c[core]:x64-windows a a[core]:x64-windows c"),
+                                            StatusParagraphs(std::move(status_paragraphs)));
 
     remove_plan_check(plan.remove_actions.at(0), "a", Test::X64_WINDOWS);
     remove_plan_check(plan.remove_actions.at(1), "a");
@@ -414,10 +411,10 @@ TEST_CASE ("install all features test", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a[*]:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a[*]:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 1);
     features_check(install_plan.install_actions.at(0), "a", {"0", "1", "core"}, Test::X64_WINDOWS);
@@ -435,10 +432,10 @@ TEST_CASE ("install default features test 1", "[plan]")
     MockCMakeVarProvider var_provider;
 
     // Install "a" (without explicit feature specification)
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     // Expect the default feature "1" to be installed, but not "0"
     REQUIRE(install_plan.size() == 1);
@@ -461,10 +458,10 @@ TEST_CASE ("install default features test 2", "[plan]")
     MockCMakeVarProvider var_provider;
 
     // Install "a" (without explicit feature specification)
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     // Expect "a" to get removed for rebuild and then installed with default
     // features.
@@ -485,10 +482,10 @@ TEST_CASE ("install default features test 3", "[plan]")
     MockCMakeVarProvider var_provider;
 
     // Explicitly install "a" without default features
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a[core]:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a[core]:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     // Expect the default feature not to get installed.
     REQUIRE(install_plan.size() == 1);
@@ -509,10 +506,10 @@ TEST_CASE ("install default features of dependency test 1", "[plan]")
     MockCMakeVarProvider var_provider;
 
     // Install "a" (without explicit feature specification)
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     // Expect "a" to get installed and defaults of "b" through the dependency,
     // as no explicit features of "b" are installed by the user.
@@ -534,11 +531,10 @@ TEST_CASE ("do not install default features of dependency test 1", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan =
-        Dependencies::create_feature_install_plan(map_port,
-                                                  var_provider,
-                                                  Test::parse_test_fspecs("a:x64-windows b[core]:x64-windows"),
-                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows b[core]:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     // Expect "a" to get installed and defaults of "b" through the dependency,
     // as no explicit features of "b" are installed by the user.
@@ -560,11 +556,10 @@ TEST_CASE ("install default features of dependency test 2", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan =
-        Dependencies::create_feature_install_plan(map_port,
-                                                  var_provider,
-                                                  Test::parse_test_fspecs("a:x64-windows b[core]:x64-windows"),
-                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows b[core]:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     // Expect "a" to get installed and defaults of "b" through the dependency
     REQUIRE(install_plan.size() == 2);
@@ -588,10 +583,10 @@ TEST_CASE ("do not install default features of existing dependency", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     // Expect "a" to get installed, but not require rebuilding "b"
     REQUIRE(install_plan.size() == 1);
@@ -614,10 +609,10 @@ TEST_CASE ("install default features of existing dependency", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     // Expect "b" to be rebuilt
     REQUIRE(install_plan.install_actions.size() == 2);
@@ -640,10 +635,10 @@ TEST_CASE ("install default features of dependency test 3", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     // Expect "a" to get installed, not the defaults of "b", as the required
     // dependencies are already there, installed explicitly by the user.
@@ -665,10 +660,10 @@ TEST_CASE ("install plan action dependencies", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 3);
     features_check(install_plan.install_actions.at(0), "c", {"core"}, Test::X64_WINDOWS);
@@ -695,10 +690,10 @@ TEST_CASE ("install plan action dependencies 2", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 3);
     features_check(install_plan.install_actions.at(0), "c", {"core"}, Test::X64_WINDOWS);
@@ -723,10 +718,10 @@ TEST_CASE ("install plan action dependencies 3", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 1);
     features_check(install_plan.install_actions.at(0), "a", {"1", "0", "core"}, Test::X64_WINDOWS);
@@ -746,8 +741,8 @@ TEST_CASE ("install with default features", "[plan]")
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(
-        map_port, var_provider, Test::parse_test_fspecs("a[0] b[core]"), status_db);
+    auto install_plan =
+        create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a[0] b[core]"), status_db);
 
     // Install "a" and indicate that "b" should not install default features
     REQUIRE(install_plan.size() == 3);
@@ -769,7 +764,7 @@ TEST_CASE ("upgrade with default features 1", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
     // The upgrade should not install the default feature
     REQUIRE(plan.size() == 2);
@@ -793,7 +788,7 @@ TEST_CASE ("upgrade with default features 2", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a, spec_b}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a, spec_b}, status_db);
 
     // The upgrade should install the new default feature b1 but not b0
     REQUIRE(plan.size() == 4);
@@ -818,7 +813,7 @@ TEST_CASE ("upgrade with default features 3", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
     // The upgrade should install the default feature
     REQUIRE(plan.size() == 3);
@@ -839,7 +834,7 @@ TEST_CASE ("upgrade with new default feature", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
     // The upgrade should install the new default feature but not the old default feature 0
     REQUIRE(plan.size() == 2);
@@ -858,10 +853,10 @@ TEST_CASE ("transitive features test", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto install_plan = Dependencies::create_feature_install_plan(provider,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a[*]:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(provider,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a[*]:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 3);
     features_check(install_plan.install_actions.at(0), "c", {"0", "core"}, Test::X64_WINDOWS);
@@ -880,10 +875,10 @@ TEST_CASE ("no transitive features test", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto install_plan = Dependencies::create_feature_install_plan(provider,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a[*]:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(provider,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a[*]:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 3);
     features_check(install_plan.install_actions.at(0), "c", {"core"}, Test::X64_WINDOWS);
@@ -902,10 +897,10 @@ TEST_CASE ("only transitive features test", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto install_plan = Dependencies::create_feature_install_plan(provider,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a[*]:x64-windows"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)));
+    auto install_plan = create_feature_install_plan(provider,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a[*]:x64-windows"),
+                                                    StatusParagraphs(std::move(status_paragraphs)));
 
     REQUIRE(install_plan.size() == 3);
     features_check(install_plan.install_actions.at(0), "c", {"0", "core"}, Test::X64_WINDOWS);
@@ -919,7 +914,7 @@ TEST_CASE ("basic remove scheme", "[plan]")
     pghs.push_back(make_status_pgh("a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = Dependencies::create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
 
     REQUIRE(remove_plan.size() == 1);
     REQUIRE(remove_plan.at(0).spec.name() == "a");
@@ -932,7 +927,7 @@ TEST_CASE ("recurse remove scheme", "[plan]")
     pghs.push_back(make_status_pgh("b", "a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = Dependencies::create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
 
     REQUIRE(remove_plan.size() == 2);
     REQUIRE(remove_plan.at(0).spec.name() == "b");
@@ -947,7 +942,7 @@ TEST_CASE ("features depend remove scheme", "[plan]")
     pghs.push_back(make_status_feature_pgh("b", "0", "a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = Dependencies::create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
 
     REQUIRE(remove_plan.size() == 2);
     REQUIRE(remove_plan.at(0).spec.name() == "b");
@@ -963,7 +958,7 @@ TEST_CASE ("features depend remove scheme once removed", "[plan]")
     pghs.push_back(make_status_feature_pgh("opencv", "vtk", "vtk"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = Dependencies::create_remove_plan({{"expat", Test::X86_WINDOWS}}, status_db);
+    auto remove_plan = create_remove_plan({{"expat", Test::X86_WINDOWS}}, status_db);
 
     REQUIRE(remove_plan.size() == 3);
     REQUIRE(remove_plan.at(0).spec.name() == "opencv");
@@ -980,7 +975,7 @@ TEST_CASE ("features depend remove scheme once removed x64", "[plan]")
     pghs.push_back(make_status_feature_pgh("opencv", "vtk", "vtk", "x64"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = Dependencies::create_remove_plan({{"expat", Triplet::from_canonical_name("x64")}}, status_db);
+    auto remove_plan = create_remove_plan({{"expat", Triplet::from_canonical_name("x64")}}, status_db);
 
     REQUIRE(remove_plan.size() == 3);
     REQUIRE(remove_plan.at(0).spec.name() == "opencv");
@@ -995,7 +990,7 @@ TEST_CASE ("features depend core remove scheme", "[plan]")
     pghs.push_back(make_status_pgh("cpr", "curl[core]", "", "x64"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = Dependencies::create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
+    auto remove_plan = create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
 
     REQUIRE(remove_plan.size() == 2);
     REQUIRE(remove_plan.at(0).spec.name() == "cpr");
@@ -1010,7 +1005,7 @@ TEST_CASE ("features depend core remove scheme 2", "[plan]")
     pghs.push_back(make_status_feature_pgh("curl", "b", "curl[a]", "x64"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = Dependencies::create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
+    auto remove_plan = create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
 
     REQUIRE(remove_plan.size() == 1);
     REQUIRE(remove_plan.at(0).spec.name() == "curl");
@@ -1027,7 +1022,7 @@ TEST_CASE ("self-referencing scheme", "[plan]")
 
     SECTION ("basic")
     {
-        auto install_plan = Dependencies::create_feature_install_plan(
+        auto install_plan = create_feature_install_plan(
             map_port, var_provider, Test::parse_test_fspecs("a"), {}, {{}, Test::X64_WINDOWS});
 
         REQUIRE(install_plan.size() == 1);
@@ -1035,7 +1030,7 @@ TEST_CASE ("self-referencing scheme", "[plan]")
     }
     SECTION ("qualified")
     {
-        auto install_plan = Dependencies::create_feature_install_plan(
+        auto install_plan = create_feature_install_plan(
             map_port, var_provider, Test::parse_test_fspecs("b"), {}, {{}, Test::X64_WINDOWS});
 
         REQUIRE(install_plan.size() == 1);
@@ -1057,11 +1052,11 @@ TEST_CASE ("basic tool port scheme", "[plan]")
     MapPortFileProvider map_port(spec_map.map);
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = Dependencies::create_feature_install_plan(map_port,
-                                                                  var_provider,
-                                                                  Test::parse_test_fspecs("a"),
-                                                                  StatusParagraphs(std::move(status_paragraphs)),
-                                                                  {{}, Test::X64_WINDOWS});
+    auto install_plan = create_feature_install_plan(map_port,
+                                                    var_provider,
+                                                    Test::parse_test_fspecs("a"),
+                                                    StatusParagraphs(std::move(status_paragraphs)),
+                                                    {{}, Test::X64_WINDOWS});
 
     REQUIRE(install_plan.size() == 3);
     REQUIRE(install_plan.install_actions.at(0).spec.name() == "c");
@@ -1090,8 +1085,8 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         MapPortFileProvider map_port(spec_map.map);
 
-        auto install_plan = Dependencies::create_feature_install_plan(
-            map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
+        auto install_plan =
+            create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
 
         REQUIRE(install_plan.size() == 1);
         REQUIRE(install_plan.install_actions.at(0).spec == spec_a);
@@ -1106,16 +1101,16 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         MapPortFileProvider map_port(spec_map.map);
 
-        auto install_plan = Dependencies::create_feature_install_plan(
-            map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
+        auto install_plan =
+            create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
 
         REQUIRE(install_plan.size() == 2);
         REQUIRE(install_plan.install_actions.at(0).spec.name() == "a");
         REQUIRE(install_plan.install_actions.at(0).spec.triplet() == Test::X64_WINDOWS);
         REQUIRE(install_plan.install_actions.at(1).spec == spec_a);
 
-        install_plan = Dependencies::create_feature_install_plan(
-            map_port, var_provider, fspecs_a, status_db, {{}, Test::X86_WINDOWS});
+        install_plan =
+            create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::X86_WINDOWS});
 
         REQUIRE(install_plan.size() == 1);
         REQUIRE(install_plan.install_actions.at(0).spec == spec_a);
@@ -1132,7 +1127,7 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
         MapPortFileProvider map_port(spec_map.map);
 
         auto install_plan =
-            Dependencies::create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::ARM_UWP});
+            create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::ARM_UWP});
 
         REQUIRE(install_plan.size() == 2);
         REQUIRE(install_plan.install_actions.at(0).spec.name() == "b");
@@ -1151,8 +1146,8 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         MapPortFileProvider map_port(spec_map.map);
 
-        auto install_plan = Dependencies::create_feature_install_plan(
-            map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
+        auto install_plan =
+            create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
 
         REQUIRE(install_plan.size() == 1);
         REQUIRE(install_plan.install_actions.at(0).spec == spec_a);
@@ -1165,7 +1160,7 @@ TEST_CASE ("remove tool port scheme", "[plan]")
     pghs.push_back(make_status_pgh("a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = Dependencies::create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
 
     REQUIRE(remove_plan.size() == 1);
     REQUIRE(remove_plan.at(0).spec.name() == "a");
@@ -1182,7 +1177,7 @@ TEST_CASE ("basic upgrade scheme", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
     REQUIRE(plan.size() == 2);
     remove_plan_check(plan.remove_actions.at(0), "a");
@@ -1202,7 +1197,7 @@ TEST_CASE ("basic upgrade scheme with recurse", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
     REQUIRE(plan.size() == 4);
     remove_plan_check(plan.remove_actions.at(0), "b");
@@ -1224,7 +1219,7 @@ TEST_CASE ("basic upgrade scheme with bystander", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
     REQUIRE(plan.size() == 2);
     remove_plan_check(plan.remove_actions.at(0), "a");
@@ -1243,7 +1238,7 @@ TEST_CASE ("basic upgrade scheme with new dep", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
     REQUIRE(plan.size() == 3);
     remove_plan_check(plan.remove_actions.at(0), "a");
@@ -1263,7 +1258,7 @@ TEST_CASE ("basic upgrade scheme with features", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
     REQUIRE(plan.size() == 2);
     remove_plan_check(plan.remove_actions.at(0), "a");
@@ -1283,7 +1278,7 @@ TEST_CASE ("basic upgrade scheme with new default feature", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
     REQUIRE(plan.size() == 2);
     remove_plan_check(plan.remove_actions.at(0), "a");
@@ -1303,7 +1298,7 @@ TEST_CASE ("basic upgrade scheme with self features", "[plan]")
 
     MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
-    auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
+    auto plan = create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
     REQUIRE(plan.size() == 2);
     remove_plan_check(plan.remove_actions.at(0), "a");
@@ -1319,11 +1314,11 @@ TEST_CASE ("basic export scheme", "[plan]")
     PackageSpecMap spec_map;
     auto spec_a = spec_map.emplace("a");
 
-    auto plan = Dependencies::create_export_plan({spec_a}, status_db);
+    auto plan = create_export_plan({spec_a}, status_db);
 
     REQUIRE(plan.size() == 1);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(plan.at(0).plan_type == Dependencies::ExportPlanType::ALREADY_BUILT);
+    REQUIRE(plan.at(0).plan_type == ExportPlanType::ALREADY_BUILT);
 }
 
 TEST_CASE ("basic export scheme with recurse", "[plan]")
@@ -1337,14 +1332,14 @@ TEST_CASE ("basic export scheme with recurse", "[plan]")
     auto spec_a = spec_map.emplace("a");
     auto spec_b = spec_map.emplace("b", "a");
 
-    auto plan = Dependencies::create_export_plan({spec_b}, status_db);
+    auto plan = create_export_plan({spec_b}, status_db);
 
     REQUIRE(plan.size() == 2);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(plan.at(0).plan_type == Dependencies::ExportPlanType::ALREADY_BUILT);
+    REQUIRE(plan.at(0).plan_type == ExportPlanType::ALREADY_BUILT);
 
     REQUIRE(plan.at(1).spec.name() == "b");
-    REQUIRE(plan.at(1).plan_type == Dependencies::ExportPlanType::ALREADY_BUILT);
+    REQUIRE(plan.at(1).plan_type == ExportPlanType::ALREADY_BUILT);
 }
 
 TEST_CASE ("basic export scheme with bystander", "[plan]")
@@ -1358,11 +1353,11 @@ TEST_CASE ("basic export scheme with bystander", "[plan]")
     auto spec_a = spec_map.emplace("a");
     auto spec_b = spec_map.emplace("b", "a");
 
-    auto plan = Dependencies::create_export_plan({spec_a}, status_db);
+    auto plan = create_export_plan({spec_a}, status_db);
 
     REQUIRE(plan.size() == 1);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(plan.at(0).plan_type == Dependencies::ExportPlanType::ALREADY_BUILT);
+    REQUIRE(plan.at(0).plan_type == ExportPlanType::ALREADY_BUILT);
 }
 
 TEST_CASE ("basic export scheme with missing", "[plan]")
@@ -1372,11 +1367,11 @@ TEST_CASE ("basic export scheme with missing", "[plan]")
     PackageSpecMap spec_map;
     auto spec_a = spec_map.emplace("a");
 
-    auto plan = Dependencies::create_export_plan({spec_a}, status_db);
+    auto plan = create_export_plan({spec_a}, status_db);
 
     REQUIRE(plan.size() == 1);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(plan.at(0).plan_type == Dependencies::ExportPlanType::NOT_BUILT);
+    REQUIRE(plan.at(0).plan_type == ExportPlanType::NOT_BUILT);
 }
 
 TEST_CASE ("basic export scheme with features", "[plan]")
@@ -1390,13 +1385,13 @@ TEST_CASE ("basic export scheme with features", "[plan]")
     PackageSpecMap spec_map;
     auto spec_a = spec_map.emplace("a", "", {{"a1", ""}});
 
-    auto plan = Dependencies::create_export_plan({spec_a}, status_db);
+    auto plan = create_export_plan({spec_a}, status_db);
 
     REQUIRE(plan.size() == 2);
 
     REQUIRE(plan.at(0).spec.name() == "b");
-    REQUIRE(plan.at(0).plan_type == Dependencies::ExportPlanType::ALREADY_BUILT);
+    REQUIRE(plan.at(0).plan_type == ExportPlanType::ALREADY_BUILT);
 
     REQUIRE(plan.at(1).spec.name() == "a");
-    REQUIRE(plan.at(1).plan_type == Dependencies::ExportPlanType::ALREADY_BUILT);
+    REQUIRE(plan.at(1).plan_type == ExportPlanType::ALREADY_BUILT);
 }

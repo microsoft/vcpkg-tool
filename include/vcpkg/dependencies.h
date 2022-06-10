@@ -21,10 +21,7 @@ namespace vcpkg::Graphs
 namespace vcpkg
 {
     struct StatusParagraphs;
-}
 
-namespace vcpkg::Dependencies
-{
     enum class UnsupportedPortAction : bool
     {
         Warn,

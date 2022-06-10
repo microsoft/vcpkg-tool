@@ -11,8 +11,6 @@
 
 namespace vcpkg::Export::Chocolatey
 {
-    using Dependencies::ExportPlanAction;
-    using Dependencies::ExportPlanType;
     using Install::InstallDir;
 
     static std::string create_nuspec_dependencies(const BinaryParagraph& binary_paragraph,

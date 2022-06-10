@@ -16,8 +16,6 @@
 
 namespace vcpkg::Export::Prefab
 {
-    using Dependencies::ExportPlanAction;
-    using Dependencies::ExportPlanType;
     using Install::InstallDir;
 
     static std::vector<Path> find_modules(const VcpkgPaths& system, const Path& root, const std::string& ext)

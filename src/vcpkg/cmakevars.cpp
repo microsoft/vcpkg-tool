@@ -12,11 +12,9 @@
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
-using vcpkg::Optional;
-
 namespace vcpkg::CMakeVars
 {
-    void CMakeVarProvider::load_tag_vars(const vcpkg::Dependencies::ActionPlan& action_plan,
+    void CMakeVarProvider::load_tag_vars(const ActionPlan& action_plan,
                                          const PortFileProvider& port_provider,
                                          Triplet host_triplet) const
     {

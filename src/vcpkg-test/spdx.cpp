@@ -6,8 +6,6 @@ using namespace vcpkg;
 
 TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
-    using namespace Dependencies;
-
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     scfl.registry_location = "git://some-vcs-url";
@@ -167,8 +165,6 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
 
 TEST_CASE ("spdx minimum serialization", "[spdx]")
 {
-    using namespace Dependencies;
-
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
@@ -297,8 +293,6 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
 
 TEST_CASE ("spdx concat resources", "[spdx]")
 {
-    using namespace Dependencies;
-
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());

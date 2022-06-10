@@ -11,8 +11,6 @@
 
 namespace vcpkg::Export::IFW
 {
-    using Dependencies::ExportPlanAction;
-    using Dependencies::ExportPlanType;
     using Install::InstallDir;
 
     // requires: after_prefix <= semi

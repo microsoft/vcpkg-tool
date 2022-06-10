@@ -117,8 +117,7 @@ namespace vcpkg::Commands
         // for each spec in the user-requested specs, check all dependencies
         for (const auto& user_spec : specs)
         {
-            auto action_plan =
-                Dependencies::create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, {host_triplet});
+            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, {host_triplet});
 
             cmake_vars->load_tag_vars(action_plan, provider, host_triplet);
 

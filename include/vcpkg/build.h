@@ -211,7 +211,7 @@ namespace vcpkg
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
-    LocalizedString create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
                                                         const VcpkgPaths& paths,
                                                         Optional<Path>&& issue_body = nullopt);
 
@@ -270,11 +270,11 @@ namespace vcpkg
     std::string create_github_issue(const VcpkgCmdArguments& args,
                                     const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
-                                    const Dependencies::InstallPlanAction& action);
+                                    const InstallPlanAction& action);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
-                                      const Dependencies::InstallPlanAction& config,
+                                      const InstallPlanAction& config,
                                       BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db);
@@ -374,7 +374,7 @@ namespace vcpkg
     };
 
     void compute_all_abis(const VcpkgPaths& paths,
-                          Dependencies::ActionPlan& action_plan,
+                          ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db);
 

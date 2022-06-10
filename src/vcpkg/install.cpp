@@ -68,7 +68,6 @@ namespace
 namespace vcpkg::Install
 {
     using namespace vcpkg;
-    using namespace Dependencies;
 
     using file_pack = std::pair<std::string, std::string>;
 
@@ -480,7 +479,7 @@ namespace vcpkg::Install
         TrackedPackageInstallGuard(const size_t action_index,
                                    const size_t action_count,
                                    std::vector<SpecSummary>& results,
-                                   const Dependencies::InstallPlanAction& action)
+                                   const InstallPlanAction& action)
         {
             results.emplace_back(action);
             current_summary = &results.back();
@@ -494,7 +493,7 @@ namespace vcpkg::Install
         TrackedPackageInstallGuard(const size_t action_index,
                                    const size_t action_count,
                                    std::vector<SpecSummary>& results,
-                                   const Dependencies::RemovePlanAction& action)
+                                   const RemovePlanAction& action)
         {
             results.emplace_back(action);
             current_summary = &results.back();
@@ -921,8 +920,8 @@ namespace vcpkg::Install
             Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES)) ||
             Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
-                                                 ? Dependencies::UnsupportedPortAction::Warn
-                                                 : Dependencies::UnsupportedPortAction::Error;
+                                                 ? UnsupportedPortAction::Warn
+                                                 : UnsupportedPortAction::Error;
 
         LockGuardPtr<Metrics>(g_metrics)->track_property("install_manifest_mode", paths.manifest_mode_enabled());
 
@@ -1101,15 +1100,15 @@ namespace vcpkg::Install
             }
             auto oprovider = make_overlay_provider(paths, extended_overlay_ports);
             PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
-            auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
-                                                                            *baseprovider,
-                                                                            *oprovider,
-                                                                            var_provider,
-                                                                            dependencies,
-                                                                            manifest_scf.core_paragraph->overrides,
-                                                                            toplevel,
-                                                                            host_triplet,
-                                                                            unsupported_port_action)
+            auto install_plan = create_versioned_install_plan(*verprovider,
+                                                              *baseprovider,
+                                                              *oprovider,
+                                                              var_provider,
+                                                              dependencies,
+                                                              manifest_scf.core_paragraph->overrides,
+                                                              toplevel,
+                                                              host_triplet,
+                                                              unsupported_port_action)
                                     .value_or_exit(VCPKG_LINE_INFO);
             for (const auto& warning : install_plan.warnings)
             {
@@ -1152,7 +1151,7 @@ namespace vcpkg::Install
         StatusParagraphs status_db = database_load_check(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
-        auto action_plan = Dependencies::create_feature_install_plan(
+        auto action_plan = create_feature_install_plan(
             provider, var_provider, specs, status_db, {host_triplet, unsupported_port_action});
 
         for (const auto& warning : action_plan.warnings)
@@ -1207,7 +1206,7 @@ namespace vcpkg::Install
         }
 #endif // defined(_WIN32)
 
-        Dependencies::print_plan(action_plan, is_recursive, paths.builtin_ports_directory());
+        print_plan(action_plan, is_recursive, paths.builtin_ports_directory());
 
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
@@ -1272,7 +1271,7 @@ namespace vcpkg::Install
         Install::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 
-    SpecSummary::SpecSummary(const Dependencies::InstallPlanAction& action)
+    SpecSummary::SpecSummary(const InstallPlanAction& action)
         : build_result()
         , timing()
         , start_time(std::chrono::system_clock::now())
@@ -1281,7 +1280,7 @@ namespace vcpkg::Install
     {
     }
 
-    SpecSummary::SpecSummary(const Dependencies::RemovePlanAction& action)
+    SpecSummary::SpecSummary(const RemovePlanAction& action)
         : build_result()
         , timing()
         , start_time(std::chrono::system_clock::now())
@@ -1363,7 +1362,7 @@ namespace vcpkg::Install
         return xunit_doc;
     }
 
-    void track_install_plan(Dependencies::ActionPlan& plan)
+    void track_install_plan(ActionPlan& plan)
     {
         Cache<Triplet, std::string> triplet_hashes;
 
