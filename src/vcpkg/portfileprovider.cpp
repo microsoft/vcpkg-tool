@@ -54,10 +54,10 @@ namespace vcpkg::PortFileProvider
         return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
 
-    PathsPortFileProvider::PathsPortFileProvider(const VcpkgPaths& paths, View<std::string> overlay_ports)
+    PathsPortFileProvider::PathsPortFileProvider(const VcpkgPaths& paths, std::unique_ptr<IOverlayProvider>&& overlay)
         : m_baseline(make_baseline_provider(paths))
         , m_versioned(make_versioned_portfile_provider(paths))
-        , m_overlay(make_overlay_provider(paths, overlay_ports))
+        , m_overlay(std::move(overlay))
     {
     }
 
@@ -386,7 +386,71 @@ namespace vcpkg::PortFileProvider
             const std::vector<Path> m_overlay_ports;
             mutable std::map<std::string, Optional<SourceControlFileAndLocation>, std::less<>> m_overlay_cache;
         };
-    }
+
+        struct ManifestProviderImpl : IOverlayProvider
+        {
+            ManifestProviderImpl(const Path& manifest_path, std::unique_ptr<SourceControlFile>&& manifest_scf)
+                : m_scf_and_location{std::move(manifest_scf), manifest_path}
+            {
+            }
+
+            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const
+            {
+                if (port_name == m_scf_and_location.source_control_file->core_paragraph->name)
+                {
+                    return m_scf_and_location;
+                }
+
+                return nullopt;
+            }
+
+            virtual void load_all_control_files(
+                std::map<std::string, const SourceControlFileAndLocation*>& out) const override
+            {
+                out.emplace(std::piecewise_construct,
+                            std::forward_as_tuple(m_scf_and_location.source_control_file->core_paragraph->name),
+                            std::forward_as_tuple(&m_scf_and_location));
+            }
+
+            SourceControlFileAndLocation m_scf_and_location;
+        };
+
+        struct CombinedProviderImpl : IOverlayProvider
+        {
+            CombinedProviderImpl(std::vector<std::unique_ptr<IOverlayProvider>>&& providers)
+                : m_providers(std::move(providers))
+            {
+            }
+
+            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const
+            {
+                Optional<const SourceControlFileAndLocation&> result;
+                for (auto&& provider : m_providers)
+                {
+                    result = provider->get_control_file(port_name);
+                    if (result)
+                    {
+                        break;
+                    }
+                }
+
+                return result;
+            }
+
+            virtual void load_all_control_files(
+                std::map<std::string, const SourceControlFileAndLocation*>& out) const override
+            {
+                auto first = std::make_reverse_iterator(m_providers.end());
+                const auto last = std::make_reverse_iterator(m_providers.begin());
+                for (; first != last; ++first)
+                {
+                    (*first)->load_all_control_files(out);
+                }
+            }
+
+            std::vector<std::unique_ptr<IOverlayProvider>> m_providers;
+        };
+    } // unnamed namespace
 
     std::unique_ptr<IBaselineProvider> make_baseline_provider(const vcpkg::VcpkgPaths& paths)
     {
@@ -403,4 +467,22 @@ namespace vcpkg::PortFileProvider
     {
         return std::make_unique<OverlayProviderImpl>(paths, std::move(overlay_ports));
     }
-}
+
+    std::unique_ptr<IOverlayProvider> make_manifest_provider(const Path& manifest_path,
+                                                             std::unique_ptr<SourceControlFile>&& manifest_scf)
+    {
+        return std::make_unique<ManifestProviderImpl>(manifest_path, std::move(manifest_scf));
+    }
+
+    std::unique_ptr<IOverlayProvider> make_combined_overlay_provider(
+        std::vector<std::unique_ptr<IOverlayProvider>>&& providers)
+    {
+        if (providers.size() == 1)
+        {
+            return std::move(providers[0]);
+        }
+
+        return std::make_unique<CombinedProviderImpl>(std::move(providers));
+    }
+
+} // namespace vcpkg

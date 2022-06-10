@@ -1029,9 +1029,9 @@ namespace vcpkg::Install
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
-
-            if (auto maybe_error = manifest_scf.check_against_feature_flags(
+            auto manifest_scf = std::move(maybe_manifest_scf).value_or_exit(VCPKG_LINE_INFO);
+            const auto& manifest_core = *manifest_scf->core_paragraph;
+            if (auto maybe_error = manifest_scf->check_against_feature_flags(
                     manifest->path, paths.get_feature_flags(), paths.get_registry_set().is_default_builtin_registry()))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
@@ -1051,7 +1051,7 @@ namespace vcpkg::Install
             auto core_it = std::remove(features.begin(), features.end(), "core");
             if (core_it == features.end())
             {
-                const auto& default_features = manifest_scf.core_paragraph->default_features;
+                const auto& default_features = manifest_core.default_features;
                 features.insert(features.end(), default_features.begin(), default_features.end());
             }
             else
@@ -1060,19 +1060,19 @@ namespace vcpkg::Install
             }
             Util::sort_unique_erase(features);
 
-            auto dependencies = manifest_scf.core_paragraph->dependencies;
+            auto dependencies = manifest_core.dependencies;
             for (const auto& feature : features)
             {
                 auto it = Util::find_if(
-                    manifest_scf.feature_paragraphs,
+                    manifest_scf->feature_paragraphs,
                     [&feature](const std::unique_ptr<FeatureParagraph>& fpgh) { return fpgh->name == feature; });
 
-                if (it == manifest_scf.feature_paragraphs.end())
+                if (it == manifest_scf->feature_paragraphs.end())
                 {
                     vcpkg::printf(Color::warning,
                                   "Warning: feature %s was passed, but that is not a feature that %s supports.",
                                   feature,
-                                  manifest_scf.core_paragraph->name);
+                                  manifest_core.name);
                 }
                 else
                 {
@@ -1088,7 +1088,7 @@ namespace vcpkg::Install
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_version_constraint", "defined");
             }
 
-            if (!manifest_scf.core_paragraph->overrides.empty())
+            if (!manifest_core.overrides.empty())
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_overrides", "defined");
             }
@@ -1096,26 +1096,33 @@ namespace vcpkg::Install
             auto verprovider = PortFileProvider::make_versioned_portfile_provider(paths);
             auto baseprovider = PortFileProvider::make_baseline_provider(paths);
 
-            std::vector<std::string> extended_overlay_ports;
-            extended_overlay_ports.reserve(args.overlay_ports.size() + 2);
-            extended_overlay_ports.push_back(manifest->path.parent_path().to_string());
-            Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
+            std::vector<std::unique_ptr<PortFileProvider::IOverlayProvider>> overlay_providers;
+            if (!args.overlay_ports.empty())
+            {
+                overlay_providers.emplace_back(PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
+            }
+
             if (paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry())
             {
-                extended_overlay_ports.push_back(paths.builtin_ports_directory().native());
+                overlay_providers.emplace_back(PortFileProvider::make_overlay_provider(
+                    paths, std::vector<std::string>{paths.builtin_ports_directory().native()}));
             }
-            auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
-            PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
+
+            overlay_providers.emplace_back(
+                PortFileProvider::make_manifest_provider(manifest->path, std::move(manifest_scf)));
+            auto oprovider = PortFileProvider::make_combined_overlay_provider(std::move(overlay_providers));
+            PackageSpec toplevel{manifest_core.name, default_triplet};
             auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
                                                                             *baseprovider,
                                                                             *oprovider,
                                                                             var_provider,
                                                                             dependencies,
-                                                                            manifest_scf.core_paragraph->overrides,
+                                                                            manifest_core.overrides,
                                                                             toplevel,
                                                                             host_triplet,
                                                                             unsupported_port_action)
                                     .value_or_exit(VCPKG_LINE_INFO);
+
             for (const auto& warning : install_plan.warnings)
             {
                 print2(Color::warning, warning, '\n');
@@ -1131,8 +1138,7 @@ namespace vcpkg::Install
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
-            PortFileProvider::PathsPortFileProvider provider(paths, extended_overlay_ports);
-
+            PortFileProvider::PathsPortFileProvider provider(paths, std::move(oprovider));
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
                                                         provider,
@@ -1145,7 +1151,8 @@ namespace vcpkg::Install
                                                         keep_going);
         }
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PortFileProvider::PathsPortFileProvider provider(
+            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return Input::check_and_get_full_package_spec(
