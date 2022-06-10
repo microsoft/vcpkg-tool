@@ -1097,6 +1097,9 @@ namespace vcpkg::Install
             auto baseprovider = PortFileProvider::make_baseline_provider(paths);
 
             std::vector<std::unique_ptr<PortFileProvider::IOverlayProvider>> overlay_providers;
+            overlay_providers.emplace_back(
+                PortFileProvider::make_manifest_provider(manifest->path, std::move(manifest_scf)));
+
             if (!args.overlay_ports.empty())
             {
                 overlay_providers.emplace_back(PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
@@ -1108,8 +1111,6 @@ namespace vcpkg::Install
                     paths, std::vector<std::string>{paths.builtin_ports_directory().native()}));
             }
 
-            overlay_providers.emplace_back(
-                PortFileProvider::make_manifest_provider(manifest->path, std::move(manifest_scf)));
             auto oprovider = PortFileProvider::make_combined_overlay_provider(std::move(overlay_providers));
             PackageSpec toplevel{manifest_core.name, default_triplet};
             auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
