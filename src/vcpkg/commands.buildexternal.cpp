@@ -26,7 +26,7 @@ namespace vcpkg::Commands::BuildExternal
 
         BinaryCache binary_cache{args, paths};
 
-        const FullPackageSpec spec = Input::check_and_get_full_package_spec(
+        const FullPackageSpec spec = check_and_get_full_package_spec(
             std::string(args.command_arguments.at(0)), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
         auto overlays = args.overlay_ports;

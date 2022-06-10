@@ -94,8 +94,7 @@ namespace vcpkg::Commands::Upgrade
 
         // input sanitization
         const std::vector<PackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return Input::check_and_get_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+            return check_and_get_package_spec(std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
         Dependencies::ActionPlan action_plan;

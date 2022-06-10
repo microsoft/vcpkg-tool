@@ -82,7 +82,7 @@ namespace vcpkg::Commands::Info
 
                 auto& qpkg = *maybe_qpkg.get();
                 auto t = Triplet::from_canonical_name(std::string(*qpkg.triplet.get()));
-                Input::check_triplet(t, paths);
+                check_triplet(t, paths);
                 specs_to_write.emplace_back(qpkg.name, t);
             }
             Json::Object response;

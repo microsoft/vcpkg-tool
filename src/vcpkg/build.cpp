@@ -362,7 +362,7 @@ namespace vcpkg::Build
         std::string first_arg = args.command_arguments[0];
 
         BinaryCache binary_cache{args, paths};
-        const FullPackageSpec spec = Input::check_and_get_full_package_spec(
+        const FullPackageSpec spec = check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
         PathsPortFileProvider provider(paths, args.overlay_ports);

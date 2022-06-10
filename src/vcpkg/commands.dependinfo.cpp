@@ -308,7 +308,7 @@ namespace vcpkg::Commands::DependInfo
         const bool show_depth = Util::Sets::contains(options.switches, OPTION_SHOW_DEPTH);
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-            return Input::check_and_get_full_package_spec(
+            return check_and_get_full_package_spec(
                 std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 

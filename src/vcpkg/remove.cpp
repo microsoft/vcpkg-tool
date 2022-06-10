@@ -231,7 +231,7 @@ namespace vcpkg::Remove
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
             specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-                return Input::check_and_get_package_spec(
+                return check_and_get_package_spec(
                     std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
             });
         }
