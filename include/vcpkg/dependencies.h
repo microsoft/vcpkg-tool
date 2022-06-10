@@ -186,21 +186,21 @@ namespace vcpkg::Dependencies
     /// <param name="provider">Contains the ports of the current environment.</param>
     /// <param name="specs">Feature specifications to resolve dependencies for.</param>
     /// <param name="status_db">Status of installed packages in the current environment.</param>
-    ActionPlan create_feature_install_plan(const PortFileProvider::PortFileProvider& provider,
+    ActionPlan create_feature_install_plan(const PortFileProvider& provider,
                                            const CMakeVars::CMakeVarProvider& var_provider,
                                            View<FullPackageSpec> specs,
                                            const StatusParagraphs& status_db,
                                            const CreateInstallPlanOptions& options = {Triplet{}});
 
-    ActionPlan create_upgrade_plan(const PortFileProvider::PortFileProvider& provider,
+    ActionPlan create_upgrade_plan(const PortFileProvider& provider,
                                    const CMakeVars::CMakeVarProvider& var_provider,
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
                                    const CreateInstallPlanOptions& options = {Triplet{}});
 
-    ExpectedS<ActionPlan> create_versioned_install_plan(const PortFileProvider::IVersionedPortfileProvider& vprovider,
-                                                        const PortFileProvider::IBaselineProvider& bprovider,
-                                                        const PortFileProvider::IOverlayProvider& oprovider,
+    ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& vprovider,
+                                                        const IBaselineProvider& bprovider,
+                                                        const IOverlayProvider& oprovider,
                                                         const CMakeVars::CMakeVarProvider& var_provider,
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,

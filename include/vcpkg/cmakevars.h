@@ -32,11 +32,11 @@ namespace vcpkg::CMakeVars
         virtual void load_dep_info_vars(Span<const PackageSpec> specs, Triplet host_triplet) const = 0;
 
         virtual void load_tag_vars(Span<const FullPackageSpec> specs,
-                                   const PortFileProvider::PortFileProvider& port_provider,
+                                   const PortFileProvider& port_provider,
                                    Triplet host_triplet) const = 0;
 
         void load_tag_vars(const vcpkg::Dependencies::ActionPlan& action_plan,
-                           const PortFileProvider::PortFileProvider& port_provider,
+                           const PortFileProvider& port_provider,
                            Triplet host_triplet) const;
     };
 

@@ -59,14 +59,14 @@ namespace vcpkg::Build
         int perform_ex(const VcpkgCmdArguments& args,
                        const FullPackageSpec& full_spec,
                        Triplet host_triplet,
-                       const PortFileProvider::PathsPortFileProvider& provider,
+                       const PathsPortFileProvider& provider,
                        BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
                        const VcpkgPaths& paths);
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
                                  const FullPackageSpec& full_spec,
                                  Triplet host_triplet,
-                                 const PortFileProvider::PathsPortFileProvider& provider,
+                                 const PathsPortFileProvider& provider,
                                  BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
                                  const VcpkgPaths& paths);

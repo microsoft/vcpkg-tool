@@ -342,7 +342,7 @@ namespace vcpkg::Commands::CI
     }
 
     static Dependencies::ActionPlan compute_full_plan(const VcpkgPaths& paths,
-                                                      const PortFileProvider::PortFileProvider& provider,
+                                                      const PortFileProvider& provider,
                                                       const CMakeVars::CMakeVarProvider& var_provider,
                                                       const std::vector<FullPackageSpec>& specs,
                                                       const Dependencies::CreateInstallPlanOptions& serialize_options)
@@ -597,7 +597,7 @@ namespace vcpkg::Commands::CI
         const IBuildLogsRecorder& build_logs_recorder =
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PathsPortFileProvider provider(paths, args.overlay_ports);
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 

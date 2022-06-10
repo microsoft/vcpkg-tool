@@ -10,7 +10,7 @@ namespace vcpkg::Commands::SetInstalled
     extern const CommandStructure COMMAND_STRUCTURE;
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
-                             const PortFileProvider::PathsPortFileProvider& provider,
+                             const PathsPortFileProvider& provider,
                              BinaryCache& binary_cache,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              Dependencies::ActionPlan action_plan,

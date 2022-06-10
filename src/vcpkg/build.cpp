@@ -37,7 +37,6 @@
 
 using namespace vcpkg;
 using vcpkg::Build::BuildResult;
-using vcpkg::PortFileProvider::PathsPortFileProvider;
 
 namespace
 {

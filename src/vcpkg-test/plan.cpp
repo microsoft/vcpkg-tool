@@ -69,7 +69,7 @@ TEST_CASE ("basic install scheme", "[plan]")
     auto spec_b = spec_map.emplace("b", "c");
     auto spec_c = spec_map.emplace("c");
 
-    PortFileProvider::MapPortFileProvider map_port(spec_map.map);
+    MapPortFileProvider map_port(spec_map.map);
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(
@@ -95,7 +95,7 @@ TEST_CASE ("multiple install scheme", "[plan]")
     auto spec_g = spec_map.emplace("g");
     auto spec_h = spec_map.emplace("h");
 
-    PortFileProvider::MapPortFileProvider map_port(spec_map.map);
+    MapPortFileProvider map_port(spec_map.map);
     MockCMakeVarProvider var_provider;
 
     const auto full_package_specs = Test::parse_test_fspecs("a b c");
@@ -138,7 +138,7 @@ TEST_CASE ("existing package scheme", "[plan]")
     PackageSpecMap spec_map;
     spec_map.emplace("a");
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(
@@ -159,7 +159,7 @@ TEST_CASE ("user requested package scheme", "[plan]")
     spec_map.emplace("a", "b");
     spec_map.emplace("b");
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     const auto install_plan = Dependencies::create_feature_install_plan(
@@ -196,7 +196,7 @@ TEST_CASE ("long install scheme", "[plan]")
     auto spec_j = spec_map.emplace("j", "k");
     auto spec_k = spec_map.emplace("k");
 
-    PortFileProvider::MapPortFileProvider map_port(spec_map.map);
+    MapPortFileProvider map_port(spec_map.map);
     MockCMakeVarProvider var_provider;
 
     auto plan = Dependencies::create_feature_install_plan(
@@ -222,7 +222,7 @@ TEST_CASE ("basic feature test 1", "[plan]")
 
     const auto fspecs = Test::parse_test_fspecs("a[a1]");
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     SECTION ("1")
@@ -264,7 +264,7 @@ TEST_CASE ("basic feature test 3", "[plan]")
     spec_map.emplace("b");
     spec_map.emplace("c", "a[a1]");
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto plan = Dependencies::create_feature_install_plan(map_port,
@@ -292,7 +292,7 @@ TEST_CASE ("basic feature test 4", "[plan]")
     spec_map.emplace("b");
     spec_map.emplace("c", "a[a1]");
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(
@@ -311,7 +311,7 @@ TEST_CASE ("basic feature test 5", "[plan]")
     spec_map.emplace("a", "", {{"a1", "b[b1]"}, {"a2", "b[b2]"}, {"a3", "a[a2]"}});
     spec_map.emplace("b", "", {{"b1", ""}, {"b2", ""}});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(
@@ -331,7 +331,7 @@ TEST_CASE ("basic feature test 6", "[plan]")
     spec_map.emplace("a", "b[core]");
     spec_map.emplace("b", "", {{"b1", ""}});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto plan = Dependencies::create_feature_install_plan(map_port,
@@ -357,7 +357,7 @@ TEST_CASE ("basic feature test 7", "[plan]")
     spec_map.emplace("x", "a");
     spec_map.emplace("b", "", {{"b1", ""}});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto plan = Dependencies::create_feature_install_plan(
@@ -384,7 +384,7 @@ TEST_CASE ("basic feature test 8", "[plan]")
     spec_map.emplace("b");
     spec_map.emplace("c", "a[a1]");
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto plan = Dependencies::create_feature_install_plan(
@@ -411,7 +411,7 @@ TEST_CASE ("install all features test", "[plan]")
     PackageSpecMap spec_map(Test::X64_WINDOWS);
     spec_map.emplace("a", "", {{"0", ""}, {"1", ""}});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(map_port,
@@ -431,7 +431,7 @@ TEST_CASE ("install default features test 1", "[plan]")
     PackageSpecMap spec_map(Test::X64_WINDOWS);
     spec_map.emplace("a", "", {{"0", ""}, {"1", ""}}, {"1"});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     // Install "a" (without explicit feature specification)
@@ -457,7 +457,7 @@ TEST_CASE ("install default features test 2", "[plan]")
     PackageSpecMap spec_map(Test::X64_WINDOWS);
     spec_map.emplace("a", "", {{"a0", ""}, {"a1", ""}}, {"a1"});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     // Install "a" (without explicit feature specification)
@@ -481,7 +481,7 @@ TEST_CASE ("install default features test 3", "[plan]")
     PackageSpecMap spec_map(Test::X64_WINDOWS);
     spec_map.emplace("a", "", {{"a0", ""}, {"a1", ""}}, {"a1"});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     // Explicitly install "a" without default features
@@ -505,7 +505,7 @@ TEST_CASE ("install default features of dependency test 1", "[plan]")
     // "b" has two features, of which "b1" is default.
     spec_map.emplace("b", "", {{"b0", ""}, {"b1", ""}}, {"b1"});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     // Install "a" (without explicit feature specification)
@@ -531,7 +531,7 @@ TEST_CASE ("do not install default features of dependency test 1", "[plan]")
     // "b" has two features, of which "b1" is default.
     spec_map.emplace("b", "", {{"b0", ""}, {"b1", ""}}, {"b1"});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
@@ -557,7 +557,7 @@ TEST_CASE ("install default features of dependency test 2", "[plan]")
     // "b" has two features, of which "b1" is default.
     spec_map.emplace("b", "", {{"b0", ""}, {"b1", ""}}, {"b1"});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
@@ -585,7 +585,7 @@ TEST_CASE ("do not install default features of existing dependency", "[plan]")
     status_paragraphs.push_back(make_status_pgh("b"));
     status_paragraphs.back()->package.spec = PackageSpec("b", Test::X64_WINDOWS);
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(map_port,
@@ -611,7 +611,7 @@ TEST_CASE ("install default features of existing dependency", "[plan]")
     status_paragraphs.push_back(make_status_pgh("b", "", "b1"));
     status_paragraphs.back()->package.spec = PackageSpec("b", Test::X64_WINDOWS);
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(map_port,
@@ -637,7 +637,7 @@ TEST_CASE ("install default features of dependency test 3", "[plan]")
     // "b" has two features, of which "b1" is default.
     spec_map.emplace("b", "", {{"b0", ""}, {"b1", ""}}, {"b1"});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(map_port,
@@ -662,7 +662,7 @@ TEST_CASE ("install plan action dependencies", "[plan]")
     auto spec_b = spec_map.emplace("b", "c");
     spec_map.emplace("a", "b");
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(map_port,
@@ -692,7 +692,7 @@ TEST_CASE ("install plan action dependencies 2", "[plan]")
     auto spec_b = spec_map.emplace("b", "c");
     spec_map.emplace("a", "c, b");
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(map_port,
@@ -720,7 +720,7 @@ TEST_CASE ("install plan action dependencies 3", "[plan]")
     PackageSpecMap spec_map(Test::X64_WINDOWS);
     spec_map.emplace("a", "", {{"0", ""}, {"1", "a[0]"}}, {"1"});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(map_port,
@@ -743,7 +743,7 @@ TEST_CASE ("install with default features", "[plan]")
     auto b_spec = spec_map.emplace("b", "", {{"0", ""}}, {"0"});
     auto a_spec = spec_map.emplace("a", "b[core]", {{"0", ""}});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(
@@ -767,7 +767,7 @@ TEST_CASE ("upgrade with default features 1", "[plan]")
     PackageSpecMap spec_map;
     auto spec_a = spec_map.emplace("a", "", {{"0", ""}, {"1", ""}}, {"1"});
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
@@ -791,7 +791,7 @@ TEST_CASE ("upgrade with default features 2", "[plan]")
     auto spec_a = spec_map.emplace("a", "b[core]");
     auto spec_b = spec_map.emplace("b", "", {{"b0", ""}, {"b1", ""}}, {"b0", "b1"});
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a, spec_b}, status_db);
 
@@ -816,7 +816,7 @@ TEST_CASE ("upgrade with default features 3", "[plan]")
     auto spec_a = spec_map.emplace("a", "b[core]");
     spec_map.emplace("b", "", {{"b0", ""}, {"b1", ""}}, {"b0"});
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
@@ -837,7 +837,7 @@ TEST_CASE ("upgrade with new default feature", "[plan]")
     PackageSpecMap spec_map;
     auto spec_a = spec_map.emplace("a", "", {{"0", ""}, {"1", ""}, {"2", ""}}, {"0", "1"});
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
@@ -856,7 +856,7 @@ TEST_CASE ("transitive features test", "[plan]")
     spec_map.emplace("b", "c", {{"0", "c[0]"}});
     spec_map.emplace("c", "", {{"0", ""}});
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto install_plan = Dependencies::create_feature_install_plan(provider,
                                                                   var_provider,
@@ -878,7 +878,7 @@ TEST_CASE ("no transitive features test", "[plan]")
     spec_map.emplace("b", "c", {{"0", ""}});
     spec_map.emplace("c", "", {{"0", ""}});
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto install_plan = Dependencies::create_feature_install_plan(provider,
                                                                   var_provider,
@@ -900,7 +900,7 @@ TEST_CASE ("only transitive features test", "[plan]")
     spec_map.emplace("b", "", {{"0", "c[0]"}});
     spec_map.emplace("c", "", {{"0", ""}});
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto install_plan = Dependencies::create_feature_install_plan(provider,
                                                                   var_provider,
@@ -1022,7 +1022,7 @@ TEST_CASE ("self-referencing scheme", "[plan]")
     auto spec_a = spec_map.emplace("a", "a");
     auto spec_b = spec_map.emplace("b", "b, b (x64)");
 
-    PortFileProvider::MapPortFileProvider map_port(spec_map.map);
+    MapPortFileProvider map_port(spec_map.map);
     MockCMakeVarProvider var_provider;
 
     SECTION ("basic")
@@ -1054,7 +1054,7 @@ TEST_CASE ("basic tool port scheme", "[plan]")
 
     spec_map.map.at("a").source_control_file->core_paragraph->dependencies[0].host = true;
 
-    PortFileProvider::MapPortFileProvider map_port(spec_map.map);
+    MapPortFileProvider map_port(spec_map.map);
     MockCMakeVarProvider var_provider;
 
     auto install_plan = Dependencies::create_feature_install_plan(map_port,
@@ -1088,7 +1088,7 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         spec_map.map.at("a").source_control_file->core_paragraph->dependencies[0].host = true;
 
-        PortFileProvider::MapPortFileProvider map_port(spec_map.map);
+        MapPortFileProvider map_port(spec_map.map);
 
         auto install_plan = Dependencies::create_feature_install_plan(
             map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
@@ -1104,7 +1104,7 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         spec_map.map.at("a").source_control_file->core_paragraph->dependencies[0].host = true;
 
-        PortFileProvider::MapPortFileProvider map_port(spec_map.map);
+        MapPortFileProvider map_port(spec_map.map);
 
         auto install_plan = Dependencies::create_feature_install_plan(
             map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
@@ -1129,7 +1129,7 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         spec_map.map.at("a").source_control_file->core_paragraph->dependencies[0].host = true;
 
-        PortFileProvider::MapPortFileProvider map_port(spec_map.map);
+        MapPortFileProvider map_port(spec_map.map);
 
         auto install_plan =
             Dependencies::create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::ARM_UWP});
@@ -1149,7 +1149,7 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         spec_map.map.at("a").source_control_file->core_paragraph->dependencies[0].host = true;
 
-        PortFileProvider::MapPortFileProvider map_port(spec_map.map);
+        MapPortFileProvider map_port(spec_map.map);
 
         auto install_plan = Dependencies::create_feature_install_plan(
             map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
@@ -1180,7 +1180,7 @@ TEST_CASE ("basic upgrade scheme", "[plan]")
     PackageSpecMap spec_map;
     auto spec_a = spec_map.emplace("a");
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
@@ -1200,7 +1200,7 @@ TEST_CASE ("basic upgrade scheme with recurse", "[plan]")
     auto spec_a = spec_map.emplace("a");
     spec_map.emplace("b", "a");
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
@@ -1222,7 +1222,7 @@ TEST_CASE ("basic upgrade scheme with bystander", "[plan]")
     auto spec_a = spec_map.emplace("a");
     spec_map.emplace("b", "a");
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
@@ -1241,7 +1241,7 @@ TEST_CASE ("basic upgrade scheme with new dep", "[plan]")
     auto spec_a = spec_map.emplace("a", "b");
     spec_map.emplace("b");
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
@@ -1261,7 +1261,7 @@ TEST_CASE ("basic upgrade scheme with features", "[plan]")
     PackageSpecMap spec_map;
     auto spec_a = spec_map.emplace("a", "", {{"a1", ""}});
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
@@ -1281,7 +1281,7 @@ TEST_CASE ("basic upgrade scheme with new default feature", "[plan]")
     PackageSpecMap spec_map;
     auto spec_a = spec_map.emplace("a", "", {{"a1", ""}}, {"a1"});
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 
@@ -1301,7 +1301,7 @@ TEST_CASE ("basic upgrade scheme with self features", "[plan]")
     PackageSpecMap spec_map;
     auto spec_a = spec_map.emplace("a", "", {{"a1", ""}, {"a2", "a[a1]"}});
 
-    PortFileProvider::MapPortFileProvider provider(spec_map.map);
+    MapPortFileProvider provider(spec_map.map);
     MockCMakeVarProvider var_provider;
     auto plan = Dependencies::create_upgrade_plan(provider, var_provider, {spec_a}, status_db);
 

@@ -1093,8 +1093,8 @@ namespace vcpkg::Install
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_overrides", "defined");
             }
 
-            auto verprovider = PortFileProvider::make_versioned_portfile_provider(paths);
-            auto baseprovider = PortFileProvider::make_baseline_provider(paths);
+            auto verprovider = make_versioned_portfile_provider(paths);
+            auto baseprovider = make_baseline_provider(paths);
 
             std::vector<std::string> extended_overlay_ports;
             extended_overlay_ports.reserve(args.overlay_ports.size() + 2);
@@ -1104,7 +1104,7 @@ namespace vcpkg::Install
             {
                 extended_overlay_ports.push_back(paths.builtin_ports_directory().native());
             }
-            auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
+            auto oprovider = make_overlay_provider(paths, extended_overlay_ports);
             PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
             auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
                                                                             *baseprovider,
@@ -1131,7 +1131,7 @@ namespace vcpkg::Install
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
-            PortFileProvider::PathsPortFileProvider provider(paths, extended_overlay_ports);
+            PathsPortFileProvider provider(paths, extended_overlay_ports);
 
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
@@ -1145,7 +1145,7 @@ namespace vcpkg::Install
                                                         keep_going);
         }
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PathsPortFileProvider provider(paths, args.overlay_ports);
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return Input::check_and_get_full_package_spec(

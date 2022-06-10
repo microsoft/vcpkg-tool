@@ -296,7 +296,7 @@ namespace vcpkg::Dependencies
 
         struct PackageGraph
         {
-            PackageGraph(const PortFileProvider::PortFileProvider& provider,
+            PackageGraph(const PortFileProvider& provider,
                          const CMakeVars::CMakeVarProvider& var_provider,
                          const StatusParagraphs& status_db,
                          Triplet host_triplet);
@@ -320,7 +320,7 @@ namespace vcpkg::Dependencies
         /// </summary>
         struct ClusterGraph
         {
-            explicit ClusterGraph(const PortFileProvider::PortFileProvider& port_provider, Triplet host_triplet)
+            explicit ClusterGraph(const PortFileProvider& port_provider, Triplet host_triplet)
                 : m_port_provider(port_provider), m_host_triplet(host_triplet)
             {
             }
@@ -391,7 +391,7 @@ namespace vcpkg::Dependencies
 
         private:
             std::map<PackageSpec, Cluster> m_graph;
-            const PortFileProvider::PortFileProvider& m_port_provider;
+            const PortFileProvider& m_port_provider;
 
         public:
             const Triplet m_host_triplet;
@@ -713,7 +713,7 @@ namespace vcpkg::Dependencies
         m_graph->get(spec).request_type = RequestType::USER_REQUESTED;
     }
 
-    ActionPlan create_feature_install_plan(const PortFileProvider::PortFileProvider& port_provider,
+    ActionPlan create_feature_install_plan(const PortFileProvider& port_provider,
                                            const CMakeVars::CMakeVarProvider& var_provider,
                                            View<FullPackageSpec> specs,
                                            const StatusParagraphs& status_db,
@@ -924,7 +924,7 @@ namespace vcpkg::Dependencies
         install(reinstall_reqs, unsupported_port_action);
     }
 
-    ActionPlan create_upgrade_plan(const PortFileProvider::PortFileProvider& port_provider,
+    ActionPlan create_upgrade_plan(const PortFileProvider& port_provider,
                                    const CMakeVars::CMakeVarProvider& var_provider,
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
@@ -1075,10 +1075,9 @@ namespace vcpkg::Dependencies
         return plan;
     }
 
-    static std::unique_ptr<ClusterGraph> create_feature_install_graph(
-        const PortFileProvider::PortFileProvider& port_provider,
-        const StatusParagraphs& status_db,
-        Triplet host_triplet)
+    static std::unique_ptr<ClusterGraph> create_feature_install_graph(const PortFileProvider& port_provider,
+                                                                      const StatusParagraphs& status_db,
+                                                                      Triplet host_triplet)
     {
         std::unique_ptr<ClusterGraph> graph = std::make_unique<ClusterGraph>(port_provider, host_triplet);
 
@@ -1109,7 +1108,7 @@ namespace vcpkg::Dependencies
         return graph;
     }
 
-    PackageGraph::PackageGraph(const PortFileProvider::PortFileProvider& port_provider,
+    PackageGraph::PackageGraph(const PortFileProvider& port_provider,
                                const CMakeVars::CMakeVarProvider& var_provider,
                                const StatusParagraphs& status_db,
                                Triplet host_triplet)
@@ -1240,14 +1239,9 @@ namespace vcpkg::Dependencies
     {
         struct VersionedPackageGraph
         {
-        private:
-            using IVersionedPortfileProvider = PortFileProvider::IVersionedPortfileProvider;
-            using IBaselineProvider = PortFileProvider::IBaselineProvider;
-
-        public:
             VersionedPackageGraph(const IVersionedPortfileProvider& ver_provider,
                                   const IBaselineProvider& base_provider,
-                                  const PortFileProvider::IOverlayProvider& oprovider,
+                                  const IOverlayProvider& oprovider,
                                   const CMakeVars::CMakeVarProvider& var_provider,
                                   Triplet host_triplet)
                 : m_ver_provider(ver_provider)
@@ -1268,7 +1262,7 @@ namespace vcpkg::Dependencies
         private:
             const IVersionedPortfileProvider& m_ver_provider;
             const IBaselineProvider& m_base_provider;
-            const PortFileProvider::IOverlayProvider& m_o_provider;
+            const IOverlayProvider& m_o_provider;
             const CMakeVars::CMakeVarProvider& m_var_provider;
             const Triplet m_host_triplet;
 
@@ -2070,9 +2064,9 @@ namespace vcpkg::Dependencies
         }
     }
 
-    ExpectedS<ActionPlan> create_versioned_install_plan(const PortFileProvider::IVersionedPortfileProvider& provider,
-                                                        const PortFileProvider::IBaselineProvider& bprovider,
-                                                        const PortFileProvider::IOverlayProvider& oprovider,
+    ExpectedS<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
+                                                        const IBaselineProvider& bprovider,
+                                                        const IOverlayProvider& oprovider,
                                                         const CMakeVars::CMakeVarProvider& var_provider,
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,

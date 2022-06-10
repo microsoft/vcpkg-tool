@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/expected.h>
@@ -9,7 +10,7 @@
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/versions.h>
 
-namespace vcpkg::PortFileProvider
+namespace vcpkg
 {
     struct PortFileProvider
     {

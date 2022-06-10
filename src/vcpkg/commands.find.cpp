@@ -15,7 +15,6 @@
 #include <vcpkg/versions.h>
 
 using namespace vcpkg;
-using vcpkg::PortFileProvider::PathsPortFileProvider;
 
 namespace
 {

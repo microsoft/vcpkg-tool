@@ -39,7 +39,7 @@ namespace vcpkg::Commands::SetInstalled
 
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
-                             const PortFileProvider::PathsPortFileProvider& provider,
+                             const PathsPortFileProvider& provider,
                              BinaryCache& binary_cache,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              Dependencies::ActionPlan action_plan,
@@ -164,7 +164,7 @@ namespace vcpkg::Commands::SetInstalled
             Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads ? Install::KeepGoing::YES
                                                                                         : Install::KeepGoing::NO;
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PathsPortFileProvider provider(paths, args.overlay_ports);
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         Optional<Path> pkgsconfig;

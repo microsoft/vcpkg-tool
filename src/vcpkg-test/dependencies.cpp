@@ -22,7 +22,7 @@ using Test::make_status_pgh;
 using Test::MockCMakeVarProvider;
 using Test::PackageSpecMap;
 
-struct MockBaselineProvider : PortFileProvider::IBaselineProvider
+struct MockBaselineProvider : IBaselineProvider
 {
     mutable std::map<std::string, Version, std::less<>> v;
 
@@ -34,7 +34,7 @@ struct MockBaselineProvider : PortFileProvider::IBaselineProvider
     }
 };
 
-struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvider
+struct MockVersionedPortfileProvider : IVersionedPortfileProvider
 {
     mutable std::map<std::string, std::map<Version, SourceControlFileAndLocation, VersionMapLess>> v;
 
@@ -166,7 +166,7 @@ static const PackageSpec& toplevel_spec()
     return ret;
 }
 
-struct MockOverlayProvider : PortFileProvider::IOverlayProvider
+struct MockOverlayProvider : IOverlayProvider
 {
     MockOverlayProvider() = default;
     MockOverlayProvider(const MockOverlayProvider&) = delete;
@@ -216,8 +216,8 @@ private:
 static const MockOverlayProvider s_empty_mock_overlay;
 
 static ExpectedS<Dependencies::ActionPlan> create_versioned_install_plan(
-    const PortFileProvider::IVersionedPortfileProvider& provider,
-    const PortFileProvider::IBaselineProvider& bprovider,
+    const IVersionedPortfileProvider& provider,
+    const IBaselineProvider& bprovider,
     const CMakeVars::CMakeVarProvider& var_provider,
     const std::vector<Dependency>& deps,
     const std::vector<DependencyOverride>& overrides,
@@ -235,9 +235,9 @@ static ExpectedS<Dependencies::ActionPlan> create_versioned_install_plan(
 }
 
 static ExpectedS<vcpkg::Dependencies::ActionPlan> create_versioned_install_plan(
-    const PortFileProvider::IVersionedPortfileProvider& provider,
-    const PortFileProvider::IBaselineProvider& bprovider,
-    const PortFileProvider::IOverlayProvider& oprovider,
+    const IVersionedPortfileProvider& provider,
+    const IBaselineProvider& bprovider,
+    const IOverlayProvider& oprovider,
     const CMakeVars::CMakeVarProvider& var_provider,
     const std::vector<Dependency>& deps,
     const std::vector<DependencyOverride>& overrides,

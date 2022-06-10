@@ -614,7 +614,7 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
 
         // Load ports from ports dirs
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PathsPortFileProvider provider(paths, args.overlay_ports);
 
         // create the plan
         std::vector<ExportPlanAction> export_plan = Dependencies::create_export_plan(opts.specs, status_db);

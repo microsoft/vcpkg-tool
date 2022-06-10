@@ -86,7 +86,7 @@ TEST_CASE ("qualified dependency", "[dependencies]")
     spec_map.emplace("a", "b, b[b1] (linux)");
     spec_map.emplace("b", "", {{"b1", ""}});
 
-    PortFileProvider::MapPortFileProvider map_port{spec_map.map};
+    MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
     var_provider.dep_info_vars[{"a", Triplet::from_canonical_name("x64-linux")}].emplace("VCPKG_CMAKE_SYSTEM_NAME",
                                                                                          "Linux");

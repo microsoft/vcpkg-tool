@@ -16,7 +16,6 @@
 
 using vcpkg::Dependencies::ActionPlan;
 using vcpkg::Dependencies::InstallPlanAction;
-using vcpkg::PortFileProvider::PathsPortFileProvider;
 
 namespace vcpkg::Commands::DependInfo
 {
