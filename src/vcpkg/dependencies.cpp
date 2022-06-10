@@ -304,7 +304,7 @@ namespace vcpkg
             void upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action);
             void mark_user_requested(const PackageSpec& spec);
 
-            ActionPlan serialize(Graphs::Randomizer* randomizer) const;
+            ActionPlan serialize(GraphRandomizer* randomizer) const;
 
             void mark_for_reinstall(const PackageSpec& spec, std::vector<FeatureSpec>& out_reinstall_requirements);
             const CMakeVars::CMakeVarProvider& m_var_provider;
@@ -605,7 +605,7 @@ namespace vcpkg
     std::vector<RemovePlanAction> create_remove_plan(const std::vector<PackageSpec>& specs,
                                                      const StatusParagraphs& status_db)
     {
-        struct RemoveAdjacencyProvider final : Graphs::AdjacencyProvider<PackageSpec, RemovePlanAction>
+        struct RemoveAdjacencyProvider final : AdjacencyProvider<PackageSpec, RemovePlanAction>
         {
             const StatusParagraphs& status_db;
             const std::vector<InstalledPackageView>& installed_ports;
@@ -657,14 +657,14 @@ namespace vcpkg
 
         auto installed_ports = get_installed_ports(status_db);
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
-        return Graphs::topological_sort(
+        return topological_sort(
             std::move(specs), RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
     }
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
                                                      const StatusParagraphs& status_db)
     {
-        struct ExportAdjacencyProvider final : Graphs::AdjacencyProvider<PackageSpec, ExportPlanAction>
+        struct ExportAdjacencyProvider final : AdjacencyProvider<PackageSpec, ExportPlanAction>
         {
             const StatusParagraphs& status_db;
             const std::unordered_set<PackageSpec>& specs_as_set;
@@ -700,7 +700,7 @@ namespace vcpkg
 
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
         std::vector<ExportPlanAction> toposort =
-            Graphs::topological_sort(specs, ExportAdjacencyProvider{status_db, specs_as_set}, {});
+            topological_sort(specs, ExportAdjacencyProvider{status_db, specs_as_set}, {});
         return toposort;
     }
 
@@ -933,9 +933,9 @@ namespace vcpkg
         return pgraph.serialize(options.randomizer);
     }
 
-    ActionPlan PackageGraph::serialize(Graphs::Randomizer* randomizer) const
+    ActionPlan PackageGraph::serialize(GraphRandomizer* randomizer) const
     {
-        struct BaseEdgeProvider : Graphs::AdjacencyProvider<PackageSpec, const Cluster*>
+        struct BaseEdgeProvider : AdjacencyProvider<PackageSpec, const Cluster*>
         {
             BaseEdgeProvider(const ClusterGraph& parent) : m_parent(parent) { }
 
@@ -993,8 +993,8 @@ namespace vcpkg
                 installed_vertices.push_back(kv.first);
             }
         }
-        auto remove_toposort = Graphs::topological_sort(removed_vertices, removeedgeprovider, randomizer);
-        auto insert_toposort = Graphs::topological_sort(installed_vertices, installedgeprovider, randomizer);
+        auto remove_toposort = topological_sort(removed_vertices, removeedgeprovider, randomizer);
+        auto insert_toposort = topological_sort(installed_vertices, installedgeprovider, randomizer);
 
         ActionPlan plan;
 

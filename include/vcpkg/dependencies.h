@@ -13,13 +13,9 @@
 #include <map>
 #include <vector>
 
-namespace vcpkg::Graphs
-{
-    struct Randomizer;
-}
-
 namespace vcpkg
 {
+    struct GraphRandomizer;
     struct StatusParagraphs;
 
     enum class UnsupportedPortAction : bool
@@ -160,13 +156,13 @@ namespace vcpkg
 
     struct CreateInstallPlanOptions
     {
-        CreateInstallPlanOptions(Graphs::Randomizer* r, Triplet t) : randomizer(r), host_triplet(t) { }
+        CreateInstallPlanOptions(GraphRandomizer* r, Triplet t) : randomizer(r), host_triplet(t) { }
         CreateInstallPlanOptions(Triplet t, UnsupportedPortAction action = UnsupportedPortAction::Error)
             : host_triplet(t), unsupported_port_action(action)
         {
         }
 
-        Graphs::Randomizer* randomizer = nullptr;
+        GraphRandomizer* randomizer = nullptr;
         Triplet host_triplet;
         UnsupportedPortAction unsupported_port_action;
     };

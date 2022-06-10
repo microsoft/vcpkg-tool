@@ -1,6 +1,6 @@
 #include <vcpkg/base/graphs.h>
 
-namespace vcpkg::Graphs
+namespace vcpkg
 {
     REGISTER_MESSAGE(GraphCycleDetected);
 }

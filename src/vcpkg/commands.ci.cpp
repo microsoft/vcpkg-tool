@@ -613,7 +613,7 @@ namespace vcpkg::Commands::CI
 
         CreateInstallPlanOptions serialize_options(host_triplet, UnsupportedPortAction::Warn);
 
-        struct RandomizerInstance : Graphs::Randomizer
+        struct RandomizerInstance : GraphRandomizer
         {
             virtual int random(int i) override
             {
