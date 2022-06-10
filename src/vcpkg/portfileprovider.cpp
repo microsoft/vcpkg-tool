@@ -394,7 +394,7 @@ namespace vcpkg::PortFileProvider
             {
             }
 
-            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const
+            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
             {
                 if (port_name == m_scf_and_location.source_control_file->core_paragraph->name)
                 {
@@ -422,7 +422,7 @@ namespace vcpkg::PortFileProvider
             {
             }
 
-            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const
+            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
             {
                 Optional<const SourceControlFileAndLocation&> result;
                 for (auto&& provider : m_providers)
