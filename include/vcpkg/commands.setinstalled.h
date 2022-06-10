@@ -17,7 +17,7 @@ namespace vcpkg::Commands::SetInstalled
                              DryRun dry_run,
                              const Optional<Path>& pkgsconfig_path,
                              Triplet host_triplet,
-                             const Install::KeepGoing keep_going);
+                             const KeepGoing keep_going);
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
                           Triplet default_triplet,

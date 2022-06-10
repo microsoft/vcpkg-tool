@@ -108,7 +108,7 @@ namespace vcpkg::Commands::CI
     struct TripletAndSummary
     {
         Triplet triplet;
-        Install::InstallSummary summary;
+        InstallSummary summary;
     };
 
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
@@ -703,14 +703,8 @@ namespace vcpkg::Commands::CI
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-            auto summary = Install::perform(args,
-                                            action_plan,
-                                            Install::KeepGoing::YES,
-                                            paths,
-                                            status_db,
-                                            binary_cache,
-                                            build_logs_recorder,
-                                            var_provider);
+            auto summary = Install::perform(
+                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
 
             // Adding results for ports that were built or pulled from an archive
             for (auto&& result : summary.results)

@@ -65,10 +65,8 @@ namespace
                                  "{package_name} provides CMake targets:");
 }
 
-namespace vcpkg::Install
+namespace vcpkg
 {
-    using namespace vcpkg;
-
     using file_pack = std::pair<std::string, std::string>;
 
     InstallDir InstallDir::from_destination_root(const InstalledPaths& ip, Triplet t, const BinaryParagraph& pgh)
@@ -514,14 +512,14 @@ namespace vcpkg::Install
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
     };
 
-    InstallSummary perform(const VcpkgCmdArguments& args,
-                           ActionPlan& action_plan,
-                           const KeepGoing keep_going,
-                           const VcpkgPaths& paths,
-                           StatusParagraphs& status_db,
-                           BinaryCache& binary_cache,
-                           const IBuildLogsRecorder& build_logs_recorder,
-                           const CMakeVars::CMakeVarProvider& var_provider)
+    InstallSummary Install::perform(const VcpkgCmdArguments& args,
+                                    ActionPlan& action_plan,
+                                    const KeepGoing keep_going,
+                                    const VcpkgPaths& paths,
+                                    StatusParagraphs& status_db,
+                                    BinaryCache& binary_cache,
+                                    const IBuildLogsRecorder& build_logs_recorder,
+                                    const CMakeVars::CMakeVarProvider& var_provider)
     {
         std::vector<SpecSummary> results;
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
@@ -643,7 +641,7 @@ namespace vcpkg::Install
         return ret;
     }
 
-    const CommandStructure COMMAND_STRUCTURE = {
+    const CommandStructure Install::COMMAND_STRUCTURE = {
         create_example_string("install zlib zlib:x64-windows curl boost"),
         0,
         SIZE_MAX,
@@ -660,10 +658,10 @@ namespace vcpkg::Install
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
         nullptr,
     };
-    void print_usage_information(const BinaryParagraph& bpgh,
-                                 std::set<std::string>& printed_usages,
-                                 const Filesystem& fs,
-                                 const InstalledPaths& installed)
+    void Install::print_usage_information(const BinaryParagraph& bpgh,
+                                          std::set<std::string>& printed_usages,
+                                          const Filesystem& fs,
+                                          const InstalledPaths& installed)
     {
         auto message = get_cmake_usage(fs, installed, bpgh).message;
         if (!message.empty())
@@ -890,10 +888,10 @@ namespace vcpkg::Install
                                  "",
                                  "The option --{option} is not supported in manifest mode.");
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet)
+    void Install::perform_and_exit(const VcpkgCmdArguments& args,
+                                   const VcpkgPaths& paths,
+                                   Triplet default_triplet,
+                                   Triplet host_triplet)
     {
         const ParsedArguments options =
             args.parse_arguments(paths.manifest_mode_enabled() ? MANIFEST_COMMAND_STRUCTURE : COMMAND_STRUCTURE);
@@ -1229,7 +1227,7 @@ namespace vcpkg::Install
 
         track_install_plan(action_plan);
 
-        const InstallSummary summary = perform(
+        const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
 
         print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
@@ -1257,7 +1255,7 @@ namespace vcpkg::Install
             auto bpgh = result.get_binary_paragraph();
             assert(bpgh);
             if (!bpgh) continue;
-            print_usage_information(*bpgh, printed_usages, fs, paths.installed());
+            Install::print_usage_information(*bpgh, printed_usages, fs, paths.installed());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

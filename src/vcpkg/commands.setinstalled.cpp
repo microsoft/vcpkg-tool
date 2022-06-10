@@ -46,7 +46,7 @@ namespace vcpkg::Commands::SetInstalled
                              DryRun dry_run,
                              const Optional<Path>& maybe_pkgsconfig,
                              Triplet host_triplet,
-                             const Install::KeepGoing keep_going)
+                             const KeepGoing keep_going)
     {
         auto& fs = paths.get_filesystem();
 
@@ -117,7 +117,7 @@ namespace vcpkg::Commands::SetInstalled
 
         paths.flush_lockfile();
 
-        Install::track_install_plan(action_plan);
+        track_install_plan(action_plan);
 
         const auto summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), cmake_vars);
@@ -154,9 +154,9 @@ namespace vcpkg::Commands::SetInstalled
 
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
         const bool only_downloads = Util::Sets::contains(options.switches, OPTION_ONLY_DOWNLOADS);
-        const Install::KeepGoing keep_going =
-            Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads ? Install::KeepGoing::YES
-                                                                                        : Install::KeepGoing::NO;
+        const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
+                                         ? KeepGoing::YES
+                                         : KeepGoing::NO;
 
         PathsPortFileProvider provider(paths, args.overlay_ports);
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);

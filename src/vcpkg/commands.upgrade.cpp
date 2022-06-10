@@ -19,7 +19,6 @@
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
-using Install::KeepGoing;
 
 namespace vcpkg::Commands::Upgrade
 {
@@ -218,7 +217,7 @@ namespace vcpkg::Commands::Upgrade
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
-        const Install::InstallSummary summary = Install::perform(
+        const InstallSummary summary = Install::perform(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
 
         print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");

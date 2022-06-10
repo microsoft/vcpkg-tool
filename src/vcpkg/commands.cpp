@@ -144,7 +144,7 @@ namespace vcpkg::Commands
 
     Span<const PackageNameAndFunction<const TripletCommand*>> get_available_triplet_commands()
     {
-        static const Install::InstallCommand install{};
+        static const InstallCommand install{};
         static const SetInstalled::SetInstalledCommand set_installed{};
         static const CI::CICommand ci{};
         static const Remove::RemoveCommand remove{};

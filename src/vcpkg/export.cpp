@@ -22,8 +22,6 @@
 
 namespace vcpkg::Export
 {
-    using Install::InstallDir;
-
     static std::string create_nuspec_file_contents(const Path& raw_exported_dir,
                                                    const Path& targets_redirect_path,
                                                    const Path& props_redirect_path,
@@ -536,8 +534,7 @@ namespace vcpkg::Export
                     files.push_back(paths.installed().root() / suffix);
                 }
 
-                Install::install_files_and_write_listfile(
-                    fs, paths.installed().triplet_dir(action.spec.triplet()), files, dirs);
+                install_files_and_write_listfile(fs, paths.installed().triplet_dir(action.spec.triplet()), files, dirs);
             }
         }
 

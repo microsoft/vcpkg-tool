@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-namespace vcpkg::Install
+namespace vcpkg
 {
     enum class KeepGoing
     {
@@ -86,15 +86,6 @@ namespace vcpkg::Install
                                   const BinaryControlFile& binary_paragraph,
                                   StatusParagraphs* status_db);
 
-    InstallSummary perform(const VcpkgCmdArguments& args,
-                           ActionPlan& action_plan,
-                           const KeepGoing keep_going,
-                           const VcpkgPaths& paths,
-                           StatusParagraphs& status_db,
-                           BinaryCache& binary_cache,
-                           const IBuildLogsRecorder& build_logs_recorder,
-                           const CMakeVars::CMakeVarProvider& var_provider);
-
     struct CMakeUsageInfo
     {
         std::string message;
@@ -105,17 +96,30 @@ namespace vcpkg::Install
 
     std::vector<std::string> get_cmake_add_library_names(StringView cmake_file);
     CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh);
-    void print_usage_information(const BinaryParagraph& bpgh,
-                                 std::set<std::string>& printed_usages,
-                                 const Filesystem& fs,
-                                 const InstalledPaths& installed);
 
-    extern const CommandStructure COMMAND_STRUCTURE;
+    namespace Install
+    {
+        extern const CommandStructure COMMAND_STRUCTURE;
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet);
+        void print_usage_information(const BinaryParagraph& bpgh,
+                                     std::set<std::string>& printed_usages,
+                                     const Filesystem& fs,
+                                     const InstalledPaths& installed);
+
+        InstallSummary perform(const VcpkgCmdArguments& args,
+                               ActionPlan& action_plan,
+                               const KeepGoing keep_going,
+                               const VcpkgPaths& paths,
+                               StatusParagraphs& status_db,
+                               BinaryCache& binary_cache,
+                               const IBuildLogsRecorder& build_logs_recorder,
+                               const CMakeVars::CMakeVarProvider& var_provider);
+
+        void perform_and_exit(const VcpkgCmdArguments& args,
+                              const VcpkgPaths& paths,
+                              Triplet default_triplet,
+                              Triplet host_triplet);
+    } // namespace vcpkg::Install
 
     struct InstallCommand : Commands::TripletCommand
     {
