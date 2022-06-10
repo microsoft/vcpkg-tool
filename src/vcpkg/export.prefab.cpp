@@ -231,15 +231,15 @@ namespace vcpkg::Export::Prefab
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s installing maven file", aar);
     }
 
-    static std::unique_ptr<Build::PreBuildInfo> build_info_from_triplet(
+    static std::unique_ptr<PreBuildInfo> build_info_from_triplet(
         const VcpkgPaths& paths, const std::unique_ptr<CMakeVars::CMakeVarProvider>& provider, const Triplet& triplet)
     {
         provider->load_generic_triplet_vars(triplet);
-        return std::make_unique<Build::PreBuildInfo>(
+        return std::make_unique<PreBuildInfo>(
             paths, triplet, provider->get_generic_triplet_vars(triplet).value_or_exit(VCPKG_LINE_INFO));
     }
 
-    static bool is_supported(const Build::PreBuildInfo& info)
+    static bool is_supported(const PreBuildInfo& info)
     {
         return Strings::case_insensitive_ascii_equals(info.cmake_system_name, "android");
     }
@@ -372,8 +372,8 @@ namespace vcpkg::Export::Prefab
             const std::string name = action.spec.name();
             auto dependencies = action.dependencies();
 
-            const auto action_build_info = Build::read_build_info(utils, paths.build_info_file_path(action.spec));
-            const bool is_empty_package = action_build_info.policies.is_enabled(Build::BuildPolicy::EMPTY_PACKAGE);
+            const auto action_build_info = read_build_info(utils, paths.build_info_file_path(action.spec));
+            const bool is_empty_package = action_build_info.policies.is_enabled(BuildPolicy::EMPTY_PACKAGE);
 
             if (is_empty_package)
             {

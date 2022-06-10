@@ -35,8 +35,6 @@ using namespace vcpkg;
 
 namespace
 {
-    using namespace vcpkg::Build;
-
     const Path readme_dot_log = "readme.log";
 
     struct CiBuildLogsRecorder final : IBuildLogsRecorder
@@ -107,7 +105,6 @@ namespace
 
 namespace vcpkg::Commands::CI
 {
-    using Build::BuildResult;
     using Dependencies::InstallPlanAction;
     using Dependencies::InstallPlanType;
 
@@ -163,7 +160,7 @@ namespace vcpkg::Commands::CI
     {
     public:
         void add_test_results(const PackageSpec& spec,
-                              Build::BuildResult build_result,
+                              BuildResult build_result,
                               const ElapsedTime& elapsed_time,
                               const std::chrono::system_clock::time_point& start_time,
                               const std::string& abi_tag,
@@ -243,8 +240,8 @@ namespace vcpkg::Commands::CI
             std::string name;
             std::string method;
             std::string owner;
-            vcpkg::Build::BuildResult result;
-            vcpkg::ElapsedTime time;
+            BuildResult result;
+            ElapsedTime time;
             std::chrono::system_clock::time_point start_time;
             std::string abi_tag;
             std::vector<std::string> features;
@@ -322,7 +319,7 @@ namespace vcpkg::Commands::CI
 
     struct UnknownCIPortsResults
     {
-        std::map<PackageSpec, Build::BuildResult> known;
+        std::map<PackageSpec, BuildResult> known;
         std::map<PackageSpec, std::vector<std::string>> features;
         std::map<PackageSpec, std::string> abi_map;
         // action_state_string.size() will equal install_actions.size()
@@ -366,7 +363,7 @@ namespace vcpkg::Commands::CI
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
-        Build::compute_all_abis(paths, action_plan, var_provider, {});
+        compute_all_abis(paths, action_plan, var_provider, {});
         return action_plan;
     }
 
@@ -427,7 +424,7 @@ namespace vcpkg::Commands::CI
 
     // This algorithm reduces an action plan to only unknown actions and their dependencies
     static void reduce_action_plan(Dependencies::ActionPlan& action_plan,
-                                   const std::map<PackageSpec, Build::BuildResult>& known,
+                                   const std::map<PackageSpec, BuildResult>& known,
                                    View<std::string> parent_hashes)
     {
         std::set<PackageSpec> to_keep;
@@ -449,7 +446,7 @@ namespace vcpkg::Commands::CI
                 }
                 else
                 {
-                    it->build_options = vcpkg::Build::backcompat_prohibiting_package_options;
+                    it->build_options = backcompat_prohibiting_package_options;
                     to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
                 }
             }
@@ -500,20 +497,20 @@ namespace vcpkg::Commands::CI
             auto& build_result = port_result.build_result.value_or_exit(VCPKG_LINE_INFO);
             switch (build_result.code)
             {
-                case Build::BuildResult::BUILD_FAILED:
-                case Build::BuildResult::POST_BUILD_CHECKS_FAILED:
-                case Build::BuildResult::FILE_CONFLICTS:
+                case BuildResult::BUILD_FAILED:
+                case BuildResult::POST_BUILD_CHECKS_FAILED:
+                case BuildResult::FILE_CONFLICTS:
                     if (!expected_failures.contains(port_result.get_spec()))
                     {
-                        output.append(msg::format(msgCiBaselineRegression,
-                                                  msg::spec = port_result.get_spec().to_string(),
-                                                  msg::build_result =
-                                                      Build::to_string_locale_invariant(build_result.code).to_string(),
-                                                  msg::path = ci_baseline_file_name));
+                        output.append(
+                            msg::format(msgCiBaselineRegression,
+                                        msg::spec = port_result.get_spec().to_string(),
+                                        msg::build_result = to_string_locale_invariant(build_result.code).to_string(),
+                                        msg::path = ci_baseline_file_name));
                         output.append_raw('\n');
                     }
                     break;
-                case Build::BuildResult::SUCCEEDED:
+                case BuildResult::SUCCEEDED:
                     if (!allow_unexpected_passing && expected_failures.contains(port_result.get_spec()))
                     {
                         output.append(msg::format(msgCiBaselineUnexpectedPass,

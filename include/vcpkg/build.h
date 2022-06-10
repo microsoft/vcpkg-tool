@@ -28,10 +28,7 @@ namespace vcpkg
     struct Environment;
 
     DECLARE_MESSAGE(ElapsedForPackage, (msg::spec, msg::elapsed), "", "Elapsed time to handle {spec}: {elapsed}");
-}
 
-namespace vcpkg::Build
-{
     enum class BuildResult
     {
         SUCCEEDED,
@@ -54,7 +51,7 @@ namespace vcpkg::Build
 
     const IBuildLogsRecorder& null_build_logs_recorder() noexcept;
 
-    namespace Command
+    namespace Build
     {
         int perform_ex(const VcpkgCmdArguments& args,
                        const FullPackageSpec& full_spec,
@@ -79,7 +76,7 @@ namespace vcpkg::Build
                               const VcpkgPaths& paths,
                               Triplet default_triplet,
                               Triplet host_triplet);
-    }
+    } // namespace vcpkg::Build
 
     enum class UseHeadVersion
     {
@@ -169,31 +166,31 @@ namespace vcpkg::Build
     };
 
     static constexpr BuildPackageOptions default_build_package_options{
-        Build::BuildMissing::YES,
-        Build::UseHeadVersion::NO,
-        Build::AllowDownloads::YES,
-        Build::OnlyDownloads::NO,
-        Build::CleanBuildtrees::YES,
-        Build::CleanPackages::YES,
-        Build::CleanDownloads::NO,
-        Build::DownloadTool::BUILT_IN,
-        Build::PurgeDecompressFailure::YES,
-        Build::Editable::NO,
-        Build::BackcompatFeatures::ALLOW,
+        BuildMissing::YES,
+        UseHeadVersion::NO,
+        AllowDownloads::YES,
+        OnlyDownloads::NO,
+        CleanBuildtrees::YES,
+        CleanPackages::YES,
+        CleanDownloads::NO,
+        DownloadTool::BUILT_IN,
+        PurgeDecompressFailure::YES,
+        Editable::NO,
+        BackcompatFeatures::ALLOW,
     };
 
     static constexpr BuildPackageOptions backcompat_prohibiting_package_options{
-        Build::BuildMissing::YES,
-        Build::UseHeadVersion::NO,
-        Build::AllowDownloads::YES,
-        Build::OnlyDownloads::NO,
-        Build::CleanBuildtrees::YES,
-        Build::CleanPackages::YES,
-        Build::CleanDownloads::NO,
-        Build::DownloadTool::BUILT_IN,
-        Build::PurgeDecompressFailure::YES,
-        Build::Editable::NO,
-        Build::BackcompatFeatures::PROHIBIT,
+        BuildMissing::YES,
+        UseHeadVersion::NO,
+        AllowDownloads::YES,
+        OnlyDownloads::NO,
+        CleanBuildtrees::YES,
+        CleanPackages::YES,
+        CleanDownloads::NO,
+        DownloadTool::BUILT_IN,
+        PurgeDecompressFailure::YES,
+        Editable::NO,
+        BackcompatFeatures::PROHIBIT,
     };
 
     struct BuildResultCounts
@@ -422,4 +419,4 @@ namespace vcpkg::Build
                                       Triplet default_triplet,
                                       Triplet host_triplet) const override;
     };
-}
+} // namespace vcpkg

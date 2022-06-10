@@ -348,7 +348,7 @@ namespace
                 }
                 else
                 {
-                    if (actions[i]->build_options.purge_decompress_failure == Build::PurgeDecompressFailure::YES)
+                    if (actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::YES)
                     {
                         Debug::print(
                             "Failed to decompress archive package; purging: ", archive_paths[j].native(), '\n');

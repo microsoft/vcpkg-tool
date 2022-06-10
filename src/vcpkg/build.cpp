@@ -36,11 +36,9 @@
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
-using vcpkg::Build::BuildResult;
 
 namespace
 {
-    using vcpkg::Build::IBuildLogsRecorder;
     struct NullBuildLogsRecorder final : IBuildLogsRecorder
     {
         void record_build_result(const VcpkgPaths& paths, const PackageSpec& spec, BuildResult result) const override
@@ -237,13 +235,13 @@ namespace vcpkg::Build
     using Dependencies::InstallPlanAction;
     using Dependencies::InstallPlanType;
 
-    void Command::perform_and_exit_ex(const VcpkgCmdArguments& args,
-                                      const FullPackageSpec& full_spec,
-                                      Triplet host_triplet,
-                                      const PathsPortFileProvider& provider,
-                                      BinaryCache& binary_cache,
-                                      const IBuildLogsRecorder& build_logs_recorder,
-                                      const VcpkgPaths& paths)
+    void perform_and_exit_ex(const VcpkgCmdArguments& args,
+                             const FullPackageSpec& full_spec,
+                             Triplet host_triplet,
+                             const PathsPortFileProvider& provider,
+                             BinaryCache& binary_cache,
+                             const IBuildLogsRecorder& build_logs_recorder,
+                             const VcpkgPaths& paths)
     {
         Checks::exit_with_code(
             VCPKG_LINE_INFO,
@@ -258,21 +256,21 @@ namespace vcpkg::Build
         nullptr,
     };
 
-    void Command::perform_and_exit(const VcpkgCmdArguments& args,
-                                   const VcpkgPaths& paths,
-                                   Triplet default_triplet,
-                                   Triplet host_triplet)
+    void perform_and_exit(const VcpkgCmdArguments& args,
+                          const VcpkgPaths& paths,
+                          Triplet default_triplet,
+                          Triplet host_triplet)
     {
         Checks::exit_with_code(VCPKG_LINE_INFO, perform(args, paths, default_triplet, host_triplet));
     }
 
-    int Command::perform_ex(const VcpkgCmdArguments& args,
-                            const FullPackageSpec& full_spec,
-                            Triplet host_triplet,
-                            const PathsPortFileProvider& provider,
-                            BinaryCache& binary_cache,
-                            const IBuildLogsRecorder& build_logs_recorder,
-                            const VcpkgPaths& paths)
+    int perform_ex(const VcpkgCmdArguments& args,
+                   const FullPackageSpec& full_spec,
+                   Triplet host_triplet,
+                   const PathsPortFileProvider& provider,
+                   BinaryCache& binary_cache,
+                   const IBuildLogsRecorder& build_logs_recorder,
+                   const VcpkgPaths& paths)
     {
         const PackageSpec& spec = full_spec.package_spec;
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -323,7 +321,7 @@ namespace vcpkg::Build
         action->build_options.clean_packages = CleanPackages::NO;
 
         const auto build_timer = ElapsedTimer::create_started();
-        const auto result = Build::build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
+        const auto result = build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
@@ -349,18 +347,15 @@ namespace vcpkg::Build
             {
                 msg::print(Color::warning, warnings);
             }
-            msg::println_error(Build::create_error_message(result, spec));
-            msg::print(Build::create_user_troubleshooting_message(*action, paths));
+            msg::println_error(create_error_message(result, spec));
+            msg::print(create_user_troubleshooting_message(*action, paths));
             return 1;
         }
 
         return 0;
     }
 
-    int Command::perform(const VcpkgCmdArguments& args,
-                         const VcpkgPaths& paths,
-                         Triplet default_triplet,
-                         Triplet host_triplet)
+    int perform(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet, Triplet host_triplet)
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
@@ -371,20 +366,20 @@ namespace vcpkg::Build
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
         PathsPortFileProvider provider(paths, args.overlay_ports);
-        return perform_ex(args, spec, host_triplet, provider, binary_cache, Build::null_build_logs_recorder(), paths);
+        return perform_ex(args, spec, host_triplet, provider, binary_cache, null_build_logs_recorder(), paths);
     }
+} // namespace vcpkg::Build
 
+namespace vcpkg
+{
     void BuildCommand::perform_and_exit(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
                                         Triplet default_triplet,
                                         Triplet host_triplet) const
     {
-        Build::Command::perform_and_exit(args, paths, default_triplet, host_triplet);
+        Build::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
-}
 
-namespace vcpkg::Build
-{
     static const std::string NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
     static const std::string NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
     static const std::string NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
@@ -1024,7 +1019,7 @@ namespace vcpkg::Build
     }
 
     static void write_sbom(const VcpkgPaths& paths,
-                           const InstallPlanAction& action,
+                           const Dependencies::InstallPlanAction& action,
                            std::vector<Json::Value> heuristic_resources)
     {
         auto& fs = paths.get_filesystem();
@@ -1105,7 +1100,7 @@ namespace vcpkg::Build
         } // close out_file
 
         // With the exception of empty packages, builds in "Download Mode" always result in failure.
-        if (action.build_options.only_downloads == Build::OnlyDownloads::YES)
+        if (action.build_options.only_downloads == OnlyDownloads::YES)
         {
             // TODO: Capture executed command output and evaluate whether the failure was intended.
             // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
@@ -1608,7 +1603,7 @@ namespace vcpkg::Build
     std::string create_github_issue(const VcpkgCmdArguments& args,
                                     const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
-                                    const InstallPlanAction& action)
+                                    const Dependencies::InstallPlanAction& action)
     {
         const auto& fs = paths.get_filesystem();
         const auto create_log_details = [&fs](vcpkg::Path&& path) {
@@ -1675,7 +1670,7 @@ namespace vcpkg::Build
             manifest);
     }
 
-    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+    LocalizedString create_user_troubleshooting_message(const Dependencies::InstallPlanAction& action,
                                                         const VcpkgPaths& paths,
                                                         Optional<Path>&& issue_body)
     {

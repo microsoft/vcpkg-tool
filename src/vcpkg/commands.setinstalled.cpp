@@ -51,7 +51,7 @@ namespace vcpkg::Commands::SetInstalled
         auto& fs = paths.get_filesystem();
 
         cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
-        Build::compute_all_abis(paths, action_plan, cmake_vars, {});
+        compute_all_abis(paths, action_plan, cmake_vars, {});
 
         std::set<std::string> all_abis;
 
@@ -103,7 +103,7 @@ namespace vcpkg::Commands::SetInstalled
 
         if (auto p_pkgsconfig = maybe_pkgsconfig.get())
         {
-            Build::compute_all_abis(paths, action_plan, cmake_vars, status_db);
+            compute_all_abis(paths, action_plan, cmake_vars, status_db);
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
@@ -119,14 +119,8 @@ namespace vcpkg::Commands::SetInstalled
 
         Install::track_install_plan(action_plan);
 
-        const auto summary = Install::perform(args,
-                                              action_plan,
-                                              keep_going,
-                                              paths,
-                                              status_db,
-                                              binary_cache,
-                                              Build::null_build_logs_recorder(),
-                                              cmake_vars);
+        const auto summary = Install::perform(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), cmake_vars);
 
         print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 
@@ -182,7 +176,7 @@ namespace vcpkg::Commands::SetInstalled
 
         for (auto&& action : action_plan.install_actions)
         {
-            action.build_options = Build::default_build_package_options;
+            action.build_options = default_build_package_options;
         }
 
         perform_and_exit_ex(args,

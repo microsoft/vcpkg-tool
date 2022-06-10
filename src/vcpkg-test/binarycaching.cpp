@@ -263,11 +263,11 @@ Build-Depends: bzip
                                         {{"a", {}}, {"b", {}}},
                                         {});
 
-    ipa.abi_info = Build::AbiInfo{};
+    ipa.abi_info = AbiInfo{};
     ipa.abi_info.get()->package_abi = "packageabi";
     std::string tripletabi("tripletabi");
     ipa.abi_info.get()->triplet_abi = tripletabi;
-    Build::CompilerInfo compiler_info;
+    CompilerInfo compiler_info;
     compiler_info.hash = "compilerhash";
     compiler_info.id = "compilerid";
     compiler_info.version = "compilerversion";
@@ -466,7 +466,7 @@ Description: a spiffy compression library wrapper
     plan.install_actions.push_back(Dependencies::InstallPlanAction());
     plan.install_actions[0].spec = PackageSpec("zlib", Test::X64_ANDROID);
     plan.install_actions[0].source_control_file_and_location = scfl;
-    plan.install_actions[0].abi_info = Build::AbiInfo{};
+    plan.install_actions[0].abi_info = AbiInfo{};
     plan.install_actions[0].abi_info.get()->package_abi = "packageabi";
 
     packageconfig = generate_nuget_packages_config(plan);
@@ -489,7 +489,7 @@ Description: a spiffy compression library wrapper
     plan.install_actions.push_back(Dependencies::InstallPlanAction());
     plan.install_actions[1].spec = PackageSpec("zlib2", Test::X64_ANDROID);
     plan.install_actions[1].source_control_file_and_location = scfl2;
-    plan.install_actions[1].abi_info = Build::AbiInfo{};
+    plan.install_actions[1].abi_info = AbiInfo{};
     plan.install_actions[1].abi_info.get()->package_abi = "packageabi2";
 
     packageconfig = generate_nuget_packages_config(plan);

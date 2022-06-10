@@ -106,7 +106,7 @@ namespace vcpkg::Export
             std::sort(cont.begin(), cont.end(), &ExportPlanAction::compare_by_name);
             const std::string as_string = Strings::join("\n", cont, [](const ExportPlanAction* p) {
                 return Dependencies::to_output_string(
-                    p->request_type, p->spec.to_string(), vcpkg::Build::default_build_package_options);
+                    p->request_type, p->spec.to_string(), default_build_package_options);
             });
 
             switch (plan_type)

@@ -38,9 +38,7 @@ namespace vcpkg::Dependencies
         AUTO_SELECTED
     };
 
-    std::string to_output_string(RequestType request_type,
-                                 const ZStringView s,
-                                 const Build::BuildPackageOptions& options);
+    std::string to_output_string(RequestType request_type, const ZStringView s, const BuildPackageOptions& options);
     std::string to_output_string(RequestType request_type, const ZStringView s);
 
     enum class InstallPlanType
@@ -74,7 +72,7 @@ namespace vcpkg::Dependencies
         const std::string& public_abi() const;
         bool has_package_abi() const;
         Optional<const std::string&> package_abi() const;
-        const Build::PreBuildInfo& pre_build_info(LineInfo li) const;
+        const PreBuildInfo& pre_build_info(LineInfo li) const;
 
         PackageSpec spec;
 
@@ -83,7 +81,7 @@ namespace vcpkg::Dependencies
 
         InstallPlanType plan_type;
         RequestType request_type;
-        Build::BuildPackageOptions build_options;
+        BuildPackageOptions build_options;
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
         std::vector<PackageSpec> package_dependencies;
@@ -91,7 +89,7 @@ namespace vcpkg::Dependencies
         InternalFeatureSet feature_list;
         Triplet host_triplet;
 
-        Optional<Build::AbiInfo> abi_info;
+        Optional<AbiInfo> abi_info;
     };
 
     enum class RemovePlanType

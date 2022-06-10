@@ -204,7 +204,7 @@ namespace vcpkg::Commands::Upgrade
         // Set build settings for all install actions
         for (auto&& action : action_plan.install_actions)
         {
-            action.build_options = vcpkg::Build::default_build_package_options;
+            action.build_options = default_build_package_options;
         }
 
         Dependencies::print_plan(action_plan, true, paths.builtin_ports_directory());
@@ -219,14 +219,8 @@ namespace vcpkg::Commands::Upgrade
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
-        const Install::InstallSummary summary = Install::perform(args,
-                                                                 action_plan,
-                                                                 keep_going,
-                                                                 paths,
-                                                                 status_db,
-                                                                 binary_cache,
-                                                                 Build::null_build_logs_recorder(),
-                                                                 var_provider);
+        const Install::InstallSummary summary = Install::perform(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
 
         print2("\nTotal elapsed time: ", GlobalState::timer.to_string(), "\n\n");
 

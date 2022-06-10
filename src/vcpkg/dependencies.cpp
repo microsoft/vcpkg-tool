@@ -400,7 +400,7 @@ namespace vcpkg::Dependencies
 
     static std::string to_output_string(RequestType request_type,
                                         const ZStringView s,
-                                        const Build::BuildPackageOptions& options,
+                                        const BuildPackageOptions& options,
                                         const SourceControlFileAndLocation* scfl,
                                         const InstalledPackageView* ipv,
                                         const Path& builtin_ports_dir)
@@ -421,7 +421,7 @@ namespace vcpkg::Dependencies
         {
             Strings::append(ret, " -> ", Version{ipv->core->package.version, ipv->core->package.port_version});
         }
-        if (options.use_head_version == Build::UseHeadVersion::YES)
+        if (options.use_head_version == UseHeadVersion::YES)
         {
             Strings::append(ret, " (+HEAD)");
         }
@@ -436,9 +436,7 @@ namespace vcpkg::Dependencies
         return ret;
     }
 
-    std::string to_output_string(RequestType request_type,
-                                 const ZStringView s,
-                                 const Build::BuildPackageOptions& options)
+    std::string to_output_string(RequestType request_type, const ZStringView s, const BuildPackageOptions& options)
     {
         return to_output_string(request_type, s, options, {}, {}, {});
     }
@@ -537,7 +535,7 @@ namespace vcpkg::Dependencies
         if (!p || p->package_abi.empty()) return nullopt;
         return p->package_abi;
     }
-    const Build::PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
+    const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
         return *abi_info.value_or_exit(li).pre_build_info.get();
     }

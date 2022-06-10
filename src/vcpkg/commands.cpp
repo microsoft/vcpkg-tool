@@ -149,7 +149,7 @@ namespace vcpkg::Commands
         static const CI::CICommand ci{};
         static const Remove::RemoveCommand remove{};
         static const Upgrade::UpgradeCommand upgrade{};
-        static const Build::BuildCommand build{};
+        static const BuildCommand build{};
         static const Env::EnvCommand env{};
         static const BuildExternal::BuildExternalCommand build_external{};
         static const Export::ExportCommand export_command{};

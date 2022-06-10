@@ -33,7 +33,7 @@ namespace vcpkg::Install
         const BinaryParagraph* get_binary_paragraph() const;
         const PackageSpec& get_spec() const { return m_spec; }
         bool is_user_requested_install() const;
-        Optional<Build::ExtendedBuildResult> build_result;
+        Optional<ExtendedBuildResult> build_result;
         vcpkg::ElapsedTime timing;
         std::chrono::system_clock::time_point start_time;
 
@@ -63,11 +63,11 @@ namespace vcpkg::Install
         const Path& listfile() const;
     };
 
-    Build::ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
-                                                           const VcpkgPaths& paths,
-                                                           Dependencies::InstallPlanAction& action,
-                                                           StatusParagraphs& status_db,
-                                                           const CMakeVars::CMakeVarProvider& var_provider);
+    ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
+                                                    const VcpkgPaths& paths,
+                                                    Dependencies::InstallPlanAction& action,
+                                                    StatusParagraphs& status_db,
+                                                    const CMakeVars::CMakeVarProvider& var_provider);
 
     enum class InstallResult
     {
@@ -92,7 +92,7 @@ namespace vcpkg::Install
                            const VcpkgPaths& paths,
                            StatusParagraphs& status_db,
                            BinaryCache& binary_cache,
-                           const Build::IBuildLogsRecorder& build_logs_recorder,
+                           const IBuildLogsRecorder& build_logs_recorder,
                            const CMakeVars::CMakeVarProvider& var_provider);
 
     struct CMakeUsageInfo
