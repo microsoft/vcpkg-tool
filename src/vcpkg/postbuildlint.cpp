@@ -346,7 +346,7 @@ namespace vcpkg::PostBuildLint
     {
         const auto packages_dir = paths.packages() / spec.dir();
         const auto copyright_file = packages_dir / "share" / spec.name() / "copyright";
-        if (fs.exists(copyright_file, IgnoreErrors{}))
+        if (fs.is_regular_file(copyright_file) || fs.get_regular_files_recursive(copyright_file, IgnoreErrors{}).size() > 1)
         {
             return LintStatus::SUCCESS;
         }
