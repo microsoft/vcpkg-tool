@@ -268,7 +268,7 @@ namespace vcpkg::Commands::CI
                 .attr("name", test.name)
                 .attr("method", test.method)
                 .attr("time", test.time.as<std::chrono::seconds>().count())
-                .attr("method", result_string)
+                .attr("result", result_string)
                 .finish_complex_open_tag()
                 .line_break();
             xml.open_tag("traits").line_break();
