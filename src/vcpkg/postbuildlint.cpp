@@ -14,6 +14,13 @@ using vcpkg::Build::BuildInfo;
 using vcpkg::Build::BuildPolicy;
 using vcpkg::Build::PreBuildInfo;
 
+namespace
+{
+    using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.");
+}
+
 namespace vcpkg::PostBuildLint
 {
     constexpr static const StringLiteral windows_system_names[] = {
@@ -346,10 +353,16 @@ namespace vcpkg::PostBuildLint
     {
         const auto packages_dir = paths.packages() / spec.dir();
         const auto copyright_file = packages_dir / "share" / spec.name() / "copyright";
-        if (fs.is_regular_file(copyright_file) || fs.get_regular_files_recursive(copyright_file, IgnoreErrors{}).size() > 1)
+        if (fs.is_regular_file(copyright_file))
         {
             return LintStatus::SUCCESS;
         }
+        else if (fs.is_directory(copyright_file))
+        {
+            msg::println_warning(msgCopyrightIsDir, msg::path = "copyright");
+            return LintStatus::SUCCESS;
+        }
+
         const auto current_buildtrees_dir = paths.build_dir(spec);
         const auto current_buildtrees_dir_src = current_buildtrees_dir / "src";
 
