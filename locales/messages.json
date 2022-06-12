@@ -129,6 +129,8 @@
   "_CommandFailed.comment": "An example of {command_line} is vcpkg install zlib.",
   "CompressFolderFailed": "Failed to compress folder '{path}':",
   "_CompressFolderFailed.comment": "An example of {path} is /foo/bar.",
+  "CopyrightIsDir": "`{path}` being a directory is deprecated.",
+  "_CopyrightIsDir.comment": "An example of {path} is /foo/bar.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "_CouldNotDeduceNugetIdAndVersion.comment": "An example of {path} is /foo/bar.",
   "CurlReportedUnexpectedResults": "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\nPlease review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!\ncmd: {command_line}\n=== curl output ===\n{actual}\n=== end curl output ===",
