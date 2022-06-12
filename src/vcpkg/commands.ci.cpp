@@ -183,7 +183,7 @@ namespace vcpkg::Commands::CI
         std::string build_xml(Triplet controlling_triplet)
         {
             XmlSerializer xml;
-            xml.emit_declaration();
+            xml.emit_declaration().line_break();
             xml.open_tag("assemblies").line_break();
             for (const auto& test_group : m_tests)
             {
