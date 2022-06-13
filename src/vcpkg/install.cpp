@@ -399,11 +399,13 @@ namespace vcpkg::Install
                     {
                         warnings.append(msg).append_raw('\n');
                     }
+
                     if (!warnings.data().empty())
                     {
                         msg::print(Color::warning, warnings);
                     }
-                    msg::print(Color::error, Build::create_error_message(result, action.spec));
+
+                    msg::println_error(Build::create_error_message(result, action.spec));
                     return result;
                 }
 
@@ -553,7 +555,16 @@ namespace vcpkg::Install
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              Build::create_user_troubleshooting_message(action, paths));
+                                              Build::create_user_troubleshooting_message(
+                                                  action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
+                                                      const auto issue_body_path =
+                                                          paths.installed().root() / "vcpkg" / "issue_body.md";
+                                                      paths.get_filesystem().write_contents(
+                                                          issue_body_path,
+                                                          Build::create_github_issue(args, result, paths, action),
+                                                          VCPKG_LINE_INFO);
+                                                      return issue_body_path;
+                                                  })));
             }
 
             this_install.current_summary->build_result.emplace(std::move(result));
@@ -743,7 +754,7 @@ namespace vcpkg::Install
         auto files = fs.read_lines(installed.listfile_path(bpgh), ec);
         if (!ec)
         {
-            std::map<std::string, std::string> config_files;
+            std::unordered_map<std::string, std::string> config_files;
             std::map<std::string, std::vector<std::string>> library_targets;
             bool is_header_only = true;
             std::string header_path;

@@ -3,6 +3,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <ctime>
@@ -477,6 +478,23 @@ namespace vcpkg
         }
 
         return nullopt;
+    }
+
+    std::string get_host_os_name()
+    {
+#if defined(_WIN32)
+        return "windows";
+#elif defined(__APPLE__)
+        return "osx";
+#elif defined(__FreeBSD__)
+        return "freebsd";
+#elif defined(__OpenBSD__)
+        return "openbsd";
+#elif defined(__linux__)
+        return "linux";
+#else
+        return "unknown"
+#endif
     }
 }
 

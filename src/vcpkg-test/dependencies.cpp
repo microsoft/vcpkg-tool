@@ -92,17 +92,6 @@ struct MockVersionedPortfileProvider : PortFileProvider::IVersionedPortfileProvi
     }
 };
 
-template<class T, class E>
-T unwrap(ExpectedT<T, E> e)
-{
-    if (!e.has_value())
-    {
-        INFO(e.error());
-        REQUIRE(false);
-    }
-    return std::move(*e.get());
-}
-
 static void check_name_and_features(const Dependencies::InstallPlanAction& ipa,
                                     StringLiteral name,
                                     std::initializer_list<StringLiteral> features)
@@ -143,7 +132,7 @@ static void check_semver_version(const ExpectedL<DotVersion>& maybe_version,
                                  uint64_t patch,
                                  const std::vector<std::string>& identifiers)
 {
-    auto actual_version = unwrap(maybe_version);
+    auto actual_version = maybe_version.value_or_exit(VCPKG_LINE_INFO);
     CHECK(actual_version.version_string == version_string);
     CHECK(actual_version.prerelease_string == prerelease_string);
     REQUIRE(actual_version.version.size() == 3);
@@ -157,7 +146,7 @@ static void check_relaxed_version(const ExpectedL<DotVersion>& maybe_version,
                                   const std::vector<uint64_t>& version,
                                   const std::vector<std::string>& identifiers = {})
 {
-    auto actual_version = unwrap(maybe_version);
+    auto actual_version = maybe_version.value_or_exit(VCPKG_LINE_INFO);
     CHECK(actual_version.version == version);
     CHECK(actual_version.identifiers == identifiers);
 }
@@ -166,7 +155,7 @@ static void check_date_version(const ExpectedL<DateVersion>& maybe_version,
                                const std::string& version_string,
                                const std::vector<uint64_t>& identifiers)
 {
-    auto actual_version = unwrap(maybe_version);
+    auto actual_version = maybe_version.value_or_exit(VCPKG_LINE_INFO);
     CHECK(actual_version.version_string == version_string);
     CHECK(actual_version.identifiers == identifiers);
 }
@@ -275,7 +264,8 @@ TEST_CASE ("basic version install single", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = unwrap(create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     REQUIRE(install_plan.install_actions.at(0).spec.name() == "a");
@@ -316,7 +306,8 @@ TEST_CASE ("basic version install scheme", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = unwrap(create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     CHECK(install_plan.size() == 2);
 
@@ -351,7 +342,8 @@ TEST_CASE ("basic version install scheme diamond", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = unwrap(create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     CHECK(install_plan.size() == 4);
 
@@ -388,14 +380,15 @@ TEST_CASE ("basic version install scheme baseline missing success", "[versionpla
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2"}},
-                                             },
-                                             {},
-                                             toplevel_spec()));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2"}},
+                                      },
+                                      {},
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"2", 0});
@@ -413,7 +406,8 @@ TEST_CASE ("basic version install scheme baseline", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = unwrap(create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"2", 0});
@@ -475,14 +469,15 @@ TEST_CASE ("version install string port version", "[versionplan]")
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 1}},
-                                             },
-                                             {},
-                                             toplevel_spec()));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 1}},
+                                      },
+                                      {},
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"2", 1});
@@ -501,14 +496,15 @@ TEST_CASE ("version install string port version 2", "[versionplan]")
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 0}},
-                                             },
-                                             {},
-                                             toplevel_spec()));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 0}},
+                                      },
+                                      {},
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"2", 1});
@@ -533,14 +529,15 @@ TEST_CASE ("version install transitive string", "[versionplan]")
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 1}},
-                                             },
-                                             {},
-                                             toplevel_spec()));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 1}},
+                                      },
+                                      {},
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "b", {"2", 0});
@@ -561,14 +558,15 @@ TEST_CASE ("version install simple relaxed", "[versionplan]")
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3", 0}},
-                                             },
-                                             {},
-                                             toplevel_spec()));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3", 0}},
+                                      },
+                                      {},
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"3", 0});
@@ -591,14 +589,15 @@ TEST_CASE ("version install transitive relaxed", "[versionplan]")
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3", 0}},
-                                             },
-                                             {},
-                                             toplevel_spec()));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3", 0}},
+                                      },
+                                      {},
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "b", {"3", 0});
@@ -627,15 +626,16 @@ TEST_CASE ("version install diamond relaxed", "[versionplan]")
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3", 0}},
-                                                 Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "2", 1}},
-                                             },
-                                             {},
-                                             toplevel_spec()));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3", 0}},
+                                          Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "2", 1}},
+                                      },
+                                      {},
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 3);
     check_name_and_version(install_plan.install_actions[0], "c", {"9", 2});
@@ -711,22 +711,22 @@ TEST_CASE ("version parse date", "[versionplan]")
 TEST_CASE ("version sort semver", "[versionplan]")
 {
     std::vector<DotVersion> versions{
-        unwrap(DotVersion::try_parse_semver("1.0.0")),
-        unwrap(DotVersion::try_parse_semver("0.0.0")),
-        unwrap(DotVersion::try_parse_semver("1.1.0")),
-        unwrap(DotVersion::try_parse_semver("2.0.0")),
-        unwrap(DotVersion::try_parse_semver("1.1.1")),
-        unwrap(DotVersion::try_parse_semver("1.0.1")),
-        unwrap(DotVersion::try_parse_semver("1.0.0-alpha.1")),
-        unwrap(DotVersion::try_parse_semver("1.0.0-beta")),
-        unwrap(DotVersion::try_parse_semver("1.0.0-alpha")),
-        unwrap(DotVersion::try_parse_semver("1.0.0-alpha.beta")),
-        unwrap(DotVersion::try_parse_semver("1.0.0-rc")),
-        unwrap(DotVersion::try_parse_semver("1.0.0-beta.2")),
-        unwrap(DotVersion::try_parse_semver("1.0.0-beta.20")),
-        unwrap(DotVersion::try_parse_semver("1.0.0-beta.3")),
-        unwrap(DotVersion::try_parse_semver("1.0.0-1")),
-        unwrap(DotVersion::try_parse_semver("1.0.0-0alpha")),
+        DotVersion::try_parse_semver("1.0.0").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("0.0.0").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.1.0").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("2.0.0").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.1.1").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.1").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.0-alpha.1").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.0-beta").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.0-alpha").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.0-alpha.beta").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.0-rc").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.0-beta.2").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.0-beta.20").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.0-beta.3").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.0-1").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_semver("1.0.0-0alpha").value_or_exit(VCPKG_LINE_INFO),
     };
 
     std::sort(std::begin(versions), std::end(versions));
@@ -752,22 +752,22 @@ TEST_CASE ("version sort semver", "[versionplan]")
 TEST_CASE ("version sort relaxed", "[versionplan]")
 {
     std::vector<DotVersion> versions{
-        unwrap(DotVersion::try_parse_relaxed("2.1-alpha.alpha")),
-        unwrap(DotVersion::try_parse_relaxed("1.0.0")),
-        unwrap(DotVersion::try_parse_relaxed("2.0-1")),
-        unwrap(DotVersion::try_parse_relaxed("1.0")),
-        unwrap(DotVersion::try_parse_relaxed("1")),
-        unwrap(DotVersion::try_parse_relaxed("2.1-alpha")),
-        unwrap(DotVersion::try_parse_relaxed("2")),
-        unwrap(DotVersion::try_parse_relaxed("1.1")),
-        unwrap(DotVersion::try_parse_relaxed("1.10.1")),
-        unwrap(DotVersion::try_parse_relaxed("2.0-0")),
-        unwrap(DotVersion::try_parse_relaxed("1.0.1")),
-        unwrap(DotVersion::try_parse_relaxed("2.1-beta")),
-        unwrap(DotVersion::try_parse_relaxed("1.0.0.1")),
-        unwrap(DotVersion::try_parse_relaxed("1.0.0.2")),
-        unwrap(DotVersion::try_parse_relaxed("2.0")),
-        unwrap(DotVersion::try_parse_relaxed("2.0-rc")),
+        DotVersion::try_parse_relaxed("2.1-alpha.alpha").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("1.0.0").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("2.0-1").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("1.0").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("1").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("2.1-alpha").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("2").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("1.1").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("1.10.1").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("2.0-0").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("1.0.1").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("2.1-beta").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("1.0.0.1").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("1.0.0.2").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("2.0").value_or_exit(VCPKG_LINE_INFO),
+        DotVersion::try_parse_relaxed("2.0-rc").value_or_exit(VCPKG_LINE_INFO),
     };
 
     std::sort(std::begin(versions), std::end(versions));
@@ -793,15 +793,15 @@ TEST_CASE ("version sort relaxed", "[versionplan]")
 TEST_CASE ("version sort date", "[versionplan]")
 {
     std::vector<DateVersion> versions{
-        unwrap(DateVersion::try_parse("2021-01-01.2")),
-        unwrap(DateVersion::try_parse("2021-01-01.1")),
-        unwrap(DateVersion::try_parse("2021-01-01.1.1")),
-        unwrap(DateVersion::try_parse("2021-01-01.1.0")),
-        unwrap(DateVersion::try_parse("2021-01-01")),
-        unwrap(DateVersion::try_parse("2021-01-01")),
-        unwrap(DateVersion::try_parse("2020-12-25")),
-        unwrap(DateVersion::try_parse("2020-12-31")),
-        unwrap(DateVersion::try_parse("2021-01-01.10")),
+        DateVersion::try_parse("2021-01-01.2").value_or_exit(VCPKG_LINE_INFO),
+        DateVersion::try_parse("2021-01-01.1").value_or_exit(VCPKG_LINE_INFO),
+        DateVersion::try_parse("2021-01-01.1.1").value_or_exit(VCPKG_LINE_INFO),
+        DateVersion::try_parse("2021-01-01.1.0").value_or_exit(VCPKG_LINE_INFO),
+        DateVersion::try_parse("2021-01-01").value_or_exit(VCPKG_LINE_INFO),
+        DateVersion::try_parse("2021-01-01").value_or_exit(VCPKG_LINE_INFO),
+        DateVersion::try_parse("2020-12-25").value_or_exit(VCPKG_LINE_INFO),
+        DateVersion::try_parse("2020-12-31").value_or_exit(VCPKG_LINE_INFO),
+        DateVersion::try_parse("2021-01-01.10").value_or_exit(VCPKG_LINE_INFO),
     };
 
     std::sort(std::begin(versions), std::end(versions));
@@ -868,14 +868,15 @@ TEST_CASE ("version install simple semver", "[versionplan]")
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3.0.0", 0}},
-                                             },
-                                             {},
-                                             toplevel_spec()));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3.0.0", 0}},
+                                      },
+                                      {},
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"3.0.0", 0});
@@ -898,14 +899,15 @@ TEST_CASE ("version install transitive semver", "[versionplan]")
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3.0.0", 0}},
-                                             },
-                                             {},
-                                             toplevel_spec()));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3.0.0", 0}},
+                                      },
+                                      {},
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "b", {"3.0.0", 0});
@@ -934,15 +936,16 @@ TEST_CASE ("version install diamond semver", "[versionplan]")
     MockCMakeVarProvider var_provider;
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3.0.0", 0}},
-                                                 Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "2.0.0", 1}},
-                                             },
-                                             {},
-                                             toplevel_spec()));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      var_provider,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "3.0.0", 0}},
+                                          Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "2.0.0", 1}},
+                                      },
+                                      {},
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 3);
     check_name_and_version(install_plan.install_actions[0], "c", {"9.0.0", 2});
@@ -961,7 +964,7 @@ TEST_CASE ("version install simple date", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = unwrap(
+    auto install_plan =
         create_versioned_install_plan(vp,
                                       bp,
                                       var_provider,
@@ -969,7 +972,8 @@ TEST_CASE ("version install simple date", "[versionplan]")
                                           Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2020-03-01", 0}},
                                       },
                                       {},
-                                      toplevel_spec()));
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"2020-03-01", 0});
@@ -991,7 +995,7 @@ TEST_CASE ("version install transitive date", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = unwrap(
+    auto install_plan =
         create_versioned_install_plan(vp,
                                       bp,
                                       var_provider,
@@ -999,7 +1003,8 @@ TEST_CASE ("version install transitive date", "[versionplan]")
                                           Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2020-01-01.3", 0}},
                                       },
                                       {},
-                                      toplevel_spec()));
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "b", {"2020-01-01.3", 0});
@@ -1027,7 +1032,7 @@ TEST_CASE ("version install diamond date", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = unwrap(
+    auto install_plan =
         create_versioned_install_plan(vp,
                                       bp,
                                       var_provider,
@@ -1036,7 +1041,8 @@ TEST_CASE ("version install diamond date", "[versionplan]")
                                           Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "2020-01-02", 1}},
                                       },
                                       {},
-                                      toplevel_spec()));
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 3);
     check_name_and_version(install_plan.install_actions[0], "c", {"2020-01-09", 2});
@@ -1141,13 +1147,14 @@ TEST_CASE ("version install relaxed cross with semver success", "[versionplan]")
         MockBaselineProvider bp;
         bp.v["a"] = {"1.0.0", 0};
 
-        auto install_plan = unwrap(
+        auto install_plan =
             create_versioned_install_plan(vp,
                                           bp,
                                           var_provider,
                                           {Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1.0.1", 0}}},
                                           {},
-                                          toplevel_spec()));
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         check_name_and_version(install_plan.install_actions[0], "a", {"1.0.1", 0});
     }
@@ -1156,13 +1163,14 @@ TEST_CASE ("version install relaxed cross with semver success", "[versionplan]")
         MockBaselineProvider bp;
         bp.v["a"] = {"1.0.2", 0};
 
-        auto install_plan = unwrap(
+        auto install_plan =
             create_versioned_install_plan(vp,
                                           bp,
                                           var_provider,
                                           {Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1.0.1", 0}}},
                                           {},
-                                          toplevel_spec()));
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         check_name_and_version(install_plan.install_actions[0], "a", {"1.0.2", 0});
     }
@@ -1188,14 +1196,15 @@ TEST_CASE ("version install scheme change in port version", "[versionplan]")
         bp.v["a"] = {"2", 0};
 
         auto install_plan =
-            unwrap(create_versioned_install_plan(vp,
-                                                 bp,
-                                                 var_provider,
-                                                 {
-                                                     Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 1}},
-                                                 },
-                                                 {},
-                                                 toplevel_spec()));
+            create_versioned_install_plan(vp,
+                                          bp,
+                                          var_provider,
+                                          {
+                                              Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 1}},
+                                          },
+                                          {},
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "b", {"1", 1});
@@ -1207,14 +1216,15 @@ TEST_CASE ("version install scheme change in port version", "[versionplan]")
         bp.v["a"] = {"2", 1};
 
         auto install_plan =
-            unwrap(create_versioned_install_plan(vp,
-                                                 bp,
-                                                 var_provider,
-                                                 {
-                                                     Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 0}},
-                                                 },
-                                                 {},
-                                                 toplevel_spec()));
+            create_versioned_install_plan(vp,
+                                          bp,
+                                          var_provider,
+                                          {
+                                              Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 0}},
+                                          },
+                                          {},
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "b", {"1", 1});
@@ -1255,42 +1265,45 @@ TEST_CASE ("version install simple feature", "[versionplan]")
 
         SECTION ("relaxed")
         {
-            auto install_plan = unwrap(create_versioned_install_plan(vp,
-                                                                     bp,
-                                                                     var_provider,
-                                                                     {
-                                                                         Dependency{"a", {"x"}},
-                                                                     },
-                                                                     {},
-                                                                     toplevel_spec()));
+            auto install_plan = create_versioned_install_plan(vp,
+                                                              bp,
+                                                              var_provider,
+                                                              {
+                                                                  Dependency{"a", {"x"}},
+                                                              },
+                                                              {},
+                                                              toplevel_spec())
+                                    .value_or_exit(VCPKG_LINE_INFO);
 
             REQUIRE(install_plan.size() == 1);
             check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
         }
         SECTION ("semver")
         {
-            auto install_plan = unwrap(create_versioned_install_plan(vp,
-                                                                     bp,
-                                                                     var_provider,
-                                                                     {
-                                                                         Dependency{"semver", {"x"}},
-                                                                     },
-                                                                     {},
-                                                                     toplevel_spec()));
+            auto install_plan = create_versioned_install_plan(vp,
+                                                              bp,
+                                                              var_provider,
+                                                              {
+                                                                  Dependency{"semver", {"x"}},
+                                                              },
+                                                              {},
+                                                              toplevel_spec())
+                                    .value_or_exit(VCPKG_LINE_INFO);
 
             REQUIRE(install_plan.size() == 1);
             check_name_and_version(install_plan.install_actions[0], "semver", {"1.0.0", 0}, {"x"});
         }
         SECTION ("date")
         {
-            auto install_plan = unwrap(create_versioned_install_plan(vp,
-                                                                     bp,
-                                                                     var_provider,
-                                                                     {
-                                                                         Dependency{"date", {"x"}},
-                                                                     },
-                                                                     {},
-                                                                     toplevel_spec()));
+            auto install_plan = create_versioned_install_plan(vp,
+                                                              bp,
+                                                              var_provider,
+                                                              {
+                                                                  Dependency{"date", {"x"}},
+                                                              },
+                                                              {},
+                                                              toplevel_spec())
+                                    .value_or_exit(VCPKG_LINE_INFO);
 
             REQUIRE(install_plan.size() == 1);
             check_name_and_version(install_plan.install_actions[0], "date", {"2020-01-01", 0}, {"x"});
@@ -1301,7 +1314,7 @@ TEST_CASE ("version install simple feature", "[versionplan]")
     {
         MockBaselineProvider bp;
 
-        auto install_plan = unwrap(
+        auto install_plan =
             create_versioned_install_plan(vp,
                                           bp,
                                           var_provider,
@@ -1309,7 +1322,8 @@ TEST_CASE ("version install simple feature", "[versionplan]")
                                               Dependency{"a", {"x"}, {}, {VersionConstraintKind::Minimum, "1", 0}},
                                           },
                                           {},
-                                          toplevel_spec()));
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
@@ -1340,14 +1354,15 @@ TEST_CASE ("version install transitive features", "[versionplan]")
     bp.v["a"] = {"1", 0};
     bp.v["b"] = {"1", 0};
 
-    auto install_plan = unwrap(create_versioned_install_plan(vp,
-                                                             bp,
-                                                             var_provider,
-                                                             {
-                                                                 Dependency{"a", {"x"}},
-                                                             },
-                                                             {},
-                                                             toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp,
+                                                      bp,
+                                                      var_provider,
+                                                      {
+                                                          Dependency{"a", {"x"}},
+                                                      },
+                                                      {},
+                                                      toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "b", {"1", 0}, {"y"});
@@ -1382,14 +1397,15 @@ TEST_CASE ("version install transitive feature versioned", "[versionplan]")
     bp.v["a"] = {"1", 0};
     bp.v["c"] = {"1", 0};
 
-    auto install_plan = unwrap(create_versioned_install_plan(vp,
-                                                             bp,
-                                                             var_provider,
-                                                             {
-                                                                 Dependency{"a", {"x"}},
-                                                             },
-                                                             {},
-                                                             toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp,
+                                                      bp,
+                                                      var_provider,
+                                                      {
+                                                          Dependency{"a", {"x"}},
+                                                      },
+                                                      {},
+                                                      toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 3);
     check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
@@ -1424,14 +1440,15 @@ TEST_CASE ("version install constraint-reduction", "[versionplan]")
         bp.v["c"] = {"1", 0};
 
         auto install_plan =
-            unwrap(create_versioned_install_plan(vp,
-                                                 bp,
-                                                 var_provider,
-                                                 {
-                                                     Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "1"}},
-                                                 },
-                                                 {},
-                                                 toplevel_spec()));
+            create_versioned_install_plan(vp,
+                                          bp,
+                                          var_provider,
+                                          {
+                                              Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "1"}},
+                                          },
+                                          {},
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
@@ -1458,14 +1475,15 @@ TEST_CASE ("version install constraint-reduction", "[versionplan]")
         bp.v["c"] = {"1", 0};
 
         auto install_plan =
-            unwrap(create_versioned_install_plan(vp,
-                                                 bp,
-                                                 var_provider,
-                                                 {
-                                                     Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "2"}},
-                                                 },
-                                                 {},
-                                                 toplevel_spec()));
+            create_versioned_install_plan(vp,
+                                          bp,
+                                          var_provider,
+                                          {
+                                              Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "2"}},
+                                          },
+                                          {},
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
@@ -1490,13 +1508,13 @@ TEST_CASE ("version install overrides", "[versionplan]")
 
     SECTION ("string")
     {
-        auto install_plan =
-            unwrap(create_versioned_install_plan(vp,
-                                                 bp,
-                                                 var_provider,
-                                                 {Dependency{"c"}},
-                                                 {DependencyOverride{"b", "1"}, DependencyOverride{"c", "1"}},
-                                                 toplevel_spec()));
+        auto install_plan = create_versioned_install_plan(vp,
+                                                          bp,
+                                                          var_provider,
+                                                          {Dependency{"c"}},
+                                                          {DependencyOverride{"b", "1"}, DependencyOverride{"c", "1"}},
+                                                          toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
@@ -1504,13 +1522,13 @@ TEST_CASE ("version install overrides", "[versionplan]")
 
     SECTION ("relaxed")
     {
-        auto install_plan =
-            unwrap(create_versioned_install_plan(vp,
-                                                 bp,
-                                                 var_provider,
-                                                 {Dependency{"b"}},
-                                                 {DependencyOverride{"b", "1"}, DependencyOverride{"c", "1"}},
-                                                 toplevel_spec()));
+        auto install_plan = create_versioned_install_plan(vp,
+                                                          bp,
+                                                          var_provider,
+                                                          {Dependency{"b"}},
+                                                          {DependencyOverride{"b", "1"}, DependencyOverride{"c", "1"}},
+                                                          toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "b", {"1", 0});
@@ -1534,13 +1552,13 @@ TEST_CASE ("version install transitive overrides", "[versionplan]")
     bp.v["b"] = {"2", 0};
     bp.v["c"] = {"2", 1};
 
-    auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             var_provider,
-                                             {Dependency{"b"}},
-                                             {DependencyOverride{"b", "1"}, DependencyOverride{"c", "1"}},
-                                             toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp,
+                                                      bp,
+                                                      var_provider,
+                                                      {Dependency{"b"}},
+                                                      {DependencyOverride{"b", "1"}, DependencyOverride{"c", "1"}},
+                                                      toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
@@ -1561,8 +1579,8 @@ TEST_CASE ("version install default features", "[versionplan]")
     MockBaselineProvider bp;
     bp.v["a"] = {"1", 0};
 
-    auto install_plan =
-        unwrap(create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a"}}, {}, toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
@@ -1583,7 +1601,8 @@ TEST_CASE ("version dont install default features", "[versionplan]")
     bp.v["a"] = {"1", 0};
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a", {"core"}}}, {}, toplevel_spec()));
+        create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a", {"core"}}}, {}, toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
@@ -1611,15 +1630,16 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
     bp.v["b"] = {"1", 0};
     bp.v["c"] = {"1", 0};
 
-    auto install_plan =
-        unwrap(create_versioned_install_plan(vp, bp, var_provider, {Dependency{"b"}}, {}, toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {Dependency{"b"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
     check_name_and_version(install_plan.install_actions[1], "b", {"1", 0});
 
-    install_plan = unwrap(create_versioned_install_plan(
-        vp, bp, var_provider, {Dependency{"a", {"core"}}, Dependency{"c"}}, {}, toplevel_spec()));
+    install_plan = create_versioned_install_plan(
+                       vp, bp, var_provider, {Dependency{"a", {"core"}}, Dependency{"c"}}, {}, toplevel_spec())
+                       .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
@@ -1628,7 +1648,8 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
 
 static PlatformExpression::Expr parse_platform(StringView l)
 {
-    return unwrap(PlatformExpression::parse_platform_expression(l, PlatformExpression::MultipleBinaryOperators::Deny));
+    return PlatformExpression::parse_platform_expression(l, PlatformExpression::MultipleBinaryOperators::Deny)
+        .value_or_exit(VCPKG_LINE_INFO);
 }
 
 TEST_CASE ("version install qualified dependencies", "[versionplan]")
@@ -1647,13 +1668,14 @@ TEST_CASE ("version install qualified dependencies", "[versionplan]")
         MockCMakeVarProvider var_provider;
         var_provider.dep_info_vars[toplevel_spec()] = {{"VCPKG_CMAKE_SYSTEM_NAME", "Windows"}};
 
-        auto install_plan = unwrap(
+        auto install_plan =
             create_versioned_install_plan(vp,
                                           bp,
                                           var_provider,
                                           {{"b", {}, parse_platform("!linux")}, {"c", {}, parse_platform("linux")}},
                                           {},
-                                          toplevel_spec()));
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "b", {"1", 0});
@@ -1664,13 +1686,14 @@ TEST_CASE ("version install qualified dependencies", "[versionplan]")
         MockCMakeVarProvider var_provider;
         var_provider.dep_info_vars[toplevel_spec()] = {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}};
 
-        auto install_plan = unwrap(
+        auto install_plan =
             create_versioned_install_plan(vp,
                                           bp,
                                           var_provider,
                                           {{"b", {}, parse_platform("!linux")}, {"c", {}, parse_platform("linux")}},
                                           {},
-                                          toplevel_spec()));
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
@@ -1694,13 +1717,14 @@ TEST_CASE ("version install qualified default suppression", "[versionplan]")
     bp.v["a"] = {"1", 0};
     bp.v["b"] = {"1", 0};
 
-    auto install_plan = unwrap(
+    auto install_plan =
         create_versioned_install_plan(vp,
                                       bp,
                                       var_provider,
                                       {{"b", {}, parse_platform("!linux")}, {"a", {"core"}, parse_platform("linux")}},
                                       {},
-                                      toplevel_spec()));
+                                      toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
@@ -1725,7 +1749,8 @@ TEST_CASE ("version install qualified transitive", "[versionplan]")
     bp.v["b"] = {"1", 0};
     bp.v["c"] = {"1", 0};
 
-    auto install_plan = unwrap(create_versioned_install_plan(vp, bp, var_provider, {{"b"}}, {}, toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"b"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
@@ -1752,7 +1777,8 @@ TEST_CASE ("version install different vars", "[versionplan]")
     bp.v["b"] = {"1", 0};
     bp.v["c"] = {"1", 0};
 
-    auto install_plan = unwrap(create_versioned_install_plan(vp, bp, var_provider, {{"b"}}, {}, toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"b"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 3);
     check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
@@ -1790,7 +1816,8 @@ TEST_CASE ("version install qualified features", "[versionplan]")
     bp.v["c"] = {"1", 0};
     bp.v["d"] = {"1", 0};
 
-    auto install_plan = unwrap(create_versioned_install_plan(vp, bp, var_provider, {{"b"}}, {}, toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"b"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 3);
     check_name_and_version(install_plan.install_actions[0], "c", {"1", 0}, {"z"});
@@ -1812,8 +1839,8 @@ TEST_CASE ("version install self features", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan =
-        unwrap(create_versioned_install_plan(vp, bp, var_provider, {{"a", {"x"}}}, {}, toplevel_spec()));
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a", {"x"}}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x", "y"});
@@ -1893,14 +1920,15 @@ TEST_CASE ("version remove features during upgrade", "[versionplan]")
     vp.emplace("c", {"1", 1});
 
     auto install_plan =
-        unwrap(create_versioned_install_plan(vp,
-                                             bp,
-                                             {
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1"}},
-                                                 Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1", 1}},
-                                                 Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "1", 1}},
-                                                 Dependency{"c"},
-                                             }));
+        create_versioned_install_plan(vp,
+                                      bp,
+                                      {
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1"}},
+                                          Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1", 1}},
+                                          Dependency{"b", {}, {}, {VersionConstraintKind::Minimum, "1", 1}},
+                                          Dependency{"c"},
+                                      })
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 3);
     check_name_and_version(install_plan.install_actions[0], "c", {"1", 1});
@@ -1929,7 +1957,7 @@ TEST_CASE ("version install host tool", "[versionplan]")
     {
         Dependency dep_c{"c"};
 
-        auto install_plan = unwrap(create_versioned_install_plan(vp, bp, {dep_c}));
+        auto install_plan = create_versioned_install_plan(vp, bp, {dep_c}).value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
@@ -1942,7 +1970,7 @@ TEST_CASE ("version install host tool", "[versionplan]")
         Dependency dep_a{"a"};
         dep_a.host = true;
 
-        auto install_plan = unwrap(create_versioned_install_plan(vp, bp, {dep_a}));
+        auto install_plan = create_versioned_install_plan(vp, bp, {dep_a}).value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
@@ -1950,7 +1978,7 @@ TEST_CASE ("version install host tool", "[versionplan]")
     }
     SECTION ("transitive 1")
     {
-        auto install_plan = unwrap(create_versioned_install_plan(vp, bp, {{"b"}}));
+        auto install_plan = create_versioned_install_plan(vp, bp, {{"b"}}).value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
@@ -1965,7 +1993,7 @@ TEST_CASE ("version install host tool", "[versionplan]")
         Dependency dep_c{"c"};
         dep_c.host = true;
 
-        auto install_plan = unwrap(create_versioned_install_plan(vp, bp, {dep_c}));
+        auto install_plan = create_versioned_install_plan(vp, bp, {dep_c}).value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
@@ -1977,7 +2005,7 @@ TEST_CASE ("version install host tool", "[versionplan]")
     }
     SECTION ("self-reference")
     {
-        auto install_plan = unwrap(create_versioned_install_plan(vp, bp, {{"d"}}));
+        auto install_plan = create_versioned_install_plan(vp, bp, {{"d"}}).value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "d", {"1", 0});
@@ -2014,7 +2042,8 @@ TEST_CASE ("version overlay ports", "[versionplan]")
         const MockBaselineProvider empty_bp;
 
         auto install_plan =
-            unwrap(create_versioned_install_plan(vp, empty_bp, oprovider, var_provider, {{"a"}}, {}, toplevel_spec()));
+            create_versioned_install_plan(vp, empty_bp, oprovider, var_provider, {{"a"}}, {}, toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -2022,8 +2051,8 @@ TEST_CASE ("version overlay ports", "[versionplan]")
 
     SECTION ("transitive")
     {
-        auto install_plan =
-            unwrap(create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"b"}}, {}, toplevel_spec()));
+        auto install_plan = create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"b"}}, {}, toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -2032,8 +2061,8 @@ TEST_CASE ("version overlay ports", "[versionplan]")
 
     SECTION ("transitive constraint")
     {
-        auto install_plan =
-            unwrap(create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"c"}}, {}, toplevel_spec()));
+        auto install_plan = create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"c"}}, {}, toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 2);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -2042,8 +2071,8 @@ TEST_CASE ("version overlay ports", "[versionplan]")
 
     SECTION ("none")
     {
-        auto install_plan =
-            unwrap(create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"a"}}, {}, toplevel_spec()));
+        auto install_plan = create_versioned_install_plan(vp, bp, oprovider, var_provider, {{"a"}}, {}, toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -2051,15 +2080,16 @@ TEST_CASE ("version overlay ports", "[versionplan]")
     SECTION ("constraint")
     {
         auto install_plan =
-            unwrap(create_versioned_install_plan(vp,
-                                                 bp,
-                                                 oprovider,
-                                                 var_provider,
-                                                 {
-                                                     Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1", 1}},
-                                                 },
-                                                 {},
-                                                 toplevel_spec()));
+            create_versioned_install_plan(vp,
+                                          bp,
+                                          oprovider,
+                                          var_provider,
+                                          {
+                                              Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1", 1}},
+                                          },
+                                          {},
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -2067,34 +2097,36 @@ TEST_CASE ("version overlay ports", "[versionplan]")
     SECTION ("constraint+override")
     {
         auto install_plan =
-            unwrap(create_versioned_install_plan(vp,
-                                                 bp,
-                                                 oprovider,
-                                                 var_provider,
-                                                 {
-                                                     Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1", 1}},
-                                                 },
-                                                 {
-                                                     DependencyOverride{"a", "2", 0},
-                                                 },
-                                                 toplevel_spec()));
+            create_versioned_install_plan(vp,
+                                          bp,
+                                          oprovider,
+                                          var_provider,
+                                          {
+                                              Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1", 1}},
+                                          },
+                                          {
+                                              DependencyOverride{"a", "2", 0},
+                                          },
+                                          toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
     }
     SECTION ("override")
     {
-        auto install_plan = unwrap(create_versioned_install_plan(vp,
-                                                                 bp,
-                                                                 oprovider,
-                                                                 var_provider,
-                                                                 {
-                                                                     Dependency{"a"},
-                                                                 },
-                                                                 {
-                                                                     DependencyOverride{"a", "2", 0},
-                                                                 },
-                                                                 toplevel_spec()));
+        auto install_plan = create_versioned_install_plan(vp,
+                                                          bp,
+                                                          oprovider,
+                                                          var_provider,
+                                                          {
+                                                              Dependency{"a"},
+                                                          },
+                                                          {
+                                                              DependencyOverride{"a", "2", 0},
+                                                          },
+                                                          toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});

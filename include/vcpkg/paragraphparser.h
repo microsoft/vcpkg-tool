@@ -20,10 +20,9 @@ namespace vcpkg
     struct ParseControlErrorInfo
     {
         std::string name;
-        std::map<std::string, std::vector<std::string>> missing_fields;
-        std::map<std::string, std::vector<std::string>> extra_fields;
+        std::vector<std::string> missing_fields;
+        std::vector<std::string> extra_fields;
         std::map<std::string, std::string> expected_types;
-        std::map<std::string, std::vector<std::string>> mutually_exclusive_fields;
         std::vector<std::string> other_errors;
         std::string error;
 
@@ -34,8 +33,16 @@ namespace vcpkg
         }
 
         static std::string format_errors(View<std::unique_ptr<ParseControlErrorInfo>> errors);
+        void to_string(std::string& target) const;
+        std::string to_string() const;
     };
+} // namespace vcpkg
 
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ParseControlErrorInfo);
+
+namespace vcpkg
+{
+    inline std::string to_string(const std::unique_ptr<ParseControlErrorInfo>& up) { return up->to_string(); }
     template<class P>
     using ParseExpected = vcpkg::ExpectedT<std::unique_ptr<P>, std::unique_ptr<ParseControlErrorInfo>>;
 
@@ -45,12 +52,12 @@ namespace vcpkg
     {
         ParagraphParser(Paragraph&& fields) : fields(std::move(fields)) { }
 
-        std::string required_field(const std::string& fieldname);
-        void required_field(const std::string& fieldname, std::string& out);
-        void required_field(const std::string& fieldname, std::pair<std::string&, TextRowCol&> out);
+        std::string required_field(StringView fieldname);
+        void required_field(StringView fieldname, std::string& out);
+        void required_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out);
 
-        std::string optional_field(const std::string& fieldname);
-        void optional_field(const std::string& fieldname, std::pair<std::string&, TextRowCol&> out);
+        std::string optional_field(StringView fieldname);
+        void optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out);
 
         void add_type_error(const std::string& fieldname, const char* type) { expected_types[fieldname] = type; }
 

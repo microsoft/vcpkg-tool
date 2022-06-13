@@ -114,14 +114,15 @@ namespace vcpkg::Commands::PortsDiff
     static void check_commit_exists(const VcpkgPaths& paths, const std::string& git_commit_id)
     {
         static const std::string VALID_COMMIT_OUTPUT = "commit\n";
-
         auto cmd = paths.git_cmd_builder(paths.root / ".git", paths.root)
                        .string_arg("cat-file")
                        .string_arg("-t")
                        .string_arg(git_commit_id);
-        const ExitCodeAndOutput output = cmd_execute_and_capture_output(cmd);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, output.output == VALID_COMMIT_OUTPUT, "Invalid commit id %s", git_commit_id);
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           cmd_execute_and_capture_output(cmd).value_or_exit(VCPKG_LINE_INFO).output ==
+                               VALID_COMMIT_OUTPUT,
+                           "Invalid commit id %s",
+                           git_commit_id);
     }
 
     const CommandStructure COMMAND_STRUCTURE = {

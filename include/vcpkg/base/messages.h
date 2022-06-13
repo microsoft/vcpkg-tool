@@ -28,8 +28,9 @@ namespace vcpkg
     struct LocalizedString
     {
         LocalizedString() = default;
-        operator StringView() const { return m_data; }
-        const std::string& data() const { return m_data; }
+        operator StringView() const noexcept { return m_data; }
+        const std::string& data() const noexcept { return m_data; }
+        const std::string& to_string() const noexcept { return m_data; }
         std::string extract_data() { return std::exchange(m_data, ""); }
 
         static LocalizedString from_raw(std::string&& s) { return LocalizedString(std::move(s)); }
@@ -116,16 +117,7 @@ namespace vcpkg
     };
 }
 
-template<>
-struct fmt::formatter<vcpkg::LocalizedString> : fmt::formatter<vcpkg::StringView>
-{
-    // parse is inherited from formatter<StringView>
-    template<class FormatContext>
-    auto format(const vcpkg::LocalizedString& s, FormatContext& ctx)
-    {
-        return formatter<vcpkg::StringView>::format(s.data(), ctx);
-    }
-};
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::LocalizedString);
 
 namespace vcpkg::msg
 {
@@ -213,23 +205,23 @@ namespace vcpkg::msg
     }
 
     template<class Message, class... Ts>
-    void print(Message m, Ts... args)
+    typename Message::is_message_type print(Message m, Ts... args)
     {
         print(format(m, args...));
     }
     template<class Message, class... Ts>
-    void println(Message m, Ts... args)
+    typename Message::is_message_type println(Message m, Ts... args)
     {
         print(format(m, args...).append_raw('\n'));
     }
 
     template<class Message, class... Ts>
-    void print(Color c, Message m, Ts... args)
+    typename Message::is_message_type print(Color c, Message m, Ts... args)
     {
         print(c, format(m, args...));
     }
     template<class Message, class... Ts>
-    void println(Color c, Message m, Ts... args)
+    typename Message::is_message_type println(Color c, Message m, Ts... args)
     {
         print(c, format(m, args...).append_raw('\n'));
     }
@@ -277,6 +269,7 @@ namespace vcpkg::msg
     DECLARE_MSG_ARG(path, "/foo/bar");
     DECLARE_MSG_ARG(row, "42");
     DECLARE_MSG_ARG(spec, "zlib:x64-windows");
+    DECLARE_MSG_ARG(system_api, "CreateProcessW");
     DECLARE_MSG_ARG(system_name, "Darwin");
     DECLARE_MSG_ARG(tool_name, "aria2");
     DECLARE_MSG_ARG(triplet, "x64-windows");
@@ -336,4 +329,72 @@ namespace vcpkg::msg
     {
         println_error(format(m, args...));
     }
+
+    template<class Message, class... Ts, class = typename Message::is_message_type>
+    LocalizedString format_warning(Message m, Ts... args)
+    {
+        return format(msgWarningMessage).append(m, args...);
+    }
+
+    template<class Message, class... Ts, class = typename Message::is_message_type>
+    LocalizedString format_error(Message m, Ts... args)
+    {
+        return format(msgErrorMessage).append(m, args...);
+    }
+
+}
+
+namespace vcpkg
+{
+    struct MessageSink
+    {
+        virtual void print(Color c, StringView sv) = 0;
+
+        void println() { this->print(Color::none, "\n"); }
+        void print(const LocalizedString& s) { this->print(Color::none, s); }
+        void println(Color c, const LocalizedString& s)
+        {
+            this->print(c, s);
+            this->print(Color::none, "\n");
+        }
+        inline void println(const LocalizedString& s)
+        {
+            this->print(Color::none, s);
+            this->print(Color::none, "\n");
+        }
+
+        template<class Message, class... Ts>
+        typename Message::is_message_type print(Message m, Ts... args)
+        {
+            this->print(Color::none, msg::format(m, args...));
+        }
+
+        template<class Message, class... Ts>
+        typename Message::is_message_type println(Message m, Ts... args)
+        {
+            this->print(Color::none, msg::format(m, args...).append_raw('\n'));
+        }
+
+        template<class Message, class... Ts>
+        typename Message::is_message_type print(Color c, Message m, Ts... args)
+        {
+            this->print(c, msg::format(m, args...));
+        }
+
+        template<class Message, class... Ts>
+        typename Message::is_message_type println(Color c, Message m, Ts... args)
+        {
+            this->print(c, msg::format(m, args...).append_raw('\n'));
+        }
+
+        MessageSink(const MessageSink&) = delete;
+        MessageSink& operator=(const MessageSink&) = delete;
+
+    protected:
+        MessageSink() = default;
+        ~MessageSink() = default;
+    };
+
+    extern MessageSink& stdout_sink;
+    extern MessageSink& stderr_sink;
 }

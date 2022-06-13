@@ -6,6 +6,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/to_string.h>
 
 #include <functional>
 #include <system_error>
@@ -13,84 +14,9 @@
 
 namespace vcpkg
 {
-    template<class Err>
-    struct ErrorHolder
+    struct Unit
     {
-        ErrorHolder() : m_is_error(false), m_err{} { }
-        template<class U>
-        ErrorHolder(U&& err) : m_is_error(true), m_err(std::forward<U>(err))
-        {
-        }
-
-        constexpr bool has_error() const { return m_is_error; }
-
-        const Err& error() const { return m_err; }
-        Err& error() { return m_err; }
-
-        StringLiteral to_string() const { return "value was error"; }
-
-    private:
-        bool m_is_error;
-        Err m_err;
-    };
-
-    template<>
-    struct ErrorHolder<std::string>
-    {
-        ErrorHolder() : m_is_error(false) { }
-        template<class U>
-        ErrorHolder(U&& err) : m_is_error(true), m_err(std::forward<U>(err))
-        {
-        }
-
-        bool has_error() const { return m_is_error; }
-
-        const std::string& error() const { return m_err; }
-        std::string& error() { return m_err; }
-
-        const std::string& to_string() const { return m_err; }
-
-    private:
-        bool m_is_error;
-        std::string m_err;
-    };
-
-    template<>
-    struct ErrorHolder<std::error_code>
-    {
-        ErrorHolder() = default;
-        ErrorHolder(const std::error_code& err) : m_err(err) { }
-
-        bool has_error() const { return bool(m_err); }
-
-        const std::error_code& error() const { return m_err; }
-        std::error_code& error() { return m_err; }
-
-        std::string to_string() const { return m_err.message(); }
-
-    private:
-        std::error_code m_err;
-    };
-
-    template<>
-    struct ErrorHolder<LocalizedString>
-    {
-        ErrorHolder() : m_is_error(false) { }
-        template<class U>
-        ErrorHolder(U&& err) : m_is_error(true), m_err(std::forward<U>(err))
-        {
-        }
-
-        bool has_error() const { return m_is_error; }
-
-        const LocalizedString& error() const { return m_err; }
-        LocalizedString& error() { return m_err; }
-
-        const std::string& to_string() const { return m_err.data(); }
-
-    private:
-        bool m_is_error;
-        LocalizedString m_err;
+        // A meaningless type intended to be used with Expected when there is no meaningful value.
     };
 
     struct ExpectedLeftTag
@@ -105,191 +31,334 @@ namespace vcpkg
     template<class T>
     struct ExpectedHolder
     {
-        ExpectedHolder() = default;
-        ExpectedHolder(const T& t) : t(t) { }
-        ExpectedHolder(T&& t) : t(std::move(t)) { }
+        ExpectedHolder() = delete;
+        ExpectedHolder(const ExpectedHolder&) = default;
+        ExpectedHolder(ExpectedHolder&&) = default;
+        ExpectedHolder& operator=(const ExpectedHolder&) = default;
+        ExpectedHolder& operator=(ExpectedHolder&&) = default;
+        template<
+            class Fwd,
+            std::enable_if_t<!std::is_same_v<ExpectedHolder, std::remove_cv_t<std::remove_reference_t<Fwd>>>, int> = 0>
+        ExpectedHolder(Fwd&& t) : t(std::forward<Fwd>(t))
+        {
+        }
         using pointer = T*;
         using const_pointer = const T*;
-        T* get() { return &t; }
-        const T* get() const { return &t; }
+        T* get() noexcept { return &t; }
+        const T* get() const noexcept { return &t; }
         T t;
     };
+
     template<class T>
     struct ExpectedHolder<T&>
     {
+        ExpectedHolder() = delete;
         ExpectedHolder(T& t) : t(&t) { }
-        ExpectedHolder() : t(nullptr) { }
+        ExpectedHolder(const ExpectedHolder&) = default;
+        ExpectedHolder& operator=(const ExpectedHolder&) = default;
         using pointer = T*;
         using const_pointer = T*;
-        T* get() { return t; }
-        T* get() const { return t; }
+        T* get() noexcept { return t; }
+        T* get() const noexcept { return t; }
         T* t;
     };
 
-    template<class T, class S>
+    template<class T, class Error>
     struct ExpectedT
     {
-        constexpr ExpectedT() = default;
-
         // Constructors are intentionally implicit
 
-        ExpectedT(const S& s, ExpectedRightTag = {}) : m_s(s) { }
-        template<class U = S, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
-        ExpectedT(S&& s, ExpectedRightTag = {}) : m_s(std::move(s))
+        // Each single argument ctor exists if we can convert to T or Error, and it isn't exactly the other type.
+        // Note that this means both are effectively disabled when T == Error.
+        template<class ConvToT,
+                 std::enable_if_t<std::is_convertible_v<ConvToT, T> &&
+                                      !std::is_same_v<std::remove_reference_t<ConvToT>, Error>,
+                                  int> = 0>
+        ExpectedT(ConvToT&& t) : m_t(std::forward<ConvToT>(t)), value_is_error(false)
         {
         }
 
-        ExpectedT(const T& t, ExpectedLeftTag = {}) : m_t(t) { }
-        template<class U = T, std::enable_if_t<!std::is_reference<U>::value, int> = 0>
-        ExpectedT(T&& t, ExpectedLeftTag = {}) : m_t(std::move(t))
+        template<class ConvToError,
+                 std::enable_if_t<std::is_convertible_v<ConvToError, Error> &&
+                                      !std::is_same_v<std::remove_reference_t<ConvToError>, T>,
+                                  int> = 0,
+                 int = 1>
+        ExpectedT(ConvToError&& e) : m_error(std::forward<ConvToError>(e)), value_is_error(true)
         {
         }
 
-        ExpectedT(const ExpectedT&) = default;
-        ExpectedT(ExpectedT&&) = default;
-        ExpectedT& operator=(const ExpectedT&) = default;
-        ExpectedT& operator=(ExpectedT&&) = default;
-
-        explicit constexpr operator bool() const noexcept { return !m_s.has_error(); }
-        constexpr bool has_value() const noexcept { return !m_s.has_error(); }
-
-        const T&& value_or_exit(const LineInfo& line_info) const&&
+        // Constructors that explicitly specify left or right exist if the parameter is convertible to T or Error
+        template<class ConvToT, std::enable_if_t<std::is_convertible_v<ConvToT, T>, int> = 0>
+        ExpectedT(ConvToT&& t, ExpectedLeftTag) : m_t(std::forward<ConvToT>(t)), value_is_error(false)
         {
-            exit_if_error(line_info);
-            return std::move(*this->m_t.get());
         }
 
-        T&& value_or_exit(const LineInfo& line_info) &&
+        template<class ConvToError, std::enable_if_t<std::is_convertible_v<ConvToError, Error>, int> = 0>
+        ExpectedT(ConvToError&& e, ExpectedRightTag) : m_error(std::forward<ConvToError>(e)), value_is_error(true)
         {
-            exit_if_error(line_info);
-            return std::move(*this->m_t.get());
         }
 
-        T& value_or_exit(const LineInfo& line_info) &
+        ExpectedT(const ExpectedT& other) : value_is_error(other.value_is_error)
         {
-            exit_if_error(line_info);
-            return *this->m_t.get();
-        }
-
-        const T& value_or_exit(const LineInfo& line_info) const&
-        {
-            exit_if_error(line_info);
-            return *this->m_t.get();
-        }
-
-        const S& error() const& { return this->m_s.error(); }
-
-        S&& error() && { return std::move(this->m_s.error()); }
-
-        std::string error_to_string() const { return Strings::concat(m_s.to_string()); }
-
-        typename ExpectedHolder<T>::const_pointer get() const
-        {
-            if (!this->has_value())
+            if (value_is_error)
             {
-                return nullptr;
-            }
-            return this->m_t.get();
-        }
-
-        typename ExpectedHolder<T>::pointer get()
-        {
-            if (!this->has_value())
-            {
-                return nullptr;
-            }
-            return this->m_t.get();
-        }
-
-        using const_ref_type = decltype(*std::declval<typename ExpectedHolder<T>::const_pointer>());
-        using move_ref_type = decltype(std::move(*std::declval<typename ExpectedHolder<T>::pointer>()));
-        template<class F>
-        using map_t = decltype(std::declval<F&>()(*std::declval<typename ExpectedHolder<T>::const_pointer>()));
-
-        template<class F>
-        ExpectedT<map_t<F>, S> map(F f) const&
-        {
-            if (has_value())
-            {
-                return {f(*m_t.get()), expected_left_tag};
+                ::new (&m_error) Error(other.m_error);
             }
             else
             {
-                return ExpectedT<map_t<F>, S>{m_s};
+                ::new (&m_t) ExpectedHolder<T>(other.m_t);
             }
         }
 
-        template<class F>
-        using move_map_t =
-            decltype(std::declval<F&>()(std::move(*std::declval<typename ExpectedHolder<T>::pointer>())));
-
-        template<class F>
-        ExpectedT<move_map_t<F>, S> map(F f) &&
+        ExpectedT(ExpectedT&& other) : value_is_error(other.value_is_error)
         {
-            if (has_value())
+            if (value_is_error)
             {
-                return {f(std::move(*m_t.get())), expected_left_tag};
+                ::new (&m_error) Error(std::move(other.m_error));
             }
             else
             {
-                return ExpectedT<move_map_t<F>, S>{std::move(m_s)};
+                ::new (&m_t) ExpectedHolder<T>(std::move(other.m_t));
             }
         }
 
-        template<class F>
-        ExpectedT& replace_error(F&& specific_error_generator)
+        // copy assign is deleted to avoid creating "valueless by exception" states
+        ExpectedT& operator=(const ExpectedT& other) = delete;
+
+        ExpectedT& operator=(ExpectedT&& other) noexcept // enforces termination
         {
-            if (m_s.has_error())
+            if (value_is_error)
             {
-                m_s.error() = std::forward<F>(specific_error_generator)();
+                if (other.value_is_error)
+                {
+                    m_error = std::move(other.m_error);
+                }
+                else
+                {
+                    m_error.~Error();
+                    ::new (&m_t) ExpectedHolder<T>(std::move(other.m_t));
+                    value_is_error = false;
+                }
+            }
+            else
+            {
+                if (other.value_is_error)
+                {
+                    m_t.~ExpectedHolder<T>();
+                    ::new (&m_error) Error(std::move(other.m_error));
+                    value_is_error = true;
+                }
+                else
+                {
+                    m_t = std::move(other.m_t);
+                }
             }
 
             return *this;
         }
 
-        template<class F, class... Args>
-        std::invoke_result_t<F, const_ref_type, Args&&...> then(F f, Args&&... args) const&
+        ~ExpectedT()
         {
-            if (has_value())
+            if (value_is_error)
             {
-                return std::invoke(f, *m_t.get(), static_cast<Args&&>(args)...);
+                m_error.~Error();
             }
             else
             {
-                return std::invoke_result_t<F, const_ref_type, Args&&...>{m_s};
+                m_t.~ExpectedHolder<T>();
+            }
+        }
+
+        explicit constexpr operator bool() const noexcept { return !value_is_error; }
+        constexpr bool has_value() const noexcept { return !value_is_error; }
+
+        const T&& value_or_exit(const LineInfo& line_info) const&&
+        {
+            exit_if_error(line_info);
+            return std::move(*m_t.get());
+        }
+
+        T&& value_or_exit(const LineInfo& line_info) &&
+        {
+            exit_if_error(line_info);
+            return std::move(*m_t.get());
+        }
+
+        T& value_or_exit(const LineInfo& line_info) &
+        {
+            exit_if_error(line_info);
+            return *m_t.get();
+        }
+
+        const T& value_or_exit(const LineInfo& line_info) const&
+        {
+            exit_if_error(line_info);
+            return *m_t.get();
+        }
+
+        const Error& error() const&
+        {
+            exit_if_not_error();
+            return m_error;
+        }
+
+        Error&& error() &&
+        {
+            exit_if_not_error();
+            return std::move(m_error);
+        }
+
+        typename ExpectedHolder<T>::const_pointer get() const
+        {
+            if (value_is_error)
+            {
+                return nullptr;
+            }
+
+            return m_t.get();
+        }
+
+        typename ExpectedHolder<T>::pointer get()
+        {
+            if (value_is_error)
+            {
+                return nullptr;
+            }
+
+            return m_t.get();
+        }
+
+        // map(F): returns an Expected<result_of_calling_F, Error>
+        //
+        // If *this holds a value, returns an expected holding the value F(*get())
+        // Otherwise, returns an expected containing a copy of error()
+        template<class F>
+        ExpectedT<decltype(std::declval<F&>()(std::declval<const T&>())), Error> map(F f) const&
+        {
+            if (value_is_error)
+            {
+                return {m_error, expected_right_tag};
+            }
+            else
+            {
+                return {f(*m_t.get()), expected_left_tag};
+            }
+        }
+
+        template<class F>
+        ExpectedT<decltype(std::declval<F&>()(std::declval<T>())), Error> map(F f) &&
+        {
+            if (value_is_error)
+            {
+                return {std::move(m_error), expected_right_tag};
+            }
+            else
+            {
+                return {f(std::move(*m_t.get())), expected_left_tag};
+            }
+        }
+
+        // map_error(F): returns an Expected<T, result_of_calling_F>
+        //
+        // If *this holds a value, returns an expected holding the same value.
+        // Otherwise, returns an expected containing f(error())
+        template<class F>
+        ExpectedT<T, decltype(std::declval<F&>()(std::declval<const Error&>()))> map_error(F f) const&
+        {
+            if (value_is_error)
+            {
+                return {f(m_error), expected_right_tag};
+            }
+            else
+            {
+                return {*m_t.get(), expected_left_tag};
+            }
+        }
+
+        template<class F>
+        ExpectedT<T, decltype(std::declval<F&>()(std::declval<Error>()))> map_error(F f) &&
+        {
+            if (value_is_error)
+            {
+                return {f(std::move(m_error)), expected_right_tag};
+            }
+            else
+            {
+                return {std::move(*m_t.get()), expected_left_tag};
+            }
+        }
+
+        // then: f(T, Args...)
+        // If *this contains a value, returns INVOKE(f, *get(), forward(args)...)
+        // Otherwise, returns error() put into the same type.
+    private:
+        template<class Test>
+        struct IsThenCompatibleExpected : std::false_type
+        {
+        };
+
+        template<class OtherTy>
+        struct IsThenCompatibleExpected<ExpectedT<OtherTy, Error>> : std::true_type
+        {
+        };
+
+    public:
+        template<class F, class... Args>
+        std::invoke_result_t<F, const T&, Args...> then(F f, Args&&... args) const&
+        {
+            static_assert(IsThenCompatibleExpected<std::invoke_result_t<F, const T&, Args...>>::value,
+                          "then expects f to return an expected with the same error type");
+            if (value_is_error)
+            {
+                return {m_error, expected_right_tag};
+            }
+            else
+            {
+                return std::invoke(f, *m_t.get(), static_cast<Args&&>(args)...);
             }
         }
 
         template<class F, class... Args>
-        std::invoke_result_t<F, move_ref_type, Args&&...> then(F f, Args&&... args) &&
+        std::invoke_result_t<F, T&&, Args...> then(F f, Args&&... args) &&
         {
-            if (has_value())
+            static_assert(IsThenCompatibleExpected<std::invoke_result_t<F, T&&, Args...>>::value,
+                          "then expects f to return an expected with the same error type");
+            if (value_is_error)
             {
-                return std::invoke(f, std::move(*m_t.get()), static_cast<Args&&>(args)...);
+                return {m_error, expected_right_tag};
             }
             else
             {
-                return std::invoke_result_t<F, move_ref_type, Args&&...>{std::move(m_s)};
+                return std::invoke(f, std::move(*m_t.get()), static_cast<Args&&>(args)...);
             }
         }
 
     private:
-        template<class, class>
-        friend struct ExpectedT;
-
-        explicit ExpectedT(const ErrorHolder<S>& err) : m_s(err) { }
-        explicit ExpectedT(ErrorHolder<S>&& err) : m_s(static_cast<ErrorHolder<S>&&>(err)) { }
-
         void exit_if_error(const LineInfo& line_info) const
         {
-            if (m_s.has_error())
+            if (value_is_error)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, Strings::concat(m_s.to_string(), '\n'));
-                Checks::exit_fail(line_info);
+                Checks::exit_with_message(line_info, to_string(error()));
             }
         }
 
-        ErrorHolder<S> m_s;
-        ExpectedHolder<T> m_t;
+        void exit_if_not_error() const noexcept
+        {
+            if (!value_is_error)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+
+        union
+        {
+            Error m_error;
+            ExpectedHolder<T> m_t;
+        };
+
+        bool value_is_error;
     };
+
+    template<class T>
+    using ExpectedS = ExpectedT<T, std::string>;
 }

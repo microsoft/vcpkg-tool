@@ -134,24 +134,6 @@ namespace vcpkg::Test
         PackageSpec emplace(vcpkg::SourceControlFileAndLocation&& scfl);
     };
 
-    template<class T, class S>
-    T&& unwrap(vcpkg::ExpectedT<T, S>&& p)
-    {
-        if (!p.has_value())
-        {
-            INFO(p.error_to_string());
-            REQUIRE(p.has_value());
-        }
-        return std::move(*p.get());
-    }
-
-    template<class T>
-    T&& unwrap(vcpkg::Optional<T>&& opt)
-    {
-        REQUIRE(opt.has_value());
-        return std::move(*opt.get());
-    }
-
     inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv, Triplet t = X86_WINDOWS)
     {
         std::vector<FullPackageSpec> ret;
@@ -160,7 +142,7 @@ namespace vcpkg::Test
         {
             auto opt = parse_qualified_specifier(parser);
             REQUIRE(opt.has_value());
-            ret.push_back(unwrap(opt.get()->to_full_spec(t, ImplicitDefault::YES)));
+            ret.push_back(opt.get()->to_full_spec(t, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO));
         }
         return ret;
     }

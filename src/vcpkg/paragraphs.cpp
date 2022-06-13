@@ -1,4 +1,5 @@
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.print.h>
@@ -12,11 +13,95 @@
 
 static std::atomic<uint64_t> g_load_ports_stats(0);
 
+namespace
+{
+    using namespace vcpkg;
+
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoWhileLoading,
+                                 (msg::path),
+                                 "Error messages are is printed after this.",
+                                 "while loading {path}:");
+
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:");
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:");
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoWrongTypeFields,
+                                 (),
+                                 "",
+                                 "The following fields had the wrong types:");
+    DECLARE_AND_REGISTER_MESSAGE(ParseControlErrorInfoTypesEntry,
+                                 (msg::value, msg::expected),
+                                 "{value} is the name of a field in an on-disk file, {expected} is a short description "
+                                 "of what it should be like 'a non-negative integer' (which isn't localized yet)",
+                                 "{value} was expected to be {expected}");
+}
+
 namespace vcpkg
 {
-    static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, const std::string& fieldname)
+    void ParseControlErrorInfo::to_string(std::string& target) const
     {
-        auto it = fields->find(fieldname);
+        if (!has_error())
+        {
+            return;
+        }
+
+        target.append(msg::format_error(msgParseControlErrorInfoWhileLoading, msg::path = name).extract_data());
+        if (!error.empty())
+        {
+            target.push_back('\n');
+            target.append(error);
+        }
+
+        if (!other_errors.empty())
+        {
+            for (auto&& msg : other_errors)
+            {
+                target.push_back('\n');
+                target.append(msg);
+            }
+        }
+
+        if (!extra_fields.empty())
+        {
+            target.push_back('\n');
+            target.append(msg::format(msgParseControlErrorInfoInvalidFields)
+                              .append_raw(' ')
+                              .append_raw(Strings::join(", ", extra_fields))
+                              .extract_data());
+        }
+
+        if (!missing_fields.empty())
+        {
+            target.push_back('\n');
+            target.append(msg::format(msgParseControlErrorInfoMissingFields)
+                              .append_raw(' ')
+                              .append_raw(Strings::join(", ", missing_fields))
+                              .extract_data());
+        }
+
+        if (!expected_types.empty())
+        {
+            auto expected_types_component = msg::format_error(msgParseControlErrorInfoWrongTypeFields);
+            for (auto&& pr : expected_types)
+            {
+                expected_types_component.append_raw('\n').append_indent().append(
+                    msgParseControlErrorInfoTypesEntry, msg::value = pr.first, msg::expected = pr.second);
+            }
+
+            target.push_back('\n');
+            target.append(expected_types_component.extract_data());
+        }
+    }
+
+    std::string ParseControlErrorInfo::to_string() const
+    {
+        std::string result;
+        to_string(result);
+        return result;
+    }
+
+    static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, StringView fieldname)
+    {
+        auto it = fields->find(fieldname.to_string());
         if (it == fields->end())
         {
             return nullopt;
@@ -27,32 +112,32 @@ namespace vcpkg
         return value;
     }
 
-    void ParagraphParser::required_field(const std::string& fieldname, std::pair<std::string&, TextRowCol&> out)
+    void ParagraphParser::required_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out)
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (const auto field = maybe_field.get())
             out = std::move(*field);
         else
-            missing_fields.push_back(fieldname);
+            missing_fields.push_back(fieldname.data());
     }
-    void ParagraphParser::optional_field(const std::string& fieldname, std::pair<std::string&, TextRowCol&> out)
+    void ParagraphParser::optional_field(StringView fieldname, std::pair<std::string&, TextRowCol&> out)
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (auto field = maybe_field.get()) out = std::move(*field);
     }
-    void ParagraphParser::required_field(const std::string& fieldname, std::string& out)
+    void ParagraphParser::required_field(StringView fieldname, std::string& out)
     {
         TextRowCol ignore;
         required_field(fieldname, {out, ignore});
     }
-    std::string ParagraphParser::optional_field(const std::string& fieldname)
+    std::string ParagraphParser::optional_field(StringView fieldname)
     {
         std::string out;
         TextRowCol ignore;
         optional_field(fieldname, {out, ignore});
         return out;
     }
-    std::string ParagraphParser::required_field(const std::string& fieldname)
+    std::string ParagraphParser::required_field(StringView fieldname)
     {
         std::string out;
         TextRowCol ignore;
@@ -66,8 +151,8 @@ namespace vcpkg
         {
             auto err = std::make_unique<ParseControlErrorInfo>();
             err->name = name.to_string();
-            err->extra_fields["CONTROL"] = Util::extract_keys(fields);
-            err->missing_fields["CONTROL"] = missing_fields;
+            err->extra_fields = Util::extract_keys(fields);
+            err->missing_fields = missing_fields;
             err->expected_types = expected_types;
             return err;
         }
@@ -103,7 +188,7 @@ namespace vcpkg
     {
         auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<std::string>("default features", parser, &parse_feature_name);
-        if (!opt) return {parser.get_error()->format(), expected_right_tag};
+        if (!opt) return {parser.get_error()->to_string(), expected_right_tag};
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
     ExpectedS<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
@@ -113,7 +198,7 @@ namespace vcpkg
         auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<ParsedQualifiedSpecifier>(
             "dependencies", parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
-        if (!opt) return {parser.get_error()->format(), expected_right_tag};
+        if (!opt) return {parser.get_error()->to_string(), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
@@ -133,7 +218,7 @@ namespace vcpkg
                 return Dependency{pqs.name, pqs.features.value_or({}), pqs.platform.value_or({})};
             });
         });
-        if (!opt) return {parser.get_error()->format(), expected_right_tag};
+        if (!opt) return {parser.get_error()->to_string(), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
@@ -207,7 +292,7 @@ namespace vcpkg::Paragraphs
                 get_paragraph(paragraphs.back());
                 match_while(is_lineend);
             }
-            if (get_error()) return get_error()->format();
+            if (get_error()) return get_error()->to_string();
 
             return paragraphs;
         }
@@ -284,7 +369,7 @@ namespace vcpkg::Paragraphs
         }
         else
         {
-            error = res.error()->format();
+            error = res.error()->to_string();
         }
         auto error_info = std::make_unique<ParseControlErrorInfo>();
         error_info->name = origin.to_string();

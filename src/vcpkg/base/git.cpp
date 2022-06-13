@@ -147,7 +147,7 @@ namespace vcpkg
 
         if (auto error = parser.get_error())
         {
-            return msg::format(msgGitUnexpectedCommandOutput).append_raw(error->format());
+            return msg::format(msgGitUnexpectedCommandOutput).append_raw('\n').append_raw(error->to_string());
         }
 
         return results;
@@ -160,14 +160,23 @@ namespace vcpkg
         {
             cmd.string_arg("--").string_arg(path);
         }
-        auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code != 0)
+
+        auto maybe_output = cmd_execute_and_capture_output(cmd);
+        if (auto output = maybe_output.get())
         {
-            return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-                .append_raw('\n')
-                .append_raw(output.output);
+            if (output->exit_code != 0)
+            {
+                return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
+                    .append_raw('\n')
+                    .append_raw(output->output);
+            }
+
+            return parse_git_status_output(output->output);
         }
-        return parse_git_status_output(output.output);
+
+        return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
+            .append_raw('\n')
+            .append_raw(maybe_output.error().to_string());
     }
 
     ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config)

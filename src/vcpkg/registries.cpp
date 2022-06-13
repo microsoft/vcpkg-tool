@@ -509,10 +509,12 @@ namespace
         {
             auto maybe_version_entries =
                 load_versions_file(fs, VersionDbType::Git, m_paths.builtin_registry_versions, port_name);
-            Checks::check_maybe_upgrade(
-                VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: " + maybe_version_entries.error());
-            auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
+            if (!maybe_version_entries)
+            {
+                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: " + maybe_version_entries.error());
+            }
 
+            auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
             auto res = std::make_unique<BuiltinGitRegistryEntry>(m_paths);
             res->port_name = port_name.to_string();
             for (auto&& version_entry : version_entries)
@@ -530,7 +532,7 @@ namespace
     {
         const auto& baseline = m_baseline.get([this]() -> Baseline {
             auto maybe_path = git_checkout_baseline(m_paths, m_baseline_identifier);
-            if (!maybe_path.has_value())
+            if (!maybe_path)
             {
                 Checks::exit_with_message(
                     VCPKG_LINE_INFO, "%s\n\n%s", maybe_path.error(), m_paths.get_current_git_sha_baseline_message());
@@ -609,8 +611,7 @@ namespace
     {
         auto maybe_version_entries =
             load_versions_file(m_fs, VersionDbType::Filesystem, m_path / registry_versions_dir_name, port_name, m_path);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: %s", maybe_version_entries.error());
+
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
         auto res = std::make_unique<FilesystemRegistryEntry>(port_name.to_string());
@@ -661,15 +662,16 @@ namespace
 
             auto path_to_baseline = Path(registry_versions_dir_name.to_string()) / "baseline.json";
             auto maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
-            if (!maybe_contents.has_value())
+            if (!maybe_contents)
             {
                 get_lock_entry().ensure_up_to_date(m_paths);
                 maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             }
-            if (!maybe_contents.has_value())
+            if (!maybe_contents)
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
-                if (auto err = m_paths.git_fetch(m_repo, m_baseline_identifier))
+                auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
+                if (!maybe_err)
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
                                                                      "defined");
@@ -680,12 +682,13 @@ namespace
                         m_repo,
                         maybe_contents.error(),
                         m_repo,
-                        *err.get());
+                        maybe_err.error());
                 }
+
                 maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
             }
 
-            if (!maybe_contents.has_value())
+            if (!maybe_contents)
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline", "defined");
                 Checks::exit_with_message(VCPKG_LINE_INFO,
@@ -836,8 +839,6 @@ namespace
     void GitRegistryEntry::fill_data_from_path(const Filesystem& fs, const Path& port_versions_path) const
     {
         auto maybe_version_entries = load_versions_file(fs, VersionDbType::Git, port_versions_path, port_name);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_version_entries.has_value(), "Error: " + maybe_version_entries.error());
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
         for (auto&& version_entry : version_entries)
@@ -913,10 +914,11 @@ namespace
         }
 
         auto maybe_versions_json = Json::parse(std::move(contents));
-        if (!maybe_versions_json.has_value())
+        if (!maybe_versions_json)
         {
-            return Strings::format(
-                "Error: failed to parse versions file for `%s`: %s", port_name, maybe_versions_json.error()->format());
+            return Strings::format("Error: failed to parse versions file for `%s`: %s",
+                                   port_name,
+                                   maybe_versions_json.error()->to_string());
         }
         if (!maybe_versions_json.get()->first.is_object())
         {
@@ -949,10 +951,10 @@ namespace
     ExpectedS<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin)
     {
         auto maybe_value = Json::parse(contents, origin);
-        if (!maybe_value.has_value())
+        if (!maybe_value)
         {
             return Strings::format(
-                "Error: failed to parse baseline file: %s\n%s", origin, maybe_value.error()->format());
+                "Error: failed to parse baseline file: %s\n%s", origin, maybe_value.error()->to_string());
         }
 
         auto& value = *maybe_value.get();
