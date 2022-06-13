@@ -102,7 +102,16 @@ namespace vcpkg
             extract_ce_tarball(paths, ce_tarball, node_path, node_modules);
             fs.write_contents(ce_sha_path, VCPKG_CE_SHA_AS_STRING, VCPKG_LINE_INFO);
         }
-#else  // ^^^ VCPKG_CE_SHA / !VCPKG_CE_SHA vvv
+#elif defined(VCPKG_ARTIFACTS_PATH)
+        // use hard coded in-source copy
+        (void)fs;
+        (void)download_manager;
+        ce_path = MACRO_TO_STRING(VCPKG_ARTIFACTS_PATH);
+        // development support: intentionally unlocalized
+        msg::println(
+            Color::warning,
+            LocalizedString::from_raw("Using in-development vcpkg-artifacts built at: ").append_raw(ce_path));
+#else  // ^^^ VCPKG_ARTIFACTS_PATH / give up and always download latest vvv
         fs.remove(ce_sha_path, VCPKG_LINE_INFO);
         fs.remove_all(ce_path, VCPKG_LINE_INFO);
         msg::println(Color::warning, msgDownloadingVcpkgCeBundleLatest);

@@ -19,6 +19,7 @@ option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
+option(VCPKG_ARTIFACTS_DEVELOPMENT "Hard code path to artifacts TypeScript. Requires node.js and global install of @microsoft/rush." OFF)
 option(VCPKG_OFFICIAL_BUILD "Option to cause immediate failure if variables required for official builds are unset." OFF)
 set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
 
@@ -170,7 +171,85 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
     if(VCPKG_OFFICIAL_BUILD)
         message(FATAL_ERROR "VCPKG_CE_SHA is required for official builds.")
     endif()
+    if (VCPKG_ARTIFACTS_DEVELOPMENT)
+        file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce" VCPKG_ARTIFACTS_PATH)
+        target_compile_definitions(vcpkglib PUBLIC "VCPKG_ARTIFACTS_PATH=${VCPKG_ARTIFACTS_PATH}")
+        mark_as_advanced(VCPKG_ARTIFACTS_PATH)
+
+        if (WIN32)
+            set(RUSH_SUFFIX ".cmd")
+        else()
+            set(RUSH_SUFFIX "")
+        endif()
+
+        find_program(NODEJS "node")
+        if (NOT NODEJS)
+            message(FATAL_ERROR "node.js and @microsoft/rush must be installed when VCPKG_ARTIFACTS_DEVELOPMENT is set")
+        endif()
+
+        find_program(RUSH "rush${RUSH_SUFFIX}")
+        if (NOT RUSH)
+            message(FATAL_ERROR "@microsoft/rush is required when VCPKG_ARTIFACTS_DEVELOPMENT is set; use `npm install -g @microsoft/rush`")
+        endif()
+
+        add_custom_command(
+            OUTPUT
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
+            COMMAND
+                "${RUSH}" "update" WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ce"
+            COMMENT
+                "Running rush update..."
+                )
+
+        add_custom_target(rush-update
+            DEPENDS
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
+                )
+
+# === Target: vcpkg-artifacts ===
+        file(GLOB_RECURSE VCPKG_ARTIFACTS_SOURCES CONFIGURE_DEPENDS "ce/ce/*.ts")
+        add_custom_command(
+            OUTPUT
+                "${CMAKE_CURRENT_LIST_DIR}/ce/ce/dist/tsconfig.tsbuildinfo"
+            COMMAND
+                "${NODEJS}" "${CMAKE_CURRENT_LIST_DIR}/ce/ce/node_modules/typescript/bin/tsc"
+                    -p "${CMAKE_CURRENT_LIST_DIR}/ce/ce"
+            DEPENDS
+                ${VCPKG_ARTIFACTS_SOURCES}
+            )
+
+        add_custom_target(vcpkg-artifacts
+            DEPENDS
+                "${CMAKE_CURRENT_LIST_DIR}/ce/ce/dist/tsconfig.tsbuildinfo"
+            )
+
+        add_dependencies(vcpkg-artifacts rush-update)
+
+# === Target: vcpkg-artifacts-test ===
+        file(GLOB_RECURSE VCPKG_ARTIFACTS_TEST_SOURCES CONFIGURE_DEPENDS "ce/test/*.ts")
+        add_custom_command(
+            OUTPUT
+                "${CMAKE_CURRENT_LIST_DIR}/ce/test/dist/tsconfig.tsbuildinfo"
+            COMMAND
+                "${NODEJS}" "${CMAKE_CURRENT_LIST_DIR}/ce/test/node_modules/typescript/bin/tsc"
+                    -p "${CMAKE_CURRENT_LIST_DIR}/ce/test"
+            DEPENDS
+                ${VCPKG_ARTIFACTS_TEST_SOURCES}
+            )
+
+        add_custom_target(vcpkg-artifacts-test
+            DEPENDS
+                "${CMAKE_CURRENT_LIST_DIR}/ce/test/dist/tsconfig.tsbuildinfo"
+            )
+
+        add_dependencies(vcpkg-artifacts-test rush-update)
+    endif()
 else()
+    if (VCPKG_ARTIFACTS_DEVELOPMENT)
+        message(WARNING "VCPKG_CE_SHA overrides VCPKG_ARTIFACTS_DEVELOPMENT")
+    endif()
     target_compile_definitions(vcpkglib PUBLIC
         VCPKG_CE_SHA=${VCPKG_CE_SHA}
     )
@@ -240,9 +319,19 @@ if(MINGW)
 endif()
 
 # === Target: vcpkg ===
+add_custom_command(OUTPUT "vcpkg.ps1" COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "vcpkg.ps1")
+add_custom_target(vcpkg-ps1 DEPENDS "vcpkg.ps1")
 
 add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 target_link_libraries(vcpkg PRIVATE vcpkglib)
+add_dependencies(vcpkg vcpkg-ps1)
+if (VCPKG_ARTIFACTS_DEVELOPMENT)
+    add_dependencies(vcpkg vcpkg-artifacts)
+    if (BUILD_TESTING)
+        add_dependencies(vcpkg vcpkg-artifacts-test)
+    endif()
+endif()
+
 vcpkg_target_add_warning_options(vcpkg)
 if(VCPKG_ADD_SOURCELINK)
     if(VCPKG_VERSION STREQUAL "unknownhash")
