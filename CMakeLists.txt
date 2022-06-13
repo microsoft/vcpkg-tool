@@ -218,6 +218,8 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                     -p "${CMAKE_CURRENT_LIST_DIR}/ce/ce"
             DEPENDS
                 ${VCPKG_ARTIFACTS_SOURCES}
+            COMMENT
+                "Building vcpkg-ce..."
             )
 
         add_custom_target(vcpkg-artifacts
@@ -237,6 +239,8 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                     -p "${CMAKE_CURRENT_LIST_DIR}/ce/test"
             DEPENDS
                 ${VCPKG_ARTIFACTS_TEST_SOURCES}
+            COMMENT
+                "Building vcpkg-ce-test..."
             )
 
         add_custom_target(vcpkg-artifacts-test
