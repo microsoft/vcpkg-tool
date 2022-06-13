@@ -235,6 +235,13 @@ namespace vcpkg
                                                    MessageSink& status_sink,
                                                    const Path& exe_path) const = 0;
 
+        // returns true if and only if `exe_path` is a usable version of this tool
+        virtual bool is_acceptable(const Path& exe_path) const
+        {
+            (void)exe_path;
+            return true;
+        }
+
         virtual void add_system_package_info(LocalizedString& out) const
         {
             out.append_raw(" ").append(msgInstallWithSystemManager);
@@ -607,6 +614,38 @@ namespace vcpkg
                     return extract_prefixed_nonwhitespace("Python ", Tools::PYTHON3, std::move(output), exe_path);
                 });
         }
+
+        virtual void add_system_package_info(LocalizedString& out) const override
+        {
+#if defined(__APPLE__)
+            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
+#else
+            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "sudo apt install python3");
+#endif
+        }
+    };
+
+    struct Python3WithVEnvProvider : Python3Provider
+    {
+        virtual StringView tool_data_name() const override { return Tools::PYTHON3_WITH_VENV; }
+
+        virtual bool is_acceptable(const Path& exe_path) const override
+        {
+            return flatten(cmd_execute_and_capture_output(
+                               Command(exe_path).string_arg("-m").string_arg("venv").string_arg("-h")),
+                           Tools::PYTHON3)
+                .has_value();
+        }
+
+        virtual void add_system_package_info(LocalizedString& out) const override
+        {
+#if defined(__APPLE__)
+            out.append_raw(" ").append(msgInstallWithSystemManagerPkg, msg::command_line = "brew install python3");
+#else
+            out.append_raw(" ").append(msgInstallWithSystemManagerPkg,
+                                       msg::command_line = "sudo apt install python3-virtualenv");
+#endif
+        }
     };
 
     struct ToolCacheImpl final : ToolCache
@@ -652,6 +691,7 @@ namespace vcpkg
                 if (!parsed_version) continue;
                 auto& actual_version = *parsed_version.get();
                 if (!accept_version(actual_version)) continue;
+                if (!tool_provider.is_acceptable(candidate)) continue;
 
                 return PathAndVersion{candidate, *version};
             }
@@ -789,10 +829,12 @@ namespace vcpkg
             if (ignore_version)
             {
                 // If we are forcing the system copy (and therefore ignoring versions), take the first entry that
-                // exists.
-                const auto it = std::find_if(candidate_paths.begin(), candidate_paths.end(), [this](const Path& p) {
-                    return this->fs.exists(p, IgnoreErrors{});
-                });
+                // is acceptable.
+                const auto it =
+                    std::find_if(candidate_paths.begin(), candidate_paths.end(), [this, &tool](const Path& p) {
+                        return this->fs.is_regular_file(p) && tool.is_acceptable(p);
+                    });
+
                 if (it != candidate_paths.end())
                 {
                     return {*it, "0"};
@@ -872,6 +914,7 @@ namespace vcpkg
                 if (tool == Tools::AWSCLI) return get_path(AwsCliProvider(), status_sink);
                 if (tool == Tools::COSCLI) return get_path(CosCliProvider(), status_sink);
                 if (tool == Tools::PYTHON3) return get_path(Python3Provider(), status_sink);
+                if (tool == Tools::PYTHON3_WITH_VENV) return get_path(Python3WithVEnvProvider(), status_sink);
                 if (tool == Tools::TAR)
                 {
                     return {find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), {}};

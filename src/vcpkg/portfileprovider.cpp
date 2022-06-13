@@ -345,8 +345,11 @@ namespace vcpkg::PortFileProvider
             virtual void load_all_control_files(
                 std::map<std::string, const SourceControlFileAndLocation*>& out) const override
             {
-                for (auto&& ports_dir : m_overlay_ports)
+                auto first = std::make_reverse_iterator(m_overlay_ports.end());
+                const auto last = std::make_reverse_iterator(m_overlay_ports.begin());
+                for (; first != last; ++first)
                 {
+                    auto&& ports_dir = *first;
                     // Try loading individual port
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
