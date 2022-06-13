@@ -69,8 +69,8 @@ namespace vcpkg::PortFileProvider
     std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const vcpkg::VcpkgPaths& paths);
     std::unique_ptr<IOverlayProvider> make_overlay_provider(const vcpkg::VcpkgPaths& paths,
                                                             View<std::string> overlay_ports);
-    std::unique_ptr<IOverlayProvider> make_manifest_provider(const Path& manifest_path,
+    std::unique_ptr<IOverlayProvider> make_manifest_provider(const vcpkg::VcpkgPaths& paths,
+                                                             View<std::string> overlay_ports,
+                                                             const Path& manifest_path,
                                                              std::unique_ptr<SourceControlFile>&& manifest_scf);
-    std::unique_ptr<IOverlayProvider> make_combined_overlay_provider(
-        std::vector<std::unique_ptr<IOverlayProvider>>&& providers);
 }

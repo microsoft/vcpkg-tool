@@ -1096,22 +1096,18 @@ namespace vcpkg::Install
             auto verprovider = PortFileProvider::make_versioned_portfile_provider(paths);
             auto baseprovider = PortFileProvider::make_baseline_provider(paths);
 
-            std::vector<std::unique_ptr<PortFileProvider::IOverlayProvider>> overlay_providers;
-            overlay_providers.emplace_back(
-                PortFileProvider::make_manifest_provider(manifest->path, std::move(manifest_scf)));
-
-            if (!args.overlay_ports.empty())
+            std::vector<std::string> extended_overlay_ports;
+            const bool add_builtin_ports_directory_as_overlay =
+                paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry();
+            extended_overlay_ports.reserve(args.overlay_ports.size() + add_builtin_ports_directory_as_overlay);
+            extended_overlay_ports = args.overlay_ports;
+            if (add_builtin_ports_directory_as_overlay)
             {
-                overlay_providers.emplace_back(PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
+                extended_overlay_ports.emplace_back(paths.builtin_ports_directory().native());
             }
 
-            if (paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry())
-            {
-                overlay_providers.emplace_back(PortFileProvider::make_overlay_provider(
-                    paths, std::vector<std::string>{paths.builtin_ports_directory().native()}));
-            }
-
-            auto oprovider = PortFileProvider::make_combined_overlay_provider(std::move(overlay_providers));
+            auto oprovider = PortFileProvider::make_manifest_provider(
+                paths, extended_overlay_ports, manifest->path, std::move(manifest_scf));
             PackageSpec toplevel{manifest_core.name, default_triplet};
             auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
                                                                             *baseprovider,
