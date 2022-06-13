@@ -122,6 +122,7 @@ namespace vcpkg::Commands::CI
     static constexpr StringLiteral OPTION_HOST_EXCLUDE = "host-exclude";
     static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
     static constexpr StringLiteral OPTION_XUNIT = "x-xunit";
+    static constexpr StringLiteral OPTION_XUNIT_ALL = "x-xunit-all";
     static constexpr StringLiteral OPTION_CI_BASELINE = "ci-baseline";
     static constexpr StringLiteral OPTION_ALLOW_UNEXPECTED_PASSING = "allow-unexpected-passing";
     static constexpr StringLiteral OPTION_SKIP_FAILURES = "skip-failures";
@@ -142,12 +143,13 @@ namespace vcpkg::Commands::CI
          {OPTION_SKIPPED_CASCADE_COUNT,
           "Asserts that the number of --exclude and supports skips exactly equal this number"}}};
 
-    static constexpr std::array<CommandSwitch, 4> CI_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 5> CI_SWITCHES = {{
         {OPTION_DRY_RUN, "Print out plan without execution"},
         {OPTION_RANDOMIZE, "Randomize the install order"},
         {OPTION_ALLOW_UNEXPECTED_PASSING,
          "Indicates that 'Passing, remove from fail list' results should not be emitted."},
         {OPTION_SKIP_FAILURES, "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped."},
+        {OPTION_XUNIT_ALL, "Report also unchanged ports to the XUnit output (internal)"},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -183,7 +185,7 @@ namespace vcpkg::Commands::CI
         std::string build_xml(Triplet controlling_triplet)
         {
             XmlSerializer xml;
-            xml.emit_declaration();
+            xml.emit_declaration().line_break();
             xml.open_tag("assemblies").line_break();
             for (const auto& test_group : m_tests)
             {
@@ -268,7 +270,7 @@ namespace vcpkg::Commands::CI
                 .attr("name", test.name)
                 .attr("method", test.method)
                 .attr("time", test.time.as<std::chrono::seconds>().count())
-                .attr("method", result_string)
+                .attr("result", result_string)
                 .finish_complex_open_tag()
                 .line_break();
             xml.open_tag("traits").line_break();
@@ -302,8 +304,8 @@ namespace vcpkg::Commands::CI
                 xml.open_tag("failure")
                     .open_tag("message")
                     .cdata(to_string_locale_invariant(test.result))
-                    .close_tag("failure")
                     .close_tag("message")
+                    .close_tag("failure")
                     .line_break();
             }
             else if (result_string == "Skip")
@@ -734,15 +736,18 @@ namespace vcpkg::Commands::CI
             }
 
             // Adding results for ports that were not built because they have known states
-            for (auto&& port : split_specs->known)
+            if (Util::Sets::contains(options.switches, OPTION_XUNIT_ALL))
             {
-                auto& port_features = split_specs->features.at(port.first);
-                xunitTestResults.add_test_results(port.first,
-                                                  port.second,
-                                                  ElapsedTime{},
-                                                  std::chrono::system_clock::time_point{},
-                                                  split_specs->abi_map.at(port.first),
-                                                  port_features);
+                for (auto&& port : split_specs->known)
+                {
+                    auto& port_features = split_specs->features.at(port.first);
+                    xunitTestResults.add_test_results(port.first,
+                                                      port.second,
+                                                      ElapsedTime{},
+                                                      std::chrono::system_clock::time_point{},
+                                                      split_specs->abi_map.at(port.first),
+                                                      port_features);
+                }
             }
 
             all_known_results.emplace_back(std::move(split_specs->known));
