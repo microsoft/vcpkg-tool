@@ -40,7 +40,7 @@ namespace
             .attr("name", test.name)
             .attr("method", test.method)
             .attr("time", test.time.as<std::chrono::seconds>().count())
-            .attr("method", result_string)
+            .attr("result", result_string)
             .finish_complex_open_tag()
             .line_break();
         xml.open_tag("traits").line_break();
@@ -74,8 +74,8 @@ namespace
             xml.open_tag("failure")
                 .open_tag("message")
                 .cdata(to_string_locale_invariant(test.result))
-                .close_tag("failure")
                 .close_tag("message")
+                .close_tag("failure")
                 .line_break();
         }
         else if (result_string == "Skip")
