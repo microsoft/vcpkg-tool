@@ -16,7 +16,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(UnknownBaselineFileContent,
                                  (),
                                  "",
-                                 "unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'");
+                                 "unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'");
 
     DECLARE_AND_REGISTER_MESSAGE(
         CiBaselineRegression,
