@@ -324,23 +324,27 @@ namespace vcpkg::Commands::CI
                                            const std::string& ci_baseline_file_name,
                                            bool allow_unexpected_passing)
     {
-        LocalizedString output;
+        bool has_error = false;
+        LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
+        output.append_raw('\n');
         for (auto&& port_result : result.summary.results)
         {
             auto& build_result = port_result.build_result.value_or_exit(VCPKG_LINE_INFO);
-            output.append(format_ci_result(
-                port_result.get_spec(), build_result.code, cidata, ci_baseline_file_name, allow_unexpected_passing));
+
+            auto msg = format_ci_result(
+                port_result.get_spec(), build_result.code, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            if (!msg.empty())
+            {
+                has_error = true;
+                output.append(msg).append_raw("\n");
+            }
         }
 
-        auto output_data = output.extract_data();
-        if (output_data.empty())
+        if (!has_error)
         {
             return;
         }
-
-        LocalizedString header = msg::format(msgCiBaselineRegressionHeader);
-        header.append_raw('\n');
-        output_data.insert(0, header.extract_data());
+        auto output_data = output.extract_data();
         fwrite(output_data.data(), 1, output_data.size(), stderr);
     }
 

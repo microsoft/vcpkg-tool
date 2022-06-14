@@ -19,11 +19,11 @@ TEST_CASE ("Simple XunitWriter", "[xunitwriter]")
     CHECK(x.build_xml(t) == R"(<?xml version="1.0" encoding="utf-8"?><assemblies>
   <assembly name="name" run-date="1970-01-01" run-time="00:00:00" time="0">
     <collection name="triplet" time="0">
-      <test name="name:triplet" method="name[]:triplet" time="0" method="Fail">
+      <test name="name:triplet" method="name[]:triplet" time="0" result="Fail">
         <traits>
           <trait name="owner" value="triplet"/>
         </traits>
-        <failure><message><![CDATA[BUILD_FAILED]]></failure></message>
+        <failure><message><![CDATA[BUILD_FAILED]]></message></failure>
       </test>
     </collection>
   </assembly>
@@ -49,23 +49,23 @@ TEST_CASE ("XunitWriter Two", "[xunitwriter]")
     CHECK(x.build_xml(t3) == R"(<?xml version="1.0" encoding="utf-8"?><assemblies>
   <assembly name="name" run-date="1970-01-01" run-time="00:00:00" time="0">
     <collection name="triplet3" time="0">
-      <test name="name:triplet" method="name[]:triplet" time="0" method="Pass">
+      <test name="name:triplet" method="name[]:triplet" time="0" result="Pass">
         <traits>
           <trait name="abi_tag" value="abihash"/>
           <trait name="owner" value="triplet"/>
         </traits>
       </test>
-      <test name="name:triplet2" method="name[]:triplet2" time="0" method="Fail">
+      <test name="name:triplet2" method="name[]:triplet2" time="0" result="Fail">
         <traits>
           <trait name="owner" value="triplet2"/>
         </traits>
-        <failure><message><![CDATA[POST_BUILD_CHECKS_FAILED]]></failure></message>
+        <failure><message><![CDATA[POST_BUILD_CHECKS_FAILED]]></message></failure>
       </test>
     </collection>
   </assembly>
   <assembly name="other" run-date="1970-01-01" run-time="00:00:00" time="0">
     <collection name="triplet3" time="0">
-      <test name="other:triplet2" method="other[core,feature]:triplet2" time="0" method="Pass">
+      <test name="other:triplet2" method="other[core,feature]:triplet2" time="0" result="Pass">
         <traits>
           <trait name="features" value="core, feature"/>
           <trait name="owner" value="triplet2"/>

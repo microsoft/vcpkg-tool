@@ -305,18 +305,18 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
                                               ^)");
 
     check_error("example:x64-windows   =    fail extra stuff",
-                R"(test:1:33: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'
+                R"(test:1:33: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'
     on expression: example:x64-windows   =    fail extra stuff
                                                    ^)");
 
     check_error("example:x64-windows   =    fail example:x64-windows   =    fail",
-                R"(test:1:33: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'
+                R"(test:1:33: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'
     on expression: example:x64-windows   =    fail example:x64-windows   =    fail
                                                    ^)");
 
     check_error("example:x64-windows   =    fail  # extra stuff\n"
                 "example:x64-uwp=skip extra stuff\n",
-                R"(test:2:22: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'
+                R"(test:2:22: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'
     on expression: example:x64-uwp=skip extra stuff
                                         ^)");
 }
