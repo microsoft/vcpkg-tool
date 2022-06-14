@@ -207,7 +207,8 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce"
             COMMENT
                 "Running rush update..."
-                )
+            VERBATIM
+            )
 
         add_custom_target(rush-update
             DEPENDS
@@ -227,6 +228,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                 ${VCPKG_ARTIFACTS_SOURCES}
             COMMENT
                 "Building vcpkg-ce..."
+            VERBATIM
             )
 
         add_custom_target(vcpkg-artifacts
@@ -248,6 +250,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                 ${VCPKG_ARTIFACTS_TEST_SOURCES}
             COMMENT
                 "Building vcpkg-ce-test..."
+            VERBATIM
             )
 
         add_custom_target(vcpkg-artifacts-test
@@ -330,8 +333,17 @@ if(MINGW)
 endif()
 
 # === Target: vcpkg ===
-add_custom_command(OUTPUT "vcpkg.ps1" COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "vcpkg.ps1")
-add_custom_target(vcpkg-ps1 DEPENDS "vcpkg.ps1")
+add_custom_command(
+    OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+    COMMAND
+        "${CMAKE_COMMAND}" ARGS -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1"
+    VERBATIM
+    )
+
+add_custom_target(vcpkg-ps1 DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1")
 
 add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 target_link_libraries(vcpkg PRIVATE vcpkglib)
