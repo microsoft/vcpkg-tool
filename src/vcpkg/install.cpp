@@ -23,6 +23,7 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+#include <vcpkg/xunitwriter.h>
 
 #include <iterator>
 
@@ -1254,12 +1255,19 @@ namespace vcpkg::Install
         auto it_xunit = options.settings.find(OPTION_XUNIT);
         if (it_xunit != options.settings.end())
         {
-            std::string xunit_doc = "<assemblies><assembly><collection>\n";
+            XunitWriter xwriter;
 
-            xunit_doc += summary.xunit_results();
+            for (auto&& result : summary.results)
+            {
+                xwriter.add_test_results(result.get_spec(),
+                                         result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
+                                         result.timing,
+                                         result.start_time,
+                                         "",
+                                         {});
+            }
 
-            xunit_doc += "</collection></assembly></assemblies>\n";
-            fs.write_contents(it_xunit->second, xunit_doc, VCPKG_LINE_INFO);
+            fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
 
         std::set<std::string> printed_usages;
@@ -1328,50 +1336,6 @@ namespace vcpkg::Install
     bool SpecSummary::is_user_requested_install() const
     {
         return m_install_action && m_install_action->request_type == RequestType::USER_REQUESTED;
-    }
-
-    static std::string xunit_result(const PackageSpec& spec, ElapsedTime time, BuildResult code)
-    {
-        std::string message_block;
-        const char* result_string = "";
-        switch (code)
-        {
-            case BuildResult::POST_BUILD_CHECKS_FAILED:
-            case BuildResult::FILE_CONFLICTS:
-            case BuildResult::BUILD_FAILED:
-            case BuildResult::CACHE_MISSING:
-                result_string = "Fail";
-                message_block = Strings::format("<failure><message><![CDATA[%s]]></message></failure>",
-                                                to_string_locale_invariant(code));
-                break;
-            case BuildResult::EXCLUDED:
-            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
-                result_string = "Skip";
-                message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string_locale_invariant(code));
-                break;
-            case BuildResult::SUCCEEDED: result_string = "Pass"; break;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-
-        return Strings::format(R"(<test name="%s" method="%s" time="%lld" result="%s">%s</test>)"
-                               "\n",
-                               spec,
-                               spec,
-                               time.as<std::chrono::seconds>().count(),
-                               result_string,
-                               message_block);
-    }
-
-    std::string InstallSummary::xunit_results() const
-    {
-        std::string xunit_doc;
-        for (auto&& result : results)
-        {
-            xunit_doc +=
-                xunit_result(result.get_spec(), result.timing, result.build_result.value_or_exit(VCPKG_LINE_INFO).code);
-        }
-
-        return xunit_doc;
     }
 
     void track_install_plan(Dependencies::ActionPlan& plan)
