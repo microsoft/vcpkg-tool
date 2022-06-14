@@ -353,7 +353,9 @@ namespace vcpkg
         return input;
     }
 
-    static void download_files_inner(Filesystem&, View<std::pair<std::string, Path>> url_pairs, std::vector<int>* out)
+    static void download_files_inner(Filesystem&,
+                                     View<std::tuple<std::string, View<std::string>, Path>> url_header_path_tuples,
+                                     std::vector<int>* out)
     {
         for (auto i : {100, 1000, 10000, 0})
         {
@@ -366,9 +368,13 @@ namespace vcpkg
                 .string_arg("--location")
                 .string_arg("-w")
                 .string_arg(Strings::concat(guid_marker, " %{http_code}\\n"));
-            for (auto&& url : url_pairs)
+            for (auto&& url : url_header_path_tuples)
             {
-                cmd.string_arg(url.first).string_arg("-o").string_arg(url.second);
+                cmd.string_arg(std::get<0>(url)).string_arg("-o").string_arg(std::get<2>(url));
+                for (StringView header : std::get<1>(url))
+                {
+                    cmd.string_arg("-H").string_arg(header);
+                }
             }
             auto res = cmd_execute_and_stream_lines(cmd, [out](StringView line) {
                            if (Strings::starts_with(line, guid_marker))
@@ -378,13 +384,13 @@ namespace vcpkg
                        }).value_or_exit(VCPKG_LINE_INFO);
             Checks::check_exit(VCPKG_LINE_INFO, res == 0, "Error: curl failed to execute with exit code: %d", res);
 
-            if (start_size + url_pairs.size() > out->size())
+            if (start_size + url_header_path_tuples.size() > out->size())
             {
                 // curl stopped before finishing all downloads; retry after some time
                 msg::println_warning(msgUnexpectedErrorDuringBulkDownload);
                 std::this_thread::sleep_for(std::chrono::milliseconds(i));
-                url_pairs =
-                    View<std::pair<std::string, Path>>{url_pairs.begin() + out->size() - start_size, url_pairs.end()};
+                url_header_path_tuples = View<std::tuple<std::string, View<std::string>, Path>>{
+                    url_header_path_tuples.begin() + out->size() - start_size, url_header_path_tuples.end()};
             }
             else
             {
@@ -392,26 +398,28 @@ namespace vcpkg
             }
         }
     }
-    std::vector<int> download_files(Filesystem& fs, View<std::pair<std::string, Path>> url_pairs)
+    std::vector<int> download_files(Filesystem& fs,
+                                    View<std::tuple<std::string, View<std::string>, Path>> url_header_path_tuples)
     {
         static constexpr size_t batch_size = 50;
 
         std::vector<int> ret;
 
         size_t i = 0;
-        for (; i + batch_size <= url_pairs.size(); i += batch_size)
+        for (; i + batch_size <= url_header_path_tuples.size(); i += batch_size)
         {
-            download_files_inner(fs, {url_pairs.data() + i, batch_size}, &ret);
+            download_files_inner(fs, {url_header_path_tuples.data() + i, batch_size}, &ret);
         }
-        if (i != url_pairs.size()) download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, &ret);
+        if (i != url_header_path_tuples.size())
+            download_files_inner(fs, {url_header_path_tuples.begin() + i, url_header_path_tuples.end()}, &ret);
 
         Checks::check_exit(
             VCPKG_LINE_INFO,
-            ret.size() == url_pairs.size(),
+            ret.size() == url_header_path_tuples.size(),
             "Error: curl returned a different number of response codes than were expected for the request (",
             ret.size(),
             " vs expected ",
-            url_pairs.size(),
+            url_header_path_tuples.size(),
             ")");
         return ret;
     }

@@ -21,6 +21,8 @@
 
 #include <iterator>
 
+#include "vcpkg/base/api_stable_format.h"
+
 using namespace vcpkg;
 
 namespace
@@ -102,6 +104,11 @@ namespace
                                  "",
                                  "invalid argument: binary config '{binary_source}' requires 2 or 3 arguments");
     DECLARE_AND_REGISTER_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder '{path}':");
+    DECLARE_AND_REGISTER_MESSAGE(
+        UnknownVariablesInTemplate,
+        (msg::value, msg::list),
+        "{value} is the value provided by the user and {list} a list of unknown variables seperated by comma",
+        "invalid argument: url template '{value}' contains unknown variables: {list}");
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -256,7 +263,7 @@ namespace
         ArchivesBinaryProvider(const VcpkgPaths& paths,
                                std::vector<Path>&& read_dirs,
                                std::vector<Path>&& write_dirs,
-                               std::vector<std::string>&& put_url_templates,
+                               std::vector<UrlTemplate>&& put_url_templates,
                                const std::vector<std::string>& secrets)
             : paths(paths)
             , m_read_dirs(std::move(read_dirs))
@@ -406,8 +413,8 @@ namespace
             size_t http_remotes_pushed = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
-                auto url = Strings::replace_all(std::string(put_url_template), "<SHA>", abi_tag);
-                auto maybe_success = put_file(fs, url, azure_blob_headers(), tmp_archive_path);
+                auto url = put_url_template.instantiate_variables(action);
+                auto maybe_success = put_file(fs, url, put_url_template.headers, tmp_archive_path);
                 if (maybe_success)
                 {
                     http_remotes_pushed++;
@@ -491,13 +498,13 @@ namespace
         const VcpkgPaths& paths;
         std::vector<Path> m_read_dirs;
         std::vector<Path> m_write_dirs;
-        std::vector<std::string> m_put_url_templates;
+        std::vector<UrlTemplate> m_put_url_templates;
         std::vector<std::string> m_secrets;
     };
     struct HttpGetBinaryProvider : IBinaryProvider
     {
         HttpGetBinaryProvider(const VcpkgPaths& paths,
-                              std::vector<std::string>&& url_templates,
+                              std::vector<UrlTemplate>&& url_templates,
                               const std::vector<std::string>& secrets)
             : paths(paths), m_url_templates(std::move(url_templates)), m_secrets(secrets)
         {
@@ -515,7 +522,7 @@ namespace
             const auto timer = ElapsedTimer::create_started();
             auto& fs = paths.get_filesystem();
             size_t this_restore_count = 0;
-            std::vector<std::pair<std::string, Path>> url_paths;
+            std::vector<std::tuple<std::string, View<std::string>, Path>> url_paths;
             std::vector<size_t> url_indices;
             for (auto&& url_template : m_url_templates)
             {
@@ -531,9 +538,9 @@ namespace
 
                     auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    auto uri = Strings::replace_all(
-                        url_template, "<SHA>", action.package_abi().value_or_exit(VCPKG_LINE_INFO));
-                    url_paths.emplace_back(std::move(uri), make_temp_archive_path(paths.buildtrees(), action.spec));
+                    auto uri = url_template.instantiate_variables(action);
+                    url_paths.emplace_back(
+                        std::move(uri), url_template.headers, make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
 
@@ -552,7 +559,7 @@ namespace
                         jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
                                                                   stdout_sink,
                                                                   paths.package_dir(actions[url_indices[i]].spec),
-                                                                  url_paths[i].second));
+                                                                  std::get<2>(url_paths[i])));
                     }
                 }
                 auto job_results = decompress_in_parallel(jobs);
@@ -562,12 +569,12 @@ namespace
                     if (job_results[j])
                     {
                         ++this_restore_count;
-                        fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
+                        fs.remove(std::get<2>(url_paths[i]), VCPKG_LINE_INFO);
                         cache_status[url_indices[i]]->mark_restored();
                     }
                     else
                     {
-                        Debug::print("Failed to decompress ", url_paths[i].second, '\n');
+                        Debug::print("Failed to decompress ", std::get<2>(url_paths[i]), '\n');
                     }
                 }
             }
@@ -590,13 +597,12 @@ namespace
                 url_indices.clear();
                 for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
-                    const auto& abi = actions[idx].package_abi().value_or_exit(VCPKG_LINE_INFO);
                     if (!cache_status[idx]->should_attempt_precheck(this))
                     {
                         continue;
                     }
 
-                    urls.push_back(Strings::replace_all(std::string(url_template), "<SHA>", abi));
+                    urls.push_back(url_template.instantiate_variables(actions[idx]));
                     url_indices.push_back(idx);
                 }
 
@@ -627,7 +633,7 @@ namespace
         }
 
         const VcpkgPaths& paths;
-        std::vector<std::string> m_url_templates;
+        std::vector<UrlTemplate> m_url_templates;
         std::vector<std::string> m_secrets;
     };
     struct NugetBinaryProvider : IBinaryProvider
@@ -1347,6 +1353,61 @@ namespace
 
 namespace vcpkg
 {
+
+    LocalizedString UrlTemplate::valid()
+    {
+        std::vector<std::string> invalid_keys;
+        auto result = api_stable_format(url_template, [&](std::string&, StringView key) {
+            StringView valid_keys[] = {"name", "version", "sha", "triplet"};
+            if (!Util::Vectors::contains(valid_keys, key))
+            {
+                invalid_keys.push_back(key.to_string());
+            }
+        });
+        if (!result)
+        {
+            return result.error();
+        }
+        if (!invalid_keys.empty())
+        {
+            return msg::format(msgUnknownVariablesInTemplate,
+                               msg::value = url_template,
+                               msg::list = Strings::join(", ", invalid_keys));
+        }
+        return {};
+    }
+
+    std::string UrlTemplate::instantiate_variables(const Dependencies::InstallPlanAction& action) const
+    {
+        return api_stable_format(url_template,
+                                 [&](std::string& out, StringView key) {
+                                     if (key == "version")
+                                     {
+                                         out += action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
+                                                    .source_control_file->core_paragraph->raw_version;
+                                     }
+                                     else if (key == "name")
+                                     {
+                                         out += action.spec.name();
+                                     }
+                                     else if (key == "triplet")
+                                     {
+                                         out += action.spec.triplet().canonical_name();
+                                     }
+                                     else if (key == "sha")
+                                     {
+                                         out += action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
+                                     }
+                                     else
+                                     {
+                                         print2("unknown key: ", key, '\n');
+                                         // We do a input validation while parsing the config
+                                         Checks::unreachable(VCPKG_LINE_INFO);
+                                     };
+                                 })
+            .value_or_exit(VCPKG_LINE_INFO);
+    }
+
     BinaryCache::BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         install_providers_for(args, paths);
@@ -1593,7 +1654,7 @@ namespace vcpkg
         archives_to_read.clear();
         archives_to_write.clear();
         url_templates_to_get.clear();
-        azblob_templates_to_put.clear();
+        url_templates_to_put.clear();
         gcs_read_prefixes.clear();
         gcs_write_prefixes.clear();
         aws_read_prefixes.clear();
@@ -1845,7 +1906,7 @@ namespace
                     p.push_back('/');
                 }
 
-                p.append("<SHA>.zip");
+                p.append("{sha}.zip");
                 if (!Strings::starts_with(segments[2].second, "?"))
                 {
                     p.push_back('?');
@@ -1853,8 +1914,11 @@ namespace
 
                 p.append(segments[2].second);
                 state->secrets.push_back(segments[2].second);
+                UrlTemplate url_template = {p};
+                auto headers = azure_blob_headers();
+                url_template.headers.assign(headers.begin(), headers.end());
                 handle_readwrite(
-                    state->url_templates_to_get, state->azblob_templates_to_put, std::move(p), segments, 3);
+                    state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 3);
             }
             else if (segments[0].second == "x-gcs")
             {
@@ -1971,6 +2035,43 @@ namespace
                 }
 
                 handle_readwrite(state->cos_read_prefixes, state->cos_write_prefixes, std::move(p), segments, 2);
+            }
+            else if (segments[0].second == "http")
+            {
+                // Scheme: http,<url_template>[,<readwrite>[,<header>]]
+                if (segments.size() < 2)
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "http"),
+                                     segments[0].first);
+                }
+
+                if (!Strings::starts_with(segments[1].second, "http://") &&
+                    !Strings::starts_with(segments[1].second, "https://"))
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                 msg::base_url = "https://",
+                                                 msg::binary_source = "http"),
+                                     segments[1].first);
+                }
+
+                if (segments.size() > 4)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "http"),
+                        segments[3].first);
+                }
+
+                UrlTemplate url_template{segments[1].second};
+                if (auto err = url_template.valid(); !err.empty())
+                {
+                    return add_error(std::move(err), segments[1].first);
+                }
+                if (segments.size() == 4)
+                {
+                    url_template.headers.push_back(segments[3].second);
+                }
+                handle_readwrite(
+                    state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 2);
             }
             else
             {
@@ -2248,12 +2349,12 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
             paths, std::move(s.cos_read_prefixes), std::move(s.cos_write_prefixes)));
     }
 
-    if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.azblob_templates_to_put.empty())
+    if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.url_templates_to_put.empty())
     {
         providers.push_back(std::make_unique<ArchivesBinaryProvider>(paths,
                                                                      std::move(s.archives_to_read),
                                                                      std::move(s.archives_to_write),
-                                                                     std::move(s.azblob_templates_to_put),
+                                                                     std::move(s.url_templates_to_put),
                                                                      s.secrets));
     }
 
@@ -2469,6 +2570,11 @@ void vcpkg::help_topic_binary_caching(const VcpkgPaths&)
     tbl.format("clear", "Removes all previous sources");
     tbl.format("default[,<rw>]", "Adds the default file-based location.");
     tbl.format("files,<path>[,<rw>]", "Adds a custom file-based location.");
+    tbl.format("http,<url_template>[,<rw>[,<header>]]",
+               "Adds a custom http-based location. GET, HEAD and PUT request are done to download, check and upload "
+               "the binaries. You can use the variables 'name', 'version', 'sha' and 'triplet'. An example url would "
+               "be 'https://cache.example.com/{triplet}/{name}/{version}/{sha}'. Via the header field you can set a "
+               "custom header to pass an authorization token.");
     tbl.format("nuget,<uri>[,<rw>]",
                "Adds a NuGet-based source; equivalent to the `-Source` parameter of the NuGet CLI.");
     tbl.format("nugetconfig,<path>[,<rw>]",
