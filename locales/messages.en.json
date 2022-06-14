@@ -195,7 +195,7 @@
   "ToolInWin10": "This utility is bundled with Windows 10 or later.",
   "UnexpectedErrorDuringBulkDownload": "an unexpected error occurred during bulk download.",
   "UnexpectedToolOutput": "{tool_name} ({path}) produced unexpected output when attempting to determine the version:",
-  "UnknownBaselineFileContent": "unrecognizable baseline entry; expected 'port:triplet=(fail|skip)'",
+  "UnknownBaselineFileContent": "unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'",
   "UnknownBinaryProviderType": "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files'",
   "UnknownTool": "vcpkg does not have a definition of this tool for this platform.",
   "UnsupportedSystemName": "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. Supported system names are '', 'Windows' and 'WindowsStore'.",
