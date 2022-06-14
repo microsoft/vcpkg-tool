@@ -356,12 +356,8 @@ namespace vcpkg::PostBuildLint
 
         switch (fs.status(copyright_file, IgnoreErrors{}))
         {
-            case FileType::regular:
-                return LintStatus::SUCCESS;
-                break;
-            case FileType::directory:
-                msg::println_warning(msgCopyrightIsDir, msg::path = "copyright");
-                break;
+            case FileType::regular: return LintStatus::SUCCESS; break;
+            case FileType::directory: msg::println_warning(msgCopyrightIsDir, msg::path = "copyright"); break;
             default: break;
         }
 
