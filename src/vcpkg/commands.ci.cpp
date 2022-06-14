@@ -319,7 +319,7 @@ namespace vcpkg::Commands::CI
         return result;
     }
 
-    static void print_baseline_regressions(const TripletAndSummary& result,
+    static void print_baseline_regressions(const std::map<PackageSpec, BuildResult>& results,
                                            const CiBaselineData& cidata,
                                            const std::string& ci_baseline_file_name,
                                            bool allow_unexpected_passing)
@@ -327,12 +327,9 @@ namespace vcpkg::Commands::CI
         bool has_error = false;
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
         output.append_raw('\n');
-        for (auto&& port_result : result.summary.results)
+        for (auto&& r : results)
         {
-            auto& build_result = port_result.build_result.value_or_exit(VCPKG_LINE_INFO);
-
-            auto msg = format_ci_result(
-                port_result.get_spec(), build_result.code, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            auto msg = format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing);
             if (!msg.empty())
             {
                 has_error = true;
@@ -411,11 +408,8 @@ namespace vcpkg::Commands::CI
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        std::vector<std::map<PackageSpec, BuildResult>> all_known_results;
-
         XunitWriter xunitTestResults;
 
-        std::vector<TripletAndSummary> results;
         auto timer = ElapsedTimer::create_started();
         std::vector<std::string> all_port_names =
             Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
@@ -530,18 +524,20 @@ namespace vcpkg::Commands::CI
                                             build_logs_recorder,
                                             var_provider);
 
+            std::map<PackageSpec, BuildResult> full_results;
+
             // Adding results for ports that were built or pulled from an archive
             for (auto&& result : summary.results)
             {
-                auto& port_features = split_specs->features.at(result.get_spec());
-                split_specs->known.erase(result.get_spec());
-                xunitTestResults.add_test_results(result.get_spec(),
-                                                  result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
-                                                  result.timing,
-                                                  result.start_time,
-                                                  split_specs->abi_map.at(result.get_spec()),
-                                                  port_features);
+                const auto& spec = result.get_spec();
+                auto& port_features = split_specs->features.at(spec);
+                split_specs->known.erase(spec);
+                auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
+                xunitTestResults.add_test_results(
+                    spec, code, result.timing, result.start_time, split_specs->abi_map.at(spec), port_features);
+                full_results.emplace(spec, code);
             }
+            full_results.insert(split_specs->known.begin(), split_specs->known.end());
 
             // Adding results for ports that were not built because they have known states
             if (Util::Sets::contains(options.switches, OPTION_XUNIT_ALL))
@@ -558,27 +554,23 @@ namespace vcpkg::Commands::CI
                 }
             }
 
-            all_known_results.emplace_back(std::move(split_specs->known));
+            TripletAndSummary result{target_triplet, std::move(summary)};
 
-            results.push_back({target_triplet, std::move(summary)});
-        }
-
-        for (auto&& result : results)
-        {
             print2("\nTriplet: ", result.triplet, "\n");
             print2("Total elapsed time: ", GlobalState::timer.to_string(), "\n");
             result.summary.print();
 
             if (baseline_iter != settings.end())
             {
-                print_baseline_regressions(result, cidata, baseline_iter->second, allow_unexpected_passing);
+                print_baseline_regressions(full_results, cidata, baseline_iter->second, allow_unexpected_passing);
             }
-        }
 
-        auto it_xunit = settings.find(OPTION_XUNIT);
-        if (it_xunit != settings.end())
-        {
-            filesystem.write_contents(it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
+            auto it_xunit = settings.find(OPTION_XUNIT);
+            if (it_xunit != settings.end())
+            {
+                filesystem.write_contents(
+                    it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
+            }
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
