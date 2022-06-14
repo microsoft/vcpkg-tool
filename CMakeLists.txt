@@ -40,6 +40,11 @@ if(VCPKG_DEVELOPMENT_WARNINGS)
     set(FMT_PEDANTIC ON CACHE BOOL "")
 endif()
 
+if (VCPKG_ARTIFACTS_DEVELOPMENT)
+    # https://gitlab.kitware.com/cmake/cmake/-/issues/20245
+    cmake_minimum_required(VERSION 3.17)
+endif()
+
 project(vcpkg
     DESCRIPTION "vcpkg helps you manage C and C++ libraries on Windows, Linux and MacOS."
     HOMEPAGE_URL "https://github.com/microsoft/vcpkg"
