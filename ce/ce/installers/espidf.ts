@@ -69,9 +69,10 @@ export async function installEspIdf(session: Session, events: Partial<InstallEve
 }
 
 export async function activateEspIdf(session: Session, targetLocation: Uri) {
-  const pythonPath = await session.activation.getAlias('python');
+  const vcpkg = new Vcpkg(session);
+  const pythonPath = await vcpkg.fetch('python3_with_venv');
   if (!pythonPath) {
-    throw new Error(i`Python is not installed`);
+    throw new Error(i`Could not activate esp-idf: python was not found.`);
   }
 
   const directoryLocation = await isFilePath(targetLocation) ? targetLocation.fsPath : targetLocation.toString();
