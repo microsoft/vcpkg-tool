@@ -32,6 +32,7 @@ namespace
                                  "This message is normally displayed only in development.",
                                  "Downloading latest vcpkg-ce bundle...");
 
+#if !defined(VCPKG_ARTIFACTS_PATH)
     void extract_ce_tarball(const VcpkgPaths& paths,
                             const Path& ce_tarball,
                             const Path& node_path,
@@ -64,6 +65,7 @@ namespace
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
         }
     }
+#endif // ^^^ !defined(VCPKG_ARTIFACTS_PATH)
 }
 
 namespace vcpkg
