@@ -40,6 +40,8 @@ $manifestDir = (Get-Item $manifestDir).FullName
 New-Item -Path "$manifestDir/vcpkg.json" -ItemType File `
     -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
 
+New-Item -Path "$manifestDir/CONTROL" -ItemType File -Value [string]::Empty
+
 Write-Trace "test manifest features: default-features, features = []"
 Run-Vcpkg install @manifestDirArgs
 Throw-IfNotFailed

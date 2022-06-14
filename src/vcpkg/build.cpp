@@ -371,7 +371,8 @@ namespace vcpkg::Build
         const FullPackageSpec spec = Input::check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
-        PathsPortFileProvider provider(paths, args.overlay_ports);
+        PortFileProvider::PathsPortFileProvider provider(
+            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
         return perform_ex(args, spec, host_triplet, provider, binary_cache, Build::null_build_logs_recorder(), paths);
     }
 
