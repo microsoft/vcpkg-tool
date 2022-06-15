@@ -69,6 +69,15 @@ namespace vcpkg
         virtual void precheck(View<Dependencies::InstallPlanAction> actions, View<CacheStatus*> cache_status) const = 0;
     };
 
+    struct UrlTemplate
+    {
+        std::string url_template;
+        std::vector<std::string> headers;
+
+        LocalizedString valid();
+        std::string instantiate_variables(const Dependencies::InstallPlanAction& action) const;
+    };
+
     struct BinaryConfigParserState
     {
         bool m_cleared = false;
@@ -78,8 +87,8 @@ namespace vcpkg
         std::vector<Path> archives_to_read;
         std::vector<Path> archives_to_write;
 
-        std::vector<std::string> url_templates_to_get;
-        std::vector<std::string> azblob_templates_to_put;
+        std::vector<UrlTemplate> url_templates_to_get;
+        std::vector<UrlTemplate> url_templates_to_put;
 
         std::vector<std::string> gcs_read_prefixes;
         std::vector<std::string> gcs_write_prefixes;
