@@ -64,7 +64,7 @@ static void invalid_command(const std::string& cmd)
 static void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args)
 {
     // track version on each invocation
-    LockGuardPtr<Metrics>(g_metrics)->track_property("version", Commands::Version::version.to_string());
+    LockGuardPtr<Metrics>(g_metrics)->track_property("vcpkg_version", Commands::Version::version.to_string());
 
     if (args.command.empty())
     {
