@@ -930,8 +930,6 @@ namespace vcpkg::Install
                                                  ? Dependencies::UnsupportedPortAction::Warn
                                                  : Dependencies::UnsupportedPortAction::Error;
 
-        LockGuardPtr<Metrics>(g_metrics)->track_property("install_manifest_mode", paths.manifest_mode_enabled());
-
         if (auto p = paths.get_manifest().get())
         {
             bool failure = false;
@@ -1015,6 +1013,8 @@ namespace vcpkg::Install
 
         if (auto manifest = paths.get_manifest().get())
         {
+            LockGuardPtr<Metrics>(g_metrics)->track_property("install_mode", "manifest");
+
             Optional<Path> pkgsconfig;
             auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
             if (it_pkgsconfig != options.settings.end())
@@ -1148,6 +1148,8 @@ namespace vcpkg::Install
                                                         host_triplet,
                                                         keep_going);
         }
+
+        LockGuardPtr<Metrics>(g_metrics)->track_property("install_mode", "classic");
 
         PortFileProvider::PathsPortFileProvider provider(
             paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
