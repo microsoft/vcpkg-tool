@@ -610,6 +610,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CiBaselineDisallowedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} cascaded, but it is required to pass. ({path}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[REGRESE: {spec} kaskádovité, ale je nutný úspěch. ({path}).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CiBaselineRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.]]></Val>
@@ -972,10 +981,13 @@
       </Item>
       <Item ItemId=";ExpectedFailOrSkip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
+          <Val><![CDATA[expected 'fail', 'skip', or 'pass' here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[tady se očekávalo fail nebo skip]]></Val>
+            <Val><![CDATA[zde se očekávala chyba, přeskočit nebo úspěch]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1395,6 +1407,15 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Neplatný argument: binární konfigurace {binary_source} vyžaduje token SAS bez předcházejícího znaku „?“ jako druhého argumentu.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidFormatString" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid format string: {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[neplatný formátovací řetězec: {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1854,10 +1875,13 @@
       </Item>
       <Item ItemId=";UnknownBaselineFileContent" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip)']]></Val>
+          <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[nerozpoznatelná položka směrného plánu; očekávalo se port:triplet=(fail|skip)]]></Val>
+            <Val><![CDATA[nerozpoznatelná položka směrného plánu; očekávalo se port:triplet=(fail|skip|pass)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip)']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1875,6 +1899,15 @@
           <Val><![CDATA[vcpkg does not have a definition of this tool for this platform.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Vcpkg nemá definici tohoto nástroje pro tuto platformu.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownVariablesInTemplate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: url template '{value}' contains unknown variables: {list}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[neplatný argument: šablona adresy URL '{value}' obsahuje neznámé proměnné: {list}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

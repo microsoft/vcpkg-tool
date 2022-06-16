@@ -610,6 +610,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CiBaselineDisallowedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} cascaded, but it is required to pass. ({path}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[回帰: {spec} がカスケードされましたが、渡す必要があります。({path})。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CiBaselineRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.]]></Val>
@@ -972,10 +981,13 @@
       </Item>
       <Item ItemId=";ExpectedFailOrSkip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
+          <Val><![CDATA[expected 'fail', 'skip', or 'pass' here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ここには 'fail' または 'skip' が必要です]]></Val>
+            <Val><![CDATA['fail'、'skip'、または 'pass' が必要です]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1395,6 +1407,15 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[無効な引数: バイナリ構成 '{binary_source}' には、2 番目の引数として先頭に '?' がない SAS トークンが必要です]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidFormatString" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid format string: {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無効な形式の文字列: {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1854,10 +1875,13 @@
       </Item>
       <Item ItemId=";UnknownBaselineFileContent" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip)']]></Val>
+          <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[認識できないベースライン エントリ; 'port:triplet=(fail|skip)' が必要です]]></Val>
+            <Val><![CDATA[認識できないベースライン エントリ;'port:triplet=(fail|skip|pass)' が必要です]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip)']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1875,6 +1899,15 @@
           <Val><![CDATA[vcpkg does not have a definition of this tool for this platform.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[vcpkg に、このプラットフォーム用のこのツールの定義がありません。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownVariablesInTemplate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: url template '{value}' contains unknown variables: {list}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無効な引数: URL テンプレー `'{value}` に不明な変数が含まれています: {list}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
