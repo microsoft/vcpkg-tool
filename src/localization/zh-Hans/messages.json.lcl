@@ -610,6 +610,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CiBaselineDisallowedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} cascaded, but it is required to pass. ({path}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[回归: {spec} 已级联，但需要它才能通过。({path})。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CiBaselineRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.]]></Val>
@@ -972,10 +981,13 @@
       </Item>
       <Item ItemId=";ExpectedFailOrSkip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
+          <Val><![CDATA[expected 'fail', 'skip', or 'pass' here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[此处需要选择“失败”或“跳过”]]></Val>
+            <Val><![CDATA[此处应为“失败”、“跳过”或“通过”]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1395,6 +1407,15 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[参数无效: 二进制配置“{binary_source}”需要 SAS 令牌，不需要将前面的“?”作为第二个参数]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidFormatString" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid format string: {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[格式字符串无效: {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1854,10 +1875,13 @@
       </Item>
       <Item ItemId=";UnknownBaselineFileContent" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip)']]></Val>
+          <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法识别的基线条目；应为“port：triplet=(fail|skip)”]]></Val>
+            <Val><![CDATA[无法识别的基线条目；应为 “port:triplet=(fail|skip|pass)”]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip)']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1875,6 +1899,15 @@
           <Val><![CDATA[vcpkg does not have a definition of this tool for this platform.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[vcpkg 没有为适用于此平台的这一工具提供定义。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownVariablesInTemplate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: url template '{value}' contains unknown variables: {list}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[参数无效: URL 模板“{value}”包含未知变量: {list}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

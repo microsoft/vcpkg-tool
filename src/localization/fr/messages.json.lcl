@@ -610,6 +610,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CiBaselineDisallowedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} cascaded, but it is required to pass. ({path}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[RÉGRESSION : {spec} en cascade, mais il est nécessaire de passer. ({path}).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CiBaselineRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.]]></Val>
@@ -972,10 +981,13 @@
       </Item>
       <Item ItemId=";ExpectedFailOrSkip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
+          <Val><![CDATA[expected 'fail', 'skip', or 'pass' here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['échec' ou 'ignorer' attendu ici]]></Val>
+            <Val><![CDATA['échec', 'ignorer' ou 'réussite' attendu ici]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1395,6 +1407,15 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[argument non valide : la configuration binaire '{binary_source}' nécessite un jeton SAS sans '?' comme deuxième argument]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidFormatString" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid format string: {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[format de chaîne non valide : {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1854,10 +1875,13 @@
       </Item>
       <Item ItemId=";UnknownBaselineFileContent" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip)']]></Val>
+          <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[entrée de base de référence non reconnaissable ; 'port:triplet=(fail|skip)' attendu]]></Val>
+            <Val><![CDATA[entrée de base de référence non reconnaissable ; 'port:triplet=(fail|skip|pass)' attendu]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[unrecognizable baseline entry; expected 'port:triplet=(fail|skip)']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1875,6 +1899,15 @@
           <Val><![CDATA[vcpkg does not have a definition of this tool for this platform.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[vcpkg n’a pas de définition de cet outil pour cette plateforme.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownVariablesInTemplate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: url template '{value}' contains unknown variables: {list}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[argument non valide : le modèle d’URL « {value} » contient des variables inconnues : {list}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
