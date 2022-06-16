@@ -1,7 +1,6 @@
 #include <vcpkg/base/api_stable_format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/unicode.h>
@@ -16,18 +15,7 @@
 #include <string>
 #include <vector>
 
-using namespace vcpkg;
-
-namespace
-{
-
-    DECLARE_AND_REGISTER_MESSAGE(InvalidFormatString,
-                                 (msg::actual),
-                                 "{actual} is the provided format string",
-                                 "invalid format string: {actual}");
-}
-
-vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
+vcpkg::ExpectedS<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
                                                                      void (*cb)(void*, std::string&, StringView),
                                                                      void* user)
 {
@@ -49,7 +37,7 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
         {
             if (p == last)
             {
-                return msg::format(msgInvalidFormatString, msg::actual = sv);
+                return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
             }
             else if (*p == '{')
             {
@@ -63,7 +51,7 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
                 p = std::find_first_of(p, last, s_brackets, s_brackets + 2);
                 if (p == last || p[0] != '}')
                 {
-                    return msg::format(msgInvalidFormatString, msg::actual = sv);
+                    return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
                 }
                 // p[0] == '}'
                 cb(user, out, {seq_start, p});
@@ -74,7 +62,7 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
         {
             if (p == last || p[0] != '}')
             {
-                return msg::format(msgInvalidFormatString, msg::actual = sv);
+                return {Strings::concat("Error: invalid format string: ", sv), expected_right_tag};
             }
             out.push_back('}');
             prev = ++p;

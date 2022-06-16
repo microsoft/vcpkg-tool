@@ -32,8 +32,7 @@ namespace vcpkg
 
     View<std::string> azure_blob_headers();
 
-    std::vector<int> download_files(Filesystem& fs,
-                                    View<std::tuple<std::string, View<std::string>, Path>> url_header_path_tuples);
+    std::vector<int> download_files(Filesystem& fs, View<std::pair<std::string, Path>> url_pairs);
     ExpectedS<int> put_file(const Filesystem&, StringView url, View<std::string> headers, const Path& file);
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
     std::string replace_secrets(std::string input, View<std::string> secrets);
