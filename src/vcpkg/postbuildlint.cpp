@@ -595,7 +595,7 @@ namespace vcpkg::PostBuildLint
         else if (cmake_system_name == "Darwin")
         {
             auto requested_architectures = Strings::split(Strings::trim(expected_architecture), ';');
-            Util::transform(requested_architectures, [](std::string a){return a == "x64" ? "x86_64" : a;});
+            Util::transform(requested_architectures, [](std::string a) { return a == "x64" ? "x86_64" : a; });
 
             for (const Path& file : files)
             {
