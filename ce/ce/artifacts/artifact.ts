@@ -38,19 +38,20 @@ class ArtifactBase {
   constructor(protected session: Session, public readonly metadata: MetadataFile) {
     this.applicableDemands = new SetOfDemands(this.metadata, this.session);
     this.registries = new Registries(session);
-
-    // load the registries from the project file
-    for (const [name, registry] of this.metadata.registries) {
-      const reg = session.loadRegistry(registry.location.get(0), registry.registryKind || 'artifact');
-      if (reg) {
-        this.registries.add(reg, name);
-      }
-    }
   }
 
   /** Async Initializer */
   async init(session: Session) {
     await this.applicableDemands.init(session);
+
+    // load the registries from the project file
+    for (const [name, registry] of this.metadata.registries) {
+      const reg = await session.loadRegistry(registry.location.get(0), registry.registryKind || 'artifact');
+      if (reg) {
+        this.registries.add(reg, name);
+      }
+    }
+
     return this;
   }
 

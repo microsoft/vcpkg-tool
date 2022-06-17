@@ -152,35 +152,38 @@ export class Session {
   }
 
 
-  loadRegistry(registryLocation: Uri | string | undefined, registryKind = 'artifact'): Registry | undefined {
-    if (registryLocation) {
-      const r = this.registries.getRegistry(registryLocation.toString());
+  async loadRegistry(registryLocation: Uri | string | undefined, registryKind = 'artifact'): Promise<Registry | undefined> {
+    // normalize the location first. 
+    registryLocation = typeof registryLocation === 'string' ? await this.parseLocation(registryLocation) : registryLocation;
 
-      if (r) {
-        return r;
-      }
-
-      // not already loaded
-      registryLocation = this.parseUri(registryLocation);
-
-      switch (registryKind) {
-
-        case 'artifact':
-          switch (registryLocation.scheme) {
-            case 'https':
-              return this.registries.add(new RemoteRegistry(this, registryLocation));
-
-            case 'file':
-              return this.registries.add(new LocalRegistry(this, registryLocation));
-
-            default:
-              throw new Error(i`Unsupported registry scheme '${registryLocation.scheme}'`);
-          }
-      }
-      throw new Error(i`Unsupported registry kind '${registryKind}'`);
+    if (!registryLocation) {
+      return undefined;
     }
 
-    return undefined;
+    // if the registry from that location is already loaded, return it.
+    const r = this.registries.getRegistry(registryLocation.toString());
+    if (r) {
+      return r;
+    }
+
+    // not already loaded
+    registryLocation = this.parseUri(registryLocation);
+
+    switch (registryKind) {
+
+      case 'artifact':
+        switch (registryLocation.scheme) {
+          case 'https':
+            return this.registries.add(new RemoteRegistry(this, registryLocation));
+
+          case 'file':
+            return this.registries.add(new LocalRegistry(this, registryLocation));
+
+          default:
+            throw new Error(i`Unsupported registry scheme '${registryLocation.scheme}'`);
+        }
+    }
+    throw new Error(i`Unsupported registry kind '${registryKind}'`);
   }
 
   async isLocalRegistry(location: Uri | string): Promise<boolean> {
@@ -289,7 +292,7 @@ export class Session {
       const loc = regDef.location.get(0);
       if (loc) {
         const uri = this.parseUri(loc);
-        const reg = this.loadRegistry(uri, regDef.registryKind);
+        const reg = await this.loadRegistry(uri, regDef.registryKind);
         if (reg) {
           this.channels.debug(`Loaded global manifest ${name} => ${uri.formatted}`);
           this.defaultRegistry.add(reg, name);

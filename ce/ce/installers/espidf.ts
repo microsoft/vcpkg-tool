@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { platform } from 'os';
 import { delimiter } from 'path';
 import { log } from '../cli/styling';
 import { i } from '../i18n';
@@ -61,10 +62,6 @@ export async function installEspIdf(session: Session, events: Partial<InstallEve
     return false;
   }
 
-  // call activate, extrapolate what environment is changed
-  // change it in the session object.
-
-  log('installing espidf commands post-git is implemented, but post activation of the necessary esp-idf path / environment variables is not.');
   return true;
 }
 
@@ -81,7 +78,8 @@ export async function activateEspIdf(session: Session, targetLocation: Uri) {
     `${directoryLocation}/tools/idf_tools.py`,
     'export',
     '--format',
-    'key-value'
+    'key-value',
+    '--prefer-system'
   ], {
     env: await session.activation.getEnvironmentBlock(),
     onStdOutData: (chunk) => {
@@ -95,7 +93,11 @@ export async function activateEspIdf(session: Session, targetLocation: Uri) {
             const pathValues = splitLine[1].split(delimiter);
             for (const path of pathValues) {
               if (path.trim() !== '%PATH%' && path.trim() !== '$PATH') {
-                session.activation.addPath(splitLine[0].trim(), session.fileSystem.file(path));
+                // we actually want to use the artifacts we installed, not the ones that are being bundled. 
+                // when espressif supports artifacts properly, we shouldn't need this filter.
+                if (! /\.espressif.tools/ig.exec(path)) {
+                  session.activation.addPath(splitLine[0].trim(), session.fileSystem.file(path));
+                }
               }
             }
           }
