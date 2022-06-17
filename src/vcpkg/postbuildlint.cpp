@@ -594,16 +594,22 @@ namespace vcpkg::PostBuildLint
         }
         else if (cmake_system_name == "Darwin")
         {
-            const auto requested_arch = expected_architecture == "x64" ? "x86_64" : expected_architecture;
+            auto requested_architectures = Strings::split(Strings::trim(expected_architecture), ';');
+            Util::transform(requested_architectures, [](std::string a){return a == "x64" ? "x86_64" : a;});
+
             for (const Path& file : files)
             {
                 auto cmd_line = Command("lipo").string_arg("-archs").string_arg(file);
                 auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "lipo");
                 if (const auto output = maybe_output.get())
                 {
-                    if (!Util::Vectors::contains(Strings::split(Strings::trim(*output), ' '), requested_arch))
+                    const auto generated_architectures = Strings::split(Strings::trim(*output), ' ');
+                    for (const auto& architecture : requested_architectures)
                     {
-                        binaries_with_invalid_architecture.push_back({file, std::move(*output)});
+                        if (!Util::Vectors::contains(generated_architectures, architecture))
+                        {
+                            binaries_with_invalid_architecture.push_back({file, std::move(*output)});
+                        }
                     }
                 }
                 else
