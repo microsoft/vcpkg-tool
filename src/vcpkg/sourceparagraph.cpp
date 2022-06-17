@@ -1022,12 +1022,12 @@ namespace vcpkg
         // but with whitespace normalized
         virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) override
         {
-            auto parser = SpdxLicenseExpressionParser(sv, "<manifest>");
+            auto parser = SpdxLicenseExpressionParser(sv, "");
             auto res = parser.parse();
 
             for (const auto& warning : parser.messages().warnings)
             {
-                msg::println(Color::warning, warning.format("<manifest>", MessageKind::Warning));
+                r.add_warning(type_name(), warning.format("", MessageKind::Warning));
             }
             if (auto err = parser.get_error())
             {
@@ -1270,11 +1270,20 @@ namespace vcpkg
     }
 
     ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_object(StringView origin,
-                                                                              const Json::Object& manifest)
+                                                                              const Json::Object& manifest,
+                                                                              MessageSink* warnings_sink)
     {
         Json::Reader reader;
 
         auto res = reader.visit(manifest, ManifestDeserializer::instance);
+
+        if (warnings_sink)
+        {
+            for (auto&& w : reader.warnings())
+            {
+                warnings_sink->print(Color::warning, LocalizedString::from_raw(Strings::concat(origin, ": ", w, '\n')));
+            }
+        }
 
         if (!reader.errors().empty())
         {
@@ -1421,6 +1430,11 @@ namespace vcpkg
         return it == last ? last : it + 1;
     }
 
+    static bool starts_with_error(StringView sv)
+    {
+        return Strings::starts_with(sv, "Error") || Strings::starts_with(sv, "error: ");
+    }
+
     void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
     {
         auto msg = ParseControlErrorInfo::format_errors(error_info_list);
@@ -1435,7 +1449,7 @@ namespace vcpkg
         const char* const last = msg.data() + msg.size();
         while (end_of_chunk != last)
         {
-            while (end_of_chunk != last && Strings::starts_with({end_of_chunk, last}, "Error"))
+            while (end_of_chunk != last && starts_with_error({end_of_chunk, last}))
             {
                 end_of_chunk = after_nl(end_of_chunk, last);
             }
@@ -1445,7 +1459,7 @@ namespace vcpkg
                 start_of_chunk = end_of_chunk;
             }
 
-            while (end_of_chunk != last && !Strings::starts_with({end_of_chunk, last}, "Error"))
+            while (end_of_chunk != last && !starts_with_error({end_of_chunk, last}))
             {
                 end_of_chunk = after_nl(end_of_chunk, last);
             }
@@ -1455,6 +1469,7 @@ namespace vcpkg
                 start_of_chunk = end_of_chunk;
             }
         }
+        print2('\n');
     }
 
     Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const
