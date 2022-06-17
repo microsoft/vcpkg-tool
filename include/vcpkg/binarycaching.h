@@ -72,7 +72,8 @@ namespace vcpkg
     struct UrlTemplate
     {
         std::string url_template;
-        std::vector<std::string> headers;
+        std::vector<std::string> headers_for_put;
+        std::vector<std::string> headers_for_get;
 
         LocalizedString valid();
         std::string instantiate_variables(const Dependencies::InstallPlanAction& action) const;

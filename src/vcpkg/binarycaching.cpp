@@ -414,7 +414,7 @@ namespace
             for (auto&& put_url_template : m_put_url_templates)
             {
                 auto url = put_url_template.instantiate_variables(action);
-                auto maybe_success = put_file(fs, url, put_url_template.headers, tmp_archive_path);
+                auto maybe_success = put_file(fs, url, put_url_template.headers_for_put, tmp_archive_path);
                 if (maybe_success)
                 {
                     http_remotes_pushed++;
@@ -522,7 +522,7 @@ namespace
             const auto timer = ElapsedTimer::create_started();
             auto& fs = paths.get_filesystem();
             size_t this_restore_count = 0;
-            std::vector<std::tuple<std::string, View<std::string>, Path>> url_paths;
+            std::vector<std::pair<std::string, Path>> url_paths;
             std::vector<size_t> url_indices;
             for (auto&& url_template : m_url_templates)
             {
@@ -539,8 +539,7 @@ namespace
                     auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
                     auto uri = url_template.instantiate_variables(action);
-                    url_paths.emplace_back(
-                        std::move(uri), url_template.headers, make_temp_archive_path(paths.buildtrees(), action.spec));
+                    url_paths.emplace_back(std::move(uri), make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
 
@@ -548,7 +547,7 @@ namespace
 
                 print2("Attempting to fetch ", url_paths.size(), " packages from HTTP servers.\n");
 
-                auto codes = download_files(fs, url_paths);
+                auto codes = download_files(fs, url_paths, url_template.headers_for_get);
                 std::vector<size_t> action_idxs;
                 std::vector<Command> jobs;
                 for (size_t i = 0; i < codes.size(); ++i)
@@ -559,7 +558,7 @@ namespace
                         jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
                                                                   stdout_sink,
                                                                   paths.package_dir(actions[url_indices[i]].spec),
-                                                                  std::get<2>(url_paths[i])));
+                                                                  url_paths[i].second));
                     }
                 }
                 auto job_results = decompress_in_parallel(jobs);
@@ -569,12 +568,12 @@ namespace
                     if (job_results[j])
                     {
                         ++this_restore_count;
-                        fs.remove(std::get<2>(url_paths[i]), VCPKG_LINE_INFO);
+                        fs.remove(url_paths[i].second, VCPKG_LINE_INFO);
                         cache_status[url_indices[i]]->mark_restored();
                     }
                     else
                     {
-                        Debug::print("Failed to decompress ", std::get<2>(url_paths[i]), '\n');
+                        Debug::print("Failed to decompress ", url_paths[i].second, '\n');
                     }
                 }
             }
@@ -1353,7 +1352,6 @@ namespace
 
 namespace vcpkg
 {
-
     LocalizedString UrlTemplate::valid()
     {
         std::vector<std::string> invalid_keys;
@@ -1916,7 +1914,7 @@ namespace
                 state->secrets.push_back(segments[2].second);
                 UrlTemplate url_template = {p};
                 auto headers = azure_blob_headers();
-                url_template.headers.assign(headers.begin(), headers.end());
+                url_template.headers_for_put.assign(headers.begin(), headers.end());
                 handle_readwrite(
                     state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 3);
             }
@@ -2068,7 +2066,8 @@ namespace
                 }
                 if (segments.size() == 4)
                 {
-                    url_template.headers.push_back(segments[3].second);
+                    url_template.headers_for_get.push_back(segments[3].second);
+                    url_template.headers_for_put.push_back(segments[3].second);
                 }
                 handle_readwrite(
                     state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 2);
