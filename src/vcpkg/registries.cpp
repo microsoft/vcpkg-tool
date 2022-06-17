@@ -100,8 +100,11 @@ namespace
         ExpectedL<Path> git_checkout_registry_port(StringView git_object) const
         {
             const auto destination = m_paths.reg_cache_dir() / "git-trees" / git_object;
-            auto maybe_path = m_paths.get_git_impl().splat_object(
-                m_gitconfig, m_paths.get_filesystem(), m_paths.get_tool_exe(Tools::CMAKE), destination, git_object);
+            auto maybe_path = m_paths.get_git_impl(stdout_sink).splat_object(m_gitconfig,
+                                                                  m_paths.get_filesystem(),
+                                                                  m_paths.get_tool_exe(Tools::CMAKE, stdout_sink),
+                                                                  destination,
+                                                                  git_object);
             if (auto path = maybe_path.get())
             {
                 return *path;
@@ -117,7 +120,7 @@ namespace
             return m_versions_tree.get([this]() -> Path {
                 auto e = get_lock_entry();
                 e.ensure_up_to_date(m_paths);
-                auto maybe_tree = m_paths.get_git_impl().rev_parse(
+                auto maybe_tree = m_paths.get_git_impl(stdout_sink).rev_parse(
                     m_gitconfig, Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
 
                 if (!maybe_tree)
@@ -158,7 +161,7 @@ namespace
             }
             if (!m_stale_versions_tree.has_value())
             {
-                auto maybe_tree = m_paths.get_git_impl().rev_parse(
+                auto maybe_tree = m_paths.get_git_impl(stdout_sink).rev_parse(
                     m_gitconfig, Strings::concat(e.commit_id(), ':', registry_versions_dir_name));
                 if (!maybe_tree)
                 {
@@ -426,7 +429,7 @@ namespace
         {
             const auto destination_tmp = destination_parent / "baseline.json.tmp";
 
-            auto maybe_contents = paths.get_git_impl().show(paths.git_builtin_config(),
+            auto maybe_contents = paths.get_git_impl(stdout_sink).show(paths.git_builtin_config(),
                                                             Strings::concat(commit_sha, ":versions/baseline.json"));
             if (auto contents = maybe_contents.get())
             {
@@ -543,7 +546,7 @@ namespace
         {
             auto maybe_version_entries =
                 load_versions_file(fs, VersionDbType::Git, m_paths.builtin_registry_versions, port_name);
-            if (!maybe_version_entries.has_value())
+            if (!maybe_version_entries)
             {
                 Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: " + maybe_version_entries.error());
             }
@@ -566,7 +569,7 @@ namespace
     {
         const auto& baseline = m_baseline.get([this]() -> Baseline {
             auto maybe_path = git_checkout_baseline(m_paths, m_baseline_identifier);
-            if (!maybe_path.has_value())
+            if (!maybe_path)
             {
                 Checks::exit_with_message(
                     VCPKG_LINE_INFO, "%s\n\n%s", maybe_path.error(), RegistrySet::get_baseline_suggestion(m_paths));
@@ -645,10 +648,6 @@ namespace
     {
         auto maybe_version_entries =
             load_versions_file(m_fs, VersionDbType::Filesystem, m_path / registry_versions_dir_name, port_name, m_path);
-        if (!maybe_version_entries.has_value())
-        {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: %s", maybe_version_entries.error());
-        }
 
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
@@ -698,21 +697,20 @@ namespace
                     e.commit_id());
             }
 
-            const auto& git = m_paths.get_git_impl();
+            const auto& git = m_paths.get_git_impl(stdout_sink);
 
             const std::string rev = Strings::concat(m_baseline_identifier, ":versions/baseline.json");
-
             auto maybe_contents = git.show(m_gitconfig, rev);
-            if (!maybe_contents.has_value())
+            if (!maybe_contents)
             {
                 get_lock_entry().ensure_up_to_date(m_paths);
                 maybe_contents = git.show(m_gitconfig, rev);
             }
-            if (!maybe_contents.has_value())
+            if (!maybe_contents)
             {
                 print2("Fetching baseline information from ", m_repo, "...\n");
                 auto maybe_fetch = git.init_fetch(m_gitconfig, m_paths.get_filesystem(), m_repo, m_baseline_identifier);
-                if (!maybe_fetch.has_value())
+                if (!maybe_fetch)
                 {
                     LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline",
                                                                      "defined");
@@ -728,7 +726,7 @@ namespace
                 maybe_contents = git.show(m_gitconfig, rev);
             }
 
-            if (!maybe_contents.has_value())
+            if (!maybe_contents)
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("registries-error-could-not-find-baseline", "defined");
                 Checks::exit_with_message(VCPKG_LINE_INFO,
@@ -815,9 +813,9 @@ namespace
 
         const auto destination = m_paths.versions_output() / port_name / git_tree;
 
-        auto maybe_path = m_paths.get_git_impl().splat_object(m_paths.git_builtin_config(),
+        auto maybe_path = m_paths.get_git_impl(stdout_sink).splat_object(m_paths.git_builtin_config(),
                                                               m_paths.get_filesystem(),
-                                                              m_paths.get_tool_exe(Tools::CMAKE),
+                                                              m_paths.get_tool_exe(Tools::CMAKE, stdout_sink),
                                                               destination,
                                                               git_tree);
         if (auto path = maybe_path.get())
@@ -903,11 +901,6 @@ namespace
     void GitRegistryEntry::fill_data_from_path(const Filesystem& fs, const Path& port_versions_path) const
     {
         auto maybe_version_entries = load_versions_file(fs, VersionDbType::Git, port_versions_path, port_name);
-        if (!maybe_version_entries.has_value())
-        {
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Error: " + maybe_version_entries.error());
-        }
-
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
 
         for (auto&& version_entry : version_entries)
@@ -983,7 +976,7 @@ namespace
         }
 
         auto maybe_versions_json = Json::parse(std::move(contents));
-        if (!maybe_versions_json.has_value())
+        if (!maybe_versions_json)
         {
             return Strings::format("Error: failed to parse versions file for `%s`: %s",
                                    port_name,
@@ -1020,7 +1013,7 @@ namespace
     ExpectedS<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin)
     {
         auto maybe_value = Json::parse(contents, origin);
-        if (!maybe_value.has_value())
+        if (!maybe_value)
         {
             return Strings::format(
                 "Error: failed to parse baseline file: %s\n%s", origin, maybe_value.error()->to_string());
@@ -1204,7 +1197,7 @@ namespace vcpkg
         {
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
             auto x =
-                paths.get_git_impl().init_fetch(git_registries_config(paths), paths.get_filesystem(), repo, reference);
+                paths.get_git_impl(stdout_sink).init_fetch(git_registries_config(paths), paths.get_filesystem(), repo, reference);
             it = lockdata.emplace(repo.to_string(),
                                   EntryData{reference.to_string(), x.value_or_exit(VCPKG_LINE_INFO), false});
             modified = true;
@@ -1221,7 +1214,7 @@ namespace vcpkg
             print2("Fetching registry information from ", repo, " (", reference, ")...\n");
 
             data->second.commit_id =
-                paths.get_git_impl()
+                paths.get_git_impl(stdout_sink)
                     .init_fetch(git_registries_config(paths), paths.get_filesystem(), repo, reference)
                     .value_or_exit(VCPKG_LINE_INFO);
             data->second.stale = false;
@@ -1278,7 +1271,7 @@ namespace vcpkg
         auto maybe_embedded_sha = paths.git_embedded_sha();
         if (!maybe_embedded_sha)
         {
-            const IGit& git = paths.get_git_impl();
+            const IGit& git = paths.get_git_impl(stdout_sink);
             const auto config = paths.git_builtin_config();
 
             auto maybe_sha = git.rev_parse(config, "HEAD");
@@ -1305,7 +1298,7 @@ namespace vcpkg
         if (auto pversions = maybe_versions.get())
         {
             return Util::fmap(
-                *pversions, [](auto&& entry) -> auto {
+                *pversions, [](auto&& entry) -> auto{
                     return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
                 });
         }
@@ -1328,7 +1321,7 @@ namespace vcpkg
 
     ExpectedL<std::map<std::string, std::string>> get_builtin_port_git_objects(const VcpkgPaths& paths)
     {
-        const auto& git = paths.get_git_impl();
+        const auto& git = paths.get_git_impl(stdout_sink);
         GitLsTreeOptions opts = {};
         opts.dirs_only = true;
         auto maybe_files = git.ls_tree(paths.git_builtin_config(), "HEAD:ports/", opts);

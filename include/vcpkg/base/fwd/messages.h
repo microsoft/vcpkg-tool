@@ -23,9 +23,11 @@ namespace vcpkg
 #endif
 
     struct LocalizedString;
+    struct MessageSink;
 }
 
 namespace vcpkg::msg
 {
     void write_unlocalized_text_to_stdout(Color c, vcpkg::StringView sv);
+    void write_unlocalized_text_to_stderr(Color c, vcpkg::StringView sv);
 }

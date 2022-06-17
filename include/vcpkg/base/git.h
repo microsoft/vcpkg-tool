@@ -90,9 +90,9 @@ namespace vcpkg
 
         /// \param rev Commit to checkout files from
         /// \param files Required list of files to checkout
-        virtual ExpectedL<char> checkout(const GitConfig& config, StringView rev, View<StringView> files) const = 0;
+        virtual ExpectedL<Unit> checkout(const GitConfig& config, StringView rev, View<StringView> files) const = 0;
 
-        virtual ExpectedL<char> reset(const GitConfig& config) const = 0;
+        virtual ExpectedL<Unit> reset(const GitConfig& config) const = 0;
 
         /// Determine if \c rev is in the git repo and points at a commit object
         /// \returns The boolean value of  "is \c rev a commit object" on success.

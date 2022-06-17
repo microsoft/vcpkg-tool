@@ -540,7 +540,7 @@ namespace vcpkg
                                                                        StringView url,
                                                                        StringView ref = "HEAD")
     {
-        return paths.get_git_impl().ls_remote(paths.git_builtin_config(), url, ref).map([](std::string&& s) {
+        return paths.get_git_impl(stdout_sink).ls_remote(paths.git_builtin_config(), url, ref).map([](std::string&& s) {
             return Optional<std::string>(std::move(s));
         });
     }
@@ -565,7 +565,7 @@ namespace vcpkg
                 {
                     return Optional<std::string>(std::move(*sha));
                 }
-                return paths.get_git_impl().rev_parse(paths.git_builtin_config(), "HEAD").map([](std::string&& s) {
+                return paths.get_git_impl(stdout_sink).rev_parse(paths.git_builtin_config(), "HEAD").map([](std::string&& s) {
                     return Optional<std::string>(std::move(s));
                 });
                 ;

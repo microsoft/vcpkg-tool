@@ -129,10 +129,10 @@ namespace vcpkg
         std::string get_toolver_diagnostics() const;
 
         const ToolCache& get_tool_cache() const;
-        const Path& get_tool_exe(StringView tool) const;
-        const std::string& get_tool_version(StringView tool) const;
+        const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;
+        const std::string& get_tool_version(StringView tool, MessageSink& status_messages) const;
 
-        const IGit& get_git_impl() const;
+        const IGit& get_git_impl(MessageSink& sink) const;
 
         // gets git configuration for the built-in registry
         GitConfig git_builtin_config() const;

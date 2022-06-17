@@ -232,14 +232,12 @@ namespace vcpkg
 
     static ExpectedL<std::string> execute_git_cmd(const Command& cmd)
     {
-        auto output = cmd_execute_and_capture_output(cmd);
-        if (output.exit_code != 0)
-        {
-            return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-                .append_raw('\n')
-                .append_raw(output.output);
-        }
-        return std::move(output.output);
+        return flatten_out(cmd_execute_and_capture_output(cmd), cmd.command_line());
+    }
+
+    static ExpectedL<Unit> execute_git_cmd_unit(const Command& cmd)
+    {
+        return flatten(cmd_execute_and_capture_output(cmd), cmd.command_line());
     }
 
     struct GitImpl final : IGit
@@ -272,43 +270,22 @@ namespace vcpkg
 
         /// If destination exists, immediately returns.
         /// \param rev Uses git revision syntax (e.g. <commit>[:<subpath>])
-        ExpectedL<char> archive(const GitConfig& config, StringView rev, StringView destination) const
+        ExpectedL<Unit> archive(const GitConfig& config, StringView rev, StringView destination) const
         {
-            const auto archive_cmd =
+            const auto cmd =
                 git_cmd(config).string_arg("archive").string_arg(rev).string_arg("-o").string_arg(destination);
-            const auto tar_output = cmd_execute_and_capture_output(archive_cmd);
-            if (tar_output.exit_code != 0)
-            {
-                // failed to create {destination_tmp}
-                return msg::format(msg::msgErrorMessage)
-                    .append(msgGitCheckoutFailedToCreateArchive)
-                    .append_raw('\n')
-                    .append_raw(tar_output.output);
-            }
-            else
-            {
-                return '\0';
-            }
+            return execute_git_cmd_unit(cmd);
         }
 
-        ExpectedL<bool> init(const GitConfig& config) const
+        ExpectedL<Unit> init(const GitConfig& config) const
         {
             const auto cmd = git_cmd(config).string_arg("init");
-            const auto output = cmd_execute_and_capture_output(cmd);
-            if (output.exit_code != 0)
-            {
-                // failed to initialize local repository in {work_tree}
-                return msg::format(msg::msgErrorMessage)
-                    .append(msgGitFailedToInitializeLocalRepository, msg::path = config.git_work_tree)
-                    .append_raw('\n')
-                    .append_raw(output.output);
-            }
-            return true;
+            return execute_git_cmd_unit(cmd);
         }
 
         // fetch a repository into the specified work tree
         // the directory pointed at by config.work_tree should already exist
-        ExpectedL<bool> fetch(const GitConfig& config, StringView uri, StringView ref) const
+        ExpectedL<Unit> fetch(const GitConfig& config, StringView uri, StringView ref) const
         {
             const auto cmd = git_cmd(config)
                                  .string_arg("fetch")
@@ -317,17 +294,7 @@ namespace vcpkg
                                  .string_arg("--")
                                  .string_arg(uri)
                                  .string_arg(ref);
-
-            auto output = cmd_execute_and_capture_output(cmd);
-            if (output.exit_code != 0)
-            {
-                // failed to fetch ref {treeish} from repository {url}
-                return msg::format(msgGitFailedToFetchRefFromRepository, msg::git_ref = ref, msg::url = uri)
-                    .append_raw('\n')
-                    .append_raw(output.output);
-            }
-
-            return true;
+            return execute_git_cmd_unit(cmd);
         }
 
         virtual ExpectedL<std::string> rev_parse(const GitConfig& config, StringView rev) const override
@@ -353,7 +320,7 @@ namespace vcpkg
             });
         }
 
-        virtual ExpectedL<char> checkout(const GitConfig& config, StringView rev, View<StringView> files) const override
+        virtual ExpectedL<Unit> checkout(const GitConfig& config, StringView rev, View<StringView> files) const override
         {
             auto cmd = git_cmd(config)
                            .string_arg("checkout")
@@ -365,13 +332,13 @@ namespace vcpkg
             {
                 cmd.string_arg(file);
             }
-            return execute_git_cmd(cmd).map([](const auto&) { return '\0'; });
+            return execute_git_cmd_unit(cmd);
         }
 
-        virtual ExpectedL<char> reset(const GitConfig& config) const override
+        virtual ExpectedL<Unit> reset(const GitConfig& config) const override
         {
             auto cmd = git_cmd(config).string_arg("reset");
-            return execute_git_cmd(cmd).map([](const auto&) { return '\0'; });
+            return execute_git_cmd_unit(cmd);
         }
 
         virtual ExpectedL<bool> is_commit(const GitConfig& config, StringView rev) const override

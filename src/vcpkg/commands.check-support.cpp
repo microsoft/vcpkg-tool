@@ -111,7 +111,8 @@ namespace vcpkg::Commands
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PortFileProvider::PathsPortFileProvider provider(
+            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         // for each spec in the user-requested specs, check all dependencies

@@ -92,7 +92,7 @@ namespace vcpkg::Commands::PortsDiff
         GitConfig config = paths.git_builtin_config();
         config.git_work_tree = temp_checkout_path;
 
-        const auto& git = paths.get_git_impl();
+        const auto& git = paths.get_git_impl(stdout_sink);
 
         git.checkout(config, git_commit_id, std::vector<StringView>{checkout_this_dir, ".vcpkg-root"})
             .value_or_exit(VCPKG_LINE_INFO);
@@ -111,7 +111,7 @@ namespace vcpkg::Commands::PortsDiff
 
     static void check_commit_exists(const VcpkgPaths& paths, const std::string& git_commit_id)
     {
-        auto cmd = paths.get_git_impl().is_commit(paths.git_builtin_config(), git_commit_id);
+        auto cmd = paths.get_git_impl(stdout_sink).is_commit(paths.git_builtin_config(), git_commit_id);
         Checks::check_exit(VCPKG_LINE_INFO, cmd.value_or_exit(VCPKG_LINE_INFO), "Invalid commit id %s", git_commit_id);
     }
 

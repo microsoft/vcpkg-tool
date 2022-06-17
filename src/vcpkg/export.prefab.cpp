@@ -227,7 +227,7 @@ namespace vcpkg::Export::Prefab
         cmd_line.string_arg("install:install-file")
             .string_arg(Strings::concat("-Dfile=", aar))
             .string_arg(Strings::concat("-DpomFile=", pom));
-        const int exit_code = cmd_execute_clean(cmd_line);
+        const int exit_code = cmd_execute_clean(cmd_line).value_or_exit(VCPKG_LINE_INFO);
         Checks::check_exit(VCPKG_LINE_INFO, exit_code == 0, "Error: %s installing maven file", aar);
     }
 
@@ -636,11 +636,17 @@ namespace vcpkg::Export::Prefab
                     "[DEBUG] Exporting AAR And POM\n\tAAR Path %s\n\tPOM Path %s\n", exported_archive_path, pom_path));
             }
 
-            Checks::check_exit(
-                VCPKG_LINE_INFO,
-                compress_directory_to_zip(
-                    paths.get_filesystem(), paths.get_tool_cache(), package_directory, exported_archive_path) != 0,
-                Strings::concat("Failed to compress folder ", package_directory));
+            auto compress_result = compress_directory_to_zip(
+                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, package_directory, exported_archive_path);
+            if (!compress_result)
+            {
+                Checks::exit_with_message(VCPKG_LINE_INFO,
+                                          std::move(compress_result)
+                                              .error()
+                                              .append_raw("\nFailed to compress folder ")
+                                              .append_raw(package_directory.native())
+                                              .extract_data());
+            }
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"

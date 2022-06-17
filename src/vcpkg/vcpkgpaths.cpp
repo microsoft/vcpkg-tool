@@ -73,7 +73,7 @@ namespace vcpkg
                 VCPKG_LINE_INFO, "Failed to load manifest from directory %s: %s", manifest_dir, ec.message());
         }
 
-        if (!manifest_opt.has_value())
+        if (!manifest_opt)
         {
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO,
                                        "Failed to parse manifest at %s:\n%s",
@@ -706,7 +706,7 @@ namespace vcpkg
 
     Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
     Path VcpkgPaths::build_dir(const PackageSpec& spec) const { return this->buildtrees() / spec.name(); }
-    Path VcpkgPaths::build_dir(StringView package_name) const { return this->buildtrees() / package_name.data(); }
+    Path VcpkgPaths::build_dir(StringView package_name) const { return this->buildtrees() / package_name.to_string(); }
 
     Path VcpkgPaths::build_info_file_path(const PackageSpec& spec) const
     {
@@ -895,7 +895,7 @@ namespace vcpkg
     const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
         return m_pimpl->m_triplets_cache.get_lazy(
-            triplet, [&]() -> auto {
+            triplet, [&]() -> auto{
                 for (const auto& triplet_dir : m_pimpl->triplets_dirs)
                 {
                     auto path = triplet_dir / (triplet.canonical_name() + ".cmake");
@@ -911,15 +911,19 @@ namespace vcpkg
     }
 
     const ToolCache& VcpkgPaths::get_tool_cache() const { return *m_pimpl->m_tool_cache; }
-    const Path& VcpkgPaths::get_tool_exe(StringView tool) const { return m_pimpl->m_tool_cache->get_tool_path(tool); }
-    const std::string& VcpkgPaths::get_tool_version(StringView tool) const
+    const Path& VcpkgPaths::get_tool_exe(StringView tool, MessageSink& status_messages) const
     {
-        return m_pimpl->m_tool_cache->get_tool_version(tool);
+        return m_pimpl->m_tool_cache->get_tool_path(tool, status_messages);
+    }
+    const std::string& VcpkgPaths::get_tool_version(StringView tool, MessageSink& status_messages) const
+    {
+        return m_pimpl->m_tool_cache->get_tool_version(tool, status_messages);
     }
 
-    const IGit& VcpkgPaths::get_git_impl() const
+    const IGit& VcpkgPaths::get_git_impl(MessageSink& sink) const
     {
-        return *m_pimpl->m_git_impl.get_lazy([this]() { return make_git_from_exe(get_tool_exe(Tools::GIT)); }).get();
+        return *m_pimpl->m_git_impl.get_lazy(
+            [this, &sink]() { return make_git_from_exe(get_tool_exe(Tools::GIT, sink)); });
     }
 
     GitConfig VcpkgPaths::git_builtin_config() const
@@ -949,7 +953,7 @@ namespace vcpkg
         }
         else
         {
-            auto pretty_commit = get_git_impl().show_pretty_commit(git_builtin_config(), "HEAD");
+            auto pretty_commit = get_git_impl(stdout_sink).show_pretty_commit(git_builtin_config(), "HEAD");
             if (auto output = pretty_commit.get())
             {
                 Strings::append(ret, "    vcpkg-scripts version: ", *output, "\n");

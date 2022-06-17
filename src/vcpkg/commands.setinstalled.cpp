@@ -164,7 +164,8 @@ namespace vcpkg::Commands::SetInstalled
             Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads ? Install::KeepGoing::YES
                                                                                         : Install::KeepGoing::NO;
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PortFileProvider::PathsPortFileProvider provider(
+            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         Optional<Path> pkgsconfig;

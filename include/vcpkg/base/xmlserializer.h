@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 
 #include <string>

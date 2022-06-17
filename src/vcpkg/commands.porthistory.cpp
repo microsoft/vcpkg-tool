@@ -65,7 +65,7 @@ namespace vcpkg::Commands::PortHistory
                                                                 const std::string& commit_date,
                                                                 const std::string& port_name)
         {
-            const auto& git_impl = paths.get_git_impl();
+            const auto& git_impl = paths.get_git_impl(stdout_sink);
             const auto config = paths.git_builtin_config();
             auto rev_parse_output = git_impl.rev_parse(config, Strings::concat(commit_id, ":ports/", port_name));
             if (const auto git_tree = rev_parse_output.get())
@@ -91,7 +91,7 @@ namespace vcpkg::Commands::PortHistory
 
         std::vector<HistoryVersion> read_versions_from_log(const VcpkgPaths& paths, const std::string& port_name)
         {
-            auto results = paths.get_git_impl()
+            auto results = paths.get_git_impl(stdout_sink)
                                .log(paths.git_builtin_config(), Strings::format("ports/%s/.", port_name))
                                .value_or_exit(VCPKG_LINE_INFO);
 
@@ -112,29 +112,31 @@ namespace vcpkg::Commands::PortHistory
                     }
                 }
             }
+
             return ret;
         }
-    }
 
-    static constexpr StringLiteral OPTION_OUTPUT_FILE = "output";
+        static constexpr StringLiteral OPTION_OUTPUT_FILE = "output";
 
-    static const CommandSetting HISTORY_SETTINGS[] = {
-        {OPTION_OUTPUT_FILE, "Write output to a file"},
-    };
+        static const CommandSetting HISTORY_SETTINGS[] = {
+            {OPTION_OUTPUT_FILE, "Write output to a file"},
+        };
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("history <port>"),
-        1,
-        1,
-        {{}, {HISTORY_SETTINGS}, {}},
-        nullptr,
-    };
+        const CommandStructure COMMAND_STRUCTURE = {
+            create_example_string("history <port>"),
+            1,
+            1,
+            {{}, {HISTORY_SETTINGS}, {}},
+            nullptr,
+        };
 
-    static Optional<std::string> maybe_lookup(std::map<std::string, std::string, std::less<>> const& m, StringView key)
-    {
-        const auto it = m.find(key);
-        if (it != m.end()) return it->second;
-        return nullopt;
+        static Optional<std::string> maybe_lookup(std::map<std::string, std::string, std::less<>> const& m,
+                                                  StringView key)
+        {
+            const auto it = m.find(key);
+            if (it != m.end()) return it->second;
+            return nullopt;
+        }
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)

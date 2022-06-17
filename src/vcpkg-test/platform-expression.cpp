@@ -447,11 +447,8 @@ TEST_CASE ("operator keywords in identifiers", "[platform-expression]")
 {
     // Operator keywords ("and","not") require a break to separate them from identifiers
     // In these cases, strings containing an operator keyword parse as an identifier, not as a unary/binary expression
-    auto m_expr1 = parse_expr("!windowsandandroid");
-    CHECK(m_expr1);
-
-    auto m_expr2 = parse_expr("notwindows");
-    CHECK(m_expr2);
+    CHECK(parse_expr("!windowsandandroid"));
+    CHECK(parse_expr("notwindows"));
 }
 
 TEST_CASE ("operator keywords without whitepace", "[platform-expression]")
@@ -503,169 +500,73 @@ TEST_CASE ("operator keywords without whitepace", "[platform-expression]")
 
 TEST_CASE ("invalid logic expression, unexpected character", "[platform-expression]")
 {
-    auto m_expr = parse_expr("windows arm");
-    CHECK_FALSE(m_expr);
+    CHECK_FALSE(parse_expr("windows arm"));
 }
 
 TEST_CASE ("invalid logic expression, use '|' instead of 'or'", "[platform-expression]")
 {
-    auto m_expr = parse_expr("windows or arm");
-    CHECK_FALSE(m_expr);
+    CHECK_FALSE(parse_expr("windows or arm"));
 }
 
 TEST_CASE ("unexpected character or identifier in logic expression", "[platform-expression]")
 {
     CHECK_FALSE(parse_expr("windows aND arm"));
-
-    {
-        auto m_expr = parse_expr("windows a&d arm");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("windows oR arm");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("windows o|r arm");
-        CHECK_FALSE(m_expr);
-    }
+    CHECK_FALSE(parse_expr("windows a&d arm"));
+    CHECK_FALSE(parse_expr("windows oR arm"));
+    CHECK_FALSE(parse_expr("windows o|r arm"));
 }
 
 TEST_CASE ("unexpected identifier in logic expression", "[platform-expression]")
 {
-    {
-        auto m_expr = parse_expr("windows amd arm");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("windows andsynonym arm");
-        CHECK_FALSE(m_expr);
-    }
+    CHECK_FALSE(parse_expr("windows amd arm"));
+    CHECK_FALSE(parse_expr("windows andsynonym arm"));
 }
 
 TEST_CASE ("missing closing )", "[platform-expression]")
 {
-    {
-        auto m_expr = parse_expr("(windows & arm | linux");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("( (windows & arm) | (osx & arm64) | linux");
-        CHECK_FALSE(m_expr);
-    }
+    CHECK_FALSE(parse_expr("(windows & arm | linux"));
+    CHECK_FALSE(parse_expr("( (windows & arm) | (osx & arm64) | linux"));
 }
 
 TEST_CASE ("missing or invalid identifier", "[platform-expression]")
 {
-    {
-        auto m_expr = parse_expr("!");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("w!ndows");
-        CHECK_FALSE(m_expr);
-    }
+    CHECK_FALSE(parse_expr("!"));
+    CHECK_FALSE(parse_expr("w!ndows"));
 }
 
 TEST_CASE ("mixing & and | is not allowed", "[platform-expression]")
 {
-    {
-        auto m_expr = parse_expr("windows & arm | linux");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("windows | !arm & linux");
-        CHECK_FALSE(m_expr);
-    }
+    CHECK_FALSE(parse_expr("windows & arm | linux"));
+    CHECK_FALSE(parse_expr("windows | !arm & linux"));
 }
 
 TEST_CASE ("invalid expression, no binary operator", "[platform-expression]")
 {
-    {
-        auto m_expr = parse_expr("windows linux");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("windows x64");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("!windows x86");
-        CHECK_FALSE(m_expr);
-    }
+    CHECK_FALSE(parse_expr("windows linux"));
+    CHECK_FALSE(parse_expr("windows x64"));
+    CHECK_FALSE(parse_expr("!windows x86"));
 }
 
 TEST_CASE ("invalid expression, missing binary operand", "[platform-expression]")
 {
-    {
-        auto m_expr = parse_expr("windows & ");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr(" | arm");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("windows & !arm & ");
-        CHECK_FALSE(m_expr);
-    }
+    CHECK_FALSE(parse_expr("windows & "));
+    CHECK_FALSE(parse_expr(" | arm"));
+    CHECK_FALSE(parse_expr("windows & !arm & "));
 }
 
 TEST_CASE ("invalid identifier", "[platform-expression]")
 {
-    auto m_expr = parse_expr("windows & x^$");
-    CHECK_FALSE(m_expr);
+    CHECK_FALSE(parse_expr("windows & x^$"));
 }
 
 TEST_CASE ("invalid alternate expressions", "[platform-expression]")
 {
-    {
-        auto m_expr = parse_expr("windows an%d arm");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("windows aNd arm");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("windows andMORE arm");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("windows and+ arm");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("windows and& arm");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("notANY windows");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("not! windows");
-        CHECK_FALSE(m_expr);
-    }
-
-    {
-        auto m_expr = parse_expr("notx64 windows");
-        CHECK_FALSE(m_expr);
-    }
+    CHECK_FALSE(parse_expr("windows an%d arm"));
+    CHECK_FALSE(parse_expr("windows aNd arm"));
+    CHECK_FALSE(parse_expr("windows andMORE arm"));
+    CHECK_FALSE(parse_expr("windows and+ arm"));
+    CHECK_FALSE(parse_expr("windows and& arm"));
+    CHECK_FALSE(parse_expr("notANY windows"));
+    CHECK_FALSE(parse_expr("not! windows"));
+    CHECK_FALSE(parse_expr("notx64 windows"));
 }

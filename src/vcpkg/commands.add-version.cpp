@@ -495,7 +495,7 @@ namespace vcpkg::Commands::AddVersion
 
         // Find ports with uncommited changes
         std::set<std::string> changed_ports;
-        auto maybe_changes = git_ports_with_uncommitted_changes(paths.get_git_impl(), git_config);
+        auto maybe_changes = git_ports_with_uncommitted_changes(paths.get_git_impl(stdout_sink), git_config);
         if (auto changes = maybe_changes.get())
         {
             changed_ports.insert(changes->begin(), changes->end());
@@ -517,7 +517,7 @@ namespace vcpkg::Commands::AddVersion
             }
 
             auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
-            if (!maybe_scf.has_value())
+            if (!maybe_scf)
             {
                 msg::println_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
                 print_error_message(maybe_scf.error());

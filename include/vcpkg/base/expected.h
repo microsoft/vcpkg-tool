@@ -14,6 +14,11 @@
 
 namespace vcpkg
 {
+    struct Unit
+    {
+        // A meaningless type intended to be used with Expected when there is no meaningful value.
+    };
+
     struct ExpectedLeftTag
     {
     };
