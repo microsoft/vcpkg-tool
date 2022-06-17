@@ -41,12 +41,13 @@ namespace vcpkg
                           "Cannot convert incompatible ranges");
         }
 
-        constexpr iterator begin() const { return m_ptr; }
-        constexpr iterator end() const { return m_ptr + m_count; }
+        constexpr iterator begin() const noexcept { return m_ptr; }
+        constexpr iterator end() const noexcept { return m_ptr + m_count; }
 
-        constexpr reference operator[](size_t i) const { return m_ptr[i]; }
-        constexpr pointer data() const { return m_ptr; }
-        constexpr size_t size() const { return m_count; }
+        constexpr reference operator[](size_t i) const noexcept { return m_ptr[i]; }
+        constexpr pointer data() const noexcept { return m_ptr; }
+        constexpr size_t size() const noexcept { return m_count; }
+        constexpr bool empty() const noexcept { return m_count == 0; }
 
     private:
         pointer m_ptr;

@@ -61,7 +61,7 @@ namespace
     DECLARE_AND_REGISTER_MESSAGE(BuildResultSummaryLine,
                                  (msg::build_result, msg::count),
                                  "Displayed to show a count of results of a build_result in a summary.",
-                                 "    {build_result}: {count}");
+                                 "{build_result}: {count}");
 
     DECLARE_AND_REGISTER_MESSAGE(
         BuildResultSucceeded,
@@ -143,7 +143,7 @@ namespace
                                  (),
                                  "",
                                  "The build command requires all dependencies to be already installed.\nThe following "
-                                 "dependencies are missing:\n\n");
+                                 "dependencies are missing:");
 
     DECLARE_AND_REGISTER_MESSAGE(
         BuildTroubleshootingMessage1,
@@ -163,6 +163,69 @@ namespace
         "before version information about vcpkg itself.",
         "Include '[{package_name}] Build error' in your bug report title, the following version information in your "
         "bug description, and attach any relevant failure logs from above.");
+    DECLARE_AND_REGISTER_MESSAGE(BuildTroubleshootingMessage4,
+                                 (msg::path),
+                                 "Fourth optional part of build troubleshooting message, printed after the version"
+                                 "information about vcpkg itself.",
+                                 "You can also use the prefilled template from {path}.");
+    DECLARE_AND_REGISTER_MESSAGE(DetectCompilerHash,
+                                 (msg::triplet),
+                                 "",
+                                 "Detecting compiler hash for triplet \"{triplet}\"...");
+    DECLARE_AND_REGISTER_MESSAGE(UseEnvVar,
+                                 (msg::env_var),
+                                 "An example of env_var is \"HTTP(S)_PROXY\""
+                                 "'--' at the beginning must be preserved",
+                                 "-- Using {env_var} in environment variables.");
+    DECLARE_AND_REGISTER_MESSAGE(SettingEnvVar,
+                                 (msg::env_var, msg::url),
+                                 "An example of env_var is \"HTTP(S)_PROXY\""
+                                 "'--' at the beginning must be preserved",
+                                 "-- Setting \"{env_var}\" environment variables to \"{url}\".");
+    DECLARE_AND_REGISTER_MESSAGE(AutoSettingEnvVar,
+                                 (msg::env_var, msg::url),
+                                 "An example of env_var is \"HTTP(S)_PROXY\""
+                                 "'--' at the beginning must be preserved",
+                                 "-- Automatically setting {env_var} environment variables to \"{url}\".");
+    DECLARE_AND_REGISTER_MESSAGE(ErrorDetectingCompilerInfo,
+                                 (msg::path),
+                                 "",
+                                 "while detecting compiler information:\nThe log file content at \"{path}\" is:");
+    DECLARE_AND_REGISTER_MESSAGE(
+        ErrorUnableToDetectCompilerInfo,
+        (),
+        "failure output will be displayed at the top of this",
+        "vcpkg was unable to detect the active compiler's information. See above for the CMake failure output.");
+    DECLARE_AND_REGISTER_MESSAGE(
+        UsingCommunityTriplet,
+        (msg::triplet),
+        "'--' at the beginning must be preserved",
+        "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.");
+    DECLARE_AND_REGISTER_MESSAGE(LoadingCommunityTriplet,
+                                 (msg::path),
+                                 "'-- [COMMUNITY]' at the beginning must be preserved",
+                                 "-- [COMMUNITY] Loading triplet configuration from: {path}");
+    DECLARE_AND_REGISTER_MESSAGE(LoadingOverlayTriplet,
+                                 (msg::path),
+                                 "'-- [OVERLAY]' at the beginning must be preserved",
+                                 "-- [OVERLAY] Loading triplet configuration from: {path}");
+    DECLARE_AND_REGISTER_MESSAGE(InstallingFromLocation,
+                                 (msg::path),
+                                 "'--' at the beginning must be preserved",
+                                 "-- Installing port from location: {path}");
+    DECLARE_AND_REGISTER_MESSAGE(
+        UnsupportedToolchain,
+        (msg::triplet, msg::arch, msg::path, msg::list),
+        "example for {list} is 'x86, arm64'",
+        "in triplet {triplet}: Unable to find a valid toolchain for requested target architecture {arch}.\n"
+        "The selected Visual Studio instance is at: {path}\n"
+        "The available toolchain combinations are: {list}");
+
+    DECLARE_AND_REGISTER_MESSAGE(UnsupportedSystemName,
+                                 (msg::system_name),
+                                 "",
+                                 "Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
+                                 "Supported system names are '', 'Windows' and 'WindowsStore'.");
 }
 
 namespace vcpkg
@@ -268,7 +331,7 @@ namespace vcpkg::Build
             LocalizedString errorMsg = msg::format(msg::msgErrorMessage).append(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
-                errorMsg.append_indent().append_raw(p.to_string()).appendnl();
+                errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
             }
 
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);
@@ -281,13 +344,13 @@ namespace vcpkg::Build
             LocalizedString warnings;
             for (auto&& msg : action->build_failure_messages)
             {
-                warnings.append(msg).appendnl();
+                warnings.append(msg).append_raw('\n');
             }
             if (!warnings.data().empty())
             {
                 msg::print(Color::warning, warnings);
             }
-            msg::print(Color::error, Build::create_error_message(result, spec));
+            msg::println_error(Build::create_error_message(result, spec));
             msg::print(Build::create_user_troubleshooting_message(*action, paths));
             return 1;
         }
@@ -308,7 +371,8 @@ namespace vcpkg::Build
         const FullPackageSpec spec = Input::check_and_get_full_package_spec(
             std::move(first_arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
 
-        PathsPortFileProvider provider(paths, args.overlay_ports);
+        PortFileProvider::PathsPortFileProvider provider(
+            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
         return perform_ex(args, spec, host_triplet, provider, binary_cache, Build::null_build_logs_recorder(), paths);
     }
 
@@ -402,7 +466,7 @@ namespace vcpkg::Build
         }
     }
 
-    Optional<LinkageType> to_linkage_type(const std::string& str)
+    Optional<LinkageType> to_linkage_type(StringView str)
     {
         if (str == "dynamic") return LinkageType::DYNAMIC;
         if (str == "static") return LinkageType::STATIC;
@@ -415,36 +479,17 @@ namespace vcpkg::Build
         static const std::string LIBRARY_LINKAGE = "LibraryLinkage";
     }
 
-    DECLARE_AND_REGISTER_MESSAGE(
-        UnsupportedToolchain,
-        (msg::triplet, msg::arch, msg::path, msg::list),
-        "example for {list} is 'x86, arm64'",
-        "Error: in triplet {triplet}: Unable to find a valid toolchain combination.\n    The requested target "
-        "architecture was {arch}\n    "
-        "The selected Visual Studio instance is at {path}\n    The available toolchain combinations are {list}\n");
-
-    DECLARE_AND_REGISTER_MESSAGE(
-        UnsupportedSystemName,
-        (msg::system_name),
-        "",
-        "Error: Could not map VCPKG_CMAKE_SYSTEM_NAME '{system_name}' to a vcvarsall platform. "
-        "Supported system names are '', 'Windows' and 'WindowsStore'.");
-
 #if defined(_WIN32)
-    static ZStringView to_vcvarsall_target(const std::string& cmake_system_name)
+    static ZStringView to_vcvarsall_target(StringView cmake_system_name)
     {
         if (cmake_system_name.empty()) return "";
         if (cmake_system_name == "Windows") return "";
         if (cmake_system_name == "WindowsStore") return "store";
 
-        msg::println(Color::error, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
-
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
     }
 
-    static ZStringView to_vcvarsall_toolchain(const std::string& target_architecture,
-                                              const Toolset& toolset,
-                                              Triplet triplet)
+    static ZStringView to_vcvarsall_toolchain(StringView target_architecture, const Toolset& toolset, Triplet triplet)
     {
         auto maybe_target_arch = to_cpu_architecture(target_architecture);
         Checks::check_maybe_upgrade(
@@ -469,11 +514,11 @@ namespace vcpkg::Build
         const auto toolset_list = Strings::join(
             ", ", toolset.supported_architectures, [](const ToolsetArchOption& t) { return t.name.c_str(); });
 
-        msg::println(msgUnsupportedToolchain,
-                     msg::triplet = triplet,
-                     msg::arch = target_architecture,
-                     msg::path = toolset.visual_studio_root_path,
-                     msg::list = toolset_list);
+        msg::println_error(msgUnsupportedToolchain,
+                           msg::triplet = triplet,
+                           msg::arch = target_architecture,
+                           msg::path = toolset.visual_studio_root_path,
+                           msg::list = toolset_list);
         msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
@@ -503,7 +548,7 @@ namespace vcpkg::Build
                 VcpkgCmdArguments::RECURSIVE_DATA_ENV,
             };
 
-            for (auto var : s_extra_vars)
+            for (const auto& var : s_extra_vars)
             {
                 auto val = get_environment_variable(var);
                 if (auto p_val = val.get()) env.emplace(var, *p_val);
@@ -526,7 +571,7 @@ namespace vcpkg::Build
 
             if (proxy_from_env)
             {
-                print2("-- Using HTTP(S)_PROXY in environment variables.\n");
+                msg::println(msgUseEnvVar, msg::env_var = "HTTP(S)_PROXY");
             }
             else
             {
@@ -566,20 +611,20 @@ namespace vcpkg::Build
 
                                 protocol = Strings::concat(Strings::ascii_to_uppercase(protocol.c_str()), "_PROXY");
                                 env.emplace(protocol, address);
-                                print2("-- Setting ", protocol, " environment variables to ", address, "\n");
+                                msg::println(msgSettingEnvVar, msg::env_var = protocol, msg::url = address);
                             }
                         }
                     }
                     // Specified http:// prefix
                     else if (Strings::starts_with(server, "http://"))
                     {
-                        print2("-- Setting HTTP_PROXY environment variables to ", server, "\n");
+                        msg::println(msgSettingEnvVar, msg::env_var = "HTTP_PROXY", msg::url = server);
                         env.emplace("HTTP_PROXY", server);
                     }
                     // Specified https:// prefix
                     else if (Strings::starts_with(server, "https://"))
                     {
-                        print2("-- Setting HTTPS_PROXY environment variables to ", server, "\n");
+                        msg::println(msgSettingEnvVar, msg::env_var = "HTTPS_PROXY", msg::url = server);
                         env.emplace("HTTPS_PROXY", server);
                     }
                     // Most common case: "ip:port" style, apply to HTTP and HTTPS proxies.
@@ -590,7 +635,7 @@ namespace vcpkg::Build
                     // We simply set "ip:port" to HTTP(S)_PROXY variables because it works on most common cases.
                     else
                     {
-                        print2("-- Automatically setting HTTP(S)_PROXY environment variables to ", server, "\n");
+                        msg::println(msgAutoSettingEnvVar, msg::env_var = "HTTP(S)_PROXY", msg::url = server);
 
                         env.emplace("HTTP_PROXY", server.c_str());
                         env.emplace("HTTPS_PROXY", server.c_str());
@@ -601,7 +646,7 @@ namespace vcpkg::Build
         });
 
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
-            const Path& powershell_exe_path = paths.get_tool_exe("powershell-core");
+            const Path& powershell_exe_path = paths.get_tool_exe("powershell-core", stdout_sink);
             auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
             if (build_env_cmd.empty())
                 return clean_env;
@@ -759,17 +804,15 @@ namespace vcpkg::Build
                                   {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
                                   {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
                               });
-        if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
-        {
-            const Path& git_exe_path = paths.get_tool_exe(Tools::GIT);
-            out_vars.push_back({"GIT", git_exe_path});
-        }
+        // Make sure GIT could be found
+        const Path& git_exe_path = paths.get_tool_exe(Tools::GIT, stdout_sink);
+        out_vars.push_back({"GIT", git_exe_path});
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
     {
         auto triplet = abi_info.pre_build_info->triplet;
-        print2("Detecting compiler hash for triplet ", triplet, "...\n");
+        msg::println(msgDetectCompilerHash, msg::triplet = triplet);
         auto buildpath = paths.buildtrees() / "detect_compiler";
 
         std::vector<CMakeVariable> cmake_args{
@@ -790,7 +833,7 @@ namespace vcpkg::Build
         CompilerInfo compiler_info;
         std::string buf;
 
-        int rc;
+        ExpectedL<int> rc = LocalizedString();
         {
             const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             rc = cmd_execute_and_stream_lines(
@@ -824,7 +867,7 @@ namespace vcpkg::Build
                 env);
         } // close out_file
 
-        if (compiler_info.hash.empty() || rc != 0)
+        if (compiler_info.hash.empty() || !succeeded(rc))
         {
             Debug::print("Compiler information tracking can be disabled by passing --",
                          VcpkgCmdArguments::FEATURE_FLAGS_ARG,
@@ -832,10 +875,9 @@ namespace vcpkg::Build
                          VcpkgCmdArguments::COMPILER_TRACKING_FEATURE,
                          "\n");
 
-            print2("Error: while detecting compiler information:\nThe log content at ", stdoutlog, " is:\n", buf);
-            Checks::exit_with_message(VCPKG_LINE_INFO,
-                                      "Error: vcpkg was unable to detect the active compiler's information. See above "
-                                      "for the CMake failure output.");
+            msg::println_error(msgErrorDetectingCompilerInfo, msg::path = stdoutlog);
+            msg::write_unlocalized_text_to_stdout(Color::none, buf);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorUnableToDetectCompilerInfo);
         }
 
         Debug::print("Detected compiler hash for triplet ", triplet, ": ", compiler_info.hash, "\n");
@@ -870,10 +912,10 @@ namespace vcpkg::Build
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
-            variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2)});
+            variables.push_back({"ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink)});
         }
 
-        for (auto cmake_arg : args.cmake_args)
+        for (const auto& cmake_arg : args.cmake_args)
         {
             variables.push_back(CMakeVariable{cmake_arg});
         }
@@ -1025,19 +1067,17 @@ namespace vcpkg::Build
 
         if (Strings::starts_with(triplet_file_path, paths.community_triplets))
         {
-            vcpkg::printf(vcpkg::Color::warning,
-                          "-- Using community triplet %s. This triplet configuration is not guaranteed to succeed.\n",
-                          triplet.canonical_name());
-            vcpkg::printf("-- [COMMUNITY] Loading triplet configuration from: %s\n", triplet_file_path);
+            msg::println_warning(msgUsingCommunityTriplet, msg::triplet = triplet.canonical_name());
+            msg::println(msgLoadingCommunityTriplet, msg::path = triplet_file_path);
         }
         else if (!Strings::starts_with(triplet_file_path, paths.triplets))
         {
-            vcpkg::printf("-- [OVERLAY] Loading triplet configuration from: %s\n", triplet_file_path);
+            msg::println(msgLoadingOverlayTriplet, msg::path = triplet_file_path);
         }
 
         if (!Strings::starts_with(scfl.source_location, paths.builtin_ports_directory()))
         {
-            vcpkg::printf("-- Installing port from location: %s\n", scfl.source_location);
+            msg::println(msgInstallingFromLocation, msg::path = scfl.source_location);
         }
 
         const auto timer = ElapsedTimer::create_started();
@@ -1050,7 +1090,7 @@ namespace vcpkg::Build
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
-        int return_code;
+        ExpectedL<int> return_code = LocalizedString();
         {
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(
@@ -1088,11 +1128,18 @@ namespace vcpkg::Build
                                                        }) +
                                          "]",
                                      buildtimeus);
-            if (return_code != 0)
+            if (!succeeded(return_code))
             {
                 metrics->track_property("error", "build failed");
                 metrics->track_property("build_error", spec_string);
-                return ExtendedBuildResult{BuildResult::BUILD_FAILED};
+                const auto logs = buildpath / Strings::concat("error-logs-", action.spec.triplet(), ".txt");
+                std::vector<std::string> error_logs;
+                if (fs.exists(logs, VCPKG_LINE_INFO))
+                {
+                    error_logs = fs.read_lines(logs, VCPKG_LINE_INFO);
+                    Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
+                }
+                return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
             }
         }
 
@@ -1260,10 +1307,11 @@ namespace vcpkg::Build
             }
         }
 
-        abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE));
+        abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
 
+        // This #ifdef is mirrored in tools.cpp's PowershellProvider
 #if defined(_WIN32)
-        abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core"));
+        abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", stdout_sink));
 #endif
 
         auto& helpers = paths.get_cmake_script_hashes();
@@ -1485,8 +1533,8 @@ namespace vcpkg::Build
     {
         if (count != 0)
         {
-            msg::println(
-                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count);
+            msg::println(LocalizedString().append_indent().append(
+                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count));
         }
     }
 
@@ -1542,41 +1590,121 @@ namespace vcpkg::Build
 
     LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec)
     {
-        auto res = msg::format(msg::msgErrorMessage)
-                       .append(msgBuildingPackageFailed,
+        auto res = msg::format(msgBuildingPackageFailed,
                                msg::spec = spec,
                                msg::build_result = to_string_locale_invariant(build_result.code));
 
         if (build_result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            res.appendnl().append_indent().append(msgBuildingPackageFailedDueToMissingDeps);
+            res.append_raw('\n').append_indent().append(msgBuildingPackageFailedDueToMissingDeps);
 
             for (const auto& missing_spec : build_result.unmet_dependencies)
             {
-                res.appendnl().append_indent(2).append_raw(missing_spec.to_string());
+                res.append_raw('\n').append_indent(2).append_raw(missing_spec.to_string());
             }
         }
 
-        res.appendnl();
         return res;
     }
 
-    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
+    std::string create_github_issue(const VcpkgCmdArguments& args,
+                                    const ExtendedBuildResult& build_result,
+                                    const VcpkgPaths& paths,
+                                    const InstallPlanAction& action)
     {
+        const auto& fs = paths.get_filesystem();
+        const auto create_log_details = [&fs](vcpkg::Path&& path) {
+            constexpr auto MAX_LOG_LENGTH = 20'000;
+            constexpr auto START_BLOCK_LENGTH = 3'000;
+            constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
+            constexpr auto END_BLOCK_LENGTH = 13'000;
+            constexpr auto END_BLOCK_MAX_LENGTH = 15'000;
+            auto log = fs.read_contents(path, VCPKG_LINE_INFO);
+            if (log.size() > MAX_LOG_LENGTH)
+            {
+                auto first_block_end = log.find_first_of('\n', START_BLOCK_LENGTH);
+                if (first_block_end == std::string::npos || first_block_end > START_BLOCK_MAX_LENGTH)
+                    first_block_end = START_BLOCK_LENGTH;
+
+                auto last_block_end = log.find_last_of('\n', log.size() - END_BLOCK_LENGTH);
+                if (last_block_end == std::string::npos || last_block_end < log.size() - END_BLOCK_MAX_LENGTH)
+                    last_block_end = log.size() - END_BLOCK_LENGTH;
+
+                auto skipped_lines = std::count(log.begin() + first_block_end, log.begin() + last_block_end, '\n');
+                log = log.substr(0, first_block_end) + "\n...\nSkipped " + std::to_string(skipped_lines) +
+                      " lines\n...\n" + log.substr(last_block_end);
+            }
+            while (!log.empty() && log.back() == '\n')
+                log.pop_back();
+            return Strings::concat(
+                "<details><summary>", path.native(), "</summary>\n\n```\n", log, "\n```\n</details>");
+        };
+        const auto manifest =
+            paths.get_manifest()
+                .map([](const ManifestAndPath& manifest) {
+                    return Strings::concat("<details><summary>vcpkg.json</summary>\n\n```\n",
+                                           Json::stringify(manifest.manifest, Json::JsonStyle::with_spaces(2)),
+                                           "\n```\n</details>\n");
+                })
+                .value_or("");
+
+        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
+        return Strings::concat(
+            "Package: ",
+            action.displayname(),
+            " -> ",
+            action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
+            "\n**Host Environment**",
+            "\n- Host: ",
+            to_zstring_view(get_host_processor()),
+            '-',
+            get_host_os_name(),
+            "\n- Compiler: ",
+            compiler_info.id,
+            " ",
+            compiler_info.version,
+            "\n-",
+            paths.get_toolver_diagnostics(),
+            "\n\n**To Reproduce**\n",
+            Strings::concat("`vcpkg ", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
+            "\n\n**Failure logs**\n```\n",
+            paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
+                                                 VCPKG_LINE_INFO),
+            "\n```\n",
+            Strings::join("\n", Util::fmap(build_result.error_logs, create_log_details)),
+            "\n\n**Additional context**\n",
+            manifest);
+    }
+
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+                                                        const VcpkgPaths& paths,
+                                                        Optional<Path>&& issue_body)
+    {
+        std::string package = action.displayname();
+        if (auto scfl = action.source_control_file_and_location.get())
+        {
+            Strings::append(package, " -> ", scfl->to_version());
+        }
         const auto& spec_name = action.spec.name();
-        LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).appendnl();
+        LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
         result.append_indent()
             .append_raw("https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+")
             .append_raw(spec_name)
-            .appendnl();
-        result.append(msgBuildTroubleshootingMessage2).appendnl();
+            .append_raw('\n');
+        result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
         result.append_indent()
             .append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
                             "new?template=report-package-build-failure.md&title=[{}]+Build+error",
                             spec_name)
-            .appendnl();
-        result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).appendnl();
-        result.append_raw(paths.get_toolver_diagnostics()).appendnl();
+            .append_raw('\n');
+        result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
+        result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
+        if (issue_body)
+        {
+            result.append(msgBuildTroubleshootingMessage4, msg::path = issue_body.value_or_exit(VCPKG_LINE_INFO))
+                .append_raw('\n');
+        }
         return result;
     }
 
@@ -1619,8 +1747,8 @@ namespace vcpkg::Build
         std::string version = parser.optional_field("Version");
         if (!version.empty()) build_info.version = std::move(version);
 
-        std::map<BuildPolicy, bool> policies;
-        for (auto policy : ALL_POLICIES)
+        std::unordered_map<BuildPolicy, bool> policies;
+        for (const auto& policy : ALL_POLICIES)
         {
             const auto setting = parser.optional_field(to_string(policy));
             if (setting.empty()) continue;
@@ -1647,8 +1775,11 @@ namespace vcpkg::Build
     BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
     {
         const ExpectedS<Paragraph> pghs = Paragraphs::get_single_paragraph(fs, filepath);
-        Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, pghs.get() != nullptr, "Invalid BUILD_INFO file for package: %s", pghs.error());
+        if (!pghs)
+        {
+            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO, "Invalid BUILD_INFO file for package: %s", pghs.error());
+        }
+
         return inner_create_buildinfo(*pghs.get());
     }
 
@@ -1794,6 +1925,12 @@ namespace vcpkg::Build
     }
 
     ExtendedBuildResult::ExtendedBuildResult(BuildResult code) : code(code) { }
+    ExtendedBuildResult::ExtendedBuildResult(BuildResult code,
+                                             vcpkg::Path stdoutlog,
+                                             std::vector<std::string>&& error_logs)
+        : code(code), stdoutlog(stdoutlog), error_logs(error_logs)
+    {
+    }
     ExtendedBuildResult::ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf)
         : code(code), binary_control_file(std::move(bcf))
     {

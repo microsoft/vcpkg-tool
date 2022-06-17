@@ -499,7 +499,7 @@ jobs:
           tagSource: manual
           tag: $(VCPKG_BASE_VERSION)
           assets: "$(Build.ArtifactStagingDirectory)\\drop\\*"
-          addChangeLog: true
+          addChangeLog: false
           compareWith: 'lastFullRelease'
     - task: MicroBuildCleanup@1
       condition: succeededOrFailed()

@@ -3,12 +3,20 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <ctime>
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
+#endif
+
+#if defined(_WIN32)
+// needed for mingw
+#include <processenv.h>
+#else
+extern char** environ;
 #endif
 
 namespace
@@ -219,6 +227,32 @@ namespace vcpkg
             Checks::check_exit(VCPKG_LINE_INFO, unsetenv(varname.c_str()) == 0);
         }
 #endif
+    }
+
+    std::string get_environment_variables()
+    {
+        std::string result;
+#if defined(_WIN32)
+        const struct EnvironmentStringsW
+        {
+            LPWCH strings;
+            EnvironmentStringsW() : strings(GetEnvironmentStringsW()) { Checks::check_exit(VCPKG_LINE_INFO, strings); }
+            ~EnvironmentStringsW() { FreeEnvironmentStringsW(strings); }
+        } env_block;
+
+        size_t len;
+        for (LPWCH i = env_block.strings; *i; i += len + 1)
+        {
+            len = wcslen(i);
+            result.append(Strings::to_utf8(i, len)).push_back('\n');
+        }
+#else
+        for (char** s = environ; *s; s++)
+        {
+            result.append(*s).push_back('\n');
+        }
+#endif
+        return result;
     }
 
     const ExpectedS<Path>& get_home_dir() noexcept
@@ -444,6 +478,23 @@ namespace vcpkg
         }
 
         return nullopt;
+    }
+
+    std::string get_host_os_name()
+    {
+#if defined(_WIN32)
+        return "windows";
+#elif defined(__APPLE__)
+        return "osx";
+#elif defined(__FreeBSD__)
+        return "freebsd";
+#elif defined(__OpenBSD__)
+        return "openbsd";
+#elif defined(__linux__)
+        return "linux";
+#else
+        return "unknown"
+#endif
     }
 }
 

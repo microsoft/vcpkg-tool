@@ -46,9 +46,7 @@ namespace vcpkg::Commands
         download_manager.download_file(fs, bundle_uri, bundle_tarball, nullopt);
 #endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA
 
-        auto tool_cache = get_tool_cache(RequireExactVersions::NO);
-        const auto tar = tool_cache->get_tool_path_from_system(fs, Tools::TAR);
-        extract_tar(tar, bundle_tarball, vcpkg_root);
+        extract_tar(find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), bundle_tarball, vcpkg_root);
         fs.remove(bundle_tarball, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }

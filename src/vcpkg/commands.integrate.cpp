@@ -414,7 +414,7 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
     {
         auto& fs = paths.get_filesystem();
 
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
 
         const Path& buildsystems_dir = paths.buildsystems;
         const auto tmp_dir = buildsystems_dir / "tmp";
@@ -440,12 +440,15 @@ CMake projects should use: "-DCMAKE_TOOLCHAIN_FILE=%s"
                             .string_arg(buildsystems_dir)
                             .string_arg(nuspec_file_path);
 
-        const int exit_code =
-            cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()).exit_code;
+        const auto maybe_nuget_output = flatten(
+            cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()), Tools::NUGET);
+        if (!maybe_nuget_output)
+        {
+            Checks::exit_with_message(
+                VCPKG_LINE_INFO, "Error: NuGet package creation failed: %s\n", maybe_nuget_output.error());
+        }
 
         const auto nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, exit_code == 0, "Error: NuGet package creation failed with exit code: %d", exit_code);
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(nuget_package, IgnoreErrors{}),
                            "Error: NuGet package creation \"succeeded\", but no .nupkg was produced. Expected %s",
@@ -472,14 +475,14 @@ With a project open, go to Tools->NuGet Package Manager->Package Manager Console
         static constexpr StringLiteral TITLE = "PowerShell Tab-Completion";
         const auto script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
 
-        const auto& ps = paths.get_tool_exe("powershell-core");
+        const auto& ps = paths.get_tool_exe("powershell-core", stdout_sink);
         auto cmd = Command(ps)
                        .string_arg("-NoProfile")
                        .string_arg("-ExecutionPolicy")
                        .string_arg("Bypass")
                        .string_arg("-Command")
                        .string_arg(Strings::format("& {& '%s' }", script_path));
-        const int rc = cmd_execute(cmd);
+        const int rc = cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
             vcpkg::printf(Color::error,

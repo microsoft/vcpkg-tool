@@ -313,7 +313,8 @@ namespace vcpkg::Commands::DependInfo
                 std::string{arg}, default_triplet, COMMAND_STRUCTURE.example_text, paths);
         });
 
-        PathsPortFileProvider provider(paths, args.overlay_ports);
+        PortFileProvider::PathsPortFileProvider provider(
+            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 

@@ -255,19 +255,20 @@ namespace vcpkg
             return "{}";
         }
 
-        auto getmac = cmd_execute_and_capture_output(Command("getmac"));
-
-        if (getmac.exit_code != 0) return "0";
-
-        auto found_mac = find_first_nonzero_mac(getmac.output);
-        if (auto p = found_mac.get())
+        auto maybe_getmac = cmd_execute_and_capture_output(Command("getmac"));
+        if (auto getmac = maybe_getmac.get())
         {
-            return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
+            if (getmac->exit_code == 0)
+            {
+                auto found_mac = find_first_nonzero_mac(getmac->output);
+                if (auto p = found_mac.get())
+                {
+                    return Hash::get_string_hash(*p, Hash::Algorithm::Sha256);
+                }
+            }
         }
-        else
-        {
-            return "0";
-        }
+
+        return "0";
     }
 #endif
 
