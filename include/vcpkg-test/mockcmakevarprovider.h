@@ -18,12 +18,18 @@ namespace vcpkg::Test
                 dep_info_vars.emplace(spec, SMap{});
         }
 
-        void load_tag_vars(Span<const FullPackageSpec> specs,
-                           const PortFileProvider::PortFileProvider& port_provider,
-                           Triplet host_triplet) const override
+        void load_tag_vars_and_triplet_hash(Span<const FullPackageSpec> specs,
+                                            const PortFileProvider::PortFileProvider& port_provider,
+                                            Triplet host_triplet) const override
         {
             for (auto&& spec : specs)
+            {
                 tag_vars.emplace(spec.package_spec, SMap{});
+                triplet_hashs.emplace(
+                    spec.package_spec,
+                    Strings::concat("fake hash for ", spec.package_spec.triplet(), " host:", host_triplet));
+            }
+
             (void)(port_provider);
             (void)(host_triplet);
         }
@@ -37,8 +43,11 @@ namespace vcpkg::Test
         Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
             const PackageSpec& spec) const override;
 
+        Optional<std::string> get_triplet_hash(const PackageSpec& spec) const override;
+
         mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> dep_info_vars;
         mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> tag_vars;
+        mutable std::unordered_map<PackageSpec, std::string> triplet_hashs;
         mutable std::unordered_map<Triplet, std::unordered_map<std::string, std::string>> generic_triplet_vars;
     };
 }

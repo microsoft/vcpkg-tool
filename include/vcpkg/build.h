@@ -367,7 +367,7 @@ namespace vcpkg::Build
     {
         std::unique_ptr<PreBuildInfo> pre_build_info;
         Optional<const Toolset&> toolset;
-        Optional<const std::string&> triplet_abi;
+        Optional<std::string> triplet_abi;
         std::string package_abi;
         Optional<Path> abi_tag_file;
         Optional<const CompilerInfo&> compiler_info;
@@ -386,13 +386,12 @@ namespace vcpkg::Build
         explicit EnvCache(bool compiler_tracking) : m_compiler_tracking(compiler_tracking) { }
 
         const Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
-        const std::string& get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
+        const std::string& get_toolchain_abi(const VcpkgPaths& paths, const AbiInfo& abi_info);
         const CompilerInfo& get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
 
     private:
         struct TripletMapEntry
         {
-            std::string hash;
             Cache<std::string, std::string> triplet_infos;
             Cache<std::string, std::string> triplet_infos_without_compiler;
             Cache<std::string, CompilerInfo> compiler_info;
@@ -400,7 +399,7 @@ namespace vcpkg::Build
         Cache<Path, TripletMapEntry> m_triplet_cache;
         Cache<Path, std::string> m_toolchain_cache;
 
-        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p);
+        const TripletMapEntry& get_triplet_cache(const Path& p);
 
 #if defined(_WIN32)
         struct EnvMapEntry
