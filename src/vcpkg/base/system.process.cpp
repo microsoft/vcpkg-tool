@@ -890,17 +890,18 @@ namespace vcpkg
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
         const auto proc_id = std::to_string(::getpid());
-        (void)env;
+
         std::string actual_cmd_line;
         if (wd.working_directory.empty())
         {
-            actual_cmd_line = Strings::format(R"(%s 2>&1)", cmd_line.command_line());
+            actual_cmd_line = Strings::format(R"(%s %s 2>&1)", env.get(), cmd_line.command_line());
         }
         else
         {
             actual_cmd_line = Command("cd")
                                   .string_arg(wd.working_directory)
                                   .raw_arg("&&")
+                                  .raw_arg(env.get())
                                   .raw_arg(cmd_line.command_line())
                                   .raw_arg("2>&1")
                                   .extract();
