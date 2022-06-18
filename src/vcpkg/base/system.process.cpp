@@ -443,18 +443,35 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>&,
                                                StringView prepend_to_path)
     {
-        std::string result;
+        Environment env;
         if (!prepend_to_path.empty())
         {
-            result = "PATH=";
-            append_shell_escaped(
-                result,
+            env.add_entry(
+                "PATH",
                 Strings::concat(prepend_to_path, ':', get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO)));
         }
 
-        return {result};
+        return env;
     }
 #endif
+
+    void Environment::add_entry(StringView key, StringView value)
+    {
+#if defined(_WIN32)
+        env_cstr.append(Strings::to_utf16(key));
+        env_cstr.push_back(L'=');
+        env_cstr.append(Strings::to_utf16(value));
+        env_cstr.push_back(L'\0');
+#else
+        Strings::append(m_env_data, key);
+        m_env_data.push_back('=');
+        append_shell_escaped(m_env_data, value);
+        m_env_data.push_back(' ');
+#endif
+    }
+
+    const Environment::string_t& Environment::get() const { return m_env_data; }
+
     const Environment& get_clean_environment()
     {
         static const Environment clean_env = get_modified_clean_environment({});
@@ -815,9 +832,9 @@ namespace vcpkg
             real_command_line_builder.raw_arg("&&");
         }
 
-        if (!env.m_env_data.empty())
+        if (!env.get().empty())
         {
-            real_command_line_builder.raw_arg(env.m_env_data);
+            real_command_line_builder.raw_arg(env.get());
         }
 
         real_command_line_builder.raw_arg(cmd_line.command_line());
@@ -1047,4 +1064,5 @@ namespace vcpkg
                     .append_raw(maybe_exit.error().to_string()),
                 expected_right_tag};
     }
+
 }

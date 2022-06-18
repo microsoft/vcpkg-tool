@@ -20,7 +20,6 @@ using namespace vcpkg;
 
 namespace
 {
-
     DECLARE_AND_REGISTER_MESSAGE(InvalidFormatString,
                                  (msg::actual),
                                  "{actual} is the provided format string",
