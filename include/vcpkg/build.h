@@ -248,7 +248,7 @@ namespace vcpkg
         Triplet triplet;
         bool load_vcvars_env = false;
         bool disable_compiler_tracking = false;
-        std::string target_architecture;
+        std::vector<std::string> target_architectures;
         std::string cmake_system_name;
         std::string cmake_system_version;
         Optional<std::string> platform_toolset;

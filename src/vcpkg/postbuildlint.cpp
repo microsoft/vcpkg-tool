@@ -534,11 +534,16 @@ namespace vcpkg::PostBuildLint
 
 #if defined(_WIN32)
 
-    static LintStatus check_dll_architecture(const std::string& expected_architecture,
+    static LintStatus check_dll_architecture(const std::vector<std::string>& expected_architectures,
                                              const std::vector<Path>& files,
                                              const Filesystem& fs)
     {
         std::vector<FileAndArch> binaries_with_invalid_architecture;
+        Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
+                                    expected_architectures.size() > 1,
+                                    "Only expected one architecture, got: %s",
+                                    Strings::join(";", expected_architectures));
+        const auto& expected_architecture = expected_architectures[0];
 
         for (const Path& file : files)
         {
@@ -565,7 +570,7 @@ namespace vcpkg::PostBuildLint
     }
 #endif
 
-    static LintStatus check_lib_architecture(const std::string& expected_architecture,
+    static LintStatus check_lib_architecture(const std::vector<std::string>& expected_architectures,
                                              const std::string& cmake_system_name,
                                              const std::vector<Path>& files,
                                              const Filesystem& fs)
@@ -573,6 +578,10 @@ namespace vcpkg::PostBuildLint
         std::vector<FileAndArch> binaries_with_invalid_architecture;
         if (Util::Vectors::contains(windows_system_names, cmake_system_name))
         {
+            Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
+                                        expected_architectures.size() > 1,
+                                        "Only expected one architecture, got: %s",
+                                        Strings::join(";", expected_architectures));
             for (const Path& file : files)
             {
                 Checks::check_exit(VCPKG_LINE_INFO,
@@ -594,9 +603,6 @@ namespace vcpkg::PostBuildLint
         }
         else if (cmake_system_name == "Darwin")
         {
-            auto requested_architectures = Strings::split(Strings::trim(expected_architecture), ';');
-            Util::transform(requested_architectures, [](std::string a) { return a == "x64" ? "x86_64" : a; });
-
             for (const Path& file : files)
             {
                 auto cmd_line = Command("lipo").string_arg("-archs").string_arg(file);
@@ -604,8 +610,9 @@ namespace vcpkg::PostBuildLint
                 if (const auto output = maybe_output.get())
                 {
                     const auto generated_architectures = Strings::split(Strings::trim(*output), ' ');
-                    for (const auto& architecture : requested_architectures)
+                    for (const auto& _architecture : expected_architectures)
                     {
+                        const auto architecture = _architecture == "x64" ? "x86_64" : _architecture;
                         if (!Util::Vectors::contains(generated_architectures, architecture))
                         {
                             binaries_with_invalid_architecture.push_back({file, std::move(*output)});
@@ -625,7 +632,7 @@ namespace vcpkg::PostBuildLint
 
         if (!binaries_with_invalid_architecture.empty())
         {
-            print_invalid_architecture_files(expected_architecture, binaries_with_invalid_architecture);
+            print_invalid_architecture_files(Strings::join(" ", expected_architectures), binaries_with_invalid_architecture);
             return LintStatus::PROBLEM_DETECTED;
         }
         return LintStatus::SUCCESS;
@@ -1094,7 +1101,7 @@ namespace vcpkg::PostBuildLint
             libs.insert(libs.cend(), debug_libs.cbegin(), debug_libs.cend());
             libs.insert(libs.cend(), release_libs.cbegin(), release_libs.cend());
             error_count +=
-                check_lib_architecture(pre_build_info.target_architecture, pre_build_info.cmake_system_name, libs, fs);
+                check_lib_architecture(pre_build_info.target_architectures, pre_build_info.cmake_system_name, libs, fs);
         }
 
         std::vector<Path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
@@ -1128,7 +1135,7 @@ namespace vcpkg::PostBuildLint
                 }
 
 #if defined(_WIN32)
-                error_count += check_dll_architecture(pre_build_info.target_architecture, dlls, fs);
+                error_count += check_dll_architecture(pre_build_info.target_architectures, dlls, fs);
 #endif
                 break;
             }

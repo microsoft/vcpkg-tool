@@ -306,11 +306,17 @@ namespace vcpkg
         Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
     }
 
-    static ZStringView to_vcvarsall_toolchain(StringView target_architecture, const Toolset& toolset, Triplet triplet)
+    static ZStringView to_vcvarsall_toolchain(const std::vector<std::string>& target_architectures,
+                                              const Toolset& toolset,
+                                              Triplet triplet)
     {
-        auto maybe_target_arch = to_cpu_architecture(target_architecture);
+        Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
+                                    target_architectures.size() > 1,
+                                    "Only expected one architecture, got: %s",
+                                    Strings::join(";", target_architectures));
+        auto maybe_target_arch = to_cpu_architecture(target_architectures[0]);
         Checks::check_maybe_upgrade(
-            VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architecture);
+            VCPKG_LINE_INFO, maybe_target_arch.has_value(), "Invalid architecture string: %s", target_architectures[0]);
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
         // Ask for an arm64 compiler when targeting arm64ec; arm64ec is selected with a different flag on the compiler
         // command line.
@@ -333,7 +339,7 @@ namespace vcpkg
 
         msg::println_error(msgUnsupportedToolchain,
                            msg::triplet = triplet,
-                           msg::arch = target_architecture,
+                           msg::arch = Strings::join(";", target_architectures),
                            msg::path = toolset.visual_studio_root_path,
                            msg::list = toolset_list);
         msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
@@ -564,7 +570,7 @@ namespace vcpkg
             tonull = "";
         }
 
-        const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, pre_build_info.triplet);
+        const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architectures, toolset, pre_build_info.triplet);
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
         return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(
@@ -1673,7 +1679,9 @@ namespace vcpkg
 
             switch (kv.second)
             {
-                case VcpkgTripletVar::TARGET_ARCHITECTURE: target_architecture = variable_value; break;
+                case VcpkgTripletVar::TARGET_ARCHITECTURE:
+                    target_architectures = Strings::split(Strings::trim(variable_value), ';');
+                    break;
                 case VcpkgTripletVar::CMAKE_SYSTEM_NAME: cmake_system_name = variable_value; break;
                 case VcpkgTripletVar::CMAKE_SYSTEM_VERSION: cmake_system_version = variable_value; break;
                 case VcpkgTripletVar::PLATFORM_TOOLSET:

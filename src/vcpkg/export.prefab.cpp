@@ -277,8 +277,12 @@ namespace vcpkg::Export::Prefab
                 auto triplet_build_info = build_info_from_triplet(paths, provider, triplet);
                 if (is_supported(*triplet_build_info))
                 {
+                    Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
+                                                triplet_build_info->target_architectures.size() > 1,
+                                                "Only expected one architecture, got: %s",
+                                                Strings::join(";", triplet_build_info->target_architectures));
                     auto cpu_architecture =
-                        to_cpu_architecture(triplet_build_info->target_architecture).value_or_exit(VCPKG_LINE_INFO);
+                        to_cpu_architecture(triplet_build_info->target_architectures[0]).value_or_exit(VCPKG_LINE_INFO);
                     auto required_arch = required_archs.find(cpu_architecture);
                     if (required_arch != required_archs.end())
                     {
