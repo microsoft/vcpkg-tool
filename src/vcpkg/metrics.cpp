@@ -214,7 +214,9 @@ namespace vcpkg
             write_config = true;
         }
 
-        if (config.user_mac.empty())
+        // For a while we had a bug where we always set "{}" without attempting to get a MAC address.
+        // We will attempt to get a MAC address and store a "0" if we fail.
+        if (config.user_mac.empty() || config.user_mac == "{}")
         {
             config.user_mac = get_user_mac_hash();
             write_config = true;
