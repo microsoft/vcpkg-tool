@@ -24,22 +24,27 @@ export async function installGit(session: Session, name: string, targetLocation:
   const gitTool = new Git(session, gitPath, await session.activation.getEnvironmentBlock(), targetDirectory);
 
   if (! await gitTool.init()) {
+    events.heartbeat?.(i`Initializing repository folder`);
     throw new Error(i`Failed to initialize git repository folder (${targetDirectory.fsPath})`);
   }
 
   if (!await gitTool.addRemote('origin', repo)) {
+    events.heartbeat?.(i`Adding remote ${repo.toString()} to git repostory folder`);
     throw new Error(i`Failed to set git origin (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
   }
 
   if (!await gitTool.fetch('origin', events, { commit: install.commit, depth: install.full ? undefined : 1 })) {
+    events.heartbeat?.(i`Fetching remote ${repo.toString()} for git repostory folder`);
     throw new Error(i`Unable to fetch git data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
   }
 
   if (!await gitTool.checkout(events, { commit: "FETCH_HEAD" })) {
+    events.heartbeat?.(i`Checking out commit ${install.commit} for ${repo.toString()} to git repostory folder`);
     throw new Error(i`Unable to checkout data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
   }
 
   if (install.recurse) {
+    events.heartbeat?.(i`Updating submodules for repository ${repo.toString()} in the git repostory folder`);
     if (!await gitTool.config('.gitmodules', 'submodule.*.shallow', 'true')) {
       throw new Error(i`Unable to set submodule shallow data for (${repo.toString()}) in folder (${targetDirectory.fsPath})`);
     }

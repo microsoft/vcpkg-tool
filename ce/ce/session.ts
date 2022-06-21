@@ -154,7 +154,8 @@ export class Session {
 
   async loadRegistry(registryLocation: Uri | string | undefined, registryKind = 'artifact'): Promise<Registry | undefined> {
     // normalize the location first. 
-    registryLocation = typeof registryLocation === 'string' ? await this.parseLocation(registryLocation) : registryLocation;
+
+    registryLocation = typeof registryLocation === 'string' ? await this.parseLocation(registryLocation) || this.parseUri(registryLocation) : registryLocation;
 
     if (!registryLocation) {
       return undefined;
