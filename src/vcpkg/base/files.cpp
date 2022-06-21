@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -25,9 +26,11 @@
 #endif // ^^^ defined(__APPLE__)
 
 #include <algorithm>
+#include <iterator>
 #include <list>
 #include <string>
 #include <thread>
+#include <vector>
 
 #if defined(_WIN32)
 #include <share.h>
@@ -352,6 +355,13 @@ namespace
         {
             ec.clear();
         }
+    }
+
+    std::vector<Path> calculate_path_bases()
+    {
+        auto path_base_strings = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
+        return std::vector<Path>{std::make_move_iterator(path_base_strings.begin()),
+                                 std::make_move_iterator(path_base_strings.end())};
     }
 
 #if defined(_WIN32)
@@ -915,7 +925,7 @@ namespace
         }
     }
 #endif // ^^^ !_WIN32
-}
+} // unnamed namespace
 
 #if defined(_WIN32)
 namespace
@@ -1508,7 +1518,7 @@ namespace vcpkg
     {
         this->rename(old_path, new_path, ec);
         using namespace std::chrono_literals;
-        for (const auto& delay : {10ms, 100ms, 1000ms})
+        for (const auto& delay : {10ms, 100ms, 1000ms, 10000ms})
         {
             if (!ec)
             {
@@ -1835,6 +1845,11 @@ namespace vcpkg
         }
 
         return sh;
+    }
+
+    std::vector<Path> Filesystem::find_from_PATH(StringView stem) const
+    {
+        return this->find_from_PATH(View<StringView>{&stem, 1});
     }
 
     ReadFilePointer Filesystem::open_for_read(const Path& file_path, LineInfo li) const
@@ -3280,27 +3295,34 @@ namespace vcpkg
             return std::move(result);
         }
 
-        virtual std::vector<Path> find_from_PATH(StringView name) const override
+        virtual std::vector<Path> find_from_PATH(View<StringView> stems) const override
         {
-#if defined(_WIN32)
-            static constexpr StringLiteral EXTS[] = {".cmd", ".exe", ".bat"};
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-            static constexpr StringLiteral EXTS[] = {""};
-#endif // ^^^!_WIN32
-            const Path pname = name;
-            auto path_bases = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
-
             std::vector<Path> ret;
-            for (auto&& path_base : path_bases)
+
+            if (!stems.empty())
             {
-                auto path_base_name = Path(path_base) / pname;
-                for (auto&& ext : EXTS)
+#if defined(_WIN32)
+                static constexpr StringLiteral extensions[] = {".cmd", ".exe", ".bat"};
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+                static constexpr StringLiteral extensions[] = {""};
+#endif // ^^^!_WIN32
+
+                static const std::vector<Path> path_bases = calculate_path_bases();
+                for (Path path_base : path_bases)
                 {
-                    auto with_extension = path_base_name + ext;
-                    if (Util::find(ret, with_extension) == ret.end() && this->exists(with_extension, IgnoreErrors{}))
+                    for (auto&& stem : stems)
                     {
-                        Debug::print("Found path: ", with_extension, '\n');
-                        ret.push_back(std::move(with_extension));
+                        auto base_name = path_base / stem;
+                        for (auto&& extension : extensions)
+                        {
+                            auto with_extension = base_name + extension;
+                            if (!Util::Vectors::contains(ret, with_extension) &&
+                                this->exists(with_extension, IgnoreErrors{}))
+                            {
+                                Debug::print("Found path: ", with_extension, '\n');
+                                ret.push_back(std::move(with_extension));
+                            }
+                        }
                     }
                 }
             }

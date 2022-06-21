@@ -32,7 +32,8 @@ namespace vcpkg::Commands::BuildExternal
         auto overlays = args.overlay_ports;
         overlays.insert(overlays.begin(), args.command_arguments.at(1));
 
-        PortFileProvider::PathsPortFileProvider provider(paths, overlays);
+        PortFileProvider::PathsPortFileProvider provider(paths,
+                                                         PortFileProvider::make_overlay_provider(paths, overlays));
         Build::Command::perform_and_exit_ex(
             args, spec, host_triplet, provider, binary_cache, Build::null_build_logs_recorder(), paths);
     }
