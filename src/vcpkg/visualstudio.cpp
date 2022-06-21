@@ -232,18 +232,27 @@ namespace vcpkg::VisualStudio
                     supported_architectures.push_back({"x86", CPU::X86, CPU::X86});
                 if (fs.exists(vcvarsall_dir / "vcvars64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64", CPU::X64, CPU::X64});
+                // Host x86
                 if (fs.exists(vcvarsall_dir / "vcvarsx86_amd64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"x86_amd64", CPU::X86, CPU::X64});
                 if (fs.exists(vcvarsall_dir / "vcvarsx86_arm.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"x86_arm", CPU::X86, CPU::ARM});
                 if (fs.exists(vcvarsall_dir / "vcvarsx86_arm64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"x86_arm64", CPU::X86, CPU::ARM64});
+                // Host x64
                 if (fs.exists(vcvarsall_dir / "vcvarsamd64_x86.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64_x86", CPU::X64, CPU::X86});
                 if (fs.exists(vcvarsall_dir / "vcvarsamd64_arm.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64_arm", CPU::X64, CPU::ARM});
                 if (fs.exists(vcvarsall_dir / "vcvarsamd64_arm64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"amd64_arm64", CPU::X64, CPU::ARM64});
+                // Host arm64
+                if (fs.exists(vcvarsall_dir / "vcvarsarm64.bat", IgnoreErrors{}))
+                    supported_architectures.push_back({"arm64", CPU::ARM64, CPU::ARM64});
+                if (fs.exists(vcvarsall_dir / "vcvarsarm64_x86.bat", IgnoreErrors{}))
+                    supported_architectures.push_back({"arm64_x86", CPU::ARM64, CPU::X86});
+                if (fs.exists(vcvarsall_dir / "vcvarsarm64_amd64.bat", IgnoreErrors{}))
+                    supported_architectures.push_back({"arm64_amd64", CPU::ARM64, CPU::X64});
 
                 // Locate the "best" MSVC toolchain version
                 const auto msvc_path = vc_dir / "Tools/MSVC";
