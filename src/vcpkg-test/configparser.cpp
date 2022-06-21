@@ -1,5 +1,5 @@
 #include <catch2/catch.hpp>
-
+#include <vcpkg/base/util.h>
 #include <vcpkg/binarycaching.h>
 
 #include <vcpkg-test/util.h>
@@ -341,7 +341,9 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
 {
     {
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"azblob"});
+        REQUIRE(state.secrets == std::vector<std::string>{"sas"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,?sas", {});
@@ -361,15 +363,15 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas,read", {});
-        REQUIRE(parsed.has_value());
+        REQUIRE(parsed.value_or_exit(VCPKG_LINE_INFO).binary_cache_providers == std::set<std::string>{"azblob"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas,write", {});
-        REQUIRE(parsed.has_value());
+        REQUIRE(parsed.value_or_exit(VCPKG_LINE_INFO).binary_cache_providers == std::set<std::string>{"azblob"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas,readwrite", {});
-        REQUIRE(parsed.has_value());
+        REQUIRE(parsed.value_or_exit(VCPKG_LINE_INFO).binary_cache_providers == std::set<std::string>{"azblob"});
     }
 }
 

@@ -14,6 +14,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <set>
 
 namespace vcpkg
 {
@@ -83,6 +84,8 @@ namespace vcpkg
     {
         bool m_cleared = false;
         bool interactive = false;
+        std::set<std::string> binary_cache_providers;
+
         std::string nugettimeout = "100";
 
         std::vector<Path> archives_to_read;
@@ -111,6 +114,7 @@ namespace vcpkg
 
         void clear();
     };
+   
 
     ExpectedS<BinaryConfigParserState> create_binary_providers_from_configs_pure(const std::string& env_string,
                                                                                  View<std::string> args);
