@@ -632,7 +632,8 @@ namespace vcpkg::PostBuildLint
 
         if (!binaries_with_invalid_architecture.empty())
         {
-            print_invalid_architecture_files(Strings::join(" ", expected_architectures), binaries_with_invalid_architecture);
+            print_invalid_architecture_files(Strings::join(" ", expected_architectures),
+                                             binaries_with_invalid_architecture);
             return LintStatus::PROBLEM_DETECTED;
         }
         return LintStatus::SUCCESS;
