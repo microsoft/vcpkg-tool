@@ -117,7 +117,11 @@ namespace vcpkg
         parser.match_until(is_quote);
         if (parser.require_character('"')) return false;
 
-        if (!parser.at_eof()) return false;
+        parser.skip_whitespace();
+        if (!parser.at_eof())
+        {
+            return false;
+        }
 
         // output line was properly formatted
         out = Strings::ascii_to_lowercase(Strings::replace_all(mac_address, "-", ":"));
