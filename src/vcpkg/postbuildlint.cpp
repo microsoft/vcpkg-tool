@@ -540,7 +540,7 @@ namespace vcpkg::PostBuildLint
     {
         std::vector<FileAndArch> binaries_with_invalid_architecture;
         Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                    expected_architectures.size() > 1,
+                                    expected_architectures.size() == 1,
                                     "Only expected one architecture, got: %s",
                                     Strings::join(";", expected_architectures));
         const auto& expected_architecture = expected_architectures[0];
@@ -579,7 +579,7 @@ namespace vcpkg::PostBuildLint
         if (Util::Vectors::contains(windows_system_names, cmake_system_name))
         {
             Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                        expected_architectures.size() > 1,
+                                        expected_architectures.size() == 1,
                                         "Only expected one architecture, got: %s",
                                         Strings::join(";", expected_architectures));
             for (const Path& file : files)

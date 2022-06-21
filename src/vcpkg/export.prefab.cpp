@@ -278,7 +278,7 @@ namespace vcpkg::Export::Prefab
                 if (is_supported(*triplet_build_info))
                 {
                     Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                                triplet_build_info->target_architectures.size() > 1,
+                                                triplet_build_info->target_architectures.size() == 1,
                                                 "Only expected one architecture, got: %s",
                                                 Strings::join(";", triplet_build_info->target_architectures));
                     auto cpu_architecture =

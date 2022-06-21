@@ -311,7 +311,7 @@ namespace vcpkg
                                               Triplet triplet)
     {
         Checks::check_maybe_upgrade(VCPKG_LINE_INFO,
-                                    target_architectures.size() > 1,
+                                    target_architectures.size() == 1,
                                     "Only expected one architecture, got: %s",
                                     Strings::join(";", target_architectures));
         auto maybe_target_arch = to_cpu_architecture(target_architectures[0]);
