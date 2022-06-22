@@ -2092,10 +2092,9 @@ namespace
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
             }
 
-            std::set<std::string>::iterator itr = state->binary_cache_providers.begin();
-            for (itr; itr != state->binary_cache_providers.end(); itr++)
+            for (const auto& cache_provider : state->binary_cache_providers) 
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-" + *itr, "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-" + cache_provider, "defined");
             }
         }
     };
