@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
+
 #include <vcpkg/base/util.h>
+
 #include <vcpkg/binarycaching.h>
 
 #include <vcpkg-test/util.h>
@@ -138,7 +140,6 @@ TEST_CASE ("BinaryConfigParser nuget timeout", "[binaryconfigparser]")
 
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
         REQUIRE(state.nugettimeout == std::string{"3601"});
-
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nugettimeout", {});
@@ -195,7 +196,7 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
     {
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",read", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
-        
+
         REQUIRE(state.configs_str() == std::string{ABSOLUTE_PATH});
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
         REQUIRE(!state.archives_to_read.empty());
@@ -211,7 +212,7 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
     {
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",readwrite", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
-        
+
         REQUIRE(state.configs_str() == std::string{ABSOLUTE_PATH});
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
         REQUIRE(!state.archives_to_write.empty());
@@ -399,7 +400,7 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
     {
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
-       
+
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"azblob"});
         REQUIRE(url_temp.get_url(state) == std::string{"https://azure/container/{sha}.zip?sas"});
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
@@ -481,7 +482,6 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"gcs"});
         REQUIRE(state.gcs_read_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
         REQUIRE(!state.archives_to_read.empty());
-        
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,gs://my-bucket/my-folder,write", {});

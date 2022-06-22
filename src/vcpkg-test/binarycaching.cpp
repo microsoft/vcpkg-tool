@@ -501,7 +501,7 @@ Description: a spiffy compression library wrapper
 )");
 }
 
-std::string vcpkg::UrlTemplate::get_url(BinaryConfigParserState state) 
+std::string vcpkg::UrlTemplate::get_url(BinaryConfigParserState state)
 {
     auto url_to_get = state.url_templates_to_get;
     auto url_to_put = state.url_templates_to_put;
@@ -514,11 +514,10 @@ std::string vcpkg::UrlTemplate::get_url(BinaryConfigParserState state)
     {
         return url_to_put.front().url_template;
     }
-    
 }
 
-std::string vcpkg::BinaryConfigParserState::source_str() 
-{ 
+std::string vcpkg::BinaryConfigParserState::source_str()
+{
     auto state = *this;
     auto src_to_read = state.sources_to_read;
     auto src_to_write = state.sources_to_write;
@@ -531,11 +530,10 @@ std::string vcpkg::BinaryConfigParserState::source_str()
     {
         return src_to_write.front().c_str();
     }
-
 }
 
 std::string vcpkg::BinaryConfigParserState::configs_str()
-{ 
+{
     auto state = *this;
     auto configs_to_read = state.configs_to_read;
     auto configs_to_write = state.configs_to_write;
@@ -550,5 +548,3 @@ std::string vcpkg::BinaryConfigParserState::configs_str()
         return configs_to_write.front().c_str();
     }
 }
-
-

@@ -11,10 +11,10 @@
 #include <vcpkg/packagespec.h>
 
 #include <iterator>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <set>
 
 namespace vcpkg
 {
@@ -117,7 +117,6 @@ namespace vcpkg
 
         void clear();
     };
-   
 
     ExpectedS<BinaryConfigParserState> create_binary_providers_from_configs_pure(const std::string& env_string,
                                                                                  View<std::string> args);
