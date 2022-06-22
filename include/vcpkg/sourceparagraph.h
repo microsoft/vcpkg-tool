@@ -103,7 +103,7 @@ namespace vcpkg
 
         static ParseExpected<SourceControlFile> parse_manifest_object(StringView origin,
                                                                       const Json::Object& object,
-                                                                      MessageSink* warnings_sink = nullptr);
+                                                                      MessageSink& warnings_sink);
 
         static ParseExpected<SourceControlFile> parse_control_file(StringView origin,
                                                                    std::vector<Paragraph>&& control_paragraphs);

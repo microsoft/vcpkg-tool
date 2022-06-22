@@ -1271,18 +1271,15 @@ namespace vcpkg
 
     ParseExpected<SourceControlFile> SourceControlFile::parse_manifest_object(StringView origin,
                                                                               const Json::Object& manifest,
-                                                                              MessageSink* warnings_sink)
+                                                                              MessageSink& warnings_sink)
     {
         Json::Reader reader;
 
         auto res = reader.visit(manifest, ManifestDeserializer::instance);
 
-        if (warnings_sink)
+        for (auto&& w : reader.warnings())
         {
-            for (auto&& w : reader.warnings())
-            {
-                warnings_sink->print(Color::warning, LocalizedString::from_raw(Strings::concat(origin, ": ", w, '\n')));
-            }
+            warnings_sink.print(Color::warning, LocalizedString::from_raw(Strings::concat(origin, ": ", w, '\n')));
         }
 
         if (!reader.errors().empty())

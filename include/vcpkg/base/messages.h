@@ -395,6 +395,7 @@ namespace vcpkg
         ~MessageSink() = default;
     };
 
+    extern MessageSink& null_sink;
     extern MessageSink& stdout_sink;
     extern MessageSink& stderr_sink;
 }
