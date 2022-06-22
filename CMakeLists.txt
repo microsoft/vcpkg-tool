@@ -226,6 +226,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                     -p "${CMAKE_CURRENT_LIST_DIR}/ce/ce"
             DEPENDS
                 ${VCPKG_ARTIFACTS_SOURCES}
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
             COMMENT
                 "Building vcpkg-ce..."
             VERBATIM
@@ -248,6 +249,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                     -p "${CMAKE_CURRENT_LIST_DIR}/ce/test"
             DEPENDS
                 ${VCPKG_ARTIFACTS_TEST_SOURCES}
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
             COMMENT
                 "Building vcpkg-ce-test..."
             VERBATIM
