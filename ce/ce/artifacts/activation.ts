@@ -621,7 +621,7 @@ export class Activation {
     return [env, undo];
   }
 
-  async activate(artifacts: Iterable<Artifact>, currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined) {
+  async activate(artifacts: Iterable<Artifact>, currentEnvironment: Record<string, string | undefined>, shellScriptFile: Uri | undefined, undoEnvironmentFile: Uri | undefined, msbuildFile: Uri | undefined, dumpEnv: Uri | undefined) {
     let undoDeactivation = '';
     const scriptKind = extname(shellScriptFile?.fsPath || '');
 
@@ -670,6 +670,12 @@ export class Activation {
       const contents = await this.generateMSBuild(artifacts);
       this.#session.channels.verbose(`--------[START MSBUILD FILE]--------\n${contents}\n--------[END MSBUILD FILE]---------`);
       await msbuildFile.writeUTF8(await this.generateMSBuild(artifacts));
+    }
+
+    if(dumpEnv) {
+      const contents = generateEnvVarDump(variables);
+      this.#session.channels.verbose(`--------[START ENV VAR FILE]--------\n${contents}\n--------[END ENV VAR FILE]---------`);
+      await dumpEnv.writeUTF8(contents); 
     }
   }
 
@@ -740,6 +746,10 @@ function generateScriptContent(kind: string, variables: Record<string, string>, 
   return '';
 }
 
+function generateEnvVarDump(variables: Record<string, string>): string {
+  var contents = {"version": 1, "env": variables}
+  return JSON.stringify(contents);
+}
 
 export async function deactivate(shellScriptFile: Uri, variables: Record<string, string>, aliases: Record<string, string>) {
   const kind = extname(shellScriptFile.fsPath);
