@@ -211,6 +211,7 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
             )
 
         add_custom_target(rush-update
+            ALL
             DEPENDS
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
@@ -233,11 +234,10 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
             )
 
         add_custom_target(vcpkg-artifacts
+            ALL
             DEPENDS
                 "${CMAKE_CURRENT_LIST_DIR}/ce/ce/dist/tsconfig.tsbuildinfo"
             )
-
-        add_dependencies(vcpkg-artifacts rush-update)
 
 # === Target: vcpkg-artifacts-test ===
         file(GLOB_RECURSE VCPKG_ARTIFACTS_TEST_SOURCES CONFIGURE_DEPENDS "ce/test/*.ts")
@@ -256,11 +256,10 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
             )
 
         add_custom_target(vcpkg-artifacts-test
+            ALL
             DEPENDS
                 "${CMAKE_CURRENT_LIST_DIR}/ce/test/dist/tsconfig.tsbuildinfo"
             )
-
-        add_dependencies(vcpkg-artifacts-test rush-update)
     endif()
 else()
     if (VCPKG_ARTIFACTS_DEVELOPMENT)
@@ -345,17 +344,10 @@ add_custom_command(
     VERBATIM
     )
 
-add_custom_target(vcpkg-ps1 DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1")
+add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1")
 
 add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 target_link_libraries(vcpkg PRIVATE vcpkglib)
-add_dependencies(vcpkg vcpkg-ps1)
-if (VCPKG_ARTIFACTS_DEVELOPMENT)
-    add_dependencies(vcpkg vcpkg-artifacts)
-    if (BUILD_TESTING)
-        add_dependencies(vcpkg vcpkg-artifacts-test)
-    endif()
-endif()
 
 vcpkg_target_add_warning_options(vcpkg)
 if(VCPKG_ADD_SOURCELINK)
