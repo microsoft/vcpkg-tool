@@ -23,6 +23,7 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+#include <vcpkg/xunitwriter.h>
 
 #include <iterator>
 
@@ -1029,9 +1030,9 @@ namespace vcpkg::Install
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
-
-            if (auto maybe_error = manifest_scf.check_against_feature_flags(
+            auto manifest_scf = std::move(maybe_manifest_scf).value_or_exit(VCPKG_LINE_INFO);
+            const auto& manifest_core = *manifest_scf->core_paragraph;
+            if (auto maybe_error = manifest_scf->check_against_feature_flags(
                     manifest->path, paths.get_feature_flags(), paths.get_registry_set().is_default_builtin_registry()))
             {
                 Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error.value_or_exit(VCPKG_LINE_INFO));
@@ -1051,7 +1052,7 @@ namespace vcpkg::Install
             auto core_it = std::remove(features.begin(), features.end(), "core");
             if (core_it == features.end())
             {
-                const auto& default_features = manifest_scf.core_paragraph->default_features;
+                const auto& default_features = manifest_core.default_features;
                 features.insert(features.end(), default_features.begin(), default_features.end());
             }
             else
@@ -1060,19 +1061,19 @@ namespace vcpkg::Install
             }
             Util::sort_unique_erase(features);
 
-            auto dependencies = manifest_scf.core_paragraph->dependencies;
+            auto dependencies = manifest_core.dependencies;
             for (const auto& feature : features)
             {
                 auto it = Util::find_if(
-                    manifest_scf.feature_paragraphs,
+                    manifest_scf->feature_paragraphs,
                     [&feature](const std::unique_ptr<FeatureParagraph>& fpgh) { return fpgh->name == feature; });
 
-                if (it == manifest_scf.feature_paragraphs.end())
+                if (it == manifest_scf->feature_paragraphs.end())
                 {
                     vcpkg::printf(Color::warning,
                                   "Warning: feature %s was passed, but that is not a feature that %s supports.",
                                   feature,
-                                  manifest_scf.core_paragraph->name);
+                                  manifest_core.name);
                 }
                 else
                 {
@@ -1088,7 +1089,7 @@ namespace vcpkg::Install
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_version_constraint", "defined");
             }
 
-            if (!manifest_scf.core_paragraph->overrides.empty())
+            if (!manifest_core.overrides.empty())
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("manifest_overrides", "defined");
             }
@@ -1097,25 +1098,29 @@ namespace vcpkg::Install
             auto baseprovider = PortFileProvider::make_baseline_provider(paths);
 
             std::vector<std::string> extended_overlay_ports;
-            extended_overlay_ports.reserve(args.overlay_ports.size() + 2);
-            extended_overlay_ports.push_back(manifest->path.parent_path().to_string());
-            Util::Vectors::append(&extended_overlay_ports, args.overlay_ports);
-            if (paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry())
+            const bool add_builtin_ports_directory_as_overlay =
+                paths.get_registry_set().is_default_builtin_registry() && !paths.use_git_default_registry();
+            extended_overlay_ports.reserve(args.overlay_ports.size() + add_builtin_ports_directory_as_overlay);
+            extended_overlay_ports = args.overlay_ports;
+            if (add_builtin_ports_directory_as_overlay)
             {
-                extended_overlay_ports.push_back(paths.builtin_ports_directory().native());
+                extended_overlay_ports.emplace_back(paths.builtin_ports_directory().native());
             }
-            auto oprovider = PortFileProvider::make_overlay_provider(paths, extended_overlay_ports);
-            PackageSpec toplevel{manifest_scf.core_paragraph->name, default_triplet};
+
+            auto oprovider = PortFileProvider::make_manifest_provider(
+                paths, extended_overlay_ports, manifest->path, std::move(manifest_scf));
+            PackageSpec toplevel{manifest_core.name, default_triplet};
             auto install_plan = Dependencies::create_versioned_install_plan(*verprovider,
                                                                             *baseprovider,
                                                                             *oprovider,
                                                                             var_provider,
                                                                             dependencies,
-                                                                            manifest_scf.core_paragraph->overrides,
+                                                                            manifest_core.overrides,
                                                                             toplevel,
                                                                             host_triplet,
                                                                             unsupported_port_action)
                                     .value_or_exit(VCPKG_LINE_INFO);
+
             for (const auto& warning : install_plan.warnings)
             {
                 print2(Color::warning, warning, '\n');
@@ -1131,8 +1136,7 @@ namespace vcpkg::Install
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
-            PortFileProvider::PathsPortFileProvider provider(paths, extended_overlay_ports);
-
+            PortFileProvider::PathsPortFileProvider provider(paths, std::move(oprovider));
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
                                                         provider,
@@ -1145,7 +1149,8 @@ namespace vcpkg::Install
                                                         keep_going);
         }
 
-        PortFileProvider::PathsPortFileProvider provider(paths, args.overlay_ports);
+        PortFileProvider::PathsPortFileProvider provider(
+            paths, PortFileProvider::make_overlay_provider(paths, args.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
             return Input::check_and_get_full_package_spec(
@@ -1254,12 +1259,19 @@ namespace vcpkg::Install
         auto it_xunit = options.settings.find(OPTION_XUNIT);
         if (it_xunit != options.settings.end())
         {
-            std::string xunit_doc = "<assemblies><assembly><collection>\n";
+            XunitWriter xwriter;
 
-            xunit_doc += summary.xunit_results();
+            for (auto&& result : summary.results)
+            {
+                xwriter.add_test_results(result.get_spec(),
+                                         result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
+                                         result.timing,
+                                         result.start_time,
+                                         "",
+                                         {});
+            }
 
-            xunit_doc += "</collection></assembly></assemblies>\n";
-            fs.write_contents(it_xunit->second, xunit_doc, VCPKG_LINE_INFO);
+            fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
 
         std::set<std::string> printed_usages;
@@ -1328,50 +1340,6 @@ namespace vcpkg::Install
     bool SpecSummary::is_user_requested_install() const
     {
         return m_install_action && m_install_action->request_type == RequestType::USER_REQUESTED;
-    }
-
-    static std::string xunit_result(const PackageSpec& spec, ElapsedTime time, BuildResult code)
-    {
-        std::string message_block;
-        const char* result_string = "";
-        switch (code)
-        {
-            case BuildResult::POST_BUILD_CHECKS_FAILED:
-            case BuildResult::FILE_CONFLICTS:
-            case BuildResult::BUILD_FAILED:
-            case BuildResult::CACHE_MISSING:
-                result_string = "Fail";
-                message_block = Strings::format("<failure><message><![CDATA[%s]]></message></failure>",
-                                                to_string_locale_invariant(code));
-                break;
-            case BuildResult::EXCLUDED:
-            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
-                result_string = "Skip";
-                message_block = Strings::format("<reason><![CDATA[%s]]></reason>", to_string_locale_invariant(code));
-                break;
-            case BuildResult::SUCCEEDED: result_string = "Pass"; break;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-
-        return Strings::format(R"(<test name="%s" method="%s" time="%lld" result="%s">%s</test>)"
-                               "\n",
-                               spec,
-                               spec,
-                               time.as<std::chrono::seconds>().count(),
-                               result_string,
-                               message_block);
-    }
-
-    std::string InstallSummary::xunit_results() const
-    {
-        std::string xunit_doc;
-        for (auto&& result : results)
-        {
-            xunit_doc +=
-                xunit_result(result.get_spec(), result.timing, result.build_result.value_or_exit(VCPKG_LINE_INFO).code);
-        }
-
-        return xunit_doc;
     }
 
     void track_install_plan(Dependencies::ActionPlan& plan)
