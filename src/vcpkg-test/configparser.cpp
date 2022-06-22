@@ -40,7 +40,9 @@ TEST_CASE ("BinaryConfigParser files provider", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH, {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"files"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",nonsense", {});
@@ -48,15 +50,25 @@ TEST_CASE ("BinaryConfigParser files provider", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",read", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"files"});
+        REQUIRE(!state.archives_to_read.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",write", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"files"});
+        REQUIRE(!state.archives_to_write.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",readwrite", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"files"});
+        REQUIRE(!state.archives_to_write.empty());
+        REQUIRE(!state.archives_to_read.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",readwrite,extra", {});
@@ -76,15 +88,24 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget,relative-path", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
+        REQUIRE(state.source_str() == std::string{"relative-path"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget,http://example.org/", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
+        REQUIRE(state.source_str() == std::string{"http://example.org/"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget," ABSOLUTE_PATH, {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.source_str() == std::string{ABSOLUTE_PATH});
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget," ABSOLUTE_PATH ",nonsense", {});
@@ -92,7 +113,12 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget," ABSOLUTE_PATH ",readwrite", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.source_str() == std::string{ABSOLUTE_PATH});
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
+        REQUIRE(!state.archives_to_write.empty());
+        REQUIRE(!state.archives_to_read.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget," ABSOLUTE_PATH ",readwrite,extra", {});
@@ -108,7 +134,11 @@ TEST_CASE ("BinaryConfigParser nuget timeout", "[binaryconfigparser]")
 {
     {
         auto parsed = create_binary_providers_from_configs_pure("nugettimeout,3601", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
+        REQUIRE(state.nugettimeout == std::string{"3601"});
+
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nugettimeout", {});
@@ -164,15 +194,28 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",read", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        
+        REQUIRE(state.configs_str() == std::string{ABSOLUTE_PATH});
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
+        REQUIRE(!state.archives_to_read.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",write", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.configs_str() == std::string{ABSOLUTE_PATH});
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
+        REQUIRE(!state.archives_to_write.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",readwrite", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        
+        REQUIRE(state.configs_str() == std::string{ABSOLUTE_PATH});
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
+        REQUIRE(!state.archives_to_write.empty());
+        REQUIRE(!state.archives_to_read.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",readwrite,extra", {});
@@ -188,7 +231,7 @@ TEST_CASE ("BinaryConfigParser default provider", "[binaryconfigparser]")
 {
     {
         auto parsed = create_binary_providers_from_configs_pure("default", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("default,nonsense", {});
@@ -196,15 +239,19 @@ TEST_CASE ("BinaryConfigParser default provider", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("default,read", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(!state.archives_to_read.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("default,readwrite", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(!state.archives_to_read.empty());
+        REQUIRE(!state.archives_to_write.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("default,write", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(!state.archives_to_write.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("default,read,extra", {});
@@ -288,11 +335,13 @@ TEST_CASE ("BinaryConfigParser escaping", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH "`,", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"files"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH "``", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"files"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH "```", {});
@@ -300,7 +349,8 @@ TEST_CASE ("BinaryConfigParser escaping", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH "````", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"files"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",", {});
@@ -313,12 +363,16 @@ TEST_CASE ("BinaryConfigParser args", "[binaryconfigparser]")
     {
         auto parsed =
             create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH, std::vector<std::string>{"clear"});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"files"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH,
                                                                 std::vector<std::string>{"clear;default"});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"files"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH,
@@ -333,16 +387,21 @@ TEST_CASE ("BinaryConfigParser args", "[binaryconfigparser]")
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH,
                                                                 std::vector<std::string>{"clear", "clear"});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"files"});
     }
 }
 
 TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
 {
+    UrlTemplate url_temp;
     {
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+       
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"azblob"});
+        REQUIRE(url_temp.get_url(state) == std::string{"https://azure/container/{sha}.zip?sas"});
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
     }
     {
@@ -363,15 +422,31 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas,read", {});
-        REQUIRE(parsed.value_or_exit(VCPKG_LINE_INFO).binary_cache_providers == std::set<std::string>{"azblob"});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"azblob"});
+        REQUIRE(url_temp.get_url(state) == std::string{"https://azure/container/{sha}.zip?sas"});
+        REQUIRE(state.secrets == std::vector<std::string>{"sas"});
+        REQUIRE(!state.archives_to_read.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas,write", {});
-        REQUIRE(parsed.value_or_exit(VCPKG_LINE_INFO).binary_cache_providers == std::set<std::string>{"azblob"});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"azblob"});
+        REQUIRE(url_temp.get_url(state) == std::string{"https://azure/container/{sha}.zip?sas"});
+        REQUIRE(state.secrets == std::vector<std::string>{"sas"});
+        REQUIRE(!state.archives_to_write.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas,readwrite", {});
-        REQUIRE(parsed.value_or_exit(VCPKG_LINE_INFO).binary_cache_providers == std::set<std::string>{"azblob"});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"azblob"});
+        REQUIRE(url_temp.get_url(state) == std::string{"https://azure/container/{sha}.zip?sas"});
+        REQUIRE(state.secrets == std::vector<std::string>{"sas"});
+        REQUIRE(!state.archives_to_read.empty());
+        REQUIRE(!state.archives_to_write.empty());
     }
 }
 
@@ -379,11 +454,17 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
 {
     {
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,gs://my-bucket/", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.gcs_read_prefixes == std::vector<std::string>{"gs://my-bucket/"});
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"gcs"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,gs://my-bucket/my-folder", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.gcs_read_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"gcs"});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,", {});
@@ -395,15 +476,30 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,gs://my-bucket/my-folder,read", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"gcs"});
+        REQUIRE(state.gcs_read_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
+        REQUIRE(!state.archives_to_read.empty());
+        
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,gs://my-bucket/my-folder,write", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"gcs"});
+        REQUIRE(state.gcs_write_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
+        REQUIRE(!state.archives_to_write.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,gs://my-bucket/my-folder,readwrite", {});
-        REQUIRE(parsed.has_value());
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<std::string>{"gcs"});
+        REQUIRE(state.gcs_write_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
+        REQUIRE(state.gcs_read_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
+        REQUIRE(!state.archives_to_write.empty());
+        REQUIRE(!state.archives_to_read.empty());
     }
 }
 

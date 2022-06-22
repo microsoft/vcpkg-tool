@@ -78,6 +78,7 @@ namespace vcpkg
 
         LocalizedString valid();
         std::string instantiate_variables(const Dependencies::InstallPlanAction& action) const;
+        std::string get_url(BinaryConfigParserState state);
     };
 
     struct BinaryConfigParserState
@@ -106,9 +107,11 @@ namespace vcpkg
 
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
+        std::string source_str();
 
         std::vector<Path> configs_to_read;
         std::vector<Path> configs_to_write;
+        std::string configs_str();
 
         std::vector<std::string> secrets;
 
