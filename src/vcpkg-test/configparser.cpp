@@ -14,6 +14,36 @@ using namespace vcpkg;
 #define ABSOLUTE_PATH "/foo"
 #endif
 
+namespace
+{
+    vcpkg::Path source_str(BinaryConfigParserState state)
+    {
+        if (!state.sources_to_read.empty())
+        {
+            return state.sources_to_read.front().c_str();
+        }
+        if (!state.sources_to_write.empty())
+        {
+            return state.sources_to_write.front().c_str();
+        }
+        return vcpkg::Path{};
+    }
+
+    vcpkg::Path configs_str(BinaryConfigParserState state)
+    {
+        if (!state.configs_to_read.empty())
+        {
+            return state.configs_to_read.front();
+        }
+
+        if (!state.configs_to_write.empty())
+        {
+            return state.configs_to_write.front();
+        }
+        return vcpkg::Path{};
+    }
+}
+
 TEST_CASE ("BinaryConfigParser empty", "[binaryconfigparser]")
 {
     auto parsed = create_binary_providers_from_configs_pure("", {});
@@ -93,20 +123,20 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
-        REQUIRE(state.source_str() == std::string{"relative-path"});
+        REQUIRE(source_str(state) == "relative-path");
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget,http://example.org/", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
-        REQUIRE(state.source_str() == std::string{"http://example.org/"});
+        REQUIRE(source_str(state) == "http://example.org/");
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget," ABSOLUTE_PATH, {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.source_str() == std::string{ABSOLUTE_PATH});
+        REQUIRE(source_str(state) == ABSOLUTE_PATH);
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
     }
     {
@@ -117,7 +147,7 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("nuget," ABSOLUTE_PATH ",readwrite", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.source_str() == std::string{ABSOLUTE_PATH});
+        REQUIRE(source_str(state) == ABSOLUTE_PATH);
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
         REQUIRE(!state.archives_to_write.empty());
         REQUIRE(!state.archives_to_read.empty());
@@ -197,7 +227,7 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",read", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.configs_str() == std::string{ABSOLUTE_PATH});
+        REQUIRE(configs_str(state) == ABSOLUTE_PATH);
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
         REQUIRE(!state.archives_to_read.empty());
     }
@@ -205,7 +235,7 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",write", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.configs_str() == std::string{ABSOLUTE_PATH});
+        REQUIRE(configs_str(state) == ABSOLUTE_PATH);
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
         REQUIRE(!state.archives_to_write.empty());
     }
@@ -213,7 +243,7 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",readwrite", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.configs_str() == std::string{ABSOLUTE_PATH});
+        REQUIRE(configs_str(state) == ABSOLUTE_PATH);
         REQUIRE(state.binary_cache_providers == std::set<std::string>{"nuget"});
         REQUIRE(!state.archives_to_write.empty());
         REQUIRE(!state.archives_to_read.empty());

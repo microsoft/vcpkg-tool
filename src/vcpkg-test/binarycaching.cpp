@@ -503,48 +503,13 @@ Description: a spiffy compression library wrapper
 
 std::string vcpkg::UrlTemplate::get_url(BinaryConfigParserState state)
 {
-    auto url_to_get = state.url_templates_to_get;
-    auto url_to_put = state.url_templates_to_put;
-
-    if (!url_to_get.empty())
+    if (!state.url_templates_to_get.empty())
     {
-        return url_to_get.front().url_template;
+        return state.url_templates_to_get.front().url_template;
     }
-    if (!url_to_put.empty())
+    if (!state.url_templates_to_put.empty())
     {
-        return url_to_put.front().url_template;
+        return state.url_templates_to_put.front().url_template;
     }
-}
-
-std::string vcpkg::BinaryConfigParserState::source_str()
-{
-    auto state = *this;
-    auto src_to_read = state.sources_to_read;
-    auto src_to_write = state.sources_to_write;
-
-    if (!src_to_read.empty())
-    {
-        return src_to_read.front().c_str();
-    }
-    if (!src_to_write.empty())
-    {
-        return src_to_write.front().c_str();
-    }
-}
-
-std::string vcpkg::BinaryConfigParserState::configs_str()
-{
-    auto state = *this;
-    auto configs_to_read = state.configs_to_read;
-    auto configs_to_write = state.configs_to_write;
-
-    if (!configs_to_read.empty())
-    {
-        return configs_to_read.front().c_str();
-    }
-
-    if (!configs_to_write.empty())
-    {
-        return configs_to_write.front().c_str();
-    }
+    return std::string{};
 }

@@ -111,7 +111,7 @@ namespace vcpkg
 
         std::vector<Path> configs_to_read;
         std::vector<Path> configs_to_write;
-        std::string configs_str();
+        Path configs_str();
 
         std::vector<std::string> secrets;
 
