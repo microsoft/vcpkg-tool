@@ -338,18 +338,21 @@ namespace vcpkg::Dependencies
                 auto it = m_graph.find(spec);
                 if (it == m_graph.end())
                 {
-                    const SourceControlFileAndLocation* scfl = m_port_provider.get_control_file(spec.name()).get();
+                    auto maybe_scfl = m_port_provider.get_control_file(spec.name());
 
-                    Checks::check_exit(VCPKG_LINE_INFO,
-                                       scfl != nullptr,
-                                       "Error: Cannot find definition for package `%s` while getting `%s`.",
-                                       spec.name(),
-                                       spec);
+                    if (!maybe_scfl)
+                    {
+                        Checks::exit_with_message(
+                            VCPKG_LINE_INFO,
+                            "info: while planning to install %s:\n%s",
+                            spec,
+                            maybe_scfl.error());
+                    }
 
                     it = m_graph
                              .emplace(std::piecewise_construct,
                                       std::forward_as_tuple(spec),
-                                      std::forward_as_tuple(spec, *scfl))
+                                      std::forward_as_tuple(spec, *maybe_scfl.get()))
                              .first;
                 }
 
