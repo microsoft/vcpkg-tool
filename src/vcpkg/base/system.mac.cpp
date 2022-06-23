@@ -71,7 +71,10 @@ namespace vcpkg
         unsigned char non_zero_mac = 0;
         for (size_t i = 0; i < MAC_BYTES_LENGTH; ++i)
         {
-            if (i>0) { *mac++ = ':'; }
+            if (i > 0)
+            {
+                *mac++ = ':';
+            }
             unsigned char c = bytes[i];
             *mac++ = hexits[(c & 0xf0) >> 4];
             *mac++ = hexits[(c & 0x0f)];
@@ -163,7 +166,6 @@ namespace vcpkg
             return "0";
         }
 
-        char bytes[MAC_BYTES_LENGTH];
         for (auto interface = interfaces.ptr; interface; interface = interface->ifa_next)
         {
             // The ifa_addr field points to a structure containing the interface
@@ -185,14 +187,14 @@ namespace vcpkg
 #if defined(__linux__)
             auto address = reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
             if (address->sll_halen != MAC_BYTES_LENGTH) continue;
-            const char* bytes = reinterpret_cast<const char*>(address->sll_addr);
+            auto mac_bytes = Span<char>(reinterpret_cast<char*>(address->sll_addr), MAC_BYTES_LENGTH);
 #elif defined(__APPLE__)
             auto address = reinterpret_cast<sockaddr_dl*>(interface->ifa_addr);
             if (address->sdl_alen != MAC_BYTES_LENGTH) continue;
             // The macro LLADDR() returns the start of the link-layer network address.
-            const char* bytes = reinterpret_cast<const char*>(LLADDR(address));
+            auto mac_bytes = Span<char>(reinterpret_cast<char*>(LLADDR(address), MAC_BYTES_LENGTH);
 #endif
-            auto mac = mac_bytes_to_string(Span<char>(bytes, MAC_BYTES_LENGTH));
+            auto mac = mac_bytes_to_string(mac_bytes);
             if (is_valid_mac_for_telemetry(mac))
             {
                 return Hash::get_string_hash(mac, Hash::Algorithm::Sha256);
