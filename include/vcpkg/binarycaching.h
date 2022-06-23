@@ -78,14 +78,13 @@ namespace vcpkg
 
         LocalizedString valid();
         std::string instantiate_variables(const Dependencies::InstallPlanAction& action) const;
-        std::string get_url(BinaryConfigParserState state);
     };
 
     struct BinaryConfigParserState
     {
         bool m_cleared = false;
         bool interactive = false;
-        std::set<std::string> binary_cache_providers;
+        std::set<StringLiteral> binary_cache_providers;
 
         std::string nugettimeout = "100";
 
@@ -107,11 +106,9 @@ namespace vcpkg
 
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
-        std::string source_str();
 
         std::vector<Path> configs_to_read;
         std::vector<Path> configs_to_write;
-        Path configs_str();
 
         std::vector<std::string> secrets;
 

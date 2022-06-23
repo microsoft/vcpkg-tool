@@ -500,16 +500,3 @@ Description: a spiffy compression library wrapper
 </packages>
 )");
 }
-
-std::string vcpkg::UrlTemplate::get_url(BinaryConfigParserState state)
-{
-    if (!state.url_templates_to_get.empty())
-    {
-        return state.url_templates_to_get.front().url_template;
-    }
-    if (!state.url_templates_to_put.empty())
-    {
-        return state.url_templates_to_put.front().url_template;
-    }
-    return std::string{};
-}

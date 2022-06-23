@@ -1646,7 +1646,8 @@ namespace vcpkg
 
     void BinaryConfigParserState::clear()
     {
-        m_cleared = true;
+        binary_cache_providers.clear();
+        binary_cache_providers.insert("clear");
         interactive = false;
         nugettimeout = "100";
         archives_to_read.clear();
@@ -2094,7 +2095,7 @@ namespace
 
             for (const auto& cache_provider : state->binary_cache_providers) 
             {
-                LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-" + cache_provider, "defined");
+                LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching_" + cache_provider, "defined");
             }
         }
     };
@@ -2317,11 +2318,6 @@ ExpectedS<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_p
         }
     }
 
-    if (s.m_cleared)
-    {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-clear", "defined");
-    }
-
     return s;
 }
 
@@ -2352,28 +2348,24 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
     std::vector<std::unique_ptr<IBinaryProvider>> providers;
     if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-gcs", "defined");
         providers.push_back(std::make_unique<GcsBinaryProvider>(
             paths, std::move(s.gcs_read_prefixes), std::move(s.gcs_write_prefixes)));
     }
 
     if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-aws", "defined");
         providers.push_back(std::make_unique<AwsBinaryProvider>(
             paths, std::move(s.aws_read_prefixes), std::move(s.aws_write_prefixes), s.aws_no_sign_request));
     }
 
     if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-cos", "defined");
         providers.push_back(std::make_unique<CosBinaryProvider>(
             paths, std::move(s.cos_read_prefixes), std::move(s.cos_write_prefixes)));
     }
 
     if (!s.archives_to_read.empty() || !s.archives_to_write.empty() || !s.url_templates_to_put.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-archive", "defined");
         providers.push_back(std::make_unique<ArchivesBinaryProvider>(paths,
                                                                      std::move(s.archives_to_read),
                                                                      std::move(s.archives_to_write),
@@ -2383,7 +2375,6 @@ ExpectedS<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
 
     if (!s.url_templates_to_get.empty())
     {
-        LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching-url-get", "defined");
         providers.push_back(
             std::make_unique<HttpGetBinaryProvider>(paths, std::move(s.url_templates_to_get), s.secrets));
     }
