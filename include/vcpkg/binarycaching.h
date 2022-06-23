@@ -82,7 +82,6 @@ namespace vcpkg
 
     struct BinaryConfigParserState
     {
-        bool m_cleared = false;
         bool interactive = false;
         std::set<StringLiteral> binary_cache_providers;
 

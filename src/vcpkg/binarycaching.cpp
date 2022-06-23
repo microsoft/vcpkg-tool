@@ -1872,6 +1872,7 @@ namespace
 
                 handle_readwrite(
                     state->archives_to_read, state->archives_to_write, Path(*maybe_home.get()), segments, 1);
+                state->binary_cache_providers.insert("default");
             }
             else if (segments[0].second == "x-azblob")
             {

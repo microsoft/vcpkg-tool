@@ -103,7 +103,7 @@ TEST_CASE ("BinaryConfigParser files provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH, {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"files"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"files"}});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",nonsense", {});
@@ -113,21 +113,21 @@ TEST_CASE ("BinaryConfigParser files provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",read", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"files"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"files"}});
         REQUIRE(!state.archives_to_read.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",write", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"files"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"files"}});
         REQUIRE(!state.archives_to_write.empty());
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",readwrite", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"files"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"files"}});
         REQUIRE(!state.archives_to_write.empty());
         REQUIRE(!state.archives_to_read.empty());
     }
@@ -151,14 +151,14 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("nuget,relative-path", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"nuget"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(source_str(state) == "relative-path");
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget,http://example.org/", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"nuget"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(source_str(state) == "http://example.org/");
     }
     {
@@ -166,7 +166,7 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(source_str(state) == ABSOLUTE_PATH);
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"nuget"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget," ABSOLUTE_PATH ",nonsense", {});
@@ -177,7 +177,7 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(source_str(state) == ABSOLUTE_PATH);
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"nuget"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(!state.archives_to_write.empty());
         REQUIRE(!state.archives_to_read.empty());
     }
@@ -197,7 +197,7 @@ TEST_CASE ("BinaryConfigParser nuget timeout", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("nugettimeout,3601", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"nuget"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(state.nugettimeout == std::string{"3601"});
     }
     {
@@ -257,7 +257,7 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(configs_str(state) == ABSOLUTE_PATH);
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"nuget"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(!state.archives_to_read.empty());
     }
     {
@@ -265,7 +265,7 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(configs_str(state) == ABSOLUTE_PATH);
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"nuget"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(!state.archives_to_write.empty());
     }
     {
@@ -273,7 +273,7 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(configs_str(state) == ABSOLUTE_PATH);
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"nuget"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(!state.archives_to_write.empty());
         REQUIRE(!state.archives_to_read.empty());
     }
@@ -396,12 +396,12 @@ TEST_CASE ("BinaryConfigParser escaping", "[binaryconfigparser]")
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH "`,", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"files"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"files"}});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH "``", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"files"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"files"}});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH "```", {});
@@ -410,7 +410,7 @@ TEST_CASE ("BinaryConfigParser escaping", "[binaryconfigparser]")
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH "````", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"files"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"files"}});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH ",", {});
@@ -432,7 +432,7 @@ TEST_CASE ("BinaryConfigParser args", "[binaryconfigparser]")
                                                                 std::vector<std::string>{"clear;default"});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"clear"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"clear"}, {"default"}});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("files," ABSOLUTE_PATH,
@@ -460,7 +460,7 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"azblob"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
         REQUIRE(validate_url(state, "https://azure/container", "read"));
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
     }
@@ -484,7 +484,7 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas,read", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"azblob"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
         REQUIRE(validate_url(state, "https://azure/container", "read"));
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         REQUIRE(!state.archives_to_read.empty());
@@ -493,7 +493,7 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas,write", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"azblob"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
         REQUIRE(validate_url(state, "https://azure/container", "write"));
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         REQUIRE(!state.archives_to_write.empty());
@@ -502,7 +502,7 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("x-azblob,https://azure/container,sas,readwrite", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"azblob"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
         REQUIRE(validate_url(state, "https://azure/container", "readwrite"));
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         REQUIRE(!state.archives_to_read.empty());
@@ -517,14 +517,14 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(state.gcs_read_prefixes == std::vector<std::string>{"gs://my-bucket/"});
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"gcs"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"gcs"}});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,gs://my-bucket/my-folder", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(state.gcs_read_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"gcs"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"gcs"}});
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,", {});
@@ -538,7 +538,7 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,gs://my-bucket/my-folder,read", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"gcs"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"gcs"}});
         REQUIRE(state.gcs_read_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
         REQUIRE(!state.archives_to_read.empty());
     }
@@ -546,7 +546,7 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,gs://my-bucket/my-folder,write", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"gcs"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"gcs"}});
         REQUIRE(state.gcs_write_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
         REQUIRE(!state.archives_to_write.empty());
     }
@@ -554,7 +554,7 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("x-gcs,gs://my-bucket/my-folder,readwrite", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{"gcs"});
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"gcs"}});
         REQUIRE(state.gcs_write_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
         REQUIRE(state.gcs_read_prefixes == std::vector<std::string>{"gs://my-bucket/my-folder/"});
         REQUIRE(!state.archives_to_write.empty());
