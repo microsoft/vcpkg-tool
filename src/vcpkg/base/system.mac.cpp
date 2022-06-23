@@ -68,14 +68,11 @@ namespace vcpkg
         static constexpr char hexits[] = "0123456789abcdef";
         char mac_address[MAC_STRING_LENGTH];
         char* mac = mac_address;
-        char c = bytes[0];
-        *mac++ = hexits[(c & 0xf0) >> 4];
-        *mac++ = hexits[(c & 0x0f)];
-        char non_zero_mac = c;
-        for (size_t i = 1; i < MAC_BYTES_LENGTH; ++i)
+        unsigned char non_zero_mac = 0;
+        for (size_t i = 0; i < MAC_BYTES_LENGTH; ++i)
         {
-            c = bytes[i];
-            *mac++ = ':';
+            if (i>0) { *mac++ = ':'; }
+            unsigned char c = bytes[i];
             *mac++ = hexits[(c & 0xf0) >> 4];
             *mac++ = hexits[(c & 0x0f)];
             non_zero_mac |= c;
@@ -188,12 +185,12 @@ namespace vcpkg
 #if defined(__linux__)
             auto address = reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
             if (address->sll_halen != MAC_BYTES_LENGTH) continue;
-            std::memcpy(bytes, address->sll_addr, MAC_BYTES_LENGTH);
+            const char* bytes = reinterpret_cast<const char*>(address->sll_addr);
 #elif defined(__APPLE__)
             auto address = reinterpret_cast<sockaddr_dl*>(interface->ifa_addr);
             if (address->sdl_alen != MAC_BYTES_LENGTH) continue;
             // The macro LLADDR() returns the start of the link-layer network address.
-            std::memcpy(bytes, LLADDR(address), MAC_BYTES_LENGTH);
+            const char* bytes = reinterpret_cast<const char*>(LLADDR(address));
 #endif
             auto mac = mac_bytes_to_string(Span<char>(bytes, MAC_BYTES_LENGTH));
             if (is_valid_mac_for_telemetry(mac))
