@@ -2093,7 +2093,7 @@ namespace
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
             }
 
-            for (const auto& cache_provider : state->binary_cache_providers) 
+            for (const auto& cache_provider : state->binary_cache_providers)
             {
                 LockGuardPtr<Metrics>(g_metrics)->track_property("binarycaching_" + cache_provider, "defined");
             }

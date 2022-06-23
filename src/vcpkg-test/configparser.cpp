@@ -56,7 +56,6 @@ namespace
         if (read_write == "read" && read_only)
         {
             return url_to_get.front().url_template == extended_url;
-
         }
 
         if (read_write == "write" && write_only)
