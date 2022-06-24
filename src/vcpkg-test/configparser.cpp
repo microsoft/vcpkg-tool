@@ -16,60 +16,19 @@ using namespace vcpkg;
 
 namespace
 {
-    vcpkg::Path source_str(BinaryConfigParserState state)
+    void validate_readonly_url(const BinaryConfigParserState& state, StringView url)
     {
-        if (!state.sources_to_read.empty())
-        {
-            return state.sources_to_read.front();
-        }
-        if (!state.sources_to_write.empty())
-        {
-            return state.sources_to_write.front();
-        }
-        return vcpkg::Path{};
+        auto extended_url = url.to_string() + "/{sha}.zip?sas";
+        CHECK(state.url_templates_to_put.empty());
+        CHECK(state.url_templates_to_get.size() == 1);
+        CHECK(state.url_templates_to_get.front().url_template == extended_url);
     }
 
-    vcpkg::Path configs_str(BinaryConfigParserState state)
+    void validate_readonly_sources(const BinaryConfigParserState& state, StringView sources)
     {
-        if (!state.configs_to_read.empty())
-        {
-            return state.configs_to_read.front();
-        }
-
-        if (!state.configs_to_write.empty())
-        {
-            return state.configs_to_write.front();
-        }
-        return vcpkg::Path{};
-    }
-
-    bool validate_url(BinaryConfigParserState state, std::string url, StringLiteral read_write)
-    {
-        auto url_to_get = state.url_templates_to_get;
-        auto url_to_put = state.url_templates_to_put;
-
-        auto read_only = !url_to_get.empty() && url_to_put.empty();
-        auto write_only = !url_to_put.empty() && url_to_get.empty();
-        auto readwrite = !url_to_get.empty() && !url_to_put.empty();
-        auto extended_url = url + "/{sha}.zip?sas";
-
-        if (read_write == "read" && read_only)
-        {
-            return url_to_get.front().url_template == extended_url;
-        }
-
-        if (read_write == "write" && write_only)
-        {
-            return state.url_templates_to_put.front().url_template == extended_url;
-        }
-
-        if (read_write == "readwrite" && readwrite)
-        {
-            auto url_temp_to_get = url_to_get.front().url_template;
-            return url_temp_to_get == url_to_put.front().url_template && url_temp_to_get == extended_url;
-        }
-
-        return false;
+        CHECK(state.sources_to_write.empty());
+        CHECK(state.sources_to_read.size() == 1);
+        CHECK(state.sources_to_read.front() == sources);
     }
 }
 
@@ -152,20 +111,20 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
-        REQUIRE(source_str(state) == "relative-path");
+        validate_readonly_sources(state, "relative-path");
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget,http://example.org/", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
-        REQUIRE(source_str(state) == "http://example.org/");
+        validate_readonly_sources(state, "http://example.org/");
     }
     {
         auto parsed = create_binary_providers_from_configs_pure("nuget," ABSOLUTE_PATH, {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(source_str(state) == ABSOLUTE_PATH);
+        validate_readonly_sources(state, ABSOLUTE_PATH);
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
     }
     {
@@ -176,7 +135,10 @@ TEST_CASE ("BinaryConfigParser nuget source provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("nuget," ABSOLUTE_PATH ",readwrite", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(source_str(state) == ABSOLUTE_PATH);
+        CHECK(state.sources_to_read.size() == 1);
+        CHECK(state.sources_to_write.size() == 1);
+        CHECK(state.sources_to_read.front() == state.sources_to_write.front());
+        CHECK(state.sources_to_read.front() == ABSOLUTE_PATH);
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(!state.archives_to_write.empty());
         REQUIRE(!state.archives_to_read.empty());
@@ -256,7 +218,9 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",read", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(configs_str(state) == ABSOLUTE_PATH);
+        CHECK(state.configs_to_write.empty());
+        CHECK(state.configs_to_read.size() == 1);
+        CHECK(state.configs_to_read.front() == ABSOLUTE_PATH);
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(!state.archives_to_read.empty());
     }
@@ -264,7 +228,9 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",write", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(configs_str(state) == ABSOLUTE_PATH);
+        CHECK(state.configs_to_read.empty());
+        CHECK(state.configs_to_write.size() == 1);
+        CHECK(state.configs_to_write.front() == ABSOLUTE_PATH);
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(!state.archives_to_write.empty());
     }
@@ -272,7 +238,10 @@ TEST_CASE ("BinaryConfigParser nuget config provider", "[binaryconfigparser]")
         auto parsed = create_binary_providers_from_configs_pure("nugetconfig," ABSOLUTE_PATH ",readwrite", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
-        REQUIRE(configs_str(state) == ABSOLUTE_PATH);
+        CHECK(state.configs_to_read.size() == 1);
+        CHECK(state.configs_to_write.size() == 1);
+        CHECK(state.configs_to_read.front() == state.configs_to_write.front());
+        CHECK(state.configs_to_read.front() == ABSOLUTE_PATH);
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"nuget"}});
         REQUIRE(!state.archives_to_write.empty());
         REQUIRE(!state.archives_to_read.empty());
@@ -461,7 +430,7 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
-        REQUIRE(validate_url(state, "https://azure/container", "read"));
+        validate_readonly_url(state, "https://azure/container");
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
     }
     {
@@ -485,7 +454,7 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
-        REQUIRE(validate_url(state, "https://azure/container", "read"));
+        validate_readonly_url(state, "https://azure/container");
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         REQUIRE(!state.archives_to_read.empty());
     }
@@ -494,7 +463,9 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
-        REQUIRE(validate_url(state, "https://azure/container", "write"));
+        CHECK(state.url_templates_to_get.empty());
+        CHECK(state.url_templates_to_put.size() == 1);
+        CHECK(state.url_templates_to_put.front().url_template == "https://azure/container/{sha}.zip?sas");
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         REQUIRE(!state.archives_to_write.empty());
     }
@@ -503,7 +474,10 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
-        REQUIRE(validate_url(state, "https://azure/container", "readwrite"));
+        CHECK(state.url_templates_to_get.size() == 1);
+        CHECK(state.url_templates_to_get.front().url_template == "https://azure/container/{sha}.zip?sas");
+        CHECK(state.url_templates_to_put.size() == 1);
+        CHECK(state.url_templates_to_put.front().url_template == "https://azure/container/{sha}.zip?sas");
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         REQUIRE(!state.archives_to_read.empty());
         REQUIRE(!state.archives_to_write.empty());
