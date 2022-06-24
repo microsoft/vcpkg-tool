@@ -223,7 +223,7 @@ export class Git {
       }
     });
 
-    return result.code === 0 ? true : false;
+    return result.code === 0;
   }
 
   /**
