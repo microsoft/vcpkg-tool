@@ -58,11 +58,7 @@ export async function installEspIdf(session: Session, events: Partial<InstallEve
     env: extendedEnvironment
   });
 
-  if (installPythonEnv.code) {
-    return false;
-  }
-
-  return true;
+  return installPythonEnv.code === 0;
 }
 
 export async function activateEspIdf(session: Session, targetLocation: Uri) {
