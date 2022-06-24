@@ -40,6 +40,11 @@ if(VCPKG_DEVELOPMENT_WARNINGS)
     set(FMT_PEDANTIC ON CACHE BOOL "")
 endif()
 
+if (VCPKG_ARTIFACTS_DEVELOPMENT)
+    # https://gitlab.kitware.com/cmake/cmake/-/issues/20245
+    cmake_minimum_required(VERSION 3.17)
+endif()
+
 project(vcpkg
     DESCRIPTION "vcpkg helps you manage C and C++ libraries on Windows, Linux and MacOS."
     HOMEPAGE_URL "https://github.com/microsoft/vcpkg"
@@ -196,13 +201,17 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
             OUTPUT
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
-            COMMAND
-                "${RUSH}" "update" WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ce"
+            COMMAND "${RUSH}" ARGS "update"
+            COMMAND "${RUSH}" ARGS "rebuild"
+            WORKING_DIRECTORY
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce"
             COMMENT
                 "Running rush update..."
-                )
+            VERBATIM
+            )
 
         add_custom_target(rush-update
+            ALL
             DEPENDS
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
                 "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
@@ -218,11 +227,14 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                     -p "${CMAKE_CURRENT_LIST_DIR}/ce/ce"
             DEPENDS
                 ${VCPKG_ARTIFACTS_SOURCES}
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/ce/node_modules"
             COMMENT
                 "Building vcpkg-ce..."
+            VERBATIM
             )
 
         add_custom_target(vcpkg-artifacts
+            ALL
             DEPENDS
                 "${CMAKE_CURRENT_LIST_DIR}/ce/ce/dist/tsconfig.tsbuildinfo"
             )
@@ -239,11 +251,14 @@ if(NOT DEFINED VCPKG_CE_SHA OR VCPKG_CE_SHA STREQUAL "")
                     -p "${CMAKE_CURRENT_LIST_DIR}/ce/test"
             DEPENDS
                 ${VCPKG_ARTIFACTS_TEST_SOURCES}
+                "${CMAKE_CURRENT_SOURCE_DIR}/ce/test/node_modules"
             COMMENT
                 "Building vcpkg-ce-test..."
+            VERBATIM
             )
 
         add_custom_target(vcpkg-artifacts-test
+            ALL
             DEPENDS
                 "${CMAKE_CURRENT_LIST_DIR}/ce/test/dist/tsconfig.tsbuildinfo"
             )
@@ -323,14 +338,20 @@ if(MINGW)
 endif()
 
 # === Target: vcpkg ===
-add_custom_command(OUTPUT "vcpkg.ps1" COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "vcpkg.ps1")
-add_custom_target(vcpkg-ps1 DEPENDS "vcpkg.ps1")
+add_custom_command(
+    OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+    COMMAND
+        "${CMAKE_COMMAND}" ARGS -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1"
+    VERBATIM
+    )
+
+add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1")
 
 add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 target_link_libraries(vcpkg PRIVATE vcpkglib)
-add_dependencies(vcpkg vcpkg-ps1)
-if (VCPKG_ARTIFACTS_DEVELOPMENT)
-    add_dependencies(vcpkg vcpkg-artifacts)
     if (BUILD_TESTING)
         add_dependencies(vcpkg vcpkg-artifacts-test)
     endif()
