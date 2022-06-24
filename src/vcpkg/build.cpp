@@ -1085,10 +1085,11 @@ namespace vcpkg::Build
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        const auto& env = paths.get_action_env(abi_info);
+        auto env = paths.get_action_env(abi_info);
 
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
+        env.add_entry("GIT_CEILING_DIRECTORIES", fs.absolute(buildpath.parent_path(), VCPKG_LINE_INFO));
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
         ExpectedL<int> return_code = LocalizedString();
         {

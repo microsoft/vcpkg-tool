@@ -60,6 +60,10 @@ namespace vcpkg::Json
             m_errors.push_back(Strings::concat(path(), " (", type, "): ", args...));
         }
 
+        void add_warning(StringView type, StringView msg);
+
+        const std::vector<LocalizedString>& warnings() const { return m_warnings; }
+
         std::string path() const noexcept;
 
     private:
@@ -67,6 +71,7 @@ namespace vcpkg::Json
         friend struct IDeserializer;
 
         std::vector<std::string> m_errors;
+        std::vector<LocalizedString> m_warnings;
         struct JsonPathElement
         {
             constexpr JsonPathElement() = default;

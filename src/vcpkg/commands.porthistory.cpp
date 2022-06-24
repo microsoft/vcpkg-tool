@@ -36,7 +36,8 @@ namespace vcpkg::Commands::PortHistory
                                                               const std::string& port_name,
                                                               bool is_manifest)
         {
-            auto res = Paragraphs::try_load_port_text(text, Strings::concat(commit_id, ":", port_name), is_manifest);
+            auto res = Paragraphs::try_load_port_text(
+                text, Strings::concat(commit_id, ":", port_name), is_manifest, stdout_sink);
             if (const auto& maybe_scf = res.get())
             {
                 if (const auto& scf = maybe_scf->get())

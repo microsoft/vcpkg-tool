@@ -51,8 +51,9 @@ namespace vcpkg
 
     LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
     {
-        LocalizedString res =
-            LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
+        LocalizedString res;
+        if (!origin.empty())
+            res = LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
         if (kind == MessageKind::Warning)
         {
             res.append(msg::msgWarningMessage);
