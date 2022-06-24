@@ -42,7 +42,7 @@ While the usage of `ce` is the same on all platforms, the installation/loading/r
 
 | OS              | Install                                             | Use                   | Remove                          |
 |-----------------|-----------------------------------------------------|-----------------------|---------------------------------|
-| **PowerShell/Pwsh** |`iex (iwr -useb https://aka.ms/vcpkg-init.ps1)`              |` . ~/.vcpkg/vcpkg-init.ps1`          | `rmdir -recurse ~/.vcpkg`          |
+| **PowerShell/Pwsh** |`iex (iwr -useb https://aka.ms/vcpkg-init.ps1)`              |` . ~/.vcpkg/vcpkg-init.ps1`          | `rmdir -recurse -force ~/.vcpkg`          |
 | **Linux/OSX**       |`. <(curl https://aka.ms/vcpkg-init.sh -L)`                  |` . ~/.vcpkg/vcpkg-init.sh`          | `rm -rf ~/.ce`                  |
 | **CMD Shell**       |`curl -LO https://aka.ms/vcpkg-init.cmd && .\vcpkg-init.cmd` |`%USERPROFILE%\.vcpkg\vcpkg-init.cmd` | `rmdir /s /q %USERPROFILE%\.vcpkg` |
 
