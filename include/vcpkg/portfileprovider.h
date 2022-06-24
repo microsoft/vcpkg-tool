@@ -55,7 +55,7 @@ namespace vcpkg::PortFileProvider
 
     struct PathsPortFileProvider : PortFileProvider
     {
-        explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, View<std::string> overlay_ports);
+        explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, std::unique_ptr<IOverlayProvider>&& overlay);
         ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 
@@ -69,4 +69,8 @@ namespace vcpkg::PortFileProvider
     std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const vcpkg::VcpkgPaths& paths);
     std::unique_ptr<IOverlayProvider> make_overlay_provider(const vcpkg::VcpkgPaths& paths,
                                                             View<std::string> overlay_ports);
+    std::unique_ptr<IOverlayProvider> make_manifest_provider(const vcpkg::VcpkgPaths& paths,
+                                                             View<std::string> overlay_ports,
+                                                             const Path& manifest_path,
+                                                             std::unique_ptr<SourceControlFile>&& manifest_scf);
 }

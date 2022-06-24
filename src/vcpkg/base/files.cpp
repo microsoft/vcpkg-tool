@@ -1518,7 +1518,7 @@ namespace vcpkg
     {
         this->rename(old_path, new_path, ec);
         using namespace std::chrono_literals;
-        for (const auto& delay : {10ms, 100ms, 1000ms})
+        for (const auto& delay : {10ms, 100ms, 1000ms, 10000ms})
         {
             if (!ec)
             {
