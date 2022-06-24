@@ -244,6 +244,6 @@ export class Git {
       env: this.#environment,
       cwd: this.#targetFolder.fsPath
     });
-    return result.code === 0 ? true : false;
+    return result.code === 0;
   }
 }
