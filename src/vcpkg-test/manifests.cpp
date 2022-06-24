@@ -40,7 +40,7 @@ enum class PrintErrors : bool
 static ParseExpected<SourceControlFile> test_parse_manifest(const Json::Object& obj,
                                                             PrintErrors print = PrintErrors::Yes)
 {
-    auto res = SourceControlFile::parse_manifest_object("<test manifest>", obj);
+    auto res = SourceControlFile::parse_manifest_object("<test manifest>", obj, null_sink);
     if (!res.has_value() && print == PrintErrors::Yes)
     {
         print_error_message(res.error());
@@ -741,7 +741,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         }
 })json";
     auto object = parse_json_object(raw);
-    auto res = SourceControlFile::parse_manifest_object("<test manifest>", object);
+    auto res = SourceControlFile::parse_manifest_object("<test manifest>", object, null_sink);
     if (!res.has_value())
     {
         print_error_message(res.error());

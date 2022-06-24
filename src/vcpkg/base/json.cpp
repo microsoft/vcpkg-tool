@@ -1394,6 +1394,11 @@ namespace vcpkg::Json
         }
     }
 
+    void Reader::add_warning(StringView type, StringView msg)
+    {
+        m_warnings.push_back(LocalizedString::from_raw(Strings::concat(path(), " (", type, "): ", msg)));
+    }
+
     std::string Reader::path() const noexcept
     {
         std::string p("$");
