@@ -106,7 +106,7 @@
   "FailedToProvisionCe": "Failed to provision vcpkg-ce.",
   "FailedToRunToolToDetermineVersion": "Failed to run {path} to determine the {tool_name} version.",
   "FailedToStoreBackToMirror": "failed to store back to mirror:",
-  "FilesContainAbsolutePath": "The following files contain an absolute path ('{absolute_paths}'): {paths}\nThere should be no absolute paths in the installed package, only relative ones.\n\n",
+  "FilesContainAbsolutePath": "The following files contain an absolute path ('{absolute_paths}'): {paths}\nThere should be no absolute paths in the installed package, only relative ones.",
   "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, and ppc64le platforms.",
   "FormattedParseMessageExpression": "on expression: {value}",
   "GenerateMsgErrorParsingFormatArgs": "parsing format string for {value}:",
